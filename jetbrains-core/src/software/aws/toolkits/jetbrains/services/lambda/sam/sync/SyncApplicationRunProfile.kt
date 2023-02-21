@@ -36,7 +36,6 @@ class SyncApplicationRunProfile(
     private val settings: SyncServerlessApplicationSettings,
     private val connection: ConnectionSettings,
     private val templatePath: Path,
-    private val syncOnlyCode: Boolean
 ) : RunProfile {
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState = SyncApplicationRunProfileState(environment)
 
@@ -55,8 +54,7 @@ class SyncApplicationRunProfile(
         private fun getSamSyncCommand(): GeneralCommandLine = getSamCli().samSyncCommand(
             connection.toEnvironmentVariables(),
             templatePath,
-            settings,
-            syncOnlyCode
+            settings
         )
 
         override fun execute(executor: Executor, runner: ProgramRunner<*>) =

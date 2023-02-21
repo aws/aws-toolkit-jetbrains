@@ -52,7 +52,7 @@ import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
 
-class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
+class SyncServerlessAppAction : AnAction(
     message("serverless.application.sync"),
     null,
     AwsIcons.Resources.SERVERLESS_APP
@@ -99,7 +99,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
             val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
-            val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
+            // val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
 
             ProgressManager.getInstance().run(
                 object : Task.WithResult<PreSyncRequirements, Exception>(
@@ -131,7 +131,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                                     SamTelemetry.sync(
                                         project = project,
                                         result = Result.Cancelled,
-                                        syncedResources = syncedResourceType,
+                                        syncedResources = SyncedResources.AllResources,
                                         lambdaPackageType = lambdaType,
                                         version = SamCommon.getVersionString()
                                     )
@@ -147,7 +147,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                                 SamTelemetry.sync(
                                     project = project,
                                     result = Result.Cancelled,
-                                    syncedResources = syncedResourceType,
+                                    syncedResources = SyncedResources.AllResources,
                                     lambdaPackageType = lambdaType,
                                     version = SamCommon.getVersionString()
                                 )
@@ -182,7 +182,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                                 }
                             }
 
-                            syncApp(templateFile, project, settings, syncedResourceType, lambdaType)
+                            syncApp(templateFile, project, settings, lambdaType)
                         }
                     }
                 }
@@ -195,7 +195,6 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
         templateFile: VirtualFile,
         project: Project,
         settings: SyncServerlessApplicationSettings,
-        syncedResources: SyncedResources,
         lambdaPackageType: LambdaPackageType
     ) {
         try {
@@ -203,14 +202,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val environment = ExecutionEnvironmentBuilder.create(
                 project,
                 DefaultRunExecutor.getRunExecutorInstance(),
-                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath, codeOnly)
+                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath)
             ).build()
 
             environment.runner.execute(environment)
             SamTelemetry.sync(
                 project = project,
                 result = Result.Succeeded,
-                syncedResources = syncedResources,
+                syncedResources = SyncedResources.AllResources,
                 lambdaPackageType = lambdaPackageType,
                 version = SamCommon.getVersionString()
             )
@@ -218,7 +217,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             SamTelemetry.sync(
                 project = project,
                 result = Result.Failed,
-                syncedResources = syncedResources,
+                syncedResources = SyncedResources.AllResources,
                 lambdaPackageType = lambdaPackageType,
                 version = SamCommon.getVersionString()
             )
