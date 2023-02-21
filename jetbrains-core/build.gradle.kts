@@ -1,6 +1,8 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
@@ -156,4 +158,13 @@ dependencies {
     testImplementation(libs.wiremock)
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
+}
+
+// fix implicit dependency on generated source
+tasks.withType<Detekt>() {
+    dependsOn(generateTelemetry)
+}
+
+tasks.withType<DetektCreateBaselineTask>() {
+    dependsOn(generateTelemetry)
 }

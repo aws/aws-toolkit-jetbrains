@@ -3,7 +3,6 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>BannedImports:CawsCloneDialogComponent.kt$import com.intellij.ui.layout.panel</ID>
-    <ID>BannedImports:CodeWhispererConfigurable.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:CodeWhispererTermsOfServiceDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:CreateEcrRepoDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:CreateIamServiceRoleDialog.kt$import com.intellij.ui.layout.panel</ID>
@@ -26,7 +25,6 @@
     <ID>BannedImports:SearchPanel.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:SonoLoginOverlay.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:TaskRoleNotFoundWarningDialog.kt$import com.intellij.ui.layout.panel</ID>
-    <ID>BannedImports:TokenDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:ToolConfigurable.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:UploadFunctionContinueDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>BannedImports:ValidatingPanel.kt$import com.intellij.ui.layout.panel</ID>
@@ -43,6 +41,11 @@
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$val (project, _, triggerTypeInfo, caretPosition) = requestContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$val (requestId, detail, _, isDiscarded) = detailContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:JavaCodeScanSessionConfig.kt$JavaCodeScanSessionConfig$val (sourceFiles, srcPayloadSize, totalLines, buildPaths) = includeDependencies()</ID>
+    <ID>Filename:software.aws.toolkits.jetbrains.core.coroutines.contexts.kt:1</ID>
+    <ID>Filename:software.aws.toolkits.jetbrains.core.coroutines.scopes.kt:1</ID>
+    <ID>Filename:software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanel.kt:1</ID>
+    <ID>Filename:software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundAction.kt:1</ID>
+    <ID>Filename:software.aws.toolkits.jetbrains.services.telemetry.CognitoIdentityProvider.kt:1</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_fail_autodetectBadSam_andManuallySetToBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectValidSam()</ID>
@@ -117,12 +120,154 @@
     <ID>LoopWithTooManyJumpStatements:CodeWhispererEditorManager.kt$CodeWhispererEditorManager$while (current &lt; recommendation.length) { val char = recommendation[current] current++ // if char isn't a paired symbol, or it is, but it's not the matching currentDocChar or // the opening version of it, then we're done if (!isMatchingSymbol(char) || (char != currentDocChar &amp;&amp; PAIRED_BRACKETS[char] != currentDocChar)) { continue } // if char is an opening bracket, push it to the stack if (PAIRED_BRACKETS[char] == currentDocChar) { bracketsStack.push(char) continue } // char is currentDocChar, it's one of a bracket, a quote, or a whitespace character. // If it's a whitespace character, directly add it to the result, // if it's a bracket or a quote, check if this char is already having a matching opening symbol // on the stack if (char.isWhitespace()) { result.add(current to caretOffset + totalDocLengthChecked) break } else if (bracketsStack.isNotEmpty() &amp;&amp; PAIRED_BRACKETS[bracketsStack.peek()] == char) { bracketsStack.pop() } else if (quotesStack.isNotEmpty() &amp;&amp; quotesStack.peek().first == char) { result.add(quotesStack.pop().second) result.add(current to caretOffset + totalDocLengthChecked) break } else { // char does not have a matching opening symbol in the stack, if it's a (opening) bracket, // immediately add it to the result; if it's a quote, push it to the stack if (PAIRED_QUOTES.contains(char)) { quotesStack.push(char to (current to caretOffset + totalDocLengthChecked)) } else { result.add(current to caretOffset + totalDocLengthChecked) } break } }</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadObjectAction.kt$DownloadObjectAction$for ((index, download) in downloads.withIndex()) { if (!download.diskLocation.exists()) { finalDownloads.add(download) continue } if (skipAll) { continue } val resolution = promptForConflictResolution(project, targetDirectory, download, downloads) if (resolution == SKIP) { LOG.info { "User requested skipping $download" } } else if (resolution == OVERWRITE) { finalDownloads.add(download) } else if (resolution == SKIP_ALL) { LOG.info { "User requested skipping rest of the files" } skipAll = true } else if (resolution == OVERWRITE_ALL) { finalDownloads.addAll(downloads.drop(index)) break } }</ID>
     <ID>LoopWithTooManyJumpStatements:JavaCodeScanSessionConfig.kt$JavaCodeScanSessionConfig$while (queue.isNotEmpty()) { if (currentTotalFileSize.equals(getPayloadLimitInBytes())) { return PayloadMetadata(sourceFiles.map { it.path }.toSet(), currentTotalFileSize, currentTotalLines, buildPaths.filterNotNull().toSet()) } val currentFile = queue.removeFirst() if (!currentFile.path.startsWith(projectRoot.path)) { LOG.error { "Invalid workspace: Current file ${currentFile.path} is not under the project root ${projectRoot.path}" } continue } if (sourceFiles.contains(currentFile)) continue val currentFileSize = currentFile.length // Ignore file if including it exceeds the payload limit. if (currentTotalFileSize > getPayloadLimitInBytes() - currentFileSize) continue currentTotalFileSize += currentFileSize currentTotalLines += Files.lines(currentFile.toNioPath()).count() sourceFiles.add(currentFile) // Get all imports from the file val importsInfo = parseImports(currentFile) importsInfo.imports.forEach { importPath -> val importedFiles = getSourceFilesForImport(currentFile, importPath) importedFiles.forEach { importedFile -> if (!sourceFiles.contains(importedFile)) queue.addLast(importedFile) } } buildPaths.add(getRelativeBuildPath(currentFile, importsInfo.packagePath)) }</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:589</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.core.CollaborationToolsUIUtil.kt:28</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.core.CollaborationToolsUIUtil.kt:29</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.cloudformation.CloudFormation.kt:147</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter.kt:18</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter.kt:19</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter.kt:20</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.kt:228</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.dynamic.editor.actions.SubmitResourceCreationRequestAction.kt:31</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction.kt:201</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationDialog.kt:136</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker.kt:75</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.ui.HandlerPanel.kt:31</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.ui.HandlerPanel.kt:32</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.ui.SliderPanel.kt:67</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:145</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:150</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:155</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:204</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:448</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.AwsResourceCache.kt:467</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.MockClientManager.kt:60</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager.kt:167</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.kt:104</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.kt:22</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenus.kt:120</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.CredentialManagerTest.kt:279</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager.kt:74</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider.kt:93</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager.kt:130</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager.kt:46</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager.kt:93</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileAssumeRoleProvider.kt:21</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory.kt:49</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialProviderFactory.kt:57</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.executables.ExecutableManagerTest.kt:279</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.AwsConnectionExtension.kt:31</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.AwsConnectionExtension.kt:42</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.AwsConnectionExtension.kt:49</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.AwsConnectionExtension.kt:56</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.AwsConnectionExtensionSettingsEditor.kt:18</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension.kt:32</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionExtension.kt:20</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.RefreshAwsTree.kt:14</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.ViewResourceDialog.kt:12</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.actions.AbstractActions.kt:94</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow.kt:54</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.CopyCawsRepositoryUrl.kt:62</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode.kt:27</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.terminal.AwsLocalTerminalRunner.kt:17</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.MockToolManager.kt:29</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:530</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:538</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:546</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.apprunner.actions.DeployAction.kt:46</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.caws.CawsClientCustomizer.kt:36</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.caws.CawsProjectListRenderer.kt:19</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.caws.CawsProjectListRenderer.kt:70</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudformation.CloudFormation.kt:45</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate.kt:126</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudformation.IndexedResources.kt:15</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudformation.stack.EventsTable.kt:35</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudformation.stack.View.kt:30</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchActor.kt:137</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudwatch.logs.DownloadLogStream.kt:156</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.TableUtils.kt:31</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.InsightsColumnInfo.kt:28</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererLanguageManagerTest.kt:103</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeWhispererModel.kt:21</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeWhispererModel.kt:59</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager.kt:43</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.kt:75</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer.kt:42</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer.kt:59</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider.kt:52</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceVirtualFile.kt:34</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceVirtualFile.kt:46</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourcesUpdateManager.kt:119</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourcesUpdateManager.kt:208</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamic.DynamicResourcesUpdateManager.kt:98</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamodb.editor.IndexRenderer.kt:25</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamodb.editor.SearchPanel.kt:17</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamodb.editor.TableInfo.kt:8</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.dynamodb.editor.TableResults.kt:53</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.ecr.EcrUtils.kt:96</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.ecr.actions.PushToRepositoryAction.kt:257</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.ecs.exec.EnableDisableExecuteCommandWarning.kt:18</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog.kt:33</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.federation.AwsConsoleUrlFactory.kt:76</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.federation.AwsConsoleUrlFactory.kt:79</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction.kt:108</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.deploy.CreateCapabilities.kt:10</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationDialog.kt:432</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.LambdaExecutionUtils.kt:23</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.local.CreateRunConfiguration.kt:124</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer.kt:54</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState.kt:84</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.template.LambdaRunLineMarkerContributorTest.kt:85</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.java.JavaDebugSupport.kt:112</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaLineMarkerTest.kt:510</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationDialog.kt:439</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.steps.PackageLambdaTest.kt:128</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.steps.UpdateLambdaCode.kt:14</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.upload.CreateFunctionDialog.kt:41</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitProjectBuilderCommon.kt:24</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator.kt:102</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaSelectionPanel.kt:71</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaSelectionPanel.kt:76</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelectionPanel.kt:68</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelectionPanel.kt:87</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.WizardFragment.kt:41</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.wizard.WizardFragment.kt:46</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.editor.S3TreeCellRenderer.kt:18</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode.kt:172</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.editor.S3TreeNode.kt:246</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectAction.kt:41</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectActionTest.kt:448</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.kt:57</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.kt:61</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.schemas.search.SchemaSearchDialogManager.kt:66</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.schemas.search.SchemasSearchDialogBase.kt:178</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.telemetry.TelemetryServiceTest.kt:298</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.kt:29</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.ui.ResourceSelector.kt:270</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.ui.connection.AwsConnectionSettingsEditor.kt:52</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog.kt:44</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.CachingAsyncEvaluator.kt:75</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:46</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:54</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:57</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:60</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:63</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:66</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.NotificationUtils.kt:69</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.ProgressMonitors.kt:47</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.ProgressMonitors.kt:63</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:119</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:80</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:85</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule.kt:39</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.ui.ResizingColumnRenderer.kt:20</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.ui.UiUtils.kt:134</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.ui.UiUtils.kt:209</ID>
     <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val nonEmptyMessage = "Second call on the same page must not return anything"</ID>
     <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val wrongPageMessage = "Wrong list of available pages"</ID>
     <ID>TopLevelPropertyNaming:SqsUtils.kt$const val sqsPolicyStatementArray = "Statement"</ID>
     <ID>UnusedPrivateMember:AwsLocalTerminalRunner.kt$AwsLocalTerminalRunner$private val termName: String</ID>
     <ID>UnusedPrivateMember:CawsCloneDialogComponent.kt$CawsCloneDialogComponent$private val modalityState: ModalityState</ID>
-    <ID>UnusedPrivateMember:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$val file1 = fixture.configureByText("/file1.py", pythonTestLeftContext)</ID>
     <ID>UseCheckOrError:AwsConnectionManager.kt$throw IllegalStateException("Bug: Attempting to retrieve connection settings with invalid connection state")</ID>
     <ID>UseCheckOrError:AwsConnectionManager.kt$throw IllegalStateException("Connection settings are not configured")</ID>
     <ID>UseCheckOrError:AwsConsoleUrlFactory.kt$AwsConsoleUrlFactory$throw IllegalStateException("Partition '${region.partitionId}' is not supported")</ID>
@@ -132,7 +277,6 @@
     <ID>UseCheckOrError:CloudWatchActor.kt$CloudWatchLogsActor$throw IllegalStateException("Table does not support loadInitial")</ID>
     <ID>UseCheckOrError:CloudWatchActor.kt$CloudWatchLogsActor$throw IllegalStateException("Table does not support loadInitialFilter")</ID>
     <ID>UseCheckOrError:CloudWatchActor.kt$CloudWatchLogsActor$throw IllegalStateException("Table does not support loadInitialRange")</ID>
-    <ID>UseCheckOrError:CopyCawsRepositoryUrl.kt$CopyCawsRepositoryUrl.Companion$throw IllegalStateException("Unable to cast popup in type: '${popup.javaClass}' to ${ListPopupImpl::class.qualifiedName}")</ID>
     <ID>UseCheckOrError:CreateFunctionDialog.kt$CreateFunctionDialog$throw IllegalStateException("Failed to locate module for $element")</ID>
     <ID>UseCheckOrError:CreateFunctionDialog.kt$CreateFunctionDialog$throw IllegalStateException("LambdaBuilder for $runtime not found")</ID>
     <ID>UseCheckOrError:CreateFunctionDialog.kt$CreateFunctionDialog$throw IllegalStateException("Runtime is missing when package type is Zip")</ID>
@@ -141,8 +285,6 @@
     <ID>UseCheckOrError:DataContextUtils.kt$throw IllegalStateException("Required dataId '${dataId.name}` was missing")</ID>
     <ID>UseCheckOrError:DetailedLogRecord.kt$DetailedLogRecord.Companion$throw IllegalStateException("$log format does not appear to be in a valid format (&lt;account-id>:&lt;log-group-name>)")</ID>
     <ID>UseCheckOrError:DownloadLogStream.kt$LogStreamDownloadToFileTask.&lt;no name provided>$throw IllegalStateException("Log Stream was downloaded but does not exist on disk!")</ID>
-    <ID>UseCheckOrError:FeedbackDialog.kt$FeedbackDialog$throw IllegalStateException("comment was null after validation")</ID>
-    <ID>UseCheckOrError:FeedbackDialog.kt$FeedbackDialog$throw IllegalStateException("sentiment was null after validation")</ID>
     <ID>UseCheckOrError:HandlerCompletionProvider.kt$HandlerCompletionProvider$throw IllegalStateException("handlerCompletion must be defined if completion is enabled.")</ID>
     <ID>UseCheckOrError:HandlerPanel.kt$HandlerPanel$throw IllegalStateException("Runtime was not set in the HandlerPanel")</ID>
     <ID>UseCheckOrError:InsightsUtils.kt$throw IllegalStateException("CWL GetQueryResults returned record without @ptr field")</ID>
@@ -194,8 +336,6 @@
     <ID>UseCheckOrError:SchemaCodeDownloader.kt$SchemaCodeDownloader.Companion$throw IllegalStateException("Attempting to use SchemaCodeDownload without valid AWS connection")</ID>
     <ID>UseCheckOrError:SchemaSelectionPanel.kt$SchemaSelectionPanel$throw IllegalStateException("Schemas is not supported by $this")</ID>
     <ID>UseCheckOrError:SingleS3ObjectAction.kt$SingleS3ObjectAction$throw IllegalStateException("SingleActionNode should only have a single node, got $nodes")</ID>
-    <ID>UseCheckOrError:SonoCredentialIdentifier.kt$SonoCredentialIdentifier$throw IllegalStateException("ID cred id should not be passed to CredentialManager")</ID>
-    <ID>UseCheckOrError:SonoCredentialProvider.kt$SonoCredentialProvider$throw IllegalStateException("Token refresh started before session initialized")</ID>
     <ID>UseCheckOrError:SqsWindowFactory.kt$SqsWindowFactory.Companion$throw IllegalStateException("Can't find tool window $TOOL_WINDOW_ID")</ID>
     <ID>UseCheckOrError:SsmPlugin.kt$SsmPlugin$throw IllegalStateException("Failed to extract $displayName\nSTDOUT:${processOutput.stdout}\nSTDERR:${processOutput.stderr}")</ID>
     <ID>UseCheckOrError:SsmPlugin.kt$SsmPlugin$throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")</ID>
@@ -203,10 +343,12 @@
     <ID>UseCheckOrError:SsmPlugin.kt$SsmPlugin$throw IllegalStateException("Unknown extension $extension")</ID>
     <ID>UseCheckOrError:ToolType.kt$BaseToolType$throw IllegalStateException("Failed to determine version of ${SsmPlugin.displayName}")</ID>
     <ID>UseCheckOrError:ToolkitToolWindow.kt$ToolkitToolWindow$throw IllegalStateException("Can't find tool window $toolWindowId")</ID>
-    <ID>UseCheckOrError:ToolkitToolWindowListener.kt$ToolkitToolWindowListener$throw IllegalStateException("Can't find tool window $toolWindowId")</ID>
     <ID>UseCheckOrError:UpdateFunctionCodeDialog.kt$UpdateFunctionCodeDialog$throw IllegalStateException("Failed to locate module for $element")</ID>
     <ID>UseCheckOrError:UpdateFunctionCodeDialog.kt$UpdateFunctionCodeDialog$throw IllegalStateException("LambdaBuilder for ${initialSettings.runtime} not found")</ID>
     <ID>UseCheckOrError:UpdateFunctionCodeDialog.kt$UpdateFunctionCodeDialog$throw IllegalStateException("Runtime is missing when package type is Zip")</ID>
     <ID>UseCheckOrError:UpdateFunctionCodePanel.kt$UpdateFunctionCodePanel$throw IllegalStateException("Unsupported package type $packageType")</ID>
+    <ID>UseRequire:AwsSettingsConfigurable.kt$AwsSettingsConfigurable$throw IllegalArgumentException("Set file is not an executable")</ID>
+    <ID>UseRequire:FourPartVersion.kt$FourPartVersion.Companion$throw IllegalArgumentException("[$version] not in the format of MAJOR.MINOR.PATCH.BUILD")</ID>
+    <ID>UseRequire:SemanticVersion.kt$SemanticVersion.Companion$throw IllegalArgumentException("[$version] not in the format of MAJOR.MINOR.PATCH")</ID>
   </CurrentIssues>
 </SmellBaseline>

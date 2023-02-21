@@ -2,7 +2,15 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>UnusedPrivateMember:VgoCompatShims.kt$VgoCompatShims$goVersion: String?</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.datagrip.DatabaseSecret.kt:47</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.datagrip.DatabaseSecret.kt:54</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.datagrip.DatabaseSecret.kt:59</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.datagrip.DatabaseSecret.kt:66</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.datagrip.actions.AddSecretsManagerConnection.kt:84</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.go.VgoCompatShims.kt:12</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.go.GoSamProjectWizard.kt:57</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.go.GoSamProjectWizard.kt:77</ID>
+    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.go.GoSamProjectWizard.kt:97</ID>
     <ID>UseCheckOrError:CreateIamDataSourceAction.kt$throw IllegalStateException("Newly inserted data source is not in the data source registry!")</ID>
     <ID>UseCheckOrError:GoCodeInsightTestFixtureRule.kt$throw IllegalStateException("'go mod tidy' did not return 0: ${output.stderr}")</ID>
     <ID>UseCheckOrError:GoHelper.kt$GoDebugHelper$throw IllegalStateException("Packaged Devle debugger is not found!")</ID>

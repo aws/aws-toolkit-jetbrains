@@ -2,6 +2,8 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcher.kt:28</ID>
+    <ID>MultiLineIfElse:software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcher.kt:29</ID>
     <ID>UnnecessaryApply:DotnetDebugUtils.kt$DotnetDebugUtils$apply { enableHeuristicPathResolve.set(true) }</ID>
     <ID>UnsafeCallOnNullableType:DotnetDebugUtils.kt$DotnetDebugUtils$promise.get()!!</ID>
     <ID>UseCheckOrError:DebuggingSteps.kt$throw IllegalStateException( "Command did not return expected result within $duration, last attempt; cmd: '${cmd.commandLineString}', " + "exitCode: ${lastAttemptOutput?.exitCode}, stdOut: '${lastAttemptOutput?.stdout?.trim()}', stdErr: '${lastAttemptOutput?.stderr?.trim()}'" )</ID>
