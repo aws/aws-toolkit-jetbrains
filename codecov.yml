@@ -24,7 +24,7 @@ coverage:
       codewhisperer:
         target: 75%
         paths:
-          - jetbrains-core/src/software/aws/toolkits/jetbrains/services/codewhisperer/*
+          - "**/src/software/aws/toolkits/jetbrains/services/codewhisperer/*"
         flags:
           - "codewhisperer"
     patch:
@@ -52,4 +52,4 @@ ignore:
 flags:
   codewhisperer:
     paths:
-      - jetbrains-core/src/software/aws/toolkits/jetbrains/services/codewhisperer/
+      - "**/src/software/aws/toolkits/jetbrains/services/codewhisperer/"
