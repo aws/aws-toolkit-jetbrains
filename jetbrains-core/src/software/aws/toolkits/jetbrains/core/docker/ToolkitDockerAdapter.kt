@@ -12,7 +12,6 @@ import com.intellij.docker.agent.progress.DockerResponseItem
 import com.intellij.docker.registry.DockerAgentRepositoryConfigImpl
 import com.intellij.docker.registry.DockerRepositoryModel
 import com.intellij.docker.remote.run.runtime.DockerAgentDeploymentConfigImpl
-import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
@@ -35,18 +34,34 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import com.intellij.docker.getSourceFile as getDockerfileSourceFile
 
-abstract class AbstractToolkitDockerAdapter(protected val project: Project, val serverRuntime: DockerServerRuntime) {
-    internal var agent = serverRuntime.agent
+// it's a facade so imo we shouldn't be leaking impl details but i don't feel like rewriting tests
+interface DockerRuntimeFacade {
+    val agent: DockerAgent
+
+    suspend fun pushImage(imageId: String, config: DockerRepositoryModel)
+}
+
+class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: DockerRuntimeFacade) {
+    internal var agent = runtimeFacade.agent
         @TestOnly
         set
 
     @TestOnly
-    abstract fun buildLocalImage(dockerfile: File): String?
+    fun buildLocalImage(dockerfile: File): String? {
+        val tag = UUID.randomUUID().toString()
+        val config = object : DockerAgentDeploymentConfigImpl(tag, null) {
+            override fun getFile() = dockerfile
+
+            override fun sourceType() = DockerAgentSourceType.FILE.toString()
+        }
+
+        return runBlocking { buildImage(project, agent, config, dockerfile.absolutePath, tag) }
+    }
 
     suspend fun hackyBuildDockerfileWithUi(project: Project, pushRequest: DockerfileEcrPushRequest) =
         hackyBuildDockerfileUnderIndicator(project, pushRequest)
 
-    abstract suspend fun pushImage(imageId: String, config: DockerRepositoryModel)
+    suspend fun pushImage(imageId: String, config: DockerRepositoryModel) = runtimeFacade.pushImage(imageId, config)
 
     fun getLocalImages(): List<LocalImage> =
         agent.getImages(null).flatMap { image ->
@@ -140,7 +155,7 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, val 
                         indicator.text2 = message
                     }
 
-                    AbstractToolkitDockerAdapter.LOG.debug { message ?: deserialized.toString() }
+                    LOG.debug { message ?: deserialized.toString() }
                 }
 
                 future.complete(agent.getImages(null).firstOrNull { it.imageRepoTags.contains("$tag:latest") }?.imageId)
@@ -153,30 +168,6 @@ abstract class AbstractToolkitDockerAdapter(protected val project: Project, val 
     protected companion object {
         const val NO_TAG_TAG = "<none>:<none>"
 
-        val LOG = getLogger<AbstractToolkitDockerAdapter>()
-    }
-}
-
-// TODO: merge with abstract class
-class ToolkitDockerAdapter(project: Project, serverRuntime: DockerServerRuntime) : AbstractToolkitDockerAdapter(project, serverRuntime) {
-    @TestOnly
-    override fun buildLocalImage(dockerfile: File): String? {
-        val tag = UUID.randomUUID().toString()
-        val config = object : DockerAgentDeploymentConfigImpl(tag, null) {
-            override fun getFile() = dockerfile
-
-            override fun sourceType() = DockerAgentSourceType.FILE.toString()
-        }
-
-        return runBlocking { buildImage(project, agent, config, dockerfile.absolutePath, tag) }
-    }
-
-    override suspend fun pushImage(imageId: String, config: DockerRepositoryModel) {
-        val imageRuntime = serverRuntime.runtimesManager.images[imageId]
-        imageRuntime?.push(project, config) ?: error("couldn't map tag to appropriate docker runtime")
-    }
-
-    companion object {
         val LOG = getLogger<ToolkitDockerAdapter>()
     }
 }

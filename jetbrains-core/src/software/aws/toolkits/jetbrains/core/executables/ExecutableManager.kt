@@ -257,7 +257,6 @@ sealed class ExecutableInstance {
     }
 
     class Executable(
-        val type: ExecutableType<*>,
         override val executablePath: Path,
         override val version: String,
         override val autoResolved: Boolean,

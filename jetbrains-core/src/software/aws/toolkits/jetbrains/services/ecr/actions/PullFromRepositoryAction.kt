@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.ecr.actions
 
 import com.intellij.docker.agent.OngoingProcess
-import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
@@ -18,6 +17,7 @@ import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.EcrLogin
 import software.aws.toolkits.jetbrains.services.ecr.EcrRepositoryNode
@@ -102,7 +102,7 @@ private class PullFromEcrTask(
     private val ecrLogin: EcrLogin,
     private val repository: Repository,
     private val image: String,
-    private val dockerRuntime: DockerServerRuntime
+    private val dockerRuntime: DockerRuntimeFacade
 ) : Task.Backgroundable(project, message("ecr.pull.progress", repository.repositoryUri, image)) {
     private var task: OngoingProcess? = null
 

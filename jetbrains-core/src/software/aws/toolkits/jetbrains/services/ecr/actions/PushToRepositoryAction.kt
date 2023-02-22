@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.ecr.actions
 import com.intellij.docker.DockerCloudType
 import com.intellij.docker.deploymentSource.DockerFileDeploymentSourceType
 import com.intellij.docker.dockerFile.DockerFileType
-import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.RunManager
 import com.intellij.execution.impl.RunDialog
@@ -47,6 +46,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.LocalImage
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
@@ -125,7 +125,7 @@ class PushToRepositoryAction : EcrDockerAction() {
 internal class PushToEcrDialog(
     private val project: Project,
     selectedRepository: Repository,
-    private val dockerRuntime: Deferred<DockerServerRuntime>
+    private val dockerRuntime: Deferred<DockerRuntimeFacade>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
     private val coroutineScope = projectCoroutineScope(project)
     private val defaultTag = "latest"

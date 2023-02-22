@@ -6,24 +6,21 @@ package software.aws.toolkits.jetbrains.services.ecr
 import com.intellij.docker.DockerCloudConfiguration
 import com.intellij.docker.DockerCloudType
 import com.intellij.docker.DockerDeploymentConfiguration
-import com.intellij.docker.DockerServerRuntimesManager
 import com.intellij.docker.deploymentSource.DockerFileDeploymentSourceType
 import com.intellij.docker.registry.DockerRepositoryModel
-import com.intellij.docker.runtimes.DockerServerRuntime
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.openapi.project.Project
-import com.intellij.remoteServer.configuration.RemoteServer
 import com.intellij.remoteServer.configuration.RemoteServersManager
-import com.intellij.remoteServer.impl.configuration.RemoteServerImpl
 import com.intellij.remoteServer.impl.configuration.deployment.DeployToServerRunConfiguration
 import com.intellij.util.Base64
-import kotlinx.coroutines.future.await
 import software.amazon.awssdk.services.ecr.model.AuthorizationData
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.core.docker.compatability.DockerRegistry
+import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -40,7 +37,7 @@ data class EcrLogin(
 
 sealed class EcrPushRequest
 data class ImageEcrPushRequest(
-    val dockerRuntime: DockerServerRuntime,
+    val dockerRuntimeFacade: DockerRuntimeFacade,
     val localImageId: String,
     val remoteRepo: Repository,
     val remoteTag: String
@@ -54,8 +51,6 @@ data class DockerfileEcrPushRequest(
 
 object EcrUtils {
     val LOG = getLogger<EcrUtils>()
-
-    private fun defaultDockerConnection() = RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
 
     fun buildDockerRepositoryModel(ecrLogin: EcrLogin?, repository: Repository, tag: String) = DockerRepositoryModel().also {
         val repoUri = repository.repositoryUri
@@ -72,13 +67,6 @@ object EcrUtils {
         }
     }
 
-    suspend fun getDockerServerRuntimeInstance(project: Project, server: RemoteServer<DockerCloudConfiguration>? = null): DockerServerRuntime {
-        val connectionConfig = server ?: defaultDockerConnection()
-        val runtime = DockerServerRuntimesManager.getInstance(project).getOrCreateConnection(connectionConfig).await()
-
-        return runtime
-    }
-
     suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) {
         when (pushRequest) {
             is DockerfileEcrPushRequest -> {
@@ -88,7 +76,7 @@ object EcrUtils {
             is ImageEcrPushRequest -> {
                 LOG.debug { "Pushing '${pushRequest.localImageId}' to ECR" }
                 val model = buildDockerRepositoryModel(ecrLogin, pushRequest.remoteRepo, pushRequest.remoteTag)
-                ToolkitDockerAdapter(project, pushRequest.dockerRuntime).pushImage(pushRequest.localImageId, model)
+                ToolkitDockerAdapter(project, pushRequest.dockerRuntimeFacade).pushImage(pushRequest.localImageId, model)
             }
         }
     }
@@ -97,7 +85,7 @@ object EcrUtils {
         val (runConfiguration, remoteRepo, remoteTag) = pushRequest
         // use connection specified in run configuration
         val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)
-        val dockerRuntime = getDockerServerRuntimeInstance(project, server)
+        val dockerRuntime = getDockerServerRuntimeFacade(project, server)
 
         // find the built image and send to ECR
         val imageIdPrefix = ToolkitDockerAdapter(project, dockerRuntime).hackyBuildDockerfileWithUi(project, pushRequest)
