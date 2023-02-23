@@ -64,3 +64,6 @@ if (idea.project != null) { // may be null during script compilation
 fun org.gradle.plugins.ide.idea.model.IdeaProject.settings(configuration: ProjectSettings.() -> Unit) = (this as ExtensionAware).configure(configuration)
 fun ProjectSettings.taskTriggers(action: TaskTriggersConfig.() -> Unit, ) = (this as ExtensionAware).extensions.configure("taskTriggers", action)
 
+tasks.coverageReport {
+    mustRunAfter(tasks.withType<AbstractTestTask>())
+}
