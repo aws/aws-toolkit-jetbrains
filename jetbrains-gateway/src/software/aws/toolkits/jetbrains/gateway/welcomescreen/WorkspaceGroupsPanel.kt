@@ -136,7 +136,7 @@ class WorkspaceGroupsPanel(
 
         val projectGroups = groupByRepo(workspaces, allRepos).sortedWith(compareBy(Comparator.nullsLast<String?>(Comparator.naturalOrder())) { it.repoName })
         projectGroups.forEachIndexed { index, group ->
-            panel.createWorkspaceGroup(group, gbc)
+            panel.createWorkspaceGroup(project, group, gbc)
 
             if (index < projectGroups.size - 1) {
                 add(createSeparator(), gbc.nextLine().insets(JBUI.emptyInsets()))
@@ -154,7 +154,7 @@ class WorkspaceGroupsPanel(
         return panel
     }
 
-    private fun JPanel.createWorkspaceGroup(workspaceGroup: WorkspaceGroup, gbc: GridBag) {
+    private fun JPanel.createWorkspaceGroup(project: CawsProject, workspaceGroup: WorkspaceGroup, gbc: GridBag) {
         gbc.nextLine()
 
         val label = workspaceGroup.subtitle ?: message("caws.no_repo")
@@ -171,10 +171,10 @@ class WorkspaceGroupsPanel(
                         cawsWizard(
                             lifetime,
                             CawsSettings().also {
+                                it.project = project
+                                it.linkedRepoName = workspaceGroup.repoName ?: ""
                                 // TODO: 3p unlinked case
-                                if (workspaceGroup.repoName == null) {
-                                    it.cloneType = CawsWizardCloneType.NONE
-                                }
+                                it.cloneType = CawsWizardCloneType.CAWS
                             }
                         )
                     )
