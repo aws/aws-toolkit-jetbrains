@@ -42,7 +42,7 @@ import kotlin.concurrent.withLock
 import kotlin.io.path.exists
 
 class DefaultToolManager @NonInjectable internal constructor(private val clock: Clock) : ToolManager {
-    constructor(): this(Clock.systemUTC())
+    constructor() : this(Clock.systemUTC())
 
     private val versionCache = ToolVersionCache()
     private val updateCheckCache = ConcurrentHashMap<ManagedToolType<*>, Instant>()
