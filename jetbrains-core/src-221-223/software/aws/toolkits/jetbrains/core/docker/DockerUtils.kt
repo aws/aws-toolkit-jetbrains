@@ -1,5 +1,5 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDXLicenseIdentifier: Apache2.0
+// SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.docker
 
@@ -29,19 +29,19 @@ private fun defaultDockerConnection() = ServerConnectionManager.getInstance().cr
 suspend fun getDockerServerRuntimeFacade(project: Project, server: RemoteServer<DockerCloudConfiguration>? = null): DockerRuntimeFacade {
     val instancePromise = AsyncPromise<DockerServerRuntimeInstance>()
     val connection = server?.let {
-            withContext(getCoroutineUiContext()) {
-                ServerConnectionManager.getInstance().getOrCreateConnection(server)
+        withContext(getCoroutineUiContext()) {
+            ServerConnectionManager.getInstance().getOrCreateConnection(server)
         }
     } ?: defaultDockerConnection()
 
     connection.connectIfNeeded(object : ServerConnector.ConnectionCallback<DeploymentConfiguration> {
         override fun errorOccurred(errorMessage: String) {
-                instancePromise.setError(errorMessage)
-            }
+            instancePromise.setError(errorMessage)
+        }
 
         override fun connected(serverRuntimeInstance: ServerRuntimeInstance<DeploymentConfiguration>) {
-                instancePromise.setResult(serverRuntimeInstance as DockerServerRuntimeInstance)
-            }
+            instancePromise.setResult(serverRuntimeInstance as DockerServerRuntimeInstance)
+        }
     })
 
     val runtime = instancePromise.await()

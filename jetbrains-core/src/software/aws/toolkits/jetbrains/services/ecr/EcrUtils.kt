@@ -81,7 +81,11 @@ object EcrUtils {
         }
     }
 
-    private suspend fun buildAndPushDockerfile(project: Project, ecrLogin: EcrLogin, pushRequest: DockerfileEcrPushRequest) {
+    private suspend fun buildAndPushDockerfile(
+        project: Project,
+        ecrLogin: EcrLogin,
+        pushRequest: DockerfileEcrPushRequest
+    ) {
         val (runConfiguration, remoteRepo, remoteTag) = pushRequest
         // use connection specified in run configuration
         val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)

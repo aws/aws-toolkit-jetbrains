@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -58,7 +60,7 @@ dependencies {
 
 // Not published to gradle plugin portal, use old syntax
 // TODO: rdgen 2023.1.2 doesn't work with gradle 8.0
-//apply(plugin = "com.jetbrains.rdgen")
+// apply(plugin = "com.jetbrains.rdgen")
 class RdGenPlugin2 : Plugin<Project> {
     override fun apply(project: Project) {
         project.extensions.create("rdgen", RdGenExtension::class.java, project)
@@ -339,7 +341,7 @@ tasks.compileKotlin {
     dependsOn(generateModels)
 }
 
-tasks.detekt {
+tasks.withType<Detekt>() {
     // Make sure kotlin code is generated before we execute detekt
     dependsOn(generateModels)
 }
@@ -358,4 +360,9 @@ tasks.integrationTest {
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
     include("**/*Test.class")
+}
+
+// fix implicit dependency on generated source
+tasks.withType<DetektCreateBaselineTask>() {
+    dependsOn(generateModels)
 }

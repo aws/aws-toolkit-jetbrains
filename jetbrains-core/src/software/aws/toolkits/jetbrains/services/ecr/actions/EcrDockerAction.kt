@@ -13,7 +13,6 @@ import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeAction
 import software.aws.toolkits.jetbrains.services.ecr.EcrRepositoryNode
-import software.aws.toolkits.jetbrains.services.ecr.EcrUtils
 
 abstract class EcrDockerAction :
     SingleExplorerNodeAction<EcrRepositoryNode>(),

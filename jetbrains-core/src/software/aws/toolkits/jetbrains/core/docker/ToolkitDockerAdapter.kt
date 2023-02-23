@@ -21,7 +21,6 @@ import org.apache.commons.io.FileUtils
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.concurrency.await
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.ecr.DockerfileEcrPushRequest
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -112,7 +111,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
     )
 
     // com.intellij.docker.agent.progress.DockerImageBuilder is probably the correct interface to use but need to figure out how to get an instance of it
-    protected suspend fun hackyBuildDockerfileUnderIndicator(project: Project, pushRequest: DockerfileEcrPushRequest): String? {
+    private suspend fun hackyBuildDockerfileUnderIndicator(project: Project, pushRequest: DockerfileEcrPushRequest): String? {
         val dockerConfig = (pushRequest.dockerBuildConfiguration.deploymentConfiguration as DockerDeploymentConfiguration)
         val tag = dockerConfig.separateImageTags.firstOrNull() ?: Instant.now().toEpochMilli().toString()
         // should never be null
@@ -132,7 +131,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
         return buildImage(project, agent, config, dockerfilePath, tag)
     }
 
-    protected suspend fun buildImage(
+    private suspend fun buildImage(
         project: Project,
         agent: DockerAgent,
         config: DockerAgentDeploymentConfig,
@@ -165,7 +164,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
         return future.await()
     }
 
-    protected companion object {
+    private companion object {
         const val NO_TAG_TAG = "<none>:<none>"
 
         val LOG = getLogger<ToolkitDockerAdapter>()
