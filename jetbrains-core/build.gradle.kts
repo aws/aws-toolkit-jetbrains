@@ -170,5 +170,7 @@ tasks.withType<DetektCreateBaselineTask>() {
 }
 
 tasks.instrumentCode {
+    ant.lifecycleLogLevel = org.gradle.api.AntBuilder.AntMessagePriority.DEBUG
     outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
 }
