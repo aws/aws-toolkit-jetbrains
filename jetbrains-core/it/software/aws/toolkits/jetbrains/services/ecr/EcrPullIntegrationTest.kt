@@ -14,6 +14,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ecr.EcrClient
 import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
+import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import java.util.UUID
 
@@ -56,7 +57,7 @@ class EcrPullIntegrationTest {
 
         val project = projectRule.project
         runBlocking {
-            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(project)
+            val serverRuntime = getDockerServerRuntimeFacade(project)
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
             val dockerAdapter = ToolkitDockerAdapter(project, serverRuntime)
             val imageId = dockerAdapter.buildLocalImage(dockerfile)!!

@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.ecr.model.Image
 import software.amazon.awssdk.services.ecr.model.ImageIdentifier
 import software.aws.toolkits.core.rules.EcrTemporaryRepositoryRule
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
+import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import java.util.UUID
 
@@ -59,7 +60,7 @@ class EcrPushIntegrationTest {
 
         val project = projectRule.project
         runBlocking {
-            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(project)
+            val serverRuntime = getDockerServerRuntimeFacade(project)
             val ecrLogin = ecrClient.authorizationToken.authorizationData().first().getDockerLogin()
             val dockerAdapter = ToolkitDockerAdapter(project, serverRuntime)
             val imageId = dockerAdapter.buildLocalImage(dockerfile)!!
@@ -112,7 +113,7 @@ class EcrPushIntegrationTest {
             EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
 
             // find our local image id
-            val serverRuntime = EcrUtils.getDockerServerRuntimeInstance(projectRule.project)
+            val serverRuntime = getDockerServerRuntimeFacade(projectRule.project)
             val localImageId = serverRuntime.agent.getImages(null).first { it.imageRepoTags.contains("${remoteRepo.repositoryUri}:$remoteTag") }.imageId
 
             assertThat(
