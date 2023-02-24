@@ -406,7 +406,9 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                         )
                                 }
                             }.bind({ context.branchCloneType }, { context.branchCloneType = it })
-                                .apply { visible(cloneRepoButton.component.isSelected) }
+                                .apply {
+                                    visible(cloneRepoButton.component.isSelected)
+                                }
 
                             newBranch = row(message("caws.workspace.details.branch_new")) {
                                 textField().bindText(context::createBranchName)
