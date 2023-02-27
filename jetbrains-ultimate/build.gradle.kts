@@ -11,7 +11,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":jetbrains-core"))
+    api(project(":jetbrains-core", "instrumentedJar"))
 
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(project(path = ":core", configuration = "testArtifacts"))

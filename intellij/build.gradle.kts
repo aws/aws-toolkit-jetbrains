@@ -61,8 +61,8 @@ tasks.test {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core"))
-    implementation(project(":jetbrains-ultimate"))
+    implementation(project(":jetbrains-core", "instrumentedJar"))
+    implementation(project(":jetbrains-ultimate", "instrumentedJar"))
     project.findProject(":jetbrains-gateway")?.let {
         implementation(it)
         gatewayResources(project(":jetbrains-gateway", configuration = "gatewayResources"))

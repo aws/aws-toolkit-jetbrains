@@ -217,3 +217,10 @@ tasks.withType<RunIdeForUiTestTask>().all {
         }
     }
 }
+
+// required due to breaking change in gradle-intellij-plugin v1.13.0
+// .form files require .class instrumentation that's missing in the standard build output directory
+tasks.withType<Test> {
+    classpath = tasks.instrumentedJar.get().outputs.files + classpath
+    testClassesDirs = tasks.instrumentTestCode.map { it.outputDir.asFileTree }.get()
+}

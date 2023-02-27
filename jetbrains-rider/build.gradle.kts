@@ -50,7 +50,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core"))
+    implementation(project(":jetbrains-core", "instrumentedJar"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 

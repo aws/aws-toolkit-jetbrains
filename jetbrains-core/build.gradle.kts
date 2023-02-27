@@ -86,7 +86,7 @@ val gatewayArtifacts by configurations.creating {
 
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
-    from(sourceSets.main.get().output) {
+    from(tasks.instrumentCode) {
         exclude("**/plugin.xml")
         exclude("**/plugin-intellij.xml")
         exclude("**/inactive")
