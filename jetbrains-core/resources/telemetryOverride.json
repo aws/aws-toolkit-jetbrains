@@ -33,6 +33,11 @@
             "name": "codecatalyst_devEnvironmentWorkflowStep",
             "type": "string",
             "description": "Workflow step name"
+        },
+        {
+            "name": "numberOfRetryAttempts",
+            "type": "string",
+            "description": "Number of retry attempts for fileSystem Check"
         }
     ],
     "metrics": [
@@ -101,7 +106,8 @@
                 { "type": "result" },
                 { "type": "duration"},
                 { "type": "codecatalyst_devEnvironmentWorkflowStep"},
-                { "type": "codecatalyst_devEnvironmentWorkflowError", "required": false }
+                { "type": "codecatalyst_devEnvironmentWorkflowError", "required": false },
+                { "type": "numberOfRetryAttempts", "required": false }
             ]
         }
     ]
