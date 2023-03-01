@@ -8,6 +8,7 @@ import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
@@ -87,7 +88,8 @@ class CodeWhispererService {
             return
         }
         latencyContext.credentialFetchingEnd = System.nanoTime()
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
+        val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }
+
         if (psiFile == null) {
             LOG.debug { "No PSI file for the current document" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
@@ -97,7 +99,7 @@ class CodeWhispererService {
         }
 
         val requestContext = try {
-            getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
+            runReadAction { getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext) }
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
@@ -446,7 +448,6 @@ class CodeWhispererService {
     }
 
     private fun checkRecommendationsValidity(states: InvocationContext, showHint: Boolean): Boolean {
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val details = states.recommendationContext.details
 
         // set to true when at least one is not discarded or empty
