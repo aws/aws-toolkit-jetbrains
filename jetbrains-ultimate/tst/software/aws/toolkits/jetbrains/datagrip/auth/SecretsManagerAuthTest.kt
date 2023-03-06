@@ -207,7 +207,7 @@ class SecretsManagerAuthTest {
             on { driverClass } doReturn "org.postgresql.Driver"
             on { sshConfiguration } doAnswer {
                 if (usesSshTunnel) {
-                    DataSourceSshTunnelConfiguration(true, "config", -1)
+                    mockDataSourceSshTunnelConfiguration()
                 } else {
                     null
                 }
