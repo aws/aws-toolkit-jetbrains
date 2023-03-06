@@ -64,7 +64,8 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
 
     fun getLocalImages(): List<LocalImage> =
         agent.getImages(null).flatMap { image ->
-            if (image.imageRepoTags.isEmpty()) {
+            @Suppress("UselessCallOnNotNull")
+            if (image.imageRepoTags.isNullOrEmpty()) {
                 return@flatMap listOf(LocalImage(image.imageId, null))
             }
 
