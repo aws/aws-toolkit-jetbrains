@@ -110,19 +110,19 @@ object CodeWhispererUtil {
                 }
             } catch (e: SsoOidcException) {
                 runInEdt {
-                    notifyConnectionExpired(project, connection)
+                    notifyConnectionExpiredRequestReauth(project, connection)
                     callback()
                 }
             }
         } else if (state == BearerTokenAuthState.NOT_AUTHENTICATED) {
             runInEdt {
-                notifyConnectionExpired(project, connection)
+                notifyConnectionExpiredRequestReauth(project, connection)
                 callback()
             }
         }
     }
 
-    private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
+    private fun notifyConnectionExpiredRequestReauth(project: Project, connection: BearerSsoConnection?) {
         connection ?: return
         if (CodeWhispererExplorerActionManager.getInstance().getConnectionExpiredDoNotShowAgain()) {
             return

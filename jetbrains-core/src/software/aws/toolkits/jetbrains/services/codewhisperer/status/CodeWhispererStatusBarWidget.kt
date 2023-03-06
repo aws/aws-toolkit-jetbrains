@@ -12,6 +12,7 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
@@ -30,6 +31,15 @@ class CodeWhispererStatusBarWidget(project: Project) :
             CodeWhispererInvocationStatus.CODEWHISPERER_INVOCATION_STATE_CHANGED,
             object : CodeWhispererInvocationStateChangeListener {
                 override fun invocationStateChanged(value: Boolean) {
+                    statusBar.updateWidget(ID)
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String) {
                     statusBar.updateWidget(ID)
                 }
             }
