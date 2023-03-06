@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -16,7 +15,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnecti
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -26,13 +24,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWit
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import java.net.URI
 
 object CodeWhispererUtil {
 
@@ -126,7 +124,9 @@ object CodeWhispererUtil {
 
     private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
         connection ?: return
-        logoutFromSsoConnection(project, connection)
+        if (CodeWhispererExplorerActionManager.getInstance().getConnectionExpiredDoNotShowAgain()) {
+            return
+        }
         notifyError(
             message("toolkit.sso_expire.dialog.title", connection.label),
             message("toolkit.sso_expire.dialog_message"),
@@ -140,8 +140,9 @@ object CodeWhispererUtil {
                     }
                     notification.expire()
                 },
-                NotificationAction.createSimple(message("aws.settings.learn_more")) {
-                    BrowserUtil.browse(URI("https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer.html"))
+                NotificationAction.create(message("toolkit.sso_expire.dialog.no_button")) { _, notification ->
+                    CodeWhispererExplorerActionManager.getInstance().setConnectionExpiredDoNotShowAgain(true)
+                    notification.expire()
                 }
             )
         )

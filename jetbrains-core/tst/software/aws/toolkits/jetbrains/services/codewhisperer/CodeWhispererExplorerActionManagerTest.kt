@@ -152,13 +152,10 @@ class CodeWhispererExplorerActionManagerTest {
     private fun assertLoginType(startUrl: String, expectedType: CodeWhispererLoginType) {
         sut = spy()
         whenever(sut.hasAcceptedTermsOfService()).thenReturn(true)
-        whenever(connectionManager.activeConnectionForFeature(any())).thenReturn(
-            ManagedBearerSsoConnection(
-                startUrl = startUrl,
-                region = "us-east-1",
-                emptyList()
-            )
-        )
+        val conn: ManagedBearerSsoConnection = mock()
+        whenever(connectionManager.activeConnectionForFeature(any())).thenReturn(conn)
+        whenever(conn.startUrl).thenReturn(startUrl)
+        whenever(conn.getConnectionSettings()).thenReturn(null)
 
         val actual = sut.checkActiveCodeWhispererConnectionType(project)
         assertThat(actual).isEqualTo(expectedType)

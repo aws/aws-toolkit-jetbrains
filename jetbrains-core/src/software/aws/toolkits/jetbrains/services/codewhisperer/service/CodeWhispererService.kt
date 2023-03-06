@@ -84,7 +84,10 @@ class CodeWhispererService {
 
         latencyContext.credentialFetchingStart = System.nanoTime()
         if (isConnectionExpired(project)) {
-            promptReAuth(project)
+            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger && reAuthPromptShown) {
+                return
+            }
+            promptReAuth(project, ::markReAuthPromptShown)
             return
         }
         latencyContext.credentialFetchingEnd = System.nanoTime()
@@ -611,6 +614,11 @@ class CodeWhispererService {
         val KEY_CODEWHISPERER_METADATA: Key<CodeWhispererMetadata> = Key.create("codewhisperer.metadata")
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
+        private var reAuthPromptShown = false
+
+        private fun markReAuthPromptShown() {
+            reAuthPromptShown = true
+        }
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo

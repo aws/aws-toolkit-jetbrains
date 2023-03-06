@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isConnectionExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.time.LocalDateTime
 
@@ -93,6 +94,12 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.DoNotShowAgainError] = doNotShowAgain
     }
 
+    fun getConnectionExpiredDoNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.ConnectionExpiredDoNotShowAgain, false)
+
+    fun setConnectionExpiredDoNotShowAgain(doNotShowAgain: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.ConnectionExpiredDoNotShowAgain] = doNotShowAgain
+    }
+
     fun getAccountlessNullified(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.AccountlessNullified, false)
 
     fun setAccountlessNullified(accountlessNullified: Boolean) {
@@ -123,6 +130,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     fun checkActiveCodeWhispererConnectionType(project: Project) = when {
         !hasAcceptedTermsOfService() -> CodeWhispererLoginType.Logout
         actionState.token != null -> CodeWhispererLoginType.Accountless
+        isConnectionExpired(project) -> CodeWhispererLoginType.Expired
         else -> {
             val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
             if (conn != null) {
@@ -194,7 +202,8 @@ enum class CodeWhispererExploreStateType {
     HasShownHowToUseCodeWhisperer,
     DoNotShowAgainWarn,
     DoNotShowAgainError,
-    AccountlessNullified
+    AccountlessNullified,
+    ConnectionExpiredDoNotShowAgain
 }
 
 interface CodeWhispererActivationChangedListener {

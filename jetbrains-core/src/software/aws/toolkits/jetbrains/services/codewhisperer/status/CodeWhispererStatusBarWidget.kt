@@ -12,6 +12,10 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.resources.message
@@ -46,12 +50,16 @@ class CodeWhispererStatusBarWidget(project: Project) :
 
     override fun getSelectedValue(): String = message("codewhisperer.statusbar.display_name")
 
-    override fun getIcon(): Icon =
-        if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            AnimatedIcon.Default()
+    override fun getIcon(): Icon {
+        val connectionType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)
+        if (connectionType == CodeWhispererLoginType.Expired) {
+            return AllIcons.Actions.IntentionBulb
+        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+            return AnimatedIcon.Default()
         } else {
-            AllIcons.Actions.Commit
+            return AllIcons.Actions.Commit
         }
+    }
 
     companion object {
         const val ID = "aws.codewhisperer.statusWidget"
