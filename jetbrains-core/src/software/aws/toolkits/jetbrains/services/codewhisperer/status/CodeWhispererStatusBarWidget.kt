@@ -12,8 +12,6 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
@@ -52,12 +50,12 @@ class CodeWhispererStatusBarWidget(project: Project) :
 
     override fun getIcon(): Icon {
         val connectionType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)
-        if (connectionType == CodeWhispererLoginType.Expired) {
-            return AllIcons.Actions.IntentionBulb
+        return if (connectionType == CodeWhispererLoginType.Expired) {
+            AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            return AnimatedIcon.Default()
+            AnimatedIcon.Default()
         } else {
-            return AllIcons.Actions.Commit
+            AllIcons.Actions.Commit
         }
     }
 
