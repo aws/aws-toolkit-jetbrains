@@ -84,10 +84,12 @@ class CodeWhispererService {
 
         latencyContext.credentialFetchingStart = System.nanoTime()
         if (isConnectionExpired(project)) {
-            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger && reAuthPromptShown) {
-                return
+            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger) {
+                if (reAuthPromptShown) return
+                promptReAuth(project, ::markReAuthPromptShown)
+            } else {
+                promptReAuth(project)
             }
-            promptReAuth(project, ::markReAuthPromptShown)
             return
         }
         latencyContext.credentialFetchingEnd = System.nanoTime()
