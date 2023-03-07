@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.database.dataSource.DataSourceSshTunnelConfiguration
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
