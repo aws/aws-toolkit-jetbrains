@@ -88,25 +88,6 @@
     <ID>NoNameShadowing:SchemaSearchDialogTest.kt$SchemaSearchDialogTest${ it.getArgument&lt;OnSearchResultReturned>(1).invoke(searchResultsPart1) it.getArgument&lt;OnSearchResultError>(2).invoke(searchError) latch.countDown() }</ID>
     <ID>NoNameShadowing:SchemaSearchDialogTest.kt$SchemaSearchDialogTest${ it.getArgument&lt;OnSearchResultReturned>(1).invoke(searchResultsPart1) it.getArgument&lt;OnSearchResultReturned>(1).invoke(searchResultsPart2) latch.countDown() }</ID>
     <ID>NoNameShadowing:SchemaSearchDialogTest.kt$SchemaSearchDialogTest${ it.getArgument&lt;OnSearchResultReturned>(2).invoke(searchResults) latch.countDown() }</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.MockClientManager.kt:60</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.CredentialManagerTest.kt:279</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager.kt:74</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.executables.ExecutableManagerTest.kt:279</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.MockToolManager.kt:29</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:530</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:538</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.core.tools.ToolManagerTest.kt:546</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererLanguageManagerTest.kt:103</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.local.CreateRunConfiguration.kt:124</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.execution.template.LambdaRunLineMarkerContributorTest.kt:85</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaLineMarkerTest.kt:510</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.steps.PackageLambdaTest.kt:128</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.s3.objectActions.DownloadObjectActionTest.kt:448</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.telemetry.TelemetryServiceTest.kt:298</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:119</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:80</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RunConfigTestUtils.kt:85</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule.kt:39</ID>
     <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val nonEmptyMessage = "Second call on the same page must not return anything"</ID>
     <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val wrongPageMessage = "Wrong list of available pages"</ID>
     <ID>UnnecessaryApply:ConfigureLambdaDialogTest.kt$ConfigureLambdaDialogTest$apply { configureLambda(TEST_FUNCTION_NAME) }</ID>
@@ -148,6 +129,7 @@
     <ID>UnsafeCallOnNullableType:ToolkitToolWindowTest.kt$ToolkitToolWindowTest$jbToolWindowManager.getToolWindow(sut.toolWindowId)?.contentManager!!</ID>
     <ID>UnsafeCallOnNullableType:WrapLogsActionTest.kt$WrapLogsActionTest$model.columnInfos[1].getRenderer(null)!!</ID>
     <ID>UnsafeCallOnNullableType:YamlCloudFormationTemplateTest.kt$YamlCloudFormationTemplateTest$resource!!</ID>
+    <ID>UnusedPrivateMember:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$val file1 = fixture.configureByText("/file1.py", pythonTestLeftContext)</ID>
     <ID>UseCheckOrError:AwsRegionProviderTest.kt$AwsRegionProviderTest$throw IllegalStateException("Bad test data")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate $it")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate gradlew")</ID>

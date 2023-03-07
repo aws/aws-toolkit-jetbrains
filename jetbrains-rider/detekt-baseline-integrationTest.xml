@@ -2,9 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.dotnet.DotnetLocalLambdaRunConfigurationIntegrationTest.kt:135</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.services.lambda.dotnet.DotnetLocalLambdaRunConfigurationIntegrationTest.kt:40</ID>
-    <ID>ParameterListWrapping:software.aws.toolkits.jetbrains.utils.RiderTestUtils.kt:76</ID>
     <ID>UseCheckOrError:RiderTestUtils.kt$throw IllegalStateException("Took too long to execute Rider run configuration!")</ID>
   </CurrentIssues>
 </SmellBaseline>
