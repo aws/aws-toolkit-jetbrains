@@ -210,10 +210,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         )
 
                                         LOG.debug { "$testFs" }
+                                        attemptCount = it + 1
                                         when (testFs.resultFromStdOut()) {
                                             StdOutResult.SUCCESS -> {
                                                 LOG.info { "Filesystem writablity test succeeded for $pluginPath on attempt $it" }
-                                                attemptCount = it + 1
                                                 return@repeatBlock
                                             }
 
@@ -229,6 +229,14 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         }
 
                                         if (it == attempts - 1) {
+                                            CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                                project = null,
+                                                userId = userId,
+                                                result = TelemetryResult.Failed,
+                                                duration = (System.currentTimeMillis() - start).toDouble(),
+                                                codecatalystDevEnvironmentWorkflowStep = "fileSystemCheck",
+                                                value = attemptCount.toDouble()
+                                            )
                                             error("Dev Environment did not have a writable filesystem after $attempts attempts")
                                         }
                                     }
@@ -237,10 +245,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                             CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                                 project = null,
                                 userId = userId,
-                                result = if (attemptCount == 15) TelemetryResult.Failed else TelemetryResult.Succeeded,
-                                duration = (System.currentTimeMillis() - start).toDouble(),
-                                codecatalystDevEnvironmentWorkflowStep = "fileSystem Check",
-                                numberOfRetryAttempts = (attemptCount).toString()
+                                result = TelemetryResult.Succeeded,
+                                duration = fsTestTime.toDouble(),
+                                codecatalystDevEnvironmentWorkflowStep = "fileSystemCheck",
+                                value = attemptCount.toDouble()
                             )
                             LOG.info { "FS test took ${fsTestTime}ms" }
 
