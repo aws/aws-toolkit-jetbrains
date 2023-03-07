@@ -5,10 +5,12 @@ package software.aws.toolkits.jetbrains.utils.rules
 
 import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
 import com.intellij.openapi.application.runWriteActionAndWait
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.module.ModuleTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.util.SystemInfo
@@ -77,16 +79,20 @@ class PythonCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
 
         PsiTestUtil.addContentRoot(module, projectRoot)
         val sdk = PyTestSdk("3.6.0")
-        runWriteActionAndWait {
-            ProjectJdkTable.getInstance().addJdk(sdk, module)
-            ModuleRootModificationUtil.setModuleSdk(module, sdk)
-        }
+        setModuleSdk(module, sdk)
 
         return newFixture
     }
 
     override val fixture: CodeInsightTestFixture
         get() = lazyFixture.value
+
+    fun setModuleSdk(module: Module, sdk: Sdk) {
+        runWriteActionAndWait {
+            ProjectJdkTable.getInstance().addJdk(sdk, module)
+            ModuleRootModificationUtil.setModuleSdk(module, sdk)
+        }
+    }
 }
 
 internal class PythonModuleFixtureBuilder(fixtureBuilder: TestFixtureBuilder<out IdeaProjectTestFixture>) :
