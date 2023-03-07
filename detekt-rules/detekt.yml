@@ -262,7 +262,7 @@ potential-bugs:
     active: false
   IgnoredReturnValue:
     active: false
-    restrictToConfig: true
+    restrictToAnnotatedMethods: true
     returnValueAnnotations: [ '*.CheckReturnValue', '*.CheckResult' ]
   ImplicitUnitReturnType:
     active: false
