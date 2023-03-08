@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.ProjectRootManager
@@ -30,10 +31,7 @@ class RuntimeGroupTest {
     @Test
     fun canDetermineRuntimeFromAnActionEventUsingModule() {
         val sdk = PyTestSdk("3.9.0")
-        runWriteAction {
-            ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
-            ModuleRootModificationUtil.setModuleSdk(projectRule.module, sdk)
-        }
+        projectRule.setModuleSdk(projectRule.module, sdk)
 
         val event: AnActionEvent = mock {
             on { getData(LangDataKeys.LANGUAGE) }.thenReturn(PythonLanguage.INSTANCE)
@@ -52,7 +50,7 @@ class RuntimeGroupTest {
         runInEdtAndWait {
             runWriteAction {
                 ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
-                ProjectRootManager.getInstance(project).projectSdk = PyTestSdk("3.9.0")
+                ProjectRootManager.getInstance(project).projectSdk = sdk
             }
 
             val event: AnActionEvent = mock {
