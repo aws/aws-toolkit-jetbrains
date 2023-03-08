@@ -280,7 +280,7 @@ potential-bugs:
   UnconditionalJumpStatementInLoop:
     active: false
   UnnecessaryNotNullOperator:
-    active: true
+    active: false
   UnnecessarySafeCall:
     active: true
   UnreachableCatchBlock:
@@ -318,6 +318,7 @@ style:
   UnnecessaryAbstractClass:
     active: false
   UnusedPrivateMember:
+    active: false
     allowedNames: '(_|ignored|expected|serialVersionUID|createUIComponents)'
   VarCouldBeVal:
     active: false

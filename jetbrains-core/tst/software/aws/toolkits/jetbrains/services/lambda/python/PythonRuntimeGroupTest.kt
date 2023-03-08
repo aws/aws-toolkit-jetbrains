@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test

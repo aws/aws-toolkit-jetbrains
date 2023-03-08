@@ -29,7 +29,12 @@ class RuntimeGroupTest {
 
     @Test
     fun canDetermineRuntimeFromAnActionEventUsingModule() {
-        ModuleRootModificationUtil.setModuleSdk(projectRule.module, PyTestSdk("3.9.0"))
+        val sdk = PyTestSdk("3.9.0")
+        runWriteAction {
+            ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
+            ModuleRootModificationUtil.setModuleSdk(projectRule.module, sdk)
+        }
+
         val event: AnActionEvent = mock {
             on { getData(LangDataKeys.LANGUAGE) }.thenReturn(PythonLanguage.INSTANCE)
             on { getData(LangDataKeys.MODULE) }.thenReturn(projectRule.module)

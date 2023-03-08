@@ -222,5 +222,6 @@ tasks.withType<RunIdeForUiTestTask>().all {
 // .form files require .class instrumentation that's missing in the standard build output directory
 tasks.withType<Test> {
     classpath = tasks.instrumentedJar.get().outputs.files + classpath
-    testClassesDirs = tasks.instrumentTestCode.map { it.outputDir.asFileTree }.get()
+    // TODO: figure out how to get IDE to not generate junit configurations for test
+    testClassesDirs = tasks.instrumentTestCode.map { it.outputDir.asFileTree }.get() + testClassesDirs
 }
