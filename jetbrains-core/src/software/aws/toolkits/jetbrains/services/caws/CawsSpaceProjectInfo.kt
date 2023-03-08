@@ -17,7 +17,7 @@ private const val WIDGET_ID = "CawsSpaceProjectInfo"
 class CawsStatusBarInstaller : StatusBarWidgetFactory {
     override fun getId(): String = WIDGET_ID
 
-    override fun getDisplayName(): String = "Displays"
+    override fun getDisplayName(): String = "spaceName/projectName"
 
     override fun isAvailable(project: Project): Boolean = true
 
@@ -33,15 +33,20 @@ class CawsStatusBarInstaller : StatusBarWidgetFactory {
 private class CawsSpaceProjectInfo(project: Project) :
     StatusBarWidget,
     StatusBarWidget.MultipleTextValuesPresentation, EditorBasedWidget(project) {
+    val spaceName: String? = System.getenv(CawsConstants.CAWS_ENV_ORG_NAME_VAR)
+    val projectName: String? = System.getenv(CawsConstants.CAWS_ENV_PROJECT_NAME_VAR)
 
     override fun ID(): String = WIDGET_ID
+
     override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
-    override fun getTooltipText(): String = "displays spaceName/projectName"
+
+    override fun getTooltipText(): String = "$spaceName/$projectName"
+
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
+
     override fun getPopupStep(): ListPopup? = null
+
     override fun getSelectedValue(): String {
-        val spaceName = System.getenv(CawsConstants.CAWS_ENV_ORG_NAME_VAR)
-        val projectName = System.getenv(CawsConstants.CAWS_ENV_PROJECT_NAME_VAR)
         if (spaceName != null && projectName != null) {
             return "$spaceName/$projectName"
         }
