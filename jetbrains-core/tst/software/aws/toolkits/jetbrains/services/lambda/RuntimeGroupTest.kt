@@ -6,9 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.runWriteAction
-import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.testFramework.runInEdtAndWait
 import com.jetbrains.python.PythonLanguage

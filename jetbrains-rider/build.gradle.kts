@@ -296,6 +296,8 @@ val resharperDllsDir = tasks.register<Sync>("resharperDllsDir") {
     from(buildReSharperPlugin) {
         include("**/bin/**/$buildConfiguration/**/AWS*.dll")
         include("**/bin/**/$buildConfiguration/**/AWS*.pdb")
+        // TODO: see if there is better way to do this
+        exclude("**/AWSSDK*")
     }
     into("$buildDir/$name")
 
