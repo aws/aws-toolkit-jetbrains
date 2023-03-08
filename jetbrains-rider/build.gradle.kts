@@ -30,9 +30,9 @@ val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("toolkit-intellij-subplugin")
     id("toolkit-testing")
     id("toolkit-integration-testing")
+    id("toolkit-intellij-subplugin")
 }
 
 intellijToolkit {

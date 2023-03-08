@@ -5,9 +5,9 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("toolkit-intellij-subplugin")
     id("toolkit-testing")
     id("toolkit-integration-testing")
+    id("toolkit-intellij-subplugin")
 }
 
 dependencies {
