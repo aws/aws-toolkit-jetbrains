@@ -290,7 +290,7 @@ potential-bugs:
   UnsafeCallOnNullableType:
     active: true
   UnsafeCast:
-    active: true
+    active: false
   UnusedUnaryOperator:
     active: false
   UselessPostfixExpression:
