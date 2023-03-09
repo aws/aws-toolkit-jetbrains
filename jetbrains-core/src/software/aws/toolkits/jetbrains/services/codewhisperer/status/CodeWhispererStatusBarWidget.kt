@@ -42,7 +42,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             }
         )
 
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String) {
