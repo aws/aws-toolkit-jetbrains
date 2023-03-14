@@ -16,7 +16,7 @@ junit5 = "5.9.2"
 kotlin = "1.8.10"
 # potentially overridden in <root>/settings.gradle.kts
 kotlinCoroutines = "1.6.4"
-mockito = "4.6.1"
+mockito = "5.2.0"
 mockitoKotlin = "4.0.0"
 mockk = "1.13.4"
 telemetryGenerator = "1.0.102"
