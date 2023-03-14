@@ -127,7 +127,7 @@ class SettingsSelectorLogicBaseTest {
         private var currentCredentials: CredentialIdentifier? = null
 
         override fun currentRegion(): AwsRegion? = currentRegion
-        override fun currentCredentials(): CredentialIdentifier? = currentCredentials
+        override fun currentCredentials(): ConnectionSettingsMenuBuilder.SelectedCredential? = currentCredentials
 
         override fun onRegionChange(region: AwsRegion) {
             currentRegion = region
