@@ -65,7 +65,7 @@ class SettingsSelectorComboBoxActionTest {
 
         override fun onRegionChange(region: AwsRegion) {}
 
-        override fun currentCredentials(): ConnectionSettingsMenuBuilder.SelectedCredential? = currentCredentials
+        override fun currentCredentials(): CredentialIdentifier? = currentCredentials
 
         override fun onCredentialChange(identifier: CredentialIdentifier) {}
     }
