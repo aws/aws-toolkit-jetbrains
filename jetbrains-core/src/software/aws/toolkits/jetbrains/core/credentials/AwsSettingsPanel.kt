@@ -73,13 +73,29 @@ private class AwsSettingsPanel(private val project: Project) :
 
         if (currentProfileInvalid || invalidBearerConnections.isNotEmpty()) {
             val numInvalid = invalidBearerConnections.size + if (currentProfileInvalid) 1 else 0
+            if (numInvalid == 1) {
+                invalidBearerConnections.firstOrNull()?.let {
+                    return message("settings.statusbar.widget.format", message("settings.statusbar.widget.expired.1", it.label))
+                }
 
-            return "AWS: $numInvalid Connections Expired"
+                return message("settings.statusbar.widget.format", accountSettingsManager.connectionState.shortMessage)
+            }
+
+            return message("settings.statusbar.widget.format", message("settings.statusbar.widget.expired.n", numInvalid))
         }
 
         val totalConnections = ToolkitAuthManager.getInstance().listConnections().size + CredentialManager.getInstance().getCredentialIdentifiers().size
+        if (totalConnections == 1) {
+            val displayText = when (val connection = connectionManager.activeConnection()) {
+                null -> message("settings.credentials.none_selected")
+                is AwsConnectionManagerConnection -> accountSettingsManager.connectionState.shortMessage
+                else -> connection.label
+            }
 
-        return "AWS: $totalConnections Connections"
+            return message("settings.statusbar.widget.format", displayText)
+        }
+
+        return message("settings.statusbar.widget.format", message("settings.statusbar.widget.connections.n", totalConnections))
     }
 
     override fun getPopupStep(): ListPopup = settingsSelector.createPopup(DataManager.getInstance().getDataContext(statusBar.component))

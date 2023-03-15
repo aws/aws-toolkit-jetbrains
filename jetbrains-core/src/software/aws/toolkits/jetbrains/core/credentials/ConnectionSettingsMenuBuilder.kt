@@ -102,17 +102,13 @@ class ConnectionSettingsMenuBuilder private constructor() {
         val profileActions = createProfileActions()
         val regionActions = createRegionActions()
 
-        if (profileActions.isNotEmpty() || regionActions.isNotEmpty()) {
-            if (profileActions.isEmpty()) {
-                // only regions
-                // don't need header since there is no individual identity section
-            } else if (regionActions.isEmpty()) {
-                // only profiles
-                topLevelGroup.add(Separator.create("IAM Credentials"))
-            } else {
-                // both
-                topLevelGroup.add(Separator.create("IAM Credentials & Regions"))
-            }
+        // no header if only regions
+        if (profileActions.isNotEmpty() && regionActions.isNotEmpty()) {
+            // both profiles & regions
+            topLevelGroup.add(Separator.create("IAM Credentials & Regions"))
+        } else if (profileActions.isNotEmpty() && regionActions.isEmpty()) {
+            // only profiles
+            topLevelGroup.add(Separator.create("IAM Credentials"))
         }
 
         val regionSettings = regionSelectionSettings
