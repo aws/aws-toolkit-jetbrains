@@ -7,12 +7,10 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaTestContext
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.resources.message
 
-@RequiresRealCredentials
 class CodeWhispererCodeScanJavaIntegrationTest : CodeWhispererIntegrationTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     @Test
     fun testCodeScanJavaProjectNoBuild() {

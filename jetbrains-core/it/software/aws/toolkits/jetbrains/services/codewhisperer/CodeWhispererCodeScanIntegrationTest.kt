@@ -9,10 +9,8 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.cppFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.cppTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials.RequiresRealCredentials
 import software.aws.toolkits.resources.message
 
-@RequiresRealCredentials
 class CodeWhispererCodeScanIntegrationTest : CodeWhispererIntegrationTestBase() {
     private val filePromptWithSecurityIssues = """
         from flask import app

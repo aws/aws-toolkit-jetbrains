@@ -31,6 +31,7 @@ class RunWithRealCredentials : TestRule {
     /**
      * Marks a unit test, or unit test class, as requiring AWS credentials to run. Will always use the default AWS profile, and by default us-west-2
      */
+    @Deprecated("Doesn't actually do yet anything since we don't use custom test runners")
     annotation class RequiresRealCredentials
 
     private val projectSupplier: () -> Project
@@ -43,6 +44,7 @@ class RunWithRealCredentials : TestRule {
         this.projectSupplier = { projectRule.project }
     }
 
+    @Suppress("DEPRECATION")
     override fun apply(base: Statement, description: Description): Statement = if (description.getAnnotation(RequiresRealCredentials::class.java) == null &&
         description.testClass.getAnnotation(RequiresRealCredentials::class.java) == null
     ) {
