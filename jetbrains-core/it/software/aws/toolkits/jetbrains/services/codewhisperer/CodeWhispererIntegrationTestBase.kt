@@ -140,9 +140,17 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
     @After
     open fun tearDown() {
         runInEdtAndWait {
-            stateManager.loadState(originalExplorerActionState)
-            settingsManager.loadState(originalSettings)
-            popupManager.reset()
+            if (::stateManager.isInitialized) {
+                stateManager.loadState(originalExplorerActionState)
+            }
+
+            if (::settingsManager.isInitialized) {
+                settingsManager.loadState(originalSettings)
+            }
+
+            if (::popupManager.isInitialized) {
+                popupManager.reset()
+            }
         }
     }
 
