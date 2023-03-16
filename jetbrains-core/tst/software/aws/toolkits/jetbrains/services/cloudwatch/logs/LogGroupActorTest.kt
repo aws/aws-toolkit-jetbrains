@@ -3,14 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
+import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.whenever
@@ -18,13 +21,21 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
-import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
 
 @ExperimentalCoroutinesApi
-class LogGroupActorTest : BaseCoroutineTest() {
+class LogGroupActorTest {
+    @JvmField
+    @Rule
+    val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
+
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogStream>
     private lateinit var table: TableView<LogStream>
@@ -39,7 +50,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun modelIsPopulated() {
+    fun modelIsPopulated() = runTest {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).build())
         runBlocking {
@@ -51,7 +62,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun emptyTableOnExceptionThrown() {
+    fun emptyTableOnExceptionThrown() = runTest {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
             actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
@@ -61,7 +72,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun loadingForwardAppendsToTable() {
+    fun loadingForwardAppendsToTable() = runTest {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).nextToken("1").build())
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name2").build()).build())
@@ -76,7 +87,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun writeChannelAndCoroutineIsDisposed() {
+    fun writeChannelAndCoroutineIsDisposed() = runTest {
         val channel = actor.channel
         actor.dispose()
         assertThatThrownBy {

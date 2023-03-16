@@ -3,14 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
+import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.whenever
@@ -19,16 +22,24 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.amazon.awssdk.services.cloudwatchlogs.paginators.GetLogEventsIterable
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamDateColumn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamMessageColumn
-import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
 @ExperimentalCoroutinesApi
-class LogStreamListActorTest : BaseCoroutineTest() {
+class LogStreamListActorTest {
+    @JvmField
+    @Rule
+    val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
+
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogStreamEntry>
     private lateinit var table: TableView<LogStreamEntry>
@@ -46,7 +57,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun modelIsPopulated() {
+    fun modelIsPopulated() = runTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build())
         runBlocking {
@@ -59,7 +70,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun modelIsPopulatedRange() {
+    fun modelIsPopulatedRange() = runTest {
         whenever(client.getLogEventsPaginator(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(
                 object : GetLogEventsIterable(client, null) {
@@ -83,7 +94,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun emptyTableOnExceptionThrown() {
+    fun emptyTableOnExceptionThrown() = runTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
             actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
@@ -96,7 +107,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun emptyTableOnExceptionThrownRange() {
+    fun emptyTableOnExceptionThrownRange() = runTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
             actor.channel.send(CloudWatchLogsActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
@@ -106,7 +117,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun loadingForwardAppendsToTable() {
+    fun loadingForwardAppendsToTable() = runTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).nextForwardToken("2").build())
             .thenReturn(GetLogEventsResponse.builder().nextForwardToken("3").build())
@@ -127,7 +138,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun loadingBackwardsPrependsToTable() {
+    fun loadingBackwardsPrependsToTable() = runTest {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).nextBackwardToken("2").build())
             .thenReturn(GetLogEventsResponse.builder().nextBackwardToken("3").build())
@@ -153,7 +164,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun writeChannelAndCoroutineIsDisposed() {
+    fun writeChannelAndCoroutineIsDisposed() = runTest {
         val channel = actor.channel
         actor.dispose()
         assertThatThrownBy {
@@ -164,7 +175,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun loadInitialFilterThrows() {
+    fun loadInitialFilterThrows() = runTest {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         val tableModel = ListTableModel<LogStreamEntry>()
         val table = TableView(tableModel)

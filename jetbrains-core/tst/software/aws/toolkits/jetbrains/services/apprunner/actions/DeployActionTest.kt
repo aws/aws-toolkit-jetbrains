@@ -7,10 +7,11 @@ import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -31,16 +32,28 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRe
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.toolwindow.CloudWatchLogsToolWindowFactory
-import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.resources.message
 
 @ExperimentalCoroutinesApi
-class DeployActionTest : BaseCoroutineTest(30) {
+class DeployActionTest {
+    @JvmField
+    @Rule
+    val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
+
+    @Rule
+    @JvmField
+    val disposableRule = DisposableRule()
+
     private val action = DeployAction()
     private lateinit var toolWindow: ToolkitToolWindow
 
@@ -48,10 +61,6 @@ class DeployActionTest : BaseCoroutineTest(30) {
     private lateinit var cloudwatchClient: CloudWatchLogsClient
 
     private val operationId = aString()
-
-    @Rule
-    @JvmField
-    val disposableRule = DisposableRule()
 
     @Before
     fun setup() {
@@ -74,7 +83,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
     }
 
     @Test
-    fun `deploy fails`() {
+    fun `deploy fails`() = runTest {
         val notificationMock = mock<Notifications>()
 
         projectRule.project.messageBus.connect(disposableRule.disposable).subscribe(Notifications.TOPIC, notificationMock)
@@ -83,7 +92,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
             on { startDeployment(any<StartDeploymentRequest>()) } doAnswer { throw RuntimeException("Failed to start deployment") }
         }
 
-        runBlockingTest {
+        runBlocking {
             action.deploy(
                 AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
                 appRunnerClient,
@@ -99,7 +108,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
     }
 
     @Test
-    fun `deploy fails to open logs`() {
+    fun `deploy fails to open logs`() = runTest {
         val notificationMock = mock<Notifications>()
 
         projectRule.project.messageBus.connect(disposableRule.disposable).subscribe(Notifications.TOPIC, notificationMock)
@@ -112,7 +121,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
             on { describeLogStreams(any<DescribeLogStreamsRequest>()) } doAnswer { throw RuntimeException("broke") }
         }
 
-        runBlockingTest {
+        runBlocking {
             action.deploy(
                 AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceArn(aString()).build()),
                 appRunnerClient,
@@ -128,7 +137,7 @@ class DeployActionTest : BaseCoroutineTest(30) {
     }
 
     @Test
-    fun `deploy succeeds and opens logs`() {
+    fun `deploy succeeds and opens logs`() = runTest {
         appRunnerClient.stub {
             on { startDeployment(any<StartDeploymentRequest>()) } doAnswer { StartDeploymentResponse.builder().operationId(operationId).build() }
         }

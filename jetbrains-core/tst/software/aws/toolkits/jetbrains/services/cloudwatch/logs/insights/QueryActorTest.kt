@@ -3,15 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights
 
+import com.intellij.testFramework.ProjectRule
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.any
@@ -24,8 +26,8 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsRespo
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField
 import software.amazon.awssdk.services.cloudwatchlogs.model.StopQueryRequest
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.InsightsQueryResultsActor
-import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
@@ -33,7 +35,15 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @ExperimentalCoroutinesApi
-class QueryActorTest : BaseCoroutineTest() {
+class QueryActorTest {
+    @JvmField
+    @Rule
+    val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
+
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogResult>
     private lateinit var table: TableView<LogResult>
@@ -53,7 +63,7 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `dedupes events`() {
+    fun `dedupes events`() = runTest {
         val sampleResults = listOf(
             ResultField.builder()
                 .field("@message")
@@ -73,7 +83,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(sampleResults).build()
             )
 
-        runBlockingTest {
+        runBlocking {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(1)
         }
@@ -83,7 +93,7 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `loads events`() {
+    fun `loads events`() = runTest {
         val sampleResult1 = ResultField.builder()
             .field("@ptr")
             .value("1234")
@@ -101,7 +111,7 @@ class QueryActorTest : BaseCoroutineTest() {
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).results(firstSampleResultList, secondSampleResultList).build()
             )
-        runBlockingTest {
+        runBlocking {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(2)
         }
@@ -111,7 +121,7 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `loads partially`() {
+    fun `loads partially`() = runTest {
         val sampleResults = listOf(
             ResultField.builder()
                 .field("@message")
@@ -131,7 +141,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 CloudWatchLogsException::class.java
             )
 
-        runBlockingTest {
+        runBlocking {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             while (!queryactor.channel.isClosedForSend) {
                 delay(10)
@@ -143,12 +153,12 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `no results`() {
+    fun `no results`() = runTest {
         whenever(client.getQueryResults(Mockito.any<GetQueryResultsRequest>()))
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).build()
             )
-        runBlockingTest {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_results_found") }
         }
@@ -156,7 +166,7 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `errors immediately`() {
+    fun `errors immediately`() = runTest {
         whenever(client.getQueryResults(any<GetQueryResultsRequest>()))
             .thenThrow(
                 CloudWatchLogsException::class.java
@@ -171,7 +181,7 @@ class QueryActorTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `stop loading`() {
+    fun `stop loading`() = runTest {
         val sampleResult1 = ResultField.builder()
             .field("@ptr")
             .value("p1234")
@@ -199,7 +209,7 @@ class QueryActorTest : BaseCoroutineTest() {
                 latch.countDown()
             }
 
-        runBlockingTest {
+        runBlocking {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             tableModel.waitForModelToBeAtLeast(1)
             queryactor.channel.send(InsightsQueryResultsActor.Message.StopLoading)
