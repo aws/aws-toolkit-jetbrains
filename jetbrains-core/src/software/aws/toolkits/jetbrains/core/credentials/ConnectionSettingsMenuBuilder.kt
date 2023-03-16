@@ -105,10 +105,10 @@ class ConnectionSettingsMenuBuilder private constructor() {
         // no header if only regions
         if (profileActions.isNotEmpty() && regionActions.isNotEmpty()) {
             // both profiles & regions
-            topLevelGroup.add(Separator.create("IAM Credentials & Regions"))
+            topLevelGroup.add(Separator.create(message("settings.credentials.iam_and_regions")))
         } else if (profileActions.isNotEmpty() && regionActions.isEmpty()) {
             // only profiles
-            topLevelGroup.add(Separator.create("IAM Credentials"))
+            topLevelGroup.add(Separator.create(message("settings.credentials.iam")))
         }
 
         val regionSettings = regionSelectionSettings
