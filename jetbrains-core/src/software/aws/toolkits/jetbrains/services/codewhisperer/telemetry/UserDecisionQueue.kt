@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
@@ -134,7 +135,7 @@ class CodeWhispererUserDecisionQueue(val size: Int = 5) {
             codewhispererTotalShownTime = duration?.toMillis()?.toDouble(),
             codewhispererTriggerCharacter = "", // TODO
             codewhispererTypeaheadLength = firstRecommendationContext.userInputSinceInvocation.length,
-            codewhispererTimeSinceLastDocumentChange = null, // TODO
+            codewhispererTimeSinceLastDocumentChange = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
             codewhispererTimeSinceLastUserDecision = codewhispererTimeSinceLastUserDecision,
             codewhispererTimeToFirstRecommendation = firstRequestContext.latencyContext.paginationFirstCompletionTime,
             codewhispererPreviousSuggestionState = codewhispererPreviousSuggestionState,
