@@ -158,7 +158,7 @@ class QueryActorTest {
             .thenReturn(
                 GetQueryResultsResponse.builder().status(QueryStatus.COMPLETE).build()
             )
-        runBlocking {
+        runTest {
             queryactor.channel.send(InsightsQueryResultsActor.Message.StartLoadingAll)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_results_found") }
         }
