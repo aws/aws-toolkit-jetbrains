@@ -12,7 +12,7 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TemporaryDirectory
 import com.intellij.testFramework.createTestOpenProjectOptions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runBlockingTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Rule
@@ -259,7 +259,7 @@ class TelemetryServiceTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    fun experimentStatusIsIncludedInFeedback() = runTest {
+    fun experimentStatusIsIncludedInFeedback() = runBlockingTest {
         val fooExperiment = DummyExperiment()
         val barExperiment = DummyExperiment()
         val bloopExperiment = DummyExperiment()

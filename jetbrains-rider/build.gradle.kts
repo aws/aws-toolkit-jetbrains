@@ -368,8 +368,3 @@ tasks.integrationTest {
 tasks.withType<DetektCreateBaselineTask>() {
     dependsOn(generateModels)
 }
-
-// weird implicit dependency issue with how we run windows tests
-tasks.named("classpathIndexCleanup") {
-    dependsOn(tasks.named("compileIntegrationTestKotlin"))
-}
