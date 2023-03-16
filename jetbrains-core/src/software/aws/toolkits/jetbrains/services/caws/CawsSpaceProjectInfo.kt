@@ -17,8 +17,8 @@ private const val WIDGET_ID = "CawsSpaceProjectInfo"
 
 class CawsStatusBarInstaller : StatusBarWidgetFactory {
     init {
-        if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
-            throw ExtensionNotApplicableException.INSTANCE
+        if (System.getenv("REMOTE_DEV_LAUNCHER_NAME_FOR_USAGE") == null) {
+            throw ExtensionNotApplicableException.create()
         }
     }
     val spaceName: String = System.getenv(CawsConstants.CAWS_ENV_ORG_NAME_VAR)
