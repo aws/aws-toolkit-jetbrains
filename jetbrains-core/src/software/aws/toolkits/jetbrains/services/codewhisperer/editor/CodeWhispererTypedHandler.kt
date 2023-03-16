@@ -31,7 +31,7 @@ class CodeWhispererTypedHandler : TypedHandlerDelegate(), CodeWhispererAutoTrigg
             return Result.CONTINUE
         }
         if (CodeWhispererConstants.SPECIAL_CHARACTERS_LIST.contains(c.toString())) {
-            performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.SpecialCharacters, latencyContext)
+            performAutomatedTriggerAction(editor, CodewhispererAutomatedTriggerType.SpecialCharacters, latencyContext, c.toString())
             return Result.CONTINUE
         }
         triggerOnIdle = projectCoroutineScope(project).launch {

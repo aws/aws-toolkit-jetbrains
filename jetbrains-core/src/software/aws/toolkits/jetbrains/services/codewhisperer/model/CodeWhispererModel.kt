@@ -56,7 +56,11 @@ data class RecommendationChunk(
 
 data class CaretPosition(val offset: Int, val line: Int)
 
-data class TriggerTypeInfo(val triggerType: CodewhispererTriggerType, val automatedTriggerType: CodewhispererAutomatedTriggerType)
+data class TriggerTypeInfo(
+    val triggerType: CodewhispererTriggerType,
+    val automatedTriggerType: CodewhispererAutomatedTriggerType,
+    val specialChar: String? = null
+)
 
 data class InvocationContext(
     val requestContext: RequestContext,

@@ -8,13 +8,19 @@ import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import java.time.Instant
 
 class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopupListener {
+    private lateinit var popupStartTimestamp: Instant
+    private lateinit var popupEndTimestamp: Instant
+
     override fun beforeShown(event: LightweightWindowEvent) {
         super.beforeShown(event)
+        popupStartTimestamp = Instant.now()
     }
     override fun onClosed(event: LightweightWindowEvent) {
         super.onClosed(event)
+        popupEndTimestamp = Instant.now()
         val (requestContext, responseContext, recommendationContext) = states
 
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(

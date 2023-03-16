@@ -23,9 +23,12 @@ import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.time.Duration
 import java.time.Instant
 
 class CodeWhispererTelemetryService {
+    private val decisionQueue = CodeWhispererUserDecisionQueue(5)
+
     companion object {
         fun getInstance(): CodeWhispererTelemetryService = service()
         val LOG = getLogger<CodeWhispererTelemetryService>()
@@ -182,6 +185,7 @@ class CodeWhispererTelemetryService {
         recommendationContext: RecommendationContext,
         sessionContext: SessionContext,
         hasUserAccepted: Boolean,
+        popupShownTime: Duration? = null
     ) {
         val detailContexts = recommendationContext.details
         detailContexts.forEachIndexed { index, detailContext ->
@@ -195,6 +199,20 @@ class CodeWhispererTelemetryService {
                 detail.content().isEmpty()
             )
             sendUserDecisionEvent(requestId, requestContext, responseContext, detail, index, suggestionState, detailContexts.size)
+
+            decisionQueue.push(
+                RecoLevelUserDecision(
+                    requestContext,
+                    responseContext,
+                    recommendationContext,
+                    responseContext.sessionId,
+                    suggestionState,
+                    index,
+                    popupShownTime
+                ),
+                index == detailContexts.size - 1,
+
+            )
         }
     }
 

@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class CodeWhispererInvocationStatus {
     private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
     private var timeAtLastInvocationComplete: Instant? = null
-    private var timeAtLastDocumentChanged: Instant = Instant.now()
+    var timeAtLastDocumentChanged: Instant = Instant.now()
+        private set
     private var isPopupActive: Boolean = false
     private var timeAtLastInvocationStart: Instant? = null
 

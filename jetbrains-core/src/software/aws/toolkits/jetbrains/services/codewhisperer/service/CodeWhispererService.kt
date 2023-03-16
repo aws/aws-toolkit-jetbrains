@@ -475,7 +475,11 @@ class CodeWhispererService {
         val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0))
 
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-            requestContext, responseContext, recommendationContext, SessionContext(), false
+            requestContext,
+            responseContext,
+            recommendationContext,
+            SessionContext(),
+            false
         )
     }
 

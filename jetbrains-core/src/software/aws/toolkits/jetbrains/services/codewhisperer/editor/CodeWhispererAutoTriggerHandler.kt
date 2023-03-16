@@ -14,9 +14,10 @@ interface CodeWhispererAutoTriggerHandler {
     fun performAutomatedTriggerAction(
         editor: Editor,
         automatedTriggerType: CodewhispererAutomatedTriggerType,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
+        specialChar: String? = null
     ) {
-        val triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, automatedTriggerType)
+        val triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, automatedTriggerType, specialChar)
         CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
     }
 }
