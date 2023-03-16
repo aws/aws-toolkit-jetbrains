@@ -8,19 +8,24 @@ import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
 
 class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopupListener {
-    private lateinit var popupStartTimestamp: Instant
-    private lateinit var popupEndTimestamp: Instant
-
+    private val popupDuration: Duration?
+        get() {
+            return CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let {
+                val result = Duration.between(it, Instant.now())
+                return result
+            }
+        }
     override fun beforeShown(event: LightweightWindowEvent) {
         super.beforeShown(event)
-        popupStartTimestamp = Instant.now()
+        CodeWhispererInvocationStatus.getInstance().setPopupStartTimestamp()
     }
     override fun onClosed(event: LightweightWindowEvent) {
         super.onClosed(event)
-        popupEndTimestamp = Instant.now()
         val (requestContext, responseContext, recommendationContext) = states
 
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
@@ -28,8 +33,11 @@ class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopu
             responseContext,
             recommendationContext,
             CodeWhispererPopupManager.getInstance().sessionContext,
-            event.isOk
+            event.isOk,
+            popupDuration
         )
+
+        println(popupDuration?.toMillis())
 
         CodeWhispererInvocationStatus.getInstance().setPopupActive(false)
     }
