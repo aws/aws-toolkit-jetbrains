@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.ecr
 
 import com.intellij.testFramework.ProjectRule
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -50,7 +51,7 @@ class EcrPullIntegrationTest {
         dockerfile.writeText(
             """
                 # arbitrary base image with a shell
-                FROM public.ecr.aws/lambda/provided:latest
+                FROM public.ecr.aws/docker/library/alpine:latest
                 RUN touch $(date +%s)
             """.trimIndent()
         )
@@ -73,8 +74,8 @@ class EcrPullIntegrationTest {
                 remoteTag
             )
             // push up and image and then delete the local tag
-            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
-            localImage.deleteImage()
+            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest).await()
+            localImage.deleteImage().await()
             assertThat(serverRuntime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNull()
 
             // pull it from the remote
@@ -82,4 +83,7 @@ class EcrPullIntegrationTest {
             assertThat(serverRuntime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
+
+    // FIX_WHEN_MIN_IS_231: deleteImage() is blocking prior to 231
+    private fun Unit.await() {}
 }

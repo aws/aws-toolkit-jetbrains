@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.docker.getDockerServerRuntimeFacade
 import software.aws.toolkits.jetbrains.services.ecr.resources.Repository
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import java.util.concurrent.CompletableFuture
 import software.amazon.awssdk.services.ecr.model.Repository as SdkRepository
 
 typealias DockerRunConfiguration = DeployToServerRunConfiguration<DockerCloudConfiguration, DockerDeploymentConfiguration>
@@ -67,7 +68,7 @@ object EcrUtils {
         }
     }
 
-    suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) {
+    suspend fun pushImage(project: Project, ecrLogin: EcrLogin, pushRequest: EcrPushRequest) =
         when (pushRequest) {
             is DockerfileEcrPushRequest -> {
                 LOG.debug { "Building Docker image from ${pushRequest.dockerBuildConfiguration}" }
@@ -79,13 +80,12 @@ object EcrUtils {
                 ToolkitDockerAdapter(project, pushRequest.dockerRuntimeFacade).pushImage(pushRequest.localImageId, model)
             }
         }
-    }
 
     private suspend fun buildAndPushDockerfile(
         project: Project,
         ecrLogin: EcrLogin,
         pushRequest: DockerfileEcrPushRequest
-    ) {
+    ): CompletableFuture<Unit> {
         val (runConfiguration, remoteRepo, remoteTag) = pushRequest
         // use connection specified in run configuration
         val server = RemoteServersManager.getInstance().findByName(runConfiguration.serverName, runConfiguration.serverType)
@@ -95,14 +95,14 @@ object EcrUtils {
         val imageIdPrefix = ToolkitDockerAdapter(project, dockerRuntime).hackyBuildDockerfileWithUi(project, pushRequest)
         if (imageIdPrefix == null) {
             notifyError(message("ecr.push.title"), message("ecr.push.unknown_exception"))
-            return
+            return CompletableFuture.completedFuture(Unit)
         }
 
         LOG.debug { "Finding built image with prefix '$imageIdPrefix'" }
         val imageId = dockerRuntime.agent.getImages(null).first { it.imageId.startsWith(imageIdPrefix) }.imageId
         LOG.debug { "Found image with full id '$imageId'" }
 
-        pushImage(project, ecrLogin, ImageEcrPushRequest(dockerRuntime, imageId, remoteRepo, remoteTag))
+        return pushImage(project, ecrLogin, ImageEcrPushRequest(dockerRuntime, imageId, remoteRepo, remoteTag))
     }
 
     fun dockerRunConfigurationFromPath(project: Project, configurationName: String, path: String): RunnerAndConfigurationSettings {

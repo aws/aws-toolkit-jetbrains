@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import java.util.concurrent.CompletableFuture
 
 private fun defaultDockerConnection() = ServerConnectionManager.getInstance().createTemporaryConnection(
     RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
@@ -49,9 +50,11 @@ suspend fun getDockerServerRuntimeFacade(project: Project, server: RemoteServer<
         override val agent: DockerAgent
             get() = runtime.agent
 
-        override suspend fun pushImage(imageId: String, config: DockerRepositoryModel) {
+        override suspend fun pushImage(imageId: String, config: DockerRepositoryModel): CompletableFuture<Unit> {
             val physicalLocalRuntime = runtime.findRuntimeLater(imageId, false).await()
             (physicalLocalRuntime as? DockerImageRuntime)?.pushImage(project, config) ?: error { "couldn't map tag to appropriate docker runtime" }
+
+            return CompletableFuture.completedFuture(Unit)
         }
     }
 }

@@ -37,7 +37,7 @@ import com.intellij.docker.getSourceFile as getDockerfileSourceFile
 interface DockerRuntimeFacade {
     val agent: DockerAgent
 
-    suspend fun pushImage(imageId: String, config: DockerRepositoryModel)
+    suspend fun pushImage(imageId: String, config: DockerRepositoryModel): CompletableFuture<Unit>
 }
 
 class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: DockerRuntimeFacade) {

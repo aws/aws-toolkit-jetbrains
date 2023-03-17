@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.remoteServer.configuration.RemoteServer
 import com.intellij.remoteServer.impl.configuration.RemoteServerImpl
 import kotlinx.coroutines.future.await
+import java.util.concurrent.CompletableFuture
 
 private fun defaultDockerConnection() = RemoteServerImpl("DockerConnection", DockerCloudType.getInstance(), DockerCloudConfiguration.createDefault())
 
@@ -23,9 +24,9 @@ suspend fun getDockerServerRuntimeFacade(project: Project, server: RemoteServer<
         override val agent: DockerAgent
             get() = runtime.agent
 
-        override suspend fun pushImage(imageId: String, config: DockerRepositoryModel) {
+        override suspend fun pushImage(imageId: String, config: DockerRepositoryModel): CompletableFuture<Unit> {
             val imageRuntime = runtime.runtimesManager.images[imageId]
-            imageRuntime?.push(project, config) ?: error("couldn't map tag to appropriate docker runtime")
+            return imageRuntime?.push(project, config) ?: error("couldn't map tag to appropriate docker runtime")
         }
     }
 }

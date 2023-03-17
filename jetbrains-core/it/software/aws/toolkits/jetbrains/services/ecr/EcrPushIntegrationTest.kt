@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.ecr
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.testFramework.ProjectRule
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -53,7 +54,7 @@ class EcrPushIntegrationTest {
         dockerfile.writeText(
             """
                 # arbitrary base image with a shell
-                FROM public.ecr.aws/amazonlinux/amazonlinux:2
+                FROM public.ecr.aws/docker/library/alpine:latest
                 RUN touch $(date +%s)
             """.trimIndent()
         )
@@ -74,7 +75,7 @@ class EcrPushIntegrationTest {
                 remoteRepo,
                 remoteTag
             )
-            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
+            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest).await()
 
             assertThat(
                 ecrClient.batchGetImage {
@@ -97,7 +98,7 @@ class EcrPushIntegrationTest {
         dockerfile.writeText(
             """
                 # arbitrary base image with a shell
-                FROM public.ecr.aws/lambda/provided:latest
+                FROM public.ecr.aws/docker/library/alpine:latest
                 RUN touch $(date +%s)
             """.trimIndent()
         )
@@ -110,7 +111,7 @@ class EcrPushIntegrationTest {
             remoteTag
         )
         runBlocking {
-            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest)
+            EcrUtils.pushImage(projectRule.project, ecrLogin, pushRequest).await()
 
             // find our local image id
             val serverRuntime = getDockerServerRuntimeFacade(projectRule.project)
