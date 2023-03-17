@@ -7,4 +7,4 @@ import com.intellij.workspaceModel.storage.url.VirtualFileUrl
 
 fun VirtualFileUrl.toVirtualFile() = this.virtualFile
 
-typealias RiderProjectTemplate = com.jetbrains.rider.projectView.actions.projectTemplating.RiderProjectTemplate
+abstract class RiderProjectTemplate : com.jetbrains.rider.projectView.actions.projectTemplating.RiderProjectTemplate
