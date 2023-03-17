@@ -205,8 +205,8 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:231.8109.2",
-                    "Docker:231.8109.2"
+                    "PythonCore:231.8109.90",
+                    "Docker:231.8109.91"
                 )
             ),
             ultimate = ProductProfile(
@@ -220,20 +220,20 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
-                    "Pythonid:231.8109.2",
-                    "org.jetbrains.plugins.go:231.8109.2",
+                    "Pythonid:231.8109.90",
+                    "org.jetbrains.plugins.go:231.8109.90",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
                     "org.intellij.intelliLang"
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2023.1-EAP7-SNAPSHOT",
+                sdkVersion = "2023.1-EAP8-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2023.1.2",
-                nugetVersion = "2023.1.0-eap07"
+                nugetVersion = "2023.1.0-eap08"
             )
         ),
 
