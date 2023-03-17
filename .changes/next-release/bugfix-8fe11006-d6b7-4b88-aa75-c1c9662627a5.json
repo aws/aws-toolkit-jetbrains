@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Provided OIDC clientName as AWS Toolkit for JetBrains"
+  "description" : "Show friendlier application name when signing in using SSO"
 }
