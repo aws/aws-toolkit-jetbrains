@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.uitests.extensions
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.TestWatcher
 import software.aws.toolkits.core.utils.outputStream
-import java.net.URL
 import java.nio.file.Paths
+import javax.imageio.ImageIO
 
 class TestRecorder : TestWatcher {
     private companion object {
@@ -22,15 +22,19 @@ class TestRecorder : TestWatcher {
         val testReport = TEST_REPORTS_LOCATION?.resolve(context.displayName) ?: return
 
         uiTest {
-            testReport.resolve("uiHierarchy.html").outputStream().use {
-                URL("http://127.0.0.1:$robotPort/").openStream().copyTo(it)
+            testReport.resolve("screenshot.png").outputStream().use {
+                ImageIO.write(getScreenshot(), "png", it)
             }
-
-            listOf("scripts.js", "xpathEditor.js", "updateButton.js", "styles.css", "img/locator.png").forEach { file ->
-                testReport.resolve(Paths.get(file)).outputStream().use {
-                    URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it)
-                }
-            }
+            // TODO: fix on failure for 231
+//            testReport.resolve("uiHierarchy.html").outputStream().use {
+//                URL("http://127.0.0.1:$robotPort/").openStream().copyTo(it)
+//            }
+//
+//            listOf("scripts.js", "xpathEditor.js", "updateButton.js", "styles.css", "img/locator.png").forEach { file ->
+//                testReport.resolve(Paths.get(file)).outputStream().use {
+//                    URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it)
+//                }
+//            }
         }
     }
 }
