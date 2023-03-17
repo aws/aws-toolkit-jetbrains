@@ -19,6 +19,7 @@ env:
 phases:
   install:
     commands:
+      - dnf install -y marco mate-media
       - startDesktop.sh
 
       # login to DockerHub so we don't get throttled
