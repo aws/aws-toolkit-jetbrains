@@ -156,7 +156,6 @@ dependencies {
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(libs.wiremock)
-    testImplementation(libs.kotlin.coroutines)
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
 }

@@ -34,6 +34,20 @@ when (providers.gradleProperty("ideProfileName").get()) {
     }
 }
 
+// pull value from IJ library list: https://github.com/JetBrains/intellij-community/blob/<mv>/.idea/libraries/kotlinx_coroutines_jdk8.xml
+when (providers.gradleProperty("ideProfileName").get()) {
+    "2022.1", "2022.2" -> "1.5.2"
+    else -> null
+}?.let {
+    dependencyResolutionManagement {
+        versionCatalogs {
+            create("libs") {
+                version("kotlinCoroutines", it)
+            }
+        }
+    }
+}
+
 include("jetbrains-ultimate")
 include("jetbrains-rider")
 include("intellij")
