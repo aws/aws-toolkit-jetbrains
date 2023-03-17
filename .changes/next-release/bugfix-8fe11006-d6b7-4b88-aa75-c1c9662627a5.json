@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Provided OIDC clientName as AWS Toolkit for JetBrains"
+}
