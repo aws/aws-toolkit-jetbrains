@@ -99,7 +99,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
             val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
-            val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
+            val syncedResourceType = SyncedResources.AllResources
 
             ProgressManager.getInstance().run(
                 object : Task.WithResult<PreSyncRequirements, Exception>(
@@ -203,7 +203,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val environment = ExecutionEnvironmentBuilder.create(
                 project,
                 DefaultRunExecutor.getRunExecutorInstance(),
-                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath, codeOnly)
+                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath)
             ).build()
 
             environment.runner.execute(environment)
