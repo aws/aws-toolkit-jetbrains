@@ -32,8 +32,8 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.sono.ALL_SONO_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.ALL_SSO_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
@@ -44,13 +44,14 @@ data class ConnectionDialogCustomizer(
     val title: String? = null,
     val header: String? = null,
     val helpId: HelpIds? = null,
-    val replaceIamComment: String? = null,
+    val replaceIamComment: String? = null
 )
 
 open class ToolkitAddConnectionDialog(
     private val project: Project,
     connection: ToolkitConnection? = null,
-    private val customizer: ConnectionDialogCustomizer? = null
+    private val customizer: ConnectionDialogCustomizer? = null,
+    private val addConnectionThroughCodeWhispererDialog: Boolean = false
 ) : DialogWrapper(project), Disposable {
     // TODO: update fields
     private class Modal {
@@ -121,7 +122,11 @@ open class ToolkitAddConnectionDialog(
                 }
 
                 val scopes = if (loginType == LoginOptions.AWS_BUILDER_ID) {
-                    ALL_SONO_SCOPES
+                    if (addConnectionThroughCodeWhispererDialog) {
+                        CODEWHISPERER_SCOPES
+                    } else {
+                        listOf("sso:account:access")
+                    }
                 } else {
                     ALL_SSO_SCOPES
                 }
