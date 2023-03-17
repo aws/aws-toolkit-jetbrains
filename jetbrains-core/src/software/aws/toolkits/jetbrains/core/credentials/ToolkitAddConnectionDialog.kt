@@ -57,7 +57,7 @@ open class ToolkitAddConnectionDialog(
     private class Modal {
         // Default option AWS Builder ID to be selected
         var loginType: LoginOptions = LoginOptions.AWS_BUILDER_ID
-        var startUrl: String = ""
+        var startUrl: String = "" 
     }
 
     private enum class LoginOptions {
