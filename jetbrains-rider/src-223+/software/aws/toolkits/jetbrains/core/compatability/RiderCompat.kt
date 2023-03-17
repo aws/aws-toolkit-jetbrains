@@ -6,10 +6,3 @@ import com.intellij.workspaceModel.ide.impl.toVirtualFile
 import com.intellij.workspaceModel.storage.url.VirtualFileUrl
 
 fun VirtualFileUrl.toVirtualFile() = this.toVirtualFile()
-
-abstract class RiderProjectTemplate : com.jetbrains.rider.projectView.actions.projectTemplating.RiderProjectTemplate {
-    override val localizedGroup: String
-        get() = group
-    override val localizedName: String
-        get() = name
-}
