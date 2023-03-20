@@ -21,7 +21,10 @@ class TestRecorder : AfterTestExecutionCallback {
 
     override fun afterTestExecution(context: ExtensionContext?) {
         val testDisplayName = context?.displayName ?: return
-        context.executionException?.isPresent ?: return
+        if (context.executionException?.isPresent != true) {
+            return
+        }
+
         val testReport = TEST_REPORTS_LOCATION?.resolve(testDisplayName) ?: return
 
         uiTest {
