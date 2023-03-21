@@ -21,6 +21,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLoadingPanel
+import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.BottomGap
@@ -334,12 +335,15 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 
                         row {
                             label(message("caws.workspace.details.branch_title"))
-                                .comment(message("caws.workspace.details.create_branch_comment"))
                         }
 
+                        row { comment(message("caws.workspace.details.create_branch_comment")) }
+
+                        lateinit var existingBranchOption: Cell<JBRadioButton>
+                        lateinit var branchOptions: Row
                         lateinit var newBranch: Row
                         buttonsGroup {
-                            row {
+                            branchOptions = row {
                                 radioButton(message("caws.workspace.details.branch_new"), BranchCloneType.NEW_FROM_EXISTING).applyToComponent {
                                     isSelected = context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING
                                 }.bindSelected(
@@ -349,12 +353,13 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                     newBranch.visibleIf(component.selected)
                                 }
 
-                                radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING).applyToComponent {
-                                    isSelected = context.branchCloneType == BranchCloneType.EXISTING
-                                }.bindSelected(
-                                    { context.branchCloneType == BranchCloneType.EXISTING },
-                                    { if (it) context.branchCloneType = BranchCloneType.EXISTING }
-                                )
+                                existingBranchOption = radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING)
+                                    .applyToComponent {
+                                        isSelected = context.branchCloneType == BranchCloneType.EXISTING
+                                    }.bindSelected(
+                                        { context.branchCloneType == BranchCloneType.EXISTING },
+                                        { if (it) context.branchCloneType = BranchCloneType.EXISTING }
+                                    )
                             }
                         }.bind({ context.branchCloneType }, { context.branchCloneType = it })
 
@@ -377,6 +382,14 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 linkedBranchCombo.proposeModelUpdate { model ->
                                     projectCombo.selected()?.let { project ->
                                         linkedRepoCombo.selected()?.let { repo ->
+                                            val is3P = isRepo3P(project, repo.name, client)
+                                            if (is3P) {
+                                                branchOptions.visible(false)
+                                                newBranch.visible(false)
+                                            } else {
+                                                branchOptions.visible(true)
+                                                existingBranchOption.component.isSelected = true
+                                            }
                                             val branches = getBranchNames(project, repo.name, client)
                                             branches.forEach { model.addElement(it) }
                                         }
@@ -558,6 +571,18 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
         .items()
         .map { it.toSourceRepository() }
         .sortedBy { it.name }
+
+    private fun isRepo3P(project: CawsProject, repo: String, client: CodeCatalystClient): Boolean {
+        val url = client.getSourceRepositoryCloneUrls {
+            it.spaceName(project.space)
+            it.projectName(project.project)
+            it.sourceRepositoryName(repo)
+        }.https()
+        if (url.contains(CawsEndpoints.CAWS_GIT_PATTERN)) {
+            return false
+        }
+        return true
+    }
 
     private fun getBranchNames(project: CawsProject, repo: String, client: CodeCatalystClient) =
         client.listSourceRepositoryBranchesPaginator {
