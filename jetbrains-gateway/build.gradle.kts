@@ -16,7 +16,7 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core"))
+    implementation(project(":jetbrains-core", "instrumentedJar"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
@@ -55,6 +55,7 @@ configurations {
         }
     }
 
+    // jetbrains-core should return default variant when from :intellij, but gateway variant when called from :jetbrains-gateway
     runtimeClasspath {
         attributes {
             attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named("gateway-instrumented-jar"))
