@@ -16,7 +16,7 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core", "instrumentedJar"))
+    implementation(project(":jetbrains-core"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))

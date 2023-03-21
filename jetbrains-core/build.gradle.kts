@@ -85,8 +85,10 @@ val gatewayArtifacts by configurations.creating {
 }
 
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
+    dependsOn(tasks.instrumentedJar)
+
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
-    from(tasks.instrumentCode) {
+    from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
         exclude("**/plugin.xml")
         exclude("**/plugin-intellij.xml")
         exclude("**/inactive")
