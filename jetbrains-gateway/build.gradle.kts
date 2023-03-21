@@ -15,19 +15,20 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.GW)
 }
 
+val gatewayRunOnly by configurations.creating {
+    extendsFrom(configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+    isCanBeResolved = true
+}
+
 dependencies {
-    implementation(project(":jetbrains-core", "instrumentedJar"))
+    // pull in :j-c:instrumentedJar for compile and :intellij:buildPlugin, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
+    compileOnly(project(":jetbrains-core", "instrumentedJar"))
+    gatewayRunOnly(project(":jetbrains-core", "gatewayArtifacts"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(libs.wiremock)
     testImplementation(libs.bundles.sshd)
-
-    attributesSchema {
-        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE) {
-            compatibilityRules.add(GatewayJarRule::class.java)
-        }
-    }
 }
 
 configurations {
@@ -52,22 +53,6 @@ configurations {
         ).forEach {
             val dep = it.get().module
             exclude(group = dep.group, module = dep.name)
-        }
-    }
-
-    // jetbrains-core should return default variant when from :intellij, but gateway variant when called from :jetbrains-gateway
-    runtimeClasspath {
-        attributes {
-            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named("gateway-instrumented-jar"))
-        }
-    }
-}
-
-abstract class GatewayJarRule : AttributeCompatibilityRule<LibraryElements> {
-    override fun execute(details: CompatibilityCheckDetails<LibraryElements>) {
-        // needed to make transitive dependencies resolve correctly
-        if (details.consumerValue?.name == "gateway-instrumented-jar" && details.producerValue?.name == "jar") {
-            details.compatible()
         }
     }
 }
@@ -97,6 +82,7 @@ artifacts {
 }
 
 tasks.prepareSandbox {
+    runtimeClasspathFiles.set(gatewayRunOnly)
     from(gatewayResourcesDir) {
         into("aws-toolkit-jetbrains/gateway-resources")
     }

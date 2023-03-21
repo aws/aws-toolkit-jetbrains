@@ -72,16 +72,6 @@ val gatewayArtifacts by configurations.creating {
     isCanBeResolved = false
     // share same dependencies as default configuration
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
-
-    attributes {
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-        attribute(KotlinPlatformType.Companion.attribute, KotlinPlatformType.jvm)
-        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, project.jvmTarget().get().majorVersion.toInt())
-        attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, objects.named(TargetJvmEnvironment.STANDARD_JVM))
-        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named("gateway-instrumented-jar"))
-    }
 }
 
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
