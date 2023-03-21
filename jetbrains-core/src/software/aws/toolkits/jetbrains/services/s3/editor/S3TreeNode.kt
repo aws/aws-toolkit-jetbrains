@@ -176,7 +176,6 @@ class S3TreeObjectNode(parent: S3TreeDirectoryNode, key: String, override val si
 
     init {
         icon = FileTypeRegistry.getInstance().getFileTypeByFileName(key.substringAfterLast("/")).icon
-        println("\n$icon\n")
     }
 
     override val versionId: String? = null

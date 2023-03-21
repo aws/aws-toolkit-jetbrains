@@ -170,8 +170,3 @@ tasks.withType<Detekt>() {
 tasks.withType<DetektCreateBaselineTask>() {
     dependsOn(generateTelemetry)
 }
-
-tasks.instrumentCode {
-    outputs.upToDateWhen { false }
-    outputs.cacheIf { false }
-}

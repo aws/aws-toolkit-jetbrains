@@ -21,7 +21,7 @@ detekt {
     parallel = true
     allRules = false
     config = files("$rulesProject/detekt.yml")
-    autoCorrect = false
+    autoCorrect = true
 
 }
 
