@@ -96,7 +96,10 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         val newConnections = linkedSetOf(*state.ssoProfiles.toTypedArray()).filterNotNull().map {
             connectionFromProfile(it)
         }
-        LOG.warn { "Persisted state had duplicate profiles" }
+
+        if (newConnections.size != state.ssoProfiles.size) {
+            LOG.warn { "Persisted state had duplicate profiles" }
+        }
 
         connections.clear()
         connections.addAll(newConnections)
