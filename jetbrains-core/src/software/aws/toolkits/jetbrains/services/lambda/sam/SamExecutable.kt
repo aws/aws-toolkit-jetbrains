@@ -305,5 +305,5 @@ fun GeneralCommandLine.samSyncCommand(
     }
     addParameter("--no-dependency-layer")
 
-    //addParameter("--no-watch")
+    addParameter("--no-watch")
 }
