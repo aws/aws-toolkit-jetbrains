@@ -54,6 +54,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.core.utils.buildMap
@@ -62,8 +63,10 @@ import software.aws.toolkits.jetbrains.gateway.connection.extractRepoName
 import software.aws.toolkits.jetbrains.gateway.connection.normalizeRepoUrl
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.recursivelySetBackground
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.setDefaultBackgroundAndBorder
+import software.aws.toolkits.jetbrains.services.caws.CawsCodeRepository
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
+import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
@@ -339,8 +342,8 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 
                         row { comment(message("caws.workspace.details.create_branch_comment")) }
 
-                        lateinit var existingBranchOption: Cell<JBRadioButton>
                         lateinit var branchOptions: Row
+                        lateinit var existingBranchOption: Cell<JBRadioButton>
                         lateinit var newBranch: Row
                         buttonsGroup {
                             branchOptions = row {
@@ -382,10 +385,11 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 linkedBranchCombo.proposeModelUpdate { model ->
                                     projectCombo.selected()?.let { project ->
                                         linkedRepoCombo.selected()?.let { repo ->
-                                            val is3P = isRepo3P(project, repo.name, client)
-                                            if (is3P) {
+                                            val is3P = isRepo3P(project, repo.name)
+                                            if (!is3P) {
                                                 branchOptions.visible(false)
                                                 newBranch.visible(false)
+                                                existingBranchOption.component.isSelected = true
                                             } else {
                                                 branchOptions.visible(true)
                                                 existingBranchOption.component.isSelected = true
@@ -572,16 +576,12 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
         .map { it.toSourceRepository() }
         .sortedBy { it.name }
 
-    private fun isRepo3P(project: CawsProject, repo: String, client: CodeCatalystClient): Boolean {
-        val url = client.getSourceRepositoryCloneUrls {
-            it.spaceName(project.space)
-            it.projectName(project.project)
-            it.sourceRepositoryName(repo)
-        }.https()
-        if (url.contains(CawsEndpoints.CAWS_GIT_PATTERN)) {
-            return false
-        }
-        return true
+    private fun isRepo3P(project: CawsProject, repo: String): Boolean {
+        val connectionSettings = context.connectionSettings ?: throw RuntimeException("ConnectionSettings was not set")
+        val url = AwsResourceCache.getInstance().getResource(
+            CawsResources.cloneUrls(CawsCodeRepository(project.space, project.project, repo)), connectionSettings
+        ).toCompletableFuture().get()
+        return url.contains(CawsEndpoints.CAWS_GIT_PATTERN)
     }
 
     private fun getBranchNames(project: CawsProject, repo: String, client: CodeCatalystClient) =
