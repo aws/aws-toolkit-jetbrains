@@ -26,6 +26,7 @@ dependencies {
     gatewayRunOnly(project(":jetbrains-core", "gatewayArtifacts"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
+    testImplementation(project(":jetbrains-core", "gatewayArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(libs.wiremock)
     testImplementation(libs.bundles.sshd)
