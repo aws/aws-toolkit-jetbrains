@@ -99,10 +99,11 @@ interface ToolkitConnectionManager {
 fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SONO_SCOPES): BearerTokenProvider {
     val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl)
     val manager = ToolkitAuthManager.getInstance()
-
+    val allScopes = mutableListOf<String>()
     return manager.getConnection(connectionId)?.let { connection ->
         // There is an existing connection we can use
         if (connection is BearerSsoConnection && !scopes.all { it in connection.scopes }) {
+            allScopes.addAll((connection.scopes + scopes))
             getLogger<ToolkitAuthManager>().info {
                 "Forcing reauth on ${connection.id} since requested scopes ($scopes) are not a complete subset of current scopes (${connection.scopes})"
             }
@@ -127,7 +128,7 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SON
             ManagedSsoProfile(
                 DEFAULT_SSO_REGION,
                 startUrl,
-                scopes
+                allScopes
             )
         )
 

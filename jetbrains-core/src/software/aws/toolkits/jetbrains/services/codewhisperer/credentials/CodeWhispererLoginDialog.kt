@@ -16,7 +16,7 @@ class CodeWhispererLoginDialog(project: Project) : ToolkitAddConnectionDialog(
         title = message("codewhisperer.credential.login.dialog.title"),
         header = message("codewhisperer.credential.login.dialog.prompt"),
         helpId = HelpIds.CODEWHISPERER_LOGIN_DIALOG,
-        replaceIamComment = message("codewhisperer.credential.login.dialog.iam.description")
-    ),
-    addConnectionThroughCodeWhispererDialog = true
+        replaceIamComment = message("codewhisperer.credential.login.dialog.iam.description"),
+        customizerId = "codewhisperer"
+    )
 )

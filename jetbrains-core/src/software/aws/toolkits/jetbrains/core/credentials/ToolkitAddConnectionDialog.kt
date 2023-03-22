@@ -44,20 +44,20 @@ data class ConnectionDialogCustomizer(
     val title: String? = null,
     val header: String? = null,
     val helpId: HelpIds? = null,
-    val replaceIamComment: String? = null
+    val replaceIamComment: String? = null,
+    val customizerId: String? = null
 )
 
 open class ToolkitAddConnectionDialog(
     private val project: Project,
     connection: ToolkitConnection? = null,
-    private val customizer: ConnectionDialogCustomizer? = null,
-    private val addConnectionThroughCodeWhispererDialog: Boolean = false
+    private val customizer: ConnectionDialogCustomizer? = null
 ) : DialogWrapper(project), Disposable {
     // TODO: update fields
     private class Modal {
         // Default option AWS Builder ID to be selected
         var loginType: LoginOptions = LoginOptions.AWS_BUILDER_ID
-        var startUrl: String = "" 
+        var startUrl: String = ""
     }
 
     private enum class LoginOptions {
@@ -122,7 +122,7 @@ open class ToolkitAddConnectionDialog(
                 }
 
                 val scopes = if (loginType == LoginOptions.AWS_BUILDER_ID) {
-                    if (addConnectionThroughCodeWhispererDialog) {
+                    if (customizer != null && customizer.customizerId == "codewhisperer") {
                         CODEWHISPERER_SCOPES
                     } else {
                         listOf("sso:account:access")
