@@ -141,10 +141,10 @@ class CodeWhispererRecommendationManager {
 
         val overlap =
             if (rightContextFirstLine.isEmpty()) {
-                overlap(recommendationContent.trim(), rightContext.trim())
+                overlap(recommendationContent.trimEnd(), rightContext.trimStart())
             } else {
                 // this is necessary to prevent display issue if first line of right context is not empty
-                val tempOverlap = overlap(recommendationContent.trim(), rightContext.trim())
+                val tempOverlap = overlap(recommendationContent.trimEnd(), rightContext.trimStart())
                 if (recommendationContent.substring(0, recommendationContent.length - tempOverlap.length).none { it == '\n' }) {
                     tempOverlap
                 } else {
