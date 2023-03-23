@@ -137,20 +137,28 @@ class CodeWhispererRecommendationManager {
         val caret = requestContext.editor.caretModel.primaryCaret
         val rightContext = document.charsSequence.subSequence(caret.offset, document.charsSequence.length).toString()
         val recommendationContent = recommendation.content()
+        val rightContextFirstLine = rightContext.substringBefore("\n")
 
-        // we will ignore white space and new lines when matching right context
-        val overlap = overlap(recommendationContent.trim(), rightContext.trim())
+        val overlap =
+            if (rightContextFirstLine.isEmpty()) {
+                overlap(recommendationContent.trim(), rightContext.trim())
+            } else {
+                // this is necessary to prevent display issue if first line of right context is not empty
+                val tempOverlap = overlap(recommendationContent.trim(), rightContext.trim())
+                if (recommendationContent.substring(0, recommendationContent.length - tempOverlap.length).none { it == '\n' }) {
+                    tempOverlap
+                } else {
+                    ""
+                }
+            }
+
         val overlapIndex = recommendationContent.lastIndexOf(overlap)
-        val truncated = if (overlapIndex >= 0) {
-            // if the truncated recommendation only contains white space we will return an empty string instead
-            if (recommendationContent.substring(0, overlapIndex).trim().isNotEmpty()) {
+        val truncated =
+            if (overlapIndex >= 0) {
                 recommendationContent.substring(0, overlapIndex)
             } else {
-                ""
+                recommendationContent
             }
-        } else {
-            recommendationContent
-        }
 
         return recommendation.toBuilder()
             .content(truncated)
