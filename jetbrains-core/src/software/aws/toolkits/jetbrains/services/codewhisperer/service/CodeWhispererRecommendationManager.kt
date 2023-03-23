@@ -154,7 +154,7 @@ class CodeWhispererRecommendationManager {
 
         val overlapIndex = recommendationContent.lastIndexOf(overlap)
         val truncated =
-            if (overlapIndex >= 0) {
+            if (overlap.isNotEmpty() && overlapIndex >= 0) {
                 recommendationContent.substring(0, overlapIndex)
             } else {
                 recommendationContent
