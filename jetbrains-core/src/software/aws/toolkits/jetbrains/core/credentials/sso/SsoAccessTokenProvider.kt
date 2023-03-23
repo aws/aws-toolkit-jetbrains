@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
+import software.aws.toolkits.resources.message
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -111,6 +112,7 @@ class SsoAccessTokenProvider(
         val registration = registerClient()
         val authorization = authorizeClient(registration)
 
+        progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
         onPendingToken.tokenPending(authorization)
 
         var backOffTime = Duration.ofSeconds(authorization.pollInterval)
