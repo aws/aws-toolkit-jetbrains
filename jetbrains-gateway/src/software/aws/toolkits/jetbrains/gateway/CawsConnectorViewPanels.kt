@@ -109,7 +109,8 @@ class CawsSettings(
 
     // intermediate values
     var connectionSettings: ClientConnectionSettings<*>? = null,
-    var branchCloneType: BranchCloneType = BranchCloneType.EXISTING
+    var branchCloneType: BranchCloneType = BranchCloneType.EXISTING,
+    var is3P: Boolean = false
 )
 
 fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = MultistagePanelContainer(
@@ -139,17 +140,18 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     if (context.cloneType == CawsWizardCloneType.UNLINKED_3P) {
                         error("Not implemented")
                     }
-
-                    if (context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING) {
-                        withTextAboveProgressBar(message("caws.creating_branch")) {
-                            cawsClient.createSourceRepositoryBranch {
-                                val project = context.project ?: throw RuntimeException("project was null")
-                                val commitId = context.linkedRepoBranch?.headCommitId ?: throw RuntimeException("source commit id was not defined")
-                                it.spaceName(project.space)
-                                it.projectName(project.project)
-                                it.sourceRepositoryName(context.linkedRepoName)
-                                it.name(context.createBranchName)
-                                it.headCommitId(commitId)
+                    if (!context.is3P) {
+                        if (context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING) {
+                            withTextAboveProgressBar(message("caws.creating_branch")) {
+                                cawsClient.createSourceRepositoryBranch {
+                                    val project = context.project ?: throw RuntimeException("project was null")
+                                    val commitId = context.linkedRepoBranch?.headCommitId ?: throw RuntimeException("source commit id was not defined")
+                                    it.spaceName(project.space)
+                                    it.projectName(project.project)
+                                    it.sourceRepositoryName(context.linkedRepoName)
+                                    it.name(context.createBranchName)
+                                    it.headCommitId(commitId)
+                                }
                             }
                         }
                     }
@@ -343,20 +345,21 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                         row { comment(message("caws.workspace.details.create_branch_comment")) }
 
                         lateinit var branchOptions: Row
-                        lateinit var existingBranchOption: Cell<JBRadioButton>
+                        lateinit var newBranchOption: Cell<JBRadioButton>
                         lateinit var newBranch: Row
                         buttonsGroup {
                             branchOptions = row {
-                                radioButton(message("caws.workspace.details.branch_new"), BranchCloneType.NEW_FROM_EXISTING).applyToComponent {
-                                    isSelected = context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING
-                                }.bindSelected(
-                                    { context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING },
-                                    { if (it) context.branchCloneType = BranchCloneType.NEW_FROM_EXISTING }
-                                ).actionListener { event, component ->
-                                    newBranch.visibleIf(component.selected)
-                                }
+                                newBranchOption = radioButton(message("caws.workspace.details.branch_new"), BranchCloneType.NEW_FROM_EXISTING)
+                                    .applyToComponent {
+                                        isSelected = context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING
+                                    }.bindSelected(
+                                        { context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING },
+                                        { if (it) context.branchCloneType = BranchCloneType.NEW_FROM_EXISTING }
+                                    ).actionListener { event, component ->
+                                        newBranch.visibleIf(component.selected)
+                                    }
 
-                                existingBranchOption = radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING)
+                                radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING)
                                     .applyToComponent {
                                         isSelected = context.branchCloneType == BranchCloneType.EXISTING
                                     }.bindSelected(
@@ -385,14 +388,15 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 linkedBranchCombo.proposeModelUpdate { model ->
                                     projectCombo.selected()?.let { project ->
                                         linkedRepoCombo.selected()?.let { repo ->
-                                            val is3P = isRepo3P(project, repo.name)
-                                            if (!is3P) {
+                                            context.is3P = isRepo3P(project, repo.name)
+                                            if (context.is3P) {
                                                 branchOptions.visible(false)
                                                 newBranch.visible(false)
-                                                existingBranchOption.component.isSelected = true
                                             } else {
                                                 branchOptions.visible(true)
-                                                existingBranchOption.component.isSelected = true
+                                                if (newBranchOption.component.isSelected) {
+                                                    newBranch.visible(true)
+                                                }
                                             }
                                             val branches = getBranchNames(project, repo.name, client)
                                             branches.forEach { model.addElement(it) }
@@ -581,7 +585,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
         val url = AwsResourceCache.getInstance().getResource(
             CawsResources.cloneUrls(CawsCodeRepository(project.space, project.project, repo)), connectionSettings
         ).toCompletableFuture().get()
-        return url.contains(CawsEndpoints.CAWS_GIT_PATTERN)
+        return !url.contains(CawsEndpoints.CAWS_GIT_PATTERN)
     }
 
     private fun getBranchNames(project: CawsProject, repo: String, client: CodeCatalystClient) =

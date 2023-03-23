@@ -195,9 +195,11 @@ class IdeBackendActions(
                         RepositoryInput.builder()
                             .repositoryName(settings.linkedRepoName)
                             .apply {
-                                when (settings.branchCloneType) {
-                                    BranchCloneType.NEW_FROM_EXISTING -> branchName(settings.createBranchName)
-                                    BranchCloneType.EXISTING -> branchName(settings.linkedRepoBranch?.name)
+                                if (!settings.is3P) {
+                                    when (settings.branchCloneType) {
+                                        BranchCloneType.NEW_FROM_EXISTING -> branchName(settings.createBranchName)
+                                        BranchCloneType.EXISTING -> branchName(settings.linkedRepoBranch?.name)
+                                    }
                                 }
                             }
                             .build()
