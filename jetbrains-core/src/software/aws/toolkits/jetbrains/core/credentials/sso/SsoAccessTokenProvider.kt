@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import java.time.Clock
@@ -92,14 +93,16 @@ class SsoAccessTokenProvider(
             throw e
         }
 
+        val creationTime = Instant.now(clock)
         return Authorization(
             authorizationResponse.deviceCode(),
             authorizationResponse.userCode(),
             authorizationResponse.verificationUri(),
             authorizationResponse.verificationUriComplete(),
-            Instant.now(clock).plusSeconds(authorizationResponse.expiresIn().toLong()),
+            creationTime.plusSeconds(authorizationResponse.expiresIn().toLong()),
             authorizationResponse.interval()?.toLong()
-                ?: DEFAULT_INTERVAL_SECS
+                ?: DEFAULT_INTERVAL_SECS,
+            creationTime
         )
     }
 
@@ -145,11 +148,12 @@ class SsoAccessTokenProvider(
         val registration = loadClientRegistration() ?: throw InvalidClientException.builder().build()
 
         val newToken = client.createToken {
-            it.clientId(registration.clientId)
-            it.clientSecret(registration.clientSecret)
-            it.grantType(REFRESH_GRANT_TYPE)
-            it.refreshToken(currentToken.refreshToken)
-        }
+                it.clientId(registration.clientId)
+                it.clientSecret(registration.clientSecret)
+                it.grantType(REFRESH_GRANT_TYPE)
+                it.refreshToken(currentToken.refreshToken)
+            }
+
 
         val token = newToken.toAccessToken()
         saveAccessToken(token)
@@ -229,5 +233,6 @@ class SsoAccessTokenProvider(
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
+        private val LOG = getLogger<SsoAccessTokenProvider>()
     }
 }
