@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Showing list of the repositories to clone, if it's hosted on CodeCatalyst."
+}
