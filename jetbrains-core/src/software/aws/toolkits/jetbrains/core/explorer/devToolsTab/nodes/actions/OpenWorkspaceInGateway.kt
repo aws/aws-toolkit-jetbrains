@@ -7,7 +7,6 @@ import com.intellij.ide.ui.ProductIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class OpenWorkspaceInGateway : DumbAwareAction(ProductIcons.getInstance().productIcon) {
     override fun actionPerformed(e: AnActionEvent) {
