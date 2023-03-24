@@ -52,7 +52,7 @@ import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
 
-class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
+class SyncServerlessAppAction() : AnAction(
     message("serverless.application.sync"),
     null,
     AwsIcons.Resources.SERVERLESS_APP
@@ -75,8 +75,8 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             }
 
             val execVersion = SemVer.parseFromText(samExecutable.version) ?: error("SAM CLI version could not detected")
-            val minVersion = SemVer("1.53.0", 1, 53, 0)
-            val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
+            val minVersion = SemVer("1.78.0", 1, 78, 0)
+
             if (!execVersion.isGreaterOrEqualThan(minVersion)) {
                 notifyError(
                     message("sam.cli.version.warning"),
@@ -108,16 +108,12 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     false
                 ) {
                     override fun compute(indicator: ProgressIndicator): PreSyncRequirements {
-                        val dockerDoesntExist = if (execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                            try {
+                        val dockerDoesntExist = try {
                                 val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
                                 processOutput.exitCode != 0
                             } catch (e: Exception) {
                                 true
                             }
-                        } else {
-                            null
-                        }
 
                         val activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
                         return PreSyncRequirements(dockerDoesntExist, activeStacks)
@@ -158,18 +154,6 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             saveSettings(project, templateFile, settings)
 
                             if (settings.useContainer) {
-                                if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                                    notifyError(
-                                        message("sam.cli.version.warning"),
-                                        message(
-                                            "sam.cli.version.upgrade.required",
-                                            execVersion.parsedVersion,
-                                            minVersionForUseContainer.parsedVersion
-                                        ),
-                                        project = project
-                                    )
-                                    return@runInEdt
-                                }
 
                                 when (result.dockerDoesntExist) {
                                     null -> return@runInEdt

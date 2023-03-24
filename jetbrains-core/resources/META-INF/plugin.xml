@@ -631,8 +631,6 @@ with what features/services are supported.
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
 
             <separator/>
-            <reference id="serverless.application.deploy"/>
-            <separator/>
             <reference id="serverless.sync.infra"/>
             <separator/>
         </group>
