@@ -19,11 +19,13 @@ data class AccessToken(
     val accessToken: String,
     @JsonInclude(JsonInclude.Include.NON_NULL)
     val refreshToken: String? = null,
-    val expiresAt: Instant
+    val expiresAt: Instant,
+    val createdAt: Instant = Instant.EPOCH
 ) : SdkToken {
     override fun token() = accessToken
 
     override fun expirationTime() = Optional.of(expiresAt)
+
 }
 
 // diverging from SDK/CLI impl here since they do: sha1sum(sessionName ?: startUrl)

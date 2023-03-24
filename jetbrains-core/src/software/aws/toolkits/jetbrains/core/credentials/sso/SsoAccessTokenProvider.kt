@@ -11,9 +11,13 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.Result
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -95,12 +99,13 @@ class SsoAccessTokenProvider(
         }
 
         val creationTime = Instant.now(clock)
+        
         return Authorization(
             authorizationResponse.deviceCode(),
             authorizationResponse.userCode(),
             authorizationResponse.verificationUri(),
             authorizationResponse.verificationUriComplete(),
-            creationTime.plusSeconds(authorizationResponse.expiresIn().toLong()),
+            Instant.now(clock).plusSeconds(authorizationResponse.expiresIn().toLong()),
             authorizationResponse.interval()?.toLong()
                 ?: DEFAULT_INTERVAL_SECS,
             creationTime
@@ -128,7 +133,7 @@ class SsoAccessTokenProvider(
 
                 onPendingToken.tokenRetrieved()
 
-                return tokenResponse.toAccessToken()
+                return tokenResponse.toAccessToken(authorization.createdAt)
             } catch (e: SlowDownException) {
                 backOffTime = backOffTime.plusSeconds(SLOW_DOWN_DELAY_SECS)
             } catch (e: AuthorizationPendingException) {
@@ -144,6 +149,14 @@ class SsoAccessTokenProvider(
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
+            val getTokenCreationTime = currentToken.createdAt
+
+            if(getTokenCreationTime != Instant.EPOCH) {
+                val sessionDuration = Duration.between(Instant.now(clock) , getTokenCreationTime)
+                val credentialSourceId = if(currentToken.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
+                AwsTelemetry.refreshCredentials(project = null, Result.Failed, sessionDuration = sessionDuration.toHours().toInt(), credentialSourceId = credentialSourceId)
+            }
+
             throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
         }
 
@@ -157,7 +170,7 @@ class SsoAccessTokenProvider(
             }
 
 
-        val token = newToken.toAccessToken()
+        val token = newToken.toAccessToken(currentToken.createdAt)
         saveAccessToken(token)
 
         return token
@@ -215,7 +228,7 @@ class SsoAccessTokenProvider(
         }
     }
 
-    private fun CreateTokenResponse.toAccessToken(): AccessToken {
+    private fun CreateTokenResponse.toAccessToken(creationTime: Instant): AccessToken {
         val expirationTime = Instant.now(clock).plusSeconds(expiresIn().toLong())
 
         return AccessToken(
@@ -223,7 +236,8 @@ class SsoAccessTokenProvider(
             region = ssoRegion,
             accessToken = accessToken(),
             refreshToken = refreshToken(),
-            expiresAt = expirationTime
+            expiresAt = expirationTime,
+            createdAt = creationTime
         )
     }
 
