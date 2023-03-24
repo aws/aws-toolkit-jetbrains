@@ -140,18 +140,21 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     if (context.cloneType == CawsWizardCloneType.UNLINKED_3P) {
                         error("Not implemented")
                     }
-                    if (!context.is3P) {
-                        if (context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING) {
-                            withTextAboveProgressBar(message("caws.creating_branch")) {
-                                cawsClient.createSourceRepositoryBranch {
-                                    val project = context.project ?: throw RuntimeException("project was null")
-                                    val commitId = context.linkedRepoBranch?.headCommitId ?: throw RuntimeException("source commit id was not defined")
-                                    it.spaceName(project.space)
-                                    it.projectName(project.project)
-                                    it.sourceRepositoryName(context.linkedRepoName)
-                                    it.name(context.createBranchName)
-                                    it.headCommitId(commitId)
-                                }
+
+                    if (context.is3P) {
+                        context.branchCloneType = BranchCloneType.EXISTING
+                    }
+
+                    if (context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING) {
+                        withTextAboveProgressBar(message("caws.creating_branch")) {
+                            cawsClient.createSourceRepositoryBranch {
+                                val project = context.project ?: throw RuntimeException("project was null")
+                                val commitId = context.linkedRepoBranch?.headCommitId ?: throw RuntimeException("source commit id was not defined")
+                                it.spaceName(project.space)
+                                it.projectName(project.project)
+                                it.sourceRepositoryName(context.linkedRepoName)
+                                it.name(context.createBranchName)
+                                it.headCommitId(commitId)
                             }
                         }
                     }
