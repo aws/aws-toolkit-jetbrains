@@ -135,9 +135,9 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SON
             logger.info {
                 "Forcing reauth on ${connection.id} since requested scopes ($scopes) are not a complete subset of current scopes (${connection.scopes})"
             }
-
+            logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            manager.deleteConnection(connection)
+            //manager.deleteConnection(connection)
             return@let null
         }
 
