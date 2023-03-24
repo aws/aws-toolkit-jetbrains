@@ -43,7 +43,6 @@ data class ConnectionDialogCustomizer(
     val header: String? = null,
     val helpId: HelpIds? = null,
     val replaceIamComment: String? = null,
-    val customizerId: String? = null,
     val scopes: List<String> = listOf("sso:account:access")
 )
 

@@ -138,7 +138,6 @@ fun loginSso(project: Project?, startUrl: String, requestedScopes: List<String> 
             }
             logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            // manager.deleteConnection(connection)
             return@let null
         }
 
