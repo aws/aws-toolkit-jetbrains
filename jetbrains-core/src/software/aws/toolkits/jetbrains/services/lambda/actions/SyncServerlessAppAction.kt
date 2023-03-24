@@ -113,7 +113,7 @@ class SyncServerlessAppAction : AnAction(
                             val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
                             processOutput.exitCode != 0
                         } catch (e: Exception) {
-                            LOG.warn("Docker could not be found")
+                            LOG.warn("Docker could not be found: " + e.message)
                             true
                         }
 
