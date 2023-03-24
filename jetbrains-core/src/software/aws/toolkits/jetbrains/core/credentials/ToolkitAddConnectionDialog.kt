@@ -32,8 +32,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.sono.ALL_SSO_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
@@ -45,7 +43,8 @@ data class ConnectionDialogCustomizer(
     val header: String? = null,
     val helpId: HelpIds? = null,
     val replaceIamComment: String? = null,
-    val customizerId: String? = null
+    val customizerId: String? = null,
+    val scopes: List<String> = listOf("sso:account:access")
 )
 
 open class ToolkitAddConnectionDialog(
@@ -121,15 +120,7 @@ open class ToolkitAddConnectionDialog(
                     error("User should not do SSO login with AWS Builder ID url")
                 }
 
-                val scopes = if (loginType == LoginOptions.AWS_BUILDER_ID) {
-                    if (customizer != null && customizer.customizerId == "codewhisperer") {
-                        CODEWHISPERER_SCOPES
-                    } else {
-                        listOf("sso:account:access")
-                    }
-                } else {
-                    ALL_SSO_SCOPES
-                }
+                val scopes = customizer?.scopes ?: listOf("sso:account:access")
 
                 loginSso(project, startUrl, scopes)
 
