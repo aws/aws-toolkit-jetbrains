@@ -25,7 +25,6 @@ data class AccessToken(
     override fun token() = accessToken
 
     override fun expirationTime() = Optional.of(expiresAt)
-
 }
 
 // diverging from SDK/CLI impl here since they do: sha1sum(sessionName ?: startUrl)

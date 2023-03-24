@@ -99,7 +99,7 @@ class SsoAccessTokenProvider(
         }
 
         val creationTime = Instant.now(clock)
-        
+
         return Authorization(
             authorizationResponse.deviceCode(),
             authorizationResponse.userCode(),
@@ -151,10 +151,14 @@ class SsoAccessTokenProvider(
         if (currentToken.refreshToken == null) {
             val getTokenCreationTime = currentToken.createdAt
 
-            if(getTokenCreationTime != Instant.EPOCH) {
-                val sessionDuration = Duration.between(Instant.now(clock) , getTokenCreationTime)
-                val credentialSourceId = if(currentToken.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
-                AwsTelemetry.refreshCredentials(project = null, Result.Failed, sessionDuration = sessionDuration.toHours().toInt(), credentialSourceId = credentialSourceId)
+            if (getTokenCreationTime != Instant.EPOCH) {
+                val sessionDuration = Duration.between(Instant.now(clock), getTokenCreationTime)
+                val credentialSourceId = if (currentToken.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
+                AwsTelemetry.refreshCredentials(
+                    project = null,
+                    Result.Failed,
+                    sessionDuration = sessionDuration.toHours().toInt(),
+                    credentialSourceId = credentialSourceId)
             }
 
             throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
@@ -163,12 +167,11 @@ class SsoAccessTokenProvider(
         val registration = loadClientRegistration() ?: throw InvalidClientException.builder().message("Unable to load client registration").build()
 
         val newToken = client.createToken {
-                it.clientId(registration.clientId)
-                it.clientSecret(registration.clientSecret)
-                it.grantType(REFRESH_GRANT_TYPE)
-                it.refreshToken(currentToken.refreshToken)
-            }
-
+            it.clientId(registration.clientId)
+            it.clientSecret(registration.clientSecret)
+            it.grantType(REFRESH_GRANT_TYPE)
+            it.refreshToken(currentToken.refreshToken)
+        }
 
         val token = newToken.toAccessToken(currentToken.createdAt)
         saveAccessToken(token)
@@ -249,6 +252,5 @@ class SsoAccessTokenProvider(
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
-        private val LOG = getLogger<SsoAccessTokenProvider>()
     }
 }
