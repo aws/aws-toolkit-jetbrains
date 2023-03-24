@@ -177,6 +177,8 @@ with what features/services are supported.
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
+        <errorHandler implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitErrorReportSubmitter"/>
+
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
 
