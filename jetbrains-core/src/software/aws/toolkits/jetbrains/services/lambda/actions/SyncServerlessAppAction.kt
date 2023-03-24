@@ -52,7 +52,7 @@ import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
 
-class SyncServerlessAppAction() : AnAction(
+class SyncServerlessAppAction : AnAction(
     message("serverless.application.sync"),
     null,
     AwsIcons.Resources.SERVERLESS_APP
@@ -109,11 +109,11 @@ class SyncServerlessAppAction() : AnAction(
                 ) {
                     override fun compute(indicator: ProgressIndicator): PreSyncRequirements {
                         val dockerDoesntExist = try {
-                                val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
-                                processOutput.exitCode != 0
-                            } catch (e: Exception) {
-                                true
-                            }
+                            val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                            processOutput.exitCode != 0
+                        } catch (e: Exception) {
+                            true
+                        }
 
                         val activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
                         return PreSyncRequirements(dockerDoesntExist, activeStacks)
@@ -154,7 +154,6 @@ class SyncServerlessAppAction() : AnAction(
                             saveSettings(project, templateFile, settings)
 
                             if (settings.useContainer) {
-
                                 when (result.dockerDoesntExist) {
                                     null -> return@runInEdt
                                     true -> {
