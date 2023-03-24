@@ -10,10 +10,6 @@ import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class OpenWorkspaceInGateway : DumbAwareAction(ProductIcons.getInstance().productIcon) {
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = !isRunningOnRemoteBackend()
-    }
-
     override fun actionPerformed(e: AnActionEvent) {
         ActionManager.getInstance().getAction("OpenRemoteDevelopment").actionPerformed(e)
     }
