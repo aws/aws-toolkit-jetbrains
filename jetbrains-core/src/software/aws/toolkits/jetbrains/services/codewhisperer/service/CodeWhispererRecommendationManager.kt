@@ -50,10 +50,12 @@ class CodeWhispererRecommendationManager {
         }
         val rangeMarkers = mutableMapOf<RangeMarker, Reference>()
         recommendation.references().forEach {
+            val tempEnd = invocationStartOffset + it.recommendationContentSpan().end()
+            val referenceEnd = if(tempEnd <= endOffset) tempEnd else endOffset
             rangeMarkers[
                 tempDocument.createRangeMarker(
                     invocationStartOffset + it.recommendationContentSpan().start(),
-                    invocationStartOffset + it.recommendationContentSpan().end()
+                    referenceEnd
                 )
             ] = it
         }
