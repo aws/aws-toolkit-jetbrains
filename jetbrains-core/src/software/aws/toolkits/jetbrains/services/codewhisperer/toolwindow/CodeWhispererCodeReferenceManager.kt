@@ -73,7 +73,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
             val recommendationEnd = startOffset + reformattedDetail.content().length
             val start = startOffset + reference.recommendationContentSpan().start()
             val tempEnd = startOffset + reference.recommendationContentSpan().end()
-            val end = if(tempEnd <= recommendationEnd) tempEnd else recommendationEnd
+            val end = if (tempEnd <= recommendationEnd) tempEnd else recommendationEnd
             val lineNums = getReferenceLineNums(editor, start, end)
 
             // There is an unformatted recommendation(directly from response) and reformatted one. We want to get
