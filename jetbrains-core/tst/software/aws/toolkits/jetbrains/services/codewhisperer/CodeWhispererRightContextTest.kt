@@ -23,7 +23,7 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test right context resolution will not change reference spans`() {
+    fun `test right context resolution will update reference spans if necessary`() {
         val rightContext = pythonResponse.recommendations()[0].content()
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
         withCodeWhispererServiceInvokedAndWait { states ->
@@ -33,7 +33,7 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
             details.forEach {
                 val span = it.reformatted.references()[0].recommendationContentSpan()
                 assertThat(span.start()).isEqualTo(0)
-                assertThat(span.end()).isEqualTo(it.recommendation.content().length)
+                assertThat(span.end()).isEqualTo(it.reformatted.content().length)
             }
         }
     }
