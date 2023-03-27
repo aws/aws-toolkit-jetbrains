@@ -52,7 +52,6 @@ abstract class PostgresBase(engine: Set<String>, additionalInfo: String? = null)
     override fun iamUsername(username: String) = username.lowercase()
 }
 
-// TODO: Verify the IDE provided icon won't cause issues
 object Maria : RdsEngine(setOf("mariadb"), AllIcons.Providers.Mariadb, null) {
     override fun sslConfig(): DataSourceSslConfiguration = RequireSsl
     override fun connectionStringUrl(endpoint: String) = "jdbc:$JDBC_MARIADB://$endpoint/"
