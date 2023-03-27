@@ -448,7 +448,6 @@ class CodeWhispererService {
     }
 
     private fun checkRecommendationsValidity(states: InvocationContext, showHint: Boolean): Boolean {
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val details = states.recommendationContext.details
 
         // set to true when at least one is not discarded or empty
@@ -493,7 +492,7 @@ class CodeWhispererService {
         return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContextInfo, connection, latencyContext)
     }
 
-    private fun validateResponse(response: ListRecommendationsResponse): ListRecommendationsResponse {
+    fun validateResponse(response: ListRecommendationsResponse): ListRecommendationsResponse {
         // If contentSpans in reference are not consistent with content(recommendations),
         // remove the incorrect references.
         val validatedRecommendations = response.recommendations().map {
