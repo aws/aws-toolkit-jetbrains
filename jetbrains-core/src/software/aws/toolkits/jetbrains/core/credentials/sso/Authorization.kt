@@ -16,5 +16,5 @@ data class Authorization(
     val verificationUriComplete: String,
     val expiresAt: Instant,
     val pollInterval: Long,
-    val createdAt: Instant = Instant.EPOCH
+    val createdAt: Instant
 )

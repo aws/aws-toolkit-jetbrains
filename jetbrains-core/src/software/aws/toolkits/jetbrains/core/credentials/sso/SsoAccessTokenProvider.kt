@@ -10,7 +10,6 @@ import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
@@ -149,16 +148,17 @@ class SsoAccessTokenProvider(
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
-            val getTokenCreationTime = currentToken.createdAt
+            val tokenCreationTime = currentToken.createdAt
 
-            if (getTokenCreationTime != Instant.EPOCH) {
-                val sessionDuration = Duration.between(Instant.now(clock), getTokenCreationTime)
+            if (tokenCreationTime != Instant.EPOCH) {
+                val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
                 val credentialSourceId = if (currentToken.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
                 AwsTelemetry.refreshCredentials(
                     project = null,
                     Result.Failed,
                     sessionDuration = sessionDuration.toHours().toInt(),
-                    credentialSourceId = credentialSourceId)
+                    credentialSourceId = credentialSourceId
+                )
             }
 
             throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
