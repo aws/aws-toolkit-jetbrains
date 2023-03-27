@@ -49,7 +49,7 @@ phases:
         }
 
          # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :jetbrains-rider:compileTestKotlin -x :jetbrains-rider:test --info --console plain
+        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :jetbrains-rider:compileTestKotlin -x :jetbrains-rider:test --info --console plain --continue
         if ($LastExitCode -ne 0) {
           Write-Host "Command failed with exit code $LastExitCode"
           exit -1
@@ -84,7 +84,7 @@ phases:
           $env:CI_BUILD_URL=[uri]::EscapeUriString($Env:CODEBUILD_BUILD_URL);
           $env:CI_BUILD_ID=$Env:CODEBUILD_BUILD_ID;
           .\codecov.exe -t $Env:CODE_COV_TOKEN `
-            --flag unittest `
+            --flags unittest `
             -f "build/reports/jacoco/coverageReport/coverageReport.xml" `
             -c $Env:CODEBUILD_RESOLVED_SOURCE_VERSION
         }

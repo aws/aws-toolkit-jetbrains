@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
+import software.aws.toolkits.resources.message
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -65,7 +66,7 @@ class SsoAccessTokenProvider(
         val registerResponse = client.registerClient {
             it.clientType(CLIENT_REGISTRATION_TYPE)
             it.scopes(scopes)
-            it.clientName("aws-toolkit-jetbrains-${Instant.now(clock)}")
+            it.clientName("AWS Toolkit for JetBrains")
         }
 
         val registeredClient = ClientRegistration(
@@ -108,6 +109,7 @@ class SsoAccessTokenProvider(
         val registration = registerClient()
         val authorization = authorizeClient(registration)
 
+        progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
         onPendingToken.tokenPending(authorization)
 
         var backOffTime = Duration.ofSeconds(authorization.pollInterval)
@@ -139,10 +141,10 @@ class SsoAccessTokenProvider(
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
-            throw InvalidRequestException.builder().build()
+            throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
         }
 
-        val registration = loadClientRegistration() ?: throw InvalidClientException.builder().build()
+        val registration = loadClientRegistration() ?: throw InvalidClientException.builder().message("Unable to load client registration").build()
 
         val newToken = client.createToken {
             it.clientId(registration.clientId)
