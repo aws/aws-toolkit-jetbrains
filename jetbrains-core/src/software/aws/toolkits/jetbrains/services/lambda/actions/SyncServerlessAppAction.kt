@@ -24,6 +24,7 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
@@ -113,7 +114,7 @@ class SyncServerlessAppAction : AnAction(
                             val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
                             processOutput.exitCode != 0
                         } catch (e: Exception) {
-                            LOG.warn("Docker could not be found: " + e.message)
+                            LOG.warn(e) { "Docker could not be found"}
                             true
                         }
 
