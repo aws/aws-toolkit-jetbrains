@@ -629,8 +629,7 @@ class SamExecutableTest {
                 tags = emptyMap(),
                 useContainer = false,
                 capabilities = listOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = false
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -674,8 +673,7 @@ class SamExecutableTest {
                 tags = emptyMap(),
                 useContainer = false,
                 capabilities = listOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = false
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -726,8 +724,7 @@ class SamExecutableTest {
                 ),
                 useContainer = false,
                 capabilities = listOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = false
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -772,8 +769,7 @@ class SamExecutableTest {
                 tags = emptyMap(),
                 useContainer = false,
                 capabilities = listOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = true
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -812,8 +808,7 @@ class SamExecutableTest {
                 tags = emptyMap(),
                 useContainer = true,
                 capabilities = listOf(CreateCapabilities.NAMED_IAM, CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = false
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
@@ -852,8 +847,7 @@ class SamExecutableTest {
                 tags = emptyMap(),
                 useContainer = true,
                 capabilities = listOf(CreateCapabilities.AUTO_EXPAND)
-            ),
-            syncOnlyCode = false
+            )
         )
 
         assertThat(cmd.workDirectory).isEqualTo(tempFolder.root)
