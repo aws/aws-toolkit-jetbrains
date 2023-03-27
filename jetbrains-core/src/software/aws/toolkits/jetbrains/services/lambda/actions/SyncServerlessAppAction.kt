@@ -226,7 +226,7 @@ class SyncServerlessAppAction : AnAction(
         }
     }
 
-    companion object{
+    companion object {
         private val LOG = getLogger<SyncServerlessAppAction>()
     }
 }
