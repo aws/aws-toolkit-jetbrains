@@ -87,6 +87,7 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
     }
 
     private fun testCodeWhispererKeyboardShortcutShouldBePrioritized(actionId: String) {
+        projectRule.fixture.configureByText(javaFileName, javaTestContext)
         val wrongAction = object : AnAction() {
             override fun actionPerformed(e: AnActionEvent) {
                 fail("the other action should not get executed first")
