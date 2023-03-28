@@ -21,8 +21,8 @@ val gatewayRunOnly by configurations.creating {
 }
 
 dependencies {
-    // pull in :j-c:instrumentedJar for compile and :intellij:buildPlugin, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
-    compileOnly(project(":jetbrains-core", "instrumentedJar"))
+    // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
+    compileOnly(project(":jetbrains-core"))
     gatewayRunOnly(project(":jetbrains-core", "gatewayArtifacts"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
