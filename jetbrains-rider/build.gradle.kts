@@ -53,7 +53,8 @@ dependencies {
     compileOnly(project(":jetbrains-core"))
     runtimeOnly(project(":jetbrains-core", "instrumentedJar"))
 
-    testImplementation(project(":jetbrains-core", "instrumentedJar"))
+    testCompileOnly(project(":jetbrains-core"))
+    testRuntimeOnly(project(":jetbrains-core", "instrumentedJar"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 
