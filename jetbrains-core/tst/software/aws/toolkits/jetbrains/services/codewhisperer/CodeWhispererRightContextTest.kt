@@ -5,6 +5,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.stub
+import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsRequest
+import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
@@ -23,7 +28,7 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test right context resolution will update reference spans if necessary`() {
+    fun `test right context resolution will remove reference span if reference is the same as right context`() {
         val rightContext = pythonResponse.recommendations()[0].content()
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
         withCodeWhispererServiceInvokedAndWait { states ->
@@ -31,10 +36,60 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
             assertThat(firstRecommendation.isDiscarded).isEqualTo(true)
             val details = states.recommendationContext.details
             details.forEach {
-                val span = it.reformatted.references()[0].recommendationContentSpan()
-                assertThat(span.start()).isEqualTo(0)
-                assertThat(span.end()).isEqualTo(it.reformatted.content().length)
+                assertThat(it.reformatted.references().isEmpty())
             }
+        }
+    }
+
+    @Test
+    fun `test right context resolution will update range of reference if reference overlaps with right context`() {
+        val firstRecommendationContent = pythonResponse.recommendations()[0].content()
+        val lastNewLineIndex = firstRecommendationContent.lastIndexOf('\n')
+        val rightContext = firstRecommendationContent.substring(lastNewLineIndex)
+        setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
+        withCodeWhispererServiceInvokedAndWait { states ->
+            val firstRecommendation = states.recommendationContext.details[0]
+            assertThat(firstRecommendation.isDiscarded).isEqualTo(false)
+            val firstDetail = states.recommendationContext.details[0]
+            val span = firstDetail.reformatted.references()[0].recommendationContentSpan()
+            assertThat(span.start()).isEqualTo(0)
+            assertThat(span.end()).isEqualTo(lastNewLineIndex)
+        }
+    }
+
+    @Test
+    fun `test right context resolution will not change reference range if reference does not overlap with right context`() {
+        val firstRecommendationContent = pythonResponse.recommendations()[0].content()
+        val lastNewLineIndex = firstRecommendationContent.lastIndexOf('\n')
+        val rightContext = firstRecommendationContent.substring(lastNewLineIndex)
+        setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
+
+        val referenceInfo = CodeWhispererTestUtil.getReferenceInfo()
+        val referencesResponse = ListRecommendationsResponse.builder()
+            .recommendations(
+                CodeWhispererTestUtil
+                    .generateMockRecommendationDetail(firstRecommendationContent, referenceInfo.first, referenceInfo.second, 0, lastNewLineIndex),
+            )
+            .nextToken("")
+            .responseMetadata(CodeWhispererTestUtil.metadata)
+            .sdkHttpResponse(CodeWhispererTestUtil.sdkHttpResponse)
+            .build() as ListRecommendationsResponse
+
+        mockClient.stub {
+            on {
+                mockClient.listRecommendations(any<ListRecommendationsRequest>())
+            } doAnswer {
+                referencesResponse
+            }
+        }
+
+        withCodeWhispererServiceInvokedAndWait { states ->
+            val firstRecommendation = states.recommendationContext.details[0]
+            assertThat(firstRecommendation.isDiscarded).isEqualTo(false)
+            val firstDetail = states.recommendationContext.details[0]
+            val span = firstDetail.reformatted.references()[0].recommendationContentSpan()
+            assertThat(span.start()).isEqualTo(0)
+            assertThat(span.end()).isEqualTo(lastNewLineIndex)
         }
     }
 
