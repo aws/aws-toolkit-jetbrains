@@ -19,10 +19,6 @@ dependencies {
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(libs.mockk)
-
-    integrationTestImplementation(project(":jetbrains-core"))
-    integrationTestRuntimeOnly(project(":jetbrains-core", "instrumentedJar"))
-    integrationTestImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 
 intellijToolkit {
