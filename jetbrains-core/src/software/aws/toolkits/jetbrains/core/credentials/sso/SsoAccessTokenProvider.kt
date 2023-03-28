@@ -157,7 +157,8 @@ class SsoAccessTokenProvider(
                     project = null,
                     Result.Failed,
                     sessionDuration = sessionDuration.toHours().toInt(),
-                    credentialSourceId = credentialSourceId
+                    credentialSourceId = credentialSourceId,
+                    reason = "Null refresh token"
                 )
             }
 
