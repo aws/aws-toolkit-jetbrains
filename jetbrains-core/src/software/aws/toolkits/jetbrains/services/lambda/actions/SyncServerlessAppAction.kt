@@ -92,6 +92,13 @@ class SyncServerlessAppAction : AnAction(
                     ),
                     project = project,
                     listOf(
+                        NotificationAction.createSimple(message("sam.cli.version.upgrade.reason")) {
+                            BrowserUtil.browse(
+                                URI(
+                                    "https://aws.amazon.com/about-aws/whats-new/2023/03/aws-toolkits-jetbrains-vs-code-sam-accelerate/"
+                                )
+                            )
+                        },
                         NotificationAction.createSimple(message("sam.cli.version.upgrade.instructions")) {
                             BrowserUtil.browse(
                                 URI(
