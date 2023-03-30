@@ -377,28 +377,7 @@ class SsoAccessTokenProviderTest {
                 .build()
         )
     }
-
-    private fun KStubbing<SsoOidcClient>.stubStartDeviceAuthorization2(interval: Int? = null) {
-        on(
-            ssoOidcClient.startDeviceAuthorization(
-                StartDeviceAuthorizationRequest.builder()
-                    .clientId(clientId)
-                    .clientSecret(clientSecret)
-                    .startUrl(ssoUrl)
-                    .build()
-            )
-        ).thenReturn(
-            StartDeviceAuthorizationResponse.builder()
-                .expiresIn(120)
-                .deviceCode("dummyCode")
-                .userCode("dummyUserCode")
-                .verificationUri("someUrl")
-                .verificationUriComplete("someUrlComplete")
-                .apply { if (interval != null) interval(interval) }
-                .build()
-        )
-    }
-
+    
     private fun KStubbing<SsoOidcClient>.stubCreateToken(throws: Boolean = false) {
         on(
             ssoOidcClient.createToken(createTokenRequest())
