@@ -77,9 +77,6 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
         }
 
         group(message("feedback.share.feedback.title")) {
-            row {
-                comment(message("feedback.customer.alert.info"))
-            }
             buttonsGroup {
                 row {
                     radioButton("", value = Sentiment.POSITIVE).applyToComponent {
@@ -93,6 +90,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
             }.bind({ sentiment }, { sentiment = it })
 
             row(message("feedback.comment.textbox.title")) {}
+            row { comment(message("feedback.customer.alert.info")) }
             row {
                 comment = textArea().rows(6).columns(50).bindText(::commentText).applyToComponent {
                     this.emptyText.text = message("feedback.comment.emptyText")
