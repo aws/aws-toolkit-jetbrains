@@ -77,6 +77,9 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
         }
 
         group(message("feedback.share.feedback.title")) {
+            row {
+                comment(message("feedback.customer.alert.info"))
+            }
             buttonsGroup {
                 row {
                     radioButton("", value = Sentiment.POSITIVE).applyToComponent {
