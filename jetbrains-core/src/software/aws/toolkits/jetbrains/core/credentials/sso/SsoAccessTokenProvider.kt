@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.progress.ProgressManager
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
@@ -33,6 +34,10 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) {
+
+    @TestOnly
+    var authorizationCreationTime = Instant.now(clock)
+
     private val clientRegistrationCacheKey by lazy {
         ClientRegistrationCacheKey(
             startUrl = ssoUrl,
@@ -97,7 +102,7 @@ class SsoAccessTokenProvider(
             throw e
         }
 
-        val creationTime = Instant.now(clock)
+        authorizationCreationTime = Instant.now(clock)
 
         return Authorization(
             authorizationResponse.deviceCode(),
@@ -107,7 +112,7 @@ class SsoAccessTokenProvider(
             Instant.now(clock).plusSeconds(authorizationResponse.expiresIn().toLong()),
             authorizationResponse.interval()?.toLong()
                 ?: DEFAULT_INTERVAL_SECS,
-            creationTime
+            authorizationCreationTime
         )
     }
 

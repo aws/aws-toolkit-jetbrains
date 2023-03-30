@@ -100,7 +100,9 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
+
                 )
             )
 
@@ -144,7 +146,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
                 )
             )
 
@@ -177,6 +180,7 @@ class SsoAccessTokenProviderTest {
         val startTime = Instant.now()
         val accessToken = runBlocking { sut.accessToken() }
         val callDuration = Duration.between(startTime, Instant.now())
+        val creationTime = sut.authorizationCreationTime
 
         assertThat(accessToken).usingRecursiveComparison()
             .isEqualTo(
@@ -184,7 +188,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = creationTime
                 )
             )
 
@@ -273,7 +278,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
                 )
             )
 
@@ -352,6 +358,27 @@ class SsoAccessTokenProviderTest {
     }
 
     private fun KStubbing<SsoOidcClient>.stubStartDeviceAuthorization(interval: Int? = null) {
+        on(
+            ssoOidcClient.startDeviceAuthorization(
+                StartDeviceAuthorizationRequest.builder()
+                    .clientId(clientId)
+                    .clientSecret(clientSecret)
+                    .startUrl(ssoUrl)
+                    .build()
+            )
+        ).thenReturn(
+            StartDeviceAuthorizationResponse.builder()
+                .expiresIn(120)
+                .deviceCode("dummyCode")
+                .userCode("dummyUserCode")
+                .verificationUri("someUrl")
+                .verificationUriComplete("someUrlComplete")
+                .apply { if (interval != null) interval(interval) }
+                .build()
+        )
+    }
+
+    private fun KStubbing<SsoOidcClient>.stubStartDeviceAuthorization2(interval: Int? = null) {
         on(
             ssoOidcClient.startDeviceAuthorization(
                 StartDeviceAuthorizationRequest.builder()
