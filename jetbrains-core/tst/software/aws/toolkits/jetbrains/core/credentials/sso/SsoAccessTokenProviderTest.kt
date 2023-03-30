@@ -377,7 +377,7 @@ class SsoAccessTokenProviderTest {
                 .build()
         )
     }
-    
+
     private fun KStubbing<SsoOidcClient>.stubCreateToken(throws: Boolean = false) {
         on(
             ssoOidcClient.createToken(createTokenRequest())
