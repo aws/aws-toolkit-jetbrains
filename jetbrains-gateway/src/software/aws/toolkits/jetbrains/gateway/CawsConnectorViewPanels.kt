@@ -299,7 +299,6 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                             cloneRepoButton = radioButton(message("caws.workspace.details.clone_repo"), RepoCloneType.CLONE_REPO).applyToComponent {
                                 isSelected = context.repoCloneType == RepoCloneType.CLONE_REPO
                             }.actionListener { event, component ->
-                                context.cloneType = CawsWizardCloneType.CAWS
                                 if (!context.is3P) {
                                     branchOptions.visible(cloneRepoButton.component.isSelected)
                                     if (newBranchOption.component.isSelected) {
@@ -315,7 +314,6 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                     branchOptions.visible(cloneRepoButton.component.isSelected)
                                     newBranch.visible(cloneRepoButton.component.isSelected)
                                     existingBranchOption.component.isSelected = true
-                                    context.cloneType = CawsWizardCloneType.NONE
                                 }
                         }
                     }.bind({ context.repoCloneType }, { context.repoCloneType = it })
@@ -436,12 +434,6 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                         }
                         contextHelp(message("caws.one.branch.per.dev.env.comment"))
                     }.visibleIf(cloneRepoButton.selected)
-
-                    if (context.repoCloneType == RepoCloneType.EMPTY_REPO) {
-                        context.cloneType = CawsWizardCloneType.NONE
-                    } else {
-                        context.cloneType = CawsWizardCloneType.CAWS
-                    }
 
                     // need here to force comboboxes to load
                     getProjects(client, spaces).forEach { projectCombo.addItem(it) }
