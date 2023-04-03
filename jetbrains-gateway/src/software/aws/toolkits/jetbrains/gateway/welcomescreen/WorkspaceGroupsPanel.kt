@@ -25,12 +25,12 @@ import com.intellij.util.ui.components.BorderLayoutPanel
 import com.jetbrains.rd.util.lifetime.Lifetime
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.jetbrains.gateway.CawsSettings
-import software.aws.toolkits.jetbrains.gateway.CawsWizardCloneType
 import software.aws.toolkits.jetbrains.gateway.SourceRepository
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.cawsWizard
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
+import software.aws.toolkits.jetbrains.settings.CawsSpaceTracker
 import software.aws.toolkits.resources.message
 import java.awt.Color
 import java.awt.Component
@@ -70,7 +70,9 @@ class WorkspaceGroupsPanel(
         }
 
         workspaces.workspaces().entries.forEachIndexed { index, (project, workspaces) ->
-            add(createProjectGroup(project, workspaces, this.workspaces.codeRepos()[project] ?: emptyList()), gbc.nextLine().setColumn(0).coverLine())
+            if (CawsSpaceTracker.getInstance().lastSpaceName() == project.space) {
+                add(createProjectGroup(project, workspaces, this.workspaces.codeRepos()[project] ?: emptyList()), gbc.nextLine().setColumn(0).coverLine())
+            }
 
             if (index < workspaces.size - 1) {
                 add(createSeparator(), gbc.nextLine().setColumn(0).coverLine().insets(JBUI.emptyInsets()))
@@ -173,10 +175,6 @@ class WorkspaceGroupsPanel(
                             CawsSettings().also {
                                 it.project = project
                                 it.linkedRepoName = workspaceGroup.repoName ?: ""
-                                // TODO: 3p unlinked case
-                                if (workspaceGroup.repoName == null) {
-                                    it.cloneType = CawsWizardCloneType.NONE
-                                }
                             }
                         )
                     )
