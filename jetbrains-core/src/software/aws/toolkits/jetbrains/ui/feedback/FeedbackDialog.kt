@@ -92,7 +92,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
             row(message("feedback.comment.textbox.title")) {}
             row { comment(message("feedback.customer.alert.info")) }
             row {
-                comment = textArea().rows(6).columns(50).bindText(::commentText).applyToComponent {
+                comment = textArea().rows(6).columns(52).bindText(::commentText).applyToComponent {
                     this.emptyText.text = message("feedback.comment.emptyText")
                     this.lineWrap = true
 
