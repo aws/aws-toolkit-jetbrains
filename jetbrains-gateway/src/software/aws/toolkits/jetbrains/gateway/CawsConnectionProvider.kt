@@ -170,6 +170,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
                             val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
                             var retries = 3
+                            val startTimeToCheckInstallation = System.currentTimeMillis()
                             val toolkitInstallSettings: ToolkitInstallSettings? = coroutineScope {
                                 while (retries > 0) {
                                     indicator.checkCanceled()
@@ -192,9 +193,18 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     }
                                 }
                             } as ToolkitInstallSettings?
+                            val timeTakenToCheckInstallation = System.currentTimeMillis() - startTimeToCheckInstallation
                             toolkitInstallSettings ?: let {
                                 // environment is non-responsive to SSM; restart
                                 LOG.warn { "Restarting $envId since it appears unresponsive to SSM Run-Command" }
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = TelemetryResult.Failed,
+                                    codecatalystDevEnvironmentWorkflowStep = "ToolkitInstallationSSMCheck",
+                                    codecatalystDevEnvironmentWorkflowError = "Dev env unresponsive to SSM",
+                                    duration = timeTakenToCheckInstallation.toDouble()
+                                )
                                 coroutineScope {
                                     launchChildIOBackground {
                                         environmentActions.stopEnvironment()
