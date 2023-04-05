@@ -48,6 +48,7 @@ class StartBackend(
 
         LOG.info { "Starting thin client with link: $localLink" }
         val clientHandle = ThinClientTrackerService.getInstance().associate(envId) {
+            Thread.sleep(10000)
             val start = System.currentTimeMillis()
             val thinClientHandle = try {
                 LinkedClientManager.getInstance()

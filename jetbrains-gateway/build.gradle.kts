@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import net.bytebuddy.utility.RandomString
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -9,6 +10,10 @@ plugins {
     id("toolkit-testing")
     id("toolkit-integration-testing")
     id("toolkit-intellij-subplugin")
+}
+
+intellij {
+    type.set("GW")
 }
 
 intellijToolkit {
@@ -29,6 +34,8 @@ dependencies {
     testCompileOnly(project(":jetbrains-core"))
     testRuntimeOnly(project(":jetbrains-core", "gatewayArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
+    testImplementation(libs.kotlin.coroutinesTest)
+    testImplementation(libs.kotlin.coroutinesDebug)
     testImplementation(libs.wiremock)
     testImplementation(libs.bundles.sshd)
 }
@@ -105,4 +112,9 @@ val publishChannel: String by project
 tasks.publishPlugin {
     token.set(publishToken)
     channels.set(publishChannel.split(",").map { it.trim() })
+}
+
+tasks.integrationTest {
+    val testToken = RandomString.make(32)
+    environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)
 }
