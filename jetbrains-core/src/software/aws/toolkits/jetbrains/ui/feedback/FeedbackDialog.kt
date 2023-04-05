@@ -48,7 +48,9 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
     private val sadIcon = IconUtil.scale(AwsIcons.Misc.FROWN, null, 3f)
     private var commentText: String = initialComment
     private lateinit var comment: Cell<JBTextArea>
-    private var lengthLimitLabel = JBLabel(message("feedback.comment.textbox.initial.length"))
+    private var lengthLimitLabel = JBLabel(
+        "<html><font color='#${ColorUtil.toHex(UIUtil.getLabelInfoForeground())}'>${message("feedback.comment.textbox.initial.length")}</font></html>"
+    )
 
     private val dialogPanel = panel {
         row {
@@ -158,7 +160,8 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
     private fun onTextAreaUpdate(commentText: String) {
         this.commentText = commentText
         val currentLength = this.commentText.length
-        val lengthText = message("feedback.limit.label", MAX_LENGTH - currentLength)
+        val lengthText = "<html><font color='#${ColorUtil.toHex(UIUtil.getLabelInfoForeground())}'>" +
+            "${message("feedback.limit.label", MAX_LENGTH - currentLength)}</font></html>"
         lengthLimitLabel.text = if (currentLength >= MAX_LENGTH) {
             "<html><font color='#${ColorUtil.toHex(UIUtil.getErrorForeground())}'>$lengthText</font></html>"
         } else {
