@@ -30,7 +30,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
 
     @BeforeMethod
     fun setUp() {
-        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getVersionAsJson("1.40.1"))
         preWarmSamVersionCache(validSam.toString())
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
 
