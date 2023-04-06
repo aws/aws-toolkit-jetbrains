@@ -60,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
@@ -158,7 +159,8 @@ class CodeWhispererPopupManager {
             return
         }
         val typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
-        sessionContext = SessionContext(typeahead, typeaheadOriginal, selectedIndex, sessionContext.seen)
+        val isFirstTimeShowingPopup = indexChange == 0 && typeaheadChange.isEmpty()
+        sessionContext = SessionContext(typeahead, typeaheadOriginal, selectedIndex, sessionContext.seen, isFirstTimeShowingPopup)
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
             states, sessionContext
@@ -192,21 +194,39 @@ class CodeWhispererPopupManager {
         updateCodeReferencePanel(states.requestContext.project, details[selectedIndex].recommendation.references())
     }
 
-    fun render(states: InvocationContext, sessionContext: SessionContext, overlappingLinesCount: Int) {
+    fun render(
+        states: InvocationContext,
+        sessionContext: SessionContext,
+        overlappingLinesCount: Int,
+        isRecommendationAdded: Boolean,
+        isScrolling: Boolean
+    ) {
         updatePopupPanel(states, sessionContext)
 
         val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         sessionContext.seen.add(sessionContext.selectedIndex)
-        showPopup(
-            states.requestContext.editor,
-            states.recommendationContext.details,
-            states.recommendationContext.userInputOriginal,
-            states.recommendationContext.userInputSinceInvocation,
-            sessionContext,
-            states.popup,
-            caretPoint,
-            overlappingLinesCount
-        )
+
+        // There are four cases that render() is called:
+        // 1. Popup showing for the first time, both booleans are false, we should show the popup and update the latency
+        // end time, and emit the event if it's at the pagination end.
+        // 2. New recommendations being added to the existing ones, we should not update the latency end time, and emit
+        // the event if it's at the pagination end.
+        // 3. User scrolling (so popup is changing positions), we should not update the latency end time and should not
+        // emit any events.
+        // 4. User nagivating through the completions or typing as the completion shows. We should not update the latency
+        // end time and should not emit any events in this case.
+        if (!isRecommendationAdded) {
+            showPopup(states, sessionContext, states.popup, caretPoint, overlappingLinesCount)
+            if (!isScrolling) {
+                states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+                states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+            }
+        }
+        if (isScrolling ||
+            CodeWhispererInvocationStatus.getInstance().hasExistingInvocation() ||
+            !sessionContext.isFirstTimeShowingPopup
+        ) return
+        CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
     }
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
@@ -231,15 +251,16 @@ class CodeWhispererPopupManager {
     }
 
     fun showPopup(
-        editor: Editor,
-        detailContexts: List<DetailContext>,
-        userInputOriginal: String,
-        userInput: String,
+        states: InvocationContext,
         sessionContext: SessionContext,
         popup: JBPopup,
         p: Point,
         overlappingLinesCount: Int
     ) {
+        val editor = states.requestContext.editor
+        val detailContexts = states.recommendationContext.details
+        val userInputOriginal = states.recommendationContext.userInputOriginal
+        val userInput = states.recommendationContext.userInputSinceInvocation
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
         val typeahead = sessionContext.typeahead
@@ -294,6 +315,13 @@ class CodeWhispererPopupManager {
                 CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = originalAutoPopupCompletionLookup
             }
             popup.show(relativePopupLocationToEditor)
+            val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
+            CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
+                detailContexts[selectedIndex].requestId,
+                states.requestContext,
+                states.responseContext,
+                perceivedLatency
+            )
         }
         if (shouldHidePopup) {
             WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
@@ -557,11 +585,11 @@ class CodeWhispererPopupManager {
         typeahead: String
     ): Int {
         var currIndexIgnoreInvalid = 0
-        detailContexts.forEachIndexed { index, it ->
+        detailContexts.forEachIndexed { index, value ->
             if (index == selectedIndex) {
                 return currIndexIgnoreInvalid
             }
-            if (isValidRecommendation(it, userInput, typeahead)) {
+            if (isValidRecommendation(value, userInput, typeahead)) {
                 currIndexIgnoreInvalid++
             }
         }

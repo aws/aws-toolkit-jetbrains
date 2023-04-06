@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.buildStr
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudWatchResourceType
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.File
@@ -59,15 +60,15 @@ class LogStreamDownloadTask(
             .logStreamName(logStream)
             .endTime(startTime.toEpochMilli())
         val getRequest = client.getLogEventsPaginator(request.build())
-        getRequest.stream().asSequence().forEachIndexed { index, it ->
+        getRequest.stream().asSequence().forEachIndexed { index, value ->
             indicator.checkCanceled()
-            buffer.append(it.events().buildStringFromLogsOutput())
+            buffer.append(value.events().buildStringFromLogsOutput())
             // This might look off by 1 because for example if we are at index 20, it's the
             // 21st iteration, but at this point we won't try to open in a file so we bail from
             // streaming at the correct time
             if (index >= maxPages) {
                 runBlocking {
-                    request.nextToken(it.nextForwardToken())
+                    request.nextToken(value.nextForwardToken())
                     if (promptWriteToFile() == Messages.OK) {
                         ProgressManager.getInstance().run(
                             LogStreamDownloadToFileTask(
@@ -177,11 +178,11 @@ class LogStreamDownloadToFileTask(
                     }
                 )
             )
-            CloudwatchlogsTelemetry.downloadStreamToFile(project, success = true)
+            CloudwatchlogsTelemetry.download(project, success = true, CloudWatchResourceType.LogStream)
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while downloading large log stream" }
             e.notifyError(project = project, title = message("cloudwatch.logs.saving_to_disk_failed", logStream))
-            CloudwatchlogsTelemetry.downloadStreamToFile(project, success = false)
+            CloudwatchlogsTelemetry.download(project, success = false, CloudWatchResourceType.LogStream)
         }
     }
 
@@ -192,7 +193,7 @@ class LogStreamDownloadToFileTask(
         } else {
             Result.Failed
         }
-        CloudwatchlogsTelemetry.downloadStreamToFile(project, result)
+        CloudwatchlogsTelemetry.download(project, result, CloudWatchResourceType.LogStream)
     }
 
     companion object {

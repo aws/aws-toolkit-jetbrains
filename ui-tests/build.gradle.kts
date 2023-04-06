@@ -32,6 +32,8 @@ dependencies {
     testImplementation(libs.aws.sns)
     testImplementation(libs.aws.sqs)
     testImplementation(libs.commons.io)
+    // match version declared by intellijRemoteRobot
+    testImplementation("com.squareup.okhttp3:okhttp:4.10.0")
 
     testRuntimeOnly(libs.junit5.jupiterEngine)
 }
@@ -66,4 +68,10 @@ tasks.register<Test>("uiTestCore") {
     ciOnly {
         enableRemoteCoverage(this)
     }
+
+    // TODO: can these be scoped down
+    jvmArgs(
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED"
+    )
 }

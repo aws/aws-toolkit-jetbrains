@@ -7,6 +7,8 @@
     </extensions>
     <extensions defaultExtensionNs="Pythonid">
         <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionExtension"/>
+        <pythonCommandLineTargetEnvironmentProvider
+            implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionCommandLineTargetEnvironmentProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -17,10 +19,12 @@
         <builder id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaBuilder"/>
         <handlerResolver id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaHandlerResolver"/>
         <sam.runtimeDebugSupport id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeDebugSupport"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python36ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python37ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python38ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python39ImageDebugSupport"/>
         <sam.projectWizard id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonSamProjectWizard"/>
+    </extensions>
+    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython"/>
     </extensions>
 </idea-plugin>

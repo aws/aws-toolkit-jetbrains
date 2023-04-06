@@ -16,9 +16,14 @@ val publishToken: String by project
 val publishChannel: String by project
 
 // please check changelog generation logic if this format is changed
+// also sync with gateway version
 version = "$toolkitVersion-${ideProfile.shortName}"
 
 val resharperDlls = configurations.create("resharperDlls") {
+    isCanBeConsumed = false
+}
+
+val gatewayResources = configurations.create("gatewayResources") {
     isCanBeConsumed = false
 }
 
@@ -35,6 +40,9 @@ intellij {
 tasks.prepareSandbox {
     from(resharperDlls) {
         into("aws-toolkit-jetbrains/dotnet")
+    }
+    from(gatewayResources) {
+        into("aws-toolkit-jetbrains/gateway-resources")
     }
 }
 
@@ -53,9 +61,15 @@ tasks.test {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core"))
-    implementation(project(":jetbrains-ultimate"))
+    implementation(project(":jetbrains-core", "instrumentedJar"))
+    implementation(project(":jetbrains-ultimate", "instrumentedJar"))
+    project.findProject(":jetbrains-gateway")?.let {
+        // does this need to be the instrumented variant?
+        implementation(it)
+        gatewayResources(project(":jetbrains-gateway", configuration = "gatewayResources"))
+    }
     project.findProject(":jetbrains-rider")?.let {
+        // does this need to be the instrumented variant?
         implementation(it)
         resharperDlls(project(":jetbrains-rider", configuration = "resharperDlls"))
     }

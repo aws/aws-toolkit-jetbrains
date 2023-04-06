@@ -5,16 +5,20 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("toolkit-intellij-subplugin")
     id("toolkit-testing")
     id("toolkit-integration-testing")
+    id("toolkit-intellij-subplugin")
 }
 
 dependencies {
-    api(project(":jetbrains-core"))
+    compileOnly(project(":jetbrains-core"))
+    runtimeOnly(project(":jetbrains-core", "instrumentedJar"))
+
+    testCompileOnly(project(":jetbrains-core"))
+    testRuntimeOnly(project(":jetbrains-core", "instrumentedJar"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
-    integrationTestImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
+    testImplementation(libs.mockk)
 }
 
 intellijToolkit {

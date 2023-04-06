@@ -7,52 +7,24 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
-enum class IdeFlavor { IC, IU, RD }
+enum class IdeFlavor { GW, IC, IU, RD }
 
 object IdeVersions {
     private val commonPlugins = arrayOf(
+        "git4idea",
         "org.jetbrains.plugins.terminal",
         "org.jetbrains.plugins.yaml"
     )
 
+    // FIX_WHEN_MIN_IS_223
+    private val commonPlugins223 = commonPlugins.map {
+        when (it) {
+            "git4idea" -> "vcs-git"
+            else -> it
+        }
+    }.toTypedArray()
+
     private val ideProfiles = listOf(
-        Profile(
-            name = "2021.2",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2021.2",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "PythonCore:212.4746.96",
-                    "Docker:212.4746.92"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2021.2",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    // Transitive dependency needed for javascript
-                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
-                    "com.intellij.css",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "Pythonid:212.4746.96",
-                    "org.jetbrains.plugins.go:212.4746.92"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2021.2",
-                plugins = commonPlugins + listOf(
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net472",
-                rdGenVersion = "0.212.315",
-                nugetVersion = "2021.2.0"
-            )
-        ),
         Profile(
             name = "2021.3",
             community = ProductProfile(
@@ -112,6 +84,7 @@ object IdeVersions {
                     // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
                     "com.intellij.css",
                     "JavaScriptDebugger",
+                    "com.jetbrains.codeWithMe",
                     "com.intellij.database",
                     "Pythonid:221.5080.212",
                     "org.jetbrains.plugins.go:221.5080.210"
@@ -129,6 +102,11 @@ object IdeVersions {
         ),
         Profile(
             name = "2022.2",
+            gateway = ProductProfile(
+                sdkFlavor = IdeFlavor.GW,
+                sdkVersion = "222.4459-EAP-CANDIDATE-SNAPSHOT",
+                plugins = arrayOf("org.jetbrains.plugins.terminal")
+            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2022.2",
@@ -150,6 +128,7 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
                     "Pythonid:222.3345.118",
                     "org.jetbrains.plugins.go:222.3345.118",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
@@ -157,15 +136,106 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2022.2-EAP8-SNAPSHOT",
+                sdkVersion = "2022.2",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2022.2.4",
-                nugetVersion = "2022.2.0-eap08"
+                nugetVersion = "2022.2.0"
             )
-        )
+        ),
+        Profile(
+            name = "2022.3",
+            gateway = ProductProfile(
+                sdkFlavor = IdeFlavor.GW,
+                sdkVersion = "223.7571-EAP-CANDIDATE-SNAPSHOT",
+                plugins = arrayOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                // test failure related to null notification contexts in 2022.3
+                sdkVersion = "2022.3.1",
+                plugins = commonPlugins223 + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:223.8214.16",
+                    "Docker:223.8214.64"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "2022.3.1",
+                plugins = commonPlugins223 + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
+                    "Pythonid:223.8214.52",
+                    "org.jetbrains.plugins.go:223.8214.52",
+                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
+                    "org.intellij.intelliLang"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2022.3.1",
+                plugins = commonPlugins223 + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2022.3.4",
+                nugetVersion = "2022.3.1"
+            )
+        ),
+        Profile(
+            name = "2023.1",
+            gateway = ProductProfile(
+                sdkFlavor = IdeFlavor.GW,
+                sdkVersion = "231.8109-EAP-CANDIDATE-SNAPSHOT",
+                plugins = arrayOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkFlavor = IdeFlavor.IC,
+                sdkVersion = "231.8109-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins223 + listOf(
+                    "java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                    "PythonCore:231.8109.90",
+                    "Docker:231.8109.91"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkFlavor = IdeFlavor.IU,
+                sdkVersion = "231.8109-EAP-CANDIDATE-SNAPSHOT",
+                plugins = commonPlugins223 + listOf(
+                    "JavaScript",
+                    // Transitive dependency needed for javascript
+                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
+                    "com.intellij.css",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
+                    "Pythonid:231.8109.90",
+                    "org.jetbrains.plugins.go:231.8109.90",
+                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
+                    "org.intellij.intelliLang"
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2023.1-EAP8-SNAPSHOT",
+                plugins = commonPlugins223 + listOf(
+                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
+                ),
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2023.1.2",
+                nugetVersion = "2023.1.0-eap08"
+            )
+        ),
 
     ).associateBy { it.name }
 
@@ -181,7 +251,7 @@ object IdeVersions {
 open class ProductProfile(
     val sdkFlavor: IdeFlavor,
     val sdkVersion: String,
-    val plugins: Array<String>
+    val plugins: Array<String> = emptyArray()
 ) {
     fun version(): String? = if (!isLocalPath(sdkVersion)) {
         sdkFlavor.name + "-" + sdkVersion
@@ -209,6 +279,7 @@ class Profile(
     val shortName: String = shortenedIdeProfileName(name),
     val sinceVersion: String = shortName,
     val untilVersion: String = "$sinceVersion.*",
+    val gateway: ProductProfile? = null,
     val community: ProductProfile,
     val ultimate: ProductProfile,
     val rider: RiderProfile,

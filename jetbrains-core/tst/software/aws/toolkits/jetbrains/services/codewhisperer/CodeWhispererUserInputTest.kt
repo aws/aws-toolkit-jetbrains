@@ -10,15 +10,12 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.verify
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
@@ -28,10 +25,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
     fun `test no user input should show all recommendations`() {
         addUserInputAfterInvocation("")
 
-        withCodeWhispererServiceInvokedAndWait {
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
+        withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendations = states.recommendationContext.details.map {
                 it.recommendation.content()
             }
@@ -46,10 +40,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
 
         val expectedRecommendations = pythonResponse.recommendations().map { it.content() }
 
-        withCodeWhispererServiceInvokedAndWait {
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
+        withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendations = states.recommendationContext.details.map { it.recommendation.content() }
             assertThat(actualRecommendations).isEqualTo(expectedRecommendations)
             states.recommendationContext.details.forEachIndexed { index, context ->
@@ -67,11 +58,8 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
 
         val typeahead = " recommendation"
 
-        withCodeWhispererServiceInvokedAndWait {
+        withCodeWhispererServiceInvokedAndWait { states ->
             projectRule.fixture.type(typeahead)
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy, atLeastOnce()).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
             assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(typeahead)
             states.recommendationContext.details.forEachIndexed { index, actualContext ->
                 val actualDiscarded = actualContext.isDiscarded
@@ -87,10 +75,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         addUserInputAfterInvocation(blankUserInput)
         val userInput = blankUserInput.trimStart()
 
-        withCodeWhispererServiceInvokedAndWait {
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy, atLeastOnce()).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
+        withCodeWhispererServiceInvokedAndWait { states ->
             assertThat(states.recommendationContext.userInputSinceInvocation).isEqualTo(userInput)
             states.recommendationContext.details.forEachIndexed { _, actualContext ->
                 assertThat(actualContext.isDiscarded).isEqualTo(false)
@@ -104,10 +89,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         addUserInputAfterInvocation(userInputWithLeadingSpaces)
         val userInput = userInputWithLeadingSpaces.trimStart()
 
-        withCodeWhispererServiceInvokedAndWait {
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy, atLeastOnce()).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
+        withCodeWhispererServiceInvokedAndWait { states ->
             assertThat(states.recommendationContext.userInputSinceInvocation).isEqualTo(userInput)
             states.recommendationContext.details.forEachIndexed { index, actualContext ->
                 val actualDiscarded = actualContext.isDiscarded
@@ -123,20 +105,23 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
+        val latencyContextCaptor = argumentCaptor<LatencyContext>()
         codewhispererServiceSpy.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
                     projectCaptor.capture(),
-                    psiFileCaptor.capture()
+                    psiFileCaptor.capture(),
+                    latencyContextCaptor.capture()
                 )
             }.doAnswer {
                 val requestContext = codewhispererServiceSpy.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
-                    psiFileCaptor.firstValue
+                    psiFileCaptor.firstValue,
+                    latencyContextCaptor.firstValue
                 )
                 projectRule.fixture.type(userInput)
                 requestContext

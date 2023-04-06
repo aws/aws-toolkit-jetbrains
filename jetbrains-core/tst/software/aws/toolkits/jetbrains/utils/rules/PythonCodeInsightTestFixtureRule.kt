@@ -4,9 +4,13 @@
 package software.aws.toolkits.jetbrains.utils.rules
 
 import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
+import com.intellij.openapi.application.runWriteActionAndWait
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.module.ModuleTypeManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.util.SystemInfo
@@ -25,8 +29,6 @@ import com.jetbrains.python.PythonModuleTypeBase
 import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.sdk.PythonSdkAdditionalData
 import com.jetbrains.python.sdk.PythonSdkType
-import com.jetbrains.python.sdk.flavors.CPythonSdkFlavor
-import org.jetbrains.annotations.NotNull
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
@@ -76,14 +78,21 @@ class PythonCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
         }
 
         PsiTestUtil.addContentRoot(module, projectRoot)
-
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.6.0"))
+        val sdk = PyTestSdk("3.6.0")
+        setModuleSdk(module, sdk)
 
         return newFixture
     }
 
     override val fixture: CodeInsightTestFixture
         get() = lazyFixture.value
+
+    fun setModuleSdk(module: Module, sdk: Sdk) {
+        runWriteActionAndWait {
+            ProjectJdkTable.getInstance().addJdk(sdk, module)
+            ModuleRootModificationUtil.setModuleSdk(module, sdk)
+        }
+    }
 }
 
 internal class PythonModuleFixtureBuilder(fixtureBuilder: TestFixtureBuilder<out IdeaProjectTestFixture>) :
@@ -110,11 +119,6 @@ class PyTestSdk(private val version: String) : ProjectJdkImpl("PySdk $version", 
     }
 
     override fun getVersionString(): String = "FakeCPython $version"
-}
-
-internal class FakeCPython : CPythonSdkFlavor() {
-    @NotNull
-    override fun getName(): String = "FakeCPython"
 }
 
 fun PythonCodeInsightTestFixtureRule.addBreakpoint() {

@@ -7,26 +7,25 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
+import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsRequest
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaTestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import kotlin.test.fail
 
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {
@@ -52,6 +51,11 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
     @Test
     fun `test accept recommendation with no typeahead no right context`() {
         testAcceptRecommendationWithTypingAndMatchingRightContext("", "")
+    }
+
+    @Test
+    fun `test accept recommendation with no typeahead no right context using keyboard`() {
+        testAcceptRecommendationWithTypingAndMatchingRightContext("", "", true)
     }
 
     @Test
@@ -97,40 +101,42 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
             }
         }
         withCodeWhispererServiceInvokedAndWait {
-            runInEdtAndWait {
-                val codeWhispererAction = ActionManager.getInstance().getAction(actionId)
-                val actions = listOf<AnAction>(wrongAction, codeWhispererAction)
-                val newActions = CodeWhispererActionPromoter().promote(
-                    actions.toMutableList(),
-                    DataManager.getInstance().getDataContext(projectRule.fixture.editor.contentComponent)
-                )
-                assertThat(newActions[0]).isEqualTo(codeWhispererAction)
-                popupManagerSpy.popupComponents.acceptButton.doClick()
-            }
+            val codeWhispererAction = ActionManager.getInstance().getAction(actionId)
+            val actions = listOf<AnAction>(wrongAction, codeWhispererAction)
+            val newActions = CodeWhispererActionPromoter().promote(
+                actions.toMutableList(),
+                DataManager.getInstance().getDataContext(projectRule.fixture.editor.contentComponent)
+            )
+            assertThat(newActions[0]).isEqualTo(codeWhispererAction)
+            popupManagerSpy.popupComponents.acceptButton.doClick()
         }
     }
 
-    private fun testAcceptRecommendationWithTypingAndMatchingRightContext(typing: String, rightContext: String) {
+    private fun testAcceptRecommendationWithTypingAndMatchingRightContext(typing: String, rightContext: String, useKeyboard: Boolean = false) {
         projectRule.fixture.configureByText(javaFileName, buildContextWithRecommendation(rightContext))
         runInEdtAndWait {
             projectRule.fixture.editor.caretModel.moveToOffset(javaTestContext.length - 2)
         }
-        withCodeWhispererServiceInvokedAndWait {
-            val statesCaptor = argumentCaptor<InvocationContext>()
-            verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any())
-            val states = statesCaptor.lastValue
+        withCodeWhispererServiceInvokedAndWait { states ->
             val recommendation = states.recommendationContext.details[0].reformatted.content()
             val editor = projectRule.fixture.editor
             val expectedContext = buildContextWithRecommendation(recommendation)
-            runInEdtAndWait {
-                val startOffset = editor.caretModel.offset
-                typing.forEachIndexed { index, char ->
-                    if (index < editor.caretModel.offset - startOffset) return@forEachIndexed
-                    projectRule.fixture.type(char)
-                }
-                popupManagerSpy.popupComponents.acceptButton.doClick()
+            val startOffset = editor.caretModel.offset
+            typing.forEachIndexed { index, char ->
+                if (index < editor.caretModel.offset - startOffset) return@forEachIndexed
+                projectRule.fixture.type(char)
             }
-            assertThat(projectRule.fixture.editor.document.text).isEqualTo(expectedContext)
+            acceptHelper(useKeyboard)
+            assertThat(editor.document.text).isEqualTo(expectedContext)
+        }
+    }
+
+    private fun acceptHelper(useKeyboard: Boolean) {
+        if (useKeyboard) {
+            EditorActionManager.getInstance().getActionHandler(IdeActions.ACTION_EDITOR_TAB)
+                .execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+        } else {
+            popupManagerSpy.popupComponents.acceptButton.doClick()
         }
     }
 

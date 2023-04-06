@@ -1,7 +1,7 @@
 version: 0.2
 
-#cache:
-#  paths:
+cache:
+  paths:
 #    - '/root/.gradle/caches/**/*'
 #    - '/root/.gradle/wrapper/**/*'
 
@@ -18,23 +18,23 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: corretto11
-      dotnet: 3.1
-
     commands:
+      - dnf install -y marco mate-media
       - startDesktop.sh
 
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
+      - export PATH="$PATH:$HOME/.dotnet/tools"
+      - dotnet codeartifact-creds install
 
   build:
     commands:
       - |
         if [ "$CODEARTIFACT_DOMAIN_NAME" ] && [ "$CODEARTIFACT_REPO_NAME" ]; then
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
+          CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text) 
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
@@ -66,8 +66,8 @@ phases:
       - VCS_COMMIT_ID="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
       - CI_BUILD_URL=$(echo $CODEBUILD_BUILD_URL | sed 's/#/%23/g') # Encode `#` in the URL because otherwise the url is clipped in the Codecov.io site
       - CI_BUILD_ID="${CODEBUILD_BUILD_ID}"
-      - test -n "$CODE_COV_TOKEN" && curl -s https://codecov.io/bash > codecov.sh || true # this sometimes times out but we don't want to fail the build
-      - test -n "$CODE_COV_TOKEN" && test -n "$CODEBUILD_BUILD_SUCCEEDING" && bash ./codecov.sh -t $CODE_COV_TOKEN -F uitest || true
+      - test -n "$CODE_COV_TOKEN" && curl -Os https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov || true # this sometimes times out but we don't want to fail the build
+      - test -n "$CODE_COV_TOKEN" && test -n "$CODEBUILD_BUILD_SUCCEEDING" && ./codecov -t $CODE_COV_TOKEN -F uitest || true
 
 reports:
   ui-test:

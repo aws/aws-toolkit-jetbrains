@@ -3,8 +3,9 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -14,18 +15,16 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
-import com.intellij.ui.components.JBLabel
 import com.intellij.util.EventDispatcher
-import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.BOTH
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.CREDENTIALS
+import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.NONE
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode.REGIONS
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder.Companion.connectionSettingsMenuBuilder
+import software.aws.toolkits.jetbrains.ui.ActionPopupComboLogic
 import software.aws.toolkits.resources.message
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.event.ChangeEvent
 import javax.swing.event.ChangeListener
@@ -34,6 +33,7 @@ import javax.swing.event.ChangeListener
  * Determine what settings the settings selector is capable of changing
  */
 enum class ChangeSettingsMode(val showRegions: Boolean, val showCredentials: Boolean) {
+    NONE(false, false),
     CREDENTIALS(false, true),
     REGIONS(true, false),
     BOTH(true, true)
@@ -45,21 +45,22 @@ enum class ChangeSettingsMode(val showRegions: Boolean, val showCredentials: Boo
  * @see ProjectLevelSettingSelector
  * @see SettingsSelectorComboBoxAction
  */
-abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMode) {
+abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMode) : ActionPopupComboLogic {
     private val listeners by lazy {
         EventDispatcher.create(ChangeListener::class.java)
     }
 
-    fun displayValue(): String = when (menuMode) {
+    override fun displayValue(): String = when (menuMode) {
         CREDENTIALS -> credentialsDisplay()
         REGIONS -> regionDisplay()
         BOTH -> "${credentialsDisplay()}@${regionDisplay()}"
+        NONE -> ""
     }
 
-    fun tooltip(): String? = when (menuMode) {
+    override fun tooltip(): String? = when (menuMode) {
         CREDENTIALS -> credentialsTooltip()
         REGIONS -> regionTooltip()
-        BOTH -> null
+        NONE, BOTH -> null
     }
 
     private fun regionDisplay() = currentRegion()?.id ?: message("settings.regions.none_selected")
@@ -104,8 +105,12 @@ abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMod
 
     protected open fun customizeSelectionMenu(builder: ConnectionSettingsMenuBuilder) {}
 
-    fun addChangeListener(changeListener: ChangeListener) {
+    override fun addChangeListener(changeListener: ChangeListener) {
         listeners.addListener(changeListener)
+    }
+
+    override fun showPopup(sourceComponent: JComponent) {
+        createPopup(DataManager.getInstance().getDataContext(sourceComponent)).showUnderneathOf(sourceComponent)
     }
 }
 
@@ -116,9 +121,17 @@ abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMod
 class LocalSettingsSelector(initialRegion: AwsRegion? = null, initialCredentialIdentifier: CredentialIdentifier? = null, settingsMode: ChangeSettingsMode) :
     SettingsSelectorLogicBase(settingsMode) {
     var currentRegion: AwsRegion? = initialRegion
-        private set
+        set(value) {
+            if (field == value) return
+            field = value
+            value?.let { onRegionChange(it) }
+        }
     var currentCredentials: CredentialIdentifier? = initialCredentialIdentifier
-        private set
+        set(value) {
+            if (field == value) return
+            field = value
+            value?.let { onCredentialChange(it) }
+        }
 
     override fun currentRegion(): AwsRegion? = currentRegion
 
@@ -136,7 +149,7 @@ class LocalSettingsSelector(initialRegion: AwsRegion? = null, initialCredentialI
 /**
  * Version of a [SettingsSelectorLogicBase] that stores the settings at the project level.
  */
-class ProjectLevelSettingSelector(private val project: Project, settingsMode: ChangeSettingsMode) : SettingsSelectorLogicBase(settingsMode) {
+open class ProjectLevelSettingSelector(private val project: Project, settingsMode: ChangeSettingsMode) : SettingsSelectorLogicBase(settingsMode) {
     override fun currentRegion(): AwsRegion? = AwsConnectionManager.getInstance(project).selectedRegion
 
     override fun onRegionChange(region: AwsRegion) {
@@ -151,6 +164,47 @@ class ProjectLevelSettingSelector(private val project: Project, settingsMode: Ch
 
     override fun customizeSelectionMenu(builder: ConnectionSettingsMenuBuilder) {
         builder.withRecentChoices(project)
+        builder.withIndividualIdentityActions(project)
+    }
+}
+
+class ToolkitConnectionComboBoxAction(private val project: Project) : ComboBoxAction(), DumbAware {
+    private val logic = object : ProjectLevelSettingSelector(project, CREDENTIALS) {
+        override fun currentCredentials(): CredentialIdentifier? {
+            val active = ToolkitConnectionManager.getInstance(project).activeConnection()
+            if (active is AwsConnectionManagerConnection) {
+                return super.currentCredentials()
+            }
+
+            return null
+        }
+
+        override fun onCredentialChange(identifier: CredentialIdentifier) {
+            super.onCredentialChange(identifier)
+            val connectionManager = ToolkitConnectionManager.getInstance(project)
+            connectionManager.switchConnection(AwsConnectionManagerConnection(project))
+        }
+
+        override fun customizeSelectionMenu(builder: ConnectionSettingsMenuBuilder) {
+            super.customizeSelectionMenu(builder)
+            builder.withIndividualIdentitySettings(project)
+        }
+    }
+
+    override fun createPopupActionGroup(button: JComponent?) = logic.selectionMenuActions()
+
+    override fun update(e: AnActionEvent) {
+        val active = ToolkitConnectionManager.getInstance(project).activeConnection()
+        if (active is AwsConnectionManagerConnection) {
+            e.presentation.text = logic.displayValue()
+            e.presentation.description = logic.tooltip()
+        } else {
+            e.presentation.text = active?.label?.let {
+                "Connected with $it"
+            } ?: message("settings.credentials.none_selected")
+
+            e.presentation.description = null
+        }
     }
 }
 
@@ -169,34 +223,32 @@ class SettingsSelectorComboBoxAction(private val selectorLogic: SettingsSelector
     }
 }
 
-class SettingsSelectorComboLabel(private val selectorLogic: SettingsSelectorLogicBase) : BorderLayoutPanel() {
-    private val label = JBLabel()
-
-    init {
-        val arrowLabel = JBLabel(AllIcons.General.ArrowDown)
-        addToCenter(label)
-        addToRight(arrowLabel)
-
-        val clickAdapter = object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                showPopup()
-            }
-        }
-        label.addMouseListener(clickAdapter)
-        arrowLabel.addMouseListener(clickAdapter)
-        selectorLogic.addChangeListener {
-            updateText()
-        }
-
-        updateText()
+class CredsComboBoxActionGroup(private val project: Project) : DefaultActionGroup() {
+    private val toolkitConnectionAction = ToolkitConnectionComboBoxAction(project)
+    private val profileRegionSelectorGroup: Array<AnAction> by lazy {
+        arrayOf(
+            toolkitConnectionAction,
+            SettingsSelectorComboBoxAction(ProjectLevelSettingSelector(project, ChangeSettingsMode.REGIONS))
+        )
     }
 
-    private fun showPopup() {
-        selectorLogic.createPopup(DataManager.getInstance().getDataContext(this)).showUnderneathOf(this)
+    private val ssoSelectorGroup: Array<AnAction> by lazy {
+        arrayOf(
+            toolkitConnectionAction
+        )
     }
 
-    private fun updateText() {
-        label.text = selectorLogic.displayValue()
-        label.toolTipText = selectorLogic.tooltip()
+    override fun getChildren(e: AnActionEvent?): Array<AnAction> {
+        val activeConnection = ToolkitConnectionManager.getInstance(project).activeConnection()
+
+        return if (activeConnection is AwsBearerTokenConnection) {
+            ssoSelectorGroup
+        } else if (activeConnection == null) {
+            arrayOf(
+                ActionManager.getInstance().getAction("aws.toolkit.toolwindow.explorer.newConnection")
+            )
+        } else {
+            profileRegionSelectorGroup
+        }
     }
 }

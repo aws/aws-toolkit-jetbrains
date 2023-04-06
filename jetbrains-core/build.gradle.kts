@@ -1,9 +1,17 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.isCi
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
+
+val toolkitVersion: String by project
+val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
     id("toolkit-kotlin-conventions")
@@ -44,9 +52,59 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
 
 tasks.jar {
     dependsOn(changelog)
-    archiveBaseName.set("aws-intellij-toolkit-core")
     from(changelog) {
         into("META-INF")
+    }
+}
+
+val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
+    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
+    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
+
+    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
+    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+}
+
+val gatewayArtifacts by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    // share same dependencies as default configuration
+    extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
+}
+
+val gatewayJar = tasks.create<Jar>("gatewayJar") {
+    dependsOn(tasks.instrumentedJar)
+
+    archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
+    from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
+        exclude("**/plugin.xml")
+        exclude("**/plugin-intellij.xml")
+        exclude("**/inactive")
+    }
+
+    from(gatewayPluginXml) {
+        into("META-INF")
+    }
+
+    val pluginGateway = sourceSets.main.get().resources.first { it.name == "plugin-gateway.xml" }
+    from(pluginGateway) {
+        into("META-INF")
+    }
+}
+
+artifacts {
+    add("gatewayArtifacts", gatewayJar)
+}
+
+val codewhispererReadmeAssets = tasks.register<Sync>("codewhispererReadmeAssets") {
+    from("${project.projectDir}/assets")
+    into("$buildDir/assets")
+}
+
+tasks.prepareSandbox {
+    dependsOn(codewhispererReadmeAssets)
+    from(codewhispererReadmeAssets) {
+        into("aws-toolkit-jetbrains/assets")
     }
 }
 
@@ -90,4 +148,13 @@ dependencies {
     testImplementation(libs.wiremock)
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
+}
+
+// fix implicit dependency on generated source
+tasks.withType<Detekt>() {
+    dependsOn(generateTelemetry)
+}
+
+tasks.withType<DetektCreateBaselineTask>() {
+    dependsOn(generateTelemetry)
 }

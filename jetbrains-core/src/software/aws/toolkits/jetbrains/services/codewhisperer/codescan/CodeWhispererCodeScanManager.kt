@@ -20,6 +20,7 @@ import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.MarkupModel
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
@@ -28,7 +29,9 @@ import com.intellij.refactoring.suggested.range
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.treeStructure.Tree
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
@@ -41,15 +44,19 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.overlaps
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
@@ -59,7 +66,7 @@ import javax.swing.Icon
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
-internal class CodeWhispererCodeScanManager(val project: Project) {
+class CodeWhispererCodeScanManager(val project: Project) {
     private val codeScanResultsPanel by lazy {
         CodeWhispererCodeScanResultsView(project)
     }
@@ -100,6 +107,12 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
     fun runCodeScan() {
         // Return if a scan is already in progress.
         if (isCodeScanInProgress.getAndSet(true)) return
+        if (CodeWhispererUtil.isConnectionExpired(project)) {
+            promptReAuth(project) {
+                isCodeScanInProgress.set(false)
+            }
+            return
+        }
         // Prepare for a code scan
         beforeCodeScan()
         // launch code scan coroutine
@@ -110,6 +123,8 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
         var codeScanStatus: Result = Result.Failed
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
+        var getProjectSize: Deferred<Long?> = async { null }
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         try {
             val file = FileEditorManager.getInstance(project).selectedEditor?.file
                 ?: noFileOpenError()
@@ -133,6 +148,9 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
                 }
                 LOG.info { "Security scan completed." }
             }
+            getProjectSize = async {
+                codeScanSessionConfig.getTotalProjectSizeInBytes()
+            }
         } catch (e: Exception) {
             isCodeScanInProgress.set(false)
             val errorMessage = handleException(e)
@@ -140,14 +158,16 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
         } finally {
             // After code scan
             afterCodeScan()
-            val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
-            CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
-                CodeScanTelemetryEvent(codeScanResponseContext, duration, codeScanStatus)
-            )
+            launch {
+                val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
+                CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
+                    CodeScanTelemetryEvent(codeScanResponseContext, duration, codeScanStatus, getProjectSize.await()?.toDouble(), connection)
+                )
+            }
         }
     }
 
-    private fun handleException(e: Exception): String {
+    fun handleException(e: Exception): String {
         val errorMessage = when (e) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
             is CodeWhispererCodeScanException -> e.message
@@ -290,16 +310,17 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun beforeCodeScan() {
         // Refresh CodeWhisperer Explorer tree node to reflect scan in progress.
-        CodeWhispererExplorerActionManager.getInstance().refreshCodeWhispererNode(project)
+        project.refreshDevToolTree()
         addCodeScanUI(setSelected = true)
         // Show in progress indicator
         codeScanResultsPanel.showInProgressIndicator()
+        (FileDocumentManagerImpl.getInstance() as FileDocumentManagerImpl).saveAllDocuments(false)
         LOG.info { "Starting security scan on package ${project.name}..." }
     }
 
     private fun afterCodeScan() {
         isCodeScanInProgress.set(false)
-        CodeWhispererExplorerActionManager.getInstance().refreshCodeWhispererNode(project)
+        project.refreshDevToolTree()
     }
 
     /**
@@ -335,7 +356,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
         return codeScanTreeNodeRoot
     }
 
-    private suspend fun renderResponseOnUIThread(issues: List<CodeWhispererCodeScanIssue>) {
+    suspend fun renderResponseOnUIThread(issues: List<CodeWhispererCodeScanIssue>) {
         withContext(getCoroutineUiContext()) {
             val root = createCodeScanIssuesTree(issues)
             val codeScanTreeModel = CodeWhispererCodeScanTreeModel(root)
@@ -366,7 +387,7 @@ internal class CodeWhispererCodeScanManager(val project: Project) {
  * @param description is shown in the tooltip of the scan node and also shown when the mouse
  * is hovered over the highlighted text in the editor.
  */
-internal data class CodeWhispererCodeScanIssue(
+data class CodeWhispererCodeScanIssue(
     val project: Project,
     val file: VirtualFile,
     val startLine: Int,

@@ -6,12 +6,14 @@ package software.aws.toolkits.jetbrains.core
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import com.intellij.testFramework.ThreadTracker
+import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.replaceService
 import org.junit.rules.ExternalResource
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.regions.Region
+import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.clients.SdkClientProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -33,9 +35,11 @@ class MockClientManager : AwsClientManager() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : SdkClient> constructAwsClient(
         sdkClass: KClass<T>,
-        credProvider: AwsCredentialsProvider,
+        credProvider: AwsCredentialsProvider?,
+        tokenProvider: SdkTokenProvider?,
         region: Region,
-        endpointOverride: String?
+        endpointOverride: String?,
+        clientCustomizer: ToolkitClientCustomizer?
     ): T = mockClients[Key(sdkClass, region.id(), credProvider)] as? T
         ?: mockClients[Key(sdkClass)] as? T
         ?: throw IllegalStateException("No mock registered for $sdkClass")
@@ -72,7 +76,7 @@ class MockClientManager : AwsClientManager() {
             // Make a new http client that is scoped to the disposable and replace the global one with it, otherwise the apache connection reaper thread
             // is detected as leaking threads and fails the tests
             // TODO: We aren't closing cred providers and sdks when they are removed, we need to see what ramifications that has
-            ThreadTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "idle-connection-reaper")
+            ThreadLeakTracker.longRunningThreadCreated(disposable, "idle-connection-reaper")
 
             val httpClient = AwsSdkClient()
             ApplicationManager.getApplication().replaceService(SdkClientProvider::class.java, httpClient, disposable)

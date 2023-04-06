@@ -43,7 +43,6 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data(): Collection<Array<Runtime>> = listOf(
-//            arrayOf(Runtime.PYTHON3_6),
             arrayOf(Runtime.PYTHON3_7),
             arrayOf(Runtime.PYTHON3_8),
             arrayOf(Runtime.PYTHON3_9)
@@ -345,7 +344,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
-        expectedOutput = input.toUpperCase()
+        expectedOutput = input.uppercase()
     )
 
     @Test
@@ -356,7 +355,7 @@ class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runt
         runtime = LambdaRuntime.fromValue(runtime)!!,
         mockCredentialsId = mockId,
         input = input,
-        expectedOutput = input.toUpperCase(),
+        expectedOutput = input.uppercase(),
         addBreakpoint = { projectRule.addBreakpoint() }
     )
 

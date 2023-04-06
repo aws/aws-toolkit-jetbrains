@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.toolkittelemetry.ToolkitTelemetryClient
 import software.amazon.awssdk.services.toolkittelemetry.model.MetadataEntry
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricDatum
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.core.clients.nullDefaultProfileFile
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -21,8 +22,13 @@ import kotlin.streams.toList
 
 class DefaultTelemetryPublisher(
     private val clientMetadata: ClientMetadata = ClientMetadata.DEFAULT_METADATA,
-    private val client: ToolkitTelemetryClient = createDefaultTelemetryClient()
+    private val clientProvider: () -> ToolkitTelemetryClient
 ) : TelemetryPublisher {
+    constructor() : this(clientProvider = { createDefaultTelemetryClient() })
+
+    private val lazyClient = lazy { clientProvider() }
+    private val client by lazyClient
+
     override suspend fun publish(metricEvents: Collection<MetricEvent>) {
         withContext(getCoroutineBgContext()) {
             client.postMetrics {
@@ -88,7 +94,9 @@ class DefaultTelemetryPublisher(
         }
 
     override fun close() {
-        client.close()
+        if (lazyClient.isInitialized()) {
+            client.close()
+        }
     }
 
     private companion object {
@@ -106,11 +114,12 @@ class DefaultTelemetryPublisher(
                         .credentialsProvider(AnonymousCredentialsProvider.create())
                         .region(region)
                         .httpClient(sdkClient.sharedSdkClient())
+                        .nullDefaultProfileFile()
                         .build()
                 ),
                 region = region,
                 endpointOverride = Registry.get("aws.telemetry.endpoint").asString()
-            )
+            ) { _, _, _, _, clientOverrideConfiguration -> clientOverrideConfiguration.nullDefaultProfileFile() }
         }
     }
 }

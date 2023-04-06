@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.execution
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.configurations.RunnerSettings
 import com.intellij.openapi.options.SettingsEditor
-import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.python.run.AbstractPythonRunConfiguration
 import com.jetbrains.python.run.PythonRunConfigurationExtension
 import org.jdom.Element
@@ -37,13 +36,13 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
 
     override fun getEditorTitle() = message("aws_connection.tab.label")
 
-    override fun <P : AbstractPythonRunConfiguration<*>?> createEditor(configuration: P): SettingsEditor<P>? = connectionSettingsEditor(
+    override fun <P : AbstractPythonRunConfiguration<*>> createEditor(configuration: P): SettingsEditor<P>? = connectionSettingsEditor(
         configuration
     )
 
     override fun validateConfiguration(configuration: AbstractPythonRunConfiguration<*>, isExecution: Boolean) {
-        delegate.validateConfiguration(configuration, isExecution)
+        delegate.validateConfiguration(configuration)
     }
 
-    private fun isEnabled() = PythonAwsConnectionExperiment.isEnabled() && !Registry.`is`("python.use.targets.api", false)
+    private fun isEnabled() = PythonAwsConnectionExperiment.isEnabled()
 }

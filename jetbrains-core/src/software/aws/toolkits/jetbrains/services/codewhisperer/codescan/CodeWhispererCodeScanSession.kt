@@ -10,18 +10,22 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.TimeoutUtil.sleep
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.time.withTimeout
 import org.apache.commons.codec.digest.DigestUtils
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhisperer.model.ArtifactType
 import software.amazon.awssdk.services.codewhisperer.model.CodeScanFindingsSchema
 import software.amazon.awssdk.services.codewhisperer.model.CodeScanStatus
+import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
+import software.amazon.awssdk.services.codewhisperer.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhisperer.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
 import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
+import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
 import software.amazon.awssdk.utils.IoUtils
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -30,7 +34,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanServiceInvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
@@ -48,10 +52,11 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 
-internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
+class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     private val clientToken: UUID = UUID.randomUUID()
     private val urlResponse = mutableMapOf<ArtifactType, CreateUploadUrlResponse>()
-    private val codewhispererClient: CodeWhispererClient = CodeWhispererClientManager.getInstance().getClient()
+
+    private val clientAdaptor = CodeWhispererClientAdaptor.getInstance(sessionContext.project)
 
     private fun now() = Instant.now().toEpochMilli()
 
@@ -132,8 +137,6 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
 
-            LOG.debug { "Job ID for create security scan job: $jobId" }
-
             // 5. Keep polling the API GetCodeScan to wait for results for a given timeout period.
             waitUntil(
                 succeedOn = { codeScanStatus == CodeScanStatus.COMPLETED },
@@ -164,7 +167,7 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
             var listCodeScanFindingsResponse = listCodeScanFindings(jobId)
             LOG.debug {
                 "Successfully fetched results for security scan with " +
-                    "job id: $jobId, request id: ${listCodeScanFindingsResponse.responseMetadata().requestId()}"
+                    "request id: ${listCodeScanFindingsResponse.responseMetadata().requestId()}"
             }
             val serviceInvocationDuration = now() - serviceInvocationStartTime
             codeScanResponseContext = codeScanResponseContext.copy(
@@ -206,10 +209,12 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
         throw e
     }
 
-    fun createUploadUrl(md5Content: String, artifactType: String): CreateUploadUrlResponse = codewhispererClient.createUploadUrl {
-        it.contentMd5(md5Content)
-        it.artifactType(artifactType)
-    }
+    fun createUploadUrl(md5Content: String, artifactType: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
+        CreateUploadUrlRequest.builder()
+            .contentMd5(md5Content)
+            .artifactType(artifactType)
+            .build()
+    )
 
     @Throws(IOException::class)
     fun uploadArtifactTOS3(url: String, fileToUpload: File, md5: String) {
@@ -230,11 +235,13 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
         ).filter { (_, v) -> v != null }
 
         try {
-            return codewhispererClient.createCodeScan {
-                it.clientToken(clientToken.toString())
-                it.programmingLanguage { builder -> builder.languageName(language) }
-                it.artifacts(artifactsMap)
-            }
+            return clientAdaptor.createCodeScan(
+                CreateCodeScanRequest.builder()
+                    .clientToken(clientToken.toString())
+                    .programmingLanguage { it.languageName(language) }
+                    .artifacts(artifactsMap)
+                    .build()
+            )
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
             throw e
@@ -242,17 +249,23 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
     }
 
     fun getCodeScan(jobId: String): GetCodeScanResponse = try {
-        codewhispererClient.getCodeScan { it.jobId(jobId) }
+        clientAdaptor.getCodeScan(
+            GetCodeScanRequest.builder()
+                .jobId(jobId)
+                .build()
+        )
     } catch (e: Exception) {
         LOG.debug { "Getting security scan failed: ${e.message}" }
         throw e
     }
 
     fun listCodeScanFindings(jobId: String): ListCodeScanFindingsResponse = try {
-        codewhispererClient.listCodeScanFindings {
-            it.jobId(jobId)
-            it.codeScanFindingsSchema(CodeScanFindingsSchema.CODESCAN_FINDINGS_1_0)
-        }
+        clientAdaptor.listCodeScanFindings(
+            ListCodeScanFindingsRequest.builder()
+                .jobId(jobId)
+                .codeScanFindingsSchema(CodeScanFindingsSchema.CODESCAN_FINDINGS_1_0)
+                .build()
+        )
     } catch (e: Exception) {
         LOG.debug { "Listing security scan failed: ${e.message}" }
         throw e
@@ -266,9 +279,13 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
         LOG.debug { "Total code scan issues returned from service: ${scanRecommendations.size}" }
         return scanRecommendations.mapNotNull {
             val file = try {
-                LocalFileSystem.getInstance().findFileByIoFile(
-                    Path.of(it.filePath).toFile()
-                )
+                val path =
+                    if (SystemInfo.isWindows) {
+                        Path.of(it.filePath)
+                    } else {
+                        Path.of(File.separator, it.filePath)
+                    }
+                LocalFileSystem.getInstance().findFileByIoFile(path.toFile())
             } catch (e: Exception) {
                 LOG.debug { "Cannot find file at location ${it.filePath}" }
                 null
@@ -315,7 +332,7 @@ internal class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionC
     }
 }
 
-internal sealed class CodeScanResponse {
+sealed class CodeScanResponse {
     abstract val issues: List<CodeWhispererCodeScanIssue>
     abstract val responseContext: CodeScanResponseContext
 
@@ -339,9 +356,9 @@ internal data class CodeScanRecommendation(
     val description: Description
 )
 
-internal data class Description(val text: String, val markdown: String)
+data class Description(val text: String, val markdown: String)
 
-internal data class CodeScanSessionContext(
+data class CodeScanSessionContext(
     val project: Project,
     val sessionConfig: CodeScanSessionConfig
 )

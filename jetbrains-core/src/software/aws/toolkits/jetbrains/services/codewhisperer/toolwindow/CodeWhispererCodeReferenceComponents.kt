@@ -9,6 +9,10 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
 import software.amazon.awssdk.services.codewhisperer.model.Reference
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addVerticalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -60,6 +64,34 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
             text = message("codewhisperer.toolwindow.entry.prefix", LocalTime.now().format(codeReferenceTimeFormatter))
         }.asCodeReferencePanelFont()
 
+    init {
+        repaint(project)
+
+        // set the reference panel text different for SSO users vs AWS Builder ID / Accless users
+        project.messageBus.connect().subscribe(
+            ToolkitConnectionManagerListener.TOPIC,
+            object : ToolkitConnectionManagerListener {
+                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    repaint(project)
+                }
+            }
+        )
+    }
+
+    // TODO: figure out how to have a different view for SSO user in a cleaner way, maybe have 2 sets of components stored in [ReferenceManager]?
+    private fun repaint(project: Project) {
+        val loginType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)
+        settingsLabelPrefixText as JLabel
+        settingsLabelLink as ActionLink
+        if (loginType == CodeWhispererLoginType.SSO) {
+            settingsLabelPrefixText.text = message("codewhisperer.toolwindow.settings.prefix_sso")
+            settingsLabelLink.isVisible = false
+        } else {
+            settingsLabelPrefixText.text = message("codewhisperer.toolwindow.settings.prefix")
+            settingsLabelLink.isVisible = true
+        }
+    }
+
     private fun licenseNameLink(licenseName: String) = ActionLink(licenseName) {
         BrowserUtil.browse(CodeWhispererLicenseInfoManager.getInstance().getLicenseLink(licenseName))
     }.asCodeReferencePanelFont()
@@ -68,7 +100,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         BrowserUtil.browse(url)
     }.asCodeReferencePanelFont()
 
-    private fun acceptRecommendationSuffixText(repo: String, path: String?, line: String) = JLabel().apply {
+    private fun acceptRecommendationSuffixText(path: String?, line: String) = JLabel().apply {
         val choice = if (path != null) 1 else 0
         text = message("codewhisperer.toolwindow.entry.suffix", path ?: "", choice, line)
     }.asCodeReferencePanelFont()
@@ -81,16 +113,26 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         // if url to source package/repo is missing, the UX remains the same as we have for now
         // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
         if (ref.url().isNullOrEmpty()) {
-            add(licenseNameLink(ref.licenseName()), inlineLabelConstraints)
+            add(
+                licenseNameLink(ref.licenseName()).apply {
+                    font = font.deriveFont(Font.ITALIC + Font.BOLD)
+                },
+                inlineLabelConstraints
+            )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             add(JLabel(ref.repository()), inlineLabelConstraints)
         } else {
-            add(JLabel(ref.licenseName()), inlineLabelConstraints)
+            add(
+                JLabel(ref.licenseName()).apply {
+                    font = font.deriveFont(Font.ITALIC + Font.BOLD)
+                },
+                inlineLabelConstraints
+            )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             add(repoNameLink(ref.repository(), ref.url()), inlineLabelConstraints)
         }
 
-        add(acceptRecommendationSuffixText(ref.repository(), relativePath, lineNums), inlineLabelConstraints)
+        add(acceptRecommendationSuffixText(relativePath, lineNums), inlineLabelConstraints)
         addHorizontalGlue()
     }
 

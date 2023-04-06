@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.eclipse.jgit.api.Git
+import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
+import org.jetbrains.intellij.tasks.PatchPluginXmlTask
 import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import org.jetbrains.intellij.utils.OpenedPackages
+import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -84,40 +88,23 @@ intellij {
     plugins.set(toolkitIntelliJ.productProfile().map { it.plugins.toMutableList() })
 
     downloadSources.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC && !project.isCi() })
-    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it != IdeFlavor.RD })
+    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC || it == IdeFlavor.IU })
 }
 
 tasks.jar {
     archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "aws-toolkit-jetbrains-$it" })
 }
 
-tasks.patchPluginXml {
+tasks.withType<PatchPluginXmlTask>().all {
     sinceBuild.set(toolkitIntelliJ.ideProfile().map { it.sinceVersion })
     untilBuild.set(toolkitIntelliJ.ideProfile().map { it.untilVersion })
 }
 
 // attach the current commit hash on local builds
 if (!project.isCi()){
-    val buildMetadata = try {
-        val git = Git.open(project.rootDir)
-        val currentShortHash = git.repository.findRef("HEAD").objectId.abbreviate(7).name()
-        val isDirty = git.status().call().hasUncommittedChanges()
-
-        buildString {
-            append(currentShortHash)
-
-            if (isDirty) {
-                append(".modified")
-            }
-        }
-    } catch(e: IOException) {
-        logger.warn("Could not determine current commit", e)
-
-        "unknownCommit"
-    }
-
-    tasks.patchPluginXml {
-        version.set("${version.get()}+$buildMetadata")
+    val buildMetadata = buildMetadata()
+    tasks.withType<PatchPluginXmlTask>().all {
+        version.set(intellij.version.map { "$it+$buildMetadata" })
     }
 
     tasks.buildPlugin {
@@ -130,6 +117,19 @@ tasks.buildSearchableOptions {
     enabled = false
 }
 
+// https://github.com/JetBrains/gradle-intellij-plugin/blob/829786d5d196ab942d7e6eb3e472ac0af776d3fa/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L315
+val openedPackages = OpenedPackages + listOf(
+    // very noisy in UI tests
+    "--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED",
+) + with(OperatingSystem.current()) {
+    when {
+        isWindows -> listOf(
+            "--add-opens=java.base/sun.nio.fs=ALL-UNNAMED",
+        )
+        else -> emptyList()
+    }
+}
+
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
@@ -138,52 +138,7 @@ tasks.withType<Test>().all {
     systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
 
-    // https://github.com/JetBrains/gradle-intellij-plugin/blob/f87d997479e882546dd6005240e3895c1a0c2333/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L314
-    jvmArgs(
-        listOf(
-            "--add-opens=java.base/java.io=ALL-UNNAMED",
-            "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-            "--add-opens=java.base/java.lang=ALL-UNNAMED",
-            "--add-opens=java.base/java.net=ALL-UNNAMED",
-            "--add-opens=java.base/java.nio=ALL-UNNAMED",
-            "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
-            "--add-opens=java.base/java.text=ALL-UNNAMED",
-            "--add-opens=java.base/java.time=ALL-UNNAMED",
-            "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-            "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-            "--add-opens=java.base/java.util=ALL-UNNAMED",
-            "--add-opens=java.base/jdk.internal.vm=ALL-UNNAMED",
-            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-            "--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED",
-            "--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED",
-            "--add-opens=java.desktop/com.apple.laf=ALL-UNNAMED",
-//            "--add-opens=java.desktop/com.sun.java.swing.plaf.gtk=ALL-UNNAMED",
-            "--add-opens=java.desktop/java.awt.dnd.peer=ALL-UNNAMED",
-            "--add-opens=java.desktop/java.awt.event=ALL-UNNAMED",
-            "--add-opens=java.desktop/java.awt.image=ALL-UNNAMED",
-            "--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED",
-            "--add-opens=java.desktop/java.awt=ALL-UNNAMED",
-            "--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED",
-            "--add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED",
-            "--add-opens=java.desktop/javax.swing=ALL-UNNAMED",
-//            "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.awt.datatransfer=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.awt.image=ALL-UNNAMED",
-//            "--add-opens=java.desktop/sun.awt.windows=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.font=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.java2d=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED",
-            "--add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED",
-            "--add-opens=jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED",
-            "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-            "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED",
-            "--add-opens=java.base/sun.security.util=ALL-UNNAMED",
-        )
-    )
+    jvmArgs(openedPackages)
 
     useJUnitPlatform()
 }
@@ -222,7 +177,12 @@ ciOnly {
 }
 tasks.withType<RunIdeForUiTestTask>().all {
     systemProperty("robot-server.port", remoteRobotPort)
+    // mac magic
+    systemProperty("ide.mac.message.dialogs.as.sheets", "false")
+    systemProperty("jbScreenMenuBar.enabled", "false")
+    systemProperty("apple.laf.useScreenMenuBar", "false")
     systemProperty("ide.mac.file.chooser.native", "false")
+
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
@@ -241,9 +201,18 @@ tasks.withType<RunIdeForUiTestTask>().all {
         suspend.set(false)
     }
 
+    jvmArgs(openedPackages)
+
     ciOnly {
         configure<JacocoTaskExtension> {
+            // sync with testing-subplugin
+            // don't instrument sdk, icons, etc.
             includes = listOf("software.aws.toolkits.*")
+            excludes = listOf("software.aws.toolkits.telemetry.*")
+
+            // 221+ uses a custom classloader and jacoco fails to find classes
+            isIncludeNoLocationClasses = true
+
             output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
         }
     }

@@ -7,26 +7,49 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: openjdk11
-
     commands:
       - |
-        if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
-            choco install -y --no-progress codecov
+        $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
+        Write-Host ('Downloading from {0}' -f $url);
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+        Invoke-WebRequest -Uri $url -OutFile 'corretto_jdk_build.msi';
+        Start-Process 'corretto_jdk_build.msi' -PassThru | Wait-Process
+      - |
+        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
+          ls $_ | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
         }
+        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
+      - |
+        if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+            Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
+        }
+      - dotnet --list-sdks
+      - |
+        Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1';
+        ./dotnet-install.ps1 -Verbose -InstallDir 'C:\Program Files\dotnet' -Channel '5.0'
+      - |
+        $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
+        $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
+        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
+        dotnet codeartifact-creds install
       - dotnet --list-sdks
 
   build:
     commands:
       - |
+        # See https://github.com/NuGet/NuGet.Client/pull/4259
+        $Env:NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY = "3,1000"
+
+        $Env:JAVA_HOME = $JAVA_HOME
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
+          $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
           $Env:CODEARTIFACT_AUTH_TOKEN=aws codeartifact get-authorization-token --domain $Env:CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600
         }
 
          # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :jetbrains-rider:compileTestKotlin -x :jetbrains-rider:test --info --console plain
+        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :jetbrains-rider:compileTestKotlin -x :jetbrains-rider:test --info --console plain --continue
         if ($LastExitCode -ne 0) {
           Write-Host "Command failed with exit code $LastExitCode"
           exit -1
@@ -60,8 +83,8 @@ phases:
           $env:VCS_COMMIT_ID=$Env:CODEBUILD_RESOLVED_SOURCE_VERSION;
           $env:CI_BUILD_URL=[uri]::EscapeUriString($Env:CODEBUILD_BUILD_URL);
           $env:CI_BUILD_ID=$Env:CODEBUILD_BUILD_ID;
-          codecov -t $Env:CODE_COV_TOKEN `
-            --flag unittest `
+          .\codecov.exe -t $Env:CODE_COV_TOKEN `
+            --flags unittest `
             -f "build/reports/jacoco/coverageReport/coverageReport.xml" `
             -c $Env:CODEBUILD_RESOLVED_SOURCE_VERSION
         }

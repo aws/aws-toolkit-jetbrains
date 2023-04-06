@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.ecr.actions
 
 import com.intellij.docker.DockerCloudType
-import com.intellij.docker.DockerServerRuntimeInstance
 import com.intellij.docker.deploymentSource.DockerFileDeploymentSourceType
 import com.intellij.docker.dockerFile.DockerFileType
 import com.intellij.execution.ExecutionBundle
@@ -27,9 +26,12 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.applyToComponent
-import com.intellij.ui.layout.buttonGroup
 import com.intellij.ui.layout.listCellRenderer
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
@@ -44,6 +46,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.docker.DockerRuntimeFacade
 import software.aws.toolkits.jetbrains.core.docker.LocalImage
 import software.aws.toolkits.jetbrains.core.docker.ToolkitDockerAdapter
 import software.aws.toolkits.jetbrains.services.ecr.DockerRunConfiguration
@@ -65,13 +68,14 @@ import software.aws.toolkits.telemetry.EcrTelemetry
 import software.aws.toolkits.telemetry.Result
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
+import com.intellij.ui.dsl.builder.panel as panelv2
 
 class PushToRepositoryAction : EcrDockerAction() {
     override fun actionPerformed(selected: EcrRepositoryNode, e: AnActionEvent) {
         val project = e.getRequiredData(LangDataKeys.PROJECT)
         val client: EcrClient = project.awsClient()
         val scope = projectCoroutineScope(project)
-        val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync())
+        val dialog = PushToEcrDialog(project, selected.repository, scope.dockerServerRuntimeAsync(project))
         if (!dialog.showAndGet()) {
             // user cancelled; noop
             EcrTelemetry.deployImage(project, Result.Cancelled)
@@ -121,7 +125,7 @@ class PushToRepositoryAction : EcrDockerAction() {
 internal class PushToEcrDialog(
     private val project: Project,
     selectedRepository: Repository,
-    private val dockerServerRuntime: Deferred<DockerServerRuntimeInstance>
+    private val dockerRuntime: Deferred<DockerRuntimeFacade>
 ) : DialogWrapper(project, null, false, IdeModalityType.PROJECT) {
     private val coroutineScope = projectCoroutineScope(project)
     private val defaultTag = "latest"
@@ -147,13 +151,13 @@ internal class PushToEcrDialog(
         init()
 
         coroutineScope.launch {
-            val dockerAdapter = ToolkitDockerAdapter(project, dockerServerRuntime.await())
+            val dockerAdapter = ToolkitDockerAdapter(project, dockerRuntime.await())
             localImageRepoTags.add(dockerAdapter.getLocalImages())
             localImageRepoTags.update()
         }
     }
 
-    override fun createCenterPanel() = panel {
+    override fun createCenterPanel() = panelv2 {
         // valid tag is ascii letters, numbers, underscores, periods, or dashes
         // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
         val validTagRegex = "[a-zA-Z0-9_.-]{1,128}".toRegex()
@@ -161,41 +165,39 @@ internal class PushToEcrDialog(
         lateinit var fromLocalImageButton: JBRadioButton
         lateinit var fromDockerfileButton: JBRadioButton
 
-        buttonGroup(::type) {
+        buttonsGroup {
             row {
-                fromLocalImageButton = this@row.radioButton(message("ecr.push.type.local_image.label"), BuildType.LocalImage).component
-                fromDockerfileButton = this@row.radioButton(message("ecr.push.type.dockerfile.label"), BuildType.Dockerfile).component
+                fromLocalImageButton = radioButton(message("ecr.push.type.local_image.label"), BuildType.LocalImage).component
+                fromDockerfileButton = radioButton(message("ecr.push.type.dockerfile.label"), BuildType.Dockerfile).component
             }
-        }
+        }.bind(::type.toMutableProperty(), type = BuildType::class.java)
 
         val imageSelectorPanel = localImageSelectorPanel()
         val dockerfilePanel = dockerfileConfigurationSelectorPanel()
 
         row {
-            cell(isFullWidth = true) {
-                imageSelectorPanel(grow)
-                    .installOnParent { fromLocalImageButton.isSelected }
-                    .visibleIf(fromLocalImageButton.selected)
-                dockerfilePanel(grow)
-                    .installOnParent { fromDockerfileButton.isSelected }
-                    .visibleIf(fromDockerfileButton.selected)
-            }
+            cell(imageSelectorPanel)
+                .visibleIf(fromLocalImageButton.selected)
+                .installOnParent { fromLocalImageButton.isSelected }
+            cell(dockerfilePanel)
+                .visibleIf(fromDockerfileButton.selected)
+                .installOnParent { fromDockerfileButton.isSelected }
         }
 
         row(message("ecr.repo.label")) {
-            component(remoteRepos)
-                .growPolicy(GrowPolicy.MEDIUM_TEXT)
-                .withErrorOnApplyIf(message("loading_resource.still_loading")) { it.isLoading }
-                .withErrorOnApplyIf(message("ecr.repo.not_selected")) { it.selected() == null }
+            cell(remoteRepos)
+                .columns(COLUMNS_MEDIUM)
+                .errorOnApply(message("loading_resource.still_loading")) { it.isLoading }
+                .errorOnApply(message("ecr.repo.not_selected")) { it.selected() == null }
         }
 
         row(message("ecr.push.remoteTag")) {
-            textField(::remoteTag)
-                .constraints(grow)
+            textField()
+                .bindText(::remoteTag)
                 .also {
                     it.component.emptyText.text = defaultTag
                 }
-                .withErrorOnApplyIf(message("ecr.tag.invalid")) { it.text.isNotEmpty() && !it.text.matches(validTagRegex) }
+                .errorOnApply(message("ecr.tag.invalid")) { it.text.isNotEmpty() && !it.text.matches(validTagRegex) }
         }
     }
 
@@ -321,7 +323,7 @@ internal class PushToEcrDialog(
 
         return when (type.ordinal) {
             BuildType.LocalImage.ordinal -> ImageEcrPushRequest(
-                dockerServerRuntime.await(),
+                dockerRuntime.await(),
                 localImage?.imageId ?: throw IllegalStateException("image id was null"),
                 selectedRepo(),
                 tag

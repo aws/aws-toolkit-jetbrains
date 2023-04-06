@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -19,17 +18,9 @@ class PythonRuntimeGroupTest {
     private val sut = PythonRuntimeGroup()
 
     @Test
-    fun testRuntimeDetection36() {
-        val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.6.0"))
-
-        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_6)
-    }
-
-    @Test
     fun testRuntimeDetection37() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.7.0"))
+        projectRule.setModuleSdk(module, PyTestSdk("3.7.0"))
 
         assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_7)
     }
@@ -37,7 +28,7 @@ class PythonRuntimeGroupTest {
     @Test
     fun testRuntimeDetection38() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.8.0"))
+        projectRule.setModuleSdk(module, PyTestSdk("3.8.0"))
 
         assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_8)
     }
@@ -45,7 +36,7 @@ class PythonRuntimeGroupTest {
     @Test
     fun testRuntimeDetection39() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.9.0"))
+        projectRule.setModuleSdk(module, PyTestSdk("3.9.0"))
 
         assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_9)
     }

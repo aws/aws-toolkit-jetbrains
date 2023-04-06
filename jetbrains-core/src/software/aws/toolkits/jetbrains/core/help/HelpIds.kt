@@ -25,6 +25,10 @@ enum class HelpIds(shortId: String, val url: String) {
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"
     ),
+    EXPLORER_CREDS_HELP(
+        "explorerCredsHelp",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
+    ),
 
     // Lambda
     CREATE_FUNCTION_DIALOG(
@@ -94,10 +98,34 @@ enum class HelpIds(shortId: String, val url: String) {
         "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
     ),
 
+    // What is AWS Toolkit?
+    AWS_TOOLKIT_GETTING_STARTED(
+        "awsToolkitGettingStarted",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html"
+    ),
+
     // CodeWhisperer
     CODEWHISPERER_TOKEN(
         "CodeWhispererToken",
         CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
+    ),
+
+    // TODO: update this
+    CODEWHISPERER_LOGIN_YES_NO(
+        "CodeWhispererLoginYesNoDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+    ),
+
+    // TODO: update this
+    CODEWHISPERER_LOGIN_DIALOG(
+        "CodeWhispererLoginDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+    ),
+
+    // TODO: update this
+    TOOLKIT_ADD_CONNECTIONS_DIALOG(
+        "ToolkitAddConnectionsDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
     )
     ;
 

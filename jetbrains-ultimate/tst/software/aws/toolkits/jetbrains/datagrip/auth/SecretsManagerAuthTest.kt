@@ -4,11 +4,12 @@
 package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.database.dataSource.DataSourceSshTunnelConfiguration
 import com.intellij.database.dataSource.DatabaseConnectionInterceptor
 import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
+import io.mockk.every
+import io.mockk.mockkStatic
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -33,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRul
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
+import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 import kotlin.test.assertNotNull
 
 class SecretsManagerAuthTest {
@@ -204,7 +206,7 @@ class SecretsManagerAuthTest {
             on { driverClass } doReturn "org.postgresql.Driver"
             on { sshConfiguration } doAnswer {
                 if (usesSshTunnel) {
-                    DataSourceSshTunnelConfiguration(true, "config")
+                    mockDataSourceSshTunnelConfiguration()
                 } else {
                     null
                 }
@@ -234,7 +236,7 @@ class SecretsManagerAuthTest {
                 }
             }
         }
-        return mock {
+        return mock<DatabaseConnectionInterceptor.ProtoConnection> {
             val m = mutableMapOf<String, String>()
             var u = if (hasUrl) {
                 "jdbc:postgresql://${if (hasHost) dbHost else ""}${if (hasPort) ":$port" else ""}/dev"
@@ -242,11 +244,6 @@ class SecretsManagerAuthTest {
                 null
             }
             on { connectionPoint } doReturn dbConnectionPoint
-            on { runConfiguration } doAnswer {
-                mock {
-                    on { project } doAnswer { projectRule.project }
-                }
-            }
             on { connectionProperties } doReturn m
             on { getUrl() } doAnswer {
                 u
@@ -255,6 +252,11 @@ class SecretsManagerAuthTest {
                 u = it.arguments[0] as String
                 Unit
             }
+        }.also {
+            mockkStatic("software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapterKt")
+            every {
+                it.project()
+            } returns projectRule.project
         }
     }
 }

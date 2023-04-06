@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
-import com.jetbrains.rd.generator.gradle.RdGenTask
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -29,9 +30,9 @@ val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("toolkit-intellij-subplugin")
     id("toolkit-testing")
     id("toolkit-integration-testing")
+    id("toolkit-intellij-subplugin")
 }
 
 intellijToolkit {
@@ -49,7 +50,11 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":jetbrains-core"))
+    compileOnly(project(":jetbrains-core"))
+    runtimeOnly(project(":jetbrains-core", "instrumentedJar"))
+
+    testCompileOnly(project(":jetbrains-core"))
+    testRuntimeOnly(project(":jetbrains-core", "instrumentedJar"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
 }
 
@@ -58,7 +63,58 @@ dependencies {
  */
 
 // Not published to gradle plugin portal, use old syntax
-apply(plugin = "com.jetbrains.rdgen")
+// TODO: rdgen 2023.1.2 doesn't work with gradle 8.0
+// apply(plugin = "com.jetbrains.rdgen")
+class RdGenPlugin2 : Plugin<Project> {
+    override fun apply(project: Project) {
+        project.extensions.create("rdgen", RdGenExtension::class.java, project)
+        project.configurations.create("rdGenConfiguration")
+        project.tasks.create("rdgen", RdGenTask2::class.java)
+
+        project.dependencies.run {
+            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.0")
+            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib:1.7.0")
+            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-reflect:1.7.0")
+            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.0")
+            add("rdGenConfiguration", "org.jetbrains.intellij.deps:trove4j:1.0.20181211")
+        }
+    }
+}
+
+open class RdGenTask2 : JavaExec() {
+    private val local = extensions.create("params", RdGenExtension::class.java, this)
+    private val global = project.extensions.findByType(RdGenExtension::class.java)
+
+    fun rdGenOptions(action: (RdGenExtension) -> Unit) {
+        local.apply(action)
+    }
+
+    override fun exec() {
+        args(generateArgs())
+
+        val files = project.configurations.getByName("rdGenConfiguration").files
+        val buildScriptFiles = project.buildscript.configurations.getByName("classpath").files
+        val rdFiles: MutableSet<File> = HashSet()
+        for (file in buildScriptFiles) {
+            if (file.name.contains("rd-")) {
+                rdFiles.add(file)
+            }
+        }
+        classpath(files)
+        classpath(rdFiles)
+        super.exec()
+    }
+
+    private fun generateArgs(): List<String?> {
+        val effective = local.mergeWith(global!!)
+        return effective.toArguments()
+    }
+
+    init {
+        mainClass.set("com.jetbrains.rd.generator.nova.MainKt")
+    }
+}
+apply<RdGenPlugin2>()
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -103,7 +159,7 @@ configure<RdGenExtension> {
 }
 
 // TODO: migrate to official rdgen gradle plugin https://www.jetbrains.com/help/resharper/sdk/Rider.html#plugin-project-jvm
-val generateModels = tasks.register<RdGenTask>("generateModels") {
+val generateModels = tasks.register<RdGenTask2>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
@@ -137,7 +193,7 @@ val cleanGenerateModels = tasks.register<Delete>("cleanGenerateModels") {
 
 // Backend
 val backendGroup = "backend"
-
+val codeArtifactNugetUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_NUGET_URL")
 val prepareBuildProps = tasks.register("prepareBuildProps") {
     val riderSdkVersionPropsPath = File(resharperPluginPath, "RiderSdkPackageVersion.props")
     group = backendGroup
@@ -174,6 +230,22 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 
     doLast {
         val nugetPath = getNugetPackagesPath()
+        val codeArtifactConfigText = """<?xml version="1.0" encoding="utf-8"?>
+  <configuration>
+    <packageSources> 
+    ${
+        if (codeArtifactNugetUrl.isPresent) {
+            """
+       |   <clear /> 
+       |   <add key="codeartifact-nuget" value="${codeArtifactNugetUrl.get()}v3/index.json" />
+        """.trimMargin("|")
+        } else {
+            ""
+        }
+        }
+    </packageSources>
+  </configuration>
+"""
         val configText = """<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
@@ -181,7 +253,7 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
   </packageSources>
 </configuration>
 """
-        nugetConfigPath.writeText(configText)
+        nugetConfigPath.writeText(codeArtifactConfigText)
         nugetConfigPath211.writeText(configText)
     }
 }
@@ -197,6 +269,8 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     doLast {
         val arguments = listOf(
             "build",
+            "--verbosity",
+            "normal",
             "${resharperPluginPath.canonicalPath}/ReSharper.AWS.sln"
         )
         exec {
@@ -226,6 +300,8 @@ val resharperDllsDir = tasks.register<Sync>("resharperDllsDir") {
     from(buildReSharperPlugin) {
         include("**/bin/**/$buildConfiguration/**/AWS*.dll")
         include("**/bin/**/$buildConfiguration/**/AWS*.pdb")
+        // TODO: see if there is better way to do this
+        exclude("**/AWSSDK*")
     }
     into("$buildDir/$name")
 
@@ -271,7 +347,7 @@ tasks.compileKotlin {
     dependsOn(generateModels)
 }
 
-tasks.detekt {
+tasks.withType<Detekt>() {
     // Make sure kotlin code is generated before we execute detekt
     dependsOn(generateModels)
 }
@@ -290,4 +366,14 @@ tasks.integrationTest {
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
     include("**/*Test.class")
+}
+
+// fix implicit dependency on generated source
+tasks.withType<DetektCreateBaselineTask>() {
+    dependsOn(generateModels)
+}
+
+// weird implicit dependency issue with how we run windows tests
+tasks.named("classpathIndexCleanup") {
+    dependsOn(tasks.named("compileIntegrationTestKotlin"))
 }

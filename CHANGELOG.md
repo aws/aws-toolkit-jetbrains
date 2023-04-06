@@ -1,3 +1,81 @@
+# _1.63_ (2023-03-24)
+- **(Bug Fix)** Fix issue where multiple Builder ID entries show up in connection list
+- **(Bug Fix)** Fix temporary deadlock when user fails to complete reauthentication request
+- **(Bug Fix)** Only allow cloning a repository from CodeCatalyst if it's hosted on CodeCatalyst
+
+# _1.62_ (2023-03-20)
+- **(Bug Fix)** Show friendlier application name when signing in using SSO
+- **(Bug Fix)** Fix confusing experience when attempting to sign in to multiple Builder IDs
+
+# _1.61_ (2023-02-17)
+- **(Bug Fix)** Authenticating through the browser now requires users to manually enter a user verification code for SSO/AWS Builder ID
+- **(Bug Fix)** Fix NPE that may occur when installing the toolkit for the first time ([#3433](https://github.com/aws/aws-toolkit-jetbrains/issues/3433))
+- **(Bug Fix)** Fix network calls cant be made inside read/write action exception thrown from CodeWhisperer ([#3423](https://github.com/aws/aws-toolkit-jetbrains/issues/3423))
+
+# _1.60_ (2023-02-01)
+- **(Bug Fix)** Fix Small Dev Environment instance sizes not connecting to the thin clients
+
+# _1.59_ (2023-01-27)
+- **(Feature)** Added an option to submit feedback for the AWS Toolkit in JetBrains Gateway
+
+# _1.58_ (2023-01-12)
+- **(Feature)** CodeWhisperer: more responsive Auto-Suggestions
+- **(Feature)** Added Nodejs18.x Lambda runtime support
+- **(Bug Fix)** Fix regression in requirements.txt detection ([#3041](https://github.com/aws/aws-toolkit-jetbrains/issues/3041))
+- **(Bug Fix)** Fix `com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException when choosing an input template in Lambda Run Configurations` ([#3359](https://github.com/aws/aws-toolkit-jetbrains/issues/3359))
+- **(Bug Fix)** Fix Lambda Python console encoding issue ([#2802](https://github.com/aws/aws-toolkit-jetbrains/issues/2802))
+
+# _1.57_ (2022-12-15)
+- **(Feature)** Change reauthentication prompt to be non-distruptive notification.
+- **(Bug Fix)** Add do not show again button for CodeWhisperer accountless usage notification
+- **(Bug Fix)** Fix CodeWhisperer status widget is shown even when users are disconnected
+
+# _1.56_ (2022-12-08)
+- **(Bug Fix)** Remove redundant calls in certain Gateway UI panels
+- **(Bug Fix)** Fix threading issue while attempting to login to CodeCatalyst
+- **(Bug Fix)** Only list dev environments under projects that users are a member of
+- **(Bug Fix)** Fix 'Learn more' link in Gateway 2022.2
+- **(Bug Fix)** Fix connection issue with CodeCatalyst when user is already logged into CodeWhisperer
+
+# _1.55_ (2022-12-01)
+- **(Feature)** Amazon CodeCatalyst: Connect JetBrains to your remote Dev Environments.
+- **(Feature)** Amazon CodeCatalyst: Clone your repositories to your local machine.
+- **(Feature)** Amazon CodeCatalyst: Connect using your AWS Builder ID.
+
+# _1.54_ (2022-11-28)
+- **(Feature)** Amazon CodeWhisperer now supports JavaScript for Security Scan to catch security vulnerabilities.
+- **(Feature)** Amazon CodeWhisperer recommendations are more context aware. We are removing the overlaps from CodeWhisperer suggestions specifically when the cursor is inside a code block.
+- **(Feature)** Amazon CodeWhisperer now supports TypeScript and C# programming languages.
+- **(Feature)** Amazon CodeWhisperer is now available as a supported feature and no longer an experimental feature.
+- **(Feature)** Amazon CodeWhisperer now adds new access methods with AWS Builder ID and AWS IAM Identity Center to enable and get started.
+
+# _1.53_ (2022-11-23)
+- **(Feature)** Sync Serverless Application(SAM Accelerate)
+- **(Feature)** New experiment to allow injection of AWS Connection details (region/credentials) into Golang Run Configurations
+- **(Removal)** Removed support for 2021.3.x IDEs
+
+# _1.52_ (2022-10-19)
+- **(Feature)** Added 2022.3 support
+- **(Bug Fix)** Fix `credential_process` retrieval when command contains quoted arguments on Windows ([#3322](https://github.com/aws/aws-toolkit-jetbrains/issues/3322))
+- **(Deprecation)** An upcoming release will remove support for IDEs based on the 2021.3 platform
+- **(Bug Fix)** Fix `java.lang.IllegalStateException: Region provider data is missing default data` ([#3264](https://github.com/aws/aws-toolkit-jetbrains/issues/3264))
+
+# _1.51_ (2022-09-22)
+- **(Feature)** Resources (in AWS Explorer) can list more resource types for EC2, IoT, RDS, Redshift, NetworkManager, and other services
+- **(Feature)** CodeWhisperer now supports .jsx files
+- **(Bug Fix)** CodeWhisperer fixes
+
+# _1.50_ (2022-08-23)
+- **(Bug Fix)** Fix opening toolwindow tabs in incorrect thread in Cloudwatch Logs
+- **(Bug Fix)** Fix hitting enter inside braces will produce an extra newline ([#3270](https://github.com/aws/aws-toolkit-jetbrains/issues/3270))
+- **(Deprecation)** Remove support for deprecated Lambda runtime Python 3.6
+- **(Removal)** Removed support for 2021.2.x IDEs
+
+# _1.49_ (2022-08-11)
+- **(Bug Fix)** Fix IllegalCallableAccessException thrown in several UI panels ([#3228](https://github.com/aws/aws-toolkit-jetbrains/issues/3228))
+- **(Bug Fix)** Fix to stop showing CodeWhisperer's welcome page every time on project start
+- **(Deprecation)** An upcoming release will remove support for IDEs based on the 2021.2 platform
+
 # _1.48_ (2022-07-26)
 - **(Bug Fix)** Fix to display appropriate error messaging for filtering Cloudwatch Streams using search patterns failures
 
