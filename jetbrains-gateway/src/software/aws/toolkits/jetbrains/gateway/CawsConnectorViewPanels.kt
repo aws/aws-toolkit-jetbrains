@@ -91,7 +91,7 @@ class CawsSettings(
     var unlinkedRepoUrl: String = "",
     var unlinkedRepoBranch: String? = null,
     var alias: String = "",
-    var cloneType: CawsWizardCloneType = CawsWizardCloneType.CAWS,
+    var cloneType: CawsWizardCloneType = CawsWizardCloneType.NONE,
     var instanceType: InstanceType = InstanceType.DEV_STANDARD1_SMALL,
     var persistentStorage: Int? = 0,
     var inactivityTimeout: InactivityTimeout = InactivityTimeout.DEFAULT_TIMEOUT,
@@ -104,7 +104,6 @@ class CawsSettings(
     // intermediate values
     var connectionSettings: ClientConnectionSettings<*>? = null,
     var branchCloneType: BranchCloneType = BranchCloneType.EXISTING,
-    var repoCloneType: RepoCloneType = RepoCloneType.EMPTY_REPO,
     var is3P: Boolean = false
 )
 
@@ -285,7 +284,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
             val existingRepo = context.linkedRepoName
 
             if (existingRepo != null) {
-                context.repoCloneType = RepoCloneType.CLONE_REPO
+                context.cloneType = CawsWizardCloneType.CAWS
             }
 
             panel {
@@ -296,8 +295,8 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 
                     buttonsGroup {
                         row {
-                            cloneRepoButton = radioButton(message("caws.workspace.details.clone_repo"), RepoCloneType.CLONE_REPO).applyToComponent {
-                                isSelected = context.repoCloneType == RepoCloneType.CLONE_REPO
+                            cloneRepoButton = radioButton(message("caws.workspace.details.clone_repo"), CawsWizardCloneType.CAWS).applyToComponent {
+                                isSelected = context.cloneType == CawsWizardCloneType.CAWS
                             }.actionListener { event, component ->
                                 if (!context.is3P) {
                                     branchOptions.visible(cloneRepoButton.component.isSelected)
@@ -307,8 +306,8 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 }
                             }
 
-                            radioButton(message("caws.workspace.details.create_empty_dev_env"), RepoCloneType.EMPTY_REPO).applyToComponent {
-                                isSelected = context.repoCloneType == RepoCloneType.EMPTY_REPO
+                            radioButton(message("caws.workspace.details.create_empty_dev_env"), CawsWizardCloneType.NONE).applyToComponent {
+                                isSelected = context.cloneType == CawsWizardCloneType.NONE
                             }
                                 .actionListener { event, component ->
                                     branchOptions.visible(cloneRepoButton.component.isSelected)
@@ -316,7 +315,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                     existingBranchOption.component.isSelected = true
                                 }
                         }
-                    }.bind({ context.repoCloneType }, { context.repoCloneType = it })
+                    }.bind({ context.cloneType }, { context.cloneType = it })
 
                     row {
                         label(message("caws.workspace.clone.info"))
@@ -632,11 +631,6 @@ enum class CawsWizardCloneType {
 enum class BranchCloneType {
     EXISTING,
     NEW_FROM_EXISTING
-}
-
-enum class RepoCloneType {
-    EMPTY_REPO,
-    CLONE_REPO
 }
 
 class PersistentStorageOptions(items: List<Int>, private val subscriptionIsFreeTier: Boolean) : CollectionComboBoxModel<Int>(items) {

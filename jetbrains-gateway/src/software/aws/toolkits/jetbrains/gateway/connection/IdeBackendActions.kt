@@ -19,7 +19,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.BranchCloneType
 import software.aws.toolkits.jetbrains.gateway.CawsSettings
-import software.aws.toolkits.jetbrains.gateway.RepoCloneType
+import software.aws.toolkits.jetbrains.gateway.CawsWizardCloneType
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.WorkspaceIdentifier
 import software.aws.toolkits.jetbrains.gateway.toWorkspace
@@ -193,7 +193,7 @@ class IdeBackendActions(
                 it.spaceName(project.space)
                 it.projectName(project.project)
 
-                if (settings.repoCloneType == RepoCloneType.CLONE_REPO) {
+                if (settings.cloneType == CawsWizardCloneType.CAWS) {
                     it.repositories(
                         RepositoryInput.builder()
                             .repositoryName(settings.linkedRepoName)

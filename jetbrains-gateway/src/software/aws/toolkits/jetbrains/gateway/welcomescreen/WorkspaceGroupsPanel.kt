@@ -70,9 +70,7 @@ class WorkspaceGroupsPanel(
         }
 
         workspaces.workspaces().entries.forEachIndexed { index, (project, workspaces) ->
-            if (CawsSpaceTracker.getInstance().lastSpaceName() == project.space) {
                 add(createProjectGroup(project, workspaces, this.workspaces.codeRepos()[project] ?: emptyList()), gbc.nextLine().setColumn(0).coverLine())
-            }
 
             if (index < workspaces.size - 1) {
                 add(createSeparator(), gbc.nextLine().setColumn(0).coverLine().insets(JBUI.emptyInsets()))

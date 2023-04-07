@@ -51,7 +51,7 @@ fun isSubscriptionFreeTier(
     val subscriptionTier = if (space != null) {
         checkIfSubscriptionIsFreeTier(client, space)
     } else {
-        true
+        return true
     }
 
     return subscriptionTier == "FREE"
