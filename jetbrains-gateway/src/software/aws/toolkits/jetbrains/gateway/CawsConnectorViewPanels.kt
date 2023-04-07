@@ -435,8 +435,10 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     }.visibleIf(cloneRepoButton.selected)
 
                     // need here to force comboboxes to load
-                    getProjects(client, spaces).forEach { projectCombo.addItem(it) }
-                    projectCombo.selectedItem = getProjects(client, arrayListOf(CawsSpaceTracker.getInstance().lastSpaceName().toString()))[0]
+                    getProjects(client, spaces).apply {
+                        forEach { projectCombo.addItem(it) }
+                        projectCombo.selectedItem = firstOrNull { it.space == CawsSpaceTracker.getInstance().lastSpaceName() }
+                    }
 
                     val propertyGraph = PropertyGraph()
                     val projectProperty = propertyGraph.property(projectCombo.selected())
