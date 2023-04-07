@@ -151,8 +151,8 @@ class WorkspaceDataRetriever(
         if (CawsSpaceTracker.getInstance().lastSpaceName() == identifer.project.space) {
             dirtyWorkspaces.add(identifer)
         }
-            updateAlarm.cancelAllRequests()
-            pollForUpdate()
+        updateAlarm.cancelAllRequests()
+        pollForUpdate()
     }
 
     override fun markWorkspaceAsDirty(ws: Workspace) {

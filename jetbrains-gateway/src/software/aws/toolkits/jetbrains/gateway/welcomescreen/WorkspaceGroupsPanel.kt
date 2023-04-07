@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.cawsWizard
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
-import software.aws.toolkits.jetbrains.settings.CawsSpaceTracker
 import software.aws.toolkits.resources.message
 import java.awt.Color
 import java.awt.Component
@@ -70,7 +69,7 @@ class WorkspaceGroupsPanel(
         }
 
         workspaces.workspaces().entries.forEachIndexed { index, (project, workspaces) ->
-                add(createProjectGroup(project, workspaces, this.workspaces.codeRepos()[project] ?: emptyList()), gbc.nextLine().setColumn(0).coverLine())
+            add(createProjectGroup(project, workspaces, this.workspaces.codeRepos()[project] ?: emptyList()), gbc.nextLine().setColumn(0).coverLine())
 
             if (index < workspaces.size - 1) {
                 add(createSeparator(), gbc.nextLine().setColumn(0).coverLine().insets(JBUI.emptyInsets()))
