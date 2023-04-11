@@ -34,6 +34,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:213.5744.122",
                     "PythonCore:213.5744.248",
                     "Docker:213.5744.202"
                 )
@@ -48,6 +49,7 @@ object IdeVersions {
                     "com.intellij.css",
                     "JavaScriptDebugger",
                     "com.intellij.database",
+                    "AWSCloudFormation:213.5744.122",
                     "Pythonid:213.5744.248",
                     "org.jetbrains.plugins.go:213.5744.223"
                 )
@@ -55,6 +57,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2021.3",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:213.5744.122",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -71,6 +74,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:221.5080.126",
                     "PythonCore:221.5080.216",
                     "Docker:221.5080.126"
                 )
@@ -86,6 +90,7 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.jetbrains.codeWithMe",
                     "com.intellij.database",
+                    "AWSCloudFormation:221.5080.126",
                     "Pythonid:221.5080.212",
                     "org.jetbrains.plugins.go:221.5080.210"
                 )
@@ -93,6 +98,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2022.1",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:221.5080.126",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -114,6 +120,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:222.3345.108",
                     "PythonCore:222.3345.118",
                     "Docker:222.3345.118"
                 )
@@ -129,6 +136,7 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "AWSCloudFormation:222.3345.108",
                     "Pythonid:222.3345.118",
                     "org.jetbrains.plugins.go:222.3345.118",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
@@ -138,6 +146,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2022.2",
                 plugins = commonPlugins + listOf(
+                    "AWSCloudFormation:222.3345.108",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -160,6 +169,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:223.8214.6",
                     "PythonCore:223.8214.16",
                     "Docker:223.8214.64"
                 )
@@ -175,6 +185,7 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "AWSCloudFormation:223.8214.6",
                     "Pythonid:223.8214.52",
                     "org.jetbrains.plugins.go:223.8214.52",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
@@ -184,6 +195,7 @@ object IdeVersions {
             rider = RiderProfile(
                 sdkVersion = "2022.3.1",
                 plugins = commonPlugins223 + listOf(
+                    "AWSCloudFormation:223.7571.175",
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
@@ -205,6 +217,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:231.8109.91",
                     "PythonCore:231.8109.144",
                     "Docker:231.8109.217"
                 )
@@ -220,6 +233,7 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "AWSCloudFormation:231.8109.91",
                     "Pythonid:231.8109.175",
                     "org.jetbrains.plugins.go:231.8109.175",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
