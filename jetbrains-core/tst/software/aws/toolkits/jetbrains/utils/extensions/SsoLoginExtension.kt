@@ -3,30 +3,28 @@
 
 package software.aws.toolkits.jetbrains.utils.extensions
 
-import com.intellij.testFramework.DisposableExtension
+import com.intellij.testFramework.DisposableRule
 import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.MockSsoLoginCallbackProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.TestSsoPrompt
 
-class SsoLoginExtension : BeforeEachCallback, AfterEachCallback {
-    @RegisterExtension
-    @JvmField
-    val disposableExtension = DisposableExtension()
-
+class SsoLoginExtension : DisposableRule(), BeforeEachCallback, AfterEachCallback {
     override fun beforeEach(context: ExtensionContext) {
         val ssoSecret = getAnnotation(context) ?: return
 
-        MockClientManager.useRealImplementations(disposableExtension.disposable)
+        MockClientManager.useRealImplementations(disposable)
         MockSsoLoginCallbackProvider.getInstance().provider = TestSsoPrompt(ssoSecret)
     }
 
     override fun afterEach(context: ExtensionContext?) {
         MockSsoLoginCallbackProvider.getInstance().provider = null
+
+        // todo: is there a better way to do this
+        after()
     }
 
     private fun getAnnotation(context: ExtensionContext?): String? {

@@ -46,7 +46,6 @@ class SsoAccessTokenProviderTest {
     private val clientId = aString()
     private val clientSecret = aString()
 
-    private lateinit var ssoLoginCallback: SsoLoginCallback
     private lateinit var ssoOidcClient: SsoOidcClient
     private lateinit var sut: SsoAccessTokenProvider
     private lateinit var ssoCache: SsoCache
@@ -58,7 +57,6 @@ class SsoAccessTokenProviderTest {
     @Before
     fun setUp() {
         ssoOidcClient = delegateMock()
-        ssoLoginCallback = mock()
         ssoCache = mock()
 
         sut = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoCache, ssoOidcClient, clock = clock)

@@ -17,9 +17,16 @@ import software.aws.toolkits.jetbrains.utils.scrubException
 
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     internal var provider: SsoLoginCallback? = null
+    private object NoOpSsoLoginCallback : SsoLoginCallback {
+        override fun tokenPending(authorization: Authorization) {}
+
+        override fun tokenRetrieved() {}
+
+        override fun tokenRetrievalFailure(e: Exception) {}
+    }
 
     override fun getProvider(ssoUrl: String): SsoLoginCallback =
-        provider ?: error("SsoLoginCallback not set")
+        provider ?: NoOpSsoLoginCallback
 
     companion object {
         fun getInstance() = service<SsoLoginCallbackProvider>() as MockSsoLoginCallbackProvider
