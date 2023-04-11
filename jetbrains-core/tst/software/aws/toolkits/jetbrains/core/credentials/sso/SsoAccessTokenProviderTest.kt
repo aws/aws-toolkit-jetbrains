@@ -61,7 +61,7 @@ class SsoAccessTokenProviderTest {
         ssoLoginCallback = mock()
         ssoCache = mock()
 
-        sut = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoLoginCallback, ssoCache, ssoOidcClient, clock = clock)
+        sut = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoCache, ssoOidcClient, clock = clock)
     }
 
     @Test
