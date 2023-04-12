@@ -148,7 +148,15 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                             canBeCancelled = true,
                             isIndeterminate = true,
                         ) {
-                            validateEnvironmentIsRunning(indicator, environmentActions)
+                            val timeBeforeEnvIsRunningCheck = System.currentTimeMillis()
+                            validateEnvironmentIsRunning(indicator, environmentActions, userId, timeBeforeEnvIsRunningCheck)
+                            CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                project = null,
+                                userId = userId,
+                                result = TelemetryResult.Succeeded,
+                                duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                                codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning"
+                            )
                             val isSmallInstance = cawsClient.getDevEnvironment {
                                 it.id(envId)
                                 it.projectName(projectName)
@@ -337,7 +345,12 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         }
     }
 
-    private fun validateEnvironmentIsRunning(indicator: ProgressIndicator, environmentActions: WorkspaceActions) {
+    private fun validateEnvironmentIsRunning(
+        indicator: ProgressIndicator,
+        environmentActions: WorkspaceActions,
+        userId: String,
+        timeBeforeEnvIsRunningCheck: Long
+    ) {
         when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
             DevEnvironmentStatus.RUNNING -> {
@@ -351,8 +364,27 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 environmentActions.startEnvironment()
                 environmentActions.waitForTaskReady(indicator)
             }
-            DevEnvironmentStatus.DELETING, DevEnvironmentStatus.DELETED -> throw IllegalStateException("Environment is deleted, unable to start")
-            else -> throw IllegalStateException("Unknown state $status")
+            DevEnvironmentStatus.DELETING, DevEnvironmentStatus.DELETED -> {
+                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                    project = null,
+                    userId = userId,
+                    result = TelemetryResult.Failed,
+                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning",
+                    codecatalystDevEnvironmentWorkflowError = "Deleted Env"
+                )
+                throw IllegalStateException("Environment is deleted, unable to start")
+            }
+            else -> {
+                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                    project = null,
+                    userId = userId,
+                    result = TelemetryResult.Failed,
+                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning"
+                )
+                throw IllegalStateException("Unknown state $status")
+            }
         }
     }
 
