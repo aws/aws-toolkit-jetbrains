@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Provide consistent UX in all Dev Environment wizard variants"
+}
