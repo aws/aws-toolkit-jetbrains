@@ -22,7 +22,7 @@ data class Workspace(
     val alias: String?,
     val identifier: WorkspaceIdentifier,
     val status: DevEnvironmentStatus,
-    val statusReason: String,
+    val statusReason: String?,
     val instanceType: InstanceType,
     val inactivityTimeout: InactivityTimeout,
     val repo: String?,

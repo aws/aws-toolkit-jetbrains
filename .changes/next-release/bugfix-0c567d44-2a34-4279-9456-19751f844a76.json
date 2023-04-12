@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Added tooltip with description about Stopped Dev Environments"
+  "description" : "Include more information in the Dev Environment status tooltip"
 }
