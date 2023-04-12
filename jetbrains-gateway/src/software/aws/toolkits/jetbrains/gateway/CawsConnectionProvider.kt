@@ -360,7 +360,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         indicator: ProgressIndicator,
         environmentActions: WorkspaceActions
     ) {
-        when (val status = DevEnvironmentStatus.DELETED) {
+        when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
             DevEnvironmentStatus.RUNNING -> {
             }
