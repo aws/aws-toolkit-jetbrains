@@ -149,14 +149,25 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                             isIndeterminate = true,
                         ) {
                             val timeBeforeEnvIsRunningCheck = System.currentTimeMillis()
-                            validateEnvironmentIsRunning(indicator, environmentActions, userId, timeBeforeEnvIsRunningCheck)
-                            CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                                project = null,
-                                userId = userId,
-                                result = TelemetryResult.Succeeded,
-                                duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
-                                codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning"
-                            )
+                            var validateEnvIsRunningResult = TelemetryResult.Succeeded
+                            var errorMessageDuringStateValidation: String? = null
+                            try {
+                                validateEnvironmentIsRunning(indicator, environmentActions)
+                            } catch (e: Exception) {
+                                validateEnvIsRunningResult = TelemetryResult.Failed
+                                errorMessageDuringStateValidation = e.message
+                                throw e
+                            } finally {
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = validateEnvIsRunningResult,
+                                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning",
+                                    codecatalystDevEnvironmentWorkflowError = errorMessageDuringStateValidation
+                                )
+                            }
+
                             val isSmallInstance = cawsClient.getDevEnvironment {
                                 it.id(envId)
                                 it.projectName(projectName)
@@ -347,11 +358,9 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
     private fun validateEnvironmentIsRunning(
         indicator: ProgressIndicator,
-        environmentActions: WorkspaceActions,
-        userId: String,
-        timeBeforeEnvIsRunningCheck: Long
+        environmentActions: WorkspaceActions
     ) {
-        when (val status = environmentActions.getEnvironmentDetails().status()) {
+        when (val status = DevEnvironmentStatus.DELETED) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
             DevEnvironmentStatus.RUNNING -> {
             }
@@ -364,27 +373,8 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 environmentActions.startEnvironment()
                 environmentActions.waitForTaskReady(indicator)
             }
-            DevEnvironmentStatus.DELETING, DevEnvironmentStatus.DELETED -> {
-                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                    project = null,
-                    userId = userId,
-                    result = TelemetryResult.Failed,
-                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
-                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning",
-                    codecatalystDevEnvironmentWorkflowError = "Deleted Env"
-                )
-                throw IllegalStateException("Environment is deleted, unable to start")
-            }
-            else -> {
-                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                    project = null,
-                    userId = userId,
-                    result = TelemetryResult.Failed,
-                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
-                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning"
-                )
-                throw IllegalStateException("Unknown state $status")
-            }
+            DevEnvironmentStatus.DELETING, DevEnvironmentStatus.DELETED -> throw IllegalStateException("Environment is deleted, unable to start")
+            else -> throw IllegalStateException("Unknown state $status")
         }
     }
 
