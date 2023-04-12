@@ -22,6 +22,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
+import com.intellij.util.containers.nullize
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
@@ -43,7 +44,7 @@ data class ConnectionDialogCustomizer(
     val header: String? = null,
     val helpId: HelpIds? = null,
     val replaceIamComment: String? = null,
-    val scopes: List<String> = listOf("sso:account:access")
+    val scopes: List<String>? = null
 )
 
 open class ToolkitAddConnectionDialog(
@@ -119,7 +120,7 @@ open class ToolkitAddConnectionDialog(
                     error("User should not do SSO login with AWS Builder ID url")
                 }
 
-                val scopes = customizer?.scopes ?: listOf("sso:account:access")
+                val scopes = customizer?.scopes?.nullize() ?: listOf("sso:account:access")
 
                 loginSso(project, startUrl, scopes)
 
