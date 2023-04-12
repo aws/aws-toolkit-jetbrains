@@ -19,12 +19,14 @@ import com.jetbrains.gateway.api.GatewayConnectionHandle
 import com.jetbrains.rd.util.lifetime.isNotAlive
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
@@ -36,14 +38,22 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.DiskSsoSessionConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.connection.resultFromStdOut
+import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils
 import software.aws.toolkits.jetbrains.utils.extensions.DevEnvironmentExtension
 import software.aws.toolkits.jetbrains.utils.extensions.DisposerAfterAllExtension
+import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
+import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -51,14 +61,31 @@ import kotlin.reflect.KFunction
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-@Disabled(value = "needs real credentials in CI")
+@ExtendWith(ApplicationExtension::class)
+@SsoLogin("codecatalyst-test-account")
 class DevEnvConnectTest : AfterAllCallback {
     companion object {
-        @JvmStatic
+        @JvmField
         @RegisterExtension
-        val environmentExtension = DevEnvironmentExtension {
-            it.spaceName("")
-            it.projectName("")
+        val disposableExtension = DisposerAfterAllExtension()
+
+        private lateinit var connection: ManagedBearerSsoConnection
+
+        @JvmField
+        @RegisterExtension
+        val environmentExtension = DevEnvironmentExtension({ connection }) { client, it ->
+            val space = client.listSpacesPaginator {}.items().map { it.name() }.firstOrNull { space ->
+                !isSubscriptionFreeTier(client, space)
+            } ?: error("CodeCatalyst user doesn't have access to a paid space")
+
+            val project = client.createProject {
+                it.spaceName(space)
+                it.displayName("aws-jetbrains-toolkit-integ-test-project")
+                it.description("Project used by AWS Toolkit Jetbrains integration tests")
+            }
+
+            it.spaceName(space)
+            it.projectName(project.name())
             it.ides({ ide ->
                 ide.name("IntelliJ")
                 ide.runtime("public.ecr.aws/jetbrains/iu:release")
@@ -70,20 +97,10 @@ class DevEnvConnectTest : AfterAllCallback {
             it.inactivityTimeoutMinutes(15)
             it.repositories(emptyList())
         }
-
-        // disposer/app registered after devenv extension, so we can ensure that clients aren't shut down before devenv cleanup
-        @JvmField
-        @RegisterExtension
-        val disposableExtension = DisposerAfterAllExtension()
-
-        @JvmStatic
-        @RegisterExtension
-        val applicationExtension = ApplicationExtension()
     }
 
     private val client: CodeCatalystClient by lazy {
-        val provider = DiskSsoSessionConnection("codecatalyst", "us-east-1")
-        AwsClientManager.getInstance().getClient(provider.getConnectionSettings())
+        AwsClientManager.getInstance().getClient(connection.getConnectionSettings())
     }
 
     private val environment by lazy {
@@ -123,8 +140,13 @@ class DevEnvConnectTest : AfterAllCallback {
                 .getApplication()
                 .registerOrReplaceServiceInstance(ThinClientTrackerService::class.java, ThinClientTrackerService(), disposableExtension.disposable)
 
-        MockClientManager.useRealImplementations(disposable)
+        MockClientManager.useRealImplementations(disposableExtension.disposable)
         MockToolManagerRule.useRealTools(disposable)
+
+        // can probably abstract this out as an extension
+        // force auth to complete now
+        connection = ManagedBearerSsoConnection(SONO_URL, SONO_REGION, listOf("codecatalyst:read_write"))
+        (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
 
         (service<JetBrainsClientDownloaderConfigurationProvider>() as TestJetBrainsClientDownloaderConfigurationProvider).apply {
             guestConfigFolder = tempDir.resolve("config")
@@ -181,10 +203,12 @@ class DevEnvConnectTest : AfterAllCallback {
     }
 
     fun `poll for bootstrap script availability`() = runBlocking {
-        // TODO scripts are in wrong location in unit test mode
         waitUntil(
             succeedOn = {
                 it == StdOutResult.SUCCESS
+            },
+            failOn = {
+                connectionHandle.lifetime.isNotAlive
             },
             maxDuration = Duration.ofMinutes(5),
             call = {

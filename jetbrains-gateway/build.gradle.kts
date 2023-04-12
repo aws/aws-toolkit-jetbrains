@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import net.bytebuddy.utility.RandomString
+import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -40,8 +41,8 @@ dependencies {
     testImplementation(libs.bundles.sshd)
 }
 
-configurations {
-    all {
+listOf("compileClasspath", "runtimeClasspath").forEach { configuration ->
+     configurations.named(configuration) {
         // definitely won't be used in Gateway
         setOf(
             libs.aws.apprunner,
@@ -90,11 +91,15 @@ artifacts {
     add(gatewayResources.name, gatewayResourcesDir)
 }
 
-tasks.prepareSandbox {
-    runtimeClasspathFiles.set(gatewayRunOnly)
+
+tasks.withType<PrepareSandboxTask>().all {
     from(gatewayResourcesDir) {
         into("aws-toolkit-jetbrains/gateway-resources")
     }
+}
+
+tasks.prepareSandbox {
+    runtimeClasspathFiles.set(gatewayRunOnly)
 }
 
 tasks.buildPlugin {

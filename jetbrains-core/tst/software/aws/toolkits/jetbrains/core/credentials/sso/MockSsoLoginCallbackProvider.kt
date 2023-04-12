@@ -19,7 +19,9 @@ import software.aws.toolkits.jetbrains.utils.scrubException
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     internal var provider: SsoLoginCallback? = null
     private object NoOpSsoLoginCallback : SsoLoginCallback {
-        override fun tokenPending(authorization: Authorization) {}
+        override fun tokenPending(authorization: Authorization) {
+            error("Not implemented")
+        }
 
         override fun tokenRetrieved() {}
 

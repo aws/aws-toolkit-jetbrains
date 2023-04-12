@@ -8,17 +8,16 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.CreateDevEnvironmentRequest
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.credentials.DiskSsoSessionConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
-class DevEnvironmentExtension(environmentBuilder: (CreateDevEnvironmentRequest.Builder) -> Unit) : AfterAllCallback {
+class DevEnvironmentExtension(connection: () -> ToolkitConnection, environmentBuilder: (CodeCatalystClient, CreateDevEnvironmentRequest.Builder) -> Unit) : AfterAllCallback {
     private val client: CodeCatalystClient by lazy {
-        val provider = DiskSsoSessionConnection("codecatalyst", "us-east-1")
-        AwsClientManager.getInstance().getClient(provider.getConnectionSettings())
+        AwsClientManager.getInstance().getClient(connection().getConnectionSettings())
     }
 
     private val lazyEnvironment = lazy {
         client.createDevEnvironment {
-            environmentBuilder(it)
+            environmentBuilder(client, it)
         }.let {
             DevEnvironment(
                 spaceName = it.spaceName(),
