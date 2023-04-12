@@ -6,14 +6,17 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import software.amazon.awssdk.core.SdkBytes
+import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.services.lambda.LambdaClient
 import software.amazon.awssdk.services.lambda.model.InvocationType
 import software.amazon.awssdk.services.lambda.model.LambdaException
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.utils.scrubException
+import java.nio.file.Paths
 
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     internal var provider: SsoLoginCallback? = null
@@ -53,13 +56,17 @@ internal class TestSsoPrompt(private val secretName: String) : SsoLoginCallback 
         """.trimMargin()
 
         val response = try {
-            LambdaClient.create().use { client ->
-                client.invoke {
-                    it.functionName(authLambda)
-                    it.payload(SdkBytes.fromUtf8String(payload))
-                    it.invocationType(InvocationType.REQUEST_RESPONSE)
+            LambdaClient.builder()
+                .overrideConfiguration {
+                    it.defaultProfileFile(defaultProfileFileIgnoringEnv())
                 }
-            }
+                .build().use { client ->
+                    client.invoke {
+                        it.functionName(authLambda)
+                        it.payload(SdkBytes.fromUtf8String(payload))
+                        it.invocationType(InvocationType.REQUEST_RESPONSE)
+                    }
+                }
         } catch (e: LambdaException) {
             throw scrubException(e)
         }
@@ -86,3 +93,17 @@ internal class TestSsoPrompt(private val secretName: String) : SsoLoginCallback 
         private val LOG = getLogger<TestSsoPrompt>()
     }
 }
+
+private fun defaultProfileFileIgnoringEnv() =
+    ProfileFile.aggregator()
+        .addFile(
+            ProfileFile.builder()
+                .content(Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), ".aws", "config"))
+                .build()
+        )
+        .addFile(
+            ProfileFile.builder()
+                .content(Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), ".aws", "credentials"))
+                .build()
+        )
+        .build()
