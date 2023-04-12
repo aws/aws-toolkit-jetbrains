@@ -74,7 +74,7 @@ class WorkspaceDetails(ws: Workspace, workspaces: WorkspaceList, cawsClient: Cod
             else -> JBLabel(AwsGatewayIcons.GATEWAY_STOPPED)
         }
 
-        statusIconLabel.toolTipText = if (ws.status == DevEnvironmentStatus.STOPPED) "${ws.status.name}: ${ws.statusReason}" else ws.status.name
+        statusIconLabel.toolTipText = if (ws.statusReason.isNotEmpty()) "${ws.status.name}: ${ws.statusReason}" else ws.status.name
 
         val (ideIcon, ideToolTip) = ws.platformProduct?.let {
             it.icon to it.ideName

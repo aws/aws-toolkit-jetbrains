@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Provided a message explaining the workspace status"
+  "description" : "Added tooltip with description about Stopped Dev Environments"
 }
