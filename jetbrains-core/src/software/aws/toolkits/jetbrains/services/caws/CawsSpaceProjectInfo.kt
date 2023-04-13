@@ -19,7 +19,7 @@ class CawsStatusBarInstaller : StatusBarWidgetFactory {
 
     override fun getId(): String = WIDGET_ID
 
-    override fun getDisplayName(): String = "spaceName/projectName"
+    override fun getDisplayName(): String = "$spaceName/$projectName"
 
     override fun isAvailable(project: Project): Boolean = spaceName != null && projectName != null
 
