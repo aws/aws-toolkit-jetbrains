@@ -31,4 +31,5 @@ data class ClientRegistration(
 data class ClientRegistrationCacheKey(
     val startUrl: String,
     val scopes: List<String>,
+    val region: String,
 )
