@@ -45,7 +45,7 @@ configurations {
             libs.aws.ec2,
             libs.aws.ecr,
             libs.aws.ecs,
-            libs.aws.lambda,
+            //libs.aws.lambda,
             libs.aws.rds,
             libs.aws.redshift,
             libs.aws.secretsmanager,
