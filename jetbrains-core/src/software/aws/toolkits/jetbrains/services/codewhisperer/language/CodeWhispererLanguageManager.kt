@@ -36,7 +36,7 @@ class CodeWhispererLanguageManager {
         val fileExtension = vFile.extension?.lowercase()
 
         // We want to support Python Console which does not have a file extension
-        if (fileExtension == null && fileTypeName.contains("python")) {
+        if (fileExtension == null && !fileTypeName.contains("python")) {
             return CodeWhispererUnknownLanguage.INSTANCE
         }
         return when {
