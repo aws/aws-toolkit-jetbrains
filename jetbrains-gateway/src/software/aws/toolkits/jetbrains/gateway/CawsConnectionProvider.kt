@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
@@ -14,13 +13,17 @@ import com.intellij.openapi.rd.createNestedDisposable
 import com.intellij.openapi.rd.util.launchChildIOBackground
 import com.intellij.openapi.rd.util.launchIOBackground
 import com.intellij.openapi.rd.util.launchOnUiAnyModality
+import com.intellij.openapi.rd.util.startUnderBackgroundProgressAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.remoteDev.downloader.CodeWithMeClientDownloader
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.layout.panel
 import com.intellij.util.ui.JBFont
@@ -38,21 +41,23 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
+import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.utils.AttributeBagKey
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.core.utils.buildList
+import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
+import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
 import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
-import software.aws.toolkits.jetbrains.gateway.connection.resultFromStdOut
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CloneCode
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CopyScripts
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallLocalPluginBackend
@@ -76,10 +81,13 @@ import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.time.Duration
 import java.util.UUID
 import javax.swing.JLabel
-import kotlin.system.measureTimeMillis
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 import com.intellij.ui.dsl.builder.panel as panelv2
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
+@ExperimentalTime
 class CawsConnectionProvider : GatewayConnectionProvider {
     companion object {
         val CAWS_CONNECTION_PARAMETERS = AttributeBagKey.create<Map<String, String>>("CAWS_CONNECTION_PARAMETERS")
@@ -111,19 +119,21 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         val id = WorkspaceIdentifier(CawsProject(spaceName, projectName), envId)
 
         val lifetime = Lifetime.Eternal.createNested()
+        val workflowDisposable = Lifetime.Eternal.createNestedDisposable()
 
         return object : GatewayConnectionHandle(lifetime) {
             // reference lost with all the blocks
             private val handle = this
             private val component = let { _ ->
                 val view = JBTabbedPane()
+                val workflowEmitter = TabbedWorkflowEmitter(view, workflowDisposable)
 
                 fun handleException(e: Throwable) {
                     if (e is ProcessCanceledException || e is CancellationException) {
                         CodecatalystTelemetry.connect(project = null, userId = userId, result = TelemetryResult.Cancelled)
                         LOG.warn { "Connect to dev environment cancelled" }
                     } else {
-                        CodecatalystTelemetry.connect(project = null, userId = userId, result = TelemetryResult.Failed)
+                        CodecatalystTelemetry.connect(project = null, userId = userId, result = TelemetryResult.Failed, reason = e.javaClass.simpleName)
                         LOG.error(e) { "Caught exception while connecting to dev environment" }
                     }
                     lifetime.terminate()
@@ -143,7 +153,32 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                             canBeCancelled = true,
                             isIndeterminate = true,
                         ) {
-                            validateEnvironmentIsRunning(indicator, environmentActions)
+                            val timeBeforeEnvIsRunningCheck = System.currentTimeMillis()
+                            var validateEnvIsRunningResult = TelemetryResult.Succeeded
+                            var errorMessageDuringStateValidation: String? = null
+                            try {
+                                validateEnvironmentIsRunning(indicator, environmentActions)
+                            } catch (e: Exception) {
+                                validateEnvIsRunningResult = TelemetryResult.Failed
+                                errorMessageDuringStateValidation = e.message
+                                throw e
+                            } finally {
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = validateEnvIsRunningResult,
+                                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning",
+                                    codecatalystDevEnvironmentWorkflowError = errorMessageDuringStateValidation
+                                )
+                            }
+
+                            val isSmallInstance = cawsClient.getDevEnvironment {
+                                it.id(envId)
+                                it.projectName(projectName)
+                                it.spaceName(spaceName)
+                            }.instanceType().equals(InstanceType.DEV_STANDARD1_SMALL)
+
                             lifetime.launchIOBackground {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
                                     .environmentStarted(
@@ -153,8 +188,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     )
                             }
 
-                            val pluginPath = "$CAWS_ENV_IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
+                            val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
                             var retries = 3
+                            val startTimeToCheckInstallation = System.currentTimeMillis()
+
                             val toolkitInstallSettings: ToolkitInstallSettings? = coroutineScope {
                                 while (retries > 0) {
                                     indicator.checkCanceled()
@@ -162,6 +199,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         pluginPath,
                                         timeout = Duration.ofSeconds(15)
                                     )
+
                                     when (pluginIsInstalled) {
                                         null -> {
                                             if (retries == 1) {
@@ -177,9 +215,19 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     }
                                 }
                             } as ToolkitInstallSettings?
+
                             toolkitInstallSettings ?: let {
                                 // environment is non-responsive to SSM; restart
                                 LOG.warn { "Restarting $envId since it appears unresponsive to SSM Run-Command" }
+                                val timeTakenToCheckInstallation = System.currentTimeMillis() - startTimeToCheckInstallation
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = TelemetryResult.Failed,
+                                    codecatalystDevEnvironmentWorkflowStep = "ToolkitInstallationSSMCheck",
+                                    codecatalystDevEnvironmentWorkflowError = "Timeout/Unknown error while connecting to Dev Env via SSM",
+                                    duration = timeTakenToCheckInstallation.toDouble()
+                                )
                                 coroutineScope {
                                     launchChildIOBackground {
                                         environmentActions.stopEnvironment()
@@ -190,44 +238,46 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 return@startUnderModalProgressAsync JLabel()
                             }
 
-                            val fsTestTime = measureTimeMillis {
-                                val attempts = 15
-                                run repeatBlock@{
-                                    repeat(attempts) {
-                                        indicator.checkCanceled()
-                                        val testFs = executor.executeCommandNonInteractive(
-                                            "sh", "-c", "mkdir -p '$pluginPath' && echo true || echo false",
+                            lifetime.startUnderBackgroundProgressAsync(message("caws.download.thin_client"), isIndeterminate = true) {
+                                val (backendVersion, getBackendVersionTime) = measureTimedValue {
+                                    tryOrNull {
+                                        executor.executeCommandNonInteractive(
+                                            "sh", "-c", GET_IDE_BACKEND_VERSION_COMMAND,
                                             timeout = Duration.ofSeconds(15)
-                                        )
-
-                                        LOG.debug { "$testFs" }
-                                        when (testFs.resultFromStdOut()) {
-                                            StdOutResult.SUCCESS -> {
-                                                LOG.info { "Filesystem writablity test succeeded for $pluginPath on attempt $it" }
-                                                return@repeatBlock
-                                            }
-
-                                            StdOutResult.FAILED -> LOG.warn { "Filesystem writability test failed (#$it)" }
-                                            StdOutResult.TIMEOUT -> LOG.warn {
-                                                """
-                                                    |Filesystem writability test timed out (#$it)"
-                                                    |available stdout: ${testFs.fullStdout}
-                                                    |available stderr: ${testFs.stderr}
-                                                """.trimMargin()
-                                            }
-                                            StdOutResult.UNKNOWN -> LOG.warn { "Unknown status: ${testFs.stdout}" }
-                                        }
-
-                                        if (it == attempts - 1) {
-                                            error("Dev Environment did not have a writable filesystem after $attempts attempts")
-                                        }
+                                        ).stdout
                                     }
                                 }
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = if (backendVersion != null) TelemetryResult.Succeeded else TelemetryResult.Failed,
+                                    duration = getBackendVersionTime.toDouble(DurationUnit.MILLISECONDS),
+                                    codecatalystDevEnvironmentWorkflowStep = "getBackendVersion"
+                                )
+
+                                if (backendVersion.isNullOrBlank()) {
+                                    LOG.warn { "Could not determine backend version to prefetch thin client" }
+                                } else {
+                                    val (clientPaths, downloadClientTime) = measureTimedValue {
+                                        BuildNumber.fromStringOrNull(backendVersion)?.asStringWithoutProductCode()?.let { build ->
+                                            LOG.info { "Fetching client for version: $build" }
+                                            CodeWithMeClientDownloader.downloadClientAndJdk(build, indicator)
+                                        }
+                                    }
+
+                                    CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                        project = null,
+                                        userId = userId,
+                                        result = if (clientPaths != null) TelemetryResult.Succeeded else TelemetryResult.Failed,
+                                        duration = downloadClientTime.toDouble(DurationUnit.MILLISECONDS),
+                                        codecatalystDevEnvironmentWorkflowStep = "downloadThinClient"
+                                    )
+                                }
                             }
-                            LOG.info { "FS test took ${fsTestTime}ms" }
 
                             runBackendWorkflow(
                                 view,
+                                workflowEmitter,
                                 userId,
                                 indicator,
                                 lifetime.createNested(),
@@ -236,11 +286,15 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 handle,
                                 id,
                                 connectionParams.gitSettings,
-                                toolkitInstallSettings
+                                toolkitInstallSettings,
+                                isSmallInstance
                             ).await()
                         }.invokeOnCompletion { e ->
                             if (e == null) {
                                 CodecatalystTelemetry.connect(project = null, userId = userId, result = TelemetryResult.Succeeded)
+                                lifetime.onTermination {
+                                    Disposer.dispose(workflowDisposable)
+                                }
                             } else {
                                 handleException(e)
                                 if (e is ProcessCanceledException || e is CancellationException) {
@@ -270,10 +324,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                                     collapsibleGroup(message("general.logs"), false) {
                                                         row {
                                                             cell(view)
+                                                                .horizontalAlign(HorizontalAlign.FILL)
                                                         }
-                                                    }.apply {
-                                                        expanded = false
-                                                    }
+                                                    }.expanded = false
+                                                    // TODO: can't seem to reliably force a terminal redraw on initial expand
                                                 }
                                             }
                                         )
@@ -286,6 +340,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                             GatewayUI.getInstance().connect(parameters)
                                         }
                                     }.show()
+                                    Disposer.dispose(workflowDisposable)
                                 }
                             }
                         }
@@ -319,7 +374,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         }
     }
 
-    private fun validateEnvironmentIsRunning(indicator: ProgressIndicator, environmentActions: WorkspaceActions) {
+    private fun validateEnvironmentIsRunning(
+        indicator: ProgressIndicator,
+        environmentActions: WorkspaceActions
+    ) {
         when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
             DevEnvironmentStatus.RUNNING -> {
@@ -340,15 +398,17 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
     private fun runBackendWorkflow(
         view: JBTabbedPane,
+        workflowEmitter: TabbedWorkflowEmitter,
         userId: String,
         indicator: ProgressIndicator,
         lifetime: LifetimeDefinition,
         parameters: Map<String, String>,
         executor: CawsCommandExecutor,
         gatewayHandle: GatewayConnectionHandle,
-        id: WorkspaceIdentifier,
+        envId: WorkspaceIdentifier,
         gitSettings: GitSettings,
         toolkitInstallSettings: ToolkitInstallSettings,
+        isSmallInstance: Boolean
     ): AsyncPromise<Unit> {
         val remoteScriptPath = "/tmp/${UUID.randomUUID()}"
         val remoteProjectName = (gitSettings as? GitSettings.GitRepoSettings)?.repoName
@@ -373,25 +433,24 @@ class CawsConnectionProvider : GatewayConnectionProvider {
             when (toolkitInstallSettings) {
                 is ToolkitInstallSettings.None -> {}
                 is ToolkitInstallSettings.UseSelf -> {
-                    add(installBundledPluginBackend(executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
+                    add(installBundledPluginBackend(executor, remoteScriptPath, IDE_BACKEND_DIR))
                 }
                 is ToolkitInstallSettings.UseArbitraryLocalPath -> {
-                    add(InstallLocalPluginBackend(toolkitInstallSettings, executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
+                    add(InstallLocalPluginBackend(toolkitInstallSettings, executor, remoteScriptPath, IDE_BACKEND_DIR))
                 }
                 is ToolkitInstallSettings.UseMarketPlace -> {
-                    add(InstallMarketplacePluginBackend(null, executor, remoteScriptPath, CAWS_ENV_IDE_BACKEND_DIR))
+                    add(InstallMarketplacePluginBackend(null, executor, remoteScriptPath, IDE_BACKEND_DIR))
                 }
             }
 
             if (Registry.`is`("aws.codecatalyst.experimentalConnect", false)) {
-                add(StartBackendV2(lifetime, indicator, id))
+                add(StartBackendV2(lifetime, indicator, envId))
             } else {
-                add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, id.id))
+                add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, envId.id, isSmallInstance))
             }
         }
 
         val promise = AsyncPromise<Unit>()
-        var workflowDisposable: Disposable? = null
         fun start() {
             lifetime.launchOnUiAnyModality {
                 view.removeAll()
@@ -434,34 +493,30 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 result = result,
                                 duration = time.toDouble(),
                                 codecatalystDevEnvironmentWorkflowStep = step.stepName,
-                                codecatalystDevEnvironmentWorkflowError = error?.javaClass?.getSimpleName()
+                                codecatalystDevEnvironmentWorkflowError = error?.javaClass?.simpleName
                             )
                         }
                     }
                 }
             }
 
-            workflowDisposable?.let { Disposer.dispose(it) }
-            workflowDisposable = lifetime.createNestedDisposable().also { disposable ->
-                val workflowEmitter = TabbedWorkflowEmitter(view, disposable)
-                StepExecutor(project = null, workflow, workflowEmitter)
-                    .also {
-                        it.addContext(CAWS_CONNECTION_PARAMETERS, parameters)
-                        lifetime.onTermination {
-                            it.getProcessHandler().destroyProcess()
-                        }
-
-                        it.onSuccess = {
-                            promise.setResult(Unit)
-                        }
-
-                        it.onError = { throwable ->
-                            promise.setError(throwable)
-                        }
-
-                        it.startExecution()
+            StepExecutor(project = null, workflow, workflowEmitter)
+                .also {
+                    it.addContext(CAWS_CONNECTION_PARAMETERS, parameters)
+                    lifetime.onTermination {
+                        it.getProcessHandler().destroyProcess()
                     }
-            }
+
+                    it.onSuccess = {
+                        promise.setResult(Unit)
+                    }
+
+                    it.onError = { throwable ->
+                        promise.setError(throwable)
+                    }
+
+                    it.startExecution()
+                }
         }
 
         start()

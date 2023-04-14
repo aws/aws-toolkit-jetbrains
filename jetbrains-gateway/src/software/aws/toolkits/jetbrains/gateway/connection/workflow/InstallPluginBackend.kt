@@ -9,18 +9,18 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.Compressor
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.io.HttpRequests
-import com.intellij.util.io.exists
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.gateway.GatewayProduct
 import software.aws.toolkits.jetbrains.gateway.ToolkitInstallSettings
 import software.aws.toolkits.jetbrains.gateway.connection.AbstractSsmCommandExecutor
-import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_IDE_BACKEND_DIR
+import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.utils.execution.steps.CliBasedStep
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -68,7 +68,7 @@ abstract class InstallPluginBackend(
                 }
             }
 
-            return "$baseUrl$(cat $CAWS_ENV_IDE_BACKEND_DIR/build.txt)"
+            return "$baseUrl$($GET_IDE_BACKEND_VERSION_COMMAND)"
         }
     }
 

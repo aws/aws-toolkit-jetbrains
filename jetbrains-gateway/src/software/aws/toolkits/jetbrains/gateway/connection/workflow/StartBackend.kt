@@ -8,6 +8,8 @@ import com.jetbrains.gateway.thinClientLink.LinkedClientManager
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.adviseEternal
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
@@ -32,7 +34,8 @@ class StartBackend(
     private val remoteProjectName: String?,
     private val executor: CawsCommandExecutor,
     private val lifetime: LifetimeDefinition,
-    private val envId: String
+    private val envId: String,
+    private val isSmallInstance: Boolean
 ) : Step() {
     override val stepName: String = message("gateway.connection.workflow.start_ide")
 
@@ -45,8 +48,32 @@ class StartBackend(
 
         LOG.info { "Starting thin client with link: $localLink" }
         val clientHandle = ThinClientTrackerService.getInstance().associate(envId) {
-            gatewayHandle to LinkedClientManager.getInstance()
-                .startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {}
+            val start = System.currentTimeMillis()
+            val thinClientHandle = try {
+                LinkedClientManager.getInstance()
+                    .startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {
+                        CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                            project = null,
+                            userId = lazilyGetUserId(),
+                            result = TelemetryResult.Succeeded,
+                            duration = System.currentTimeMillis() - start.toDouble(),
+                            codecatalystDevEnvironmentWorkflowStep = "startThinClient",
+                        )
+                    }
+            } catch (e: Throwable) {
+                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                    project = null,
+                    userId = lazilyGetUserId(),
+                    result = TelemetryResult.Failed,
+                    duration = System.currentTimeMillis() - start.toDouble(),
+                    codecatalystDevEnvironmentWorkflowStep = "startThinClient",
+                    codecatalystDevEnvironmentWorkflowError = e.javaClass.simpleName
+                )
+
+                throw e
+            }
+
+            gatewayHandle to thinClientHandle
         }
 
         clientHandle.clientClosed.adviseEternal {
@@ -67,6 +94,12 @@ class StartBackend(
         if (initialConnectLink != null) {
             stepEmitter.emitMessageLine("Reusing existing backend instance at: $initialConnectLink", isError = false)
         }
+        if (isSmallInstance) {
+            runBlocking {
+                delay(5000)
+            }
+        }
+
         val remoteLink = initialConnectLink ?: let {
             val backend = ideActions.startBackend()
             stepEmitter.attachProcess(backend)
@@ -74,7 +107,14 @@ class StartBackend(
                 backend.destroyProcess()
             }
 
+            if (isSmallInstance) {
+                runBlocking {
+                    delay(5000)
+                }
+            }
+
             val start = System.currentTimeMillis()
+
             val duration = Duration.ofMinutes(3)
             return@let try {
                 spinUntilValue(duration = duration, interval = Duration.ofSeconds(5)) {

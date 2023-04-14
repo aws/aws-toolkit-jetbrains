@@ -27,7 +27,7 @@ enum class HelpIds(shortId: String, val url: String) {
     ),
     EXPLORER_CREDS_HELP(
         "explorerCredsHelp",
-        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/working-with-aws.html"
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
 
     // Lambda
@@ -96,6 +96,12 @@ enum class HelpIds(shortId: String, val url: String) {
     ECS_EXEC_PERMISSIONS_REQUIRED(
         "ecsExecPermissions",
         "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
+    ),
+
+    // What is AWS Toolkit?
+    AWS_TOOLKIT_GETTING_STARTED(
+        "awsToolkitGettingStarted",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html"
     ),
 
     // CodeWhisperer

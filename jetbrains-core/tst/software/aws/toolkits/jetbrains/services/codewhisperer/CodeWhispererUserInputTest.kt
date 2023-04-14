@@ -15,6 +15,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
@@ -28,7 +29,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
             val actualRecommendations = states.recommendationContext.details.map {
                 it.recommendation.content()
             }
-            assertThat(actualRecommendations).isEqualTo(pythonResponse.recommendations().map { it.content() })
+            assertThat(actualRecommendations).isEqualTo(pythonResponse.completions().map { it.content() })
         }
     }
 
@@ -37,13 +38,13 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val userInput = "test"
         addUserInputAfterInvocation(userInput)
 
-        val expectedRecommendations = pythonResponse.recommendations().map { it.content() }
+        val expectedRecommendations = pythonResponse.completions().map { it.content() }
 
         withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendations = states.recommendationContext.details.map { it.recommendation.content() }
             assertThat(actualRecommendations).isEqualTo(expectedRecommendations)
             states.recommendationContext.details.forEachIndexed { index, context ->
-                val expectedDiscarded = !pythonResponse.recommendations()[index].content().startsWith(userInput)
+                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput)
                 val actualDiscarded = context.isDiscarded
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
@@ -62,7 +63,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
             assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(typeahead)
             states.recommendationContext.details.forEachIndexed { index, actualContext ->
                 val actualDiscarded = actualContext.isDiscarded
-                val expectedDiscarded = !pythonResponse.recommendations()[index].content().startsWith(userInput + typeahead)
+                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput + typeahead)
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
         }
@@ -92,7 +93,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
             assertThat(states.recommendationContext.userInputSinceInvocation).isEqualTo(userInput)
             states.recommendationContext.details.forEachIndexed { index, actualContext ->
                 val actualDiscarded = actualContext.isDiscarded
-                val expectedDiscarded = !pythonResponse.recommendations()[index].content().startsWith(userInput)
+                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput)
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
         }
@@ -104,20 +105,23 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
+        val latencyContextCaptor = argumentCaptor<LatencyContext>()
         codewhispererServiceSpy.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
                     projectCaptor.capture(),
-                    psiFileCaptor.capture()
+                    psiFileCaptor.capture(),
+                    latencyContextCaptor.capture()
                 )
             }.doAnswer {
                 val requestContext = codewhispererServiceSpy.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
-                    psiFileCaptor.firstValue
+                    psiFileCaptor.firstValue,
+                    latencyContextCaptor.firstValue
                 )
                 projectRule.fixture.type(userInput)
                 requestContext

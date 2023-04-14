@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.gateway.connection
 
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.util.io.exists
 import com.intellij.util.io.readText
 import com.intellij.util.net.NetUtils
 import org.apache.sshd.scp.server.ScpCommandFactory
@@ -13,14 +12,18 @@ import org.apache.sshd.server.auth.UserAuthNoneFactory
 import org.apache.sshd.server.forward.AcceptAllForwardingFilter
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider
 import org.apache.sshd.server.shell.ProcessShellCommandFactory
+import org.apache.sshd.sftp.server.SftpSubsystemFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.core.utils.exists
 import java.nio.file.Paths
 
 class SshServerRule(private val tempFolderRule: TemporaryFolder) : ExternalResource() {
     lateinit var server: SshServer
     lateinit var scpCommandFactory: ScpCommandFactory
+    lateinit var sftpSubsystemFactory: SftpSubsystemFactory
+
     private var knownHosts: String? = null
     private val hostsFile = Paths.get(System.getProperty("user.home"), ".ssh", "known_hosts")
 
@@ -36,11 +39,15 @@ class SshServerRule(private val tempFolderRule: TemporaryFolder) : ExternalResou
             }
             .build()
 
+        sftpSubsystemFactory = SftpSubsystemFactory.Builder()
+            .build()
+
         server = SshServer.setUpDefaultServer().also {
             it.port = NetUtils.findAvailableSocketPort()
             it.keyPairProvider = SimpleGeneratorHostKeyProvider(tempFolderRule.newFile().toPath())
             it.forwardingFilter = AcceptAllForwardingFilter()
             it.commandFactory = scpCommandFactory
+            it.subsystemFactories = listOf(sftpSubsystemFactory)
         }
 
         server.start()

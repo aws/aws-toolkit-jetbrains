@@ -7,8 +7,10 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.util.startLongBackgroundAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
 import com.intellij.remote.RemoteCredentialsHolder
+import com.jetbrains.gateway.ssh.ClientOverSshTunnelConnector
 import com.jetbrains.gateway.ssh.DeployFlowUtil
 import com.jetbrains.gateway.ssh.HostDeployInputs
+import com.jetbrains.gateway.ssh.SshHostTunnelConnector
 import com.jetbrains.gateway.ssh.SshMultistagePanelContext
 import com.jetbrains.gateway.ssh.deploy.DeployTargetInfo
 import com.jetbrains.gateway.ssh.deploy.LoggingHostCommandExecutorWrapper

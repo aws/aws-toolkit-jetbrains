@@ -15,20 +15,22 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.GW)
 }
 
+val gatewayRunOnly by configurations.creating {
+    extendsFrom(configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+    isCanBeResolved = true
+}
+
 dependencies {
-    implementation(project(":jetbrains-core"))
+    // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
+    compileOnly(project(":jetbrains-core"))
+    gatewayRunOnly(project(":jetbrains-core", "gatewayArtifacts"))
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
+    testCompileOnly(project(":jetbrains-core"))
+    testRuntimeOnly(project(":jetbrains-core", "gatewayArtifacts"))
     testImplementation(project(path = ":jetbrains-core", configuration = "testArtifacts"))
     testImplementation(libs.wiremock)
-    testImplementation(libs.sshd.core)
-    testImplementation(libs.sshd.scp)
-
-    attributesSchema {
-        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE) {
-            compatibilityRules.add(GatewayJarRule::class.java)
-        }
-    }
+    testImplementation(libs.bundles.sshd)
 }
 
 configurations {
@@ -53,21 +55,6 @@ configurations {
         ).forEach {
             val dep = it.get().module
             exclude(group = dep.group, module = dep.name)
-        }
-    }
-
-    runtimeClasspath {
-        attributes {
-            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named("gateway-instrumented-jar"))
-        }
-    }
-}
-
-abstract class GatewayJarRule : AttributeCompatibilityRule<LibraryElements> {
-    override fun execute(details: CompatibilityCheckDetails<LibraryElements>) {
-        // needed to make transitive dependencies resolve correctly
-        if (details.consumerValue?.name == "gateway-instrumented-jar" && details.producerValue?.name == "jar") {
-            details.compatible()
         }
     }
 }
@@ -97,9 +84,20 @@ artifacts {
 }
 
 tasks.prepareSandbox {
+    runtimeClasspathFiles.set(gatewayRunOnly)
     from(gatewayResourcesDir) {
         into("aws-toolkit-jetbrains/gateway-resources")
     }
+}
+
+tasks.buildPlugin {
+    val classifier = if (archiveClassifier.get().isNullOrBlank()) {
+        "GW"
+    } else {
+        "${archiveClassifier.get()}-GW"
+    }
+
+    archiveClassifier.set(classifier)
 }
 
 val publishToken: String by project

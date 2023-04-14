@@ -9,6 +9,7 @@ import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import java.awt.Font
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 
 object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
@@ -24,8 +25,15 @@ object CodeWhispererConstants {
     const val POPUP_BUTTON_TEXT_SIZE = 12f
     const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
+    const val IDLE_TIME_CHECK_INTERVAL: Long = 25
+
+    // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
+    // avoid ThrottlingException as much as possible.
+    const val INVOCATION_INTERVAL: Long = 2050
 
     const val CODEWHISPERER_LEARN_MORE_URI = "https://aws.amazon.com/codewhisperer"
+    const val CODEWHISPERER_SSO_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer-auth.html"
+    const val CODEWHISPERER_LOGIN_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     const val CODEWHISPERER_LOGIN_HELP_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer.html"
 
     const val THROTTLING_MESSAGE = "Maximum recommendation count reached for this month."
@@ -48,6 +56,9 @@ object CodeWhispererConstants {
 
     // Date when Accountless is not supported
     val EXPIRE_DATE = SimpleDateFormat("yyyy-MM-dd").parse("2023-01-31")
+
+    // Formatter for timestamp on accountless warn notification
+    val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     object AutoSuggestion {
         const val SETTING_ID = "codewhisperer_autoSuggestionActivation"

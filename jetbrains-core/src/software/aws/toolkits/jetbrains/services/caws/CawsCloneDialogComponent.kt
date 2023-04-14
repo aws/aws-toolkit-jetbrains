@@ -32,6 +32,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.core.ClientConnectionSettings
+import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -96,6 +97,7 @@ class CawsCloneDialogComponent(
                 }
 
                 val destination = Paths.get(browseButton.text).toAbsolutePath()
+                destination.createParentDirectories()
                 val parentDirectory = destination.parent
                 val parentDirectoryVfs = VfsUtil.findFile(parentDirectory, true)
                     ?: throw RuntimeException("VFS could not find specified directory: $parentDirectory")
@@ -160,8 +162,14 @@ class CawsCloneDialogComponent(
                 val projects = cache.getResource(CawsResources.ALL_PROJECTS, cawsConnectionSettings).await()
                 projects.forEach { cawsProject ->
                     val items = cache.getResource(CawsResources.codeRepositories(cawsProject), cawsConnectionSettings).await()
-                    items.forEach {
-                        repoListModel.add(it)
+                    items.forEach { item ->
+                        val url = cache.getResource(
+                            CawsResources.cloneUrls(CawsCodeRepository(cawsProject.space, cawsProject.project, item.name)),
+                            cawsConnectionSettings
+                        ).toCompletableFuture().get()
+                        if (url.contains(CawsEndpoints.CAWS_GIT_PATTERN)) {
+                            repoListModel.add(item)
+                        }
                     }
                 }
 

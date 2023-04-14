@@ -8,13 +8,13 @@ import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -25,13 +25,13 @@ import kotlinx.coroutines.launch
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
-import software.amazon.awssdk.services.codewhisperer.model.FileContext
-import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
-import software.amazon.awssdk.services.codewhisperer.model.ProgrammingLanguage
-import software.amazon.awssdk.services.codewhisperer.model.Recommendation
-import software.amazon.awssdk.services.codewhisperer.model.RecommendationsWithReferencesPreference
-import software.amazon.awssdk.services.codewhisperer.model.ThrottlingException
+import software.amazon.awssdk.services.codewhispererruntime.model.Completion
+import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
+import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
+import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -50,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPositio
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
@@ -59,7 +60,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererMetadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.checkCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.checkEmptyRecommendations
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isConnectionExpired
@@ -72,16 +72,27 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 class CodeWhispererService {
-    fun showRecommendationsInPopup(editor: Editor, triggerTypeInfo: TriggerTypeInfo) {
+    fun showRecommendationsInPopup(
+        editor: Editor,
+        triggerTypeInfo: TriggerTypeInfo,
+        latencyContext: LatencyContext
+    ) {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
+
+        latencyContext.credentialFetchingStart = System.nanoTime()
         if (isConnectionExpired(project)) {
-            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger) {
+                if (reAuthPromptShown) return
+                promptReAuth(project, ::markReAuthPromptShown)
+            } else {
                 promptReAuth(project)
             }
             return
         }
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
+        latencyContext.credentialFetchingEnd = System.nanoTime()
+        val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }
+
         if (psiFile == null) {
             LOG.debug { "No PSI file for the current document" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
@@ -91,7 +102,7 @@ class CodeWhispererService {
         }
 
         val requestContext = try {
-            getRequestContext(triggerTypeInfo, editor, project, psiFile)
+            runReadAction { getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext) }
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
@@ -124,7 +135,6 @@ class CodeWhispererService {
             return
         }
 
-        invocationStatus.resetKeyStrokeCount()
         invokeCodeWhispererInBackground(requestContext)
     }
 
@@ -142,23 +152,36 @@ class CodeWhispererService {
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
-        val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).listRecommendationsPaginator(
+        val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
             buildCodeWhispererRequest(requestContext.fileContextInfo)
         )
         coroutineScope.launch {
             try {
                 var startTime = System.nanoTime()
+                requestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
+                requestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
+                CodeWhispererInvocationStatus.getInstance().setInvocationStart()
+                var requestCount = 0
                 for (response in responseIterable) {
+                    requestCount++
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                     startTime = endTime
                     val requestId = response.responseMetadata().requestId()
+                    if (requestCount == 1) {
+                        requestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
+                        requestContext.latencyContext.paginationFirstCompletionTime = latency
+                        requestContext.latencyContext.firstRequestId = requestId
+                    }
+                    if (response.nextToken().isEmpty()) {
+                        requestContext.latencyContext.paginationAllCompletionsEnd = System.nanoTime()
+                    }
                     val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    val emptyRecommendations = checkEmptyRecommendations(response.recommendations())
-                    val completionType = checkCompletionType(response.recommendations(), emptyRecommendations)
+                    val emptyRecommendations = checkEmptyRecommendations(response.completions())
+                    val completionType = checkCompletionType(response.completions(), emptyRecommendations)
                     val responseContext = ResponseContext(sessionId, completionType)
-                    logServiceInvocation(requestId, requestContext, responseContext, response.recommendations(), latency, null)
-                    lastRecommendationIndex += response.recommendations().size
+                    logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
+                    lastRecommendationIndex += response.completions().size
                     ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
                         .onSuccess(requestContext.fileContextInfo)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
@@ -252,10 +275,7 @@ class CodeWhispererService {
                     exceptionType
                 )
 
-                if ((
-                    e is ThrottlingException ||
-                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
-                    ) &&
+                if (e is ThrottlingException &&
                     e.message == CodeWhispererConstants.THROTTLING_MESSAGE
                 ) {
                     CodeWhispererExplorerActionManager.getInstance().setSuspended(requestContext.project)
@@ -305,6 +325,11 @@ class CodeWhispererService {
             return null
         }
 
+        if (requestContext.editor.isDisposed) {
+            LOG.debug { "Stop showing CodeWhisperer recommendations since editor is disposed. RequestId: $requestId" }
+            return null
+        }
+
         if (response.nextToken().isEmpty()) {
             CodeWhispererInvocationStatus.getInstance().finishInvocation()
         }
@@ -343,7 +368,7 @@ class CodeWhispererService {
                 requestId,
                 requestContext,
                 responseContext,
-                Recommendation.builder().build(),
+                Completion.builder().build(),
                 -1,
                 CodewhispererSuggestionState.Empty,
                 nextStates.recommendationContext.details.size
@@ -355,7 +380,7 @@ class CodeWhispererService {
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
             }
-        } else if (response.recommendations().isNotEmpty()) {
+        } else {
             updateCodeWhisperer(nextStates, isPopupShowing)
         }
         return nextStates
@@ -364,12 +389,12 @@ class CodeWhispererService {
     private fun initStates(
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        response: ListRecommendationsResponse,
+        response: GenerateCompletionsResponse,
         caretMovement: CaretMovement,
         popup: JBPopup
     ): InvocationContext? {
         val requestId = response.responseMetadata().requestId()
-        val recommendations = response.recommendations()
+        val recommendations = response.completions()
         val visualPosition = requestContext.editor.caretModel.visualPosition
 
         if (CodeWhispererPopupManager.getInstance().hasConflictingPopups(requestContext.editor)) {
@@ -407,14 +432,14 @@ class CodeWhispererService {
 
     private fun updateStates(
         states: InvocationContext,
-        response: ListRecommendationsResponse
+        response: GenerateCompletionsResponse
     ): InvocationContext {
         val recommendationContext = states.recommendationContext
         val details = recommendationContext.details
         val newDetailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
             states.requestContext,
             recommendationContext.userInputSinceInvocation,
-            response.recommendations(),
+            response.completions(),
             response.responseMetadata().requestId()
         )
         Disposer.dispose(states)
@@ -428,7 +453,6 @@ class CodeWhispererService {
     }
 
     private fun checkRecommendationsValidity(states: InvocationContext, showHint: Boolean): Boolean {
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val details = states.recommendationContext.details
 
         // set to true when at least one is not discarded or empty
@@ -450,13 +474,17 @@ class CodeWhispererService {
     private fun sendDiscardedUserDecisionEventForAll(
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        recommendations: List<Recommendation>
+        recommendations: List<Completion>
     ) {
         val detailContexts = recommendations.map { DetailContext("", it, it, true, false) }
         val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0))
 
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-            requestContext, responseContext, recommendationContext, SessionContext(), false
+            requestContext,
+            responseContext,
+            recommendationContext,
+            SessionContext(),
+            false
         )
     }
 
@@ -464,18 +492,19 @@ class CodeWhispererService {
         triggerTypeInfo: TriggerTypeInfo,
         editor: Editor,
         project: Project,
-        psiFile: PsiFile
+        psiFile: PsiFile,
+        latencyContext: LatencyContext
     ): RequestContext {
         val fileContextInfo = getFileContextInfo(editor, psiFile)
         val caretPosition = getCaretPosition(editor)
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContextInfo, connection)
+        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContextInfo, connection, latencyContext)
     }
 
-    private fun validateResponse(response: ListRecommendationsResponse): ListRecommendationsResponse {
+    fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
         // If contentSpans in reference are not consistent with content(recommendations),
         // remove the incorrect references.
-        val validatedRecommendations = response.recommendations().map {
+        val validatedRecommendations = response.completions().map {
             val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
                 it.references().none { reference ->
                     val span = reference.recommendationContentSpan()
@@ -487,7 +516,8 @@ class CodeWhispererService {
                 it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
             }
         }
-        return response.toBuilder().recommendations(validatedRecommendations).build()
+
+        return response.toBuilder().completions(validatedRecommendations).build()
     }
 
     private fun buildInvocationContext(
@@ -497,7 +527,6 @@ class CodeWhispererService {
         popup: JBPopup
     ): InvocationContext {
         addPopupChildDisposables(popup)
-
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
         // previously(before pagination) we use popup as the parent disposable.
         // After pagination, listeners need to be updated as states are updated, for the same popup,
@@ -529,7 +558,7 @@ class CodeWhispererService {
         requestId: String,
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        recommendations: List<Recommendation>,
+        recommendations: List<Completion>,
         latency: Double?,
         exceptionType: String?
     ) {
@@ -588,13 +617,17 @@ class CodeWhispererService {
             "CodeWhisperer code completion service invoked",
             CodeWhispererCodeCompletionServiceListener::class.java
         )
-        val KEY_CODEWHISPERER_METADATA: Key<CodeWhispererMetadata> = Key.create("codewhisperer.metadata")
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
+        private var reAuthPromptShown = false
+
+        private fun markReAuthPromptShown() {
+            reAuthPromptShown = true
+        }
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo
-        ): ListRecommendationsRequest {
+        ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
                 .build()
@@ -611,7 +644,7 @@ class CodeWhispererService {
                 RecommendationsWithReferencesPreference.BLOCK
             }
 
-            return ListRecommendationsRequest.builder()
+            return GenerateCompletionsRequest.builder()
                 .fileContext(fileContext)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .build()
@@ -625,7 +658,8 @@ data class RequestContext(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    val connection: ToolkitConnection?
+    val connection: ToolkitConnection?,
+    val latencyContext: LatencyContext
 )
 
 data class ResponseContext(
