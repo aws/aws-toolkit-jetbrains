@@ -14,7 +14,7 @@ dependencies {
     api(libs.aws.cognitoidentity)
     api(libs.aws.ecr)
     api(libs.aws.ecs)
-    //api(libs.aws.lambda)
+    // api(libs.aws.lambda)
     api(libs.aws.s3)
     api(libs.aws.sso)
     api(libs.aws.ssooidc)

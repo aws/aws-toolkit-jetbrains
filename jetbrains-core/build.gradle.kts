@@ -131,7 +131,7 @@ dependencies {
     api(libs.aws.ecr)
     api(libs.aws.ecs)
     api(libs.aws.iam)
-    //api(libs.aws.lambda)
+    // api(libs.aws.lambda)
     api(libs.aws.rds)
     api(libs.aws.redshift)
     api(libs.aws.s3)
