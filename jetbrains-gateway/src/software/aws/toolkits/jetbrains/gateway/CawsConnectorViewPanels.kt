@@ -334,7 +334,6 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                             .columns(COLUMNS_MEDIUM)
                     }
 
-                    // TODO: might want to show linked repos as disabled to reduce confusion
                     val linkedRepoCombo = AsyncComboBox<SourceRepository> { label, value, _ -> label.text = value?.name }
                     val linkedBranchCombo = AsyncComboBox<BranchSummary> { label, value, _ -> label.text = value?.name }
                     Disposer.register(disposable, linkedRepoCombo)
@@ -347,7 +346,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 { i, v -> i.selectedItem = i.model.find { it.name == v } },
                                 context::linkedRepoName.toMutableProperty()
                             )
-                            .errorOnApply(message("caws.workspace.details.repository_validation")) { it.selectedItem == null }
+                            .errorOnApply(message("caws.workspace.details.repository_validation")) { it.isVisible && it.selectedItem == null }
                             .columns(COLUMNS_MEDIUM)
                         projectCombo.addActionListener {
                             linkedRepoCombo.proposeModelUpdate { model ->
@@ -406,7 +405,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     row(message("caws.workspace.details.branch_existing")) {
                         cell(linkedBranchCombo)
                             .bindItem(context::linkedRepoBranch.toMutableProperty())
-                            .errorOnApply(message("caws.workspace.details.branch_validation")) { it.selectedItem == null }
+                            .errorOnApply(message("caws.workspace.details.branch_validation")) { it.isVisible && it.selectedItem == null }
                             .columns(COLUMNS_MEDIUM)
 
                         linkedRepoCombo.addActionListener {
@@ -437,7 +436,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     // need here to force comboboxes to load
                     getProjects(client, spaces).apply {
                         forEach { projectCombo.addItem(it) }
-                        projectCombo.selectedItem = firstOrNull { it.space == CawsSpaceTracker.getInstance().lastSpaceName() }
+                        projectCombo.selectedItem = existingProject ?: context.initialSpace
                     }
 
                     val propertyGraph = PropertyGraph()
