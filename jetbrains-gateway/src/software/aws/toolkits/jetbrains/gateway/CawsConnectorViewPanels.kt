@@ -79,9 +79,6 @@ import javax.swing.JComponent
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 class CawsSettings(
-    // ui initialization params
-    var initialSpace: String? = null,
-
     // core bindings
     var project: CawsProject? = null,
     var productType: GatewayProduct? = null,
@@ -436,7 +433,9 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     // need here to force comboboxes to load
                     getProjects(client, spaces).apply {
                         forEach { projectCombo.addItem(it) }
-                        projectCombo.selectedItem = existingProject ?: context.initialSpace
+                        projectCombo.selectedItem = existingProject
+                            ?: firstOrNull { it.space == CawsSpaceTracker.getInstance().lastSpaceName() }
+                            ?: firstOrNull()
                     }
 
                     val propertyGraph = PropertyGraph()
