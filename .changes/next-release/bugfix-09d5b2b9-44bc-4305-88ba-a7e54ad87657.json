@@ -1,4 +1,4 @@
 {
-  "type" : "bugfix",
-  "description" : "Display spaceName and projectName on the MDE status bar"
+  "type" : "feature",
+  "description" : "Display current space and project name on status bar while working in a CodeCatalyst Dev Environment"
 }
