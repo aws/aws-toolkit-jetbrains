@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Display spaceName and projectName on the MDE status bar"
+}
