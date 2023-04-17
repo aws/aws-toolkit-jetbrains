@@ -67,7 +67,7 @@ include("ui-tests")
 include("detekt-rules")
 
 plugins {
-    id("com.gradle.enterprise").version("3.13")
+    id("com.gradle.enterprise").version("3.4.1")
     id("com.github.burrunan.s3-build-cache").version("1.5")
 }
 

@@ -6,6 +6,7 @@ import software.aws.toolkits.gradle.ciOnly
 plugins {
     id("java") // Needed for referencing "implementation" configuration
     id("jacoco")
+    id("org.gradle.test-retry")
     id("com.adarshr.test-logger")
 }
 
