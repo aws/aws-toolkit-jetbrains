@@ -12,6 +12,7 @@ val ARN_REGEX = "arn:(aws|aws-cn|aws-us-gov):(?:.*?):(.*?):(.*?):.".toRegex()
 fun scrubException(e: Exception): Exception {
     if (e is AwsServiceException && e.awsErrorDetails() != null) {
         return e.toBuilder()
+            .message(scrubArn(e.message))
             .awsErrorDetails(e.awsErrorDetails().toBuilder().errorMessage(scrubArn(e.awsErrorDetails().errorMessage())).build())
             .build().apply {
                 stackTrace = e.stackTrace

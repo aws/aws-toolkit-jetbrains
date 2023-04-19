@@ -56,7 +56,9 @@ internal class TestSsoPrompt(private val secretName: String) : SsoLoginCallback 
         val response = try {
             LambdaClient.builder()
                 .overrideConfiguration {
-                    it.nullDefaultProfileFile()
+                    if (!System.getenv("CI").isNullOrBlank()) {
+                        it.nullDefaultProfileFile()
+                    }
                 }
                 .build().use { client ->
                     client.invoke {
