@@ -19,9 +19,7 @@ import com.jetbrains.gateway.api.GatewayConnectionHandle
 import com.jetbrains.rd.util.lifetime.isNotAlive
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.Timeout
@@ -37,9 +35,7 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
-import software.aws.toolkits.jetbrains.core.credentials.DiskSsoSessionConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -53,7 +49,6 @@ import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils
 import software.aws.toolkits.jetbrains.utils.extensions.DevEnvironmentExtension
 import software.aws.toolkits.jetbrains.utils.extensions.DisposerAfterAllExtension
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
-import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -73,7 +68,7 @@ class DevEnvConnectTest : AfterAllCallback {
 
         @JvmField
         @RegisterExtension
-        val environmentExtension = DevEnvironmentExtension({ connection }) { client, it ->
+        val environmentExtension = DevEnvironmentExtension({ connection }) { client, builder ->
             val space = client.listSpacesPaginator {}.items().map { it.name() }.firstOrNull { space ->
                 !isSubscriptionFreeTier(client, space)
             } ?: error("CodeCatalyst user doesn't have access to a paid space")
@@ -84,18 +79,18 @@ class DevEnvConnectTest : AfterAllCallback {
                 it.description("Project used by AWS Toolkit Jetbrains integration tests")
             }
 
-            it.spaceName(space)
-            it.projectName(project.name())
-            it.ides({ ide ->
+            builder.spaceName(space)
+            builder.projectName(project.name())
+            builder.ides({ ide ->
                 ide.name("IntelliJ")
                 ide.runtime("public.ecr.aws/jetbrains/iu:release")
             })
-            it.persistentStorage { storage ->
+            builder.persistentStorage { storage ->
                 storage.sizeInGiB(16)
             }
-            it.instanceType(InstanceType.DEV_STANDARD1_MEDIUM)
-            it.inactivityTimeoutMinutes(15)
-            it.repositories(emptyList())
+            builder.instanceType(InstanceType.DEV_STANDARD1_MEDIUM)
+            builder.inactivityTimeoutMinutes(15)
+            builder.repositories(emptyList())
         }
     }
 

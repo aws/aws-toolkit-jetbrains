@@ -10,7 +10,10 @@ import software.amazon.awssdk.services.codecatalyst.model.CreateDevEnvironmentRe
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
-class DevEnvironmentExtension(connection: () -> ToolkitConnection, environmentBuilder: (CodeCatalystClient, CreateDevEnvironmentRequest.Builder) -> Unit) : AfterAllCallback {
+class DevEnvironmentExtension(
+    connection: () -> ToolkitConnection,
+    environmentBuilder: (CodeCatalystClient, CreateDevEnvironmentRequest.Builder) -> Unit
+) : AfterAllCallback {
     private val client: CodeCatalystClient by lazy {
         AwsClientManager.getInstance().getClient(connection().getConnectionSettings())
     }

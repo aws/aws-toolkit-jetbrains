@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.utils.scrubException
 
 internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     internal var provider: SsoLoginCallback? = null
-    private object NoOpSsoLoginCallback : SsoLoginCallback {
+    private object ErrorSsoLoginCallback : SsoLoginCallback {
         override fun tokenPending(authorization: Authorization) {
             error("Not implemented")
         }
@@ -29,11 +29,19 @@ internal class MockSsoLoginCallbackProvider : SsoLoginCallbackProvider {
     }
 
     override fun getProvider(ssoUrl: String): SsoLoginCallback =
-        provider ?: NoOpSsoLoginCallback
+        provider ?: ErrorSsoLoginCallback
 
     companion object {
         fun getInstance() = service<SsoLoginCallbackProvider>() as MockSsoLoginCallbackProvider
     }
+}
+
+object NoOpSsoLoginCallback : SsoLoginCallback {
+    override fun tokenPending(authorization: Authorization) {}
+
+    override fun tokenRetrieved() {}
+
+    override fun tokenRetrievalFailure(e: Exception) {}
 }
 
 internal class TestSsoPrompt(private val secretName: String) : SsoLoginCallback {

@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.util.registry.Registry
+import java.nio.file.Paths
 
 object AwsToolkit {
     const val PLUGIN_ID = "aws.toolkit"
@@ -23,7 +24,7 @@ object AwsToolkit {
     }
 
     fun pluginPath() = if (ApplicationManager.getApplication().isUnitTestMode) {
-        System.getProperty("plugin.path")
+        Paths.get(System.getProperty("plugin.path"))
     } else {
         DESCRIPTOR?.pluginPath ?: throw RuntimeException("Toolkit root not available")
     }

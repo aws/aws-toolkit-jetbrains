@@ -42,7 +42,7 @@ dependencies {
 }
 
 listOf("compileClasspath", "runtimeClasspath").forEach { configuration ->
-     configurations.named(configuration) {
+    configurations.named(configuration) {
         // definitely won't be used in Gateway
         setOf(
             libs.aws.apprunner,
@@ -90,7 +90,6 @@ val gatewayResourcesDir = tasks.register<Sync>("gatewayResourcesDir") {
 artifacts {
     add(gatewayResources.name, gatewayResourcesDir)
 }
-
 
 tasks.withType<PrepareSandboxTask>().all {
     from(gatewayResourcesDir) {
