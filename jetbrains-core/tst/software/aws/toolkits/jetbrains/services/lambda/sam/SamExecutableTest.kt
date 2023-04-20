@@ -417,7 +417,7 @@ class SamExecutableTest {
             outputDir = outputDir.toPath(),
             parameters = AppBasedZipTemplate(
                 name = "Hello",
-                runtime = LambdaRuntime.JAVA11,
+                runtime = LambdaRuntime.JAVA17,
                 architecture = LambdaArchitecture.X86_64,
                 appTemplate = "HelloWorldTemplate",
                 dependencyManager = "maven"
@@ -435,7 +435,7 @@ class SamExecutableTest {
                 "--name",
                 "Hello",
                 "--runtime",
-                "java11",
+                "java17",
                 "--dependency-manager",
                 "maven",
                 "--app-template",
@@ -451,7 +451,7 @@ class SamExecutableTest {
             outputDir = outputDir.toPath(),
             parameters = AppBasedZipTemplate(
                 name = "Hello",
-                runtime = LambdaRuntime.JAVA11,
+                runtime = LambdaRuntime.JAVA17,
                 architecture = LambdaArchitecture.ARM64,
                 appTemplate = "HelloWorldTemplate",
                 dependencyManager = "maven"
@@ -469,7 +469,7 @@ class SamExecutableTest {
                 "--name",
                 "Hello",
                 "--runtime",
-                "java11",
+                "java17",
                 "--architecture",
                 "arm64",
                 "--dependency-manager",
@@ -585,7 +585,7 @@ class SamExecutableTest {
             outputDir = outputDir.toPath(),
             parameters = AppBasedZipTemplate(
                 name = "Hello",
-                runtime = LambdaRuntime.JAVA11,
+                runtime = LambdaRuntime.JAVA17,
                 architecture = LambdaArchitecture.X86_64,
                 appTemplate = "HelloWorldTemplate",
                 dependencyManager = "maven"
@@ -603,7 +603,7 @@ class SamExecutableTest {
                 "--name",
                 "Hello",
                 "--runtime",
-                "java11",
+                "java17",
                 "--dependency-manager",
                 "maven",
                 "--app-template",

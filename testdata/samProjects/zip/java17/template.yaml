@@ -7,7 +7,7 @@ Resources:
     Properties:
       CodeUri: HelloWorldFunction
       Handler: helloworld.App::handleRequest
-      Runtime: java11
+      Runtime: java17
       Timeout: 900
       MemorySize: 512
       Environment:

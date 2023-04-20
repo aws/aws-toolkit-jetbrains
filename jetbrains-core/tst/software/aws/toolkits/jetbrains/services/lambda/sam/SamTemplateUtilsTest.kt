@@ -383,7 +383,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
             """.trimIndent()
         )
 
@@ -401,7 +401,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
                   Environment:
                     Variables: string
             """.trimIndent()
@@ -421,7 +421,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
             """.trimIndent()
         )
 
@@ -445,7 +445,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
             """.trimIndent()
         )
 
@@ -470,7 +470,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
                   Environment:
                     Variables:
                       VAR1: abc
@@ -505,7 +505,7 @@ class SamTemplateUtilsTest {
                 Properties:
                   Handler: helloworld.App::handleRequest
                   CodeUri: src
-                  Runtime: java11
+                  Runtime: java17
                   Environment:
                     Variables:
                       VAR2: 123

@@ -30,7 +30,7 @@ class SamInvokeRunnerTest {
     @Test
     fun canRunSupportedRuntimeHandler() {
         val runConfig =
-            createHandlerBasedRunConfiguration(project = projectRule.project, runtime = Runtime.JAVA8)
+            createHandlerBasedRunConfiguration(project = projectRule.project, runtime = Runtime.JAVA17)
 
         runInEdtAndWait {
             assertThat(SamInvokeRunner().canRun(DefaultRunExecutor.EXECUTOR_ID, runConfig)).isTrue()
@@ -58,7 +58,7 @@ class SamInvokeRunnerTest {
     @Test
     fun canDebugSupportedRuntimeHandler() {
         val runConfig =
-            createHandlerBasedRunConfiguration(project = projectRule.project, runtime = Runtime.JAVA8)
+            createHandlerBasedRunConfiguration(project = projectRule.project, runtime = Runtime.JAVA17)
 
         runInEdtAndWait {
             assertThat(SamInvokeRunner().canRun(DefaultDebugExecutor.EXECUTOR_ID, runConfig)).isTrue()
@@ -85,7 +85,7 @@ class SamInvokeRunnerTest {
                     Properties:
                       Handler: com.example.LambdaHandler::handleRequest
                       CodeUri: /some/dummy/code/location
-                      Runtime: java8
+                      Runtime: java17
             """.trimIndent()
         )
 
@@ -116,7 +116,7 @@ class SamInvokeRunnerTest {
             project = projectRule.project,
             templateFile = template,
             isImage = true,
-            runtime = LambdaRuntime.JAVA11,
+            runtime = LambdaRuntime.JAVA17,
             logicalId = "SomeFunction"
         )
 
@@ -185,7 +185,7 @@ class SamInvokeRunnerTest {
                     Properties:
                       Handler: com.example.LambdaHandler::handleRequest
                       CodeUri: /some/dummy/code/location
-                      Runtime: java8
+                      Runtime: java17
             """.trimIndent()
         )
 
@@ -216,7 +216,7 @@ class SamInvokeRunnerTest {
             project = projectRule.project,
             templateFile = template,
             isImage = true,
-            runtime = LambdaRuntime.JAVA11,
+            runtime = LambdaRuntime.JAVA17,
             logicalId = "SomeFunction"
         )
 
