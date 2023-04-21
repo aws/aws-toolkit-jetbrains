@@ -36,6 +36,7 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
     }
 
     private fun determineRuntimeForSdk(sdk: JavaSdkVersion) = when {
+        // TODO: is this actually the right logic?
         sdk <= JavaSdkVersion.JDK_1_8 -> LambdaRuntime.JAVA8_AL2
         sdk <= JavaSdkVersion.JDK_11 -> LambdaRuntime.JAVA11
         sdk <= JavaSdkVersion.JDK_17 -> LambdaRuntime.JAVA17
