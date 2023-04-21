@@ -56,7 +56,7 @@ class LocalLambdaRunConfigurationTest {
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
-    private val runtime = Runtime.JAVA17
+    private val runtime = Runtime.JAVA8
     private val defaultHandler = "com.example.LambdaHandler::handleRequest"
 
     @Before
@@ -119,7 +119,7 @@ class LocalLambdaRunConfigurationTest {
                 isImage = true,
                 credentialsProviderId = mockId,
                 templateFile = template,
-                runtime = LambdaRuntime.JAVA17,
+                runtime = LambdaRuntime.JAVA11,
                 logicalId = "SomeFunction"
             )
 
@@ -320,7 +320,7 @@ class LocalLambdaRunConfigurationTest {
                     Properties:
                       Handler: com.example.LambdaHandler::handleRequest
                       CodeUri: /some/dummy/code/location
-                      Runtime: java17
+                      Runtime: java8
                       Timeout: 900
                     """.trimIndent()
                 )
@@ -415,7 +415,7 @@ class LocalLambdaRunConfigurationTest {
                     Properties:
                       Handler: com.example.LambdaHandler::handleRequest
                       CodeUri: /some/dummy/code/location
-                      Runtime: java17
+                      Runtime: java8
                       Architectures:
                         - FAKE
                       Timeout: 900
@@ -447,7 +447,7 @@ class LocalLambdaRunConfigurationTest {
                   SomeFunction:
                     Type: AWS::Serverless::Function
                     Properties:
-                      Runtime: java17
+                      Runtime: java8
                       CodeUri: /some/dummy/code/location
                       Timeout: 900
                     """.trimIndent()
