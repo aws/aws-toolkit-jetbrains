@@ -69,8 +69,11 @@ class DevEnvConnectTest : AfterAllCallback {
         @JvmField
         @RegisterExtension
         val environmentExtension = DevEnvironmentExtension({ connection }) { client, builder ->
-            val space = client.listSpacesPaginator {}.items().map { it.name() }.firstOrNull { space ->
-                !isSubscriptionFreeTier(client, space)
+            val space = client.listSpacesPaginator {}.items().map { it.name() }.let { spaces ->
+                spaces.firstOrNull { it == "aws-toolkit-jetbrains-test-space" }
+                    ?: spaces.firstOrNull { space ->
+                        !isSubscriptionFreeTier(client, space)
+                    }
             } ?: error("CodeCatalyst user doesn't have access to a paid space")
 
             val project = client.createProject {
