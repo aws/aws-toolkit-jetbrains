@@ -28,11 +28,10 @@ class SsmPluginTest {
         SoftAssertions.assertSoftly { softly ->
             listOf(
                 SsmPlugin.windowsUrl(latest),
-                SsmPlugin.linuxArm64Url(latest),
-                SsmPlugin.linuxI64Url(latest),
-                SsmPlugin.ubuntuArm64Url(latest),
-                SsmPlugin.ubuntuI64Url(latest),
-                SsmPlugin.macUrl(latest)
+                SsmPlugin.debArm64Url(latest),
+                SsmPlugin.debX64Url(latest),
+                SsmPlugin.macArm64Url(latest),
+                SsmPlugin.macX64Url(latest)
             ).forEach { url ->
                 softly.assertThatCode { HttpRequests.head(url).tryConnect() }.doesNotThrowAnyException()
             }
