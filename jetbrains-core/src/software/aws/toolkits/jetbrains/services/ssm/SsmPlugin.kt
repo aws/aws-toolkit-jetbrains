@@ -29,6 +29,9 @@ import java.time.Duration
 import kotlin.streams.asSequence
 
 object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPartVersion>, BaseToolType<FourPartVersion>() {
+    private val hasDpkg by lazy { hasCommand("dpkg-deb") }
+    private val hasRpm2Cpio by lazy { hasCommand("rpm2cpio") }
+
     override val telemetryId: ToolId = ToolId.SessionManagerPlugin
     override val displayName: String = "AWS Session Manager Plugin"
 
@@ -37,10 +40,11 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
     override fun downloadVersion(version: FourPartVersion, destinationDir: Path, indicator: ProgressIndicator?): Path {
         val downloadUrl = when {
             SystemInfo.isWindows -> windowsUrl(version)
-            SystemInfo.isMac && CpuArch.isArm64() -> macArm64Url(version)
-            SystemInfo.isMac && CpuArch.isIntel64() -> macX64Url(version)
-            SystemInfo.isLinux && CpuArch.isArm64() -> debArm64Url(version)
-            SystemInfo.isLinux && CpuArch.isIntel64() -> debX64Url(version)
+            SystemInfo.isMac -> macUrl(version)
+            SystemInfo.isLinux && hasDpkg && CpuArch.isArm64() -> ubuntuArm64Url(version)
+            SystemInfo.isLinux && hasDpkg && CpuArch.isIntel64() -> ubuntuI64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && CpuArch.isArm64() -> linuxArm64Url(version)
+            SystemInfo.isLinux && hasRpm2Cpio && CpuArch.isIntel64() -> linuxI64Url(version)
             else -> throw IllegalStateException("Failed to find compatible SSM plugin: SystemInfo=${SystemInfo.OS_NAME}, Arch=${SystemInfo.OS_ARCH}")
         }
 
@@ -55,7 +59,10 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
     override fun installVersion(downloadArtifact: Path, destinationDir: Path, indicator: ProgressIndicator?) {
         when (val extension = downloadArtifact.fileName.toString().substringAfterLast(".")) {
             "zip" -> extractZip(downloadArtifact, destinationDir)
-            "deb" -> runInstall(GeneralCommandLine("sh", "-c", """mkdir -p "$destinationDir" && cd "$destinationDir" && ar -x "$downloadArtifact" && tar -xvzf data.tar.gz"""))
+            "rpm" -> runInstall(
+                GeneralCommandLine("sh", "-c", """rpm2cpio "$downloadArtifact" | (mkdir -p "$destinationDir" && cd "$destinationDir" && cpio -idmv)""")
+            )
+            "deb" -> runInstall(GeneralCommandLine("sh", "-c", """mkdir -p "$destinationDir" && dpkg-deb -x "$downloadArtifact" "$destinationDir""""))
             else -> throw IllegalStateException("Unknown extension $extension")
         }
     }
@@ -85,16 +92,19 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
     fun windowsUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/windows/SessionManagerPlugin.zip"
 
     @VisibleForTesting
-    fun macArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac_arm64/sessionmanager-bundle.zip"
+    fun macUrl(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
 
     @VisibleForTesting
-    fun macX64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/mac/sessionmanager-bundle.zip"
+    fun ubuntuArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
 
     @VisibleForTesting
-    fun debArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_arm64/session-manager-plugin.deb"
+    fun ubuntuI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
 
     @VisibleForTesting
-    fun debX64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/ubuntu_64bit/session-manager-plugin.deb"
+    fun linuxArm64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_arm64/session-manager-plugin.rpm"
+
+    @VisibleForTesting
+    fun linuxI64Url(version: FourPartVersion) = "$BASE_URL/${version.displayValue()}/linux_64bit/session-manager-plugin.rpm"
 
     private fun runInstall(cmd: GeneralCommandLine) {
         val processOutput = ExecUtil.execAndGetOutput(cmd, INSTALL_TIMEOUT.toMillis().toInt())
@@ -119,8 +129,13 @@ object SsmPlugin : ManagedToolType<FourPartVersion>, DocumentedToolType<FourPart
         Decompressor.Zip(intermediateZip).withZipExtensions().extract(destinationDir)
     }
 
+    private fun hasCommand(cmd: String): Boolean {
+        val output = ExecUtil.execAndGetOutput(GeneralCommandLine("sh", "-c", "command -v $cmd"), EXECUTION_TIMEOUT.toMillis().toInt())
+        return output.exitCode == 0
+    }
     private val LOGGER = getLogger<SsmPlugin>()
     private const val BASE_URL = "https://s3.us-east-1.amazonaws.com/session-manager-downloads/plugin"
     private const val VERSION_FILE = "$BASE_URL/latest/VERSION"
+    private val EXECUTION_TIMEOUT = Duration.ofSeconds(5)
     private val INSTALL_TIMEOUT = Duration.ofSeconds(30)
 }
