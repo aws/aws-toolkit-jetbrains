@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.gateway
 
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -40,11 +42,13 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
+import software.aws.toolkits.jetbrains.core.tools.ToolManager
 import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.connection.resultFromStdOut
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
+import software.aws.toolkits.jetbrains.services.ssm.SsmPlugin
 import software.aws.toolkits.jetbrains.utils.FrameworkTestUtils
 import software.aws.toolkits.jetbrains.utils.extensions.DevEnvironmentExtension
 import software.aws.toolkits.jetbrains.utils.extensions.DisposerAfterAllExtension
@@ -131,6 +135,13 @@ class DevEnvConnectTest : AfterAllCallback {
     @BeforeEach
     fun setUp(@TempDir tempDir: Path) {
         FrameworkTestUtils.ensureBuiltInServerStarted()
+
+        // TODO: some sort of race happening where this somehow returns before the executable is usable?
+        println(
+            ExecUtil.execAndGetOutput(
+                GeneralCommandLine(ToolManager.getInstance().getOrInstallTool(SsmPlugin).path.toAbsolutePath().toString())
+            )
+        )
 
         val disposable = disposableExtension.disposable
         serviceOrNull<ThinClientTrackerService>()
