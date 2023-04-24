@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains
 
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.util.registry.Registry
@@ -24,7 +25,7 @@ object AwsToolkit {
     }
 
     fun pluginPath() = if (ApplicationManager.getApplication().isUnitTestMode) {
-        Paths.get(System.getProperty("plugin.path"))
+        Paths.get(PathManager.getPluginsPath(), PLUGIN_ID)
     } else {
         DESCRIPTOR?.pluginPath ?: throw RuntimeException("Toolkit root not available")
     }

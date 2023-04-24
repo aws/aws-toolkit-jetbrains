@@ -136,13 +136,6 @@ class DevEnvConnectTest : AfterAllCallback {
     fun setUp(@TempDir tempDir: Path) {
         FrameworkTestUtils.ensureBuiltInServerStarted()
 
-        // TODO: some sort of race happening where this somehow returns before the executable is usable?
-        println(
-            ExecUtil.execAndGetOutput(
-                GeneralCommandLine(ToolManager.getInstance().getOrInstallTool(SsmPlugin).path.toAbsolutePath().toString())
-            )
-        )
-
         val disposable = disposableExtension.disposable
         serviceOrNull<ThinClientTrackerService>()
             ?: ApplicationManager
@@ -151,6 +144,13 @@ class DevEnvConnectTest : AfterAllCallback {
 
         MockClientManager.useRealImplementations(disposableExtension.disposable)
         MockToolManagerRule.useRealTools(disposable)
+
+        // TODO: some sort of race happening where this somehow returns before the executable is usable?
+        println(
+            ExecUtil.execAndGetOutput(
+                GeneralCommandLine(ToolManager.getInstance().getOrInstallTool(SsmPlugin).path.toAbsolutePath().toString())
+            )
+        )
 
         // can probably abstract this out as an extension
         // force auth to complete now
