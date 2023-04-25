@@ -3,15 +3,22 @@
 
 package software.aws.toolkits.core.utils
 
+import org.slf4j.Logger
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
+import java.nio.file.AccessMode
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
+import kotlin.io.path.isRegularFile
+
+val POSIX_OWNER_ONLY_FILE = setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+val POSIX_OWNER_ONLY_DIR = setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE)
 
 fun Path.inputStream(): InputStream = Files.newInputStream(this)
 fun Path.inputStreamIfExists(): InputStream? = try {
@@ -20,26 +27,126 @@ fun Path.inputStreamIfExists(): InputStream? = try {
     null
 }
 
-fun Path.touch() {
-    this.createParentDirectories()
+fun Path.touch(restrictToOwner: Boolean = false) {
     try {
-        Files.createFile(this)
-    } catch (_: FileAlreadyExistsException) { }
+        if (!restrictToOwner || !hasPosixFilePermissions()) {
+            Files.createFile(this)
+        } else {
+            Files.createFile(this, PosixFilePermissions.asFileAttribute(POSIX_OWNER_ONLY_FILE))
+        }
+    } catch (_: FileAlreadyExistsException) {}
 }
 
 fun Path.outputStream(): OutputStream {
     this.createParentDirectories()
     return Files.newOutputStream(this)
 }
-fun Path.createParentDirectories() = Files.createDirectories(this.parent)
+
+fun Path.createParentDirectories(restrictToOwner: Boolean = false) = if (!restrictToOwner || !hasPosixFilePermissions()) {
+    Files.createDirectories(this.parent)
+} else {
+    Files.createDirectories(this.parent, PosixFilePermissions.asFileAttribute(POSIX_OWNER_ONLY_DIR))
+}
+
 fun Path.exists() = Files.exists(this)
 fun Path.deleteIfExists() = Files.deleteIfExists(this)
 fun Path.lastModified(): FileTime = Files.getLastModifiedTime(this)
 fun Path.readText(charset: Charset = Charsets.UTF_8) = toFile().readText(charset)
 fun Path.writeText(text: String, charset: Charset = Charsets.UTF_8) = toFile().writeText(text, charset)
+
+// Comes from PosixFileAttributeView#name()
+fun Path.hasPosixFilePermissions() = "posix" in this.fileSystem.supportedFileAttributeViews()
 fun Path.filePermissions(permissions: Set<PosixFilePermission>) {
-    // Comes from PosixFileAttributeView#name()
-    if ("posix" in this.fileSystem.supportedFileAttributeViews()) {
+    if (hasPosixFilePermissions()) {
         Files.setPosixFilePermissions(this, permissions)
     }
+}
+
+fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
+    try {
+        block(this)
+    } catch (e: Exception) {
+        if (e !is java.nio.file.AccessDeniedException && e !is kotlin.io.AccessDeniedException) {
+            throw e
+        }
+
+        if (!hasPosixFilePermissions()) {
+            throw e
+        }
+
+        log.info(e) { "Attempting to handle ADE for directory operation" }
+        try {
+            var parent = if (this.isRegularFile()) { parent } else { this }
+
+            while (parent != null) {
+                if (!parent.exists()) {
+                    log.info { "${parent.toAbsolutePath()}: does not exist yet" }
+                } else {
+                    if (tryOrNull { parent.fileSystem.provider().checkAccess(parent, AccessMode.READ, AccessMode.WRITE, AccessMode.EXECUTE) } != null) {
+                        // can assume parent permissions are correct
+                        break
+                    }
+
+                    parent.tryFixPerms(log, POSIX_OWNER_ONLY_DIR)
+                }
+
+                parent = parent.parent
+            }
+        } catch (e2: Exception) {
+            log.warn(e2) { "Encountered error while handling ADE for ${e.message}" }
+
+            throw e
+        }
+
+        log.info { "Done attempting to handle ADE for directory operation" }
+        block(this)
+    }
+}
+
+fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
+    try {
+        block(this)
+    } catch (e: Exception) {
+        if (e !is java.nio.file.AccessDeniedException && e !is kotlin.io.AccessDeniedException) {
+            throw e
+        }
+
+        if (!hasPosixFilePermissions()) {
+            throw e
+        }
+
+        log.info(e) { "Attempting to handle ADE for file operation" }
+        try {
+            tryFixPerms(log, POSIX_OWNER_ONLY_FILE)
+        } catch (e2: Exception) {
+            log.warn(e2) { "Encountered error while handling ADE for ${e.message}" }
+
+            throw e
+        }
+
+        log.info { "Done attempting to handle ADE for file operation" }
+        block(this)
+    }
+
+private fun Path.tryFixPerms(log: Logger, desiredPermissions: Set<PosixFilePermission>) {
+    // only try ops if we own the file
+    // (ab)use invariant that chmod only works if you are root or the file owner
+    val perms = tryOrLogShortException(log) { Files.getPosixFilePermissions(this) }
+    val ownership = tryOrLogShortException(log) { Files.getOwner(this) }
+
+    log.info { "Permissions for ${toAbsolutePath()}: $ownership, $perms" }
+    if (perms != null && ownership != null) {
+        if (ownership.name != "root" && tryOrNull { filePermissions(perms) } != null) {
+            val permissions = perms + desiredPermissions
+            log.info { "Setting perms for ${toAbsolutePath()}: $permissions" }
+            filePermissions(permissions)
+        }
+    }
+}
+
+private inline fun<T> tryOrLogShortException(log: Logger, block: () -> T) = try {
+    block()
+} catch (e: Exception) {
+    log.warn { "${e::class.simpleName}: ${e.message}" }
+    null
 }
