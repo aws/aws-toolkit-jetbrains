@@ -160,7 +160,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", scopes = emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -188,7 +188,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", scopes = emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).resolveToken()
@@ -214,7 +214,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", scopes = emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).reauthenticate()
@@ -240,7 +240,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", scopes = listOf("existing1"))
+            loginSso(projectRule.project, "foo", requestedScopes = listOf("existing1"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -268,7 +268,7 @@ class DefaultToolkitAuthManagerTest {
             )
 
             val newScopes = listOf("existing1", "new1")
-            loginSso(projectRule.project, "foo", scopes = newScopes)
+            loginSso(projectRule.project, "foo", requestedScopes = newScopes)
 
             val captor = argumentCaptor<ManagedBearerSsoConnection>()
             verify(connectionManager).switchConnection(captor.capture())
@@ -296,7 +296,7 @@ class DefaultToolkitAuthManagerTest {
             // before
             assertThat(sut.listConnections()).hasSize(0)
 
-            loginSso(projectRule.project, "foo", scopes = listOf("scope1", "scope2"))
+            loginSso(projectRule.project, "foo", requestedScopes = listOf("scope1", "scope2"))
 
             // after
             assertThat(sut.listConnections()).hasSize(1)
