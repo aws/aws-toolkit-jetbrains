@@ -68,7 +68,6 @@ object SamTemplateFileUtils {
             runReadAction {
                 project.validateSamTemplateHasResources(templateFile)
             }
-
         } catch (e: Exception) {
             message("serverless.application.deploy.error.bad_parse", templateFile.path, e)
         }
