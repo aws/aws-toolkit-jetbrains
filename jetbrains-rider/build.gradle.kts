@@ -74,7 +74,7 @@ class RdGenPlugin2 : Plugin<Project> {
         project.dependencies.run {
             add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.0")
             add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib:1.7.0")
-            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-reflect:1.7.0")
+            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-reflect:1.8.20")
             add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.0")
             add("rdGenConfiguration", "org.jetbrains.intellij.deps:trove4j:1.0.20181211")
         }
