@@ -3,14 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.explorer
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.annotations.Property
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval
 import software.aws.toolkits.core.utils.getLogger
@@ -22,6 +20,8 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isAccessTokenExpired
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isRefreshTokenExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.time.LocalDateTime
 
@@ -55,14 +55,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.IsAutoEnabled] = isAutoEnabled
     }
 
-    fun hasAcceptedTermsOfService(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.HasAcceptedTermsOfServices, false)
-
-    fun setHasAcceptedTermsOfService(hasAcceptedTermsOfService: Boolean) {
-        actionState.value[CodeWhispererExploreStateType.HasAcceptedTermsOfServices] = hasAcceptedTermsOfService
-        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_ACTIVATION_CHANGED)
-            .activationChanged(hasAcceptedTermsOfService)
-    }
-
     fun hasShownHowToUseCodeWhisperer(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.HasShownHowToUseCodeWhisperer, false)
 
     fun setHasShownHowToUseCodeWhisperer(hasShownHowToUseCodeWhisperer: Boolean) {
@@ -93,6 +85,12 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.DoNotShowAgainError] = doNotShowAgain
     }
 
+    fun getConnectionExpiredDoNotShowAgain(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.ConnectionExpiredDoNotShowAgain, false)
+
+    fun setConnectionExpiredDoNotShowAgain(doNotShowAgain: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.ConnectionExpiredDoNotShowAgain] = doNotShowAgain
+    }
+
     fun getAccountlessNullified(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.AccountlessNullified, false)
 
     fun setAccountlessNullified(accountlessNullified: Boolean) {
@@ -121,8 +119,8 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     }
 
     fun checkActiveCodeWhispererConnectionType(project: Project) = when {
-        !hasAcceptedTermsOfService() -> CodeWhispererLoginType.Logout
         actionState.token != null -> CodeWhispererLoginType.Accountless
+        isAccessTokenExpired(project) || isRefreshTokenExpired(project) -> CodeWhispererLoginType.Expired
         else -> {
             val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
             if (conn != null) {
@@ -163,10 +161,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         @JvmStatic
         fun getInstance(): CodeWhispererExplorerActionManager = service()
 
-        val CODEWHISPERER_ACTIVATION_CHANGED: Topic<CodeWhispererActivationChangedListener> = Topic.create(
-            "CodeWhisperer enabled",
-            CodeWhispererActivationChangedListener::class.java
-        )
         private val LOG = getLogger<CodeWhispererExplorerActionManager>()
     }
 }
@@ -194,7 +188,8 @@ enum class CodeWhispererExploreStateType {
     HasShownHowToUseCodeWhisperer,
     DoNotShowAgainWarn,
     DoNotShowAgainError,
-    AccountlessNullified
+    AccountlessNullified,
+    ConnectionExpiredDoNotShowAgain
 }
 
 interface CodeWhispererActivationChangedListener {
@@ -203,4 +198,8 @@ interface CodeWhispererActivationChangedListener {
 
 fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
     checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
+}
+
+fun isCodeWhispererExpired(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
+    checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
 }

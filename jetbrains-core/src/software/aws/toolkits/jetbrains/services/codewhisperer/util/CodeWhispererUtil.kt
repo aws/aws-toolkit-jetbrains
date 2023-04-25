@@ -3,19 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import software.amazon.awssdk.services.codewhisperer.model.Recommendation
+import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
@@ -26,17 +24,19 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWit
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import java.net.URI
 
 object CodeWhispererUtil {
 
     fun checkCompletionType(
-        results: List<Recommendation>,
+        results: List<Completion>,
         noRecommendation: Boolean
     ): CodewhispererCompletionType {
         if (noRecommendation) {
@@ -50,21 +50,22 @@ object CodeWhispererUtil {
     }
 
     // return true if every recommendation is empty
-    fun checkEmptyRecommendations(recommendations: List<Recommendation>): Boolean =
+    fun checkEmptyRecommendations(recommendations: List<Completion>): Boolean =
         recommendations.all { it.content().isEmpty() }
 
     fun notifyWarnCodeWhispererUsageLimit(project: Project? = null) {
         notifyWarn(
             message("codewhisperer.notification.usage_limit.warn.title"),
-            message("codewhisperer.notification.usage_limit.warn.content"),
+            message("codewhisperer.notification.usage_limit.codesuggestion.warn.content"),
             project,
         )
     }
 
-    fun notifyErrorCodeWhispererUsageLimit(project: Project? = null) {
+    fun notifyErrorCodeWhispererUsageLimit(project: Project? = null, isCodeScan: Boolean = false) {
         notifyError(
             "",
-            message("codewhisperer.notification.usage_limit.warn.content"),
+            if (!isCodeScan) message("codewhisperer.notification.usage_limit.codesuggestion.warn.content")
+            else message("codewhisperer.notification.usage_limit.codescan.warn.content"),
             project,
         )
     }
@@ -93,42 +94,51 @@ object CodeWhispererUtil {
         listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError(), DoNotShowAgainActionError())
     )
 
-    fun isConnectionExpired(project: Project): Boolean {
+    fun isAccessTokenExpired(project: Project): Boolean {
         val tokenProvider = tokenProvider(project) ?: return false
         val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NEEDS_REFRESH || state == BearerTokenAuthState.NOT_AUTHENTICATED
+        return state == BearerTokenAuthState.NEEDS_REFRESH
     }
 
-    fun promptReAuth(project: Project, callback: () -> Unit = {}) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        if (connection !is BearerSsoConnection) return
-        val tokenProvider = tokenProvider(project) ?: return
-        maybeReauthProviderIfNeeded(project, tokenProvider) {
+    fun isRefreshTokenExpired(project: Project): Boolean {
+        val tokenProvider = tokenProvider(project) ?: return false
+        val state = tokenProvider.state()
+        return state == BearerTokenAuthState.NOT_AUTHENTICATED
+    }
+
+    // This will be called only when there's a CW connection, but it has expired(either accessToken or refreshToken)
+    // 1. If connection is expired, try to refresh
+    // 2. If not able to refresh, requesting re-login by showing a notification
+    // 3. The notification will be shown at most once per IDE session
+    // Return true if need to re-auth, false otherwise
+    fun promptReAuth(project: Project): Boolean {
+        if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
+        if (!isCodeWhispererExpired(project)) return false
+        val tokenProvider = tokenProvider(project) ?: return false
+        return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
-                notifyConnectionExpired(project, connection)
-                callback()
+                notifyConnectionExpiredRequestReauth(project)
+                CodeWhispererService.markReAuthPromptShown()
             }
         }
     }
 
-    private fun notifyConnectionExpired(project: Project, connection: BearerSsoConnection?) {
-        connection ?: return
-        logoutFromSsoConnection(project, connection)
+    private fun notifyConnectionExpiredRequestReauth(project: Project) {
+        if (CodeWhispererExplorerActionManager.getInstance().getConnectionExpiredDoNotShowAgain()) {
+            return
+        }
         notifyError(
-            message("toolkit.sso_expire.dialog.title", connection.label),
+            message("toolkit.sso_expire.dialog.title"),
             message("toolkit.sso_expire.dialog_message"),
             project,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    ApplicationManager.getApplication().executeOnPooledThread {
-                        getConnectionStartUrl(connection)?.let { startUrl ->
-                            loginSso(project, startUrl, connection.scopes)
-                        }
-                    }
+                    reconnectCodeWhisperer(project)
                     notification.expire()
                 },
-                NotificationAction.createSimple(message("aws.settings.learn_more")) {
-                    BrowserUtil.browse(URI("https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer.html"))
+                NotificationAction.create(message("toolkit.sso_expire.dialog.no_button")) { _, notification ->
+                    CodeWhispererExplorerActionManager.getInstance().setConnectionExpiredDoNotShowAgain(true)
+                    notification.expire()
                 }
             )
         )
@@ -148,6 +158,16 @@ object CodeWhispererUtil {
         ?.getConnectionSettings()
         ?.tokenProvider
         ?.delegate as? BearerTokenProvider
+
+    fun reconnectCodeWhisperer(project: Project) {
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        if (connection !is BearerSsoConnection) return
+        ApplicationManager.getApplication().executeOnPooledThread {
+            getConnectionStartUrl(connection)?.let { startUrl ->
+                loginSso(project, startUrl, scopes = connection.scopes)
+            }
+        }
+    }
 }
 
 enum class CaretMovement {

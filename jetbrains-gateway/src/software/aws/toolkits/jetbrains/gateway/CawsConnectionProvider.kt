@@ -148,7 +148,26 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                             canBeCancelled = true,
                             isIndeterminate = true,
                         ) {
-                            validateEnvironmentIsRunning(indicator, environmentActions)
+                            val timeBeforeEnvIsRunningCheck = System.currentTimeMillis()
+                            var validateEnvIsRunningResult = TelemetryResult.Succeeded
+                            var errorMessageDuringStateValidation: String? = null
+                            try {
+                                validateEnvironmentIsRunning(indicator, environmentActions)
+                            } catch (e: Exception) {
+                                validateEnvIsRunningResult = TelemetryResult.Failed
+                                errorMessageDuringStateValidation = e.message
+                                throw e
+                            } finally {
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = validateEnvIsRunningResult,
+                                    duration = (System.currentTimeMillis() - timeBeforeEnvIsRunningCheck).toDouble(),
+                                    codecatalystDevEnvironmentWorkflowStep = "validateEnvRunning",
+                                    codecatalystDevEnvironmentWorkflowError = errorMessageDuringStateValidation
+                                )
+                            }
+
                             val isSmallInstance = cawsClient.getDevEnvironment {
                                 it.id(envId)
                                 it.projectName(projectName)
@@ -166,6 +185,8 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
                             val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
                             var retries = 3
+                            val startTimeToCheckInstallation = System.currentTimeMillis()
+
                             val toolkitInstallSettings: ToolkitInstallSettings? = coroutineScope {
                                 while (retries > 0) {
                                     indicator.checkCanceled()
@@ -173,6 +194,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         pluginPath,
                                         timeout = Duration.ofSeconds(15)
                                     )
+
                                     when (pluginIsInstalled) {
                                         null -> {
                                             if (retries == 1) {
@@ -188,9 +210,19 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     }
                                 }
                             } as ToolkitInstallSettings?
+
                             toolkitInstallSettings ?: let {
                                 // environment is non-responsive to SSM; restart
                                 LOG.warn { "Restarting $envId since it appears unresponsive to SSM Run-Command" }
+                                val timeTakenToCheckInstallation = System.currentTimeMillis() - startTimeToCheckInstallation
+                                CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                                    project = null,
+                                    userId = userId,
+                                    result = TelemetryResult.Failed,
+                                    codecatalystDevEnvironmentWorkflowStep = "ToolkitInstallationSSMCheck",
+                                    codecatalystDevEnvironmentWorkflowError = "Timeout/Unknown error while connecting to Dev Env via SSM",
+                                    duration = timeTakenToCheckInstallation.toDouble()
+                                )
                                 coroutineScope {
                                     launchChildIOBackground {
                                         environmentActions.stopEnvironment()
@@ -337,7 +369,10 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         }
     }
 
-    private fun validateEnvironmentIsRunning(indicator: ProgressIndicator, environmentActions: WorkspaceActions) {
+    private fun validateEnvironmentIsRunning(
+        indicator: ProgressIndicator,
+        environmentActions: WorkspaceActions
+    ) {
         when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
             DevEnvironmentStatus.RUNNING -> {
