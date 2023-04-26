@@ -230,10 +230,11 @@ open class ToolkitAddConnectionDialog(
 
         buttonsGroup {
             // AWS Builder ID
+            val awsBuilderIdDoc = "<a href=${HelpIds.SETUP_AWS_BUILDER_ID_DOC.url}> Learn More</a>"
             row {
                 radioButton(message("toolkit.login.dialog.aws_builder_id.title"), LoginOptions.AWS_BUILDER_ID)
                     .comment(
-                        message("toolkit.login.dialog.aws_builder_id.comment"),
+                        message("toolkit.login.dialog.aws_builder_id.comment").plus(awsBuilderIdDoc),
                         commentMaxLength
                     )
             }

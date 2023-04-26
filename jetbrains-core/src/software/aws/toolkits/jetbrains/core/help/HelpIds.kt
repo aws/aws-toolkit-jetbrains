@@ -6,6 +6,12 @@ package software.aws.toolkits.jetbrains.core.help
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 
 enum class HelpIds(shortId: String, val url: String) {
+    // AWS Builder Id Doc
+    SETUP_AWS_BUILDER_ID_DOC(
+        "setupAwsBuilderIdDoc",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/builder-id.html"
+    ),
+
     // App Runner
     APPRUNNER_PAUSE_RESUME(
         "appRunnerPauseResume",
