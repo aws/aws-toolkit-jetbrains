@@ -159,7 +159,7 @@ fun loginSso(project: Project?, startUrl: String, region: String = DEFAULT_SSO_R
             ManagedSsoProfile(
                 region,
                 startUrl,
-                allScopes
+                allScopes.toSet().toList()
             )
         )
 

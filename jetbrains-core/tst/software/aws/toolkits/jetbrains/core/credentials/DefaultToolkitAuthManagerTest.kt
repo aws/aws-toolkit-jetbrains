@@ -18,6 +18,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -267,18 +268,21 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
+
+
             val newScopes = listOf("existing1", "new1")
             loginSso(projectRule.project, "foo", requestedScopes = newScopes)
 
             val captor = argumentCaptor<ManagedBearerSsoConnection>()
-            verify(connectionManager).switchConnection(captor.capture())
-            assertThat(captor.allValues.size).isEqualTo(1)
-            assertThat(captor.firstValue).satisfies { connection ->
-                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+
+            verify(connectionManager, times(2)).switchConnection(captor.capture())
+
+            assertThat(captor.secondValue).satisfies { connection ->
+                assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3","new1"))
             }
             assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<BearerSsoConnection>() { connection ->
                 assertThat(connection).usingRecursiveComparison().isNotEqualTo(existingConnection)
-                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+                assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3","new1"))
             }
         }
     }
