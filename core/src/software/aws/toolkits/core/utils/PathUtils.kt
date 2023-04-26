@@ -12,9 +12,13 @@ import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
+import java.nio.file.attribute.AclEntry
+import java.nio.file.attribute.AclFileAttributeView
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.attribute.UserPrincipal
+import kotlin.io.path.getPosixFilePermissions
 import kotlin.io.path.isRegularFile
 
 val POSIX_OWNER_ONLY_FILE = setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
@@ -71,7 +75,7 @@ fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
         }
 
         if (!hasPosixFilePermissions()) {
-            throw e
+            throw tryAugmentExceptionMessage(e, this)
         }
 
         log.info(e) { "Attempting to handle ADE for directory operation" }
@@ -95,7 +99,7 @@ fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
         } catch (e2: Exception) {
             log.warn(e2) { "Encountered error while handling ADE for ${e.message}" }
 
-            throw e
+            throw tryAugmentExceptionMessage(e, this)
         }
 
         log.info { "Done attempting to handle ADE for directory operation" }
@@ -112,7 +116,7 @@ fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
         }
 
         if (!hasPosixFilePermissions()) {
-            throw e
+            throw tryAugmentExceptionMessage(e, this)
         }
 
         log.info(e) { "Attempting to handle ADE for file operation" }
@@ -121,7 +125,7 @@ fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
         } catch (e2: Exception) {
             log.warn(e2) { "Encountered error while handling ADE for ${e.message}" }
 
-            throw e
+            throw tryAugmentExceptionMessage(e, this)
         }
 
         log.info { "Done attempting to handle ADE for file operation" }
@@ -129,6 +133,7 @@ fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
     }
 
 private fun Path.tryFixPerms(log: Logger, desiredPermissions: Set<PosixFilePermission>) {
+    // TODO: consider handling linux ACLs
     // only try ops if we own the file
     // (ab)use invariant that chmod only works if you are root or the file owner
     val perms = tryOrLogShortException(log) { Files.getPosixFilePermissions(this) }
@@ -141,6 +146,57 @@ private fun Path.tryFixPerms(log: Logger, desiredPermissions: Set<PosixFilePermi
             log.info { "Setting perms for ${toAbsolutePath()}: $permissions" }
             filePermissions(permissions)
         }
+    }
+}
+
+private fun tryAugmentExceptionMessage(e: Exception, path: Path): Exception {
+    if (e !is java.nio.file.AccessDeniedException && e !is kotlin.io.AccessDeniedException) {
+        return e
+    }
+
+    var potentialProblem = if (path.exists()) { path } else { path.parent }
+    var acls: List<AclEntry>? = null
+    var ownership: UserPrincipal? = null
+    while (potentialProblem != null) {
+        acls = tryOrNull { Files.getFileAttributeView(potentialProblem, AclFileAttributeView::class.java).acl }
+        ownership = tryOrNull { Files.getOwner(potentialProblem) }
+
+        if (acls != null || ownership != null) {
+            break
+        }
+
+        potentialProblem = potentialProblem.parent
+    }
+
+    val message = buildString {
+        // $path is automatically added to the front of the exception message
+        appendLine("Exception trying to perform operation")
+
+        if (potentialProblem != null) {
+            append("Potential issue is with $potentialProblem")
+
+            if (ownership != null) {
+                append(", which has owner: $ownership")
+            }
+
+            if (acls != null) {
+                append(", and ACL entries for: ${acls.map { it.principal() }}")
+            }
+
+            val posixPermissions = tryOrNull { PosixFilePermissions.toString(potentialProblem.getPosixFilePermissions()) }
+            if (posixPermissions != null) {
+                append(", and POSIX permissions: $posixPermissions")
+            }
+        }
+    }
+
+    return when (e) {
+        is kotlin.io.AccessDeniedException -> kotlin.io.AccessDeniedException(e.file, e.other, message)
+        is java.nio.file.AccessDeniedException -> java.nio.file.AccessDeniedException(e.file, e.otherFile, message)
+        // should never happen
+        else -> e
+    }.also {
+        it.stackTrace = e.stackTrace
     }
 }
 
