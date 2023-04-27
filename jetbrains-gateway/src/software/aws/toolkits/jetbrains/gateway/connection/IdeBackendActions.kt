@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.gateway.connection
 
 import com.intellij.execution.process.ProcessHandler
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.remoteDev.hostStatus.UnattendedHostConstants
 import com.intellij.remoteDev.hostStatus.UnattendedHostStatus
 import com.intellij.util.net.NetUtils
@@ -16,6 +17,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.gateway.BranchCloneType
 import software.aws.toolkits.jetbrains.gateway.CawsSettings
@@ -30,6 +32,7 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 private const val PROJECT_PATH = "/projects"
 const val IDE_BACKEND_DIR = "/aws/mde/ide-runtimes/jetbrains/runtime/"
+val GET_IDE_BACKEND_VERSION_COMMAND = "cat $IDE_BACKEND_DIR/build.txt"
 private const val REMOTE_SERVER_CMD = "$IDE_BACKEND_DIR/bin/remote-dev-server.sh"
 
 class IdeBackendActions(
@@ -50,7 +53,21 @@ class IdeBackendActions(
     }
 
     fun startBackend(): ProcessHandler = remoteCommandExecutor.executeLongLivedSshCommandLine {
-        it.addToRemoteCommand("$remoteScriptPath/start-ide.sh $REMOTE_SERVER_CMD $projectPath")
+        val cmd = buildString {
+            val token = if (ApplicationManager.getApplication().isUnitTestMode) {
+                System.getenv("CWM_HOST_STATUS_OVER_HTTP_TOKEN")
+            } else if (AwsToolkit.isDeveloperMode()) {
+                System.getProperty("user.name")
+            } else {
+                null
+            }
+
+            token?.let { append("CWM_HOST_STATUS_OVER_HTTP_TOKEN=$it ") }
+
+            append("$remoteScriptPath/start-ide.sh $REMOTE_SERVER_CMD $projectPath")
+        }
+
+        it.addToRemoteCommand(cmd)
     }
 
     fun remoteScriptsExist() = remoteCommandExecutor.remoteDirectoryExistsUnsafe(remoteScriptPath)
@@ -113,7 +130,7 @@ class IdeBackendActions(
 
         if (statusStart < 0) {
             if (output.stdout.contains("IDE has not been initialized yet")) {
-                return IdeBackendStatus.HostAlive
+                return IdeBackendStatus.HostAlive(null)
             }
             return IdeBackendStatus.HostNotAlive
         }
@@ -140,25 +157,27 @@ class IdeBackendActions(
             // 	Suppressed: kotlinx.coroutines.DiagnosticCoroutineContextException: [no parent and no name, ModalityState.NON_MODAL, StandaloneCoroutine{Cancelling}@6dfed258, EDT]
             //                                                                                                                                                     ^ error due to finding this }
             // rather than be more robust, just treat it as a failure and let the backend restart auto-retry
-        } ?: return IdeBackendStatus.HostAlive
+        } ?: return IdeBackendStatus.HostAlive(null)
 
-        val projectIdx = status.projects?.indexOfFirst { it.projectPath == projectPath } ?: return IdeBackendStatus.HostAlive
-        if (projectIdx < 0) {
-            return IdeBackendStatus.HostAlive
+        val projectIdx = status.projects?.indexOfFirst { it.projectPath == projectPath }
+        if (projectIdx == null || projectIdx < 0) {
+            return IdeBackendStatus.HostAlive(status)
         }
 
         return IdeBackendStatus.BackendRunning(status, projectIdx)
     }
 
-    fun getGatewayConnectLink(timeout: Duration): Pair<Long, URI>? {
-        val status = (getStatus(timeout) as? IdeBackendStatus.BackendRunning) ?: return null
+    fun getGatewayConnectLink(status: IdeBackendStatus): Pair<Long, URI>? {
+        val backendStatus = (status as? IdeBackendStatus.BackendRunning) ?: return null
         // TODO: should we do what JetBrains does instead?
         // ps aux | egrep ${status.idePath} + '.*com.intellij.idea.Main [c]wmHostNoLobby' + $projectPath
-        val pid = status.hostStatus.appPid
-        val joinLink = status.projectStatus.joinLink
+        val pid = backendStatus.hostStatus.appPid
+        val joinLink = backendStatus.projectStatus.joinLink
 
         return pid to URI(joinLink)
     }
+
+    fun getGatewayConnectLink(timeout: Duration): Pair<Long, URI>? = getGatewayConnectLink(getStatus(timeout))
 
     fun forwardBackendToLocalhost(connectLink: URI, lifetime: Lifetime): URI {
         val localPort = NetUtils.findAvailableSocketPort()

@@ -1,3 +1,42 @@
+# _1.65_ (2023-04-13)
+- **(Feature)** [CodeWhisperer]: Introducing "Stop code scan" feature where users will be able to stop the ongoing code scan and immediately start a new one.
+- **(Feature)** [CodeWhisperer]: Automatic import recommendations
+- **(Feature)** [CodeWhisperer]: Now supports cross region calls.
+- **(Feature)** Attempt to download IDE thin client earlier in the CodeCatalyst Dev Environment connection process
+- **(Feature)** [CodeWhisperer]: New supported programming languages: C, C++, Go, Kotlin, Php, Ruby, Rust, Scala, Shell, Sql.
+- **(Bug Fix)** Include more information in the Dev Environment status tooltip
+- **(Bug Fix)** Provide consistent UX in all Dev Environment wizard variants
+- **(Bug Fix)** Fix 'MissingResourceException: Registry key is not defined'
+- **(Bug Fix)** [CodeWhisperer]: Multiple bug fixes to improve user experience
+- **(Removal)** Drop support for the Node.js 12.x Lambda runtime
+- **(Removal)** Drop support for the .NET Core 3.1 Lambda runtime
+
+# _1.64_ (2023-03-29)
+- **(Breaking Change)** Required SAM CLI upgrade to v1.78.0 to for using Sync Serverless Application option.
+- **(Feature)** Support for RDS MariaDB instances ([#3530](https://github.com/aws/aws-toolkit-jetbrains/issues/3530))
+- **(Feature)** Added 2023.1 support
+- **(Deprecation)** An upcoming release will remove support for IDEs based on the 2022.1 platform
+
+# _1.63_ (2023-03-24)
+- **(Bug Fix)** Fix issue where multiple Builder ID entries show up in connection list
+- **(Bug Fix)** Fix temporary deadlock when user fails to complete reauthentication request
+- **(Bug Fix)** Only allow cloning a repository from CodeCatalyst if it's hosted on CodeCatalyst
+
+# _1.62_ (2023-03-20)
+- **(Bug Fix)** Show friendlier application name when signing in using SSO
+- **(Bug Fix)** Fix confusing experience when attempting to sign in to multiple Builder IDs
+
+# _1.61_ (2023-02-17)
+- **(Bug Fix)** Authenticating through the browser now requires users to manually enter a user verification code for SSO/AWS Builder ID
+- **(Bug Fix)** Fix NPE that may occur when installing the toolkit for the first time ([#3433](https://github.com/aws/aws-toolkit-jetbrains/issues/3433))
+- **(Bug Fix)** Fix network calls cant be made inside read/write action exception thrown from CodeWhisperer ([#3423](https://github.com/aws/aws-toolkit-jetbrains/issues/3423))
+
+# _1.60_ (2023-02-01)
+- **(Bug Fix)** Fix Small Dev Environment instance sizes not connecting to the thin clients
+
+# _1.59_ (2023-01-27)
+- **(Feature)** Added an option to submit feedback for the AWS Toolkit in JetBrains Gateway
+
 # _1.58_ (2023-01-12)
 - **(Feature)** CodeWhisperer: more responsive Auto-Suggestions
 - **(Feature)** Added Nodejs18.x Lambda runtime support

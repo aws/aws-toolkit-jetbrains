@@ -65,7 +65,9 @@ object SamTemplateFileUtils {
 
     fun validateTemplateFile(project: Project, templateFile: VirtualFile): String? =
         try {
-            project.validateSamTemplateHasResources(templateFile)
+            runReadAction {
+                project.validateSamTemplateHasResources(templateFile)
+            }
         } catch (e: Exception) {
             message("serverless.application.deploy.error.bad_parse", templateFile.path, e)
         }
@@ -95,6 +97,7 @@ fun getSamCli(): GeneralCommandLine {
     val executable = runBlocking {
         ExecutableManager.getInstance().getExecutable<SamExecutable>().await()
     }
+
     val samExecutable = when (executable) {
         is ExecutableInstance.Executable -> executable
         else -> {

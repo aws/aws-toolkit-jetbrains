@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -11,12 +12,14 @@ import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 
 // TODO: unify with CredentialManager
 @State(name = "authManager", storages = [Storage("aws.xml")])
 class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<ToolkitAuthManagerState>, Disposable {
     private var state = ToolkitAuthManagerState()
-    private val connections = mutableListOf<ToolkitConnection>()
+    private val connections = linkedSetOf<ToolkitConnection>()
     private val transientConnections = let {
         val factoryConnections = mutableListOf<ToolkitConnection>()
         ToolkitStartupAuthFactory.EP_NAME.forEachExtensionSafe { factory ->
@@ -34,8 +37,16 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
     override fun createConnection(profile: AuthProfile): ToolkitConnection {
         val connection = connectionFromProfile(profile)
-        connections.add(connection)
+        connections.firstOrNull { it.id == connection.id }?.let {
+            LOG.warn { "$it already exists in connection list" }
+            if (connection is Disposable) {
+                Disposer.dispose(connection)
+            }
 
+            return it
+        }
+
+        connections.add(connection)
         return connection
     }
 
@@ -43,6 +54,8 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         connections.removeAll { connection ->
             predicate(connection).also {
                 if (it && connection is Disposable) {
+                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+                        .invalidate(connection.id)
                     Disposer.dispose(connection)
                 }
             }
@@ -84,8 +97,12 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
     override fun loadState(state: ToolkitAuthManagerState) {
         this.state = state
-        val newConnections = state.ssoProfiles.filterNotNull().map {
+        val newConnections = linkedSetOf(*state.ssoProfiles.toTypedArray()).filterNotNull().map {
             connectionFromProfile(it)
+        }
+
+        if (newConnections.size != state.ssoProfiles.size) {
+            LOG.warn { "Persisted state had duplicate profiles" }
         }
 
         connections.clear()

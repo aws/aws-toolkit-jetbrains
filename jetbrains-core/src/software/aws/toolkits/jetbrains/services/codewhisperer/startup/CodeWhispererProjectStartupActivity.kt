@@ -12,6 +12,9 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorAccountless
@@ -38,10 +41,14 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
 
+        // Reconnect CodeWhisperer on startup
         promptReAuth(project)
 
+        CodeWhispererAutoTriggerService.getInstance().determineUserGroupIfNeeded()
+
         // install intellsense autotrigger listener, this only need to be executed 1 time
-        project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntlliSenseAutoTriggerListener)
+        project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntelliSenseAutoTriggerListener)
+        project.messageBus.connect().subscribe(CODEWHISPERER_USER_ACTION_PERFORMED, CodeWhispererImportAdderListener)
 
         // show notification to accountless users
         showAccountlessNotificationIfNeeded(project)
@@ -53,17 +60,27 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             // simply show a notification when user login with Accountless, and it's still supported by CodeWhisperer
             if (!isExpired()) {
                 // don't show warn notification if user selected Don't show again or if notification was shown less than a week ago
-                if (!timeToShowAccessTokenWarn() || CodeWhispererExplorerActionManager.getInstance().getDoNotShowAgain()) {
+                if (!timeToShowAccessTokenWarn() || CodeWhispererExplorerActionManager.getInstance().getDoNotShowAgainWarn()) {
                     return
                 }
                 notifyWarnAccountless()
-                CodeWhispererExplorerActionManager.getInstance().setAccountlessNotificationTimestamp()
+                CodeWhispererExplorerActionManager.getInstance().setAccountlessNotificationWarnTimestamp()
 
                 // to handle the case when user open the IDE when Accountless not yet expired but expire soon e.g. 30min etc.
                 Timer().schedule(CodeWhispererConstants.EXPIRE_DATE) { notifyErrorAndDisableAccountless(project) }
             } else {
+                if (!timeToShowAccessTokenError() || CodeWhispererExplorerActionManager.getInstance().getDoNotShowAgainError()) {
+                    return
+                }
+                CodeWhispererExplorerActionManager.getInstance().setAccountlessNotificationErrorTimestamp()
                 notifyErrorAndDisableAccountless(project)
             }
+        } else if (CodeWhispererExplorerActionManager.getInstance().getAccountlessNullified()) {
+            if (!timeToShowAccessTokenError() || CodeWhispererExplorerActionManager.getInstance().getDoNotShowAgainError()) {
+                return
+            }
+            CodeWhispererExplorerActionManager.getInstance().setAccountlessNotificationErrorTimestamp()
+            notifyErrorAndDisableAccountless(project)
         }
     }
 
@@ -75,7 +92,15 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     }
 
     private fun timeToShowAccessTokenWarn(): Boolean {
-        val lastShown = CodeWhispererExplorerActionManager.getInstance().getAccountlessNotificationTimestamp()
+        val lastShown = CodeWhispererExplorerActionManager.getInstance().getAccountlessWarnNotificationTimestamp()
+        return lastShown?.let {
+            val parsedLastShown = LocalDateTime.parse(lastShown, CodeWhispererConstants.TIMESTAMP_FORMATTER)
+            parsedLastShown.plusDays(7) <= LocalDateTime.now()
+        } ?: true
+    }
+
+    private fun timeToShowAccessTokenError(): Boolean {
+        val lastShown = CodeWhispererExplorerActionManager.getInstance().getAccountlessErrorNotificationTimestamp()
         return lastShown?.let {
             val parsedLastShown = LocalDateTime.parse(lastShown, CodeWhispererConstants.TIMESTAMP_FORMATTER)
             parsedLastShown.plusDays(7) <= LocalDateTime.now()

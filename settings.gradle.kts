@@ -18,6 +18,15 @@ pluginManagement {
     }
 }
 
+buildscript {
+    // match with version catalog, s3-build-cache has silent classpath conflict with codegen task
+    // also since this is a settings plugin, we can't use a version catalog
+    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
+    dependencies {
+        classpath(platform("software.amazon.awssdk:bom:2.20.48"))
+    }
+}
+
 rootProject.name = "aws-toolkit-jetbrains"
 
 include("resources")
@@ -34,6 +43,23 @@ when (providers.gradleProperty("ideProfileName").get()) {
     }
 }
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            when (providers.gradleProperty("ideProfileName").get()) {
+                "2022.1", "2022.2" -> {
+                    // pull value from IJ library list: https://github.com/JetBrains/intellij-community/blob/<mv>/.idea/libraries/kotlinx_coroutines_jdk8.xml
+                    version("kotlinCoroutines", "1.5.2")
+                    // only needed due to binary incompat for single test on 221 & 222
+                    version("kotlin", "1.6.20")
+                }
+
+                else -> {}
+            }
+        }
+    }
+}
+
 include("jetbrains-ultimate")
 include("jetbrains-rider")
 include("intellij")
@@ -42,7 +68,7 @@ include("detekt-rules")
 
 plugins {
     id("com.gradle.enterprise").version("3.4.1")
-    id("com.github.burrunan.s3-build-cache").version("1.2")
+    id("com.github.burrunan.s3-build-cache").version("1.5")
 }
 
 gradleEnterprise {
