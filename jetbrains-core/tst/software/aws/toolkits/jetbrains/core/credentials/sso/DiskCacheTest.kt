@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.testFramework.utils.io.children
-import com.intellij.testFramework.utils.io.deleteRecursively
+import com.intellij.openapi.util.io.NioFiles
+
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -514,7 +514,7 @@ class DiskCacheTest {
     @Test
     @DisabledOnOs(OS.WINDOWS)
     fun `handles error saving client registration when user home is not writable`() {
-        cacheRoot.children.forEach { it.deleteRecursively() }
+        Files.newDirectoryStream(cacheRoot).forEach { NioFiles.deleteRecursively(it) }
         cacheRoot.resolve("fakehome").apply {
             Files.createDirectory(this)
             setPosixFilePermissions(emptySet())
