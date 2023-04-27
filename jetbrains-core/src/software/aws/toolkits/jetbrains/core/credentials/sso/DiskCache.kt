@@ -214,7 +214,7 @@ class DiskCache(
 
     private fun writeKey(path: Path, consumer: (OutputStream) -> Unit) {
         LOG.debug { "writing to $path" }
-        path.tryDirOp(LOG) { createParentDirectories(restrictToOwner = true) }
+        path.tryDirOp(LOG) { createParentDirectories() }
 
         path.tryFileOp(LOG) {
             touch(restrictToOwner = true)
