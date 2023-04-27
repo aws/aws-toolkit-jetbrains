@@ -18,6 +18,7 @@ phases:
       - useradd codebuild-user
       - ls -alh /codebuild/output
       - chown -R codebuild-user:codebuild-user /codebuild/output
+      - chown -R codebuild-user:codebuild-user /root/
 
   build:
     commands:
