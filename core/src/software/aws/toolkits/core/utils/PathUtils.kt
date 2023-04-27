@@ -88,10 +88,12 @@ fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
                     log.info { "${parent.toAbsolutePath()}: does not exist yet" }
                 } else {
                     if (tryOrNull { parent.fileSystem.provider().checkAccess(parent, AccessMode.READ, AccessMode.WRITE, AccessMode.EXECUTE) } != null) {
+                        log.debug { "$parent has rwx, exiting"}
                         // can assume parent permissions are correct
                         break
                     }
 
+                    log.debug { "fixing perms for $parent" }
                     parent.tryFixPerms(log, POSIX_OWNER_ONLY_DIR)
                 }
 
@@ -123,6 +125,7 @@ fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
 
         log.info(e) { "Attempting to handle ADE for file operation" }
         try {
+            log.debug { "fixing perms for $this" }
             tryFixPerms(log, POSIX_OWNER_ONLY_FILE)
         } catch (e2: Exception) {
             log.warn(e2) { "Encountered error while handling ADE for ${e.message}" }
