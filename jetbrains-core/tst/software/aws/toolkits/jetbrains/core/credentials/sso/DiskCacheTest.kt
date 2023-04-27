@@ -588,6 +588,8 @@ class DiskCacheTest {
     }
 
     private fun assertPosixPermissions(path: Path, expected: String) {
+        Runtime.getRuntime().exec("sync").waitFor()
+        Runtime.getRuntime().exec("sync").waitFor()
         val perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path))
         assertThat(perms).isEqualTo(expected)
     }
