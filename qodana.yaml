@@ -1,0 +1,3 @@
+version: 1.0
+dot-net:
+  solution: ReSharper.AWS.sln
