@@ -533,9 +533,9 @@ class DiskCacheTest {
         assertThat(cacheLocation).isEqualTo(Paths.get(cacheRoot.toString(), "fakehome", ".aws", "sso", "cache"))
         assertPosixPermissions(cacheRoot, "rwxr-xr-x")
         assertPosixPermissions(cacheRoot.resolve("fakehome"), "rwx------")
-        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws"), "rwx------")
-        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws").resolve("sso"), "rwx------")
-        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws").resolve("sso").resolve("cache"), "rwx------")
+        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws"), "rwxr-xr-x")
+        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws").resolve("sso"), "rwxr-xr-x")
+        assertPosixPermissions(cacheRoot.resolve("fakehome").resolve(".aws").resolve("sso").resolve("cache"), "rwxr-xr-x")
         assertPosixPermissions(registration, "rw-------")
     }
 
