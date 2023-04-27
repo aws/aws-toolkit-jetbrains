@@ -553,6 +553,7 @@ class DiskCacheTest {
         )
 
         registration.setPosixFilePermissions(emptySet())
+        assertPosixPermissions(registration, "---------")
 
         sut.saveClientRegistration(
             ssoRegion,
@@ -579,6 +580,7 @@ class DiskCacheTest {
         )
         val registration = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
         registration.setPosixFilePermissions(emptySet())
+        assertPosixPermissions(registration, "---------")
 
         assertThat(sut.loadClientRegistration(ssoRegion)).isNotNull()
 

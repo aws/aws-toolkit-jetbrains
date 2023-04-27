@@ -202,7 +202,7 @@ private fun tryAugmentExceptionMessage(e: Exception, path: Path): Exception {
     }
 }
 
-private inline fun<T> tryOrLogShortException(log: Logger, block: () -> T) = try {
+private fun<T> tryOrLogShortException(log: Logger, block: () -> T) = try {
     block()
 } catch (e: Exception) {
     log.warn { "${e::class.simpleName}: ${e.message}" }
