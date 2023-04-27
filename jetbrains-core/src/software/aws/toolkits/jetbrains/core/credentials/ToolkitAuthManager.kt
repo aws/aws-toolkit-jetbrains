@@ -139,8 +139,10 @@ fun loginSso(project: Project?, startUrl: String, region: String = DEFAULT_SSO_R
             allScopes.addAll(connection.scopes)
 
             logger.info {
-                "Forcing reauth on ${connection.id} since requested scopes ($requestedScopes) " +
-                    "are not a complete subset of current scopes (${connection.scopes})"
+                """
+                    Forcing reauth on ${connection.id} since requested scopes ($requestedScopes)
+                    are not a complete subset of current scopes (${connection.scopes})
+                """.trimIndent()
             }
             logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
