@@ -88,7 +88,7 @@ fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
                     log.info { "${parent.toAbsolutePath()}: does not exist yet" }
                 } else {
                     if (tryOrNull { parent.fileSystem.provider().checkAccess(parent, AccessMode.READ, AccessMode.WRITE, AccessMode.EXECUTE) } != null) {
-                        log.debug { "$parent has rwx, exiting"}
+                        log.debug { "$parent has rwx, exiting" }
                         // can assume parent permissions are correct
                         break
                     }
