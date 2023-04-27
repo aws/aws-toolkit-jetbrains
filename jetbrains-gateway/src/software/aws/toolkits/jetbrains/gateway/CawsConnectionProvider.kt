@@ -20,7 +20,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.remoteDev.downloader.CodeWithMeClientDownloader
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
@@ -56,20 +55,17 @@ import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
 import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
-import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CloneCode
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.CopyScripts
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallLocalPluginBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.InstallPluginBackend.InstallMarketplacePluginBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.PrimeSshAgent
-import software.aws.toolkits.jetbrains.gateway.connection.workflow.StartBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.TabbedWorkflowEmitter
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.installBundledPluginBackend
 import software.aws.toolkits.jetbrains.gateway.connection.workflow.v2.StartBackendV2
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceListStateChangeContext
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceNotifications
-import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_IDE_BACKEND_DIR
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
@@ -443,11 +439,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 }
             }
 
-            if (Registry.`is`("aws.codecatalyst.experimentalConnect", false)) {
-                add(StartBackendV2(lifetime, indicator, envId, remoteProjectName))
-            } else {
-                add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, envId.id, isSmallInstance))
-            }
+            add(StartBackendV2(lifetime, indicator, envId, remoteProjectName))
         }
 
         val promise = AsyncPromise<Unit>()

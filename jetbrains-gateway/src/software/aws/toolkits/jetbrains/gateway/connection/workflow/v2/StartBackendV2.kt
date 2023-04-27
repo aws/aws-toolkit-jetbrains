@@ -5,15 +5,11 @@ package software.aws.toolkits.jetbrains.gateway.connection.workflow.v2
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.util.startBackgroundAsync
-import com.intellij.openapi.rd.util.startLongBackgroundAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
 import com.intellij.remote.RemoteCredentialsHolder
-import com.jetbrains.gateway.ssh.ClientOverSshTunnelConnector
 import com.jetbrains.gateway.ssh.DeployFlowUtil
 import com.jetbrains.gateway.ssh.HighLevelHostAccessor
 import com.jetbrains.gateway.ssh.HostDeployInputs
-import com.jetbrains.gateway.ssh.SshHostTunnelConnector
-import com.jetbrains.gateway.ssh.SshMultistagePanelContext
 import com.jetbrains.gateway.ssh.deploy.DeployTargetInfo
 import com.jetbrains.gateway.ssh.deploy.LoggingHostCommandExecutorWrapper
 import com.jetbrains.gateway.ssh.deploy.executeCommand
@@ -42,7 +38,11 @@ class StartBackendV2(
 
         lifetime.startBackgroundAsync {
             lifetime.startUnderModalProgressAsync(message("caws.connecting.in_progress"), true) {
-                val projectPath = if(remoteProjectName == null) CawsConstants.CAWS_ENV_PROJECT_DIR else CawsConstants.CAWS_ENV_PROJECT_DIR+"/$remoteProjectName"
+                val projectPath = if (remoteProjectName == null) {
+                    CawsConstants.CAWS_ENV_PROJECT_DIR
+                } else {
+                    CawsConstants.CAWS_ENV_PROJECT_DIR + "/$remoteProjectName"
+                }
                 val hostinfo = HostDeployInputs.WithHostInfo(LoggingHostCommandExecutorWrapper(executor))
                 val hostContext = HostContext(null, hostinfo, HighLevelHostAccessor.create(executor), projectPath)
                 val accessor = DeployFlowUtil.checkHostAndDeployWorker(indicator, hostContext)

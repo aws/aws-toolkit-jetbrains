@@ -12,5 +12,4 @@ class HostContext(
     override var deployData: HostDeployInputs?,
     override val hostAccessor: HighLevelHostAccessor?,
     override val remoteProjectPath: String?
-) : HostDeployContext<Unit> {
-}
+) : HostDeployContext<Unit>

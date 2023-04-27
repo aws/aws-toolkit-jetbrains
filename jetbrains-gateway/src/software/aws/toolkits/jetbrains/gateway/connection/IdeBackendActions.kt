@@ -23,8 +23,6 @@ import software.aws.toolkits.jetbrains.gateway.CawsWizardCloneType
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.WorkspaceIdentifier
 import software.aws.toolkits.jetbrains.gateway.toWorkspace
-import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_IDE_BACKEND_DIR
-import software.aws.toolkits.jetbrains.services.caws.CawsConstants.CAWS_ENV_PROJECT_DIR
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
 import java.time.Duration
