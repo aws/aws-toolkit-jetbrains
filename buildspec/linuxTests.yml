@@ -16,6 +16,8 @@ phases:
       - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet codeartifact-creds install
       - useradd codebuild-user
+      - ls -alh /codebuild/output
+      - chown -R codebuild-user:codebuild-user /codebuild/output
 
   build:
     commands:
