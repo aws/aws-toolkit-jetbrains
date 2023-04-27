@@ -135,7 +135,7 @@ object DefaultConfigFileWriter : ConfigFileWriter {
 
     override fun createFile(file: File) {
         val path = file.toPath()
-        path.tryDirOp(LOG) { createParentDirectories(restrictToOwner = true) }
+        path.tryDirOp(LOG) { createParentDirectories() }
 
         path.tryFileOp(LOG) {
             touch(restrictToOwner = true)
