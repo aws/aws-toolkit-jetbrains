@@ -13,11 +13,10 @@ env:
 phases:
   install:
     commands:
-      - export PATH="$PATH:$HOME/.dotnet/tools"
-      - dotnet codeartifact-creds install
       - useradd codebuild-user
       - dnf install -y acl
-      - setfacl -m d:o::rwx,o::rwx /root /codebuild/output
+      - chown -R codebuild-user:codebuild-user /codebuild/output
+      - setfacl -m d:o::rwx,o::rwx /root
 
   build:
     commands:
@@ -26,6 +25,7 @@ phases:
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
           CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text)
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
+          su codebuild-user -c "dotnet codeartifact-creds install"
         fi
 
       - chmod +x gradlew
