@@ -68,6 +68,7 @@ fun Path.filePermissions(permissions: Set<PosixFilePermission>) {
 
 fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
     try {
+        log.debug { "dir op on $this" }
         block(this)
     } catch (e: Exception) {
         if (e !is java.nio.file.AccessDeniedException && e !is kotlin.io.AccessDeniedException) {
@@ -109,6 +110,7 @@ fun Path.tryDirOp(log: Logger, block: Path.() -> Unit) {
 
 fun<T> Path.tryFileOp(log: Logger, block: Path.() -> T) =
     try {
+        log.debug { "file op on $this" }
         block(this)
     } catch (e: Exception) {
         if (e !is java.nio.file.AccessDeniedException && e !is kotlin.io.AccessDeniedException) {
