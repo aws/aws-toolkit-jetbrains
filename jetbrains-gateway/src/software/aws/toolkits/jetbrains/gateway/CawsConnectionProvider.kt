@@ -444,7 +444,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
             }
 
             if (Registry.`is`("aws.codecatalyst.experimentalConnect", false)) {
-                add(StartBackendV2(lifetime, indicator, envId))
+                add(StartBackendV2(lifetime, indicator, envId, remoteProjectName))
             } else {
                 add(StartBackend(gatewayHandle, remoteScriptPath, remoteProjectName, executor, lifetime, envId.id, isSmallInstance))
             }

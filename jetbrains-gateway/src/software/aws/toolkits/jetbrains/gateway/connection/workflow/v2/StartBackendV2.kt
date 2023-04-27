@@ -4,11 +4,13 @@
 package software.aws.toolkits.jetbrains.gateway.connection.workflow.v2
 
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.rd.util.startBackgroundAsync
 import com.intellij.openapi.rd.util.startLongBackgroundAsync
 import com.intellij.openapi.rd.util.startUnderModalProgressAsync
 import com.intellij.remote.RemoteCredentialsHolder
 import com.jetbrains.gateway.ssh.ClientOverSshTunnelConnector
 import com.jetbrains.gateway.ssh.DeployFlowUtil
+import com.jetbrains.gateway.ssh.HighLevelHostAccessor
 import com.jetbrains.gateway.ssh.HostDeployInputs
 import com.jetbrains.gateway.ssh.SshHostTunnelConnector
 import com.jetbrains.gateway.ssh.SshMultistagePanelContext
@@ -27,7 +29,8 @@ import software.aws.toolkits.resources.message
 class StartBackendV2(
     private val lifetime: Lifetime,
     private val indicator: ProgressIndicator,
-    private val identifier: WorkspaceIdentifier
+    private val identifier: WorkspaceIdentifier,
+    private val remoteProjectName: String? = null
 ) : Step() {
     override val stepName: String = message("gateway.connection.workflow.start_ide")
 
@@ -37,10 +40,12 @@ class StartBackendV2(
         }
         val executor = CawsHostCommandExecutor(creds)
 
-        lifetime.startLongBackgroundAsync {
-            lifetime.startUnderModalProgressAsync("Connecting to dev environment", true) {
+        lifetime.startBackgroundAsync {
+            lifetime.startUnderModalProgressAsync(message("caws.connecting.in_progress"), true) {
+                val projectPath = if(remoteProjectName == null) CawsConstants.CAWS_ENV_PROJECT_DIR else CawsConstants.CAWS_ENV_PROJECT_DIR+"/$remoteProjectName"
                 val hostinfo = HostDeployInputs.WithHostInfo(LoggingHostCommandExecutorWrapper(executor))
-                val accessor = DeployFlowUtil.checkHostAndDeployWorker(indicator, SshMultistagePanelContext(hostinfo))
+                val hostContext = HostContext(null, hostinfo, HighLevelHostAccessor.create(executor), projectPath)
+                val accessor = DeployFlowUtil.checkHostAndDeployWorker(indicator, hostContext)
                     ?: return@startUnderModalProgressAsync null
 
                 // force-hide meaningless 'upgrade' prompt for user
@@ -51,7 +56,7 @@ class StartBackendV2(
 
                 val deployData = hostinfo.upgrade(accessor)
                     .upgrade(
-                        CawsConstants.CAWS_ENV_PROJECT_DIR,
+                        projectPath,
                         DeployTargetInfo.NoDeploy(CawsConstants.CAWS_ENV_IDE_BACKEND_DIR, null)
                     )
 
