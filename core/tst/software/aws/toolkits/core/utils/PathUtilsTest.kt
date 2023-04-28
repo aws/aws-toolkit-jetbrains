@@ -1,3 +1,6 @@
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.core.utils
 
 import org.assertj.core.api.Assertions.assertThat
@@ -16,7 +19,6 @@ import java.nio.file.attribute.AclFileAttributeView
 import java.nio.file.attribute.PosixFilePermissions
 import kotlin.io.path.createDirectory
 import kotlin.io.path.getPosixFilePermissions
-import kotlin.test.assertNotNull
 
 class PathUtilsTest {
     @Test
@@ -103,15 +105,13 @@ class PathUtilsTest {
         // need to come up with a non-painful way to setup this case to test posix...
         val sut = temp.resolve("sut")
         val aclView = Files.getFileAttributeView(temp, AclFileAttributeView::class.java)
-        aclView.apply {
-            acl = acl.map {
-                if (it.principal() != owner) {
-                    it
-                } else {
-                    AclEntry.newBuilder(it)
-                        .setPermissions(it.permissions().minus(AclEntryPermission.ADD_SUBDIRECTORY))
-                        .build()
-                }
+        aclView.acl = aclView.acl.map {
+            if (it.principal() != aclView.owner) {
+                it
+            } else {
+                AclEntry.newBuilder(it)
+                    .setPermissions(it.permissions().minus(AclEntryPermission.ADD_SUBDIRECTORY))
+                    .build()
             }
         }
 
