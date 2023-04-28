@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ main, feature/* ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   qodana:
@@ -18,7 +21,7 @@ jobs:
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2023.1.0
         with:
-          pr-mode: false
+          cache-default-branch-only: true
       - uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
