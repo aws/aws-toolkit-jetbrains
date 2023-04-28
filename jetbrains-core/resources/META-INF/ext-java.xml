@@ -19,10 +19,12 @@
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java8ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java8Al2ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java11ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.java.Java17ImageDebugSupport"/>
         <handlerResolver id="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.java.JavaLambdaHandlerResolver"/>
         <sam.projectWizard id="JAVA" implementationClass="software.aws.toolkits.jetbrains.services.lambda.java.JavaSamProjectWizard"/>
     </extensions>
     <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava"/>
+        <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererJavaImportAdder"/>
     </extensions>
 </idea-plugin>

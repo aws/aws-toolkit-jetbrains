@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.credentials.DEFAULT_SSO_REGION
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -22,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.DEFAULT_SSO_REGION
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
@@ -85,12 +86,14 @@ interface ToolkitAuthManager {
     }
 }
 
-interface ToolkitConnectionManager {
+interface ToolkitConnectionManager : Disposable {
     fun activeConnection(): ToolkitConnection?
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
 
     fun switchConnection(connection: ToolkitConnection?)
+
+    override fun dispose() {}
 
     companion object {
         fun getInstance(project: Project?) = project?.let { it.service<ToolkitConnectionManager>() } ?: service()
@@ -100,15 +103,17 @@ interface ToolkitConnectionManager {
 /**
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
  */
-fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SONO_SCOPES): BearerTokenProvider {
-    val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl)
-    val manager = ToolkitAuthManager.getInstance()
 
+fun loginSso(project: Project?, startUrl: String, region: String = DEFAULT_SSO_REGION, requestedScopes: List<String> = ALL_SONO_SCOPES): BearerTokenProvider {
+    val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
+
+    val manager = ToolkitAuthManager.getInstance()
+    val allScopes = requestedScopes.toMutableList()
     return manager.getConnection(connectionId)?.let { connection ->
         val logger = getLogger<ToolkitAuthManager>()
         // requested Builder ID, but one already exists
         // TBD: do we do this for regular SSO too?
-        if (connection.isSono() && connection is BearerSsoConnection && scopes.all { it in connection.scopes }) {
+        if (connection.isSono() && connection is BearerSsoConnection && requestedScopes.all { it in connection.scopes }) {
             val signOut = computeOnEdt {
                 MessageDialogBuilder.yesNo(
                     message("toolkit.login.aws_builder_id.already_connected.title"),
@@ -130,13 +135,17 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SON
         }
 
         // There is an existing connection we can use
-        if (connection is BearerSsoConnection && !scopes.all { it in connection.scopes }) {
-            logger.info {
-                "Forcing reauth on ${connection.id} since requested scopes ($scopes) are not a complete subset of current scopes (${connection.scopes})"
-            }
+        if (connection is BearerSsoConnection && !requestedScopes.all { it in connection.scopes }) {
+            allScopes.addAll(connection.scopes)
 
+            logger.info {
+                """
+                    Forcing reauth on ${connection.id} since requested scopes ($requestedScopes)
+                    are not a complete subset of current scopes (${connection.scopes})
+                """.trimIndent()
+            }
+            logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            manager.deleteConnection(connection)
             return@let null
         }
 
@@ -150,9 +159,9 @@ fun loginSso(project: Project?, startUrl: String, scopes: List<String> = ALL_SON
         // No existing connection, start from scratch
         val connection = manager.createConnection(
             ManagedSsoProfile(
-                DEFAULT_SSO_REGION,
+                region,
                 startUrl,
-                scopes
+                allScopes.toSet().toList()
             )
         )
 
@@ -221,26 +230,30 @@ fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider
     return tokenProvider
 }
 
-fun maybeReauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider, onReauthRequired: (SsoOidcException?) -> Any) {
+// Return true if need to re-auth, false otherwise
+fun maybeReauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider, onReauthRequired: (SsoOidcException?) -> Any): Boolean {
     val state = tokenProvider.state()
     when (state) {
         BearerTokenAuthState.NOT_AUTHENTICATED -> {
             getLogger<ToolkitAuthManager>().info { "Token provider NOT_AUTHENTICATED, requesting login" }
             onReauthRequired(null)
+            return true
         }
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
-                runUnderProgressIfNeeded(project, message("credentials.sono.login.refreshing"), true) {
+                return runUnderProgressIfNeeded(project, message("credentials.sono.login.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
+                    return@runUnderProgressIfNeeded false
                 }
             } catch (e: SsoOidcException) {
                 getLogger<ToolkitAuthManager>().warn(e) { "Redriving AWS Builder ID login flow since token could not be refreshed" }
                 onReauthRequired(e)
+                return true
             }
         }
 
-        BearerTokenAuthState.AUTHORIZED -> {}
+        BearerTokenAuthState.AUTHORIZED -> { return false }
     }
 }

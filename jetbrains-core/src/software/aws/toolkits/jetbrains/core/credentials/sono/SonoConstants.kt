@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sono
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
-internal const val SONO_REGION = "us-east-1"
+const val SONO_REGION = "us-east-1"
 const val SONO_URL = "https://view.awsapps.com/start"
 internal val CODEWHISPERER_SCOPES = listOf(
     "codewhisperer:completions",
@@ -18,7 +18,6 @@ internal val CODECATALYST_SCOPES = listOf(
 
 // limit of 10
 // at least one scope must be provided
-internal val ALL_SSO_SCOPES = CODEWHISPERER_SCOPES
 val ALL_SONO_SCOPES = CODEWHISPERER_SCOPES + CODECATALYST_SCOPES
 
 fun ToolkitConnection?.isSono() = if (this == null) {

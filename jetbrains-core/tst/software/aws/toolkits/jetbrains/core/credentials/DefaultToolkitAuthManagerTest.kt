@@ -18,6 +18,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -160,7 +161,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -188,7 +189,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).resolveToken()
@@ -214,7 +215,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", emptyList())
+            loginSso(projectRule.project, "foo", requestedScopes = emptyList())
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).reauthenticate()
@@ -240,7 +241,7 @@ class DefaultToolkitAuthManagerTest {
                 )
             )
 
-            loginSso(projectRule.project, "foo", listOf("existing1"))
+            loginSso(projectRule.project, "foo", requestedScopes = listOf("existing1"))
 
             val tokenProvider = it.constructed()[0]
             verify(tokenProvider).state()
@@ -268,17 +269,18 @@ class DefaultToolkitAuthManagerTest {
             )
 
             val newScopes = listOf("existing1", "new1")
-            loginSso(projectRule.project, "foo", newScopes)
+            loginSso(projectRule.project, "foo", requestedScopes = newScopes)
 
             val captor = argumentCaptor<ManagedBearerSsoConnection>()
-            verify(connectionManager).switchConnection(captor.capture())
-            assertThat(captor.allValues.size).isEqualTo(1)
-            assertThat(captor.firstValue).satisfies { connection ->
-                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+
+            verify(connectionManager, times(2)).switchConnection(captor.capture())
+
+            assertThat(captor.secondValue).satisfies { connection ->
+                assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3", "new1"))
             }
             assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<BearerSsoConnection>() { connection ->
                 assertThat(connection).usingRecursiveComparison().isNotEqualTo(existingConnection)
-                assertThat(connection.scopes).usingRecursiveComparison().isEqualTo(newScopes)
+                assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3", "new1"))
             }
         }
     }
@@ -296,7 +298,7 @@ class DefaultToolkitAuthManagerTest {
             // before
             assertThat(sut.listConnections()).hasSize(0)
 
-            loginSso(projectRule.project, "foo", listOf("scope1", "scope2"))
+            loginSso(projectRule.project, "foo", requestedScopes = listOf("scope1", "scope2"))
 
             // after
             assertThat(sut.listConnections()).hasSize(1)
@@ -334,7 +336,7 @@ class DefaultToolkitAuthManagerTest {
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
-                    if (providerId == "sso;startUrl000") {
+                    if (providerId == "sso;us-east-1;startUrl000") {
                         messageReceived += 1
                     }
                 }
@@ -344,7 +346,7 @@ class DefaultToolkitAuthManagerTest {
         logoutFromSsoConnection(projectRule.project, connection) { callbackInvoked += 1 }
         assertThat(messageReceived).isEqualTo(1)
         assertThat(callbackInvoked).isEqualTo(1)
-        verify(authManager).deleteConnection(eq("sso;startUrl000"))
+        verify(authManager).deleteConnection(eq("sso;us-east-1;startUrl000"))
         verify(connectionManager).switchConnection(eq(null))
     }
 }

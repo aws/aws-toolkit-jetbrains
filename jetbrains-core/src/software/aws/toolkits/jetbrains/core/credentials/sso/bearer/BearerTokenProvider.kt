@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
-import software.aws.toolkits.jetbrains.core.credentials.sso.SsoLoginCallback
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
@@ -78,11 +77,10 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
 class InteractiveBearerTokenProvider(
     startUrl: String,
     region: String,
-    loginPrompt: SsoLoginCallback,
     scopes: List<String>,
     cache: DiskCache = diskCache
 ) : BearerTokenProvider, BearerTokenLogoutSupport, Disposable {
-    override val id = ToolkitBearerTokenProvider.ssoIdentifier(startUrl)
+    override val id = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
     private val ssoOidcClient: SsoOidcClient = buildUnmanagedSsoOidcClient(region)
@@ -90,7 +88,6 @@ class InteractiveBearerTokenProvider(
         SsoAccessTokenProvider(
             startUrl,
             region,
-            loginPrompt,
             cache,
             ssoOidcClient,
             scopes = scopes
@@ -206,7 +203,6 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
     }
 }
 
-internal const val DEFAULT_SSO_REGION = "us-east-1"
 internal val DEFAULT_STALE_DURATION = Duration.ofMinutes(15)
 internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 
