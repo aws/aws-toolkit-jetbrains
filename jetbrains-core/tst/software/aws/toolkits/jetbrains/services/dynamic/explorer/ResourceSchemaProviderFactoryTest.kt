@@ -18,9 +18,9 @@ import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResource
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifier
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSchemaMapping
-import software.aws.toolkits.jetbrains.services.dynamic.ResourceType
 import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import java.util.concurrent.CompletableFuture
 
 class ResourceSchemaProviderFactoryTest {
@@ -72,12 +72,12 @@ class ResourceSchemaProviderFactoryTest {
 
         val schemaFile = LightVirtualFile("AWSLogLogGroupSchema.json", schema)
         resourceCache.addEntry(
-            projectRule.project, CloudControlApiResources.getResourceSchema(resource.type.fullName),
+            projectRule.project, CloudControlApiResources.getResourceSchema(resource.type),
             CompletableFuture.completedFuture(schemaFile)
         )
     }
 
-    private val resource = DynamicResource(ResourceType("AWS::Log::LogGroup", "Log", "LogGroup"), "sampleIdentifier")
+    private val resource = DynamicResource(CloudFormationResourceType("AWS::Log::LogGroup"), "sampleIdentifier")
 
     @Test
     fun `Check whether schema is applied`() {
@@ -87,7 +87,7 @@ class ResourceSchemaProviderFactoryTest {
         try {
             fixture.enableInspections(jsonSchemaComplianceInspection)
             val file = ViewEditableDynamicResourceVirtualFile(
-                DynamicResourceIdentifier(ConnectionSettings(aToolkitCredentialsProvider(), anAwsRegion()), resource.type.fullName, resource.identifier),
+                DynamicResourceIdentifier(ConnectionSettings(aToolkitCredentialsProvider(), anAwsRegion()), resource.type, resource.identifier),
                 """
                 {"RetentionInDays":<warning descr="Value should be one of: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653">18</warning>}
                 """.trimIndent()

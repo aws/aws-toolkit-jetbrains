@@ -233,6 +233,7 @@ with what features/services are supported.
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.pinning.DefaultConnectionPinningManager"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.filters.AwsExplorerFilterManager"/>
 
         <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
         <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory"/>
@@ -382,6 +383,7 @@ with what features/services are supported.
         <!-- Explorer nodes -->
         <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceTreeStructureProvider"/>
         <devTools.treeStructure implementation="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerTreeStructureProvider"/>
+        <explorer.treeStructure implementation="software.aws.toolkits.jetbrains.core.explorer.filters.AwsExplorerFilterProcessor"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.AppRunnerExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudFormationExplorerRootNode"/>
         <explorer.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.nodes.CloudWatchRootNode"/>
@@ -435,6 +437,14 @@ with what features/services are supported.
             <reference id="aws.settings.refresh"/>
             <separator/>
             <reference id="aws.toolkit.showFeedback"/>
+        </group>
+
+        <action id="aws.toolkit.explorer.filter.clear"
+                class="software.aws.toolkits.jetbrains.core.explorer.filters.AwsExplorerFilterClear"
+                icon="AllIcons.General.Reset"
+        />
+        <group id="aws.toolkit.explorer.filter" popup="true" compact="false">
+            <reference id="aws.toolkit.explorer.filter.clear"/>
         </group>
 
         <group id="aws.toolkit.explorer.dynamodb.table" popup="true" compact="false">
@@ -519,6 +529,7 @@ with what features/services are supported.
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
             <action id="cloudformation.stack.view"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.stack.OpenStackUiAction"/>
+            <action class="software.aws.toolkits.jetbrains.services.cloudformation.actions.FilterByStackAction"/>
             <separator/>
             <action id="cloudformation.stack.delete"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.actions.DeleteStackAction"/>

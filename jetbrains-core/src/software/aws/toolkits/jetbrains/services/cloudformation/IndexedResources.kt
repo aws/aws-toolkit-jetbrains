@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cloudformation
 
 import software.aws.toolkits.jetbrains.services.cloudformation.IndexedResource.Companion.from
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 import java.io.DataInput
 import java.io.DataOutput
@@ -106,6 +107,6 @@ internal val INDEXED_RESOURCE_MAPPINGS = mapOf<String,
         (String, Map<String, String>, Map<String, String>) -> IndexedResource,
         (Resource) -> IndexedResource>
     >(
-    LAMBDA_FUNCTION_TYPE to Pair(::IndexedFunction, ::IndexedFunction),
+    AWS.Lambda.Function.fullName to Pair(::IndexedFunction, ::IndexedFunction),
     SERVERLESS_FUNCTION_TYPE to Pair(::IndexedFunction, ::IndexedFunction)
 )

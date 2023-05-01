@@ -8,9 +8,10 @@ import com.intellij.openapi.project.Project
 import com.jetbrains.jsonSchema.JsonSchemaMappingsProjectConfiguration
 import com.jetbrains.jsonSchema.ide.JsonSchemaService
 import org.jetbrains.annotations.TestOnly
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 
 class DynamicResourceSchemaMapping {
-    private val currentlyActiveResourceTypes: MutableSet<String> = mutableSetOf()
+    private val currentlyActiveResourceTypes: MutableSet<CloudFormationResourceType> = mutableSetOf()
 
     fun addResourceSchemaMapping(
         project: Project,
@@ -23,7 +24,7 @@ class DynamicResourceSchemaMapping {
         }
     }
 
-    fun getCurrentlyActiveResourceTypes(): Set<String> = currentlyActiveResourceTypes
+    fun getCurrentlyActiveResourceTypes(): Set<CloudFormationResourceType> = currentlyActiveResourceTypes
 
     @TestOnly
     fun removeCurrentlyActiveResourceTypes(project: Project) {

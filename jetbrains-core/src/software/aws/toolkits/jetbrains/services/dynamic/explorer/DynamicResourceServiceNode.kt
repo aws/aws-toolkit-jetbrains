@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.cloudcontrol.model.UnsupportedActionExcep
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
@@ -24,16 +26,18 @@ import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateMan
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager.Companion.isTerminal
 import software.aws.toolkits.jetbrains.services.dynamic.OpenViewEditableDynamicResourceVirtualFile
 import software.aws.toolkits.jetbrains.services.dynamic.ViewEditableDynamicResourceVirtualFile
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
 import software.aws.toolkits.telemetry.Result
 
-class DynamicResourceResourceTypeNode(project: Project, val resourceType: String) :
-    AwsExplorerNode<String>(project, resourceType, null),
+class DynamicResourceResourceTypeNode(project: Project, val resourceType: CloudFormationResourceType) :
+    AwsExplorerNode<CloudFormationResourceType>(project, resourceType, null),
     ResourceParentNode,
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResourceParentNode {
 
-    override fun displayName(): String = resourceType
+    override fun displayName(): String = resourceType.fullName
     override fun isAlwaysShowPlus(): Boolean = true
 
     // calls to CloudAPI time-expensive and likely to throttle
@@ -44,39 +48,45 @@ class DynamicResourceResourceTypeNode(project: Project, val resourceType: String
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = try {
         nodeProject.getResourceNow(CloudControlApiResources.listResources(resourceType))
             .map { DynamicResourceNode(nodeProject, it) }
-            .also { DynamicresourceTelemetry.listResource(project = nodeProject, success = true, resourceType = resourceType) }
+            .also { DynamicresourceTelemetry.listResource(project = nodeProject, success = true, resourceType = resourceType.fullName) }
     } catch (e: Exception) {
         when (e) {
             is UnsupportedActionException -> {
-                DynamicresourceTelemetry.listResource(project = nodeProject, result = Result.Cancelled, resourceType = resourceType)
+                DynamicresourceTelemetry.listResource(project = nodeProject, result = Result.Cancelled, resourceType = resourceType.fullName)
                 listOf(AwsExplorerEmptyNode(nodeProject, message("dynamic_resources.unavailable_in_region", region.id)))
             }
+
             else -> {
-                DynamicresourceTelemetry.listResource(project = nodeProject, success = false, resourceType = resourceType)
+                DynamicresourceTelemetry.listResource(project = nodeProject, success = false, resourceType = resourceType.fullName)
                 throw e
             }
         }
     }
 
     override fun actionGroupName(): String = "aws.toolkit.explorer.dynamic.resource.type"
+    override fun cfnResourceTypes() = setOf(resourceType)
 }
 
-class UnavailableDynamicResourceTypeNode(project: Project, resourceType: String) : AwsExplorerNode<String>(project, resourceType, null) {
+class UnavailableDynamicResourceTypeNode(project: Project, private val resourceType: CloudFormationResourceType) :
+    AwsExplorerNode<CloudFormationResourceType>(project, resourceType, null),
+    CloudFormationResourceParentNode {
     override fun statusText(): String = message("dynamic_resources.unavailable_in_region", region.id)
     override fun getChildren(): List<AwsExplorerNode<*>> = emptyList()
     override fun isAlwaysLeaf(): Boolean = true
+    override fun cfnResourceTypes() = setOf(resourceType)
 }
 
 class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     AwsExplorerNode<DynamicResource>(project, resource, null),
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResourceNode {
 
     override fun actionGroupName() = "aws.toolkit.explorer.dynamic.resource"
     override fun displayName(): String = CloudControlApiResources.getResourceDisplayName(resource.identifier)
 
     override fun statusText(): String? {
         val state = DynamicResourceUpdateManager.getInstance(nodeProject)
-            .getUpdateStatus(DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type.fullName, resource.identifier))?.takeIf {
+            .getUpdateStatus(DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type, resource.identifier))?.takeIf {
                 !it.status.isTerminal()
             }
             ?: return null
@@ -89,7 +99,7 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     override fun onDoubleClick() = openResourceModelInEditor(OpenResourceModelSourceAction.READ)
 
     fun openResourceModelInEditor(sourceAction: OpenResourceModelSourceAction) {
-        val dynamicResourceIdentifier = DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type.fullName, resource.identifier)
+        val dynamicResourceIdentifier = DynamicResourceIdentifier(nodeProject.getConnectionSettingsOrThrow(), resource.type, resource.identifier)
         val openFiles = FileEditorManager.getInstance(nodeProject).openFiles.filter {
             it is ViewEditableDynamicResourceVirtualFile && it.dynamicResourceIdentifier == dynamicResourceIdentifier
         }
@@ -100,7 +110,7 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
                     val model = OpenViewEditableDynamicResourceVirtualFile.getResourceModel(
                         nodeProject,
                         nodeProject.awsClient(),
-                        resource.type.fullName,
+                        resource.type,
                         resource.identifier
                     ) ?: return
                     val file = ViewEditableDynamicResourceVirtualFile(
@@ -109,7 +119,7 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
                     )
 
                     indicator.text = message("dynamic_resources.fetch.open")
-                    OpenViewEditableDynamicResourceVirtualFile.openFile(nodeProject, file, sourceAction, resource.type.fullName)
+                    OpenViewEditableDynamicResourceVirtualFile.openFile(nodeProject, file, sourceAction, resource.type)
                 }
             }.queue()
         } else {
@@ -125,6 +135,9 @@ class DynamicResourceNode(project: Project, val resource: DynamicResource) :
     private companion object {
         val LOG = getLogger<DynamicResourceNode>()
     }
+
+    override val resourceType = resource.type
+    override val cfnPhysicalIdentifier = resource.identifier
 }
 
 enum class OpenResourceModelSourceAction {

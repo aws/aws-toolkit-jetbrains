@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.schemas.model.RegistrySummary
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.SchemasExplorerRootNode
@@ -54,6 +55,7 @@ class SchemasServiceNodeTest {
                 names.map {
                     RegistrySummary.builder()
                         .registryName(it)
+                        .registryArn(aString())
                         .build()
                 }
             )

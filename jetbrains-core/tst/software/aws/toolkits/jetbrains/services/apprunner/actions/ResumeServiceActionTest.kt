@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.apprunner.model.AppRunnerException
 import software.amazon.awssdk.services.apprunner.model.ResumeServiceRequest
 import software.amazon.awssdk.services.apprunner.model.ResumeServiceResponse
 import software.amazon.awssdk.services.apprunner.model.ServiceStatus
-import software.amazon.awssdk.services.apprunner.model.ServiceSummary
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
@@ -48,7 +47,7 @@ class ResumeServiceActionTest {
 
     private val serviceName = RuleUtils.randomName()
     private val serviceArn = "arn::$serviceName"
-    private val serviceSummary = ServiceSummary.builder().serviceName(serviceName).serviceArn(serviceArn).build()
+    private val serviceSummary = aServiceSummary { serviceName(serviceName).serviceArn(serviceArn) }
 
     @Before
     fun setup() {
@@ -117,9 +116,9 @@ class ResumeServiceActionTest {
 
     @Test
     fun `Hides node if service is not paused`() {
-        ServiceStatus.knownValues().filter { it != ServiceStatus.PAUSED }.forEach {
+        ServiceStatus.knownValues().filter { it != ServiceStatus.PAUSED }.forEach { status ->
             val actionEvent = TestActionEvent()
-            action.update(AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(serviceName).status(it).build()), actionEvent)
+            action.update(AppRunnerServiceNode(projectRule.project, serviceSummary.copy { it.status(status) }), actionEvent)
             assertThat(actionEvent.presentation.isVisible).isFalse
         }
     }
@@ -128,7 +127,7 @@ class ResumeServiceActionTest {
     fun `Shows node if service is paused`() {
         val actionEvent = TestActionEvent()
         action.update(
-            AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(serviceName).status(ServiceStatus.PAUSED).build()),
+            AppRunnerServiceNode(projectRule.project, serviceSummary.copy { it.status(ServiceStatus.PAUSED) }),
             actionEvent
         )
         assertThat(actionEvent.presentation.isVisible).isTrue

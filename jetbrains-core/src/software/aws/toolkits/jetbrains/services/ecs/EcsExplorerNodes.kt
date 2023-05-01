@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.ecs.EcsClient
 import software.amazon.awssdk.services.ecs.model.Service
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
@@ -16,13 +18,15 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
-class EcsParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service) {
+class EcsParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service), CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.ecs")
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> = listOf(
         EcsClusterParentNode(nodeProject)
     )
+    override fun cfnResourceTypes() = setOf(AWS.ECS.Service, AWS.ECS.Cluster)
 }
 
 class EcsClusterParentNode(project: Project) :
@@ -39,7 +43,9 @@ class EcsClusterParentNode(project: Project) :
 
 class EcsClusterNode(project: Project, private val clusterArn: String) :
     AwsExplorerResourceNode<String>(project, EcsClient.SERVICE_NAME, clusterArn, AwsIcons.Resources.Ecs.ECS_CLUSTER),
-    ResourceParentNode {
+    ResourceParentNode,
+    CloudFormationResourceParentNode,
+    CloudFormationResourceNode {
 
     override fun resourceType(): String = "cluster"
     override fun resourceArn(): String = clusterArn
@@ -52,15 +58,22 @@ class EcsClusterNode(project: Project, private val clusterArn: String) :
         .getResourceNow(EcsResources.listServiceArns(clusterArn))
         .map { nodeProject.getResourceNow(EcsResources.describeService(clusterArn, it)) }
         .map { EcsServiceNode(nodeProject, it, clusterArn) }
+
+    override fun cfnResourceTypes() = setOf(AWS.ECS.Service)
+    override val resourceType = AWS.ECS.Cluster
+    override val cfnPhysicalIdentifier = displayName()
 }
 
-class EcsServiceNode(project: Project, private val service: Service, private val clusterArn: String) :
+class EcsServiceNode(project: Project, service: Service, private val clusterArn: String) :
     AwsExplorerResourceNode<Service>(project, EcsClient.SERVICE_NAME, service, AwsIcons.Resources.Ecs.ECS_SERVICE),
-    ResourceLocationNode {
+    ResourceLocationNode,
+    CloudFormationResourceNode {
 
     override fun resourceType() = "service"
     override fun resourceArn(): String = value.serviceArn()
     override fun displayName(): String = value.serviceName()
     fun executeCommandEnabled() = value.enableExecuteCommand()
     fun clusterArn(): String = clusterArn
+    override val resourceType = AWS.ECS.Service
+    override val cfnPhysicalIdentifier = "${value.serviceArn()}|$clusterArn"
 }

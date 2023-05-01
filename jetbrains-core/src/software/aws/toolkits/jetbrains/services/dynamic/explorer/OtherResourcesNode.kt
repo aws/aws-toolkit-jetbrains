@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.dynamic.explorer
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
@@ -17,7 +18,8 @@ import software.aws.toolkits.resources.message
 class OtherResourcesNode(project: Project, service: AwsExplorerServiceNode) :
     AwsExplorerNode<AwsExplorerServiceNode>(project, service, null),
     ResourceParentNode,
-    ResourceActionNode {
+    ResourceActionNode,
+    CloudFormationResourceParentNode {
 
     override fun displayName(): String = message("explorer.node.other")
     override fun isAlwaysShowPlus(): Boolean = true
@@ -25,6 +27,7 @@ class OtherResourcesNode(project: Project, service: AwsExplorerServiceNode) :
     override fun getChildren(): List<AwsExplorerNode<*>> = super.getChildren()
     override fun getChildrenInternal(): List<AwsExplorerNode<*>> {
         val shouldShow = DynamicResourcesSettings.getInstance().selected
+
         val resourcesAvailableInRegion = nodeProject.getResourceNow(CloudControlApiResources.listTypes()).toSet()
 
         return listOf(DynamicResourceSelectorNode(nodeProject)) + DynamicResourceSupportedTypes.getInstance().getSupportedTypes()
@@ -37,6 +40,7 @@ class OtherResourcesNode(project: Project, service: AwsExplorerServiceNode) :
                 }
             }
     }
+    override fun cfnResourceTypes() = DynamicResourceSupportedTypes.getInstance().getSupportedTypes().toSet()
 
     override fun actionGroupName(): String = "aws.toolkit.explorer.dynamic.more.resources"
 }

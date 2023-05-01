@@ -8,21 +8,27 @@ import icons.AwsIcons
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class S3ServiceNode(project: Project, service: AwsExplorerServiceNode) :
-    CacheBackedAwsExplorerServiceRootNode<Bucket>(project, service, S3Resources.LIST_BUCKETS) {
+    CacheBackedAwsExplorerServiceRootNode<Bucket>(project, service, S3Resources.LIST_BUCKETS),
+    CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.s3")
     override fun toNode(child: Bucket): AwsExplorerNode<*> = S3BucketNode(nodeProject, child)
+    override fun cfnResourceTypes() = setOf(AWS.S3.Bucket)
 }
 
 class S3BucketNode(project: Project, val bucket: Bucket) :
-    AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name(), AwsIcons.Resources.S3_BUCKET) {
+    AwsExplorerResourceNode<String>(project, S3Client.SERVICE_NAME, bucket.name(), AwsIcons.Resources.S3_BUCKET),
+    CloudFormationResourceNode {
 
     override fun resourceType(): String = "bucket"
 
@@ -35,4 +41,6 @@ class S3BucketNode(project: Project, val bucket: Bucket) :
     }
 
     override fun displayName(): String = bucket.name()
+    override val resourceType = AWS.S3.Bucket
+    override val cfnPhysicalIdentifier: String = bucket.name()
 }

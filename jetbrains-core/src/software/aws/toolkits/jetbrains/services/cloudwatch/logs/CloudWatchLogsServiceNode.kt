@@ -7,20 +7,26 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceParentNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.resources.CloudWatchResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
-class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<LogGroup>(
-    project,
-    service,
-    CloudWatchResources.LIST_LOG_GROUPS
-) {
+class CloudWatchLogsServiceNode(project: Project, service: AwsExplorerServiceNode) :
+    CacheBackedAwsExplorerServiceRootNode<LogGroup>(
+        project,
+        service,
+        CloudWatchResources.LIST_LOG_GROUPS
+    ),
+    CloudFormationResourceParentNode {
     override fun displayName(): String = message("explorer.node.cloudwatch")
     override fun toNode(child: LogGroup): AwsExplorerNode<*> = CloudWatchLogsNode(nodeProject, child.arn(), child.logGroupName())
+    override fun cfnResourceTypes() = setOf(AWS.Logs.LogGroup)
 }
 
 class CloudWatchLogsNode(
@@ -32,7 +38,8 @@ class CloudWatchLogsNode(
     CloudWatchLogsClient.SERVICE_NAME,
     logGroupName,
     AwsIcons.Resources.CloudWatch.LOG_GROUP
-) {
+),
+    CloudFormationResourceNode {
     override fun resourceType() = "group"
 
     override fun resourceArn() = arn
@@ -42,4 +49,7 @@ class CloudWatchLogsNode(
     override fun onDoubleClick() {
         CloudWatchLogWindow.getInstance(nodeProject).showLogGroup(logGroupName)
     }
+
+    override val resourceType = AWS.Logs.LogGroup
+    override val cfnPhysicalIdentifier = logGroupName
 }

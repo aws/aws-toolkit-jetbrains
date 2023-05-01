@@ -7,10 +7,12 @@ import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.amazon.awssdk.services.redshift.RedshiftClient
 import software.amazon.awssdk.services.redshift.model.Cluster
+import software.aws.toolkits.jetbrains.core.explorer.filters.CloudFormationResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class RedshiftExplorerParentNode(project: Project, service: AwsExplorerServiceNode) :
@@ -19,13 +21,17 @@ class RedshiftExplorerParentNode(project: Project, service: AwsExplorerServiceNo
     override fun toNode(child: Cluster): AwsExplorerNode<*> = RedshiftExplorerNode(nodeProject, child)
 }
 
-class RedshiftExplorerNode(project: Project, val cluster: Cluster) : AwsExplorerResourceNode<Cluster>(
-    project,
-    RedshiftClient.SERVICE_NAME,
-    cluster,
-    AwsIcons.Resources.REDSHIFT
-) {
+class RedshiftExplorerNode(project: Project, val cluster: Cluster) :
+    AwsExplorerResourceNode<Cluster>(
+        project,
+        RedshiftClient.SERVICE_NAME,
+        cluster,
+        AwsIcons.Resources.REDSHIFT
+    ),
+    CloudFormationResourceNode {
     override fun displayName(): String = cluster.clusterIdentifier()
     override fun resourceType(): String = "cluster"
     override fun resourceArn(): String = nodeProject.clusterArn(cluster, region)
+    override val resourceType = AWS.Redshift.Cluster
+    override val cfnPhysicalIdentifier: String = cluster.clusterIdentifier()
 }

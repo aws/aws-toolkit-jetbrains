@@ -9,7 +9,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
-import software.amazon.awssdk.services.apprunner.model.ServiceSummary
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 import java.awt.datatransfer.DataFlavor
@@ -24,7 +23,7 @@ class CopyServiceUrlActionTest {
     @Test
     fun `Copy Service Url copies correct field`() {
         val action = CopyServiceUrlAction()
-        action.actionPerformed(AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceUrl(url).build()), mock())
+        action.actionPerformed(AppRunnerServiceNode(projectRule.project, aServiceSummary { serviceUrl(url) }), mock())
         val data = CopyPasteManager.getInstance().getContents<String>(DataFlavor.stringFlavor)
         assertThat(data).isEqualTo("https://$url")
     }
