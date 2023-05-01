@@ -35,8 +35,7 @@ import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceIdentifie
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager
 import software.aws.toolkits.jetbrains.services.dynamic.ResourceMutationState
-import software.aws.toolkits.jetbrains.services.dynamic.ResourceType
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -56,7 +55,7 @@ class DynamicResourceUpdateManagerTest {
     private lateinit var cloudControlClient: CloudControlClient
     private lateinit var dynamicResourceUpdateManager: DynamicResourceUpdateManager
     private lateinit var connectionSettings: ConnectionSettings
-    private val resource = DynamicResource(ResourceType("AWS::SampleService::Type", "SampleService", "Type"), "sampleIdentifier")
+    private val resource = DynamicResource(CloudFormationResourceType("AWS::SampleService::Type"), "sampleIdentifier")
 
     @Before
     fun setup() {
@@ -106,7 +105,7 @@ class DynamicResourceUpdateManagerTest {
                 }
             )
 
-        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type.fullName, resource.identifier))
+        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type, resource.identifier))
         CountDownLatch(1).await(400, TimeUnit.MILLISECONDS)
         assertThat(testOperationState.size).isEqualTo(1)
         assertThat(testOperationState.first().message).isEqualTo("Completed successfully")
@@ -155,7 +154,7 @@ class DynamicResourceUpdateManagerTest {
                     }
                 }
             )
-        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type.fullName, resource.identifier))
+        dynamicResourceUpdateManager.deleteResource(DynamicResourceIdentifier(connectionSettings, resource.type, resource.identifier))
         CountDownLatch(1).await(400, TimeUnit.MILLISECONDS)
         assertThat(testOperationStatus.size).isEqualTo(1)
         assertThat(testOperationStatus.first()).isEqualTo(OperationStatus.SUCCESS)
@@ -164,7 +163,7 @@ class DynamicResourceUpdateManagerTest {
     @Test
     fun `Notifies user if request token is invalid and stops polling for it`() {
         val notificationMock = mock<Notifications>()
-        val dynamicResourceIdentifier = DynamicResourceIdentifier(connectionSettings, resource.type.fullName, resource.identifier)
+        val dynamicResourceIdentifier = DynamicResourceIdentifier(connectionSettings, resource.type, resource.identifier)
 
         projectRule.project.messageBus.connect(disposableRule.disposable).subscribe(Notifications.TOPIC, notificationMock)
         dynamicResourceUpdateManager = DynamicResourceUpdateManager.getInstance(projectRule.project)

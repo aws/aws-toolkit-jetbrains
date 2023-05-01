@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.dynamic.explorer.OtherResourcesN
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.FEEDBACK_SOURCE
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeedbackTelemetry
 import javax.swing.ListSelectionModel
@@ -32,9 +33,9 @@ import javax.swing.ListSelectionModel
 class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dynamic_resources_configurable.title")) {
 
     private val coroutineScope = applicationCoroutineScope()
-    private val checklist = CheckBoxList<String>()
-    private val allResources = mutableSetOf<String>()
-    private val selected = mutableSetOf<String>()
+    private val checklist = CheckBoxList<CloudFormationResourceType>()
+    private val allResources = mutableSetOf<CloudFormationResourceType>()
+    private val selected = mutableSetOf<CloudFormationResourceType>()
     private val filter = object : FilterComponent("filter", 5) {
         override fun filter() {
             updateCheckboxList()
@@ -119,7 +120,9 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
 
     private fun updateCheckboxList() {
         checklist.clear()
-        allResources.filter { it.contains(filter.filter, ignoreCase = true) }.sorted().forEach { checklist.addItem(it, it, it in selected) }
+        allResources.filter { it.fullName.contains(filter.filter, ignoreCase = true) }
+            .sortedBy { it.fullName }
+            .forEach { checklist.addItem(it, it.fullName, it in selected) }
     }
 
     private fun checkboxStateHandler(idx: Int, state: Boolean) {

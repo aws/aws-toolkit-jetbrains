@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceTelemetryResources.addOperationToTelemetry
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DynamicResourceOperation
 import software.aws.toolkits.telemetry.DynamicresourceTelemetry
@@ -41,7 +42,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
             try {
                 val client = dynamicResourceIdentifier.connectionSettings.awsClient<CloudControlClient>()
                 val progress = client.deleteResource {
-                    it.typeName(dynamicResourceIdentifier.resourceType)
+                    it.typeName(dynamicResourceIdentifier.resourceType.fullName)
                     it.identifier(dynamicResourceIdentifier.resourceIdentifier)
                 }.progressEvent()
                 startCheckingProgress(dynamicResourceIdentifier.connectionSettings, progress, DynamicResourceTelemetryResources.getCurrentTime())
@@ -57,7 +58,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                 DynamicresourceTelemetry.mutateResource(
                     project,
                     Result.Failed,
-                    dynamicResourceIdentifier.resourceType,
+                    dynamicResourceIdentifier.resourceType.fullName,
                     addOperationToTelemetry(Operation.DELETE),
                     0.0
                 )
@@ -70,7 +71,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
             try {
                 val client = dynamicResourceIdentifier.connectionSettings.awsClient<CloudControlClient>()
                 val progress = client.updateResource {
-                    it.typeName(dynamicResourceIdentifier.resourceType)
+                    it.typeName(dynamicResourceIdentifier.resourceType.fullName)
                     it.identifier(dynamicResourceIdentifier.resourceIdentifier)
                     it.patchDocument(patchOperation)
                 }.progressEvent()
@@ -87,7 +88,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                 DynamicresourceTelemetry.mutateResource(
                     project,
                     Result.Failed,
-                    dynamicResourceIdentifier.resourceType,
+                    dynamicResourceIdentifier.resourceType.fullName,
                     addOperationToTelemetry(Operation.UPDATE),
                     0.0
                 )
@@ -95,12 +96,12 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         }
     }
 
-    fun createResource(connectionSettings: ConnectionSettings, dynamicResourceType: String, desiredState: String, file: VirtualFile) {
+    fun createResource(connectionSettings: ConnectionSettings, dynamicResourceType: CloudFormationResourceType, desiredState: String, file: VirtualFile) {
         coroutineScope.launch {
             try {
                 val client = connectionSettings.awsClient<CloudControlClient>()
                 val progress = client.createResource {
-                    it.typeName(dynamicResourceType)
+                    it.typeName(dynamicResourceType.fullName)
                     it.desiredState(desiredState)
                 }.progressEvent()
 
@@ -111,7 +112,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                     message("dynamic_resources.operation_status_notification_title", dynamicResourceType, message("general.create".decapitalize())),
                     project
                 )
-                DynamicresourceTelemetry.mutateResource(project, Result.Failed, dynamicResourceType, addOperationToTelemetry(Operation.CREATE), 0.0)
+                DynamicresourceTelemetry.mutateResource(project, Result.Failed, dynamicResourceType.fullName, addOperationToTelemetry(Operation.CREATE), 0.0)
             }
         }
     }
@@ -153,7 +154,7 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
                         DynamicresourceTelemetry.mutateResource(
                             project,
                             Result.Failed,
-                            mutation.resourceType,
+                            mutation.resourceType.fullName,
                             addOperationToTelemetry(mutation.operation),
                             ChronoUnit.MILLIS.between(mutation.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
                         )
@@ -205,13 +206,13 @@ interface DynamicResourceStateMutationHandler {
     fun statusCheckComplete() {}
 }
 
-data class DynamicResourceIdentifier(val connectionSettings: ConnectionSettings, val resourceType: String, val resourceIdentifier: String)
+data class DynamicResourceIdentifier(val connectionSettings: ConnectionSettings, val resourceType: CloudFormationResourceType, val resourceIdentifier: String)
 
 data class ResourceMutationState(
     val connectionSettings: ConnectionSettings,
     val token: String,
     val operation: Operation,
-    val resourceType: String,
+    val resourceType: CloudFormationResourceType,
     val status: OperationStatus,
     val resourceIdentifier: String?,
     val message: String?,
@@ -223,7 +224,7 @@ data class ResourceMutationState(
                 connectionSettings = connectionSettings,
                 token = progress.requestToken(),
                 operation = progress.operation(),
-                resourceType = progress.typeName(),
+                resourceType = CloudFormationResourceType(progress.typeName()),
                 status = progress.operationStatus(),
                 resourceIdentifier = progress.identifier(),
                 message = progress.statusMessage(),

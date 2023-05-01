@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.s3.resources.S3Resources
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.jetbrains.services.sqs.resources.SqsResources
+import software.aws.toolkits.resources.cloudformation.CloudFormationResourceType
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -64,7 +65,7 @@ fun MockResourceCacheRule.fillResourceCache(project: Project) {
     this.addEntry(
         project,
         CloudControlApiResources.listTypes(),
-        CompletableFuture.completedFuture(listOf("Aws::Sample::Resource"))
+        CompletableFuture.completedFuture(listOf(CloudFormationResourceType("Aws::Sample::Resource")))
     )
 
     this.addEntry(

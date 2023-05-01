@@ -15,7 +15,9 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRoo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceParentNode
 import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationResource
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class EcsParentNode(project: Project, service: AwsExplorerServiceNode) : AwsExplorerServiceRootNode(project, service) {
@@ -39,7 +41,8 @@ class EcsClusterParentNode(project: Project) :
 
 class EcsClusterNode(project: Project, private val clusterArn: String) :
     AwsExplorerResourceNode<String>(project, EcsClient.SERVICE_NAME, clusterArn, AwsIcons.Resources.Ecs.ECS_CLUSTER),
-    ResourceParentNode {
+    ResourceParentNode,
+    CloudFormationResource {
 
     override fun resourceType(): String = "cluster"
     override fun resourceArn(): String = clusterArn
@@ -52,15 +55,21 @@ class EcsClusterNode(project: Project, private val clusterArn: String) :
         .getResourceNow(EcsResources.listServiceArns(clusterArn))
         .map { nodeProject.getResourceNow(EcsResources.describeService(clusterArn, it)) }
         .map { EcsServiceNode(nodeProject, it, clusterArn) }
+
+    override val resourceType = AWS.ECS.Cluster
+    override val cfnPhysicalIdentifier = displayName()
 }
 
 class EcsServiceNode(project: Project, private val service: Service, private val clusterArn: String) :
     AwsExplorerResourceNode<Service>(project, EcsClient.SERVICE_NAME, service, AwsIcons.Resources.Ecs.ECS_SERVICE),
-    ResourceLocationNode {
+    ResourceLocationNode,
+    CloudFormationResource {
 
     override fun resourceType() = "service"
     override fun resourceArn(): String = value.serviceArn()
     override fun displayName(): String = value.serviceName()
     fun executeCommandEnabled() = value.enableExecuteCommand()
     fun clusterArn(): String = clusterArn
+    override val resourceType = AWS.ECS.Service
+    override val cfnPhysicalIdentifier = "${value.serviceArn()}|$clusterArn"
 }

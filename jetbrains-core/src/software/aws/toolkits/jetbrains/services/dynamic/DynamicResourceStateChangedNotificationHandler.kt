@@ -37,7 +37,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             DynamicresourceTelemetry.mutateResource(
                 project,
                 Result.Succeeded,
-                state.resourceType,
+                state.resourceType.fullName,
                 addOperationToTelemetry(state.operation),
                 ChronoUnit.MILLIS.between(state.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
             )
@@ -65,7 +65,7 @@ class DynamicResourceStateChangedNotificationHandler(private val project: Projec
             DynamicresourceTelemetry.mutateResource(
                 project,
                 Result.Failed,
-                state.resourceType,
+                state.resourceType.fullName,
                 addOperationToTelemetry(state.operation),
                 ChronoUnit.MILLIS.between(state.startTime, DynamicResourceTelemetryResources.getCurrentTime()).toDouble()
             )

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.cloudformation
 
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate.Companion.getTextValues
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 interface Function : Resource {
@@ -22,8 +23,6 @@ interface Function : Resource {
     fun timeout(): Int? = getOptionalScalarProperty("Timeout")?.toInt()
     fun memorySize(): Int? = getOptionalScalarProperty("MemorySize")?.toInt()
 }
-
-const val LAMBDA_FUNCTION_TYPE = "AWS::Lambda::Function"
 
 class LambdaFunction(private val delegate: Resource) : Resource by delegate, Function {
     override fun setCodeLocation(location: String) {
@@ -62,6 +61,6 @@ class SamFunction(private val delegate: Resource) : Resource by delegate, Functi
 }
 
 internal val RESOURCE_MAPPINGS = mapOf<String, (Resource) -> Resource>(
-    LAMBDA_FUNCTION_TYPE to ::LambdaFunction,
+    AWS.Lambda.Function.fullName to ::LambdaFunction,
     SERVERLESS_FUNCTION_TYPE to ::SamFunction
 )

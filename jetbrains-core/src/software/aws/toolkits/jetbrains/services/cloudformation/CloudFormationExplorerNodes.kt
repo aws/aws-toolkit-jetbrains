@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<StackSummary>(
@@ -36,7 +37,8 @@ class CloudFormationStackNode(
     CloudFormationClient.SERVICE_NAME,
     stackName,
     AwsIcons.Resources.CLOUDFORMATION_STACK
-) {
+),
+    CloudFormationResource {
     override fun resourceType() = "stack"
 
     override fun resourceArn() = stackId
@@ -48,4 +50,7 @@ class CloudFormationStackNode(
     override fun onDoubleClick() {
         StackWindowManager.getInstance(nodeProject).openStack(stackName, stackId)
     }
+
+    override val resourceType = AWS.CloudFormation.Stack
+    override val cfnPhysicalIdentifier = stackId
 }

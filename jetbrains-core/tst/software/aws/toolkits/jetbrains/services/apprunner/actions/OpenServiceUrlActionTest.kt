@@ -5,13 +5,13 @@ package software.aws.toolkits.jetbrains.services.apprunner.actions
 
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import software.amazon.awssdk.services.apprunner.model.ServiceSummary
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.apprunner.AppRunnerServiceNode
 
@@ -20,6 +20,10 @@ class OpenServiceUrlActionTest {
     @Rule
     val projectRule = ProjectRule()
 
+    @JvmField
+    @Rule
+    val disposableRule = DisposableRule()
+
     private val url = aString()
 
     @Test
@@ -27,8 +31,8 @@ class OpenServiceUrlActionTest {
         val launcher = mock<BrowserLauncher>()
         val action = OpenServiceUrlAction()
 
-        ApplicationManager.getApplication().replaceService(BrowserLauncher::class.java, launcher, projectRule.project)
-        action.actionPerformed(AppRunnerServiceNode(projectRule.project, ServiceSummary.builder().serviceName(aString()).serviceUrl(url).build()), mock())
+        ApplicationManager.getApplication().replaceService(BrowserLauncher::class.java, launcher, disposableRule.disposable)
+        action.actionPerformed(AppRunnerServiceNode(projectRule.project, aServiceSummary { serviceUrl(url) }), mock())
 
         verify(launcher).browse("https://$url", project = projectRule.project)
     }

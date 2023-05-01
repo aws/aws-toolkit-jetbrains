@@ -9,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.schemas.model.RegistrySummary
 import software.amazon.awssdk.services.schemas.model.SchemaSummary
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
@@ -49,7 +50,8 @@ class SchemaRegistryNodeTest {
         assertThat(node.children.map { it.displayName() }).contains(schema1, schema2)
     }
 
-    private fun aSchemaRegistryNode(registry: String) = SchemaRegistryNode(projectRule.project, RegistrySummary.builder().registryName(registry).build())
+    private fun aSchemaRegistryNode(registry: String) =
+        SchemaRegistryNode(projectRule.project, RegistrySummary.builder().registryName(registry).registryArn(aString()).build())
 
     private fun registryWithSchemas(registryName: String, schemas: List<String>) {
         resourceCache.addEntry(

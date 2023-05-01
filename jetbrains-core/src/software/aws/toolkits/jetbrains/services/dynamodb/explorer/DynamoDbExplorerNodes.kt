@@ -13,9 +13,11 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
+import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationResource
 import software.aws.toolkits.jetbrains.services.dynamodb.DynamoDbResources
 import software.aws.toolkits.jetbrains.services.dynamodb.editor.DynamoDbTableEditorProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
+import software.aws.toolkits.resources.cloudformation.AWS
 import software.aws.toolkits.resources.message
 
 class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
@@ -25,7 +27,8 @@ class DynamoDbServiceNode(project: Project, service: AwsExplorerServiceNode) :
 }
 
 class DynamoDbTableNode(project: Project, private val tableName: String) :
-    AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.DynamoDb.TABLE) {
+    AwsExplorerResourceNode<String>(project, DynamoDbClient.SERVICE_METADATA_ID, tableName, AwsIcons.Resources.DynamoDb.TABLE),
+    CloudFormationResource {
     private val arn = run {
         val account = tryOrNull { nodeProject.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""
         "arn:${nodeProject.activeRegion().partitionId}:dynamodb:${nodeProject.activeRegion().id}:$account:table/$tableName"
@@ -38,4 +41,7 @@ class DynamoDbTableNode(project: Project, private val tableName: String) :
     override fun onDoubleClick() {
         DynamoDbTableEditorProvider.openViewer(nodeProject, resourceArn())
     }
+
+    override val resourceType = AWS.DynamoDB.Table
+    override val cfnPhysicalIdentifier = tableName
 }
