@@ -21,7 +21,7 @@ dependencies {
 
 jacoco {
     // need to probe resolved dependencies directly if moved to rich version declaration
-    version = versionCatalog.findVersion("jacoco").get().toString()
+    toolVersion = versionCatalog.findVersion("jacoco").get().toString()
 }
 
 // TODO: Can we model this using https://docs.gradle.org/current/userguide/java_testing.html#sec:java_test_fixtures
