@@ -235,6 +235,4 @@ configurations.instrumentedJar.configure {
             type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
         }
     }
-
-    outgoing.artifacts
 }
