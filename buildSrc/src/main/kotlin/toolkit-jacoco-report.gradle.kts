@@ -57,9 +57,22 @@ val coverageDataPath by configurations.creating {
 
 // Register a code coverage report task to generate the aggregated report
 tasks.register<JacocoReport>("coverageReport") {
-    additionalClassDirs(classPath.filter { it.isDirectory }.asFileTree.matching {
-        include("**/software/aws/toolkits/**")
-    })
+    additionalClassDirs(
+        classPath.filter { it.canonicalPath.startsWith(project.projectDir.canonicalPath + File.separatorChar) }.let { files ->
+            val classes = files.filter { it.isDirectory }.asFileTree.matching {
+                include("**/software/aws/toolkits/**")
+            }
+            val jars = files.filter { it.isFile && it.extension == "jar" }.map {
+                zipTree(it).matching {
+                    exclude("icons/**")
+                    exclude("**/software/aws/toolkits/telemetry/**")
+                }
+            }
+
+            jars.fold(classes) { acc, ft -> acc.plus(ft) }
+        }
+    )
+
     additionalSourceDirs(sourcesPath.incoming.artifactView { lenient(true) }.files)
     executionData(coverageDataPath.incoming.artifactView { lenient(true) }.files.filter { it.exists() && it.extension == "exec" })
 
