@@ -75,7 +75,7 @@ configurations {
 
 tasks.processResources {
     // needed because both rider and ultimate include plugin-datagrip.xml which we are fine with
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
@@ -216,4 +216,25 @@ tasks.withType<RunIdeForUiTestTask>().all {
             output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
         }
     }
+}
+
+
+configurations.instrumentedJar.configure {
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
+    }
+
+    outgoing.variants.create("instrumentedClasses") {
+        attributes {
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.CLASSES))
+        }
+
+        artifact(tasks.instrumentCode) {
+            type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
+        }
+    }
+
+    outgoing.artifacts
 }

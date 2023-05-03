@@ -12,7 +12,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.PsiTreeUtil
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererJSImportUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
