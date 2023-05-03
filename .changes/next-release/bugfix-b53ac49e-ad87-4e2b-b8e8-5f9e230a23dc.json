@@ -1,4 +1,4 @@
 {
-  "type" : "bugfix",
-  "description" : "Fix Error Loading Resources when expanding RDS in AWS Toolkit Explorer (#3356)"
+  "type" : "removal",
+  "description" : "Remove support for Aurora MySQL v1 (#3356)"
 }
