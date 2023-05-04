@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -38,7 +39,8 @@ import kotlin.math.exp
 data class ClassifierResult(val shouldTrigger: Boolean, val calculatedResult: Double = 0.0)
 
 data class CodeWhispererAutotriggerState(
-    var isClassifierGroup: Boolean? = null
+    var isClassifierGroup: Boolean? = null,
+    var isExpThreshold: Boolean? = null
 )
 
 @State(name = "codewhispererAutotriggerStates", storages = [Storage("aws.xml")])
@@ -47,6 +49,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
     private val previousUserTriggerDecisions = CircularFifoQueue<CodewhispererPreviousSuggestionState>(5)
 
     private var isClassifierGroup: Boolean? = null
+    private var isExpThreshold: Boolean? = null
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
 
@@ -60,7 +63,13 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
 
     fun determineUserGroupIfNeeded() {
         if (isClassifierGroup == null) {
-            isClassifierGroup = Math.random() <= 0.40
+            isClassifierGroup = Math.random() <= 0.50
+        }
+    }
+
+    fun determineThresholdGroupIfNeeded() {
+        if (isExpThreshold == null) {
+            isExpThreshold = Math.random() <= 0.50
         }
     }
 
@@ -69,11 +78,37 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         return false
     }
 
+    fun isExpThreshold() = isExpThreshold ?: run {
+        determineThresholdGroupIfNeeded()
+        return false
+    }
+
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? = invoke(editor, triggerType).also { job ->
-        if (job != null) {
-            lastInvocationTime = Instant.now()
-            lastInvocationLineNum = runReadAction { editor.caretModel.visualPosition.line }
+        // only needed for Classifier group, thus calculate it lazily
+        val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
+        return if (isClassifierGroup()) {
+            // we need classifier result for any type of triggering for classifier group for supported languages
+            val language = runReadAction {
+                FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
+            } ?: CodeWhispererUnknownLanguage.INSTANCE
+            if (language.isClassifierSupported()) {
+                triggerType.calculationResult = classifierResult.calculatedResult
+            }
+
+            when (triggerType) {
+                // only invoke service if result > threshold for classifier trigger
+                is CodeWhispererAutomatedTriggerType.Classifier -> run {
+                    if (classifierResult.shouldTrigger) { invoke(editor, triggerType) } else null
+                }
+
+                // invoke whatever the result is for char / enter based trigger
+                else -> run {
+                    invoke(editor, triggerType,)
+                }
+            }
+        } else {
+            invoke(editor, triggerType)
         }
     }
 
@@ -83,6 +118,9 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
             return null
         }
 
+        lastInvocationTime = Instant.now()
+        lastInvocationLineNum = runReadAction { editor.caretModel.visualPosition.line }
+
         val latencyContext = LatencyContext().apply {
             codewhispererPreprocessingStart = System.nanoTime()
             codewhispererEndToEndStart = System.nanoTime()
@@ -91,16 +129,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         val coroutineScope = applicationCoroutineScope()
 
         return when (triggerType) {
-            is CodeWhispererAutomatedTriggerType.Classifier -> run {
-                coroutineScope.launch {
-                    shouldTriggerClassifier(editor).let {
-                        if (it.shouldTrigger) {
-                            performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.Classifier(it.calculatedResult), latencyContext)
-                        }
-                    }
-                }
-            }
-
             is CodeWhispererAutomatedTriggerType.IdleTime -> run {
                 coroutineScope.launch {
                     // TODO: potential race condition between hasExistingInvocation and entering edt
@@ -113,7 +141,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
                     }
                     runInEdt {
                         if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime, latencyContext)
+                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime(), latencyContext)
                     }
                 }
             }
@@ -126,10 +154,11 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         }
     }
 
-    override fun getState(): CodeWhispererAutotriggerState = CodeWhispererAutotriggerState(isClassifierGroup)
+    override fun getState(): CodeWhispererAutotriggerState = CodeWhispererAutotriggerState(isClassifierGroup, isExpThreshold)
 
     override fun loadState(state: CodeWhispererAutotriggerState) {
         isClassifierGroup = state.isClassifierGroup
+        isExpThreshold = state.isExpThreshold
     }
 
     private fun scheduleReset() {
@@ -159,7 +188,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         val caretPosition = runReadAction { CodeWhispererEditorUtil.getCaretPosition(editor) }
 
         // tryClassifier with only the following language
-        if (language !is CodeWhispererJava) {
+        if (!language.isClassifierSupported()) {
             return ClassifierResult(false)
         }
 
@@ -246,21 +275,32 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
                 previousOneOther +
                 CodeWhispererClassifierConstants.intercept
 
-        return ClassifierResult(sigmoid(resultBeforeSigmoid) > triggerThreshold, sigmoid(resultBeforeSigmoid))
+        val shouldTrigger = sigmoid(resultBeforeSigmoid) > getThreshold(language)
+        return ClassifierResult(shouldTrigger, sigmoid(resultBeforeSigmoid))
     }
 
     override fun dispose() {}
 
     companion object {
         private const val triggerThreshold: Double = 0.4
+        private const val expTriggerThreshold: Double = 0.35
+
+        fun getThreshold(language: CodeWhispererProgrammingLanguage): Double =
+            if (language is CodeWhispererJava && CodeWhispererAutoTriggerService.getInstance().isExpThreshold()) expTriggerThreshold
+            else triggerThreshold
 
         fun getInstance(): CodeWhispererAutoTriggerService = service()
 
         fun sigmoid(x: Double): Double = 1 / (1 + exp(-x))
 
-        fun getClassifierResultIfNeeded(editor: Editor): Double? = if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup()) {
-            CodeWhispererAutoTriggerService.getInstance().shouldTriggerClassifier(editor).calculatedResult
-        } else null
+        fun getClassifierResultIfNeeded(editor: Editor): Double? {
+            val language = runReadAction {
+                FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
+            } ?: CodeWhispererUnknownLanguage.INSTANCE
+            return if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() || language is CodeWhispererJava) {
+                CodeWhispererAutoTriggerService.getInstance().shouldTriggerClassifier(editor).calculatedResult
+            } else null
+        }
     }
 }
 
@@ -297,12 +337,12 @@ private enum class VariableTypeNeedNormalize {
 
     companion object {
         private val maxx = NormalizedCoefficients(
-            cursor = 90716.0,
-            lineNum = 2085.0,
-            lenLeftCur = 166.0,
-            lenLeftPrev = 161.0,
+            cursor = 84716.0,
+            lineNum = 2033.0,
+            lenLeftCur = 157.0,
+            lenLeftPrev = 157.0,
             lenRight = 10239.0,
-            lineDiff = 327.0,
+            lineDiff = 270.0,
         )
 
         private val minn = NormalizedCoefficients(
@@ -311,7 +351,7 @@ private enum class VariableTypeNeedNormalize {
             lenLeftCur = 0.0,
             lenLeftPrev = 0.0,
             lenRight = 0.0,
-            lineDiff = -5157.0,
+            lineDiff = -28336.0,
         )
     }
 }
