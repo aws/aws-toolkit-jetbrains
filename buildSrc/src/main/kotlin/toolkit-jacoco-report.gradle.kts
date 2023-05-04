@@ -68,7 +68,6 @@ tasks.register<JacocoReport>("coverageReport") {
             include("**/software/aws/toolkits/**")
             exclude("**/software/aws/toolkits/telemetry/**")
         }
-
     )
 
     additionalSourceDirs(sourcesPath.incoming.artifactView { lenient(true) }.files)
