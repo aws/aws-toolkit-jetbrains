@@ -204,7 +204,6 @@ tasks.withType<RunIdeForUiTestTask>().all {
     jvmArgs(openedPackages)
 
     ciOnly {
-        jacoco.applyTo(this)
         configure<JacocoTaskExtension> {
             // sync with testing-subplugin
             // don't instrument sdk, icons, etc.
