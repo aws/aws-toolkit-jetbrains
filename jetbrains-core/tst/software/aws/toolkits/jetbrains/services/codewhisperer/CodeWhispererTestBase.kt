@@ -188,7 +188,7 @@ open class CodeWhispererTestBase {
     fun mockCodeWhispererEnabledStatus(enabled: Boolean) {
         stateManager.stub {
             onGeneric {
-                checkActiveCodeWhispererConnectionType(any())
+                checkActiveCodeWhispererConnectionType()
             } doAnswer {
                 if (enabled) CodeWhispererLoginType.Sono else CodeWhispererLoginType.Logout
             }

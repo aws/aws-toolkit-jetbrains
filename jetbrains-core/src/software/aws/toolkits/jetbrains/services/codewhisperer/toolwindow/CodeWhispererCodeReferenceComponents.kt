@@ -65,22 +65,22 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         }.asCodeReferencePanelFont()
 
     init {
-        repaint(project)
+        repaint()
 
         // set the reference panel text different for SSO users vs AWS Builder ID / Accless users
         project.messageBus.connect().subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    repaint(project)
+                    repaint()
                 }
             }
         )
     }
 
     // TODO: figure out how to have a different view for SSO user in a cleaner way, maybe have 2 sets of components stored in [ReferenceManager]?
-    private fun repaint(project: Project) {
-        val loginType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)
+    private fun repaint() {
+        val loginType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType()
         settingsLabelPrefixText as JLabel
         settingsLabelLink as ActionLink
         if (loginType == CodeWhispererLoginType.SSO) {

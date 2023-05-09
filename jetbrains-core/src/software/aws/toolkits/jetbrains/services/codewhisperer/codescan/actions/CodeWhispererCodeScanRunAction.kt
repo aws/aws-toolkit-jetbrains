@@ -17,7 +17,7 @@ class CodeWhispererCodeScanRunAction : DumbAwareAction(
 ) {
     override fun update(event: AnActionEvent) {
         val project = event.project ?: return
-        event.presentation.isEnabledAndVisible = isCodeWhispererEnabled(project)
+        event.presentation.isEnabledAndVisible = isCodeWhispererEnabled()
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         event.presentation.icon = scanManager.getRunActionButtonIcon()
     }

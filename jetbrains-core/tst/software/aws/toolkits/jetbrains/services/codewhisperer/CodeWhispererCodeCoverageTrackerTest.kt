@@ -111,7 +111,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
 
         exploreActionManagerMock = mock {
-            on { checkActiveCodeWhispererConnectionType(any()) } doReturn CodeWhispererLoginType.Sono
+            on { checkActiveCodeWhispererConnectionType() } doReturn CodeWhispererLoginType.Sono
         }
 
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreActionManagerMock, disposableRule.disposable)

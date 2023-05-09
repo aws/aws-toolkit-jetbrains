@@ -87,8 +87,8 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
     @Test
     fun `when isCodeWhispererEnabled is false, user not able to trigger CodeWhisperer manually`() {
-        whenever(stateManager.checkActiveCodeWhispererConnectionType(projectRule.project)).thenReturn(CodeWhispererLoginType.Logout)
-        assertThat(isCodeWhispererEnabled(projectRule.project)).isFalse
+        whenever(stateManager.checkActiveCodeWhispererConnectionType()).thenReturn(CodeWhispererLoginType.Logout)
+        assertThat(isCodeWhispererEnabled()).isFalse
         invokeCodeWhispererService()
         verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
     }

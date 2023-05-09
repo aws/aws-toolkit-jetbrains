@@ -38,11 +38,11 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             CodeWhispererStatusBarManager.getInstance(project).updateWidget()
         }
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isCodeWhispererEnabled()) return
         if (runOnce) return
 
         // Reconnect CodeWhisperer on startup
-        promptReAuth(project)
+        promptReAuth()
 
         CodeWhispererAutoTriggerService.getInstance().determineUserGroupIfNeeded()
 
@@ -56,7 +56,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     }
 
     private fun showAccountlessNotificationIfNeeded(project: Project) {
-        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless) {
+        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType() == CodeWhispererLoginType.Accountless) {
             // simply show a notification when user login with Accountless, and it's still supported by CodeWhisperer
             if (!isExpired()) {
                 // don't show warn notification if user selected Don't show again or if notification was shown less than a week ago

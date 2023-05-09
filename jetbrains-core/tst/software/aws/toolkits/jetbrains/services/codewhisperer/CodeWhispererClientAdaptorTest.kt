@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain
@@ -109,7 +110,7 @@ class CodeWhispererClientAdaptorTest {
                 activeConnectionForFeature(any())
             } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList())) as AwsBearerTokenConnection
         }
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+        ApplicationManager.getApplication().replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
     }
 
     @Test

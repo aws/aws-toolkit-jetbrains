@@ -81,7 +81,7 @@ class CodeWhispererServiceNode(
         }
 
         val manager = CodeWhispererExplorerActionManager.getInstance()
-        val activeConnectionType = manager.checkActiveCodeWhispererConnectionType(project)
+        val activeConnectionType = manager.checkActiveCodeWhispererConnectionType()
 
         return when (activeConnectionType) {
             CodeWhispererLoginType.Logout -> listOf(whatIsCodeWhispererNode, getStartedCodeWhispererNode)
@@ -106,7 +106,7 @@ class CodeWhispererServiceNode(
             return
         }
 
-        val connectionType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)
+        val connectionType = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType()
         when (connectionType) {
             CodeWhispererLoginType.Expired -> {
                 presentation.addText(message("codewhisperer.explorer.root_node.login_type.expired"), SimpleTextAttributes.GRAY_ATTRIBUTES)

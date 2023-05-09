@@ -99,7 +99,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         ApplicationManager.getApplication().replaceService(
             CodeWhispererExplorerActionManager::class.java,
             mock {
-                on { checkActiveCodeWhispererConnectionType(any()) } doReturn CodeWhispererLoginType.Accountless
+                on { checkActiveCodeWhispererConnectionType() } doReturn CodeWhispererLoginType.Accountless
             },
             disposableRule.disposable
         )

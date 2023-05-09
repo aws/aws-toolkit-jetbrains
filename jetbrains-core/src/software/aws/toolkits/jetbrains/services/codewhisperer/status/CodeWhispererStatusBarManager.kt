@@ -52,7 +52,7 @@ class CodeWhispererStatusBarManager(private val project: Project) : Disposable {
         ExtensionPointName<StatusBarWidgetFactory>("com.intellij.statusBarWidgetFactory").extensionList.find {
             it.id == CodeWhispererStatusBarWidgetFactory.ID
         }?.let {
-            settings.setEnabled(it, isCodeWhispererEnabled(project))
+            settings.setEnabled(it, isCodeWhispererEnabled())
             widgetsManager.updateWidget(it)
         }
     }

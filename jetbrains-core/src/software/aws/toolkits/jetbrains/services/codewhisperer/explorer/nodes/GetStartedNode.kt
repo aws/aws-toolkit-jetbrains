@@ -46,7 +46,7 @@ class GetStartedNode(nodeProject: Project) : CodeWhispererActionNode(
      */
     private fun enableCodeWhisperer(project: Project) {
         val explorerActionManager = CodeWhispererExplorerActionManager.getInstance()
-        val connectionManager = ToolkitConnectionManager.getInstance(project)
+        val connectionManager = ToolkitConnectionManager.getInstance(null)
         connectionManager.activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
             project.refreshDevToolTree()
         } ?: run {
@@ -58,7 +58,7 @@ class GetStartedNode(nodeProject: Project) : CodeWhispererActionNode(
             }
         }
 
-        if (isCodeWhispererEnabled(project)) {
+        if (isCodeWhispererEnabled()) {
             StartupActivity.POST_STARTUP_ACTIVITY.findExtension(CodeWhispererProjectStartupActivity::class.java)?.let {
                 it.runActivity(project)
             }

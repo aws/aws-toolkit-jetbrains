@@ -15,7 +15,6 @@ import com.intellij.testFramework.replaceService
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -96,6 +95,6 @@ class CodeWhispererStatusBarManagerTest {
     }
 
     private fun configureConnection(loginType: CodeWhispererLoginType) {
-        whenever(explorerActionManager.checkActiveCodeWhispererConnectionType(any())).thenReturn(loginType)
+        whenever(explorerActionManager.checkActiveCodeWhispererConnectionType()).thenReturn(loginType)
     }
 }

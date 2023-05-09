@@ -24,13 +24,13 @@ class CodeWhispererConfigurable(private val project: Project) :
         get() = CodeWhispererSettings.getInstance()
 
     private val isSso: Boolean
-        get() = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.SSO
+        get() = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType() == CodeWhispererLoginType.SSO
 
     override fun getId() = "aws.codewhisperer"
 
     override fun createPanel() = panel {
         val connect = project.messageBus.connect(disposable ?: error("disposable wasn't initialized by framework"))
-        val invoke = isCodeWhispererEnabled(project)
+        val invoke = isCodeWhispererEnabled()
 
         // TODO: can we remove message bus subscribe and solely use visible(boolean) / enabled(boolean), consider multi project cases
         row {
@@ -42,7 +42,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     ToolkitConnectionManagerListener.TOPIC,
                     object : ToolkitConnectionManagerListener {
                         override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                            visible(!isCodeWhispererEnabled(project))
+                            visible(!isCodeWhispererEnabled())
                         }
                     }
                 )
@@ -55,7 +55,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     ToolkitConnectionManagerListener.TOPIC,
                     object : ToolkitConnectionManagerListener {
                         override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                            enabled(isCodeWhispererEnabled(project) && !isSso)
+                            enabled(isCodeWhispererEnabled() && !isSso)
                         }
                     }
                 )
@@ -70,7 +70,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     ToolkitConnectionManagerListener.TOPIC,
                     object : ToolkitConnectionManagerListener {
                         override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                            enabled(isCodeWhispererEnabled(project))
+                            enabled(isCodeWhispererEnabled())
                         }
                     }
                 )
@@ -85,7 +85,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     ToolkitConnectionManagerListener.TOPIC,
                     object : ToolkitConnectionManagerListener {
                         override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                            enabled(isCodeWhispererEnabled(project) && !isSso)
+                            enabled(isCodeWhispererEnabled() && !isSso)
                         }
                     }
                 )

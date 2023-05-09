@@ -16,6 +16,6 @@ class CodeWhispererReconnectNode(nodeProject: Project) : CodeWhispererActionNode
     AllIcons.Actions.Execute
 ) {
     override fun onDoubleClick(event: MouseEvent) {
-        reconnectCodeWhisperer(project)
+        reconnectCodeWhisperer()
     }
 }

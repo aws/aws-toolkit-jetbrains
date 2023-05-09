@@ -37,7 +37,7 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
     override fun toolWindowShown(toolWindow: ToolWindow) {
         super.toolWindowShown(toolWindow)
         if (toolWindow.id != ProblemsView.ID) return
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isCodeWhispererEnabled()) return
         CodeWhispererCodeScanManager.getInstance(project).addCodeScanUI()
     }
 

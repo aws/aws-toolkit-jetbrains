@@ -45,7 +45,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     }
 
     private fun getCodeWhispererConnectionStartUrl(project: Project): String {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         return getConnectionStartUrl(connection) ?: CodeWhispererConstants.ACCOUNTLESS_START_URL
     }
 
@@ -118,11 +118,11 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         return actionState.token
     }
 
-    fun checkActiveCodeWhispererConnectionType(project: Project) = when {
+    fun checkActiveCodeWhispererConnectionType() = when {
         actionState.token != null -> CodeWhispererLoginType.Accountless
-        isAccessTokenExpired(project) || isRefreshTokenExpired(project) -> CodeWhispererLoginType.Expired
+        isAccessTokenExpired() || isRefreshTokenExpired() -> CodeWhispererLoginType.Expired
         else -> {
-            val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+            val conn = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
             if (conn != null) {
                 if (conn.isSono()) {
                     CodeWhispererLoginType.Sono
@@ -196,10 +196,10 @@ interface CodeWhispererActivationChangedListener {
     fun activationChanged(value: Boolean) {}
 }
 
-fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
-    checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
+fun isCodeWhispererEnabled() = with(CodeWhispererExplorerActionManager.getInstance()) {
+    checkActiveCodeWhispererConnectionType() != CodeWhispererLoginType.Logout
 }
 
-fun isCodeWhispererExpired(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
-    checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
+fun isCodeWhispererExpired() = with(CodeWhispererExplorerActionManager.getInstance()) {
+    checkActiveCodeWhispererConnectionType() == CodeWhispererLoginType.Expired
 }

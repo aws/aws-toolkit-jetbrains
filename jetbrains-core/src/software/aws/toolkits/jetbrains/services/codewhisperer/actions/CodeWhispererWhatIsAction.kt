@@ -21,9 +21,7 @@ class CodeWhispererWhatIsAction :
     ),
     DumbAware {
     override fun update(e: AnActionEvent) {
-        e.project?.let {
-            e.presentation.isEnabledAndVisible = isCodeWhispererEnabled(it)
-        }
+        e.presentation.isEnabledAndVisible = isCodeWhispererEnabled()
     }
 
     override fun actionPerformed(e: AnActionEvent) {

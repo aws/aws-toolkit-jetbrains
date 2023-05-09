@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
@@ -51,16 +50,13 @@ class CodeWhispererExplorerActionManagerTest {
     val mockClientManager = MockClientManagerRule()
 
     private lateinit var mockManager: CodeWhispererExplorerActionManager
-    private lateinit var project: Project
     private lateinit var connectionManager: ToolkitConnectionManager
 
     @Before
     fun setup() {
         mockClientManager.create<SsoOidcClient>()
-        project = projectRule.project
         connectionManager = mock()
-
-        project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+        ApplicationManager.getApplication().replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
     }
 
     /**
@@ -71,7 +67,7 @@ class CodeWhispererExplorerActionManagerTest {
         mockManager = spy()
         whenever(connectionManager.activeConnectionForFeature(any())).thenReturn(null)
 
-        val actual = mockManager.checkActiveCodeWhispererConnectionType(project)
+        val actual = mockManager.checkActiveCodeWhispererConnectionType()
         assertThat(actual).isEqualTo(CodeWhispererLoginType.Logout)
     }
 
@@ -85,7 +81,7 @@ class CodeWhispererExplorerActionManagerTest {
             }
         )
 
-        val actual = mockManager.checkActiveCodeWhispererConnectionType(project)
+        val actual = mockManager.checkActiveCodeWhispererConnectionType()
         assertThat(actual).isEqualTo(CodeWhispererLoginType.Accountless)
     }
 
@@ -124,17 +120,17 @@ class CodeWhispererExplorerActionManagerTest {
         mockManager = mock()
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, mockManager, disposableRule.disposable)
 
-        whenever(mockManager.checkActiveCodeWhispererConnectionType(project)).thenReturn(CodeWhispererLoginType.Logout)
-        assertThat(isCodeWhispererEnabled(project)).isFalse
+        whenever(mockManager.checkActiveCodeWhispererConnectionType()).thenReturn(CodeWhispererLoginType.Logout)
+        assertThat(isCodeWhispererEnabled()).isFalse
 
-        whenever(mockManager.checkActiveCodeWhispererConnectionType(project)).thenReturn(CodeWhispererLoginType.Accountless)
-        assertThat(isCodeWhispererEnabled(project)).isTrue
+        whenever(mockManager.checkActiveCodeWhispererConnectionType()).thenReturn(CodeWhispererLoginType.Accountless)
+        assertThat(isCodeWhispererEnabled()).isTrue
 
-        whenever(mockManager.checkActiveCodeWhispererConnectionType(project)).thenReturn(CodeWhispererLoginType.Sono)
-        assertThat(isCodeWhispererEnabled(project)).isTrue
+        whenever(mockManager.checkActiveCodeWhispererConnectionType()).thenReturn(CodeWhispererLoginType.Sono)
+        assertThat(isCodeWhispererEnabled()).isTrue
 
-        whenever(mockManager.checkActiveCodeWhispererConnectionType(project)).thenReturn(CodeWhispererLoginType.SSO)
-        assertThat(isCodeWhispererEnabled(project)).isTrue
+        whenever(mockManager.checkActiveCodeWhispererConnectionType()).thenReturn(CodeWhispererLoginType.SSO)
+        assertThat(isCodeWhispererEnabled()).isTrue
     }
 
     private fun assertLoginType(startUrl: String, expectedType: CodeWhispererLoginType) {
@@ -144,7 +140,7 @@ class CodeWhispererExplorerActionManagerTest {
         whenever(conn.startUrl).thenReturn(startUrl)
         whenever(conn.getConnectionSettings()).thenReturn(null)
 
-        val actual = mockManager.checkActiveCodeWhispererConnectionType(project)
+        val actual = mockManager.checkActiveCodeWhispererConnectionType()
         assertThat(actual).isEqualTo(expectedType)
     }
 }

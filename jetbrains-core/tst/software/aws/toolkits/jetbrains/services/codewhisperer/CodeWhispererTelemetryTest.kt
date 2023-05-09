@@ -436,7 +436,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test codePercentage tracker will not be activated if CWSPR terms of service is not accepted`() {
         val exploreManagerMock = mock<CodeWhispererExplorerActionManager> {
-            on { checkActiveCodeWhispererConnectionType(projectRule.project) } doReturn CodeWhispererLoginType.Logout
+            on { checkActiveCodeWhispererConnectionType() } doReturn CodeWhispererLoginType.Logout
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreManagerMock, disposableRule.disposable)
         val project = projectRule.project

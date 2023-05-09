@@ -94,14 +94,14 @@ object CodeWhispererUtil {
         listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError(), DoNotShowAgainActionError())
     )
 
-    fun isAccessTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
+    fun isAccessTokenExpired(): Boolean {
+        val tokenProvider = tokenProvider() ?: return false
         val state = tokenProvider.state()
         return state == BearerTokenAuthState.NEEDS_REFRESH
     }
 
-    fun isRefreshTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
+    fun isRefreshTokenExpired(): Boolean {
+        val tokenProvider = tokenProvider() ?: return false
         val state = tokenProvider.state()
         return state == BearerTokenAuthState.NOT_AUTHENTICATED
     }
@@ -111,29 +111,29 @@ object CodeWhispererUtil {
     // 2. If not able to refresh, requesting re-login by showing a notification
     // 3. The notification will be shown at most once per IDE session
     // Return true if need to re-auth, false otherwise
-    fun promptReAuth(project: Project): Boolean {
+    fun promptReAuth(): Boolean {
         if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
-        if (!isCodeWhispererExpired(project)) return false
-        val tokenProvider = tokenProvider(project) ?: return false
-        return maybeReauthProviderIfNeeded(project, tokenProvider) {
+        if (!isCodeWhispererExpired()) return false
+        val tokenProvider = tokenProvider() ?: return false
+        return maybeReauthProviderIfNeeded(null, tokenProvider) {
             runInEdt {
-                notifyConnectionExpiredRequestReauth(project)
+                notifyConnectionExpiredRequestReauth()
                 CodeWhispererService.markReAuthPromptShown()
             }
         }
     }
 
-    private fun notifyConnectionExpiredRequestReauth(project: Project) {
+    private fun notifyConnectionExpiredRequestReauth() {
         if (CodeWhispererExplorerActionManager.getInstance().getConnectionExpiredDoNotShowAgain()) {
             return
         }
         notifyError(
             message("toolkit.sso_expire.dialog.title"),
             message("toolkit.sso_expire.dialog_message"),
-            project,
+            null,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    reconnectCodeWhisperer(project)
+                    reconnectCodeWhisperer()
                     notification.expire()
                 },
                 NotificationAction.create(message("toolkit.sso_expire.dialog.no_button")) { _, notification ->
@@ -150,21 +150,21 @@ object CodeWhispererUtil {
         return connection.startUrl
     }
 
-    private fun tokenProvider(project: Project) = (
+    private fun tokenProvider() = (
         ToolkitConnectionManager
-            .getInstance(project)
+            .getInstance(null)
             .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
         )
         ?.getConnectionSettings()
         ?.tokenProvider
         ?.delegate as? BearerTokenProvider
 
-    fun reconnectCodeWhisperer(project: Project) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+    fun reconnectCodeWhisperer() {
+        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is BearerSsoConnection) return
         ApplicationManager.getApplication().executeOnPooledThread {
             getConnectionStartUrl(connection)?.let { startUrl ->
-                loginSso(project, startUrl, requestedScopes = connection.scopes)
+                loginSso(null, startUrl, requestedScopes = connection.scopes)
             }
         }
     }

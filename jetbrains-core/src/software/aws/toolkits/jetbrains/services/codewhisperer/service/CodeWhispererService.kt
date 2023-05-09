@@ -77,11 +77,11 @@ class CodeWhispererService {
         latencyContext: LatencyContext
     ) {
         val project = editor.project ?: return
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isCodeWhispererEnabled()) return
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
-        if (promptReAuth(project)) return
+        if (promptReAuth()) return
 
         latencyContext.credentialFetchingEnd = System.nanoTime()
         val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }
@@ -490,7 +490,7 @@ class CodeWhispererService {
     ): RequestContext {
         val fileContextInfo = getFileContextInfo(editor, psiFile)
         val caretPosition = getCaretPosition(editor)
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContextInfo, connection, latencyContext)
     }
 
@@ -573,10 +573,8 @@ class CodeWhispererService {
     }
 
     fun canDoInvocation(editor: Editor, type: CodewhispererTriggerType): Boolean {
-        editor.project?.let {
-            if (!isCodeWhispererEnabled(it)) {
-                return false
-            }
+        if (!isCodeWhispererEnabled()) {
+            return false
         }
 
         if (type == CodewhispererTriggerType.AutoTrigger && !CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) {

@@ -66,7 +66,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         fun getInstance(project: Project): CodeWhispererClientAdaptor = project.service()
 
         private fun shouldUseSigv4Client(project: Project) =
-            CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless
+            CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType() == CodeWhispererLoginType.Accountless
     }
 }
 
@@ -158,7 +158,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED)
             .providerRemoved(oldProviderIdToRemove)
 
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         connection as? AwsBearerTokenConnection ?: error("$connection is not a bearer token connection")
         return AwsClientManager.getInstance().getClient<CodeWhispererRuntimeClient>(connection.getConnectionSettings())
     }

@@ -127,11 +127,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * Triggers a code scan and displays results in the new tab in problems view panel.
      */
     fun runCodeScan() {
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isCodeWhispererEnabled()) return
 
         // Return if a scan is already in progress.
         if (isCodeScanInProgress.getAndSet(true)) return
-        if (promptReAuth(project)) {
+        if (promptReAuth()) {
             isCodeScanInProgress.set(false)
             return
         }
@@ -165,7 +165,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
         var getProjectSize: Deferred<Long?> = async { null }
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         try {
             val file = FileEditorManager.getInstance(project).selectedEditor?.file
                 ?: noFileOpenError()

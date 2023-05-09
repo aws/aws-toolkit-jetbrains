@@ -16,8 +16,7 @@ class CodeWhispererStatusBarWidgetFactory : StatusBarEditorBasedWidgetFactory() 
 
     override fun getDisplayName(): String = message("codewhisperer.statusbar.display_name")
 
-    override fun isAvailable(project: Project): Boolean =
-        isCodeWhispererEnabled(project)
+    override fun isAvailable(project: Project): Boolean = isCodeWhispererEnabled()
 
     override fun createWidget(project: Project): StatusBarWidget = CodeWhispererStatusBarWidget(project)
 
