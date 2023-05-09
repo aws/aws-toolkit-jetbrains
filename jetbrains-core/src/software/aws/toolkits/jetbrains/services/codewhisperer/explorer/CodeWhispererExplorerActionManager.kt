@@ -45,7 +45,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     }
 
     private fun getCodeWhispererConnectionStartUrl(project: Project): String {
-        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         return getConnectionStartUrl(connection) ?: CodeWhispererConstants.ACCOUNTLESS_START_URL
     }
 
@@ -122,7 +122,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.token != null -> CodeWhispererLoginType.Accountless
         isAccessTokenExpired() || isRefreshTokenExpired() -> CodeWhispererLoginType.Expired
         else -> {
-            val conn = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+            val conn = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
             if (conn != null) {
                 if (conn.isSono()) {
                     CodeWhispererLoginType.Sono

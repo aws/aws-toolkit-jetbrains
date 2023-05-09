@@ -490,7 +490,7 @@ class CodeWhispererService {
     ): RequestContext {
         val fileContextInfo = getFileContextInfo(editor, psiFile)
         val caretPosition = getCaretPosition(editor)
-        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContextInfo, connection, latencyContext)
     }
 

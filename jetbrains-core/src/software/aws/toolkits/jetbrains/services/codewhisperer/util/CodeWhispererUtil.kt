@@ -160,7 +160,7 @@ object CodeWhispererUtil {
         ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer() {
-        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is BearerSsoConnection) return
         ApplicationManager.getApplication().executeOnPooledThread {
             getConnectionStartUrl(connection)?.let { startUrl ->

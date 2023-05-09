@@ -97,6 +97,7 @@ interface ToolkitConnectionManager : Disposable {
 
     companion object {
         fun getInstance(project: Project?) = project?.let { it.service<ToolkitConnectionManager>() } ?: service()
+        fun getInstance() = service<ToolkitConnectionManager>()
     }
 }
 

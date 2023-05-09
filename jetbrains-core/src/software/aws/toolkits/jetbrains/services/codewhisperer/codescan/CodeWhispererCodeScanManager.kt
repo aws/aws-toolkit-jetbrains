@@ -165,7 +165,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
         var getProjectSize: Deferred<Long?> = async { null }
-        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         try {
             val file = FileEditorManager.getInstance(project).selectedEditor?.file
                 ?: noFileOpenError()

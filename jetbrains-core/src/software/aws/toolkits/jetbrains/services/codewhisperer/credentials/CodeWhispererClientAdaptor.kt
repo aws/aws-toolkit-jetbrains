@@ -158,7 +158,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED)
             .providerRemoved(oldProviderIdToRemove)
 
-        val connection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         connection as? AwsBearerTokenConnection ?: error("$connection is not a bearer token connection")
         return AwsClientManager.getInstance().getClient<CodeWhispererRuntimeClient>(connection.getConnectionSettings())
     }
