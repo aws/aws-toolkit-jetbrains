@@ -152,7 +152,7 @@ object CodeWhispererUtil {
 
     private fun tokenProvider() = (
         ToolkitConnectionManager
-            .getInstance(null)
+            .getInstance()
             .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
         )
         ?.getConnectionSettings()
