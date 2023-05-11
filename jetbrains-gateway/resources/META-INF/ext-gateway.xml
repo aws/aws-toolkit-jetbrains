@@ -8,7 +8,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.gateway.connection.SshAgentService" />
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService" />
-        <notificationGroup id="aws.toolkit_deprecation" displayType="BALLOON" key="aws.toolkit_deprecation.title" />
+        <notificationGroup id="aws.toolkit_deprecation_gateway" displayType="BALLOON" key="aws.toolkit_deprecation.title" />
 
     </extensions>
     <applicationListeners>
