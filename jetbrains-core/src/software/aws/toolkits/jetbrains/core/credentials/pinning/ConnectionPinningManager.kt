@@ -18,6 +18,7 @@ import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.help.HelpIds
@@ -131,6 +132,8 @@ class DefaultConnectionPinningManager(private val project: Project) :
         val oldConnectionDisplayName = connectionString(oldConnection)
         val newConnectionDisplayName = connectionString(newConnection)
 
+        val connectionManager = ToolkitConnectionManager.getInstance()
+
         MessageDialogBuilder.yesNo(
             message("credentials.switch.confirmation.title", featuresString, oldConnectionDisplayName),
             message("credentials.switch.confirmation.comment", featuresString, oldConnectionDisplayName, newConnectionDisplayName)
@@ -148,9 +151,15 @@ class DefaultConnectionPinningManager(private val project: Project) :
             .help(HelpIds.EXPLORER_CREDS_HELP.id)
             .ask(project).apply {
                 if (this) {
+                    connectionManager.setKeepCodeWhispererConnection(true)
                     UiTelemetry.click(project, "connection_multiple_auths_yes")
                 } else {
+                    connectionManager.setKeepCodeWhispererConnection(false)
                     UiTelemetry.click(project, "connection_multiple_auths_no")
+                }
+                // if new connection is bearerToken, ping it to the current project no matter the response
+                if (newConnection is AwsBearerTokenConnection) {
+                    setPinnedConnection(CodeWhispererConnection.getInstance(), newConnection)
                 }
             }
     } else {

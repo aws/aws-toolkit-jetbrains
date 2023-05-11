@@ -93,6 +93,8 @@ interface ToolkitConnectionManager : Disposable {
 
     fun switchConnection(connection: ToolkitConnection?)
 
+    fun setKeepCodeWhispererConnection(keepCodeWhispererConnection: Boolean)
+
     override fun dispose() {}
 
     companion object {
@@ -165,7 +167,6 @@ fun loginSso(project: Project?, startUrl: String, region: String = DEFAULT_SSO_R
                 allScopes.toSet().toList()
             )
         )
-
         try {
             reauthConnection(project, connection)
         } catch (e: Exception) {

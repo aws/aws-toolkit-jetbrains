@@ -9,6 +9,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
@@ -30,6 +31,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         )
     }
     private val project: Project?
+    var keepCodeWhispererConnection: Boolean? = true
     constructor(project: Project) {
         this.project = project
     }
@@ -66,21 +68,25 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
         return connection?.let {
             if (feature.supportsConnectionType(it)) {
-                return it
+                // only use the connection if keepCodeWhispererConnection is set to true
+                return if (feature is CodeWhispererConnection && keepCodeWhispererConnection == false) {
+                    null
+                } else it
             }
-
             null
         } ?: defaultConnection?.let {
             if (feature.supportsConnectionType(it)) {
-                return it
+                return if (feature is CodeWhispererConnection && keepCodeWhispererConnection == false) {
+                    null
+                } else it
             }
-
             null
         }
     }
 
     override fun getState() = ToolkitConnectionManagerState(
-        connection?.id
+        connection?.id,
+        keepCodeWhispererConnection
     )
 
     override fun loadState(state: ToolkitConnectionManagerState) {
@@ -94,6 +100,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                 }
             connection = ToolkitAuthManager.getInstance().getConnection(activeConnectionIdWithRegion)
         }
+        keepCodeWhispererConnection = state.keepCodeWhispererConnection
     }
 
     @Synchronized
@@ -108,7 +115,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             if (oldConnection != null && newConnection != null && pinningManager != null) {
                 val featuresToPin = mutableListOf<FeatureWithPinnedConnection>()
                 FeatureWithPinnedConnection.EP_NAME.forEachExtensionSafe {
-                    if (!pinningManager.isFeaturePinned(it) && it.supportsConnectionType(oldConnection) && !it.supportsConnectionType(newConnection)) {
+                    if (!pinningManager.isFeaturePinned(it) && (oldConnection is ManagedBearerSsoConnection != newConnection is ManagedBearerSsoConnection)) {
                         featuresToPin.add(it)
                     }
                 }
@@ -121,8 +128,13 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             ApplicationManager.getApplication().messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(connection)
         }
     }
+
+    override fun setKeepCodeWhispererConnection(keepCodeWhispererConnection: Boolean) {
+        this.keepCodeWhispererConnection = keepCodeWhispererConnection
+    }
 }
 
 data class ToolkitConnectionManagerState(
-    var activeConnectionId: String? = null
+    var activeConnectionId: String? = null,
+    var keepCodeWhispererConnection: Boolean? = true
 )
