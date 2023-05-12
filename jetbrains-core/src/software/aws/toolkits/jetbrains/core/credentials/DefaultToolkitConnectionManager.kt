@@ -31,7 +31,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         )
     }
     private val project: Project?
-    var keepCodeWhispererConnection: Boolean? = true
+    var keepCodeWhispererConnection: Boolean = true
     constructor(project: Project) {
         this.project = project
     }
@@ -115,7 +115,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             if (oldConnection != null && newConnection != null && pinningManager != null) {
                 val featuresToPin = mutableListOf<FeatureWithPinnedConnection>()
                 FeatureWithPinnedConnection.EP_NAME.forEachExtensionSafe {
-                    if (!pinningManager.isFeaturePinned(it) && (oldConnection is ManagedBearerSsoConnection != newConnection is ManagedBearerSsoConnection)) {
+                    if (!pinningManager.isFeaturePinned(it) && (it.supportsConnectionType(oldConnection) != it.supportsConnectionType(newConnection))) {
                         featuresToPin.add(it)
                     }
                 }

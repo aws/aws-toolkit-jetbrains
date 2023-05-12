@@ -151,12 +151,11 @@ class DefaultConnectionPinningManager(private val project: Project) :
             .help(HelpIds.EXPLORER_CREDS_HELP.id)
             .ask(project).apply {
                 if (this) {
-                    connectionManager.setKeepCodeWhispererConnection(true)
                     UiTelemetry.click(project, "connection_multiple_auths_yes")
                 } else {
-                    connectionManager.setKeepCodeWhispererConnection(false)
                     UiTelemetry.click(project, "connection_multiple_auths_no")
                 }
+                connectionManager.setKeepCodeWhispererConnection(this)
                 // if new connection is bearerToken, ping it to the current project no matter the response
                 if (newConnection is AwsBearerTokenConnection) {
                     setPinnedConnection(CodeWhispererConnection.getInstance(), newConnection)
