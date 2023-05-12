@@ -9,16 +9,16 @@ sealed class CodeWhispererAutomatedTriggerType(
     val telemetryType: CodewhispererAutomatedTriggerType,
     var calculationResult: Double? = null
 ) {
-    class Classifier() : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
+    class Classifier : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
     class SpecialChar(val specialChar: Char) :
         CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.SpecialCharacters)
 
-    class Enter() : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Enter)
+    class Enter : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Enter)
 
-    class IntelliSense() :
+    class IntelliSense :
         CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IntelliSenseAcceptance)
 
-    class IdleTime() : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
+    class IdleTime : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
 
-    class Unknown() : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
+    class Unknown : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
 }

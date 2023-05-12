@@ -84,15 +84,15 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
     }
 
     // a util wrapper
-    fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? { 
+    fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
         val language = runReadAction {
             FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
         } ?: CodeWhispererUnknownLanguage.INSTANCE
-    
+
         // we need classifier result for any type of triggering for classifier group for supported languages
-        return if ((language.isClassifierSupported() && isClassifierGroup() || language.isAllClassifier())) {
+        return if ((language.isClassifierSupported() && isClassifierGroup()) || language.isAllClassifier()) {
             triggerType.calculationResult = classifierResult.calculatedResult
 
             when (triggerType) {
@@ -296,7 +296,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
             val language = runReadAction {
                 FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
             } ?: CodeWhispererUnknownLanguage.INSTANCE
-            return if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() || language is CodeWhispererJava) {
+            return if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() || language.isAllClassifier()) {
                 CodeWhispererAutoTriggerService.getInstance().shouldTriggerClassifier(editor).calculatedResult
             } else null
         }
