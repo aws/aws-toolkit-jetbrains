@@ -22,6 +22,15 @@ dependencies {
     testImplementation(versionCatalog.findLibrary("kotlin-test").get())
 }
 
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
+            useVersion(versionCatalog.findVersion("kotlinCoroutines").get().toString())
+            because("resolve kotlinx-coroutines version conflicts in favor of local version catalog")
+        }
+    }
+}
+
 sourceSets {
     main {
         java {
