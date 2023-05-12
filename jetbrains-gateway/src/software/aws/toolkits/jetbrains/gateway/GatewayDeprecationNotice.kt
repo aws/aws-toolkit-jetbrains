@@ -24,7 +24,7 @@ class GatewayDeprecationNotice : AppLifecycleListener {
             MIN_VERSION_HUMAN
         )
 
-        val notificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("aws.toolkit_deprecation_gateway")
+        val notificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("aws.toolkit_deprecation")
         notificationGroup.createNotification(title, message, NotificationType.WARNING).notify(null)
     }
 
