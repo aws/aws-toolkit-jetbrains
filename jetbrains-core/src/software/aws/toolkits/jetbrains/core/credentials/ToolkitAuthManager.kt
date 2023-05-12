@@ -93,7 +93,7 @@ interface ToolkitConnectionManager : Disposable {
 
     fun switchConnection(connection: ToolkitConnection?)
 
-    fun setKeepCodeWhispererConnection(keepCodeWhispererConnection: Boolean)
+    fun setKeepSecondaryConnection(keepSecondaryConnection: Boolean)
 
     override fun dispose() {}
 

@@ -37,7 +37,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.ToolkitPlaces
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -159,7 +158,7 @@ open class ToolkitAddConnectionDialog(
                         \t startUrl=${modal.startUrl}
                     """.trimIndent()
                 }
-                if (CODEWHISPERER_SCOPES.all { it in scopes }) {
+                if (customizer?.scopes?.isNotEmpty() == true) {
                     loginSso(null, startUrl, region, scopes)
                 } else {
                     loginSso(project, startUrl, region, scopes)

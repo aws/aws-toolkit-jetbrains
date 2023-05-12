@@ -31,7 +31,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         )
     }
     private val project: Project?
-    var keepCodeWhispererConnection: Boolean = true
+    private var keepSecondaryConnection: Boolean = true
     constructor(project: Project) {
         this.project = project
     }
@@ -67,18 +67,13 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         }
 
         return connection?.let {
-            if (feature.supportsConnectionType(it)) {
-                // only use the connection if keepCodeWhispererConnection is set to true
-                return if (feature is CodeWhispererConnection && keepCodeWhispererConnection == false) {
-                    null
-                } else it
+            if (feature.supportsConnectionType(it) && keepSecondaryConnection) {
+                return it
             }
             null
         } ?: defaultConnection?.let {
-            if (feature.supportsConnectionType(it)) {
-                return if (feature is CodeWhispererConnection && keepCodeWhispererConnection == false) {
-                    null
-                } else it
+            if (feature.supportsConnectionType(it) && keepSecondaryConnection) {
+                return it
             }
             null
         }
@@ -86,7 +81,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
     override fun getState() = ToolkitConnectionManagerState(
         connection?.id,
-        keepCodeWhispererConnection
+        keepSecondaryConnection
     )
 
     override fun loadState(state: ToolkitConnectionManagerState) {
@@ -100,7 +95,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                 }
             connection = ToolkitAuthManager.getInstance().getConnection(activeConnectionIdWithRegion)
         }
-        keepCodeWhispererConnection = state.keepCodeWhispererConnection
+        keepSecondaryConnection = state.keepSecondaryConnection
     }
 
     @Synchronized
@@ -129,12 +124,12 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         }
     }
 
-    override fun setKeepCodeWhispererConnection(keepCodeWhispererConnection: Boolean) {
-        this.keepCodeWhispererConnection = keepCodeWhispererConnection
+    override fun setKeepSecondaryConnection(keepSecondaryConnection: Boolean) {
+        this.keepSecondaryConnection = keepSecondaryConnection
     }
 }
 
 data class ToolkitConnectionManagerState(
     var activeConnectionId: String? = null,
-    var keepCodeWhispererConnection: Boolean? = true
+    var keepSecondaryConnection: Boolean = true
 )

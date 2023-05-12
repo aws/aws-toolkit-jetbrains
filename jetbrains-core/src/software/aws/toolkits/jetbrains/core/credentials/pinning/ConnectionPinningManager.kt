@@ -155,10 +155,11 @@ class DefaultConnectionPinningManager(private val project: Project) :
                 } else {
                     UiTelemetry.click(project, "connection_multiple_auths_no")
                 }
-                connectionManager.setKeepCodeWhispererConnection(this)
+                connectionManager.setKeepSecondaryConnection(this)
                 // if new connection is bearerToken, ping it to the current project no matter the response
                 if (newConnection is AwsBearerTokenConnection) {
                     setPinnedConnection(CodeWhispererConnection.getInstance(), newConnection)
+                    setPinnedConnection(CodeCatalystConnection.getInstance(), newConnection)
                 }
             }
     } else {
