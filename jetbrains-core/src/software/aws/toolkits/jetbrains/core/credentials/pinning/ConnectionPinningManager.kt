@@ -15,6 +15,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.MessageDialogBuilder
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -55,7 +56,9 @@ class DefaultConnectionPinningManager(private val project: Project) :
     ConnectionPinningManager,
     PersistentStateComponent<ConnectionPinningManagerState>,
     Disposable {
-    private var doNotPromptForPinning: Boolean = false
+    @VisibleForTesting
+    internal var shouldPinConnections: Boolean? = null
+
     private val pinnedConnections = ConcurrentHashMap<String, ToolkitConnection>()
 
     init {
@@ -107,14 +110,14 @@ class DefaultConnectionPinningManager(private val project: Project) :
     }
 
     override fun getState() = ConnectionPinningManagerState(
-        doNotPromptForPinning,
+        shouldPinConnections,
         pinnedConnections.entries.associate { (k, v) -> k to v.id }
     )
 
     override fun loadState(state: ConnectionPinningManagerState) {
         val authManager = ToolkitAuthManager.getInstance()
 
-        doNotPromptForPinning = state.doNotPromptForPinning
+        shouldPinConnections = state.shouldPinConnections
 
         pinnedConnections.clear()
         pinnedConnections.putAll(
@@ -127,34 +130,36 @@ class DefaultConnectionPinningManager(private val project: Project) :
     override fun dispose() {}
 
     @TestOnly
-    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) = if (!doNotPromptForPinning) {
-        val oldConnectionDisplayName = connectionString(oldConnection)
-        val newConnectionDisplayName = connectionString(newConnection)
+    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) = shouldPinConnections.let { shouldPinConnections ->
+        if (shouldPinConnections == null) {
+            val oldConnectionDisplayName = connectionString(oldConnection)
+            val newConnectionDisplayName = connectionString(newConnection)
 
-        MessageDialogBuilder.yesNo(
-            message("credentials.switch.confirmation.title", featuresString, oldConnectionDisplayName),
-            message("credentials.switch.confirmation.comment", featuresString, oldConnectionDisplayName, newConnectionDisplayName)
-        )
-            .yesText(message("credentials.switch.confirmation.yes"))
-            .noText(message("credentials.switch.confirmation.no"))
-            .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
-                override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
-                    if (isSelected && exitCode == DialogWrapper.OK_EXIT_CODE) {
-                        doNotPromptForPinning = true
+            MessageDialogBuilder.yesNo(
+                message("credentials.switch.confirmation.title", featuresString, oldConnectionDisplayName),
+                message("credentials.switch.confirmation.comment", featuresString, oldConnectionDisplayName, newConnectionDisplayName)
+            )
+                .yesText(message("credentials.switch.confirmation.yes"))
+                .noText(message("credentials.switch.confirmation.no"))
+                .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
+                    override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
+                        if (isSelected) {
+                            this@DefaultConnectionPinningManager.shouldPinConnections = exitCode == DialogWrapper.OK_EXIT_CODE
+                        }
+                    }
+                })
+                .icon(AllIcons.General.QuestionDialog)
+                .help(HelpIds.EXPLORER_CREDS_HELP.id)
+                .ask(project).apply {
+                    if (this) {
+                        UiTelemetry.click(project, "connection_multiple_auths_yes")
+                    } else {
+                        UiTelemetry.click(project, "connection_multiple_auths_no")
                     }
                 }
-            })
-            .icon(AllIcons.General.QuestionDialog)
-            .help(HelpIds.EXPLORER_CREDS_HELP.id)
-            .ask(project).apply {
-                if (this) {
-                    UiTelemetry.click(project, "connection_multiple_auths_yes")
-                } else {
-                    UiTelemetry.click(project, "connection_multiple_auths_no")
-                }
-            }
-    } else {
-        false
+        } else {
+            shouldPinConnections
+        }
     }
 
     private fun connectionString(connection: ToolkitConnection) =
@@ -166,6 +171,6 @@ class DefaultConnectionPinningManager(private val project: Project) :
 }
 
 data class ConnectionPinningManagerState(
-    var doNotPromptForPinning: Boolean = false,
+    var shouldPinConnections: Boolean? = null,
     var pinnedConnections: Map<String, String> = emptyMap()
 )

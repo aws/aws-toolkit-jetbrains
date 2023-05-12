@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.core.credentials.pinning
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.ui.MessageConstants
+import com.intellij.openapi.ui.TestDialog
+import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
@@ -16,6 +19,8 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -121,5 +126,45 @@ class ConnectionPinningManagerTest {
         sut.setPinnedConnection(feature, connection)
 
         assertThat(sut.getPinnedConnection(feature)).isEqualTo(connection)
+    }
+
+    @Test
+    fun `respects pinning prompt = yes`() {
+        val connection = mock<AwsBearerTokenConnection>() {
+            on { id } doReturn "connId"
+        }
+        val dialogMock = mock<TestDialog>()
+        TestDialogManager.setTestDialog(dialogMock)
+
+        sut.shouldPinConnections = true
+        assertThat(sut.showDialogIfNeeded(connection, connection, "feature")).isTrue()
+        verifyNoInteractions(dialogMock)
+    }
+
+    @Test
+    fun `respects pinning prompt = no`() {
+        val connection = mock<AwsBearerTokenConnection>() {
+            on { id } doReturn "connId"
+        }
+        val dialogMock = mock<TestDialog>()
+        TestDialogManager.setTestDialog(dialogMock)
+
+        sut.shouldPinConnections = false
+        assertThat(sut.showDialogIfNeeded(connection, connection, "feature")).isFalse()
+        verifyNoInteractions(dialogMock)
+    }
+
+    @Test
+    fun `prompts for pinning`() {
+        val connection = mock<AwsBearerTokenConnection>() {
+            on { id } doReturn "connId"
+        }
+
+        sut.shouldPinConnections = null
+        TestDialogManager.setTestDialog(TestDialog.YES)
+        assertThat(sut.showDialogIfNeeded(connection, connection, "feature")).isTrue()
+        TestDialogManager.setTestDialog(TestDialog.NO)
+        assertThat(sut.showDialogIfNeeded(connection, connection, "feature")).isFalse()
+
     }
 }
