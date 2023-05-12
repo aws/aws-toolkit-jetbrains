@@ -28,6 +28,11 @@ configurations.all {
             useVersion(versionCatalog.findVersion("kotlinCoroutines").get().toString())
             because("resolve kotlinx-coroutines version conflicts in favor of local version catalog")
         }
+
+        if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin")) {
+            useVersion(versionCatalog.findVersion("kotlin").get().toString())
+            because("resolve kotlin version conflicts in favor of local version catalog")
+        }
     }
 }
 
