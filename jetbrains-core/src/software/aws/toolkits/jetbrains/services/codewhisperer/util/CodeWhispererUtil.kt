@@ -111,19 +111,19 @@ object CodeWhispererUtil {
     // 2. If not able to refresh, requesting re-login by showing a notification
     // 3. The notification will be shown at most once per IDE session
     // Return true if need to re-auth, false otherwise
-    fun promptReAuth(): Boolean {
+    fun promptReAuth(project: Project): Boolean {
         if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
         if (!isCodeWhispererExpired()) return false
         val tokenProvider = tokenProvider() ?: return false
         return maybeReauthProviderIfNeeded(null, tokenProvider) {
             runInEdt {
-                notifyConnectionExpiredRequestReauth()
+                notifyConnectionExpiredRequestReauth(project)
                 CodeWhispererService.markReAuthPromptShown()
             }
         }
     }
 
-    private fun notifyConnectionExpiredRequestReauth() {
+    private fun notifyConnectionExpiredRequestReauth(project: Project) {
         if (CodeWhispererExplorerActionManager.getInstance().getConnectionExpiredDoNotShowAgain()) {
             return
         }
@@ -133,7 +133,7 @@ object CodeWhispererUtil {
             null,
             listOf(
                 NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
-                    reconnectCodeWhisperer()
+                    reconnectCodeWhisperer(project)
                     notification.expire()
                 },
                 NotificationAction.create(message("toolkit.sso_expire.dialog.no_button")) { _, notification ->
@@ -159,12 +159,12 @@ object CodeWhispererUtil {
         ?.tokenProvider
         ?.delegate as? BearerTokenProvider
 
-    fun reconnectCodeWhisperer() {
+    fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance().activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is BearerSsoConnection) return
         ApplicationManager.getApplication().executeOnPooledThread {
             getConnectionStartUrl(connection)?.let { startUrl ->
-                loginSso(null, startUrl, requestedScopes = connection.scopes)
+                loginSso(project, startUrl, requestedScopes = connection.scopes)
             }
         }
     }

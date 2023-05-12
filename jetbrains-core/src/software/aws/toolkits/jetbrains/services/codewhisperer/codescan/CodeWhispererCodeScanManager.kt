@@ -131,7 +131,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
         // Return if a scan is already in progress.
         if (isCodeScanInProgress.getAndSet(true)) return
-        if (promptReAuth()) {
+        if (promptReAuth(project)) {
             isCodeScanInProgress.set(false)
             return
         }

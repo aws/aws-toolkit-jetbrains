@@ -81,7 +81,7 @@ class CodeWhispererService {
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
-        if (promptReAuth()) return
+        if (promptReAuth(project)) return
 
         latencyContext.credentialFetchingEnd = System.nanoTime()
         val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }

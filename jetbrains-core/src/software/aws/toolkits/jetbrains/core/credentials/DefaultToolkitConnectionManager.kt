@@ -32,6 +32,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
     }
     private val project: Project?
     private var keepSecondaryConnection: Boolean = true
+
     constructor(project: Project) {
         this.project = project
     }
@@ -110,7 +111,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             if (oldConnection != null && newConnection != null && pinningManager != null) {
                 val featuresToPin = mutableListOf<FeatureWithPinnedConnection>()
                 FeatureWithPinnedConnection.EP_NAME.forEachExtensionSafe {
-                    if (!pinningManager.isFeaturePinned(it) && (it.supportsConnectionType(oldConnection) != it.supportsConnectionType(newConnection))) {
+                    if (!pinningManager.isFeaturePinned(it) && (it.supportsConnectionType(oldConnection) && !it.supportsConnectionType(newConnection))) {
                         featuresToPin.add(it)
                     }
                 }

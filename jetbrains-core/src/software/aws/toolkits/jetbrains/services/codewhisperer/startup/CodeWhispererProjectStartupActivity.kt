@@ -42,7 +42,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (runOnce) return
 
         // Reconnect CodeWhisperer on startup
-        promptReAuth()
+        promptReAuth(project)
 
         CodeWhispererAutoTriggerService.getInstance().determineUserGroupIfNeeded()
 

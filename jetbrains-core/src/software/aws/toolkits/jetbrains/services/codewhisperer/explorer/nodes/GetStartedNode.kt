@@ -50,6 +50,7 @@ class GetStartedNode(nodeProject: Project) : CodeWhispererActionNode(
         connectionManager.activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
             project.refreshDevToolTree()
         } ?: run {
+            connectionManager.setKeepSecondaryConnection(true)
             runInEdt {
                 // Start from scratch if no active connection
                 if (CodeWhispererLoginDialog(project).showAndGet()) {

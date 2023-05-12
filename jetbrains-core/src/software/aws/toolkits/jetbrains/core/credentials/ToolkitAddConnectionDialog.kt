@@ -158,11 +158,9 @@ open class ToolkitAddConnectionDialog(
                         \t startUrl=${modal.startUrl}
                     """.trimIndent()
                 }
-                if (customizer?.scopes?.isNotEmpty() == true) {
-                    loginSso(null, startUrl, region, scopes)
-                } else {
-                    loginSso(project, startUrl, region, scopes)
-                }
+
+                loginSso(project, startUrl, region, scopes)
+
             }
         } catch (e: Exception) {
             val message = when (e) {

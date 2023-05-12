@@ -56,7 +56,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
 
     override fun getPopupStep(): ListPopup? =
         if (isCodeWhispererExpired()) {
-            JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer() }, 0)
+            JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else {
             null
         }
