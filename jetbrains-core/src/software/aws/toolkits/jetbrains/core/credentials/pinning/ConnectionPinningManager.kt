@@ -130,37 +130,38 @@ class DefaultConnectionPinningManager(private val project: Project) :
     override fun dispose() {}
 
     @TestOnly
-    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) = shouldPinConnections.let { shouldPinConnections ->
-        if (shouldPinConnections == null) {
-            val oldConnectionDisplayName = connectionString(oldConnection)
-            val newConnectionDisplayName = connectionString(newConnection)
+    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) =
+        shouldPinConnections.let { shouldPinConnections ->
+            if (shouldPinConnections == null) {
+                val oldConnectionDisplayName = connectionString(oldConnection)
+                val newConnectionDisplayName = connectionString(newConnection)
 
-            MessageDialogBuilder.yesNo(
-                message("credentials.switch.confirmation.title", featuresString, oldConnectionDisplayName),
-                message("credentials.switch.confirmation.comment", featuresString, oldConnectionDisplayName, newConnectionDisplayName)
-            )
-                .yesText(message("credentials.switch.confirmation.yes"))
-                .noText(message("credentials.switch.confirmation.no"))
-                .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
-                    override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
-                        if (isSelected) {
-                            this@DefaultConnectionPinningManager.shouldPinConnections = exitCode == DialogWrapper.OK_EXIT_CODE
+                MessageDialogBuilder.yesNo(
+                    message("credentials.switch.confirmation.title", featuresString, oldConnectionDisplayName),
+                    message("credentials.switch.confirmation.comment", featuresString, oldConnectionDisplayName, newConnectionDisplayName)
+                )
+                    .yesText(message("credentials.switch.confirmation.yes"))
+                    .noText(message("credentials.switch.confirmation.no"))
+                    .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
+                        override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
+                            if (isSelected) {
+                                this@DefaultConnectionPinningManager.shouldPinConnections = exitCode == DialogWrapper.OK_EXIT_CODE
+                            }
+                        }
+                    })
+                    .icon(AllIcons.General.QuestionDialog)
+                    .help(HelpIds.EXPLORER_CREDS_HELP.id)
+                    .ask(project).apply {
+                        if (this) {
+                            UiTelemetry.click(project, "connection_multiple_auths_yes")
+                        } else {
+                            UiTelemetry.click(project, "connection_multiple_auths_no")
                         }
                     }
-                })
-                .icon(AllIcons.General.QuestionDialog)
-                .help(HelpIds.EXPLORER_CREDS_HELP.id)
-                .ask(project).apply {
-                    if (this) {
-                        UiTelemetry.click(project, "connection_multiple_auths_yes")
-                    } else {
-                        UiTelemetry.click(project, "connection_multiple_auths_no")
-                    }
-                }
-        } else {
-            shouldPinConnections
+            } else {
+                shouldPinConnections
+            }
         }
-    }
 
     private fun connectionString(connection: ToolkitConnection) =
         if (connection is AwsBearerTokenConnection) {
