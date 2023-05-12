@@ -73,6 +73,10 @@ configurations {
     }
 
     all {
+        if (name.startsWith("detekt")) {
+            return@all
+        }
+
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
                 useVersion(versionCatalog.findVersion("kotlinCoroutines").get().toString())
