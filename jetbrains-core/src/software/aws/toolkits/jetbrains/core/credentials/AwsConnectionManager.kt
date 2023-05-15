@@ -164,7 +164,11 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
         }
     }
 
-    private fun validateCredentials(credentialsIdentifier: CredentialIdentifier?, region: AwsRegion?, isInitial: Boolean): AsyncPromise<ConnectionState> {
+    private fun validateCredentials(
+        credentialsIdentifier: CredentialIdentifier?,
+        region: AwsRegion?,
+        isInitial: Boolean
+    ): AsyncPromise<ConnectionState> {
         val promise = AsyncPromise<ConnectionState>()
         ApplicationManager.getApplication().executeOnPooledThread {
             if (credentialsIdentifier == null || region == null) {

@@ -77,12 +77,21 @@ fun executeRunConfiguration(runConfiguration: RunConfiguration, executorId: Stri
             runConfiguration.project.messageBus.connect(executionEnvironment).subscribe(
                 ExecutionManager.EXECUTION_TOPIC,
                 object : ExecutionListener {
-                    override fun processTerminating(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                    override fun processTerminating(
+                        executorId: String,
+                        env: ExecutionEnvironment,
+                        handler: ProcessHandler
+                    ) {
                         println("Execution topic listener called processTerminating for $handler")
                         super.processTerminating(executorId, env, handler)
                     }
 
-                    override fun processTerminated(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler, exitCode: Int) {
+                    override fun processTerminated(
+                        executorId: String,
+                        env: ExecutionEnvironment,
+                        handler: ProcessHandler,
+                        exitCode: Int
+                    ) {
                         println("Execution topic listener called processTerminated with exit code $exitCode for $handler")
                         super.processTerminated(executorId, env, handler, exitCode)
                     }
@@ -116,7 +125,10 @@ fun getState(runConfiguration: RunConfiguration, executorId: String = DefaultRun
     return runConfiguration.getState(executor, environment)
 }
 
-fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
+fun executeRunConfigurationAndWait(
+    runConfiguration: RunConfiguration,
+    executorId: String = DefaultRunExecutor.EXECUTOR_ID
+): Output {
     val executionFuture = executeRunConfiguration(runConfiguration, executorId)
     // 4 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
     return try {

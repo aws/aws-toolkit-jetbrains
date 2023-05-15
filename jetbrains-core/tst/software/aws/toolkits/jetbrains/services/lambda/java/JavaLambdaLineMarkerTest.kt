@@ -507,7 +507,10 @@ Resources:
         }
     }
 
-    private fun findAndAssertMarks(fixture: CodeInsightTestFixture, assertion: (List<LambdaLineMarker.LambdaGutterIcon>) -> Unit) {
+    private fun findAndAssertMarks(
+        fixture: CodeInsightTestFixture,
+        assertion: (List<LambdaLineMarker.LambdaGutterIcon>) -> Unit
+    ) {
         runInEdtAndWait {
             val marks = fixture.findAllGutters().filterIsInstance<LambdaLineMarker.LambdaGutterIcon>()
             assertion(marks)

@@ -29,7 +29,11 @@ internal class MockToolManager : ToolManager {
         TODO("Not yet implemented")
     }
 
-    override fun <T : Version> validateCompatability(tool: Tool<ToolType<T>>?, stricterMinVersion: T?, project: Project?): Validity {
+    override fun <T : Version> validateCompatability(
+        tool: Tool<ToolType<T>>?,
+        stricterMinVersion: T?,
+        project: Project?
+    ): Validity {
         TODO("Not yet implemented")
     }
 }

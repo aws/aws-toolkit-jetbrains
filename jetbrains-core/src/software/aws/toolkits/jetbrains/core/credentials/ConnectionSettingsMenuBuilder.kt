@@ -21,7 +21,10 @@ import software.aws.toolkits.resources.message
 
 class ConnectionSettingsMenuBuilder private constructor() {
     private data class RegionSelectionSettings(val currentSelection: AwsRegion?, val onChange: (AwsRegion) -> Unit)
-    private data class ProfileSelectionSettings(val currentSelection: CredentialIdentifier?, val onChange: (CredentialIdentifier) -> Unit)
+    private data class ProfileSelectionSettings(
+        val currentSelection: CredentialIdentifier?,
+        val onChange: (CredentialIdentifier) -> Unit
+    )
 
     private sealed interface IdentitySelectionSettings
     private data class SelectableIdentitySelectionSettings(
@@ -170,7 +173,11 @@ class ConnectionSettingsMenuBuilder private constructor() {
         }
     }
 
-    private fun createRegionGroupActions(regions: Collection<AwsRegion>, currentSelection: AwsRegion?, onChange: (AwsRegion) -> Unit) = buildList<AnAction> {
+    private fun createRegionGroupActions(
+        regions: Collection<AwsRegion>,
+        currentSelection: AwsRegion?,
+        onChange: (AwsRegion) -> Unit
+    ) = buildList<AnAction> {
         regions.groupBy { it.category }
             .forEach { (category, categoryRegions) ->
                 add(Separator.create(category))

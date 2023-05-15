@@ -11,7 +11,10 @@ import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 
-fun Project.refreshAwsTree(resource: Resource<*>? = null, connectionSettings: ConnectionSettings = getConnectionSettingsOrThrow()) {
+fun Project.refreshAwsTree(
+    resource: Resource<*>? = null,
+    connectionSettings: ConnectionSettings = getConnectionSettingsOrThrow()
+) {
     if (resource == null) {
         AwsResourceCache.getInstance().clear(connectionSettings)
     } else {

@@ -169,7 +169,12 @@ interface S3Object {
 
 data class VersionContinuationToken(val keyMarker: String, val versionId: String)
 
-class S3TreeObjectNode(parent: S3TreeDirectoryNode, key: String, override val size: Long, override val lastModified: Instant) :
+class S3TreeObjectNode(
+    parent: S3TreeDirectoryNode,
+    key: String,
+    override val size: Long,
+    override val lastModified: Instant
+) :
     S3LazyLoadParentNode<VersionContinuationToken>(parent.bucket, parent, key),
     S3Object {
     var showHistory: Boolean = false
@@ -242,7 +247,12 @@ class S3TreeObjectNode(parent: S3TreeDirectoryNode, key: String, override val si
     }
 }
 
-class S3TreeObjectVersionNode(parent: S3TreeObjectNode, override val versionId: String, override val size: Long, override val lastModified: Instant) :
+class S3TreeObjectVersionNode(
+    parent: S3TreeObjectNode,
+    override val versionId: String,
+    override val size: Long,
+    override val lastModified: Instant
+) :
     S3TreeNode(parent.bucket, parent, parent.key), S3Object {
 
     init {

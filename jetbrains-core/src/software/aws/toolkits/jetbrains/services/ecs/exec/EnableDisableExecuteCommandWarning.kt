@@ -15,7 +15,11 @@ import software.aws.toolkits.telemetry.EcsTelemetry
 import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
 
-class EnableDisableExecuteCommandWarning(private val project: Project, private val enable: Boolean, private val serviceName: String) : DialogWrapper(project) {
+class EnableDisableExecuteCommandWarning(
+    private val project: Project,
+    private val enable: Boolean,
+    private val serviceName: String
+) : DialogWrapper(project) {
     private val warningIcon = JBLabel(Messages.getWarningIcon())
     var dontDisplayWarning = false
     var confirmNonProduction = false

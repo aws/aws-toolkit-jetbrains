@@ -429,7 +429,10 @@ class DeployServerlessApplicationDialog(
     }
 
     // visible for testing
-    internal fun populateParameters(parameters: List<Parameter>, templateFileDeclarationOverrides: List<Parameter>? = null) {
+    internal fun populateParameters(
+        parameters: List<Parameter>,
+        templateFileDeclarationOverrides: List<Parameter>? = null
+    ) {
         // TODO: would be nice to be able to pipe through the description
         parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue() ?: "") }
         templateFileParameters = templateFileDeclarationOverrides ?: CloudFormationTemplate.parse(project, templateFile).parameters().toList()

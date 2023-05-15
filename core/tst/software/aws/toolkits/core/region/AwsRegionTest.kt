@@ -15,7 +15,11 @@ import kotlin.random.Random
 class AwsRegionTest {
 
     @RunWith(Parameterized::class)
-    class NameAndCategorizationTest(private val region: AwsRegion, private val expectedCategory: String, private val expectedDisplayName: String) {
+    class NameAndCategorizationTest(
+        private val region: AwsRegion,
+        private val expectedCategory: String,
+        private val expectedDisplayName: String
+    ) {
         @Test
         fun `display name should be correct`() {
             assertThat(region.displayName).isEqualTo(expectedDisplayName)

@@ -99,7 +99,10 @@ class SamProjectGenerator :
 class SamProjectRuntimeSelectionStep(projectGenerator: SamProjectGenerator) :
     ProjectSettingsStepBase<SamNewProjectSettings>(projectGenerator, AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>())
 
-class SamProjectGeneratorSettingsPeer(val generator: SamProjectGenerator, private val wizardFragments: List<WizardFragment>) :
+class SamProjectGeneratorSettingsPeer(
+    val generator: SamProjectGenerator,
+    private val wizardFragments: List<WizardFragment>
+) :
     ProjectGeneratorPeer<SamNewProjectSettings> {
     private lateinit var samInitSelectionPanel: SamInitSelectionPanel
 

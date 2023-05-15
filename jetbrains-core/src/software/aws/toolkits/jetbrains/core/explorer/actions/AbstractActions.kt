@@ -91,7 +91,11 @@ abstract class ExplorerNodeAction<in T : AwsExplorerNode<*>> : AnAction {
     }
 }
 
-abstract class SingleExplorerNodeActionGroup<in T : AwsExplorerNode<*>>(text: String? = null, description: String? = null, icon: Icon? = null) :
+abstract class SingleExplorerNodeActionGroup<in T : AwsExplorerNode<*>>(
+    text: String? = null,
+    description: String? = null,
+    icon: Icon? = null
+) :
     ActionGroup(text, description, icon) {
 
     final override fun getChildren(e: AnActionEvent?) =

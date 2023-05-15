@@ -21,7 +21,12 @@ import javax.swing.JComponent
 import javax.swing.JTextField
 
 @JvmOverloads
-fun setupSamSelectionElements(samExecutableField: JTextField, editButton: JButton, label: JComponent, postEditCallback: Runnable? = null) {
+fun setupSamSelectionElements(
+    samExecutableField: JTextField,
+    editButton: JButton,
+    label: JComponent,
+    postEditCallback: Runnable? = null
+) {
     fun getSamExecutable(): ExecutableInstance.ExecutableWithPath? =
         ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().let { it as? ExecutableInstance.ExecutableWithPath }
 

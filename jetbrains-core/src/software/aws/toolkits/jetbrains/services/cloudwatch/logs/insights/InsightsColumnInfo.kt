@@ -25,7 +25,14 @@ class LogResultColumnInfo(private val fieldName: String) : ColumnInfo<LogResult,
 }
 
 class LogResultColumnRenderer : TableCellRenderer {
-    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+    override fun getTableCellRendererComponent(
+        table: JTable?,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")
         if (table == null) {

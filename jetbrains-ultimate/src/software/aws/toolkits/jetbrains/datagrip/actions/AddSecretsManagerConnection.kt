@@ -81,7 +81,12 @@ class AddSecretsManagerConnection : SingleExplorerNodeAction<AwsExplorerNode<*>>
     }
 }
 
-fun DataSourceRegistry.createDatasource(project: Project, secret: SecretsManagerDbSecret, secretArn: String, jdbcAdapter: String) {
+fun DataSourceRegistry.createDatasource(
+    project: Project,
+    secret: SecretsManagerDbSecret,
+    secretArn: String,
+    jdbcAdapter: String
+) {
     val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
     builder
         .withJdbcAdditionalProperty(CREDENTIAL_ID_PROPERTY, connectionSettings?.credentials?.id)

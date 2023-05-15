@@ -19,7 +19,11 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
 import java.util.concurrent.TimeUnit
 
-data class CaretContext(val leftFileContext: String, val rightFileContext: String, val leftContextOnCurrentLine: String = "")
+data class CaretContext(
+    val leftFileContext: String,
+    val rightFileContext: String,
+    val leftContextOnCurrentLine: String = ""
+)
 
 data class FileContextInfo(
     val caretContext: CaretContext,

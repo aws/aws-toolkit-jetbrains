@@ -133,7 +133,9 @@ class SyncServerlessApplicationDialog(
     private val cloudFormationClient: CloudFormationClient = project.awsClient()
     private fun checkIfStackInSettingsExists(): Boolean = if (!settings?.samStackName(samPath).isNullOrEmpty()) {
         !activeStacks.map { it.stackName() }.contains(settings?.samStackName(samPath))
-    } else true
+    } else {
+        true
+    }
 
     fun settings() = SyncServerlessApplicationSettings(
         stackName = if (createNewStack) {
@@ -436,7 +438,10 @@ class SyncServerlessApplicationDialog(
     }
 
     // visible for testing
-    internal fun populateParameters(parameters: List<Parameter>, templateFileDeclarationOverrides: List<Parameter>? = null) {
+    internal fun populateParameters(
+        parameters: List<Parameter>,
+        templateFileDeclarationOverrides: List<Parameter>? = null
+    ) {
         // TODO: would be nice to be able to pipe through the description
         parametersField.envVars = parameters.associate { it.logicalName to (it.defaultValue().orEmpty()) }
         templateFileParameters = templateFileDeclarationOverrides ?: CloudFormationTemplate.parse(project, templateFile).parameters().toList()

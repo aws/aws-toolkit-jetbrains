@@ -75,6 +75,9 @@
     <ID>FunctionNaming:SamVersionCacheTest.kt$SamVersionCacheTest$@Test fun errorCode_RandomError()</ID>
     <ID>FunctionNaming:SamVersionCacheTest.kt$SamVersionCacheTest$@Test fun successExecution_EmptyOutput()</ID>
     <ID>FunctionOnlyReturningConstant:CodeWhispererCodeScanTestBase.kt$CodeWhispererCodeScanTestBase$protected fun getFakeRecommendationsOnNonExistentFile()</ID>
+    <ID>IgnoredReturnValue:CodeWhispererRightContextTest.kt$CodeWhispererRightContextTest$assertThat(it.reformatted.references().isEmpty())</ID>
+    <ID>IgnoredReturnValue:ConnectionSettingsMenuBuilderTest.kt$ConnectionSettingsMenuBuilderTest$singleElement()</ID>
+    <ID>IgnoredReturnValue:MinimumVersionChangeTest.kt$MinimumVersionChangeTest$singleElement()</ID>
     <ID>NoNameShadowing:CopyUrlActionTest.kt$CopyUrlActionTest${ // Actual format is implementation detail below S3VirtualBucket URL("https://s3/${it.getArgument&lt;String>(0)}?version=${it.getArgument&lt;String>(1)}") }</ID>
     <ID>NoNameShadowing:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest${ it.getArgument&lt;File>(0).writeText("hello") }</ID>
     <ID>NoNameShadowing:CreateServiceRoleDialogTest.kt$CreateServiceRoleDialogTest${ it.roleName(name).arn("arn") }</ID>
@@ -129,7 +132,6 @@
     <ID>UnsafeCallOnNullableType:ToolkitToolWindowTest.kt$ToolkitToolWindowTest$jbToolWindowManager.getToolWindow(sut.toolWindowId)?.contentManager!!</ID>
     <ID>UnsafeCallOnNullableType:WrapLogsActionTest.kt$WrapLogsActionTest$model.columnInfos[1].getRenderer(null)!!</ID>
     <ID>UnsafeCallOnNullableType:YamlCloudFormationTemplateTest.kt$YamlCloudFormationTemplateTest$resource!!</ID>
-    <ID>UnusedPrivateMember:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$val file1 = fixture.configureByText("/file1.py", pythonTestLeftContext)</ID>
     <ID>UseCheckOrError:AwsRegionProviderTest.kt$AwsRegionProviderTest$throw IllegalStateException("Bad test data")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate $it")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate gradlew")</ID>

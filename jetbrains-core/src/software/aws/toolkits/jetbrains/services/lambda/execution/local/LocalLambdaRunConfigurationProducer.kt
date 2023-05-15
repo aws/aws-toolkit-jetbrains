@@ -51,7 +51,11 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
         }
     }
 
-    private fun setupFromSourceFile(element: PsiElement, context: ConfigurationContext, configuration: LocalLambdaRunConfiguration): Boolean {
+    private fun setupFromSourceFile(
+        element: PsiElement,
+        context: ConfigurationContext,
+        configuration: LocalLambdaRunConfiguration
+    ): Boolean {
         val runtimeGroup = element.language.runtimeGroup ?: return false
         if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false

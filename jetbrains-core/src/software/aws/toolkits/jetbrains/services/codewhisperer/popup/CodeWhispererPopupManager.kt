@@ -234,7 +234,9 @@ class CodeWhispererPopupManager {
         if (isScrolling ||
             CodeWhispererInvocationStatus.getInstance().hasExistingInvocation() ||
             !sessionContext.isFirstTimeShowingPopup
-        ) return
+        ) {
+            return
+        }
         CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
     }
 

@@ -16,7 +16,13 @@ import javax.swing.ListCellRenderer
 import javax.swing.border.Border
 
 class CawsProjectListRenderer(private val loadingRenderer: ListCellRenderer<in CawsProject>) : ColoredListCellRenderer<CawsProject>() {
-    override fun getListCellRendererComponent(list: JList<out CawsProject>?, value: CawsProject?, index: Int, selected: Boolean, hasFocus: Boolean): Component {
+    override fun getListCellRendererComponent(
+        list: JList<out CawsProject>?,
+        value: CawsProject?,
+        index: Int,
+        selected: Boolean,
+        hasFocus: Boolean
+    ): Component {
         val c = super.getListCellRendererComponent(list, value, index, selected, hasFocus)
         list ?: return c
         if (list.model.size == 0) {
@@ -67,7 +73,13 @@ class CawsProjectListRenderer(private val loadingRenderer: ListCellRenderer<in C
         return panel
     }
 
-    override fun customizeCellRenderer(list: JList<out CawsProject>, value: CawsProject?, index: Int, selected: Boolean, hasFocus: Boolean) {
+    override fun customizeCellRenderer(
+        list: JList<out CawsProject>,
+        value: CawsProject?,
+        index: Int,
+        selected: Boolean,
+        hasFocus: Boolean
+    ) {
         value ?: return
         if (index == -1) {
             // if not a popup

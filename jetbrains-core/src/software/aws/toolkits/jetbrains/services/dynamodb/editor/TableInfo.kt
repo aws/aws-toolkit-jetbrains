@@ -5,4 +5,9 @@ package software.aws.toolkits.jetbrains.services.dynamodb.editor
 
 import software.aws.toolkits.jetbrains.services.dynamodb.Index
 
-data class TableInfo(val tableName: String, val tableIndex: Index, val localSecondary: List<Index>, val globalSecondary: List<Index>)
+data class TableInfo(
+    val tableName: String,
+    val tableIndex: Index,
+    val localSecondary: List<Index>,
+    val globalSecondary: List<Index>
+)

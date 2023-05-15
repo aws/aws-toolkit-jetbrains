@@ -12,7 +12,11 @@ import java.io.DataOutput
  * Immutable data class for indexing [Resource]. Use [from] to create an instance so that it always
  * returns a concrete [IndexedResource] such as [IndexedFunction] if applicable.
  */
-open class IndexedResource protected constructor(val type: String, val indexedProperties: Map<String, String>, val indexedMetadata: Map<String, String>) {
+open class IndexedResource protected constructor(
+    val type: String,
+    val indexedProperties: Map<String, String>,
+    val indexedMetadata: Map<String, String>
+) {
 
     protected constructor(resource: Resource, indexProperties: List<String>, indexMetadata: List<String>) :
         this(

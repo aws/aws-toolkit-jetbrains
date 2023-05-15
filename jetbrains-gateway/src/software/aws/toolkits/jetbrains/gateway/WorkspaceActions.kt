@@ -13,7 +13,12 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.resources.message
 import kotlin.system.measureTimeMillis
 
-class WorkspaceActions(private val spaceName: String, private val projectName: String, private val envId: String, private val client: CodeCatalystClient) {
+class WorkspaceActions(
+    private val spaceName: String,
+    private val projectName: String,
+    private val envId: String,
+    private val client: CodeCatalystClient
+) {
     fun getEnvironmentDetails() = client.getDevEnvironment {
         it.spaceName(spaceName)
         it.projectName(projectName)

@@ -95,7 +95,12 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         }
     }
 
-    fun createResource(connectionSettings: ConnectionSettings, dynamicResourceType: String, desiredState: String, file: VirtualFile) {
+    fun createResource(
+        connectionSettings: ConnectionSettings,
+        dynamicResourceType: String,
+        desiredState: String,
+        file: VirtualFile
+    ) {
         coroutineScope.launch {
             try {
                 val client = connectionSettings.awsClient<CloudControlClient>()
@@ -116,7 +121,11 @@ internal class DynamicResourceUpdateManager(private val project: Project) {
         }
     }
 
-    private fun startCheckingProgress(connectionSettings: ConnectionSettings, progress: ProgressEvent, startTime: Instant) {
+    private fun startCheckingProgress(
+        connectionSettings: ConnectionSettings,
+        progress: ProgressEvent,
+        startTime: Instant
+    ) {
         pendingMutations.add(ResourceMutationState.fromEvent(connectionSettings, progress, startTime))
         if (pendingMutations.size == 1) {
             alarm.addRequest({ getProgress() }, 0)
@@ -205,7 +214,11 @@ interface DynamicResourceStateMutationHandler {
     fun statusCheckComplete() {}
 }
 
-data class DynamicResourceIdentifier(val connectionSettings: ConnectionSettings, val resourceType: String, val resourceIdentifier: String)
+data class DynamicResourceIdentifier(
+    val connectionSettings: ConnectionSettings,
+    val resourceType: String,
+    val resourceIdentifier: String
+)
 
 data class ResourceMutationState(
     val connectionSettings: ConnectionSettings,

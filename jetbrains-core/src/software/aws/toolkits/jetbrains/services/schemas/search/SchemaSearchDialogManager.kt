@@ -54,16 +54,29 @@ class SchemaSearchDialogManager {
         return dialog
     }
 
-    private fun cacheSingleRegistryDialogStateOnCancel(registry: String, credentialId: String, region: String, state: SchemaSearchDialogState) {
+    private fun cacheSingleRegistryDialogStateOnCancel(
+        registry: String,
+        credentialId: String,
+        region: String,
+        state: SchemaSearchDialogState
+    ) {
         searchDialogStateCache[SingleRegistryDialogStateCacheKey(registry, credentialId, region)] = state
     }
 
-    private fun cacheAllRegistriesDialogStateOnCancel(credentialId: String, region: String, state: SchemaSearchDialogState) {
+    private fun cacheAllRegistriesDialogStateOnCancel(
+        credentialId: String,
+        region: String,
+        state: SchemaSearchDialogState
+    ) {
         allRegistriesSearchDialogStateCache[AllRegistriesDialogStateCacheKey(credentialId, region)] = state
     }
 
     private sealed class DialogStateCacheKey {
-        data class SingleRegistryDialogStateCacheKey(private val registry: String, private val credentialId: String, private val region: String) :
+        data class SingleRegistryDialogStateCacheKey(
+            private val registry: String,
+            private val credentialId: String,
+            private val region: String
+        ) :
             DialogStateCacheKey()
         data class AllRegistriesDialogStateCacheKey(private val credentialId: String, private val region: String) : DialogStateCacheKey()
     }

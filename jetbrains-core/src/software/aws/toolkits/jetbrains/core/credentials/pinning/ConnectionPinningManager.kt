@@ -43,7 +43,11 @@ interface ConnectionPinningManager {
     fun getPinnedConnection(feature: FeatureWithPinnedConnection): ToolkitConnection?
     fun setPinnedConnection(feature: FeatureWithPinnedConnection, newConnection: ToolkitConnection?)
 
-    fun maybePinFeatures(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, features: List<FeatureWithPinnedConnection>)
+    fun maybePinFeatures(
+        oldConnection: ToolkitConnection,
+        newConnection: ToolkitConnection,
+        features: List<FeatureWithPinnedConnection>
+    )
 
     companion object {
         fun getInstance(project: Project) = project.service<ConnectionPinningManager>()
@@ -90,7 +94,11 @@ class DefaultConnectionPinningManager(private val project: Project) :
         project.messageBus.syncPublisher(ConnectionPinningManagerListener.TOPIC).pinnedConnectionChanged(feature, newConnection)
     }
 
-    override fun maybePinFeatures(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, features: List<FeatureWithPinnedConnection>) {
+    override fun maybePinFeatures(
+        oldConnection: ToolkitConnection,
+        newConnection: ToolkitConnection,
+        features: List<FeatureWithPinnedConnection>
+    ) {
         val featuresString = if (features.size == 1) {
             features.first().featureName
         } else {
@@ -127,7 +135,11 @@ class DefaultConnectionPinningManager(private val project: Project) :
     override fun dispose() {}
 
     @TestOnly
-    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) = if (!doNotPromptForPinning) {
+    internal fun showDialogIfNeeded(
+        oldConnection: ToolkitConnection,
+        newConnection: ToolkitConnection,
+        featuresString: String
+    ) = if (!doNotPromptForPinning) {
         val oldConnectionDisplayName = connectionString(oldConnection)
         val newConnectionDisplayName = connectionString(newConnection)
 

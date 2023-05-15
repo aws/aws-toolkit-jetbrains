@@ -32,7 +32,10 @@ class Dotnet60LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunC
 class Dotnet60LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda6X", LambdaRuntime.DOTNET6_0)
 
-abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
+abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(
+    private val solutionName: String,
+    private val runtime: LambdaRuntime
+) :
     AwsReuseSolutionTestBase() {
 
     override val waitForCaches = false
@@ -127,7 +130,10 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     }
 }
 
-abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private val solutionName: String, private val runtime: LambdaRuntime) :
+abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(
+    private val solutionName: String,
+    private val runtime: LambdaRuntime
+) :
     AwsReuseSolutionTestBase() {
 
     override val waitForCaches = false

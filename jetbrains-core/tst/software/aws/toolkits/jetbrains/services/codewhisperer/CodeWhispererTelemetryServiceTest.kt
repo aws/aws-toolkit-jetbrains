@@ -155,7 +155,10 @@ class CodeWhispererTelemetryServiceTest {
 
     @Test
     fun `test aggregateUserDecision`() {
-        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererPreviousSuggestionState) {
+        fun assertAggregateUserDecision(
+            decisions: List<CodewhispererSuggestionState>,
+            expected: CodewhispererPreviousSuggestionState
+        ) {
             val actual = sut.aggregateUserDecision(decisions)
             assertThat(actual).isEqualTo(expected)
         }
@@ -249,7 +252,9 @@ class CodeWhispererTelemetryServiceTest {
                 "codewhispererTriggerCharacter" to requestContext.triggerTypeInfo.automatedTriggerType.let {
                     if (it is CodeWhispererAutomatedTriggerType.SpecialChar) {
                         it.specialChar.toString()
-                    } else null
+                    } else {
+                        null
+                    }
                 },
                 "codewhispererTypeaheadLength" to recommendationContext.userInputSinceInvocation.length,
                 "codewhispererTimeSinceLastDocumentChange" to timeSinceDocumentChanged,

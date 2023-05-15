@@ -100,7 +100,11 @@ class DeployServerlessApplicationAction : AnAction(
         }
     }
 
-    private fun continueDeployment(project: Project, templateFile: VirtualFile, settings: DeployServerlessApplicationSettings) {
+    private fun continueDeployment(
+        project: Project,
+        templateFile: VirtualFile,
+        settings: DeployServerlessApplicationSettings
+    ) {
         val stackName = settings.stackName
         val emitter = BuildViewWorkflowEmitter.createEmitter(
             project,

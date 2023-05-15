@@ -153,7 +153,12 @@ class LogStreamDownloadToFileTask(
         }
     }
 
-    private fun streamLogStreamToFile(indicator: ProgressIndicator, request: GetLogEventsRequest, file: File, buffer: String) {
+    private fun streamLogStreamToFile(
+        indicator: ProgressIndicator,
+        request: GetLogEventsRequest,
+        file: File,
+        buffer: String
+    ) {
         try {
             // Delete the existing file if one exists so we don't append to it
             Files.deleteIfExists(file.toPath())

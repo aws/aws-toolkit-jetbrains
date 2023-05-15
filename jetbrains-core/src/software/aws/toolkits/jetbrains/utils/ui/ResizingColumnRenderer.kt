@@ -17,7 +17,14 @@ abstract class ResizingColumnRenderer : TableCellRenderer, SimpleColoredRenderer
     private val defaultRenderer = DefaultTableCellRenderer()
     abstract fun getText(value: Any?): String?
 
-    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+    override fun getTableCellRendererComponent(
+        table: JTable?,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
         // This wrapper will let us force the component to be at the top instead of in the middle for linewraps
         val wrapper = JPanel(BorderLayout())
 

@@ -75,7 +75,7 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 
 project.afterEvaluate {
     tasks.check {
-        dependsOn(tasks.detekt, tasks.named("detektMain"), tasks.named("detektTest"))
+        dependsOn(tasks.detekt, tasks.detektMain, tasks.detektTest)
 
         tasks.findByName("detektIntegrationTest")?.let {
             dependsOn(it)

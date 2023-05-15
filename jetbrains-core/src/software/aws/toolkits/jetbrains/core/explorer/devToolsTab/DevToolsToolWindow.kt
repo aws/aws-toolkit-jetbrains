@@ -51,7 +51,15 @@ class DevToolsToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         tree.isRootVisible = false
         tree.autoscrolls = true
         tree.cellRenderer = object : NodeRenderer() {
-            override fun customizeCellRenderer(tree: JTree, value: Any?, selected: Boolean, expanded: Boolean, leaf: Boolean, row: Int, hasFocus: Boolean) {
+            override fun customizeCellRenderer(
+                tree: JTree,
+                value: Any?,
+                selected: Boolean,
+                expanded: Boolean,
+                leaf: Boolean,
+                row: Int,
+                hasFocus: Boolean
+            ) {
                 super.customizeCellRenderer(tree, value, selected, expanded, leaf, row, hasFocus)
                 if (value is DefaultMutableTreeNode && value.userObject is NodeDescriptor<*>) {
                     icon = (value.userObject as NodeDescriptor<*>).icon

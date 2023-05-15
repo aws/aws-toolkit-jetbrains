@@ -9,7 +9,12 @@ import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
 import javax.swing.JComponent
 
-class ViewResourceDialog(project: Project, val resourceType: String, actionTitle: String, checkResourceNameValidity: (resource: String?) -> Boolean) :
+class ViewResourceDialog(
+    project: Project,
+    val resourceType: String,
+    actionTitle: String,
+    checkResourceNameValidity: (resource: String?) -> Boolean
+) :
     DialogWrapper(project) {
     var resourceName = ""
     private val component by lazy {

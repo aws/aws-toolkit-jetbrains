@@ -175,7 +175,10 @@ abstract class SchemasSearchDialogBase(
         }
     }
 
-    private fun updateSchemaVersions(selectedSchema: SchemaSearchResultWithRegistry, selectedSchemaVersion: String? = null) {
+    private fun updateSchemaVersions(
+        selectedSchema: SchemaSearchResultWithRegistry,
+        selectedSchemaVersion: String? = null
+    ) {
         versionsModel.removeAllElements()
 
         val newVersions = selectedSchema.versions

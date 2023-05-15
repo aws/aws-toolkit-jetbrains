@@ -38,7 +38,11 @@ import software.aws.toolkits.telemetry.Result
 import java.nio.file.Paths
 import javax.swing.JComponent
 
-class CreateFunctionDialog(private val project: Project, private val initialRuntime: Runtime?, private val handlerName: String?) : DialogWrapper(project) {
+class CreateFunctionDialog(
+    private val project: Project,
+    private val initialRuntime: Runtime?,
+    private val handlerName: String?
+) : DialogWrapper(project) {
     private val view = CreateFunctionPanel(project)
 
     init {

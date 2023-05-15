@@ -54,7 +54,10 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 import javax.swing.border.EmptyBorder
 
-abstract class CawsLoadingPanel(protected val lifetime: Lifetime, private val setContentCallback: ((Component) -> Unit)? = null) : JPanel() {
+abstract class CawsLoadingPanel(
+    protected val lifetime: Lifetime,
+    private val setContentCallback: ((Component) -> Unit)? = null
+) : JPanel() {
     private val disposable = lifetime.createNestedDisposable()
     private val titleBar = Wrapper()
     private val content = Wrapper()

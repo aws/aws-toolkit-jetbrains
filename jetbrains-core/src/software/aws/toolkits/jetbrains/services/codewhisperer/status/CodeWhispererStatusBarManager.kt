@@ -40,7 +40,10 @@ class CodeWhispererStatusBarManager(private val project: Project) : Disposable {
         project.messageBus.connect().subscribe(
             ConnectionPinningManagerListener.TOPIC,
             object : ConnectionPinningManagerListener {
-                override fun pinnedConnectionChanged(feature: FeatureWithPinnedConnection, newConnection: ToolkitConnection?) {
+                override fun pinnedConnectionChanged(
+                    feature: FeatureWithPinnedConnection,
+                    newConnection: ToolkitConnection?
+                ) {
                     if (feature !is CodeWhispererConnection) return
                     updateWidget()
                 }

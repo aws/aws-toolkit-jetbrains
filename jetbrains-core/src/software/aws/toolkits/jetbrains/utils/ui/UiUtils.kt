@@ -131,7 +131,15 @@ fun drawSearchMatch(
     drawSearchMatch(g, startX, endX, startY, height, color1, color2)
 }
 
-fun drawSearchMatch(graphics2D: Graphics2D, startXf: Float, endXf: Float, startY: Float, height: Int, gradientStart: Color, gradientEnd: Color) {
+fun drawSearchMatch(
+    graphics2D: Graphics2D,
+    startXf: Float,
+    endXf: Float,
+    startY: Float,
+    height: Int,
+    gradientStart: Color,
+    gradientEnd: Color
+) {
     val config = GraphicsConfig(graphics2D)
     var alpha = JBUI.getInt("SearchMatch.transparency", 70) / 100f
     alpha = if (alpha < 0 || alpha > 1) 0.7f else alpha
@@ -206,7 +214,14 @@ class WrappingCellRenderer(
         add(textArea)
     }
 
-    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+    override fun getTableCellRendererComponent(
+        table: JTable?,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
         if (table == null) {
             return this
         }

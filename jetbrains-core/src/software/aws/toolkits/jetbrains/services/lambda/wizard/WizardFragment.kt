@@ -38,10 +38,19 @@ interface WizardFragment {
     /**
      * Updates the fragment's UI based on changes to the project location (not always available), runtime, or template
      */
-    fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtimeGroup: RuntimeGroup?, template: SamProjectTemplate?) {}
+    fun updateUi(
+        projectLocation: TextFieldWithBrowseButton?,
+        runtimeGroup: RuntimeGroup?,
+        template: SamProjectTemplate?
+    ) {}
 
     /**
      * Runs after the initial template is executed to allow for post-generate activities such as code generation
      */
-    fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: LambdaRuntime, progressIndicator: ProgressIndicator) {}
+    fun postProjectGeneration(
+        model: ModifiableRootModel,
+        template: SamProjectTemplate,
+        runtime: LambdaRuntime,
+        progressIndicator: ProgressIndicator
+    ) {}
 }

@@ -260,10 +260,6 @@ potential-bugs:
     active: true
   HasPlatformType:
     active: false
-  IgnoredReturnValue:
-    active: false
-    restrictToAnnotatedMethods: true
-    returnValueAnnotations: [ '*.CheckReturnValue', '*.CheckResult' ]
   ImplicitUnitReturnType:
     active: false
     allowExplicitReturnType: true
@@ -280,17 +276,17 @@ potential-bugs:
   UnconditionalJumpStatementInLoop:
     active: false
   UnnecessaryNotNullOperator:
-    active: false
+    active: true
   UnnecessarySafeCall:
     active: true
   UnreachableCatchBlock:
     active: true
   UnreachableCode:
-    active: false
+    active: true
   UnsafeCallOnNullableType:
     active: true
   UnsafeCast:
-    active: false
+    active: true
   UnusedUnaryOperator:
     active: false
   UselessPostfixExpression:
@@ -318,7 +314,6 @@ style:
   UnnecessaryAbstractClass:
     active: false
   UnusedPrivateMember:
-    active: false
     allowedNames: '(_|ignored|expected|serialVersionUID|createUIComponents)'
   VarCouldBeVal:
     active: false

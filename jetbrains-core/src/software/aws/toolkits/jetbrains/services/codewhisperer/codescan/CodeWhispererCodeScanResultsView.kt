@@ -113,7 +113,11 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     /**
      * Updates the [codeScanTree] with the new tree model root and displays the same on the UI.
      */
-    fun updateAndDisplayScanResults(scanTreeModel: CodeWhispererCodeScanTreeModel, scannedFiles: List<VirtualFile>, isProjectTruncated: Boolean) {
+    fun updateAndDisplayScanResults(
+        scanTreeModel: CodeWhispererCodeScanTreeModel,
+        scannedFiles: List<VirtualFile>,
+        isProjectTruncated: Boolean
+    ) {
         codeScanTree.apply {
             model = scanTreeModel
             repaint()

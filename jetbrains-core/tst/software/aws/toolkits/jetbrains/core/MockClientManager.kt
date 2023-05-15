@@ -60,7 +60,12 @@ class MockClientManager : AwsClientManager() {
     }
 
     @Deprecated("Do not use, use MockClientManagerRule")
-    fun <T : SdkClient> register(clazz: KClass<out SdkClient>, sdkClient: T, region: AwsRegion, credProvider: ToolkitCredentialsProvider) {
+    fun <T : SdkClient> register(
+        clazz: KClass<out SdkClient>,
+        sdkClient: T,
+        region: AwsRegion,
+        credProvider: ToolkitCredentialsProvider
+    ) {
         mockClients[Key(clazz, region.id, credProvider)] = sdkClient
     }
 

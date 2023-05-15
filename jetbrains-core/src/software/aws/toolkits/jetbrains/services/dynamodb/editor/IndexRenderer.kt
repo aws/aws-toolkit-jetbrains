@@ -22,7 +22,13 @@ class IndexRenderer(private val model: IndexComboBoxModel) : ListCellRenderer<In
         font = font.deriveFont(Font.PLAIN)
     }
 
-    override fun getListCellRendererComponent(list: JList<out Index>, value: Index?, index: Int, isSelected: Boolean, cellHasFocus: Boolean): Component {
+    override fun getListCellRendererComponent(
+        list: JList<out Index>,
+        value: Index?,
+        index: Int,
+        isSelected: Boolean,
+        cellHasFocus: Boolean
+    ): Component {
         val row = rowRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JComponent
 
         val separatorName = model.separatorNames[index]

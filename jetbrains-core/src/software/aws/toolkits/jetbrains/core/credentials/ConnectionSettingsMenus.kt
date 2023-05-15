@@ -118,7 +118,11 @@ abstract class SettingsSelectorLogicBase(private val menuMode: ChangeSettingsMod
  * Version of a [SettingsSelectorLogicBase] that stores the settings locally to the instance of the selector. Typically, this would be used if the settings
  * differ from the Project settings such as a UI panel.
  */
-class LocalSettingsSelector(initialRegion: AwsRegion? = null, initialCredentialIdentifier: CredentialIdentifier? = null, settingsMode: ChangeSettingsMode) :
+class LocalSettingsSelector(
+    initialRegion: AwsRegion? = null,
+    initialCredentialIdentifier: CredentialIdentifier? = null,
+    settingsMode: ChangeSettingsMode
+) :
     SettingsSelectorLogicBase(settingsMode) {
     var currentRegion: AwsRegion? = initialRegion
         set(value) {

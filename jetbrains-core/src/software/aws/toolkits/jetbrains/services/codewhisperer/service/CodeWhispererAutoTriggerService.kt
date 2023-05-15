@@ -209,18 +209,22 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
 
         val osCoefficient: Double = if (SystemInfo.isMac) {
             CodeWhispererClassifierConstants.osMap["Mac OS X"] ?: 0.0
-        } else if (SystemInfo.isWindows) {
-            val osVersion = SystemInfo.OS_VERSION
-            if (osVersion.contains("11", true)) {
-                CodeWhispererClassifierConstants.osMap["Windows 10"]
-            } else if (osVersion.contains("10", true)) {
-                CodeWhispererClassifierConstants.osMap["Windows 10"]
-            } else if (osVersion.contains("7", true)) {
-                CodeWhispererClassifierConstants.osMap["Windows 7"]
-            } else 0.0
         } else {
-            0.0
-        } ?: 0.0
+            if (SystemInfo.isWindows) {
+                val osVersion = SystemInfo.OS_VERSION
+                if (osVersion.contains("11", true)) {
+                    CodeWhispererClassifierConstants.osMap["Windows 10"]
+                } else if (osVersion.contains("10", true)) {
+                    CodeWhispererClassifierConstants.osMap["Windows 10"]
+                } else if (osVersion.contains("7", true)) {
+                    CodeWhispererClassifierConstants.osMap["Windows 7"]
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            } ?: 0.0
+        }
 
         val lastCharCoefficient = if (leftContextAtCurrentLine.length - 1 >= 0) {
             CodeWhispererClassifierConstants.coefficientsMap[leftContextAtCurrentLine[leftContextAtCurrentLine.length - 1].toString()] ?: 0.0
@@ -251,7 +255,11 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
                 if (
                     previousOneDecision != CodewhispererPreviousSuggestionState.Accept &&
                     previousOneDecision != CodewhispererPreviousSuggestionState.Reject
-                ) CodeWhispererClassifierConstants.prevDecisionOtherCoefficient else 0.0
+                ) {
+                    CodeWhispererClassifierConstants.prevDecisionOtherCoefficient
+                } else {
+                    0.0
+                }
         }
 
         val resultBeforeSigmoid =
@@ -286,8 +294,11 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         fun getInstance(): CodeWhispererAutoTriggerService = service()
 
         fun getThreshold(language: CodeWhispererProgrammingLanguage): Double =
-            if (language is CodeWhispererJava && CodeWhispererAutoTriggerService.getInstance().isExpThreshold()) expTriggerThreshold
-            else triggerThreshold
+            if (language is CodeWhispererJava && CodeWhispererAutoTriggerService.getInstance().isExpThreshold()) {
+                expTriggerThreshold
+            } else {
+                triggerThreshold
+            }
 
         fun sigmoid(x: Double): Double = 1 / (1 + exp(-x))
 
@@ -297,7 +308,9 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
             } ?: CodeWhispererUnknownLanguage.INSTANCE
             return if (language is CodeWhispererJava) {
                 CodeWhispererAutoTriggerService.getInstance().shouldTriggerClassifier(editor).calculatedResult
-            } else null
+            } else {
+                null
+            }
         }
     }
 }

@@ -38,7 +38,12 @@ import java.nio.file.Paths
 
 class DownloadObjectAction :
     S3ObjectAction(message("s3.download.object.action"), AllIcons.Actions.Download) {
-    private data class DownloadInfo(val sourceBucket: S3VirtualBucket, val s3Object: String, val versionId: String?, val diskLocation: Path) {
+    private data class DownloadInfo(
+        val sourceBucket: S3VirtualBucket,
+        val s3Object: String,
+        val versionId: String?,
+        val diskLocation: Path
+    ) {
         constructor(sourceBucket: S3VirtualBucket, s3Object: S3Object, diskLocation: Path) : this(
             sourceBucket,
             s3Object.key,

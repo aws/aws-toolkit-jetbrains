@@ -50,7 +50,10 @@ class TableResults : JBTable(TableModel(BidirectionalMap(), emptyList())) {
     }
 }
 
-class TableModel(private val columns: BidirectionalMap<String, Int>, private val data: List<Map<String, DynamoAttribute<*>>>) : AbstractTableModel() {
+class TableModel(
+    private val columns: BidirectionalMap<String, Int>,
+    private val data: List<Map<String, DynamoAttribute<*>>>
+) : AbstractTableModel() {
     override fun getRowCount(): Int = data.size
     override fun getColumnCount(): Int = columns.size
     override fun getColumnName(column: Int): String = columns.getKeysByValue(column)?.firstOrNull() ?: ""

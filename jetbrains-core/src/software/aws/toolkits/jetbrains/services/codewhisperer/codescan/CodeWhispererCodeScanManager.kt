@@ -420,7 +420,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
         return codeScanTreeNodeRoot
     }
 
-    suspend fun renderResponseOnUIThread(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>, isProjectTruncated: Boolean) {
+    suspend fun renderResponseOnUIThread(
+        issues: List<CodeWhispererCodeScanIssue>,
+        scannedFiles: List<VirtualFile>,
+        isProjectTruncated: Boolean
+    ) {
         withContext(getCoroutineUiContext()) {
             val root = createCodeScanIssuesTree(issues)
             val codeScanTreeModel = CodeWhispererCodeScanTreeModel(root)
@@ -434,7 +438,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
     }
 
     @TestOnly
-    suspend fun testRenderResponseOnUIThread(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>, isProjectTruncated: Boolean) {
+    suspend fun testRenderResponseOnUIThread(
+        issues: List<CodeWhispererCodeScanIssue>,
+        scannedFiles: List<VirtualFile>,
+        isProjectTruncated: Boolean
+    ) {
         assert(ApplicationManager.getApplication().isUnitTestMode)
         renderResponseOnUIThread(issues, scannedFiles, isProjectTruncated)
     }

@@ -72,7 +72,11 @@ abstract class CachingAsyncEvaluator<TEntry, TReturn> {
 
     open fun isInvalidated(entry: TEntry, value: TReturn): Boolean = false
 
-    fun evaluateBlocking(entry: TEntry, blockingTime: Int = EVALUATE_BLOCKING_TIMEOUT_MS, blockingUnit: TimeUnit = TimeUnit.MILLISECONDS): TReturn {
+    fun evaluateBlocking(
+        entry: TEntry,
+        blockingTime: Int = EVALUATE_BLOCKING_TIMEOUT_MS,
+        blockingUnit: TimeUnit = TimeUnit.MILLISECONDS
+    ): TReturn {
         val promise = evaluate(entry)
         return promise.blockingGet(blockingTime, blockingUnit)!!
     }

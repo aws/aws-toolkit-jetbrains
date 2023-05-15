@@ -65,7 +65,11 @@ class SdkSelectionPanel : WizardFragment {
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = true
 
-    override fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtimeGroup: RuntimeGroup?, template: SamProjectTemplate?) {
+    override fun updateUi(
+        projectLocation: TextFieldWithBrowseButton?,
+        runtimeGroup: RuntimeGroup?,
+        template: SamProjectTemplate?
+    ) {
         if (runtimeGroup == null) {
             component.setContent(ErrorLabel("No runtime selected"))
             return
@@ -84,7 +88,12 @@ class SdkSelectionPanel : WizardFragment {
         }
     }
 
-    override fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: LambdaRuntime, progressIndicator: ProgressIndicator) {
+    override fun postProjectGeneration(
+        model: ModifiableRootModel,
+        template: SamProjectTemplate,
+        runtime: LambdaRuntime,
+        progressIndicator: ProgressIndicator
+    ) {
         sdkSelector?.let {
             progressIndicator.text = "Setting up SDK"
             ApplicationManager.getApplication().invokeAndWait {

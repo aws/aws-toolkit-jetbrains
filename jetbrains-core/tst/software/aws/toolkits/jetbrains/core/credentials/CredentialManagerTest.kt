@@ -276,7 +276,11 @@ class CredentialManagerTest {
         override fun createAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): AwsCredentialsProvider =
             (providerId as TestCredentialProviderIdentifier).provider ?: StaticCredentialsProvider.create(AwsBasicCredentials.create(aString(), aString()))
 
-        fun updateCredentials(providerId: String, region: AwsRegion, awsCredentialsProvider: AwsCredentialsProvider = randomCredentialProvider()) {
+        fun updateCredentials(
+            providerId: String,
+            region: AwsRegion,
+            awsCredentialsProvider: AwsCredentialsProvider = randomCredentialProvider()
+        ) {
             val identifier = TestCredentialProviderIdentifier(providerId, id, region.id, awsCredentialsProvider)
 
             credentialsMapping[providerId] = identifier

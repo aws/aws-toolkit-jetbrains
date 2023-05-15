@@ -17,7 +17,10 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
 
     override fun isApplicableFor(configuration: AbstractPythonRunConfiguration<*>): Boolean = isEnabled()
 
-    override fun isEnabledFor(applicableConfiguration: AbstractPythonRunConfiguration<*>, runnerSettings: RunnerSettings?): Boolean = isEnabled()
+    override fun isEnabledFor(
+        applicableConfiguration: AbstractPythonRunConfiguration<*>,
+        runnerSettings: RunnerSettings?
+    ): Boolean = isEnabled()
 
     override fun patchCommandLine(
         configuration: AbstractPythonRunConfiguration<*>,

@@ -527,7 +527,10 @@ class ToolManagerTest {
         verify(type, never()).installVersion(any(), any(), anyOrNull())
     }
 
-    private fun createUndetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}) =
+    private fun createUndetectableMock(
+        toolId: String = aString(),
+        stubBuilder: (KStubbing<ToolType<SemanticVersion>>).() -> Unit = {}
+    ) =
         mock<ToolType<SemanticVersion>>()
             .stub {
                 on { id } doReturn toolId
@@ -535,7 +538,10 @@ class ToolManagerTest {
                 stubBuilder(this)
             }
 
-    private fun createDetectableMock(toolId: String = aString(), stubBuilder: (KStubbing<AutoDetectableToolType<SemanticVersion>>).() -> Unit = {}) =
+    private fun createDetectableMock(
+        toolId: String = aString(),
+        stubBuilder: (KStubbing<AutoDetectableToolType<SemanticVersion>>).() -> Unit = {}
+    ) =
         mock<AutoDetectableToolType<SemanticVersion>>()
             .stub {
                 on { id } doReturn toolId
@@ -543,7 +549,10 @@ class ToolManagerTest {
                 stubBuilder(this)
             }
 
-    private fun createManagedToolMock(toolId: String = aString(), stubBuilder: (KStubbing<ManagedToolType<SemanticVersion>>).() -> Unit = {}) =
+    private fun createManagedToolMock(
+        toolId: String = aString(),
+        stubBuilder: (KStubbing<ManagedToolType<SemanticVersion>>).() -> Unit = {}
+    ) =
         mock<ManagedToolType<SemanticVersion>>(verboseLogging = true)
             .stub {
                 on { id } doReturn toolId

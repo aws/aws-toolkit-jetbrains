@@ -81,7 +81,11 @@ class SamRunningState(
         return DefaultExecutionResult(buildView, buildWorkflow)
     }
 
-    private fun createPathMappings(lambdaBuilder: LambdaBuilder, settings: LocalLambdaRunSettings, buildRequest: BuildLambdaRequest): List<PathMapping> {
+    private fun createPathMappings(
+        lambdaBuilder: LambdaBuilder,
+        settings: LocalLambdaRunSettings,
+        buildRequest: BuildLambdaRequest
+    ): List<PathMapping> {
         val defaultPathMappings = lambdaBuilder.defaultPathMappings(buildRequest.templatePath, buildRequest.logicalId ?: dummyLogicalId, buildRequest.buildDir)
         return if (settings is ImageTemplateRunSettings) {
             // This needs to be a bit smart. If a user set local path matches a default path, we need to make sure that is the one set

@@ -26,7 +26,9 @@ import kotlin.reflect.KMutableProperty0
 /**
  * Combo box used to select a credential identifier
  */
-class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = CredentialManager.getInstance().getCredentialIdentifiers()) :
+class CredentialIdentifierSelector(
+    identifiers: List<CredentialIdentifier> = CredentialManager.getInstance().getCredentialIdentifiers()
+) :
     ComboBox<CredentialIdentifier>() {
     private val comboBoxModel = CollectionComboBoxModel(identifiers.toMutableList())
 
