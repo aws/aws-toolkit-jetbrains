@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.core.credentials.pinning
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.ui.TestDialog
+import com.intellij.openapi.ui.TestDialogManager
+import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
@@ -26,6 +29,10 @@ class ConnectionPinningManagerTest {
     @JvmField
     val disposableRule = DisposableRule()
 
+    @Rule
+    @JvmField
+    val applicationRule = ApplicationRule()
+
     private lateinit var sut: DefaultConnectionPinningManager
 
     @Before
@@ -36,8 +43,9 @@ class ConnectionPinningManagerTest {
     @Test
     fun `switching connection to unsupported feature pins connection to initial connection if user allows`() {
         sut.stub {
-            onGeneric { it.showDialogIfNeeded(any(), any(), any()) } doReturn true
+            onGeneric { it.showDialogIfNeeded(any(), any(), any(), any()) } doReturn true
         }
+        TestDialogManager.setTestDialog(TestDialog.OK)
 
         val feature = object : FeatureWithPinnedConnection {
             override val featureId = "mockId"
@@ -61,8 +69,9 @@ class ConnectionPinningManagerTest {
     @Test
     fun `switching connection from unsupported feature pins connection to new connection if user allows`() {
         sut.stub {
-            onGeneric { it.showDialogIfNeeded(any(), any(), any()) } doReturn true
+            onGeneric { it.showDialogIfNeeded(any(), any(), any(), any()) } doReturn true
         }
+        TestDialogManager.setTestDialog(TestDialog.OK)
 
         val oldConnectionId = "connId"
 
@@ -93,8 +102,9 @@ class ConnectionPinningManagerTest {
     @Test
     fun `switching connection to unsupported feature does not pin connection to initial if user declines`() {
         sut.stub {
-            onGeneric { it.showDialogIfNeeded(any(), any(), any()) } doReturn false
+            onGeneric { it.showDialogIfNeeded(any(), any(), any(), any()) } doReturn false
         }
+        TestDialogManager.setTestDialog(TestDialog.NO)
 
         val feature = object : FeatureWithPinnedConnection {
             override val featureId = "mockId"
