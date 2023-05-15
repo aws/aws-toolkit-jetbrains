@@ -97,10 +97,9 @@ class DefaultConnectionPinningManager :
             "${features.dropLast(1).joinToString(",") { it.featureName }} and ${features.last().featureName}"
         }
 
-        var connectionToPin = oldConnection
+        var connectionToPin = if (oldConnection is AwsBearerTokenConnection) oldConnection else newConnection
         if (computeOnEdt { showDialogIfNeeded(oldConnection, newConnection, featuresString) }) {
             features.forEach {
-                connectionToPin = if (it.supportsConnectionType(oldConnection)) oldConnection else newConnection
                 setPinnedConnection(it, connectionToPin)
             }
             notifyInfo(message("credentials.switch.notification.title", featuresString, connectionToPin.label))

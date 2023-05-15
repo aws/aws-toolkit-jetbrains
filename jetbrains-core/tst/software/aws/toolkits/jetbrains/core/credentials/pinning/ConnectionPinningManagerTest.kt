@@ -20,6 +20,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.AwsCredentialConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
@@ -79,10 +80,10 @@ class ConnectionPinningManagerTest {
             override val featureId = "mockId"
             override val featureName = "mockFeature"
             override fun supportsConnectionType(connection: ToolkitConnection) =
-                connection.id != oldConnectionId
+                connection is AwsBearerTokenConnection
         }
 
-        val oldConnection = mock<AwsBearerTokenConnection>() {
+        val oldConnection = mock<AwsCredentialConnection>() {
             on { id } doReturn oldConnectionId
         }
 
