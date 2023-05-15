@@ -97,6 +97,7 @@
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$repoSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:SchemaResourceSelector.kt$SchemaResourceSelector$awsConnection!!</ID>
     <ID>UnsafeCallOnNullableType:UpdateFunctionConfigDialog.kt$UpdateFunctionConfigDialog$view.configSettings.iamRole.selected()!!</ID>
+    <ID>UnusedPrivateMember:AwsLocalTerminalRunner.kt$AwsLocalTerminalRunner$private val termName: String</ID>
     <ID>UnusedPrivateMember:CawsCloneDialogComponent.kt$CawsCloneDialogComponent$private val modalityState: ModalityState</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("aws.notification.credentials_missing"))</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("configure.validate.no_region_specified"))</ID>
