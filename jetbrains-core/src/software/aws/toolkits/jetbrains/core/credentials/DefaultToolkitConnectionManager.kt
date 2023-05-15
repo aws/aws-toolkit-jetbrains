@@ -39,7 +39,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
     private var connection: ToolkitConnection? = null
 
-    private val pinningManager: ConnectionPinningManager? = ConnectionPinningManager.getInstance()
+    private val pinningManager: ConnectionPinningManager = ConnectionPinningManager.getInstance()
 
     private val defaultConnection: ToolkitConnection?
         get() {
@@ -59,7 +59,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
     @Synchronized
     override fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection? {
-        val pinnedConnection = pinningManager?.getPinnedConnection(feature)
+        val pinnedConnection = pinningManager.getPinnedConnection(feature)
         if (pinnedConnection != null) {
             return pinnedConnection
         }

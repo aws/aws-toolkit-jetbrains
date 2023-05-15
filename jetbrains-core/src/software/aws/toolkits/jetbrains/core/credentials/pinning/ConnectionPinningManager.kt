@@ -128,34 +128,35 @@ class DefaultConnectionPinningManager :
     override fun dispose() {}
 
     @TestOnly
-    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String) = if (!doNotPromptForPinning) {
-        val bearerTokenConnectionName = bearerTokenConnectionString(oldConnection, newConnection)
+    internal fun showDialogIfNeeded(oldConnection: ToolkitConnection, newConnection: ToolkitConnection, featuresString: String, project: Project? = null) =
+        if (!doNotPromptForPinning) {
+            val bearerTokenConnectionName = bearerTokenConnectionString(oldConnection, newConnection)
 
-        MessageDialogBuilder.yesNo(
-            message("credentials.switch.confirmation.title", featuresString, bearerTokenConnectionName),
-            message("credentials.switch.confirmation.comment", featuresString, bearerTokenConnectionName, message("iam.name"),)
-        )
-            .yesText(message("credentials.switch.confirmation.yes"))
-            .noText(message("credentials.switch.confirmation.no"))
-            .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
-                override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
-                    if (isSelected && exitCode == DialogWrapper.OK_EXIT_CODE) {
-                        doNotPromptForPinning = true
+            MessageDialogBuilder.yesNo(
+                message("credentials.switch.confirmation.title", featuresString, bearerTokenConnectionName),
+                message("credentials.switch.confirmation.comment", featuresString, bearerTokenConnectionName, message("iam.name"),)
+            )
+                .yesText(message("credentials.switch.confirmation.yes"))
+                .noText(message("credentials.switch.confirmation.no"))
+                .doNotAsk(object : com.intellij.openapi.ui.DoNotAskOption.Adapter() {
+                    override fun rememberChoice(isSelected: Boolean, exitCode: Int) {
+                        if (isSelected && exitCode == DialogWrapper.OK_EXIT_CODE) {
+                            doNotPromptForPinning = true
+                        }
+                    }
+                })
+                .icon(AllIcons.General.QuestionDialog)
+                .help(HelpIds.EXPLORER_CREDS_HELP.id)
+                .ask(project).apply {
+                    if (this) {
+                        UiTelemetry.click(project, "connection_multiple_auths_yes")
+                    } else {
+                        UiTelemetry.click(project, "connection_multiple_auths_no")
                     }
                 }
-            })
-            .icon(AllIcons.General.QuestionDialog)
-            .help(HelpIds.EXPLORER_CREDS_HELP.id)
-            .ask(null as Project?).apply {
-                if (this) {
-                    UiTelemetry.click(null as Project?, "connection_multiple_auths_yes")
-                } else {
-                    UiTelemetry.click(null as Project?, "connection_multiple_auths_no")
-                }
-            }
-    } else {
-        false
-    }
+        } else {
+            false
+        }
 
     private fun bearerTokenConnectionString(oldConnection: ToolkitConnection, newConnection: ToolkitConnection): String {
         val connection = if (oldConnection is AwsBearerTokenConnection) oldConnection else newConnection
