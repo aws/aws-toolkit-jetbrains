@@ -208,11 +208,11 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
 
         val profile = profileHolder.getProfile(profileProviderId.profileName)
             ?: throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")
-
         return createAwsCredentialProvider(profile, region)
     }
 
     private fun createAwsCredentialProvider(profile: Profile, region: AwsRegion) = when {
+        profile.propertyExists(PROFILE_SSO_SESSION_PROPERTY) -> createSsoSessionProfileProvider(profile)
         profile.propertyExists(ProfileProperty.SSO_START_URL) -> createSsoProvider(profile)
         profile.propertyExists(ProfileProperty.ROLE_ARN) -> createAssumeRoleProvider(profile, region)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> createStaticSessionProvider(profile)
@@ -224,6 +224,8 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
     }
 
     private fun createSsoProvider(profile: Profile): AwsCredentialsProvider = ProfileSsoProvider(profile)
+
+    private fun createSsoSessionProfileProvider(profile: Profile): AwsCredentialsProvider = ProfileSsoSessionProvider(profile)
 
     private fun createAssumeRoleProvider(profile: Profile, region: AwsRegion): AwsCredentialsProvider {
         val sourceProfileName = profile.property(ProfileProperty.SOURCE_PROFILE)

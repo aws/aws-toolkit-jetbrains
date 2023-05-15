@@ -37,6 +37,7 @@ private fun validateProfile(profile: Profile, allProfiles: Map<String, Profile>)
         profile.propertyExists(ProfileProperty.ROLE_ARN) -> validateAssumeRoleProfile(profile, allProfiles)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> validateStaticSessionProfile(profile)
         profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> validateBasicProfile(profile)
+        profile.propertyExists(PROFILE_SSO_SESSION_PROPERTY) -> validateProfileSsoSession(profile)
         profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> {
             // NO-OP Always valid
         }
@@ -76,4 +77,10 @@ private fun validateStaticSessionProfile(profile: Profile) {
 private fun validateBasicProfile(profile: Profile) {
     profile.requiredProperty(ProfileProperty.AWS_ACCESS_KEY_ID)
     profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
+}
+
+private fun validateProfileSsoSession(profile: Profile) {
+    profile.requiredProperty(PROFILE_SSO_SESSION_PROPERTY)
+    profile.requiredProperty(ProfileProperty.SSO_ACCOUNT_ID)
+    profile.requiredProperty(ProfileProperty.SSO_ROLE_NAME)
 }

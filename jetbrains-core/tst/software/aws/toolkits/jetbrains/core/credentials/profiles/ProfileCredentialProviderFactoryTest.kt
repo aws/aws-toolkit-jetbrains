@@ -745,6 +745,31 @@ class ProfileCredentialProviderFactoryTest {
         }
     }
 
+    @Test
+    fun `sso-session profile creates a provider`() {
+        writeProfileFile(
+            """
+            [profile sso]
+            sso_session = my-sso
+            sso_account_id=111222333444
+            sso_role_name=RoleName
+            
+            [sso-session my-sso]
+            sso_region=us-east-2
+            sso_start_url=ValidUrl
+            """.trimIndent()
+        )
+
+        clientManager.create<SsoClient>()
+        clientManager.create<SsoOidcClient>()
+
+        val providerFactory = createProviderFactory()
+        val validProfile = findCredentialIdentifier("sso")
+        val credentialsProvider = providerFactory.createProvider(validProfile)
+
+        assertThat(credentialsProvider).isInstanceOf<ProfileSsoSessionProvider>()
+    }
+
     private companion object {
         const val MFA_TOKEN = "MfaToken"
     }
