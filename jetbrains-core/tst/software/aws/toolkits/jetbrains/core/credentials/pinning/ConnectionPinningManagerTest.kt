@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.credentials.pinning
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.DisposableRule
-import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -22,9 +21,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
 class ConnectionPinningManagerTest {
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
 
     @Rule
     @JvmField
@@ -34,7 +30,7 @@ class ConnectionPinningManagerTest {
 
     @Before
     fun setUp() {
-        sut = spy(DefaultConnectionPinningManager(projectRule.project))
+        sut = spy(DefaultConnectionPinningManager())
     }
 
     @Test
