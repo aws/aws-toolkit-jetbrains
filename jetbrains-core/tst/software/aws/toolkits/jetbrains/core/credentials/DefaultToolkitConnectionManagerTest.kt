@@ -125,6 +125,7 @@ class DefaultToolkitConnectionManagerTest {
         val pinningMock = mock<ConnectionPinningManager>()
         val feature = mock<FeatureWithPinnedConnection> {
             on { it.supportsConnectionType(any()) } doReturn true
+            on { it.featureId } doReturn "test"
         }
 
         ApplicationManager.getApplication().replaceService(ConnectionPinningManager::class.java, pinningMock, disposableRule.disposable)
