@@ -1,11 +1,13 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.DumbProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -201,22 +203,28 @@ class DotNetSamProjectGenerator(
             solutionFiles = solutionFiles
         ) ?: throw Exception(message("sam.init.error.solution.create.fail"))
 
-        val project = runBlocking {
-            SolutionManager.openExistingSolution(
-                projectToClose = null,
-                forceOpenInNewFrame = false,
-                solutionFile = solutionFile,
-                forceConsiderTrusted = true
-            )
-        } ?: return@Runnable
+        var project: Project? = null
+        runBlocking {
+            ApplicationManager.getApplication().executeOnPooledThread {
+                project = runBlocking {
+                    SolutionManager.openExistingSolution(
+                        projectToClose = null,
+                        forceOpenInNewFrame = false,
+                        solutionFile = solutionFile,
+                        forceConsiderTrusted = true
+                    )
+                }
+            }
+        }
+        if (project == null) return@Runnable
 
-        vcsPanel?.createInitializer()?.execute(project)
+        vcsPanel?.createInitializer()?.execute(project!!)
 
-        val modifiableModel = ModuleManager.getInstance(project).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@Runnable
+        val modifiableModel = ModuleManager.getInstance(project!!).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@Runnable
         try {
             val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
 
-            samProjectBuilder.runPostSamInit(project, modifiableModel, progressIndicator, samSettings, outDirVf)
+            samProjectBuilder.runPostSamInit(project!!, modifiableModel, progressIndicator, samSettings, outDirVf)
         } finally {
             modifiableModel.dispose()
         }
