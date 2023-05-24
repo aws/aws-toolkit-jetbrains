@@ -3,11 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.DumbProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -25,7 +23,9 @@ import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharp
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
 import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
 import com.jetbrains.rider.ui.themes.RiderTheme
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitSelectionPanel
@@ -203,30 +203,26 @@ class DotNetSamProjectGenerator(
             solutionFiles = solutionFiles
         ) ?: throw Exception(message("sam.init.error.solution.create.fail"))
 
-        var project: Project? = null
         runBlocking {
-            ApplicationManager.getApplication().executeOnPooledThread {
-                project = runBlocking {
-                    SolutionManager.openExistingSolution(
-                        projectToClose = null,
-                        forceOpenInNewFrame = false,
-                        solutionFile = solutionFile,
-                        forceConsiderTrusted = true
-                    )
+            applicationCoroutineScope().launch {
+                val project = SolutionManager.openExistingSolution(
+                    projectToClose = null,
+                    forceOpenInNewFrame = false,
+                    solutionFile = solutionFile,
+                    forceConsiderTrusted = true
+                ) ?: return@launch
+
+                vcsPanel?.createInitializer()?.execute(project)
+
+                val modifiableModel = ModuleManager.getInstance(project).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@launch
+                try {
+                    val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
+
+                    samProjectBuilder.runPostSamInit(project, modifiableModel, progressIndicator, samSettings, outDirVf)
+                } finally {
+                    modifiableModel.dispose()
                 }
             }
-        }
-        if (project == null) return@Runnable
-
-        vcsPanel?.createInitializer()?.execute(project!!)
-
-        val modifiableModel = ModuleManager.getInstance(project!!).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@Runnable
-        try {
-            val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
-
-            samProjectBuilder.runPostSamInit(project!!, modifiableModel, progressIndicator, samSettings, outDirVf)
-        } finally {
-            modifiableModel.dispose()
         }
     }
 
