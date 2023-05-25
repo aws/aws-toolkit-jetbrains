@@ -89,16 +89,16 @@ class DevEnvConnectTest : AfterAllCallback {
                     it.spaceName(space)
                     it.displayName(projectName)
                     it.description("Project used by AWS Toolkit Jetbrains integration tests")
-                }
+                }.name()
             } catch (e: ConflictException) {
                 client.getProject {
                     it.spaceName(space)
                     it.name(projectName)
-                }
+                }.name()
             }
 
             builder.spaceName(space)
-            builder.projectName(project.name())
+            builder.projectName(project)
             builder.ides({ ide ->
                 ide.name("IntelliJ")
                 ide.runtime("public.ecr.aws/jetbrains/iu:release")
