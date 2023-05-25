@@ -7,6 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
+
 enum class IdeFlavor { GW, IC, IU, RD }
 
 object IdeVersions {
