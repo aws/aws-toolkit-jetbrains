@@ -9,10 +9,13 @@ import com.intellij.util.containers.orNull
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.core.retry.conditions.OrRetryCondition
+import software.amazon.awssdk.core.retry.conditions.RetryOnExceptionsCondition
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcTokenProvider
 import software.amazon.awssdk.services.ssooidc.internal.OnDiskTokenManager
+import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
@@ -213,5 +216,20 @@ private fun buildUnmanagedSsoOidcClient(region: String): SsoOidcClient =
             Region.of(region),
             clientCustomizer = ToolkitClientCustomizer { _, _, _, _, configuration ->
                 configuration.nullDefaultProfileFile()
+
+                // Get the existing RetryPolicy
+                val existingRetryPolicy = configuration.retryPolicy()
+
+                // Add InvalidGrantException to the RetryOnExceptionsCondition
+                val updatedRetryPolicy = existingRetryPolicy.toBuilder()
+                    .retryCondition(
+                        OrRetryCondition.create(
+                            existingRetryPolicy.retryCondition(),
+                            RetryOnExceptionsCondition.create(setOf(InvalidGrantException::class.java)),
+                        )
+                    ).build()
+
+                // Update the RetryPolicy in the configuration
+                configuration.retryPolicy(updatedRetryPolicy)
             }
         )
