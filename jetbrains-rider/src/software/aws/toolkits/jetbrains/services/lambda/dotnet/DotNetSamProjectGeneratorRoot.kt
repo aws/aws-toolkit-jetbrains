@@ -148,8 +148,6 @@ abstract class DotNetSamProjectGeneratorRoot(
         validateData()
     }
 
-    override fun expand() = Runnable { }
-
     override fun refreshUI() {
         super.refreshUI()
         // This restore project name when user change a solution name and switch between templates
