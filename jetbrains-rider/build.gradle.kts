@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
+import com.jetbrains.rd.generator.gradle.RdGenTask
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
@@ -63,58 +64,7 @@ dependencies {
  */
 
 // Not published to gradle plugin portal, use old syntax
-// TODO: rdgen 2023.1.2 doesn't work with gradle 8.0
-// apply(plugin = "com.jetbrains.rdgen")
-class RdGenPlugin2 : Plugin<Project> {
-    override fun apply(project: Project) {
-        project.extensions.create("rdgen", RdGenExtension::class.java, project)
-        project.configurations.create("rdGenConfiguration")
-        project.tasks.create("rdgen", RdGenTask2::class.java)
-
-        project.dependencies.run {
-            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.0")
-            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib:1.7.0")
-            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-reflect:1.7.0")
-            add("rdGenConfiguration", "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.0")
-            add("rdGenConfiguration", "org.jetbrains.intellij.deps:trove4j:1.0.20181211")
-        }
-    }
-}
-
-open class RdGenTask2 : JavaExec() {
-    private val local = extensions.create("params", RdGenExtension::class.java, this)
-    private val global = project.extensions.findByType(RdGenExtension::class.java)
-
-    fun rdGenOptions(action: (RdGenExtension) -> Unit) {
-        local.apply(action)
-    }
-
-    override fun exec() {
-        args(generateArgs())
-
-        val files = project.configurations.getByName("rdGenConfiguration").files
-        val buildScriptFiles = project.buildscript.configurations.getByName("classpath").files
-        val rdFiles: MutableSet<File> = HashSet()
-        for (file in buildScriptFiles) {
-            if (file.name.contains("rd-")) {
-                rdFiles.add(file)
-            }
-        }
-        classpath(files)
-        classpath(rdFiles)
-        super.exec()
-    }
-
-    private fun generateArgs(): List<String?> {
-        val effective = local.mergeWith(global!!)
-        return effective.toArguments()
-    }
-
-    init {
-        mainClass.set("com.jetbrains.rd.generator.nova.MainKt")
-    }
-}
-apply<RdGenPlugin2>()
+apply(plugin = "com.jetbrains.rdgen")
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -159,7 +109,7 @@ configure<RdGenExtension> {
 }
 
 // TODO: migrate to official rdgen gradle plugin https://www.jetbrains.com/help/resharper/sdk/Rider.html#plugin-project-jvm
-val generateModels = tasks.register<RdGenTask2>("generateModels") {
+val generateModels = tasks.register<RdGenTask>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
