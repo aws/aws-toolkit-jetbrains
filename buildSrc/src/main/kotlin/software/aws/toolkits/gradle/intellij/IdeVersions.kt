@@ -7,6 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
+
 enum class IdeFlavor { GW, IC, IU, RD }
 
 object IdeVersions {
@@ -25,87 +26,6 @@ object IdeVersions {
     }.toTypedArray()
 
     private val ideProfiles = listOf(
-        Profile(
-            name = "2021.3",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2021.3",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "AWSCloudFormation:213.5744.122",
-                    "PythonCore:213.5744.248",
-                    "Docker:213.5744.202"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2021.3",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    // Transitive dependency needed for javascript
-                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
-                    "com.intellij.css",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "AWSCloudFormation:213.5744.122",
-                    "Pythonid:213.5744.248",
-                    "org.jetbrains.plugins.go:213.5744.223"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2021.3",
-                plugins = commonPlugins + listOf(
-                    "AWSCloudFormation:213.5744.122",
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net472",
-                rdGenVersion = "0.213.394",
-                nugetVersion = "2021.3.0"
-            )
-        ),
-        Profile(
-            name = "2022.1",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2022.1",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "AWSCloudFormation:221.5080.126",
-                    "PythonCore:221.5080.216",
-                    "Docker:221.5080.126"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2022.1",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    // Transitive dependency needed for javascript
-                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
-                    "com.intellij.css",
-                    "JavaScriptDebugger",
-                    "com.jetbrains.codeWithMe",
-                    "com.intellij.database",
-                    "AWSCloudFormation:221.5080.126",
-                    "Pythonid:221.5080.212",
-                    "org.jetbrains.plugins.go:221.5080.210"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2022.1",
-                plugins = commonPlugins + listOf(
-                    "AWSCloudFormation:221.5080.126",
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2022.1.3",
-                nugetVersion = "2022.1.0"
-            )
-        ),
         Profile(
             name = "2022.2",
             gateway = ProductProfile(
