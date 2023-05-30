@@ -24,7 +24,7 @@ class EnableDisableExecuteCommandWarning(private val project: Project, private v
         panel {
             row {
                 warningIcon(grow)
-                right {
+                row {
                     label(message("ecs.execute_command_enable_warning")).constraints(grow).visible(enable)
                     label(message("ecs.execute_command_disable_warning")).constraints(grow).visible(!enable)
                 }

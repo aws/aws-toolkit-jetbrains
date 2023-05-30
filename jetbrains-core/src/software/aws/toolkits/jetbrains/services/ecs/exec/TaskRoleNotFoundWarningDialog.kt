@@ -19,7 +19,7 @@ class TaskRoleNotFoundWarningDialog(project: Project) : DialogWrapper(project) {
         panel {
             row {
                 warningIcon(grow)
-                right {
+                row {
                     warningMessage(grow).also { it.component.setCopyable(true) }
                 }
             }

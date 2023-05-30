@@ -11,6 +11,7 @@ import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.or
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
+import intTextField
 import software.amazon.awssdk.services.apprunner.model.ConnectionSummary
 import software.amazon.awssdk.services.apprunner.model.Runtime
 import software.aws.toolkits.jetbrains.core.awsClient
@@ -252,11 +253,9 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
             cell(isFullWidth = true) {
                 // TODO HACK making this flow right means we don't have issues with weird spacing above or
                 // to the left
-                this@row.right {
-                    repoPanel(grow)
-                        .installOnParent { repo.isSelected }
-                        .visibleIf(repo.selected)
-                }
+                repoPanel(grow)
+                    .installOnParent { repo.isSelected }
+                    .visibleIf(repo.selected)
 
                 imagePanel(grow)
                     .installOnParent { ecr.isSelected || ecrPublic.isSelected }
