@@ -14,7 +14,6 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
@@ -161,12 +160,16 @@ class CodeWhispererTelemetryService {
         }
 
         val language = requestContext.fileContextInfo.programmingLanguage
-        val shouldIncludeClassifier = language is CodeWhispererJava
+
+        val shouldIncludeClassifier = language.isAllClassifier() ||
+            (language.isClassifierSupported() && CodeWhispererAutoTriggerService.getInstance().isClassifierGroup())
+
         val classifierResult = if (shouldIncludeClassifier) {
             requestContext.triggerTypeInfo.automatedTriggerType.calculationResult
         } else {
             null
         }
+
         val classifierThreshold = if (shouldIncludeClassifier) {
             CodeWhispererAutoTriggerService.getThreshold(language)
         } else {
