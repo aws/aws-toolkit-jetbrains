@@ -171,7 +171,8 @@ class CodeWhispererPopupManager {
         )
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-            states, sessionContext
+            states,
+            sessionContext
         )
     }
 

@@ -78,6 +78,10 @@ formatting:
   NoWildcardImports:
     # no `packagesToUseImportOnDemandProperty` because we don't want to allow any star imports
     active: true
+  PropertyWrapping:
+    active: true
+    indentSize: 4
+    maxLineLength: 160
   SpacingBetweenDeclarationsWithComments:
     active: true
     autoCorrect: true

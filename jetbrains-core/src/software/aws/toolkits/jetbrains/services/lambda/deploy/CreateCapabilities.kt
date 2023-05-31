@@ -30,7 +30,7 @@ enum class CreateCapabilities(
         message("cloudformation.capabilities.auto_expand"),
         message("cloudformation.capabilities.auto_expand.toolTipText"),
         false
-    );
+    )
 }
 
 class CapabilitiesEnumCheckBoxes {

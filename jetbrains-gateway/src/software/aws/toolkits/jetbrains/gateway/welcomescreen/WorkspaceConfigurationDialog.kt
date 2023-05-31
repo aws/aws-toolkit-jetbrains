@@ -95,7 +95,8 @@ class WorkspaceConfigurationDialog private constructor(
                 dialog.setTitle(
                     message(
                         "caws.configure_workspace_title",
-                        initialWs.alias ?: initialWs.branch ?: initialWs.identifier.friendlyString, initialWs.identifier.project.project
+                        initialWs.alias ?: initialWs.branch ?: initialWs.identifier.friendlyString,
+                        initialWs.identifier.project.project
                     )
                 )
                 dialog.setCenterPanel(content)

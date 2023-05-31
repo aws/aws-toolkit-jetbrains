@@ -238,7 +238,8 @@ abstract class CawsLoadingPanel(
         setContentCallback?.let {
             addToLeft(
                 LinkLabel<Void>(
-                    message("caws.workspace.new"), null,
+                    message("caws.workspace.new"),
+                    null,
                     LinkListener { _, _ ->
                         noRepoWizard(it)
                     }

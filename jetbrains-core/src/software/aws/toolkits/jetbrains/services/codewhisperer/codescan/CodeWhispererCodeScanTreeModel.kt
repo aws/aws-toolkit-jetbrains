@@ -7,7 +7,8 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
 internal class CodeWhispererCodeScanTreeModel(
-    private val codeScanTreeNodeRoot: DefaultMutableTreeNode = DefaultMutableTreeNode("CodeWhisperer security scan results")
+    private val codeScanTreeNodeRoot: DefaultMutableTreeNode =
+        DefaultMutableTreeNode("CodeWhisperer security scan results")
 ) : DefaultTreeModel(codeScanTreeNodeRoot) {
 
     override fun getRoot(): Any = codeScanTreeNodeRoot

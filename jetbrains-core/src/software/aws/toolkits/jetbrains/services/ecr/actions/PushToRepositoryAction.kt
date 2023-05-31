@@ -259,13 +259,15 @@ internal class PushToEcrDialog(
         textComponent: ExtendableTextField
     ) {
         val editExtension = ExtendableTextComponent.Extension.create(
-            AllIcons.General.Inline_edit, AllIcons.General.Inline_edit_hovered,
+            AllIcons.General.Inline_edit,
+            AllIcons.General.Inline_edit_hovered,
             message("ecr.dockerfile.configuration.edit")
         ) {
             runConfigModel.selected?.let {
                 RunManager.getInstance(project).findSettings(it)?.let { settings ->
                     RunDialog.editConfiguration(
-                        project, settings,
+                        project,
+                        settings,
                         ExecutionBundle.message("run.dashboard.edit.configuration.dialog.title")
                     )
                 }
@@ -273,7 +275,8 @@ internal class PushToEcrDialog(
         }
 
         val browseExtension = ExtendableTextComponent.Extension.create(
-            AllIcons.General.OpenDisk, AllIcons.General.OpenDiskHover,
+            AllIcons.General.OpenDisk,
+            AllIcons.General.OpenDiskHover,
             message("ecr.dockerfile.configuration.add")
         ) {
             val listener = object : TextBrowseFolderListener(
@@ -290,7 +293,8 @@ internal class PushToEcrDialog(
                     val settings = EcrUtils.dockerRunConfigurationFromPath(this@PushToEcrDialog.project, chosenFile.presentableName, chosenFile.path)
                     // open dialog for user
                     RunDialog.editConfiguration(
-                        project, settings,
+                        project,
+                        settings,
                         ExecutionBundle.message("run.dashboard.edit.configuration.dialog.title")
                     )
                     rebuildRunConfigurationComboBoxModel(runConfigModel)

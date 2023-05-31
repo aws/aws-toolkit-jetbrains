@@ -548,7 +548,8 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
     private fun isRepo3P(project: CawsProject, repo: String): Boolean {
         val connectionSettings = context.connectionSettings ?: throw RuntimeException("ConnectionSettings was not set")
         val url = AwsResourceCache.getInstance().getResource(
-            CawsResources.cloneUrls(CawsCodeRepository(project.space, project.project, repo)), connectionSettings
+            CawsResources.cloneUrls(CawsCodeRepository(project.space, project.project, repo)),
+            connectionSettings
         ).toCompletableFuture().get()
         return !url.contains(CawsEndpoints.CAWS_GIT_PATTERN)
     }
