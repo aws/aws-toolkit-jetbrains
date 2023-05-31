@@ -2,7 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>Filename:software.aws.toolkits.jetbrains.datagrip.auth.mockDataSourceSshTunnelConfiguration.kt:1</ID>
+    <ID>Filename:mockDataSourceSshTunnelConfiguration.kt$software.aws.toolkits.jetbrains.datagrip.auth.mockDataSourceSshTunnelConfiguration.kt</ID>
     <ID>NoNameShadowing:IamAuthWidgetTest.kt$IamAuthWidgetTest${ it[CREDENTIAL_ID_PROPERTY] = credentialId it[REGION_ID_PROPERTY] = defaultRegion if (hasCluster) { it[CLUSTER_ID_PROPERTY] = defaultClusterId } }</ID>
     <ID>NoNameShadowing:SecretsManagerAuthTest.kt$SecretsManagerAuthTest${ u = it.arguments[0] as String Unit }</ID>
     <ID>NoNameShadowing:SecretsManagerAuthWidgetTest.kt$SecretsManagerAuthWidgetTest${ it[CREDENTIAL_ID_PROPERTY] = credentialId it[REGION_ID_PROPERTY] = defaultRegion if (hasSecret) { it[SECRET_ID_PROPERTY] = defaultSecretId } it[GET_URL_FROM_SECRET] = getUrlFromSecret.toString() }</ID>

@@ -6,8 +6,13 @@
     <ID>ExplicitItLambdaParameter:GitUtilsTest.kt$GitUtilsTest.NormalizeRepoUrl${ it: String -> normalizeRepoUrl(it).authority }</ID>
     <ID>ExplicitItLambdaParameter:GitUtilsTest.kt$GitUtilsTest.NormalizeRepoUrl${ it: String -> normalizeRepoUrl(it).scheme }</ID>
     <ID>ExplicitItLambdaParameter:GitUtilsTest.kt$GitUtilsTest.PrimeSSHAgentCommand${ it: String -> buildAgentPrimeCommand(normalizeRepoUrl(it))?.commandLineString }</ID>
-    <ID>UnusedPrivateMember:SshCommandLine.kt$SshCommandLine.Companion$private const val ADDITIONAL_OPTIONS = "sshAdditionalOptions"</ID>
-    <ID>UnusedPrivateMember:WorkspaceDetails.kt$e: AnActionEvent</ID>
+    <ID>ExpressionBodySyntax:PtyCliBasedStep.kt$PtyCliBasedStep.&lt;no name provided>$return object : BaseOutputReader.Options() { override fun policy(): BaseDataReader.SleepingPolicy { return BaseDataReader.SleepingPolicy.BLOCKING } override fun splitToLines(): Boolean { return false } }</ID>
+    <ID>ExpressionBodySyntax:PtyCliBasedStep.kt$PtyCliBasedStep.&lt;no name provided>.&lt;no name provided>$return BaseDataReader.SleepingPolicy.BLOCKING</ID>
+    <ID>ExpressionBodySyntax:PtyCliBasedStep.kt$PtyCliBasedStep.&lt;no name provided>.&lt;no name provided>$return false</ID>
+    <ID>MaximumLineLength:HackyInstallRider.kt$HackyInstallRider$ </ID>
+    <ID>UnusedParameter:WorkspaceDetails.kt$e: AnActionEvent</ID>
+    <ID>UnusedPrivateProperty:HackyInstallRider.kt$HackyInstallRider$private val remoteScriptPath: String</ID>
+    <ID>UnusedPrivateProperty:SshCommandLine.kt$SshCommandLine.Companion$private const val ADDITIONAL_OPTIONS = "sshAdditionalOptions"</ID>
     <ID>UseCheckOrError:CawsConnectionProvider.kt$CawsConnectionParameters.Companion$throw IllegalStateException("Missing required parameter: CAWS environment id")</ID>
     <ID>UseCheckOrError:CawsConnectionProvider.kt$CawsConnectionParameters.Companion$throw IllegalStateException("Missing required parameter: CAWS project name")</ID>
     <ID>UseCheckOrError:CawsConnectionProvider.kt$CawsConnectionProvider$throw IllegalStateException("Environment is deleted, unable to start")</ID>

@@ -2,8 +2,34 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>Filename:software.aws.toolkits.jetbrains.uitests.utils.retryableAssert.kt:1</ID>
-    <ID>IgnoredReturnValue:CloudFormationBrowserTest.kt$CloudFormationBrowserTest$assertThat(toast.hasText { it.text.contains("Deleted Stack '$stack'") })</ID>
+    <ID>Filename:retryableAssert.kt$software.aws.toolkits.jetbrains.uitests.utils.retryableAssert.kt</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$connect(InetSocketAddress("127.0.0.1", robotPort))</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$log.info("Connected to IDE")</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$log.info("Gradle process started, trying to connect to IDE")</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$socket</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$startGradleTasks(":$gradleProject:runIdeForUiTests")</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$true</ID>
+    <ID>UnreachableCode:IdeExtension.kt$Ide$waitForIde()</ID>
+    <ID>UnreachableCode:IdeExtension.kt$RemoteRobot("http://127.0.0.1:$robotPort")</ID>
+    <ID>UnreachableCode:IdeExtension.kt$apply(test)</ID>
+    <ID>UnreachableCode:SqsTest.kt$SqsTest$info("Deleting $queueUrl")</ID>
+    <ID>UnreachableCode:SqsTest.kt$SqsTest$it</ID>
+    <ID>UnreachableCode:SqsTest.kt$SqsTest$queueUrl(queueUrl)</ID>
+    <ID>UnreachableCode:SqsTest.kt$SqsTest$try { deleteQueue { it.queueUrl(queueUrl) } } catch (e: Exception) { log.error("Trying to delete $queueUrl threw an exception, it might not be deleted!", e) return }</ID>
+    <ID>UnreachableCode:SqsTest.kt$SqsTest$waitForDeletion(queueName)</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$URL("http://127.0.0.1:$robotPort/")</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$URL("http://127.0.0.1:$robotPort/$file")</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$copyTo(it)</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$listOf("scripts.js", "xpathEditor.js", "updateButton.js", "styles.css", "img/locator.png").forEach { file -> testReport.resolve(Paths.get(file)).outputStream().use { URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it) } }</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$openStream()</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$outputStream()</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$resolve("screenshot.png")</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$resolve(Paths.get(file))</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$testReport.resolve("uiHierarchy.html").outputStream().use { URL("http://127.0.0.1:$robotPort/").openStream().copyTo(it) }</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$uiTest { testReport.resolve("screenshot.png").outputStream().use { ImageIO.write(getScreenshot(), "png", it) } testReport.resolve("uiHierarchy.html").outputStream().use { URL("http://127.0.0.1:$robotPort/").openStream().copyTo(it) } listOf("scripts.js", "xpathEditor.js", "updateButton.js", "styles.css", "img/locator.png").forEach { file -> testReport.resolve(Paths.get(file)).outputStream().use { URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it) } } }</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$use { ImageIO.write(getScreenshot(), "png", it) }</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$use { URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it) }</ID>
+    <ID>UnreachableCode:TestRecorder.kt$TestRecorder$val testReport = TEST_REPORTS_LOCATION?.resolve(testDisplayName) ?: return</ID>
     <ID>UseCheckOrError:IdeExtension.kt$GradleProcess$throw IllegalStateException("Failed to locate build.gradle.kts in $cwd}")</ID>
     <ID>UseCheckOrError:IdeExtension.kt$Ide$throw IllegalStateException("Gradle task has ended, check log")</ID>
     <ID>UseCheckOrError:IdeExtension.kt$Ide$throw java.lang.IllegalStateException("GRADLE_PROJECT not set")</ID>
