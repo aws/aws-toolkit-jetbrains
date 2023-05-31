@@ -359,7 +359,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 }
             }
 
-            override fun customComponentProvider() = DefaultCustomConnectionFrameComponentProvider(getTitle()) {
+            override fun customComponentProvider(lifetime: Lifetime) = DefaultCustomConnectionFrameComponentProvider(getTitle()) {
                 component
             }
 
