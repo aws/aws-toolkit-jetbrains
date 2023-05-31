@@ -14,7 +14,6 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
@@ -158,8 +157,17 @@ class CodeWhispererTelemetryService {
             automatedTriggerType.specialChar.toString()
         } else null
 
-        val classifierResult = if (requestContext.fileContextInfo.programmingLanguage is CodeWhispererJava) {
-            CodeWhispererAutoTriggerService.getClassifierResultIfNeeded(requestContext.editor)
+        val language = requestContext.fileContextInfo.programmingLanguage
+
+        val shouldIncludeClassifier = language.isAllClassifier() ||
+            (language.isClassifierSupported() && CodeWhispererAutoTriggerService.getInstance().isClassifierGroup())
+
+        val classifierResult = if (shouldIncludeClassifier) {
+            requestContext.triggerTypeInfo.automatedTriggerType.calculationResult
+        } else null
+
+        val classifierThreshold = if (shouldIncludeClassifier) {
+            CodeWhispererAutoTriggerService.getThreshold(language)
         } else null
 
         CodewhispererTelemetry.userTriggerDecision(
@@ -172,7 +180,7 @@ class CodeWhispererTelemetryService {
             codewhispererCharactersAccepted = null,
             codewhispererCharactersRecommended = null,
             codewhispererCompletionType = responseContext.completionType,
-            codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType(),
+            codewhispererLanguage = language.toTelemetryType(),
             codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
             codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
             codewhispererLineNumber = requestContext.caretPosition.line,
@@ -187,7 +195,8 @@ class CodeWhispererTelemetryService {
             codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
             codewhispererPreviousSuggestionState = previousUserTriggerDecision,
             codewhispererSuggestionState = suggestionState,
-            codewhispererClassifierResult = classifierResult
+            codewhispererClassifierResult = classifierResult,
+            codewhispererClassifierThreshold = classifierThreshold
         )
     }
 
