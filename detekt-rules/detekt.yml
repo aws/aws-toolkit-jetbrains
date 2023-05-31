@@ -184,8 +184,10 @@ potential-bugs:
     active: true
   UnreachableCatchBlock:
     active: true
+  # causes baseline to be very slow and doesn't seem to work correctly on our codebase (last attempt took over 10m and resulted in OOM)
+  # qodana provides coverage for this
   UnreachableCode:
-    active: true
+    active: false
   UnsafeCallOnNullableType:
     active: true
   UnsafeCast:
