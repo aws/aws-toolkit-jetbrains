@@ -28,11 +28,6 @@ object IdeVersions {
     private val ideProfiles = listOf(
         Profile(
             name = "2022.2",
-            gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "222.4459-EAP-CANDIDATE-SNAPSHOT",
-                plugins = arrayOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2022.2",
@@ -76,11 +71,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2022.3",
-            gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "223.7571-EAP-CANDIDATE-SNAPSHOT",
-                plugins = arrayOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 // test failure related to null notification contexts in 2022.3
