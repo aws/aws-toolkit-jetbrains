@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import com.jetbrains.rd.generator.gradle.RdGenExtension
+import com.jetbrains.rd.generator.gradle.RdGenPlugin
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.withCurrentProfileName
 import java.nio.file.Path
 
 buildscript {
@@ -16,11 +18,6 @@ buildscript {
     val rdversion = software.aws.toolkits.gradle.intellij.IdeVersions.ideProfile(project).rider.rdGenVersion
 
     println("Using rd-gen: $rdversion")
-
-    repositories {
-        maven("https://www.myget.org/F/rd-snapshots/maven/")
-        mavenCentral()
-    }
 
     dependencies {
         classpath("com.jetbrains.rd:rd-gen:$rdversion")
@@ -63,8 +60,20 @@ dependencies {
  * RESHARPER
  */
 
-// Not published to gradle plugin portal, use old syntax
-apply(plugin = "com.jetbrains.rdgen")
+withCurrentProfileName {
+    when (it) {
+        "2022.1", "2022.2", "2023.1" -> {
+            // rdgen <= 2023.1.2 doesn't work with gradle 8.0
+            apply(from = "rdgen.gradle.kts")
+        }
+
+        else -> {
+            // Not published to gradle plugin portal, use old syntax
+            apply<RdGenPlugin>()
+            tasks.register<RdGenTask>("generateModels")
+        }
+    }
+}.get()
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -109,7 +118,7 @@ configure<RdGenExtension> {
 }
 
 // TODO: migrate to official rdgen gradle plugin https://www.jetbrains.com/help/resharper/sdk/Rider.html#plugin-project-jvm
-val generateModels = tasks.register<RdGenTask>("generateModels") {
+val generateModels = tasks.named<JavaExec>("generateModels") {
     group = protocolGroup
     description = "Generates protocol models"
 
