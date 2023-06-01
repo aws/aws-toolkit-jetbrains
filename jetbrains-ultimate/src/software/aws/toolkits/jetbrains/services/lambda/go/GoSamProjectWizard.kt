@@ -54,12 +54,7 @@ class GoSdkSelectionPanel : SdkSelector {
 }
 
 class SamHelloWorldGo : SamAppTemplateBased() {
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
+    override fun postCreationAction(settings: SamNewProjectSettings, contentRoot: VirtualFile, rootModel: ModifiableRootModel, indicator: ProgressIndicator) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         // Turn off indexing entire gopath for the project since we are using go modules
         GoProjectLibrariesService.getInstance(rootModel.project).isIndexEntireGopath = false
@@ -79,12 +74,7 @@ class SamHelloWorldGo : SamAppTemplateBased() {
 }
 
 class SamEventBridgeHelloWorldGo : SamAppTemplateBased() {
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
+    override fun postCreationAction(settings: SamNewProjectSettings, contentRoot: VirtualFile, rootModel: ModifiableRootModel, indicator: ProgressIndicator) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         // Turn off indexing entire gopath for the project since we are using go modules
         GoProjectLibrariesService.getInstance(rootModel.project).isIndexEntireGopath = false
@@ -104,12 +94,7 @@ class SamEventBridgeHelloWorldGo : SamAppTemplateBased() {
 }
 
 class SamEventBridgeStarterAppGo : SamAppTemplateBased() {
-    override fun postCreationAction(
-        settings: SamNewProjectSettings,
-        contentRoot: VirtualFile,
-        rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
-    ) {
+    override fun postCreationAction(settings: SamNewProjectSettings, contentRoot: VirtualFile, rootModel: ModifiableRootModel, indicator: ProgressIndicator) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         // Turn off indexing entire gopath for the project since we are using go modules
         GoProjectLibrariesService.getInstance(rootModel.project).isIndexEntireGopath = false

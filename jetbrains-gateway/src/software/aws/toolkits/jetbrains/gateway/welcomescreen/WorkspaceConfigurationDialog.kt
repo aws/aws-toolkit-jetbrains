@@ -33,12 +33,7 @@ import software.aws.toolkits.telemetry.CodecatalystUpdateDevEnvironmentLocationT
 import java.awt.BorderLayout
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
-class WorkspaceConfigurationDialog private constructor(
-    cawsClient: CodeCatalystClient,
-    isFreeTier: Boolean,
-    ws: Workspace,
-    disposable: Disposable
-) :
+class WorkspaceConfigurationDialog private constructor(cawsClient: CodeCatalystClient, isFreeTier: Boolean, ws: Workspace, disposable: Disposable) :
     JBLoadingPanel(BorderLayout(), disposable) {
     val context = ReconfigureWorkspaceSettings(ws)
     val panel = panel {
@@ -82,12 +77,7 @@ class WorkspaceConfigurationDialog private constructor(
 
     companion object {
         private val LOG = getLogger<WorkspaceConfigurationDialog>()
-        fun buildDialog(
-            cawsClient: CodeCatalystClient,
-            isFreeTier: Boolean,
-            initialWs: Workspace,
-            workspaceList: WorkspaceList
-        ) =
+        fun buildDialog(cawsClient: CodeCatalystClient, isFreeTier: Boolean, initialWs: Workspace, workspaceList: WorkspaceList) =
             DialogBuilder().also { dialog ->
                 val content = WorkspaceConfigurationDialog(cawsClient, isFreeTier, initialWs, dialog)
                 dialog.addOkAction()

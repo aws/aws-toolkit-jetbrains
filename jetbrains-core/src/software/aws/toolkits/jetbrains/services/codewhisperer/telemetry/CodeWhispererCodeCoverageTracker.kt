@@ -72,11 +72,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         conn.subscribe(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun afterAccept(
-                    states: InvocationContext,
-                    sessionContext: SessionContext,
-                    rangeMarker: RangeMarker
-                ) {
+                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
                     if (states.requestContext.fileContextInfo.programmingLanguage != language) return
                     rangeMarkers.add(rangeMarker)
                     val originalRecommendation = extractRangeMarkerString(rangeMarker)

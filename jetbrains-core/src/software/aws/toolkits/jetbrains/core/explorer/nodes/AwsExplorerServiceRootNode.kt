@@ -24,11 +24,7 @@ abstract class AwsExplorerServiceRootNode(project: Project, service: AwsExplorer
     override fun actionGroupName() = "aws.toolkit.explorer.$serviceId"
 }
 
-abstract class CacheBackedAwsExplorerServiceRootNode<T>(
-    project: Project,
-    service: AwsExplorerServiceNode,
-    private val resource: Resource<out Collection<T>>
-) :
+abstract class CacheBackedAwsExplorerServiceRootNode<T>(project: Project, service: AwsExplorerServiceNode, private val resource: Resource<out Collection<T>>) :
     AwsExplorerServiceRootNode(project, service) {
 
     final override fun getChildrenInternal(): List<AwsExplorerNode<*>> = nodeProject.getResourceNow(resource).map(this::toNode)

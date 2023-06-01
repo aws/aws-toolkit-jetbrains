@@ -31,10 +31,7 @@ class CreateDynamicResourceVirtualFile(val connectionSettings: ConnectionSetting
         InitialCreateDynamicResourceContent.initialContent
     )
 
-class ViewEditableDynamicResourceVirtualFile(
-    val dynamicResourceIdentifier: DynamicResourceIdentifier,
-    fileContent: String
-) :
+class ViewEditableDynamicResourceVirtualFile(val dynamicResourceIdentifier: DynamicResourceIdentifier, fileContent: String) :
     DynamicResourceVirtualFile(
         CloudControlApiResources.getResourceDisplayName(dynamicResourceIdentifier.resourceIdentifier),
         dynamicResourceIdentifier.resourceType,
@@ -46,12 +43,7 @@ object InitialCreateDynamicResourceContent {
 }
 
 object OpenViewEditableDynamicResourceVirtualFile {
-    fun openFile(
-        project: Project,
-        file: ViewEditableDynamicResourceVirtualFile,
-        sourceAction: OpenResourceModelSourceAction,
-        resourceType: String
-    ) {
+    fun openFile(project: Project, file: ViewEditableDynamicResourceVirtualFile, sourceAction: OpenResourceModelSourceAction, resourceType: String) {
         WriteCommandAction.runWriteCommandAction(project) {
             CodeStyleManager.getInstance(project).reformat(PsiUtilCore.getPsiFile(project, file))
             if (sourceAction == OpenResourceModelSourceAction.READ) {

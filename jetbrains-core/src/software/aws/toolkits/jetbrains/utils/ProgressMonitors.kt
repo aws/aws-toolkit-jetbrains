@@ -44,12 +44,7 @@ class ProgressMonitorInputStream(
     }
 }
 
-class ProgressMonitorOutputStream(
-    indicator: ProgressIndicator,
-    private val delegate: OutputStream,
-    length: Long,
-    cancelable: Boolean = true
-) :
+class ProgressMonitorOutputStream(indicator: ProgressIndicator, private val delegate: OutputStream, length: Long, cancelable: Boolean = true) :
     FilterOutputStream(delegate) {
 
     private val monitor = ProgressMonitor(indicator, length, cancelable)
@@ -65,11 +60,7 @@ class ProgressMonitorOutputStream(
     }
 }
 
-private class ProgressMonitor(
-    private val indicator: ProgressIndicator,
-    private val length: Long,
-    private val cancelable: Boolean
-) {
+private class ProgressMonitor(private val indicator: ProgressIndicator, private val length: Long, private val cancelable: Boolean) {
     var completed: Long = 0
 
     fun updateProgress(increment: Long) {

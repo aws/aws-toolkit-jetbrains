@@ -68,21 +68,12 @@ class SchemaSelectionPanel : WizardFragment {
 
     override fun isApplicable(template: SamProjectTemplate?): Boolean = template?.supportsDynamicSchemas() == true
 
-    override fun updateUi(
-        projectLocation: TextFieldWithBrowseButton?,
-        runtimeGroup: RuntimeGroup?,
-        template: SamProjectTemplate?
-    ) {
+    override fun updateUi(projectLocation: TextFieldWithBrowseButton?, runtimeGroup: RuntimeGroup?, template: SamProjectTemplate?) {
         super.updateUi(projectLocation, runtimeGroup, template)
         schemaSelector.reload()
     }
 
-    override fun postProjectGeneration(
-        model: ModifiableRootModel,
-        template: SamProjectTemplate,
-        runtime: LambdaRuntime,
-        progressIndicator: ProgressIndicator
-    ) {
+    override fun postProjectGeneration(model: ModifiableRootModel, template: SamProjectTemplate, runtime: LambdaRuntime, progressIndicator: ProgressIndicator) {
         if (!template.supportsDynamicSchemas()) {
             return
         }

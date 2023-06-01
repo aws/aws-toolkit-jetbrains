@@ -41,11 +41,7 @@ import software.aws.toolkits.telemetry.FeedbackTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.net.URLEncoder
 
-class FeedbackDialog(
-    val project: Project,
-    initialSentiment: Sentiment = Sentiment.POSITIVE,
-    initialComment: String = ""
-) : DialogWrapper(project) {
+class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentiment.POSITIVE, initialComment: String = "") : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private var sentiment = initialSentiment
     private val smileIcon = IconUtil.scale(AwsIcons.Misc.SMILE, null, 3f)

@@ -71,11 +71,7 @@ class TabbedWorkflowEmitter(private val tabComponent: JTabbedPane, private val d
             }
         }
 
-        private fun doEmitMessage(
-            message: String,
-            contentType: ConsoleViewContentType,
-            shouldEmitToTerminal: Boolean = false
-        ) {
+        private fun doEmitMessage(message: String, contentType: ConsoleViewContentType, shouldEmitToTerminal: Boolean = false) {
             val content = ensureContent(null)
             if (content is TerminalExecutionConsole && !shouldEmitToTerminal) {
                 // terminal console output is automatically handled by the process handler

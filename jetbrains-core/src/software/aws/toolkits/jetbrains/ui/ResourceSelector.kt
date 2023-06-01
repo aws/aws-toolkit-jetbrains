@@ -267,11 +267,7 @@ class ResourceSelector<T> private constructor(
     }
 }
 
-inline fun <reified T : Any> Cell.resourceSelector(
-    resource: Resource<out Collection<T>>,
-    connectionSettings: ConnectionSettings,
-    prop: KMutableProperty0<T?>
-) =
+inline fun <reified T : Any> Cell.resourceSelector(resource: Resource<out Collection<T>>, connectionSettings: ConnectionSettings, prop: KMutableProperty0<T?>) =
     component(ResourceSelector.builder().resource(resource).awsConnection(connectionSettings).build()).withBinding(
         { it.selected() },
         { component, value -> component.selectedItem = value },

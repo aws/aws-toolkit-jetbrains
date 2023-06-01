@@ -62,9 +62,7 @@ import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.RunWithRealCredentials
 
-open class CodeWhispererIntegrationTestBase(
-    val projectRule: CodeInsightTestFixtureRule = PythonCodeInsightTestFixtureRule()
-) {
+open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixtureRule = PythonCodeInsightTestFixtureRule()) {
 
     private val realCredentials = RunWithRealCredentials(projectRule)
     internal val disposableRule = DisposableRule()

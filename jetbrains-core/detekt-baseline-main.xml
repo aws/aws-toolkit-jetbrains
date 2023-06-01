@@ -51,45 +51,61 @@
     <ID>Filename:ShowLogsAroundAction.kt$software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundAction.kt</ID>
     <ID>Filename:contexts.kt$software.aws.toolkits.jetbrains.core.coroutines.contexts.kt</ID>
     <ID>Filename:scopes.kt$software.aws.toolkits.jetbrains.core.coroutines.scopes.kt</ID>
+    <ID>ForbiddenVoid:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$Void</ID>
+    <ID>ForbiddenVoid:SchemaViewer.kt$SchemaPreviewer$Void</ID>
+    <ID>ForbiddenVoid:SchemaViewer.kt$SchemaViewer$Void</ID>
+    <ID>ImplicitDefaultLocale:CloudFormationTemplate.kt$CloudFormationTemplate.Companion$templateFile.extension?.toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:CodeWhispererColorUtil.kt$CodeWhispererColorUtil$String.format("#%02x%02x%02x", this.red, this.green, this.blue)</ID>
+    <ID>ImplicitDefaultLocale:DynamicResourceStateChangedNotificationHandler.kt$DynamicResourceStateChangedNotificationHandler$state.operation.name.toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:DynamicResourcesUpdateManager.kt$DynamicResourceUpdateManager$message("dynamic_resources.editor.submitResourceUpdateRequest_text").toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:DynamicResourcesUpdateManager.kt$DynamicResourceUpdateManager$message("general.delete").toLowerCase()</ID>
+    <ID>ImplicitDefaultLocale:DynamicResourcesUpdateManager.kt$DynamicResourceUpdateManager$mutation.operation.name.toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:PathMapper.kt$PathMapper.Companion$localPath.toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:ResourceSelector.kt$ResourceSelector$it.toString().toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:SchemaCodeGenUtils.kt$SchemaCodeGenUtils.CodeGenPackageBuilder$segment.toLowerCase()</ID>
     <ID>LoopWithTooManyJumpStatements:CodeWhispererEditorManager.kt$CodeWhispererEditorManager$while</ID>
     <ID>LoopWithTooManyJumpStatements:DownloadObjectAction.kt$DownloadObjectAction$for</ID>
+    <ID>NoNameShadowing:CloudControlApiResources.kt$CloudControlApiResources${ it.typeName() }</ID>
+    <ID>NoNameShadowing:CodeStoragePanel.kt$CodeStoragePanel${ it.repositoryName == ecrDialog.repoName }</ID>
+    <ID>NoNameShadowing:CodeStoragePanel.kt$CodeStoragePanel${ sourceBucket.reload(forceFetch = true) sourceBucket.selectedItem = it }</ID>
     <ID>NoNameShadowing:CreationPanel.kt$CreationPanel${ cpu = it }</ID>
     <ID>NoNameShadowing:CreationPanel.kt$CreationPanel${ memory = it }</ID>
     <ID>NoNameShadowing:CredentialIdentifierSelector.kt$CredentialIdentifierSelector${ comboBoxModel.add(it) }</ID>
+    <ID>NoNameShadowing:CredentialIdentifierSelector.kt$CredentialIdentifierSelector${ it.id == identifierId }</ID>
     <ID>NoNameShadowing:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog${ it.repositoryName == ecrDialog.repoName }</ID>
     <ID>NoNameShadowing:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog${ s3BucketSelector.reload(forceFetch = true) s3BucketSelector.selectedItem = it }</ID>
+    <ID>NoNameShadowing:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog${ val fileEditorManager = FileEditorManager.getInstance(project) fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true) }</ID>
+    <ID>NoNameShadowing:ExplorerToolWindow.kt$ExplorerToolWindow${ it.lastPathComponent }</ID>
+    <ID>NoNameShadowing:ExplorerToolWindow.kt$ExplorerToolWindow${ it.userObject }</ID>
+    <ID>NoNameShadowing:Iam.kt$Iam${ it.roleName(role.roleName()) }</ID>
+    <ID>NoNameShadowing:Iam.kt$Iam${ it.roleName(roleName) .policyName(roleName) .policyDocument(policy) }</ID>
+    <ID>NoNameShadowing:LocalPathProjectBaseCellEditor.kt$LocalPathProjectBaseCellEditor${ LocalFileSystem.getInstance().findFileByPath(it) }</ID>
+    <ID>NoNameShadowing:LocalPathProjectBaseCellEditor.kt$LocalPathProjectBaseCellEditor${ StringUtil.isNotEmpty(it) }</ID>
     <ID>NoNameShadowing:RuntimeGroup.kt$RuntimeGroup.Companion${ it.id == id }</ID>
-    <ID>RedundantSuspendModifier:DockerUtils.kt$suspend</ID>
-    <ID>RedundantSuspendModifier:ToolkitDockerAdapter.kt$ToolkitDockerAdapter$suspend</ID>
+    <ID>NoNameShadowing:SelectSavedQuery.kt$SelectSavedQuery${ logGroups.text = it.logGroupNames().joinToString("\n") queryString.text = it.queryString() // reset to the start, since setting the text moves the cursor to the end, // which results in scrolling to the bottom right corner if there's enough text logGroups.caretPosition = 0 queryString.caretPosition = 0 }</ID>
     <ID>TopLevelPropertyNaming:SqsUtils.kt$const val sqsPolicyStatementArray = "Statement"</ID>
+    <ID>UnnecessaryApply:CodeWhispererCodeScanEditorMouseMotionListener.kt$CodeWhispererCodeScanEditorMouseMotionListener$apply { size = preferredSize }</ID>
     <ID>UnnecessaryApply:CreateIamServiceRoleDialog.kt$CreateIamServiceRoleDialog$apply { component.isEditable = false }</ID>
+    <ID>UnnecessaryApply:CreateQueuePanel.kt$CreateQueuePanel$apply { border = IdeBorderFactory.createBorder(SideBorder.TOP or SideBorder.BOTTOM or SideBorder.LEFT) }</ID>
     <ID>UnnecessaryApply:CreationPanel.kt$CreationPanel$apply { component.toolTipText = message("apprunner.creation.panel.repository.url.tooltip") }</ID>
     <ID>UnnecessaryApply:ExperimentConfigurable.kt$ExperimentConfigurable$apply { component.icon = AllIcons.General.Warning }</ID>
+    <ID>UnnecessaryApply:SendMessagePane.kt$SendMessagePane$apply { border = IdeBorderFactory.createBorder() }</ID>
     <ID>UnnecessaryApply:SendMessagePane.kt$SendMessagePane$apply { emptyText.text = message("sqs.send.message.body.empty.text") }</ID>
     <ID>UnnecessaryApply:SonoLoginOverlay.kt$SonoLoginOverlay$apply { applyToComponent { putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true) } }</ID>
     <ID>UnnecessaryFilter:CodeWhispererPopupManager.kt$CodeWhispererPopupManager$filter { isValidRecommendation(it, userInput, typeahead) }</ID>
-    <ID>UnnecessarySafeCall:NotificationUtils.kt$this.stackTrace?.joinToString("\n", prefix = "\n")</ID>
+    <ID>UnsafeCallOnNullableType:CachingAsyncEvaluator.kt$CachingAsyncEvaluator$cachePromise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:CachingAsyncEvaluator.kt$CachingAsyncEvaluator$promise.blockingGet(blockingTime, blockingUnit)!!</ID>
     <ID>UnsafeCallOnNullableType:CreateFunctionDialog.kt$CreateFunctionDialog$view.configSettings.iamRole.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:CredentialIdentifierSelector.kt$CredentialIdentifierSelector.Companion$it!!</ID>
     <ID>UnsafeCallOnNullableType:DockerfileParser.kt$DockerfileParser$PsiManager.getInstance(project).findFile(virtualFile)!!</ID>
+    <ID>UnsafeCallOnNullableType:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$view.language.selected()!!</ID>
+    <ID>UnsafeCallOnNullableType:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$view.version.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:HandlerCompletionProvider.kt$HandlerCompletionProvider$handlerCompletion!!</ID>
     <ID>UnsafeCallOnNullableType:LocalLambdaRunConfiguration.kt$LocalLambdaRunConfiguration$promise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$imageSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$repoSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:SchemaResourceSelector.kt$SchemaResourceSelector$awsConnection!!</ID>
     <ID>UnsafeCallOnNullableType:UpdateFunctionConfigDialog.kt$UpdateFunctionConfigDialog$view.configSettings.iamRole.selected()!!</ID>
-    <ID>UnsafeCast:AsyncComboBox.kt$AsyncComboBox.&lt;no name provided>$super.getListCellRendererComponent(list, value, index, selected, hasFocus) as SimpleListCellRenderer&lt;*></ID>
-    <ID>UnsafeCast:CawsProjectListRenderer.kt$CawsProjectListRenderer$c as? SimpleColoredComponent</ID>
-    <ID>UnsafeCast:CodeWhispererCodeScanManager.kt$CodeWhispererCodeScanManager$e as? CodeWhispererException</ID>
-    <ID>UnsafeCast:CodeWhispererCodeScanSession.kt$CodeWhispererCodeScanSession$e as? CodeWhispererException</ID>
-    <ID>UnsafeCast:SqsWindow.kt$SqsWindow$sqsViewContent.component as SqsWindowUi</ID>
     <ID>UnusedPrivateProperty:CawsCloneDialogComponent.kt$CawsCloneDialogComponent$private val modalityState: ModalityState</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("aws.notification.credentials_missing"))</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("configure.validate.no_region_specified"))</ID>
@@ -165,6 +181,7 @@
     <ID>UseCheckOrError:SamVersionCache.kt$SamVersionCache$throw IllegalStateException(message("executableCommon.empty_info", SamCommon.SAM_NAME))</ID>
     <ID>UseCheckOrError:SamVersionCache.kt$SamVersionCache$throw IllegalStateException(message("executableCommon.unexpected_output", SamCommon.SAM_NAME, output))</ID>
     <ID>UseCheckOrError:SamVersionCache.kt$SamVersionCache$throw IllegalStateException(message("executableCommon.version_parse_error", SamCommon.SAM_NAME, version))</ID>
+    <ID>UseCheckOrError:SamVersionCache.kt$SamVersionCache$throw IllegalStateException(output)</ID>
     <ID>UseCheckOrError:SchemaCodeDownloader.kt$SchemaCodeDownloader.Companion$throw IllegalStateException("Attempting to use SchemaCodeDownload without valid AWS connection")</ID>
     <ID>UseCheckOrError:SchemaSelectionPanel.kt$SchemaSelectionPanel$throw IllegalStateException("Schemas is not supported by $this")</ID>
     <ID>UseCheckOrError:SingleS3ObjectAction.kt$SingleS3ObjectAction$throw IllegalStateException("SingleActionNode should only have a single node, got $nodes")</ID>
@@ -184,11 +201,14 @@
     <ID>UseCheckOrError:YamlCloudFormationTemplate.kt$YamlCloudFormationTemplate.YamlResource$throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))</ID>
     <ID>UseOrEmpty:AbstractActions.kt$SingleExplorerNodeActionGroup$e?.selectedNodes&lt;T>()?.takeIf { it.size == 1 }?.first()?.let { getChildren(it, e) }?.toTypedArray() ?: emptyArray()</ID>
     <ID>UseOrEmpty:AbstractActions.kt$this?.getData(ExplorerDataKeys.SELECTED_NODES)?.mapNotNull { it as? T } ?: emptyList()</ID>
+    <ID>UseOrEmpty:CodeScanSessionConfig.kt$CodeScanSessionConfig.Companion$file.extension ?: ""</ID>
     <ID>UseOrEmpty:CodeWhispererCodeReferenceComponents.kt$CodeWhispererCodeReferenceComponents$path ?: ""</ID>
     <ID>UseOrEmpty:CodeWhispererCodeScanException.kt$file ?: ""</ID>
     <ID>UseOrEmpty:CodeWhispererCodeScanManager.kt$CodeWhispererCodeScanManager$scanNodesLookup[file]?.mapNotNull { node -> val issue = node.userObject as CodeWhispererCodeScanIssue if (issue.textRange?.overlaps(range) == true) node else null } ?: listOf()</ID>
+    <ID>UseOrEmpty:CodeWhispererService.kt$CodeWhispererService$e.requestId() ?: ""</ID>
     <ID>UseOrEmpty:CodeWhispererService.kt$CodeWhispererService$exceptionType?.let { "Exception Type: $it, " } ?: ""</ID>
     <ID>UseOrEmpty:CodeWhispererService.kt$CodeWhispererService$latency?.let { "Latency: $latency, " } ?: ""</ID>
+    <ID>UseOrEmpty:ConfigureLambdaDialog.kt$ConfigureLambdaDialog$view.lambdaFunction.selected()?.functionName() ?: ""</ID>
     <ID>UseOrEmpty:CreationPanel.kt$CreationPanel$ecrUri ?: ""</ID>
     <ID>UseOrEmpty:CreationPanel.kt$CreationPanel$startCommand ?: ""</ID>
     <ID>UseOrEmpty:CredentialIdentifierSelector.kt$CredentialIdentifierSelector.&lt;no name provided>$value?.displayName ?: ""</ID>
@@ -196,20 +216,33 @@
     <ID>UseOrEmpty:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog$stackName ?: ""</ID>
     <ID>UseOrEmpty:DevToolsToolWindow.kt$DevToolsToolWindow$tree.selectionPaths?.let { treePaths -> treePaths.map { it.lastPathComponent } .filterIsInstance&lt;DefaultMutableTreeNode>() .map { it.userObject } .filterIsInstance&lt;T>() .toList() } ?: emptyList&lt;T>()</ID>
     <ID>UseOrEmpty:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$getContentRootOfCurrentFile() ?: ""</ID>
+    <ID>UseOrEmpty:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$rootError.message ?: ""</ID>
+    <ID>UseOrEmpty:DynamoDbExplorerNodes.kt$DynamoDbTableNode$tryOrNull { nodeProject.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""</ID>
+    <ID>UseOrEmpty:EventsTable.kt$EventsTableImpl$e.resourceStatusReason() ?: ""</ID>
     <ID>UseOrEmpty:ExplorerToolWindow.kt$ExplorerToolWindow$awsTree.selectionPaths?.let { it.map { it.lastPathComponent } .filterIsInstance&lt;DefaultMutableTreeNode>() .map { it.userObject } .filterIsInstance&lt;T>() .toList() } ?: emptyList&lt;T>()</ID>
     <ID>UseOrEmpty:InsightsColumnInfo.kt$LogResultColumnRenderer$(value as? String)?.trim() ?: ""</ID>
     <ID>UseOrEmpty:LocalLambdaRunSettingsEditor.kt$LocalLambdaRunSettingsEditor$configuration.handler() ?: ""</ID>
     <ID>UseOrEmpty:LogGroupSelectorTable.kt$LogGroupSelectorTable.Companion.LogGroupNameColumnInfo$value ?: ""</ID>
+    <ID>UseOrEmpty:LogStreamEntry.kt$message()?.trim() ?: ""</ID>
     <ID>UseOrEmpty:NotificationUtils.kt$&lt;no name provided>$title ?: ""</ID>
+    <ID>UseOrEmpty:PauseServiceAction.kt$PauseServiceAction$e.awsErrorDetails()?.errorMessage() ?: ""</ID>
     <ID>UseOrEmpty:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$e.message?.let { ": $it" } ?: ""</ID>
     <ID>UseOrEmpty:PythonCodeScanSessionConfig.kt$PythonCodeScanSessionConfig$importMatcher.group(1)?.plus(FILE_SEPARATOR) ?: ""</ID>
     <ID>UseOrEmpty:PythonLambdaHandlerResolver.kt$PythonLambdaHandlerResolver$handler.substringBeforeLast('/', "").nullize(true)?.split("/") ?: emptyList()</ID>
+    <ID>UseOrEmpty:ResumeServiceAction.kt$ResumeServiceAction$e.awsErrorDetails()?.errorMessage() ?: ""</ID>
+    <ID>UseOrEmpty:S3ObjectAction.kt$S3ObjectAction$dataContext.getData(S3EditorDataKeys.SELECTED_NODES) ?: emptyList()</ID>
     <ID>UseOrEmpty:S3TreeNode.kt$S3TreeDirectoryNode$response .contents() ?.filterNotNull() // filter out the directory root // if the root was a non-delimited prefix, it should not be filtered out ?.filterNot { it.key() == key &amp;&amp; (this as? S3TreePrefixedDirectoryNode)?.isDelimited() != true } ?.map { S3TreeObjectNode(this, it.key(), it.size(), it.lastModified()) } ?: emptyList()</ID>
+    <ID>UseOrEmpty:S3TreeNode.kt$S3TreeDirectoryNode$response.commonPrefixes()?.map { S3TreeDirectoryNode(bucket, this, it.prefix()) } ?: emptyList()</ID>
+    <ID>UseOrEmpty:S3ViewerPanel.kt$S3ViewerPanel$filterComponent.text.nullize(nullizeSpaces = true) ?: ""</ID>
     <ID>UseOrEmpty:SamCommon.kt$SamCommon$projectRootFile.listFiles( FileFilter { it.isFile &amp;&amp; it.name.endsWith("yaml") || it.name.endsWith("yml") } )?.toList() ?: emptyList()</ID>
     <ID>UseOrEmpty:SamInitRunner.kt$SamInitRunner$tempDir.listFiles()?.toList() ?: emptyList()</ID>
     <ID>UseOrEmpty:SamTemplateUtils.kt$SamTemplateUtils$MAPPER.convertValue&lt;Map&lt;String, String>?>(globals) ?: emptyMap()</ID>
     <ID>UseOrEmpty:SamTemplateUtils.kt$SamTemplateUtils$MAPPER.convertValue&lt;Map&lt;String, String>?>(variables) ?: emptyMap()</ID>
+    <ID>UseOrEmpty:SchemaSearchExecutor.kt$SchemaSearchExecutor$e.message ?: ""</ID>
+    <ID>UseOrEmpty:SubscribeSnsDialog.kt$SubscribeSnsDialog$view.topicSelector.selected()?.topicArn() ?: ""</ID>
+    <ID>UseOrEmpty:TableResults.kt$TableModel$columns.getKeysByValue(column)?.firstOrNull() ?: ""</ID>
     <ID>UseOrEmpty:TableUtils.kt$LogStreamsStreamColumnRenderer$(value as? String)?.trim() ?: ""</ID>
+    <ID>UseOrEmpty:TemplateSettings.kt$TemplateSettings$it.canonicalPath ?: ""</ID>
     <ID>UseOrEmpty:TemplateSettings.kt$TemplateSettings$path ?: ""</ID>
     <ID>UseOrEmpty:ToolConfigurable.kt$ToolConfigurable$settings.getExecutablePath(toolType) ?: ""</ID>
     <ID>UseOrEmpty:ToolkitCredentialProcessProvider.kt$ToolkitCredentialProcessProvider$errorOutput?.let { ": $it" } ?: ""</ID>

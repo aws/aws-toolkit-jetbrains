@@ -49,12 +49,7 @@ class DynamicResourceFileActionProvider :
         }
     }
 
-    class DynamicResourceVirtualFilePanel(
-        project: Project,
-        file: DynamicResourceVirtualFile,
-        text: String,
-        actionId: String
-    ) : EditorNotificationPanel() {
+    class DynamicResourceVirtualFilePanel(project: Project, file: DynamicResourceVirtualFile, text: String, actionId: String) : EditorNotificationPanel() {
         init {
             text(text)
             DynamicResourceSupportedTypes.getInstance().getDocs(file.dynamicResourceType)?.let { docUrl ->

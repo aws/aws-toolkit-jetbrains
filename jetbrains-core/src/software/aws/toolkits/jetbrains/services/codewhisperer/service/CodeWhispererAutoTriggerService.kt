@@ -210,22 +210,20 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
 
         val osCoefficient: Double = if (SystemInfo.isMac) {
             CodeWhispererClassifierConstants.osMap["Mac OS X"] ?: 0.0
-        } else {
-            if (SystemInfo.isWindows) {
-                val osVersion = SystemInfo.OS_VERSION
-                if (osVersion.contains("11", true)) {
-                    CodeWhispererClassifierConstants.osMap["Windows 10"]
-                } else if (osVersion.contains("10", true)) {
-                    CodeWhispererClassifierConstants.osMap["Windows 10"]
-                } else if (osVersion.contains("7", true)) {
-                    CodeWhispererClassifierConstants.osMap["Windows 7"]
-                } else {
-                    0.0
-                }
+        } else if (SystemInfo.isWindows) {
+            val osVersion = SystemInfo.OS_VERSION
+            if (osVersion.contains("11", true)) {
+                CodeWhispererClassifierConstants.osMap["Windows 10"]
+            } else if (osVersion.contains("10", true)) {
+                CodeWhispererClassifierConstants.osMap["Windows 10"]
+            } else if (osVersion.contains("7", true)) {
+                CodeWhispererClassifierConstants.osMap["Windows 7"]
             } else {
                 0.0
-            } ?: 0.0
-        }
+            }
+        } else {
+            0.0
+        } ?: 0.0
 
         val lastCharCoefficient = if (leftContextAtCurrentLine.length - 1 >= 0) {
             CodeWhispererClassifierConstants.coefficientsMap[leftContextAtCurrentLine[leftContextAtCurrentLine.length - 1].toString()] ?: 0.0

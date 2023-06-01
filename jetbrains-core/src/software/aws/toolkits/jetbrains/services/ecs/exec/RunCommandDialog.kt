@@ -30,11 +30,7 @@ import software.aws.toolkits.telemetry.Result
 import javax.swing.JComponent
 import javax.swing.plaf.basic.BasicComboBoxEditor
 
-class RunCommandDialog(
-    private val project: Project,
-    private val container: ContainerDetails,
-    private val connectionSettings: ConnectionSettings
-) :
+class RunCommandDialog(private val project: Project, private val container: ContainerDetails, private val connectionSettings: ConnectionSettings) :
     DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private val commandList = CollectionComboBoxModel(commandsEnteredPreviously.toMutableList())

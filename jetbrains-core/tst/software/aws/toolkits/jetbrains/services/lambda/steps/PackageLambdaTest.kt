@@ -125,12 +125,7 @@ class PackageLambdaTest {
         }
     }
 
-    private fun testPackageStep(
-        packagedTemplate: String,
-        s3Bucket: String? = null,
-        ecrRepo: String? = null,
-        assertBlock: (UploadedCode) -> Unit = {}
-    ) {
+    private fun testPackageStep(packagedTemplate: String, s3Bucket: String? = null, ecrRepo: String? = null, assertBlock: (UploadedCode) -> Unit = {}) {
         setSamExecutable(SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()))
 
         val templatePath = tempFolder.newFile().toPath()

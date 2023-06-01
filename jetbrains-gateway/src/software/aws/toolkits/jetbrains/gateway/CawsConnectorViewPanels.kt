@@ -266,263 +266,261 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                     BrowserLauncher.instance.browse(CawsEndpoints.ConsoleFactory.baseUrl())
                 }
                 .addAction(message("general.refresh")) { lifetime.launchOnUi { startLoading() } }
-        } else {
+        } else panel {
+            row(message("caws.workspace.ide_label")) {
+                bottomGap(BottomGap.MEDIUM)
+                ideVersionComboBox(disposable, context::productType)
+            }
+
+            lateinit var branchOptions: Row
+            lateinit var newBranchOption: Cell<JBRadioButton>
+            lateinit var newBranch: Row
+            lateinit var cloneRepoButton: Cell<JBRadioButton>
+            lateinit var existingBranchOption: Cell<JBRadioButton>
+            val existingProject = context.project
+            val existingRepo = context.linkedRepoName
+
+            if (existingRepo != null) {
+                context.cloneType = CawsWizardCloneType.CAWS
+            }
+
             panel {
-                row(message("caws.workspace.ide_label")) {
-                    bottomGap(BottomGap.MEDIUM)
-                    ideVersionComboBox(disposable, context::productType)
-                }
+                group(message("caws.workspace.settings.repository_header"), indent = false) {
+                    row {
+                        comment(message("caws.workspace.clone.info_repo"))
+                    }
 
-                lateinit var branchOptions: Row
-                lateinit var newBranchOption: Cell<JBRadioButton>
-                lateinit var newBranch: Row
-                lateinit var cloneRepoButton: Cell<JBRadioButton>
-                lateinit var existingBranchOption: Cell<JBRadioButton>
-                val existingProject = context.project
-                val existingRepo = context.linkedRepoName
-
-                if (existingRepo != null) {
-                    context.cloneType = CawsWizardCloneType.CAWS
-                }
-
-                panel {
-                    group(message("caws.workspace.settings.repository_header"), indent = false) {
+                    buttonsGroup {
                         row {
-                            comment(message("caws.workspace.clone.info_repo"))
-                        }
-
-                        buttonsGroup {
-                            row {
-                                cloneRepoButton = radioButton(message("caws.workspace.details.clone_repo"), CawsWizardCloneType.CAWS).applyToComponent {
-                                    isSelected = context.cloneType == CawsWizardCloneType.CAWS
-                                }.actionListener { event, component ->
-                                    if (!context.is3P) {
-                                        branchOptions.visible(cloneRepoButton.component.isSelected)
-                                        if (newBranchOption.component.isSelected) {
-                                            newBranch.visible(true)
-                                        }
+                            cloneRepoButton = radioButton(message("caws.workspace.details.clone_repo"), CawsWizardCloneType.CAWS).applyToComponent {
+                                isSelected = context.cloneType == CawsWizardCloneType.CAWS
+                            }.actionListener { event, component ->
+                                if (!context.is3P) {
+                                    branchOptions.visible(cloneRepoButton.component.isSelected)
+                                    if (newBranchOption.component.isSelected) {
+                                        newBranch.visible(true)
                                     }
                                 }
-
-                                radioButton(message("caws.workspace.details.create_empty_dev_env"), CawsWizardCloneType.NONE).applyToComponent {
-                                    isSelected = context.cloneType == CawsWizardCloneType.NONE
-                                }
-                                    .actionListener { event, component ->
-                                        branchOptions.visible(cloneRepoButton.component.isSelected)
-                                        newBranch.visible(cloneRepoButton.component.isSelected)
-                                        existingBranchOption.component.isSelected = true
-                                    }
                             }
-                        }.bind({ context.cloneType }, { context.cloneType = it })
 
-                        row {
-                            label(message("caws.workspace.clone.info"))
-                        }.visibleIf(cloneRepoButton.selected)
-
-                        val projectCombo = AsyncComboBox<CawsProject> { label, value, _ ->
-                            value ?: return@AsyncComboBox
-                            label.text = "${value.project} (${value.space})"
+                            radioButton(message("caws.workspace.details.create_empty_dev_env"), CawsWizardCloneType.NONE).applyToComponent {
+                                isSelected = context.cloneType == CawsWizardCloneType.NONE
+                            }
+                                .actionListener { event, component ->
+                                    branchOptions.visible(cloneRepoButton.component.isSelected)
+                                    newBranch.visible(cloneRepoButton.component.isSelected)
+                                    existingBranchOption.component.isSelected = true
+                                }
                         }
-                        Disposer.register(disposable, projectCombo)
+                    }.bind({ context.cloneType }, { context.cloneType = it })
 
-                        row(message("caws.project")) {
-                            cell(projectCombo)
-                                .bindItem(context::project.toMutableProperty())
-                                .errorOnApply(message("caws.workspace.details.project_validation")) { it.selectedItem == null }
-                                .columns(COLUMNS_MEDIUM)
+                    row {
+                        label(message("caws.workspace.clone.info"))
+                    }.visibleIf(cloneRepoButton.selected)
+
+                    val projectCombo = AsyncComboBox<CawsProject> { label, value, _ ->
+                        value ?: return@AsyncComboBox
+                        label.text = "${value.project} (${value.space})"
+                    }
+                    Disposer.register(disposable, projectCombo)
+
+                    row(message("caws.project")) {
+                        cell(projectCombo)
+                            .bindItem(context::project.toMutableProperty())
+                            .errorOnApply(message("caws.workspace.details.project_validation")) { it.selectedItem == null }
+                            .columns(COLUMNS_MEDIUM)
+                    }
+
+                    val linkedRepoCombo = AsyncComboBox<SourceRepository> { label, value, _ -> label.text = value?.name }
+                    val linkedBranchCombo = AsyncComboBox<BranchSummary> { label, value, _ -> label.text = value?.name }
+                    Disposer.register(disposable, linkedRepoCombo)
+                    Disposer.register(disposable, linkedBranchCombo)
+
+                    row(message("caws.repository")) {
+                        cell(linkedRepoCombo)
+                            .bind(
+                                { it.selected()?.name },
+                                { i, v -> i.selectedItem = i.model.find { it.name == v } },
+                                context::linkedRepoName.toMutableProperty()
+                            )
+                            .errorOnApply(message("caws.workspace.details.repository_validation")) { it.isVisible && it.selectedItem == null }
+                            .columns(COLUMNS_MEDIUM)
+                        projectCombo.addActionListener {
+                            linkedRepoCombo.proposeModelUpdate { model ->
+                                projectCombo.selected()?.let { project ->
+                                    val repositories = getRepoNames(project, client)
+                                    repositories.forEach { model.addElement(it) }
+                                }
+                            }
                         }
+                    }.visibleIf(cloneRepoButton.selected)
 
-                        val linkedRepoCombo = AsyncComboBox<SourceRepository> { label, value, _ -> label.text = value?.name }
-                        val linkedBranchCombo = AsyncComboBox<BranchSummary> { label, value, _ -> label.text = value?.name }
-                        Disposer.register(disposable, linkedRepoCombo)
-                        Disposer.register(disposable, linkedBranchCombo)
+                    if (!existingRepo.isNullOrEmpty()) {
+                        linkedBranchCombo.proposeModelUpdate { model ->
+                            val project = existingProject ?: throw RuntimeException("existingProject was null after null check")
+                            getBranchNames(project, existingRepo, client).forEach { model.addElement(it) }
+                        }
+                    }
 
-                        row(message("caws.repository")) {
-                            cell(linkedRepoCombo)
-                                .bind(
-                                    { it.selected()?.name },
-                                    { i, v -> i.selectedItem = i.model.find { it.name == v } },
-                                    context::linkedRepoName.toMutableProperty()
+                    row {
+                        label(message("caws.workspace.details.branch_title"))
+                    }.visibleIf(cloneRepoButton.selected)
+
+                    row { comment(message("caws.workspace.details.create_branch_comment")) }.visibleIf(cloneRepoButton.selected)
+
+                    buttonsGroup {
+                        branchOptions = row {
+                            newBranchOption = radioButton(message("caws.workspace.details.branch_new"), BranchCloneType.NEW_FROM_EXISTING)
+                                .applyToComponent {
+                                    isSelected = context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING
+                                }.bindSelected(
+                                    { context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING },
+                                    { if (it) context.branchCloneType = BranchCloneType.NEW_FROM_EXISTING }
+                                ).actionListener { event, component ->
+                                    newBranch.visibleIf(component.selected)
+                                }
+
+                            existingBranchOption = radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING)
+                                .applyToComponent {
+                                    isSelected = context.branchCloneType == BranchCloneType.EXISTING
+                                }.bindSelected(
+                                    { context.branchCloneType == BranchCloneType.EXISTING },
+                                    { if (it) context.branchCloneType = BranchCloneType.EXISTING }
                                 )
-                                .errorOnApply(message("caws.workspace.details.repository_validation")) { it.isVisible && it.selectedItem == null }
-                                .columns(COLUMNS_MEDIUM)
-                            projectCombo.addActionListener {
-                                linkedRepoCombo.proposeModelUpdate { model ->
-                                    projectCombo.selected()?.let { project ->
-                                        val repositories = getRepoNames(project, client)
-                                        repositories.forEach { model.addElement(it) }
-                                    }
-                                }
-                            }
-                        }.visibleIf(cloneRepoButton.selected)
+                        }.apply { visible(cloneRepoButton.component.isSelected) }
+                    }.bind({ context.branchCloneType }, { context.branchCloneType = it })
 
-                        if (!existingRepo.isNullOrEmpty()) {
+                    newBranch = row(message("caws.workspace.details.branch_new")) {
+                        textField().bindText(context::createBranchName)
+                            .errorOnApply(message("caws.workspace.details.branch_new_validation")) {
+                                it.isVisible && it.text.isNullOrBlank()
+                            }
+                    }.apply {
+                        visible(context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING && cloneRepoButton.component.isSelected)
+                    }
+
+                    row(message("caws.workspace.details.branch_existing")) {
+                        cell(linkedBranchCombo)
+                            .bindItem(context::linkedRepoBranch.toMutableProperty())
+                            .errorOnApply(message("caws.workspace.details.branch_validation")) { it.isVisible && it.selectedItem == null }
+                            .columns(COLUMNS_MEDIUM)
+
+                        linkedRepoCombo.addActionListener {
                             linkedBranchCombo.proposeModelUpdate { model ->
-                                val project = existingProject ?: throw RuntimeException("existingProject was null after null check")
-                                getBranchNames(project, existingRepo, client).forEach { model.addElement(it) }
-                            }
-                        }
-
-                        row {
-                            label(message("caws.workspace.details.branch_title"))
-                        }.visibleIf(cloneRepoButton.selected)
-
-                        row { comment(message("caws.workspace.details.create_branch_comment")) }.visibleIf(cloneRepoButton.selected)
-
-                        buttonsGroup {
-                            branchOptions = row {
-                                newBranchOption = radioButton(message("caws.workspace.details.branch_new"), BranchCloneType.NEW_FROM_EXISTING)
-                                    .applyToComponent {
-                                        isSelected = context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING
-                                    }.bindSelected(
-                                        { context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING },
-                                        { if (it) context.branchCloneType = BranchCloneType.NEW_FROM_EXISTING }
-                                    ).actionListener { event, component ->
-                                        newBranch.visibleIf(component.selected)
-                                    }
-
-                                existingBranchOption = radioButton(message("caws.workspace.details.branch_existing"), BranchCloneType.EXISTING)
-                                    .applyToComponent {
-                                        isSelected = context.branchCloneType == BranchCloneType.EXISTING
-                                    }.bindSelected(
-                                        { context.branchCloneType == BranchCloneType.EXISTING },
-                                        { if (it) context.branchCloneType = BranchCloneType.EXISTING }
-                                    )
-                            }.apply { visible(cloneRepoButton.component.isSelected) }
-                        }.bind({ context.branchCloneType }, { context.branchCloneType = it })
-
-                        newBranch = row(message("caws.workspace.details.branch_new")) {
-                            textField().bindText(context::createBranchName)
-                                .errorOnApply(message("caws.workspace.details.branch_new_validation")) {
-                                    it.isVisible && it.text.isNullOrBlank()
-                                }
-                        }.apply {
-                            visible(context.branchCloneType == BranchCloneType.NEW_FROM_EXISTING && cloneRepoButton.component.isSelected)
-                        }
-
-                        row(message("caws.workspace.details.branch_existing")) {
-                            cell(linkedBranchCombo)
-                                .bindItem(context::linkedRepoBranch.toMutableProperty())
-                                .errorOnApply(message("caws.workspace.details.branch_validation")) { it.isVisible && it.selectedItem == null }
-                                .columns(COLUMNS_MEDIUM)
-
-                            linkedRepoCombo.addActionListener {
-                                linkedBranchCombo.proposeModelUpdate { model ->
-                                    projectCombo.selected()?.let { project ->
-                                        linkedRepoCombo.selected()?.let { repo ->
-                                            context.is3P = isRepo3P(project, repo.name)
-                                            if (context.is3P) {
-                                                branchOptions.visible(false)
-                                                newBranch.visible(false)
-                                            } else {
-                                                if (cloneRepoButton.component.isSelected) {
-                                                    branchOptions.visible(true)
-                                                    if (newBranchOption.component.isSelected) {
-                                                        newBranch.visible(true)
-                                                    }
+                                projectCombo.selected()?.let { project ->
+                                    linkedRepoCombo.selected()?.let { repo ->
+                                        context.is3P = isRepo3P(project, repo.name)
+                                        if (context.is3P) {
+                                            branchOptions.visible(false)
+                                            newBranch.visible(false)
+                                        } else {
+                                            if (cloneRepoButton.component.isSelected) {
+                                                branchOptions.visible(true)
+                                                if (newBranchOption.component.isSelected) {
+                                                    newBranch.visible(true)
                                                 }
                                             }
-                                            val branches = getBranchNames(project, repo.name, client)
-                                            branches.forEach { model.addElement(it) }
                                         }
+                                        val branches = getBranchNames(project, repo.name, client)
+                                        branches.forEach { model.addElement(it) }
                                     }
                                 }
                             }
-                            contextHelp(message("caws.one.branch.per.dev.env.comment"))
-                        }.visibleIf(cloneRepoButton.selected)
-
-                        // need here to force comboboxes to load
-                        getProjects(client, spaces).apply {
-                            forEach { projectCombo.addItem(it) }
-                            projectCombo.selectedItem = existingProject
-                                ?: firstOrNull { it.space == CawsSpaceTracker.getInstance().lastSpaceName() }
-                                ?: firstOrNull()
                         }
+                        contextHelp(message("caws.one.branch.per.dev.env.comment"))
+                    }.visibleIf(cloneRepoButton.selected)
 
-                        val propertyGraph = PropertyGraph()
-                        val projectProperty = propertyGraph.property(projectCombo.selected())
-                        projectCombo.addItemListener {
-                            if (it.stateChange == ItemEvent.SELECTED) {
-                                projectProperty.set(it.item as CawsProject?)
+                    // need here to force comboboxes to load
+                    getProjects(client, spaces).apply {
+                        forEach { projectCombo.addItem(it) }
+                        projectCombo.selectedItem = existingProject
+                            ?: firstOrNull { it.space == CawsSpaceTracker.getInstance().lastSpaceName() }
+                            ?: firstOrNull()
+                    }
+
+                    val propertyGraph = PropertyGraph()
+                    val projectProperty = propertyGraph.property(projectCombo.selected())
+                    projectCombo.addItemListener {
+                        if (it.stateChange == ItemEvent.SELECTED) {
+                            projectProperty.set(it.item as CawsProject?)
+                        }
+                    }
+
+                    row(message("caws.workspace.details.alias.label")) {
+                        topGap(TopGap.MEDIUM)
+                        // TODO: would be nice to have mutable combobox with existing projects
+                        textField()
+                            .bindText(context::alias)
+                            .columns(COLUMNS_MEDIUM)
+                            .applyToComponent {
+                                setEmptyState(message("general.optional"))
                             }
-                        }
+                    }.contextHelp(message("caws.alias.instruction.text"))
 
-                        row(message("caws.workspace.details.alias.label")) {
-                            topGap(TopGap.MEDIUM)
-                            // TODO: would be nice to have mutable combobox with existing projects
-                            textField()
-                                .bindText(context::alias)
-                                .columns(COLUMNS_MEDIUM)
-                                .applyToComponent {
-                                    setEmptyState(message("general.optional"))
-                                }
-                        }.contextHelp(message("caws.alias.instruction.text"))
+                    row {
+                        placeholder()
+                    }.bottomGap(BottomGap.MEDIUM)
 
+                    group(message("caws.workspace.settings"), indent = false) {
                         row {
-                            placeholder()
-                        }.bottomGap(BottomGap.MEDIUM)
-
-                        group(message("caws.workspace.settings"), indent = false) {
-                            row {
-                                val wrapper = Wrapper().apply { isOpaque = false }
-                                val loadingPanel = JBLoadingPanel(BorderLayout(), disposable).apply {
-                                    add(wrapper, BorderLayout.CENTER)
-                                }
-                                val content = { space: String? ->
-                                    envConfigPanel(space?.let { isSubscriptionFreeTier(client, it) } ?: false)
-                                }
-
-                                wrapper.setContent(content(projectProperty.get()?.space))
-
-                                val getDialogPanel = { wrapper.targetComponent as DialogPanel }
-                                cell(loadingPanel)
-                                    .onApply { getDialogPanel().apply() }
-                                    .onReset { getDialogPanel().reset() }
-                                    .onIsModified { getDialogPanel().isModified() }
-
-                                projectProperty.afterChange {
-                                    lifetime.launchOnUi {
-                                        loadingPanel.startLoading()
-                                        val panel = startChildIOBackgroundAsync { content(it?.space) }.await()
-                                        wrapper.setContent(panel)
-                                        loadingPanel.stopLoading()
-                                    }
-                                }
+                            val wrapper = Wrapper().apply { isOpaque = false }
+                            val loadingPanel = JBLoadingPanel(BorderLayout(), disposable).apply {
+                                add(wrapper, BorderLayout.CENTER)
                             }
-                        }
+                            val content = { space: String? ->
+                                envConfigPanel(space?.let { isSubscriptionFreeTier(client, it) } ?: false)
+                            }
 
-                        if (AwsToolkit.isDeveloperMode()) {
-                            group(message("caws.workspace.details.developer_tool_settings")) {
-                                lateinit var useBundledToolkit: Cell<JBCheckBox>
-                                row {
-                                    useBundledToolkit = checkBox(message("caws.workspace.details.use_bundled_toolkit")).bindSelected(context::useBundledToolkit)
+                            wrapper.setContent(content(projectProperty.get()?.space))
+
+                            val getDialogPanel = { wrapper.targetComponent as DialogPanel }
+                            cell(loadingPanel)
+                                .onApply { getDialogPanel().apply() }
+                                .onReset { getDialogPanel().reset() }
+                                .onIsModified { getDialogPanel().isModified() }
+
+                            projectProperty.afterChange {
+                                lifetime.launchOnUi {
+                                    loadingPanel.startLoading()
+                                    val panel = startChildIOBackgroundAsync { content(it?.space) }.await()
+                                    wrapper.setContent(panel)
+                                    loadingPanel.stopLoading()
                                 }
-
-                                panel {
-                                    row(message("caws.workspace.details.backend_toolkit_location")) {
-                                        textFieldWithBrowseButton(
-                                            message("caws.workspace.details.toolkit_location"),
-                                            fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                                        ).bindText(context::toolkitLocation)
-                                    }
-
-                                    row(message("caws.workspace.details.s3_bucket")) {
-                                        textField()
-                                            .bindText(context::s3StagingBucket)
-                                            .columns(COLUMNS_MEDIUM)
-                                    }
-                                }.visibleIf(useBundledToolkit.selected.not())
                             }
                         }
                     }
+
+                    if (AwsToolkit.isDeveloperMode()) {
+                        group(message("caws.workspace.details.developer_tool_settings")) {
+                            lateinit var useBundledToolkit: Cell<JBCheckBox>
+                            row {
+                                useBundledToolkit = checkBox(message("caws.workspace.details.use_bundled_toolkit")).bindSelected(context::useBundledToolkit)
+                            }
+
+                            panel {
+                                row(message("caws.workspace.details.backend_toolkit_location")) {
+                                    textFieldWithBrowseButton(
+                                        message("caws.workspace.details.toolkit_location"),
+                                        fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                                    ).bindText(context::toolkitLocation)
+                                }
+
+                                row(message("caws.workspace.details.s3_bucket")) {
+                                    textField()
+                                        .bindText(context::s3StagingBucket)
+                                        .columns(COLUMNS_MEDIUM)
+                                }
+                            }.visibleIf(useBundledToolkit.selected.not())
+                        }
+                    }
                 }
-            }.also {
-                setDefaultBackgroundAndBorder(it)
-                it.registerValidators(disposable)
-                createPanel = it
-            }.let {
-                ScrollPaneFactory.createScrollPane(it, true)
             }
+        }.also {
+            setDefaultBackgroundAndBorder(it)
+            it.registerValidators(disposable)
+            createPanel = it
+        }.let {
+            ScrollPaneFactory.createScrollPane(it, true)
         }
     }
 

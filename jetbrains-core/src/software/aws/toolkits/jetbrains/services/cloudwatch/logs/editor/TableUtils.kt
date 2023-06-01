@@ -28,14 +28,7 @@ class LogStreamsStreamColumn(private val sortable: Boolean) : ColumnInfo<LogStre
 }
 
 class LogStreamsStreamColumnRenderer : TableCellRenderer {
-    override fun getTableCellRendererComponent(
-        table: JTable?,
-        value: Any?,
-        isSelected: Boolean,
-        hasFocus: Boolean,
-        row: Int,
-        column: Int
-    ): Component {
+    override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
         val component = SimpleColoredComponent()
         component.append((value as? String)?.trim() ?: "")
         if (table == null) {

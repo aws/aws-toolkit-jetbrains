@@ -29,11 +29,7 @@ class JavaAwsConnectionExtension : RunConfigurationExtension() {
     override fun isApplicableFor(configuration: RunConfigurationBase<*>): Boolean =
         JavaAwsConnectionExperiment.isEnabled() && configuration !is ExternalSystemRunConfiguration
 
-    override fun <T : RunConfigurationBase<*>> updateJavaParameters(
-        configuration: T,
-        params: JavaParameters,
-        runnerSettings: RunnerSettings?
-    ) {
+    override fun <T : RunConfigurationBase<*>> updateJavaParameters(configuration: T, params: JavaParameters, runnerSettings: RunnerSettings?) {
         if (JavaAwsConnectionExperiment.isEnabled()) {
             val environment = params.env
 

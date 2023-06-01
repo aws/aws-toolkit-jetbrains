@@ -14,12 +14,7 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class SearchPanel(
-    private val tableInfo: TableInfo,
-    initialSearchType: SearchType,
-    initialSearchIndex: Index,
-    runAction: () -> Unit
-) {
+class SearchPanel(private val tableInfo: TableInfo, initialSearchType: SearchType, initialSearchIndex: Index, runAction: () -> Unit) {
     enum class SearchType { Scan, Query }
 
     private val searchIndexModel = IndexComboBoxModel(tableInfo)

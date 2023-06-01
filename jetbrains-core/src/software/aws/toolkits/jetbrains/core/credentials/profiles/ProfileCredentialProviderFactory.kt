@@ -46,11 +46,7 @@ const val DEFAULT_PROFILE_ID = "profile:default"
 
 private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
-open class ProfileCredentialsIdentifier internal constructor(
-    val profileName: String,
-    override val defaultRegionId: String?,
-    credentialType: CredentialType?
-) :
+open class ProfileCredentialsIdentifier internal constructor(val profileName: String, override val defaultRegionId: String?, credentialType: CredentialType?) :
     CredentialIdentifierBase(credentialType) {
     override val id = "profile:$profileName"
     override val displayName = message("credentials.profile.name", profileName)
@@ -58,11 +54,7 @@ open class ProfileCredentialsIdentifier internal constructor(
     override val shortName: String = profileName
 }
 
-private class ProfileCredentialsIdentifierMfa(
-    profileName: String,
-    defaultRegionId: String?,
-    credentialType: CredentialType?
-) :
+private class ProfileCredentialsIdentifierMfa(profileName: String, defaultRegionId: String?, credentialType: CredentialType?) :
     ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), MfaRequiredInteractiveCredentials
 
 private class ProfileCredentialsIdentifierSso(

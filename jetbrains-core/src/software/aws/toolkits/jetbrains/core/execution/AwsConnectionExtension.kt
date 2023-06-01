@@ -28,11 +28,7 @@ import software.aws.toolkits.telemetry.Result.Failed
 import software.aws.toolkits.telemetry.Result.Succeeded
 
 class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
-    fun addToTargetEnvironment(
-        configuration: T,
-        environment: MutableMap<String, TargetEnvironmentFunction<String>>,
-        runtimeString: () -> String? = { null }
-    ) {
+    fun addToTargetEnvironment(configuration: T, environment: MutableMap<String, TargetEnvironmentFunction<String>>, runtimeString: () -> String? = { null }) {
         injectCredentials(configuration, runtimeString) { settings ->
             val putFn = { map: Map<String, String> ->
                 map.forEach { (k, v) -> environment[k] = constant(v) }
@@ -43,33 +39,21 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
         }
     }
 
-    fun addEnvironmentVariables(
-        configuration: T,
-        environment: MutableMap<String, String>,
-        runtimeString: () -> String? = { null }
-    ) {
+    fun addEnvironmentVariables(configuration: T, environment: MutableMap<String, String>, runtimeString: () -> String? = { null }) {
         injectCredentials(configuration, runtimeString) {
             it.region.mergeWithExistingEnvironmentVariables(environment)
             it.credentials.resolveCredentials().mergeWithExistingEnvironmentVariables(environment)
         }
     }
 
-    fun addToTargetCommandLineBuilder(
-        configuration: T,
-        cmdLine: TargetedCommandLineBuilder,
-        runtimeString: () -> String? = { null }
-    ) {
+    fun addToTargetCommandLineBuilder(configuration: T, cmdLine: TargetedCommandLineBuilder, runtimeString: () -> String? = { null }) {
         injectCredentials(configuration, runtimeString) {
             it.credentials.resolveCredentials().toEnvironmentVariables().forEach { key, value -> cmdLine.addEnvironmentVariable(key, value) }
             it.region.toEnvironmentVariables().forEach { key, value -> cmdLine.addEnvironmentVariable(key, value) }
         }
     }
 
-    private fun injectCredentials(
-        configuration: T,
-        runtimeString: () -> String?,
-        environmentMutator: (ConnectionSettings) -> Unit
-    ) {
+    private fun injectCredentials(configuration: T, runtimeString: () -> String?, environmentMutator: (ConnectionSettings) -> Unit) {
         try {
             val credentialConfiguration = credentialConfiguration(configuration) ?: return
             if (credentialConfiguration == DEFAULT_OPTIONS) return

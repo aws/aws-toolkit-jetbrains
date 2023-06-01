@@ -85,10 +85,7 @@ class InteractiveBearerTokenProviderTest {
         fun verifyRetryAttempts(configuration: ClientOverrideConfiguration.Builder) {
             configuration.addExecutionInterceptor(
                 object : ExecutionInterceptor {
-                    override fun onExecutionFailure(
-                        context: Context.FailedExecution?,
-                        executionAttributes: ExecutionAttributes?
-                    ) {
+                    override fun onExecutionFailure(context: Context.FailedExecution?, executionAttributes: ExecutionAttributes?) {
                         super.onExecutionFailure(context, executionAttributes)
 
                         // 3 total network calls, showing 4 since the sdk increments the attempt count at the beginning

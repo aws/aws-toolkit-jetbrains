@@ -121,12 +121,7 @@ fun preWarmSamVersionCache(path: String?, timeoutMs: Int = TEST_EVALUATE_BLOCKIN
     ExecutableManager.getInstance().setExecutablePath<SamExecutable>(Paths.get(path))
 }
 
-fun preWarmLambdaHandlerValidation(
-    project: Project,
-    runtime: Runtime,
-    handler: String,
-    timeoutMs: Int = TEST_EVALUATE_BLOCKING_TIMEOUT_MS
-) {
+fun preWarmLambdaHandlerValidation(project: Project, runtime: Runtime, handler: String, timeoutMs: Int = TEST_EVALUATE_BLOCKING_TIMEOUT_MS) {
     val handlerValidator = project.service<LambdaHandlerValidator>()
     handlerValidator.evaluateBlocking(LambdaHandlerValidator.LambdaEntry(project, runtime, handler), timeoutMs)
 }

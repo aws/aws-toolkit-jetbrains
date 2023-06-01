@@ -15,10 +15,7 @@ import software.aws.toolkits.jetbrains.ui.CredentialProviderSelector
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
-class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(
-    private val project: Project,
-    private val showHeader: Boolean
-) : SettingsEditor<T>() {
+class AwsConnectionExtensionSettingsEditor<T : RunConfigurationBase<*>>(private val project: Project, private val showHeader: Boolean) : SettingsEditor<T>() {
     internal val view = AwsConnectionExtensionSettingsPanel()
     private val regionProvider = AwsRegionProvider.getInstance()
     private val credentialManager = CredentialManager.getInstance()

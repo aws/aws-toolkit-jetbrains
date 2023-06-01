@@ -27,11 +27,7 @@ enum class Page(val icon: Icon) {
     NEXT(AllIcons.Actions.Forward)
 }
 
-enum class StatusType(
-    val icon: Icon,
-    val color: JBColor,
-    private val animatedIconStrategy: (() -> AnimatedIcon)? = null
-) {
+enum class StatusType(val icon: Icon, val color: JBColor, private val animatedIconStrategy: (() -> AnimatedIcon)? = null) {
     UNKNOWN(AllIcons.RunConfigurations.TestUnknown, JBColor.BLACK),
     PROGRESS(AllIcons.Process.ProgressResume, JBColor.ORANGE, { AnimatedIcon.FS() }),
     COMPLETED(AllIcons.RunConfigurations.ToolbarPassed, BETTER_GREEN),

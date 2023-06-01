@@ -15,15 +15,7 @@ class S3TreeCellRenderer(private val speedSearchTarget: JComponent) : ColoredTre
         myUsedCustomSpeedSearchHighlighting = true
     }
 
-    override fun customizeCellRenderer(
-        tree: JTree,
-        value: Any?,
-        selected: Boolean,
-        expanded: Boolean,
-        leaf: Boolean,
-        row: Int,
-        hasFocus: Boolean
-    ) {
+    override fun customizeCellRenderer(tree: JTree, value: Any?, selected: Boolean, expanded: Boolean, leaf: Boolean, row: Int, hasFocus: Boolean) {
         if (value is LoadingNode) {
             append(LoadingNode.getText())
             return

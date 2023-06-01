@@ -90,12 +90,7 @@ class ToolkitCredentialProcessProvider internal constructor(
     }
 }
 
-internal data class CredentialProcessOutput(
-    val accessKeyId: String,
-    val secretAccessKey: String,
-    val sessionToken: String?,
-    val expiration: Instant?
-)
+internal data class CredentialProcessOutput(val accessKeyId: String, val secretAccessKey: String, val sessionToken: String?, val expiration: Instant?)
 
 internal abstract class CredentialProcessOutputParser {
     abstract fun parse(input: String): CredentialProcessOutput

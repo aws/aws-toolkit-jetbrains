@@ -82,10 +82,7 @@ Resources:
         }
     }
 
-    private fun runAndAssertionMarks(
-        fixture: CodeInsightTestFixture,
-        assertion: (List<LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>>) -> Unit
-    ) {
+    private fun runAndAssertionMarks(fixture: CodeInsightTestFixture, assertion: (List<LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>>) -> Unit) {
         runInEdtAndWait {
             val marks = fixture.findAllGutters().filterIsInstance<LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>>()
             assertion(marks)

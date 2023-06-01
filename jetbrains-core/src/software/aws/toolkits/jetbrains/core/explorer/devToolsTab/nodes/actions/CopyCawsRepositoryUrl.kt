@@ -59,11 +59,7 @@ class CopyCawsRepositoryUrl : DumbAwareAction(AllIcons.Actions.Copy) {
             .showInBestPositionFor(e.dataContext)
     }
 
-    private fun copyUrl(
-        project: Project,
-        cawsConnectionSettings: ClientConnectionSettings<*>,
-        repository: CawsCodeRepository
-    ) {
+    private fun copyUrl(project: Project, cawsConnectionSettings: ClientConnectionSettings<*>, repository: CawsCodeRepository) {
         object : Task.Backgroundable(project, message("caws.devtoolPanel.fetch.git.url", repository.presentableString)) {
             override fun run(indicator: ProgressIndicator) {
                 val url = AwsResourceCache.getInstance()

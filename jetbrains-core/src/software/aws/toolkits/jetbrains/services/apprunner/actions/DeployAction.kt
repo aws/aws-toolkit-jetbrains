@@ -43,11 +43,7 @@ class DeployAction : SingleResourceNodeAction<AppRunnerServiceNode>(message("app
         )
     }
 
-    internal suspend fun deploy(
-        selected: AppRunnerServiceNode,
-        client: AppRunnerClient,
-        cloudwatchClient: CloudWatchLogsClient
-    ) {
+    internal suspend fun deploy(selected: AppRunnerServiceNode, client: AppRunnerClient, cloudwatchClient: CloudWatchLogsClient) {
         val project = selected.nodeProject
         val deployment = try {
             client.startDeployment { it.serviceArn(selected.resourceArn()) }

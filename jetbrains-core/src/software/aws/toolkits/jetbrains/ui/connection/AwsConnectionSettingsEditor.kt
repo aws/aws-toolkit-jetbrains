@@ -49,9 +49,7 @@ class AwsConnectionSettingsEditor<T : AwsConnectionsRunConfigurationBase<*>>(
     }
 }
 
-fun <T : AwsConnectionsRunConfigurationBase<*>> SettingsEditorGroup<T>.addAwsConnectionEditor(
-    settings: AwsConnectionSettingsEditor<T>
-) {
+fun <T : AwsConnectionsRunConfigurationBase<*>> SettingsEditorGroup<T>.addAwsConnectionEditor(settings: AwsConnectionSettingsEditor<T>) {
     addEditor(message("aws_connection.tab.label"), settings)
 }
 

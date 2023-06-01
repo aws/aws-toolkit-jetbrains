@@ -134,11 +134,7 @@ abstract class CloudWatchLogsActor<T>(
         throw IllegalStateException("Table does not support loadInitialFilter")
     }
 
-    protected abstract suspend fun loadMore(
-        nextToken: String?,
-        saveForwardToken: Boolean = false,
-        saveBackwardToken: Boolean = false
-    ): List<T>
+    protected abstract suspend fun loadMore(nextToken: String?, saveForwardToken: Boolean = false, saveBackwardToken: Boolean = false): List<T>
 
     override suspend fun handleMessages() {
         for (message in channel) {

@@ -71,11 +71,7 @@ class MockCredentialsManager : CredentialManager() {
         fun getInstance(): MockCredentialsManager = service<CredentialManager>() as MockCredentialsManager
     }
 
-    class MockCredentialIdentifier(
-        override val displayName: String,
-        val credentials: AwsCredentialsProvider,
-        override val defaultRegionId: String?
-    ) :
+    class MockCredentialIdentifier(override val displayName: String, val credentials: AwsCredentialsProvider, override val defaultRegionId: String?) :
         CredentialIdentifierBase(null) {
         override val id: String = displayName
         override val factoryId: String = "mockCredentialProviderFactory"

@@ -151,11 +151,7 @@ private fun connectToWs(ws: Workspace, e: AnActionEvent) {
     GatewayUI.getInstance().connect(connectionParameters)
 }
 
-class PauseAction(
-    private val ws: Workspace,
-    private val workspaceList: WorkspaceList,
-    private val cawsClient: CodeCatalystClient
-) : DumbAwareAction(
+class PauseAction(private val ws: Workspace, private val workspaceList: WorkspaceList, private val cawsClient: CodeCatalystClient) : DumbAwareAction(
     {
         message("caws.pause_action")
     },
@@ -184,11 +180,7 @@ class PauseAction(
     }
 }
 
-class TerminateAction(
-    private val ws: Workspace,
-    private val workspaceList: WorkspaceList,
-    private val cawsClient: CodeCatalystClient
-) : DumbAwareAction(
+class TerminateAction(private val ws: Workspace, private val workspaceList: WorkspaceList, private val cawsClient: CodeCatalystClient) : DumbAwareAction(
     {
         message("caws.delete_workspace")
     },
@@ -219,11 +211,7 @@ class TerminateAction(
     }
 }
 
-class ShellAction(
-    private val ws: Workspace,
-    private val workspaceList: WorkspaceList,
-    private val cawsClient: CodeCatalystClient
-) : DumbAwareAction(
+class ShellAction(private val ws: Workspace, private val workspaceList: WorkspaceList, private val cawsClient: CodeCatalystClient) : DumbAwareAction(
     {
         "Shell"
     }
@@ -260,11 +248,7 @@ class ShellAction(
     }
 }
 
-class ConfigureAction(
-    private val ws: Workspace,
-    private val workspaceList: WorkspaceList,
-    private val cawsClient: CodeCatalystClient
-) : DumbAwareAction(
+class ConfigureAction(private val ws: Workspace, private val workspaceList: WorkspaceList, private val cawsClient: CodeCatalystClient) : DumbAwareAction(
     {
         message("caws.configure_workspace")
     },

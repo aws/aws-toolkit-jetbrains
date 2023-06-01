@@ -73,10 +73,7 @@ private fun executeAndWaitOnAttach(runConfiguration: RunConfiguration): Completa
     return sessionFuture
 }
 
-fun executeRunConfigurationAndWaitRider(
-    runConfiguration: RunConfiguration,
-    executorId: String = DefaultRunExecutor.EXECUTOR_ID
-): Output {
+fun executeRunConfigurationAndWaitRider(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
     if (executorId == DefaultRunExecutor.EXECUTOR_ID) {
         val executeLambda = executeRunConfiguration(runConfiguration, executorId)
         // waitAndPump lets us run on EDT in the test itself without deadlocking since Rider runs tests on EDT

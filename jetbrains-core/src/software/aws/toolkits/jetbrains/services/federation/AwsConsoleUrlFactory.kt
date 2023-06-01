@@ -73,17 +73,10 @@ object AwsConsoleUrlFactory {
         return "$consoleHome${fragment ?: "/"}"
     }
 
-    fun getSigninUrl(
-        connectionSettings: ConnectionSettings,
-        destination: String?,
-        httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder
-    ): String =
+    fun getSigninUrl(connectionSettings: ConnectionSettings, destination: String?, httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder): String =
         getSigninUrl(getSigninToken(connectionSettings, httpClientBuilder), destination, connectionSettings.region)
 
-    fun getSigninToken(
-        connectionSettings: ConnectionSettings,
-        httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder
-    ): String {
+    fun getSigninToken(connectionSettings: ConnectionSettings, httpClientBuilder: HttpClientBuilder = defaultHttpClientBuilder): String {
         val resolvedCreds = connectionSettings.credentials.resolveCredentials()
         val sessionCredentials = if (resolvedCreds !is AwsSessionCredentials) {
             val stsClient = AwsClientManager.getInstance().getClient<StsClient>(connectionSettings)

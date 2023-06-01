@@ -276,11 +276,7 @@ class ExecutableManagerTest {
         executable.writeText("dummy")
     }
 
-    private fun ObjectAssert<ExecutableInstance>.isExecutableMatching(
-        version: String? = null,
-        path: Path? = null,
-        autoResolved: Boolean? = null
-    ) =
+    private fun ObjectAssert<ExecutableInstance>.isExecutableMatching(version: String? = null, path: Path? = null, autoResolved: Boolean? = null) =
         isInstanceOfSatisfying(ExecutableInstance.Executable::class.java) { executable ->
             version?.let { assertThat(executable.version).isEqualTo(it) }
             path?.let { assertThat(executable.executablePath).isEqualTo(it) }

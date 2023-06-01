@@ -231,11 +231,7 @@ fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider
 }
 
 // Return true if need to re-auth, false otherwise
-fun maybeReauthProviderIfNeeded(
-    project: Project?,
-    tokenProvider: BearerTokenProvider,
-    onReauthRequired: (SsoOidcException?) -> Any
-): Boolean {
+fun maybeReauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider, onReauthRequired: (SsoOidcException?) -> Any): Boolean {
     val state = tokenProvider.state()
     when (state) {
         BearerTokenAuthState.NOT_AUTHENTICATED -> {

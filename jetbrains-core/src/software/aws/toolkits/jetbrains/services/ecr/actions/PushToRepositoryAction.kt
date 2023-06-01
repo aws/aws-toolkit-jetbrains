@@ -254,10 +254,7 @@ internal class PushToEcrDialog(
         }
     }
 
-    private fun buildDockerfileActions(
-        runConfigModel: CollectionComboBoxModel<DockerRunConfiguration>,
-        textComponent: ExtendableTextField
-    ) {
+    private fun buildDockerfileActions(runConfigModel: CollectionComboBoxModel<DockerRunConfiguration>, textComponent: ExtendableTextField) {
         val editExtension = ExtendableTextComponent.Extension.create(
             AllIcons.General.Inline_edit,
             AllIcons.General.Inline_edit_hovered,

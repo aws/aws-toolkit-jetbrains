@@ -11,11 +11,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.resources.message
 
-class UpdateLambdaCode(
-    private val lambdaClient: LambdaClient,
-    private val functionName: String,
-    private val updatedHandler: String?
-) : Step() {
+class UpdateLambdaCode(private val lambdaClient: LambdaClient, private val functionName: String, private val updatedHandler: String?) : Step() {
     override val stepName = message("lambda.create.step.update_lambda")
 
     override fun execute(context: Context, stepEmitter: StepEmitter, ignoreCancellation: Boolean) {

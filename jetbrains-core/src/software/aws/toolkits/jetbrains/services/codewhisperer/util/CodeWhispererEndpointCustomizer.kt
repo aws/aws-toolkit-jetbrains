@@ -41,10 +41,7 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
             clientOverrideConfiguration.retryPolicy(RetryPolicy.none())
             clientOverrideConfiguration.addExecutionInterceptor(
                 object : ExecutionInterceptor {
-                    override fun modifyHttpRequest(
-                        context: Context.ModifyHttpRequest,
-                        executionAttributes: ExecutionAttributes
-                    ): SdkHttpRequest {
+                    override fun modifyHttpRequest(context: Context.ModifyHttpRequest, executionAttributes: ExecutionAttributes): SdkHttpRequest {
                         val requestBuilder = context.httpRequest().toBuilder()
                         executionAttributes.attributes.forEach { (k, v) ->
                             if (k.toString() != "OperationName") return@forEach
@@ -61,10 +58,7 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
         } else if (builder is CodeWhispererClientBuilder) {
             clientOverrideConfiguration.addExecutionInterceptor(
                 object : ExecutionInterceptor {
-                    override fun modifyHttpRequest(
-                        context: Context.ModifyHttpRequest,
-                        executionAttributes: ExecutionAttributes
-                    ): SdkHttpRequest {
+                    override fun modifyHttpRequest(context: Context.ModifyHttpRequest, executionAttributes: ExecutionAttributes): SdkHttpRequest {
                         val requestBuilder = context.httpRequest().toBuilder()
                         executionAttributes.attributes.forEach { (k, v) ->
                             if (k.toString() != "OperationName") return@forEach

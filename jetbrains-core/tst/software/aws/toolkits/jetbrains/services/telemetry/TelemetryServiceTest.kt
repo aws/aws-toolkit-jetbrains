@@ -295,12 +295,7 @@ class TelemetryServiceTest {
         resourceCache.addEntry(StsResources.ACCOUNT, region.id, credentialsIdentifier.id, "1111222233333")
     }
 
-    private fun assertMetricEventsContains(
-        events: Collection<MetricEvent>,
-        eventName: String,
-        awsAccount: String,
-        awsRegion: String
-    ) {
+    private fun assertMetricEventsContains(events: Collection<MetricEvent>, eventName: String, awsAccount: String, awsRegion: String) {
         assertThat(events).filteredOn { event ->
             event.data.any { it.name == eventName }
         }.anySatisfy {

@@ -445,10 +445,7 @@ class DownloadObjectActionTest : ObjectActionTestBase() {
         assertThat(destinationFolder.resolve("testFile-3@testVersionId")).hasContent("testFile-3-content-old-version")
     }
 
-    private fun setUpConflictResolutionResponses(
-        choices: List<ConflictResolution>,
-        vararg responses: ConflictResolution
-    ) {
+    private fun setUpConflictResolutionResponses(choices: List<ConflictResolution>, vararg responses: ConflictResolution) {
         var responseNum = 0
         TestDialogManager.setTestDialog {
             choices.indexOf(responses[responseNum++])

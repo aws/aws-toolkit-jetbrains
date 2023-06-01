@@ -7,12 +7,7 @@ import com.intellij.ui.components.JBCheckBox
 import software.amazon.awssdk.services.cloudformation.model.Capability
 import software.aws.toolkits.resources.message
 
-enum class CreateCapabilities(
-    val capability: String,
-    val text: String,
-    val toolTipText: String,
-    val defaultEnabled: Boolean
-) {
+enum class CreateCapabilities(val capability: String, val text: String, val toolTipText: String, val defaultEnabled: Boolean) {
     IAM(
         Capability.CAPABILITY_IAM.toString(),
         message("cloudformation.capabilities.iam"),

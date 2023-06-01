@@ -20,11 +20,7 @@ import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerE
 import software.aws.toolkits.jetbrains.services.lambda.validation.SamCliVersionEvaluationListener
 import software.aws.toolkits.resources.message
 
-fun registerConfigValidationListeners(
-    messageBus: MessageBus,
-    parentDisposable: Disposable,
-    validationCompleteCallback: (() -> Unit)
-) {
+fun registerConfigValidationListeners(messageBus: MessageBus, parentDisposable: Disposable, validationCompleteCallback: (() -> Unit)) {
     val connect = messageBus.connect(parentDisposable)
     connect.subscribe(
         LambdaHandlerEvaluationListener.TOPIC,

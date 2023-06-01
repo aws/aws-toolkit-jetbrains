@@ -142,31 +142,17 @@ interface AwsResourceCache {
      * @param[region] the specific [AwsRegion] to use for this resource
      * @param[credentialProvider] the specific [ToolkitCredentialsProvider] to use for this resource
      */
-    fun <T> getResourceIfPresent(
-        resource: Resource<T>,
-        region: AwsRegion,
-        credentialProvider: ToolkitCredentialsProvider,
-        useStale: Boolean = true
-    ): T?
+    fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider, useStale: Boolean = true): T?
 
     /**
      * Gets the [resource] if it exists in the cache.
      */
-    fun <T> getResourceIfPresent(
-        resource: Resource<T>,
-        region: AwsRegion,
-        tokenProvider: ToolkitBearerTokenProvider,
-        useStale: Boolean = true
-    ): T?
+    fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, tokenProvider: ToolkitBearerTokenProvider, useStale: Boolean = true): T?
 
     /**
      * Gets the [resource] if it exists in the cache.
      */
-    fun <T> getResourceIfPresent(
-        resource: Resource<T>,
-        connectionSettings: ClientConnectionSettings<*>,
-        useStale: Boolean = true
-    ): T? =
+    fun <T> getResourceIfPresent(resource: Resource<T>, connectionSettings: ClientConnectionSettings<*>, useStale: Boolean = true): T? =
         when (connectionSettings) {
             is ConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.credentials, useStale)
             is TokenConnectionSettings -> getResourceIfPresent(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale)
@@ -215,12 +201,7 @@ fun <T> Project.getResource(resource: Resource<T>, useStale: Boolean = true, for
  * @param[useStale] if an exception occurs attempting to refresh the resource return a cached version if it exists (even if it's expired). Default: true
  * @param[forceFetch] force the resource to refresh (and update cache) even if a valid cache version exists. Default: false
  */
-fun <T> Project.getResourceNow(
-    resource: Resource<T>,
-    timeout: Duration = DEFAULT_TIMEOUT,
-    useStale: Boolean = true,
-    forceFetch: Boolean = false
-): T =
+fun <T> Project.getResourceNow(resource: Resource<T>, timeout: Duration = DEFAULT_TIMEOUT, useStale: Boolean = true, forceFetch: Boolean = false): T =
     AwsResourceCache.getInstance().getResourceNow(resource, this.getConnectionSettingsOrThrow(), timeout, useStale, forceFetch)
 
 /**
@@ -464,12 +445,7 @@ class DefaultAwsResourceCache(
         }
     }
 
-    override fun <T> getResourceIfPresent(
-        resource: Resource<T>,
-        region: AwsRegion,
-        credentialProvider: ToolkitCredentialsProvider,
-        useStale: Boolean
-    ): T? =
+    override fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, credentialProvider: ToolkitCredentialsProvider, useStale: Boolean): T? =
         when (resource) {
             is Resource.Cached<T> -> {
                 val key = CacheKey(resource.id, region.id, credentialProvider.id)
@@ -488,12 +464,7 @@ class DefaultAwsResourceCache(
             }
         }
 
-    override fun <T> getResourceIfPresent(
-        resource: Resource<T>,
-        region: AwsRegion,
-        tokenProvider: ToolkitBearerTokenProvider,
-        useStale: Boolean
-    ): T? =
+    override fun <T> getResourceIfPresent(resource: Resource<T>, region: AwsRegion, tokenProvider: ToolkitBearerTokenProvider, useStale: Boolean): T? =
         when (resource) {
             is Resource.Cached<T> -> {
                 val key = CacheKey(resource.id, region.id, tokenProvider.id)

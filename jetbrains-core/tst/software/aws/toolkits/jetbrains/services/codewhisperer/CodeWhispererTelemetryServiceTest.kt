@@ -155,10 +155,7 @@ class CodeWhispererTelemetryServiceTest {
 
     @Test
     fun `test aggregateUserDecision`() {
-        fun assertAggregateUserDecision(
-            decisions: List<CodewhispererSuggestionState>,
-            expected: CodewhispererPreviousSuggestionState
-        ) {
+        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererPreviousSuggestionState) {
             val actual = sut.aggregateUserDecision(decisions)
             assertThat(actual).isEqualTo(expected)
         }

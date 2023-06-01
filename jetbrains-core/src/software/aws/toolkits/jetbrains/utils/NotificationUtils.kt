@@ -43,13 +43,7 @@ fun Throwable.notifyError(title: String = "", project: Project? = null, stripHtm
     )
 }
 
-private fun notify(
-    type: NotificationType,
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    notificationActions: Collection<AnAction>
-) {
+private fun notify(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID, title, content, type)
     notificationActions.forEach {
         notification.addAction(if (it !is NotificationAction) createNotificationExpiringAction(it) else it)
@@ -57,58 +51,22 @@ private fun notify(
     notify(notification, project)
 }
 
-fun notifyInfo(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    listener: NotificationListener? = null,
-    stripHtml: Boolean = true
-) =
+fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
     notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.INFORMATION, listener), project)
 
-fun notifyInfo(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    notificationActions: Collection<AnAction>,
-    stripHtml: Boolean = true
-) =
+fun notifyInfo(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
     notify(NotificationType.INFORMATION, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
-fun notifyWarn(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    notificationActions: Collection<AnAction>,
-    stripHtml: Boolean = true
-) =
+fun notifyWarn(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
     notify(NotificationType.WARNING, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
-fun notifyWarn(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    listener: NotificationListener? = null,
-    stripHtml: Boolean = true
-) =
+fun notifyWarn(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
     notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.WARNING, listener), project)
 
-fun notifyError(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    action: AnAction,
-    stripHtml: Boolean = true
-) =
+fun notifyError(title: String, content: String = "", project: Project? = null, action: AnAction, stripHtml: Boolean = true) =
     notify(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, listOf(action))
 
-fun notifyError(
-    title: String,
-    content: String = "",
-    project: Project? = null,
-    notificationActions: Collection<AnAction>,
-    stripHtml: Boolean = true
-) =
+fun notifyError(title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>, stripHtml: Boolean = true) =
     notify(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyError(

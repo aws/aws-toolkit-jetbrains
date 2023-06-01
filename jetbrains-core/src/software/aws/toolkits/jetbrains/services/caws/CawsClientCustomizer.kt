@@ -33,10 +33,7 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
                 URI.create(CawsEndpoints.CAWS_PROD_API)
             )
             clientOverrideConfiguration.addExecutionInterceptor(object : ExecutionInterceptor {
-                override fun onExecutionFailure(
-                    context: Context.FailedExecution,
-                    executionAttributes: ExecutionAttributes
-                ) {
+                override fun onExecutionFailure(context: Context.FailedExecution, executionAttributes: ExecutionAttributes) {
                     val exception = context.exception()
                     if (exception is CodeCatalystException) {
                         context.httpResponse().ifPresent { response ->

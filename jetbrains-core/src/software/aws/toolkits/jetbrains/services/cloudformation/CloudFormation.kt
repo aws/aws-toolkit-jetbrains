@@ -42,11 +42,7 @@ fun CloudFormationClient.describeStack(stackName: String, callback: (Stack?) -> 
     }
 }
 
-fun CloudFormationClient.describeStackForSync(
-    stackName: String,
-    enableParamsAndTags: (Boolean) -> Unit,
-    callback: (Stack?) -> Unit
-) {
+fun CloudFormationClient.describeStackForSync(stackName: String, enableParamsAndTags: (Boolean) -> Unit, callback: (Stack?) -> Unit) {
     ApplicationManager.getApplication().executeOnPooledThread {
         try {
             enableParamsAndTags(false)

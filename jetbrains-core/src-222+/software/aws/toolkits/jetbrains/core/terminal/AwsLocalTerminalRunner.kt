@@ -14,11 +14,7 @@ class AwsLocalTerminalRunner(
     private val applyConnection: (MutableMap<String, String>) -> Unit
 ) : LocalTerminalDirectRunner(project) {
     override fun getInitialCommand(envs: MutableMap<String, String>): MutableList<String> = super.getInitialCommand(envs.apply(applyConnection))
-    override fun createTerminalWidget(
-        parent: Disposable,
-        currentWorkingDirectory: String?,
-        deferSessionStartUntilUiShown: Boolean
-    ): JBTerminalWidget {
+    override fun createTerminalWidget(parent: Disposable, currentWorkingDirectory: String?, deferSessionStartUntilUiShown: Boolean): JBTerminalWidget {
         val widget = super.createTerminalWidget(parent, currentWorkingDirectory, deferSessionStartUntilUiShown)
         return widget.apply {
             terminalTitle.change {

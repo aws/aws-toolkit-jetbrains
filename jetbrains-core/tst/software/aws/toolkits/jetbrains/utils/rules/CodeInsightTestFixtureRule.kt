@@ -36,9 +36,7 @@ import java.nio.file.Paths
  *
  * If you wish to have just a [Project], you may use Intellij's [com.intellij.testFramework.ProjectRule]
  */
-open class CodeInsightTestFixtureRule(
-    protected val testDescription: LightProjectDescriptor = LightProjectDescriptor.EMPTY_PROJECT_DESCRIPTOR
-) :
+open class CodeInsightTestFixtureRule(protected val testDescription: LightProjectDescriptor = LightProjectDescriptor.EMPTY_PROJECT_DESCRIPTOR) :
     ApplicationRule() {
     private lateinit var description: Description
     protected val lazyFixture = ClearableLazy {

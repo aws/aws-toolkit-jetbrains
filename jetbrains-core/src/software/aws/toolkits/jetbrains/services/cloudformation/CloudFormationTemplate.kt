@@ -123,9 +123,7 @@ class MutableParameter(private val copyFrom: Parameter) : Parameter {
  *
  * @return The merged preferred [Parameter] list
  */
-fun List<Parameter>.mergeRemoteParameters(
-    remoteParameters: List<software.amazon.awssdk.services.cloudformation.model.Parameter>
-): List<Parameter> =
+fun List<Parameter>.mergeRemoteParameters(remoteParameters: List<software.amazon.awssdk.services.cloudformation.model.Parameter>): List<Parameter> =
     this.map { templateParameter ->
         val mutableParameter = MutableParameter(templateParameter)
         remoteParameters.find { it.parameterKey() == templateParameter.logicalName }?.let {
