@@ -60,6 +60,7 @@ tasks.withType<KotlinCompile>().all {
 tasks.withType<Detekt>().configureEach {
     jvmTarget = javaVersion.majorVersion
     dependsOn(":detekt-rules:assemble")
+    include("**/*.kt")
     exclude("build/**")
     exclude("**/*.Generated.kt")
     exclude("**/TelemetryDefinitions.kt")
@@ -68,6 +69,7 @@ tasks.withType<Detekt>().configureEach {
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     jvmTarget = javaVersion.majorVersion
     dependsOn(":detekt-rules:assemble")
+    include("**/*.kt")
     exclude("build/**")
     exclude("**/*.Generated.kt")
     exclude("**/TelemetryDefinitions.kt")

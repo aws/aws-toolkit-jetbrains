@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import software.aws.toolkits.gradle.jvmTarget
+import kotlin.reflect.KVisibility
+import kotlin.reflect.full.companionObject
+import kotlin.reflect.full.companionObjectInstance
+import kotlin.reflect.full.functions
+import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.full.memberProperties
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -27,9 +32,6 @@ detekt {
 }
 
 tasks.withType<Detekt> {
-    jvmTarget = project.jvmTarget().get().majorVersion
-    include("**/*.kt")
-
     reports {
         html.required.set(true) // Human readable report
         xml.required.set(true) // Checkstyle like format for CI tool integrations
@@ -37,8 +39,24 @@ tasks.withType<Detekt> {
 }
 
 tasks.withType<DetektCreateBaselineTask> {
-    jvmTarget = project.jvmTarget().get().majorVersion
     // weird issue where the baseline tasks can't find the source code
     source.plus(projectDir)
-    include("**/*.kt")
+
+    // hack around https://github.com/detekt/detekt/issues/6167
+    doLast {
+        Class.forName("io.gitlab.arturbosch.detekt.invoke.DetektInvoker").kotlin.let { detektInvoker ->
+            val invokerInstance = detektInvoker.companionObject!!.memberFunctions.find { it.name == "create" }!!.call(detektInvoker.companionObjectInstance, false)
+            val invokeCliMethod = detektInvoker.memberFunctions.find { it.name == "invokeCli" }
+            val jdkHomeArgumentClass = Class.forName("io.gitlab.arturbosch.detekt.invoke.JdkHomeArgument").kotlin
+            val jdkHomeArgument = jdkHomeArgumentClass.constructors.first().call(jdkHome)
+            val jdkHomeArgs = jdkHomeArgumentClass.memberFunctions.find { it.name == "toArgument" }!!.call(jdkHomeArgument) as List<String>
+            val taskArgs = this::class.memberProperties.find { it.name == "arguments" }!!.call(this) as List<String>
+
+            val cliArgs = taskArgs + jdkHomeArgs
+            val ignoreFailures = ignoreFailures.getOrElse(false)
+            val classpath = detektClasspath.plus(pluginClasspath)
+            val taskName = name
+            invokeCliMethod!!.call(invokerInstance, cliArgs, classpath, taskName, ignoreFailures)
+        }
+    }
 }

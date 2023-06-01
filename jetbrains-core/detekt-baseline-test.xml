@@ -78,7 +78,11 @@
     <ID>FunctionOnlyReturningConstant:CodeWhispererCodeScanTestBase.kt$CodeWhispererCodeScanTestBase$protected fun getFakeRecommendationsOnNonExistentFile()</ID>
     <ID>NoNameShadowing:CopyUrlActionTest.kt$CopyUrlActionTest${ // Actual format is implementation detail below S3VirtualBucket URL("https://s3/${it.getArgument&lt;String>(0)}?version=${it.getArgument&lt;String>(1)}") }</ID>
     <ID>NoNameShadowing:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest${ it.getArgument&lt;File>(0).writeText("hello") }</ID>
+    <ID>NoNameShadowing:CreateServiceRoleDialogTest.kt$CreateServiceRoleDialogTest${ it.roleName(name).arn("arn") }</ID>
+    <ID>NoNameShadowing:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest${ it.message.contains(message("serverless.application.deploy.validation.new.stack.name.invalid")) }</ID>
+    <ID>NoNameShadowing:EcsExecUtilsTest.kt$EcsExecUtilsTest${ it.sessionId(sessionId) it.tokenValue(token) it.streamUrl(streamUrl) }</ID>
     <ID>NoNameShadowing:MockAwsConnectionManager.kt${ manager.changeCredentialProviderAndWait(it) }</ID>
+    <ID>NoNameShadowing:S3ViewerPanelTest.kt$S3ViewerPanelTest${ it.prefix("folder/") }</ID>
     <ID>NoNameShadowing:S3VirtualBucketTest.kt$S3VirtualBucketTest${ @Suppress("UNCHECKED_CAST") val transformer = it.arguments[1] as ResponseTransformer&lt;GetObjectResponse, GetObjectResponse> val data = "hello".toByteArray() transformer.transform( GetObjectResponse.builder() .eTag("1111") .lastModified(Instant.parse("1995-10-23T10:12:35Z")) .contentLength(data.size.toLong()) .build(), AbortableInputStream.create(data.inputStream()) ) }</ID>
     <ID>NoNameShadowing:SchemaSearchDialogTest.kt$SchemaSearchDialogTest${ it.getArgument&lt;OnSearchResultError>(3).invoke(searchError) latch.countDown() }</ID>
     <ID>NoNameShadowing:SchemaSearchDialogTest.kt$SchemaSearchDialogTest${ it.getArgument&lt;OnSearchResultReturned>(1).invoke(searchResults) latch.countDown() }</ID>
@@ -93,7 +97,8 @@
     <ID>UnnecessaryApply:EventsFetcherTest.kt$EventsFetcherTest$apply { expectRange("4097", "4097", first, expectedSize = 1) }</ID>
     <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = "" }</ID>
     <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = MESSAGE }</ID>
-    <ID>UnnecessarySafeCall:UpdateFunctionCodeDialogTest.kt$UpdateFunctionCodeDialogTest$dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()</ID>
+    <ID>UnnecessaryFilter:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$filter { !it.content().startsWith(typeahead) }</ID>
+    <ID>UnnecessaryFilter:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$filter { it.content().isEmpty() }</ID>
     <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$ClearableLazy$_value!!</ID>
     <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$PsiManager.getInstance(project).findFile(file)!!</ID>
     <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$ref!!</ID>
@@ -104,9 +109,11 @@
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathPromise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathTempFile1Promise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathTempFile2Promise.blockingGet(0)!!</ID>
+    <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$result.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$LocalFileSystem.getInstance().refreshAndFindFileByPath(jdkHome)!!</ID>
     <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)!!</ID>
     <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$psiFile.classes[0].allMethods[0].body!!</ID>
+    <ID>UnsafeCallOnNullableType:LambdaRunLineMarkerContributorTest.kt$LambdaRunLineMarkerContributorTest$it!!</ID>
     <ID>UnsafeCallOnNullableType:LocalLambdaRunConfigurationTest.kt$LocalLambdaRunConfigurationTest$PsiDocumentManager.getInstance(projectRule.project).getDocument(eventFile)!!</ID>
     <ID>UnsafeCallOnNullableType:MockResourceCache.kt$MockResourceCacheInterface$connectionManager.selectedCredentialIdentifier!!</ID>
     <ID>UnsafeCallOnNullableType:MockResourceCache.kt$MockResourceCacheInterface$connectionManager.selectedRegion!!</ID>
@@ -119,11 +126,10 @@
     <ID>UnsafeCallOnNullableType:RunConfigTestUtils.kt$ProgramRunner.getRunner(executorId, runConfiguration)!!</ID>
     <ID>UnsafeCallOnNullableType:ScopeTest.kt$ScopeTest$ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!</ID>
     <ID>UnsafeCallOnNullableType:TelemetryServiceTest.kt$TelemetryServiceTest$ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!</ID>
+    <ID>UnsafeCallOnNullableType:ToolkitToolWindowTest.kt$ToolkitToolWindowTest$it!!</ID>
     <ID>UnsafeCallOnNullableType:ToolkitToolWindowTest.kt$ToolkitToolWindowTest$jbToolWindowManager.getToolWindow(sut.toolWindowId)?.contentManager!!</ID>
+    <ID>UnsafeCallOnNullableType:WrapLogsActionTest.kt$WrapLogsActionTest$model.columnInfos[1].getRenderer(null)!!</ID>
     <ID>UnsafeCallOnNullableType:YamlCloudFormationTemplateTest.kt$YamlCloudFormationTemplateTest$resource!!</ID>
-    <ID>UnsafeCast:EventsTableTest.kt$EventsTableTest$sut.component as JBScrollPane</ID>
-    <ID>UnsafeCast:OutputsTableViewTest.kt$OutputsTableViewTest$sut.component as JBScrollPane</ID>
-    <ID>UnusedPrivateMember:SsoAccessTokenProviderTest.kt$SsoAccessTokenProviderTest$private fun setupCacheStub(expirationClientRegistration: Instant)</ID>
     <ID>UseCheckOrError:AwsRegionProviderTest.kt$AwsRegionProviderTest$throw IllegalStateException("Bad test data")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate $it")</ID>
     <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate gradlew")</ID>

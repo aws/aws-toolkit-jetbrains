@@ -38,17 +38,12 @@
     <ID>DestructuringDeclarationWithTooManyEntries:CodeScanSessionConfig.kt$CodeScanSessionConfig$val (includedSourceFiles, payloadSize, totalLines, _) = includeDependencies()</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererCodeReferenceManager.kt$CodeWhispererCodeReferenceManager$val (_, editor, _, caretPosition) = requestContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererCodeReferenceManager.kt$CodeWhispererCodeReferenceManager.&lt;no name provided>$val (localEditor, highlighter, codeContent, referenceContent) = it</ID>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererJavaCodeScanTest.kt$CodeWhispererJavaCodeScanTest$val (includedSourceFiles, srcPayloadSize, totalLines, buildPaths) = payloadMetadata</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererPopupManager.kt$CodeWhispererPopupManager$val (_, _, recommendationContext, popup) = states</ID>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererPythonCodeScanTest.kt$CodeWhispererPythonCodeScanTest$val (includedSourceFiles, srcPayloadSize, totalLines, buildPaths) = payloadMetadata</ID>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererStateTest.kt$CodeWhispererStateTest$val (actualProject, actualEditor, actualTriggerTypeInfo, actualCaretPosition, actualFileContextInfo) = actualRequestContext</ID>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererStateTest.kt$CodeWhispererStateTest$val (actualRequestId, actualRecommendationDetail, _, actualIsDiscarded) = actualDetailContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$val (payloadContext, serviceInvocationContext, codeScanJobId, totalIssues, reason) = codeScanEvent.codeScanResponseContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$val (project, _, triggerTypeInfo, caretPosition) = requestContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$val (requestId, detail, _, isDiscarded) = detailContext</ID>
     <ID>DestructuringDeclarationWithTooManyEntries:JavaCodeScanSessionConfig.kt$JavaCodeScanSessionConfig$val (sourceFiles, srcPayloadSize, totalLines, buildPaths) = includeDependencies()</ID>
     <ID>ExpressionBodySyntax:CawsProjectListRenderer.kt$CawsProjectListRenderer.&lt;no name provided>$return myContext</ID>
-    <ID>ExpressionBodySyntax:CodeWhispererSettingsTest.kt$CodeWhispererSettingsTest.&lt;no name provided>$return myToolWindows[id]</ID>
     <ID>ExpressionBodySyntax:CodeWhispererTelemetryService.kt$CodeWhispererTelemetryService$return previousUserTriggerDecisionTimestamp?.let { Duration.between(it, Instant.now()).toMillis().toDouble() }</ID>
     <ID>Filename:AwsSettingsPanel.kt$software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanel.kt</ID>
     <ID>Filename:CawsSpaceProjectInfo.kt$software.aws.toolkits.jetbrains.services.caws.CawsSpaceProjectInfo.kt</ID>
@@ -56,75 +51,6 @@
     <ID>Filename:ShowLogsAroundAction.kt$software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.ShowLogsAroundAction.kt</ID>
     <ID>Filename:contexts.kt$software.aws.toolkits.jetbrains.core.coroutines.contexts.kt</ID>
     <ID>Filename:scopes.kt$software.aws.toolkits.jetbrains.core.coroutines.scopes.kt</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_fail_autodetectBadSam_andManuallySetToBadSam()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectBadSam()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectValidSam()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_changedTelemetry()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_noOp()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_setSamEmpty()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_setValidSam()</ID>
-    <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test(expected = ConfigurationException::class) fun validate_fail_setBadSam()</ID>
-    <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_emptyRemote()</ID>
-    <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_emptyTemplate()</ID>
-    <ID>FunctionNaming:CloudFormationParametersTest.kt$CloudFormationParametersTest$@Test fun mergeParameters_withOverlap()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateCanDeployTest.kt$CloudFormationTemplateCanDeployTest$@Test fun deployable_validatableEnough()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateCanDeployTest.kt$CloudFormationTemplateCanDeployTest$@Test fun nonDeployable_emptyFile()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateCanDeployTest.kt$CloudFormationTemplateCanDeployTest$@Test fun nonDeployable_incompleteResources()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listFunctions_lambdaFunction()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listFunctions_missingType()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listFunctions_serverlessAndLambdaFunctions()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listFunctions_serverlessFunction()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listResourcesByType_simpleTable()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listResources_fromFile()</ID>
-    <ID>FunctionNaming:CloudFormationTemplateIndexTest.kt$CloudFormationTemplateIndexTest$@Test fun listResources_nullType()</ID>
-    <ID>FunctionNaming:CreateBucketActionDialogTest.kt$CreateBucketActionDialogTest$@Test fun validateBucketName_emptyBucketName()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun InvalidNullArgs()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun InvalidNullArgs_Element()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun InvalidNullArgs_HandlerResolver()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun NonSamFunction()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun NonSamFunction_Substring()</ID>
-    <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun SamFunction()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun bothFilesOpened_bothFilesExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun configFileOpened_onlyConfigExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun confirmConfigFileCreated_bothFilesDoNotExist()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun credentialFileOpened_onlyCredentialsExists()</ID>
-    <ID>FunctionNaming:DefaultTelemetryPublisherTest.kt$DefaultTelemetryPublisherTest$@Test fun testPublish_withNamespace()</ID>
-    <ID>FunctionNaming:DefaultTelemetryPublisherTest.kt$DefaultTelemetryPublisherTest$@Test fun testPublish_withoutNamespace()</ID>
-    <ID>FunctionNaming:DeleteWaiterTest.kt$DeleteWaiterTest$@Test fun deleteSuccessful_stackNotExist()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun invalidStackName_Duplicate()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun invalidStackName_InvalidChars()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun invalidStackName_TooLong()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameterAllTypesValid_hasValues()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameterAllTypesValid_noValues()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_numberConstraintsInvalid()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_numberInvalid()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_numberTooBig()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_numberTooSmall()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_stringConstraintsInvalid()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_stringFailsRegex()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_stringRegex()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_stringTooLong()</ID>
-    <ID>FunctionNaming:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$@Test fun templateParameter_stringTooShort()</ID>
-    <ID>FunctionNaming:DeploySettingsTest.kt$DeploySettingsTest$@Test fun relativeSamPath_null()</ID>
-    <ID>FunctionNaming:DeploySettingsTest.kt$DeploySettingsTest$@Test fun relativeSamPath_root()</ID>
-    <ID>FunctionNaming:FileInfoCacheTest.kt$FileInfoCacheTest$@Test fun emptyCache_SingleExecutableRequest()</ID>
-    <ID>FunctionNaming:FileInfoCacheTest.kt$FileInfoCacheTest$@Test fun multipleThreads_SameSamPath()</ID>
-    <ID>FunctionNaming:FileInfoCacheTest.kt$FileInfoCacheTest$@Test fun nonEmptyCache_SingleExecutableRequest()</ID>
-    <ID>FunctionNaming:RetrieveSavedQueryDialogTest.kt$RetrieveSavedQueryDialogTest$@Test fun populateParentEditor_noLogGroups()</ID>
-    <ID>FunctionNaming:RetrieveSavedQueryDialogTest.kt$RetrieveSavedQueryDialogTest$@Test fun populateParentEditor_withLogGroups()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getCodeUri_multipleUris()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getCodeUri_noUri()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getCodeUri_samAndNotSam()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getCodeUri_singleUri()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getTemplateFromDirectory_singleYaml()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getVersion_Valid_exitNonZero()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test fun getVersion_badPath()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test(expected = java.lang.AssertionError::class) fun getTemplateFromDirectory_multipleYaml()</ID>
-    <ID>FunctionNaming:SamCommonTest.kt$SamCommonTest$@Test(expected = java.lang.AssertionError::class) fun getTemplateFromDirectory_noYaml()</ID>
-    <ID>FunctionNaming:SamVersionCacheTest.kt$SamVersionCacheTest$@Test fun errorCode_InvalidOption()</ID>
-    <ID>FunctionNaming:SamVersionCacheTest.kt$SamVersionCacheTest$@Test fun errorCode_RandomError()</ID>
-    <ID>FunctionNaming:SamVersionCacheTest.kt$SamVersionCacheTest$@Test fun successExecution_EmptyOutput()</ID>
-    <ID>FunctionOnlyReturningConstant:CodeWhispererCodeScanTestBase.kt$CodeWhispererCodeScanTestBase$protected fun getFakeRecommendationsOnNonExistentFile()</ID>
     <ID>ImplicitDefaultLocale:CodeWhispererColorUtil.kt$CodeWhispererColorUtil$String.format("#%02x%02x%02x", this.red, this.green, this.blue)</ID>
     <ID>ImplicitDefaultLocale:DynamicResourcesUpdateManager.kt$DynamicResourceUpdateManager$message("dynamic_resources.editor.submitResourceUpdateRequest_text").toLowerCase()</ID>
     <ID>ImplicitDefaultLocale:DynamicResourcesUpdateManager.kt$DynamicResourceUpdateManager$message("general.delete").toLowerCase()</ID>
@@ -138,81 +64,32 @@
     <ID>NoNameShadowing:CredentialIdentifierSelector.kt$CredentialIdentifierSelector${ comboBoxModel.add(it) }</ID>
     <ID>NoNameShadowing:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog${ it.repositoryName == ecrDialog.repoName }</ID>
     <ID>NoNameShadowing:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog${ s3BucketSelector.reload(forceFetch = true) s3BucketSelector.selectedItem = it }</ID>
-    <ID>NoNameShadowing:MockAwsConnectionManager.kt${ manager.changeCredentialProviderAndWait(it) }</ID>
     <ID>NoNameShadowing:RuntimeGroup.kt$RuntimeGroup.Companion${ it.id == id }</ID>
     <ID>RedundantSuspendModifier:DockerUtils.kt$suspend</ID>
     <ID>RedundantSuspendModifier:ToolkitDockerAdapter.kt$ToolkitDockerAdapter$suspend</ID>
-    <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val nonEmptyMessage = "Second call on the same page must not return anything"</ID>
-    <ID>TopLevelPropertyNaming:EventsFetcherTest.kt$private const val wrongPageMessage = "Wrong list of available pages"</ID>
     <ID>TopLevelPropertyNaming:SqsUtils.kt$const val sqsPolicyStatementArray = "Statement"</ID>
-    <ID>UnnecessaryApply:ConfigureLambdaDialogTest.kt$ConfigureLambdaDialogTest$apply { configureLambda(TEST_FUNCTION_NAME) }</ID>
     <ID>UnnecessaryApply:CreateIamServiceRoleDialog.kt$CreateIamServiceRoleDialog$apply { component.isEditable = false }</ID>
     <ID>UnnecessaryApply:CreationPanel.kt$CreationPanel$apply { component.toolTipText = message("apprunner.creation.panel.repository.url.tooltip") }</ID>
-    <ID>UnnecessaryApply:EventsFetcherTest.kt$EventsFetcherTest$apply { Assert.assertTrue(nonEmptyMessage, first.isEmpty()) }</ID>
-    <ID>UnnecessaryApply:EventsFetcherTest.kt$EventsFetcherTest$apply { expectRange("4096", "3073", first) }</ID>
-    <ID>UnnecessaryApply:EventsFetcherTest.kt$EventsFetcherTest$apply { expectRange("4097", "4097", first, expectedSize = 1) }</ID>
     <ID>UnnecessaryApply:ExperimentConfigurable.kt$ExperimentConfigurable$apply { component.icon = AllIcons.General.Warning }</ID>
     <ID>UnnecessaryApply:SendMessagePane.kt$SendMessagePane$apply { emptyText.text = message("sqs.send.message.body.empty.text") }</ID>
-    <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = "" }</ID>
-    <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = MESSAGE }</ID>
     <ID>UnnecessaryApply:SonoLoginOverlay.kt$SonoLoginOverlay$apply { applyToComponent { putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true) } }</ID>
     <ID>UnnecessaryFilter:CodeWhispererPopupManager.kt$CodeWhispererPopupManager$filter { isValidRecommendation(it, userInput, typeahead) }</ID>
     <ID>UnnecessarySafeCall:NotificationUtils.kt$this.stackTrace?.joinToString("\n", prefix = "\n")</ID>
-    <ID>UnnecessarySafeCall:UpdateFunctionCodeDialogTest.kt$UpdateFunctionCodeDialogTest$dialog.getViewForTestAssertions().codeStorage.sourceBucket.selectedItem?.toString()</ID>
     <ID>UnsafeCallOnNullableType:CachingAsyncEvaluator.kt$CachingAsyncEvaluator$promise.blockingGet(blockingTime, blockingUnit)!!</ID>
-    <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$ClearableLazy$_value!!</ID>
-    <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$PsiManager.getInstance(project).findFile(file)!!</ID>
-    <ID>UnsafeCallOnNullableType:CodeInsightTestFixtureRule.kt$ref!!</ID>
     <ID>UnsafeCallOnNullableType:CreateFunctionDialog.kt$CreateFunctionDialog$view.configSettings.iamRole.selected()!!</ID>
-    <ID>UnsafeCallOnNullableType:CreateFunctionIntegrationTest.kt$CreateFunctionIntegrationTest$AwsRegionProvider.getInstance()[Region.US_WEST_2.id()]!!</ID>
     <ID>UnsafeCallOnNullableType:CredentialIdentifierSelector.kt$CredentialIdentifierSelector.Companion$it!!</ID>
-    <ID>UnsafeCallOnNullableType:CredentialManagerTest.kt$CredentialManagerTest.TestCredentialProviderFactory$credentialsMapping.remove(providerId)!!</ID>
-    <ID>UnsafeCallOnNullableType:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest$VfsUtil.findFileByIoFile(dir.writeChild("path.yaml", byteArrayOf()).toFile(), true)!!</ID>
-    <ID>UnsafeCallOnNullableType:DeploySamApplicationValidatorTest.kt$DeploySamApplicationValidatorTest.TestParameter$getOptionalScalarProperty(key)!!</ID>
     <ID>UnsafeCallOnNullableType:DockerfileParser.kt$DockerfileParser$PsiManager.getInstance(project).findFile(virtualFile)!!</ID>
-    <ID>UnsafeCallOnNullableType:EcrPullIntegrationTest.kt$EcrPullIntegrationTest$dockerAdapter.buildLocalImage(dockerfile)!!</ID>
-    <ID>UnsafeCallOnNullableType:EcrPushIntegrationTest.kt$EcrPushIntegrationTest$dockerAdapter.buildLocalImage(dockerfile)!!</ID>
-    <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$infoProvider.evaluate(tempFile.absolutePath).blockingGet(0)!!</ID>
-    <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathPromise.blockingGet(0)!!</ID>
-    <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathTempFile1Promise.blockingGet(0)!!</ID>
-    <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathTempFile2Promise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:HandlerCompletionProvider.kt$HandlerCompletionProvider$handlerCompletion!!</ID>
-    <ID>UnsafeCallOnNullableType:InteractiveBearerTokenProviderIntegrationTest.kt$InteractiveBearerTokenProviderIntegrationTest$initialToken!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaAwsConnectionExtensionIntegrationTest.kt$JavaAwsConnectionExtensionIntegrationTest$CompilerProjectExtension.getInstance(project)!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaAwsConnectionExtensionIntegrationTest.kt$JavaAwsConnectionExtensionIntegrationTest$LocalFileSystem.getInstance().refreshAndFindFileByPath(jdkHome)!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaAwsConnectionExtensionIntegrationTest.kt$JavaAwsConnectionExtensionIntegrationTest$SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaLocalLambdaRunConfigurationIntegrationTest.kt$JavaLocalLambdaRunConfigurationIntegrationTest$projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$LocalFileSystem.getInstance().refreshAndFindFileByPath(jdkHome)!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$SdkConfigurationUtil.setupSdk(emptyArray(), jdkHomeDir, JavaSdk.getInstance(), false, null, jdkName)!!</ID>
-    <ID>UnsafeCallOnNullableType:JavaTestUtils.kt$psiFile.classes[0].allMethods[0].body!!</ID>
     <ID>UnsafeCallOnNullableType:LocalLambdaRunConfiguration.kt$LocalLambdaRunConfiguration$promise.blockingGet(0)!!</ID>
-    <ID>UnsafeCallOnNullableType:LocalLambdaRunConfigurationTest.kt$LocalLambdaRunConfigurationTest$PsiDocumentManager.getInstance(projectRule.project).getDocument(eventFile)!!</ID>
-    <ID>UnsafeCallOnNullableType:MockResourceCache.kt$MockResourceCacheInterface$connectionManager.selectedCredentialIdentifier!!</ID>
-    <ID>UnsafeCallOnNullableType:MockResourceCache.kt$MockResourceCacheInterface$connectionManager.selectedRegion!!</ID>
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$imageSelector.selected()!!</ID>
     <ID>UnsafeCallOnNullableType:PullFromRepositoryAction.kt$PullFromRepositoryDialog$repoSelector.selected()!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonCodeInsightTestFixtureRule.kt$PythonCodeInsightTestFixtureRule$newFixture.tempDirFixture.getFile(".")!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLambdaBuilderTest.kt$PythonLambdaBuilderTest$psiFile.findTopLevelFunction("handle")!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLambdaHandlerResolverTest.kt$PythonLambdaHandlerResolverTest$Runtime.PYTHON3_9.runtimeGroup?.let { LambdaHandlerResolver.getInstanceOrNull(it) }!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLambdaHandlerResolverTest.kt$PythonLambdaHandlerResolverTest$pyElement.identifyingElement!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLocalLambdaRunConfigurationIntegrationTest.kt$PythonLocalLambdaRunConfigurationIntegrationTest$FileDocumentManager.getInstance().getDocument(lambdaClass.virtualFile)!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLocalLambdaRunConfigurationIntegrationTest.kt$PythonLocalLambdaRunConfigurationIntegrationTest$LambdaRuntime.fromValue(runtime)!!</ID>
-    <ID>UnsafeCallOnNullableType:PythonLocalLambdaRunConfigurationIntegrationTest.kt$PythonLocalLambdaRunConfigurationIntegrationTest$projectRule.fixture.tempDirFixture.createFile("tmp", "Hello World").canonicalPath!!</ID>
-    <ID>UnsafeCallOnNullableType:RemoteLambdaRunConfigurationTest.kt$RemoteLambdaRunConfigurationTest$PsiDocumentManager.getInstance(projectRule.project).getDocument(eventFile)!!</ID>
-    <ID>UnsafeCallOnNullableType:RunConfigTestUtils.kt$ExecutorRegistry.getInstance().getExecutorById(executorId)!!</ID>
-    <ID>UnsafeCallOnNullableType:RunConfigTestUtils.kt$ProgramRunner.getRunner(executorId, runConfiguration)!!</ID>
     <ID>UnsafeCallOnNullableType:SchemaResourceSelector.kt$SchemaResourceSelector$awsConnection!!</ID>
-    <ID>UnsafeCallOnNullableType:ScopeTest.kt$ScopeTest$ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!</ID>
-    <ID>UnsafeCallOnNullableType:TelemetryServiceTest.kt$TelemetryServiceTest$ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!</ID>
-    <ID>UnsafeCallOnNullableType:ToolkitToolWindowTest.kt$ToolkitToolWindowTest$jbToolWindowManager.getToolWindow(sut.toolWindowId)?.contentManager!!</ID>
     <ID>UnsafeCallOnNullableType:UpdateFunctionConfigDialog.kt$UpdateFunctionConfigDialog$view.configSettings.iamRole.selected()!!</ID>
-    <ID>UnsafeCallOnNullableType:YamlCloudFormationTemplateTest.kt$YamlCloudFormationTemplateTest$resource!!</ID>
     <ID>UnsafeCast:AsyncComboBox.kt$AsyncComboBox.&lt;no name provided>$super.getListCellRendererComponent(list, value, index, selected, hasFocus) as SimpleListCellRenderer&lt;*></ID>
     <ID>UnsafeCast:CawsProjectListRenderer.kt$CawsProjectListRenderer$c as? SimpleColoredComponent</ID>
     <ID>UnsafeCast:CodeWhispererCodeScanManager.kt$CodeWhispererCodeScanManager$e as? CodeWhispererException</ID>
     <ID>UnsafeCast:CodeWhispererCodeScanSession.kt$CodeWhispererCodeScanSession$e as? CodeWhispererException</ID>
     <ID>UnsafeCast:SqsWindow.kt$SqsWindow$sqsViewContent.component as SqsWindowUi</ID>
-    <ID>UnusedPrivateMember:SsoAccessTokenProviderTest.kt$SsoAccessTokenProviderTest$private fun setupCacheStub(expirationClientRegistration: Instant)</ID>
     <ID>UnusedPrivateProperty:CawsCloneDialogComponent.kt$CawsCloneDialogComponent$private val modalityState: ModalityState</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("aws.notification.credentials_missing"))</ID>
     <ID>UseCheckOrError:AwsConnectionExtension.kt$AwsConnectionRunConfigurationExtension$throw IllegalStateException(message("configure.validate.no_region_specified"))</ID>
@@ -220,7 +97,6 @@
     <ID>UseCheckOrError:AwsConnectionManager.kt$throw IllegalStateException("Connection settings are not configured")</ID>
     <ID>UseCheckOrError:AwsConsoleUrlFactory.kt$AwsConsoleUrlFactory$throw IllegalStateException("Partition '${region.partitionId}' is not supported")</ID>
     <ID>UseCheckOrError:AwsRegionProvider.kt$AwsRegionProvider$throw IllegalStateException("Region provider data is missing default data")</ID>
-    <ID>UseCheckOrError:AwsRegionProviderTest.kt$AwsRegionProviderTest$throw IllegalStateException("Bad test data")</ID>
     <ID>UseCheckOrError:AwsResourceCache.kt$ExecutableBackedCacheResource$throw IllegalStateException((it as ExecutableInstance.BadExecutable).validationError)</ID>
     <ID>UseCheckOrError:CawsParameterDescriptions.kt$throw IllegalStateException("Failed to locate parameterDescriptions.json")</ID>
     <ID>UseCheckOrError:CliBasedStep.kt$CliBasedStep$throw IllegalStateException(message("general.execution.cli_error", exitCode))</ID>
@@ -245,8 +121,6 @@
     <ID>UseCheckOrError:JavaDebugSupport.kt$throw IllegalStateException("Attaching to the JVM failed! $debugHost:${debugPorts.first()}")</ID>
     <ID>UseCheckOrError:JavaLambdaBuilder.kt$JavaLambdaBuilder$throw IllegalStateException(message("lambda.build.java.unsupported_build_system", module.name))</ID>
     <ID>UseCheckOrError:JavaLambdaBuilder.kt$JavaLambdaBuilder$throw IllegalStateException(message("lambda.build.unable_to_locate_project_root", module))</ID>
-    <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate $it")</ID>
-    <ID>UseCheckOrError:JavaTestUtils.kt$throw IllegalStateException("Failed to locate gradlew")</ID>
     <ID>UseCheckOrError:LambdaBuilder.kt$LambdaBuilder$throw IllegalStateException("Cannot map runtime $runtime to SDK runtime.")</ID>
     <ID>UseCheckOrError:LambdaBuilder.kt$LambdaBuilder$throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))</ID>
     <ID>UseCheckOrError:LambdaBuilder.kt$LambdaBuilder.Companion$throw IllegalStateException("Failed to locate module for ${psiFile.virtualFile}")</ID>
@@ -263,7 +137,6 @@
     <ID>UseCheckOrError:LocalLambdaRunSettings.kt$ImageTemplateRunSettings$throw IllegalStateException("Attempting to run SAM for unsupported language ${imageDebugger.languageId}")</ID>
     <ID>UseCheckOrError:LocalLambdaRunSettings.kt$TemplateRunSettings$throw IllegalStateException("Attempting to run SAM for unsupported runtime $runtime")</ID>
     <ID>UseCheckOrError:LocalLambdaRunSettings.kt$throw IllegalStateException("Can't find debugger support for $this")</ID>
-    <ID>UseCheckOrError:MockClientManager.kt$MockClientManager$throw IllegalStateException("No mock registered for $sdkClass")</ID>
     <ID>UseCheckOrError:OpenShellInContainerDialog.kt$OpenShellInContainerDialog$throw IllegalStateException("Task not Selected")</ID>
     <ID>UseCheckOrError:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$throw IllegalStateException("Profile $sourceProfileName looks to have been removed")</ID>
     <ID>UseCheckOrError:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$throw IllegalStateException("Profile ${profileProviderId.profileName} looks to have been removed")</ID>
@@ -280,8 +153,6 @@
     <ID>UseCheckOrError:Resources.kt$SamFunction$throw IllegalStateException(message("cloudformation.missing_property", key, logicalName))</ID>
     <ID>UseCheckOrError:RetrieveSavedQueryDialog.kt$RetrieveSavedQueryDialog.&lt;no name provided>$throw IllegalStateException("No query definition was selected")</ID>
     <ID>UseCheckOrError:RunCommandDialog.kt$RunCommandDialog$throw IllegalStateException("Task not Selected")</ID>
-    <ID>UseCheckOrError:RunWithRealCredentials.kt$RunWithRealCredentials.&lt;no name provided>$throw IllegalStateException("Can't locate us-west-2")</ID>
-    <ID>UseCheckOrError:RunWithRealCredentials.kt$RunWithRealCredentials.&lt;no name provided>$throw IllegalStateException("RunWithRealCredentials requires a default AWS profile!")</ID>
     <ID>UseCheckOrError:RuntimeGroup.kt$RuntimeGroup.Companion$throw IllegalStateException("No RuntimeGroup with id '$id' is registered")</ID>
     <ID>UseCheckOrError:RuntimeGroup.kt$RuntimeGroupExtensionPointObject$throw IllegalStateException("Attempted to retrieve feature for unsupported runtime group $runtimeGroup")</ID>
     <ID>UseCheckOrError:S3TreeNode.kt$S3TreeNode$throw IllegalStateException("$key has no parent!")</ID>
@@ -323,14 +194,19 @@
     <ID>UseOrEmpty:CredentialIdentifierSelector.kt$CredentialIdentifierSelector.&lt;no name provided>$value?.displayName ?: ""</ID>
     <ID>UseOrEmpty:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog$it.defaultValue() ?: ""</ID>
     <ID>UseOrEmpty:DeployServerlessApplicationDialog.kt$DeployServerlessApplicationDialog$stackName ?: ""</ID>
+    <ID>UseOrEmpty:DevToolsToolWindow.kt$DevToolsToolWindow$tree.selectionPaths?.let { treePaths -> treePaths.map { it.lastPathComponent } .filterIsInstance&lt;DefaultMutableTreeNode>() .map { it.userObject } .filterIsInstance&lt;T>() .toList() } ?: emptyList&lt;T>()</ID>
     <ID>UseOrEmpty:DownloadCodeForSchemaDialog.kt$DownloadCodeForSchemaDialog$getContentRootOfCurrentFile() ?: ""</ID>
-    <ID>UseOrEmpty:EditAttributesDialogTest.kt$EditAttributesDialogTest$testMessageSize?.toString() ?: ""</ID>
-    <ID>UseOrEmpty:EditAttributesDialogTest.kt$EditAttributesDialogTest$testRetentionPeriod?.toString() ?: ""</ID>
+    <ID>UseOrEmpty:ExplorerToolWindow.kt$ExplorerToolWindow$awsTree.selectionPaths?.let { it.map { it.lastPathComponent } .filterIsInstance&lt;DefaultMutableTreeNode>() .map { it.userObject } .filterIsInstance&lt;T>() .toList() } ?: emptyList&lt;T>()</ID>
     <ID>UseOrEmpty:InsightsColumnInfo.kt$LogResultColumnRenderer$(value as? String)?.trim() ?: ""</ID>
     <ID>UseOrEmpty:LocalLambdaRunSettingsEditor.kt$LocalLambdaRunSettingsEditor$configuration.handler() ?: ""</ID>
     <ID>UseOrEmpty:LogGroupSelectorTable.kt$LogGroupSelectorTable.Companion.LogGroupNameColumnInfo$value ?: ""</ID>
     <ID>UseOrEmpty:NotificationUtils.kt$&lt;no name provided>$title ?: ""</ID>
+    <ID>UseOrEmpty:ProfileCredentialProviderFactory.kt$ProfileCredentialProviderFactory$e.message?.let { ": $it" } ?: ""</ID>
+    <ID>UseOrEmpty:PythonCodeScanSessionConfig.kt$PythonCodeScanSessionConfig$importMatcher.group(1)?.plus(FILE_SEPARATOR) ?: ""</ID>
     <ID>UseOrEmpty:PythonLambdaHandlerResolver.kt$PythonLambdaHandlerResolver$handler.substringBeforeLast('/', "").nullize(true)?.split("/") ?: emptyList()</ID>
+    <ID>UseOrEmpty:S3TreeNode.kt$S3TreeDirectoryNode$response .contents() ?.filterNotNull() // filter out the directory root // if the root was a non-delimited prefix, it should not be filtered out ?.filterNot { it.key() == key &amp;&amp; (this as? S3TreePrefixedDirectoryNode)?.isDelimited() != true } ?.map { S3TreeObjectNode(this, it.key(), it.size(), it.lastModified()) } ?: emptyList()</ID>
+    <ID>UseOrEmpty:SamCommon.kt$SamCommon$projectRootFile.listFiles( FileFilter { it.isFile &amp;&amp; it.name.endsWith("yaml") || it.name.endsWith("yml") } )?.toList() ?: emptyList()</ID>
+    <ID>UseOrEmpty:SamInitRunner.kt$SamInitRunner$tempDir.listFiles()?.toList() ?: emptyList()</ID>
     <ID>UseOrEmpty:SamTemplateUtils.kt$SamTemplateUtils$MAPPER.convertValue&lt;Map&lt;String, String>?>(globals) ?: emptyMap()</ID>
     <ID>UseOrEmpty:SamTemplateUtils.kt$SamTemplateUtils$MAPPER.convertValue&lt;Map&lt;String, String>?>(variables) ?: emptyMap()</ID>
     <ID>UseOrEmpty:TableUtils.kt$LogStreamsStreamColumnRenderer$(value as? String)?.trim() ?: ""</ID>
@@ -341,13 +217,13 @@
     <ID>UseOrEmpty:UiUtils.kt$WrappingCellRenderer$(value as? String) ?: ""</ID>
     <ID>UseOrEmpty:UpdateFunctionConfigDialog.kt$UpdateFunctionConfigDialog$initialSettings.envVariables ?: emptyMap()</ID>
     <ID>UseOrEmpty:Updater.kt$Updater$eventsAndButtonStates?.first ?: emptyList()</ID>
+    <ID>UseOrEmpty:Updater.kt$Updater$stack?.outputs() ?: emptyList()</ID>
     <ID>UseRequire:AwsSettingsConfigurable.kt$AwsSettingsConfigurable$throw IllegalArgumentException("Set file is not an executable")</ID>
     <ID>UseRequire:FourPartVersion.kt$FourPartVersion.Companion$throw IllegalArgumentException("[$version] not in the format of MAJOR.MINOR.PATCH.BUILD")</ID>
     <ID>UseRequire:ProfileUtils.kt$throw IllegalArgumentException(message("credentials.profile.assume_role.duplicate_source", currentProfileName))</ID>
     <ID>UseRequire:ProfileUtils.kt$throw IllegalArgumentException(message("credentials.profile.assume_role.missing_source", currentProfileName))</ID>
     <ID>UseRequire:Queue.kt$Queue$throw IllegalArgumentException(message("sqs.url.parse_error"))</ID>
     <ID>UseRequire:SemanticVersion.kt$SemanticVersion.Companion$throw IllegalArgumentException("[$version] not in the format of MAJOR.MINOR.PATCH")</ID>
-    <ID>UselessCallOnNotNull:AwsConsoleUrlFactoryIntegrationTest.kt$AwsConsoleUrlFactoryIntegrationTest$profileName.isNullOrBlank()</ID>
     <ID>UselessCallOnNotNull:DeleteResourceDialog.kt$DeleteResourceDialog$comment.isNullOrEmpty()</ID>
   </CurrentIssues>
 </SmellBaseline>
