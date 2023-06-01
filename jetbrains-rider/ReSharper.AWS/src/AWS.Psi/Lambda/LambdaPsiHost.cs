@@ -13,8 +13,8 @@ using JetBrains.ReSharper.Psi.Caches;
 using JetBrains.ReSharper.Psi.Modules;
 using JetBrains.ReSharper.Resources.Shell;
 using JetBrains.Util;
-using JetBrains.RdBackend.Common.Features;
 using JetBrains.RdBackend.Common.Features.ProjectModel.View;
+using JetBrains.ReSharper.Feature.Services.Protocol;
 using JetBrains.Rider.Backend.Platform.Icons;
 
 namespace AWS.Psi.Lambda

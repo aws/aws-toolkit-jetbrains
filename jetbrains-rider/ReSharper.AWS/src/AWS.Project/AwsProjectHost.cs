@@ -3,7 +3,7 @@ using JetBrains.ProjectModel;
 using JetBrains.Rd.Tasks;
 using JetBrains.ReSharper.Resources.Shell;
 using JetBrains.Util;
-using JetBrains.RdBackend.Common.Features;
+using JetBrains.ReSharper.Feature.Services.Protocol;
 
 namespace AWS.Project
 {
