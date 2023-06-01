@@ -18,17 +18,16 @@ dependencies {
 
 detekt {
     val rulesProject = project(":detekt-rules").projectDir
-    source.setFrom("$projectDir")
+    source.setFrom(projectDir)
     buildUponDefaultConfig = true
     parallel = true
     allRules = false
-    config = files("$rulesProject/detekt.yml")
+    config.setFrom("$rulesProject/detekt.yml")
     autoCorrect = true
 }
 
 tasks.withType<Detekt> {
     jvmTarget = project.jvmTarget().get().majorVersion
-    include("**/*.kt")
 
     reports {
         html.required.set(true) // Human readable report
@@ -39,6 +38,5 @@ tasks.withType<Detekt> {
 tasks.withType<DetektCreateBaselineTask> {
     jvmTarget = project.jvmTarget().get().majorVersion
     // weird issue where the baseline tasks can't find the source code
-    source = files("$projectDir").asFileTree
-    include("**/*.kt")
+    source(projectDir)
 }

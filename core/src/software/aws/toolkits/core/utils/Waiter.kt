@@ -89,6 +89,7 @@ object Waiters {
  */
 // TODO: Migrate off of, this should not expose strings on errors
 @Deprecated("Exposes localized strings, use waitUntil")
+@Suppress("SleepInsteadOfDelay") // this is clearly not a suspend fun?
 fun <T> wait(
     // The status pulling method to get the latest resource
     call: () -> T,
