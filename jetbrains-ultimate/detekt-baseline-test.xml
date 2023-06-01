@@ -3,31 +3,15 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>Filename:mockDataSourceSshTunnelConfiguration.kt$software.aws.toolkits.jetbrains.datagrip.auth.mockDataSourceSshTunnelConfiguration.kt</ID>
-    <ID>ImplicitDefaultLocale:GoLocalRunConfigurationIntegrationTest.kt$GoLocalRunConfigurationIntegrationTest$input.toUpperCase()</ID>
     <ID>NoNameShadowing:IamAuthWidgetTest.kt$IamAuthWidgetTest${ it[CREDENTIAL_ID_PROPERTY] = credentialId it[REGION_ID_PROPERTY] = defaultRegion if (hasCluster) { it[CLUSTER_ID_PROPERTY] = defaultClusterId } }</ID>
     <ID>NoNameShadowing:SecretsManagerAuthTest.kt$SecretsManagerAuthTest${ u = it.arguments[0] as String Unit }</ID>
     <ID>NoNameShadowing:SecretsManagerAuthWidgetTest.kt$SecretsManagerAuthWidgetTest${ it[CREDENTIAL_ID_PROPERTY] = credentialId it[REGION_ID_PROPERTY] = defaultRegion if (hasSecret) { it[SECRET_ID_PROPERTY] = defaultSecretId } it[GET_URL_FROM_SECRET] = getUrlFromSecret.toString() }</ID>
     <ID>UnsafeCallOnNullableType:DatabaseSecretTest.kt$DatabaseSecretTest$response!!</ID>
     <ID>UnsafeCallOnNullableType:GoCodeInsightTestFixtureRule.kt$GoCodeInsightTestFixtureRule$codeInsightFixture.tempDirFixture.getFile(".")!!</ID>
     <ID>UnsafeCallOnNullableType:GoCodeInsightTestFixtureRule.kt$psiFile.findElementAt(fileContent.indexOf(handlerName))!!</ID>
-    <ID>UnsafeCallOnNullableType:GoLocalRunConfigurationIntegrationTest.kt$GoLocalRunConfigurationIntegrationTest$GoSdkUtil.suggestSdkDirectory()!!</ID>
-    <ID>UnsafeCallOnNullableType:GoLocalRunConfigurationIntegrationTest.kt$GoLocalRunConfigurationIntegrationTest$GoSdkUtil.suggestSdkDirectory()!!.children.sortedByDescending { it.name }.first().canonicalPath!!</ID>
-    <ID>UnsafeCallOnNullableType:GoLocalRunConfigurationIntegrationTest.kt$GoLocalRunConfigurationIntegrationTest$projectRule.fixture.tempDirFixture.createFile("tmp", "\"${input}\"").canonicalPath!!</ID>
+    <ID>UnsafeCallOnNullableType:IamAuthTest.kt$IamAuthTest$connection!!</ID>
     <ID>UnsafeCallOnNullableType:NodeJsCodeInsightTestFixtureRule.kt$NodeJsCodeInsightTestFixtureRule$codeInsightFixture.tempDirFixture.getFile(".")!!</ID>
     <ID>UnsafeCallOnNullableType:NodeJsCodeInsightTestFixtureRule.kt$psiFile.findElementAt(fileContent.indexOf(handlerName))!!</ID>
-    <ID>UnsafeCallOnNullableType:NodeJsLocalLambdaRunConfigurationIntegrationTest.kt$NodeJsLocalLambdaRunConfigurationIntegrationTest$LambdaRuntime.fromValue(runtime)!!</ID>
-    <ID>UnsafeCallOnNullableType:NodeJsLocalLambdaRunConfigurationIntegrationTest.kt$NodeJsLocalLambdaRunConfigurationIntegrationTest$projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!</ID>
-    <ID>UseCheckOrError:AddSecretsManagerConnection.kt$AddSecretsManagerConnection$throw IllegalStateException(message("datagrip.secretsmanager.validation.unkown_engine", secret.engine.toString()))</ID>
-    <ID>UseCheckOrError:CreateIamDataSourceAction.kt$throw IllegalStateException("Newly inserted data source is not in the data source registry!")</ID>
     <ID>UseCheckOrError:GoCodeInsightTestFixtureRule.kt$throw IllegalStateException("'go mod tidy' did not return 0: ${output.stderr}")</ID>
-    <ID>UseCheckOrError:GoHelper.kt$GoDebugHelper$throw IllegalStateException("Packaged Devle debugger is not found!")</ID>
-    <ID>UseCheckOrError:GoLambdaBuilder.kt$GoLambdaBuilder$throw IllegalStateException("Cannot locate go.mod for $handlerVirtualFile")</ID>
-    <ID>UseCheckOrError:NodeJsLambdaBuilder.kt$NodeJsLambdaBuilder.Companion$throw IllegalStateException("Cannot locate package.json for $handlerVirtualFile")</ID>
-    <ID>UseCheckOrError:RedshiftUtils.kt$throw IllegalStateException("Newly inserted data source is not in the data source registry!")</ID>
-    <ID>UseOrEmpty:RedshiftUtils.kt$tryOrNull { this.getResourceIfPresent(StsResources.ACCOUNT) } ?: ""</ID>
-    <ID>UseRequire:DatagripUtils.kt$throw IllegalArgumentException(message("rds.validation.aurora_mysql_ssl_required"))</ID>
-    <ID>UseRequire:IamAuth.kt$IamAuth$throw IllegalArgumentException(message("rds.validation.username"))</ID>
-    <ID>UseRequire:IamAuth.kt$IamAuth$throw IllegalArgumentException(message("redshift.validation.cluster_does_not_exist", settings.clusterId, settings.connectionSettings.region.id))</ID>
-    <ID>UseRequire:IamAuth.kt$IamAuth$throw IllegalArgumentException(message("redshift.validation.username"))</ID>
   </CurrentIssues>
 </SmellBaseline>

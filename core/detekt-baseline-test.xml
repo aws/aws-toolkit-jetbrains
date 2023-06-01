@@ -5,10 +5,5 @@
     <ID>UnsafeCallOnNullableType:EnvironmentVariableHelper.kt$EnvironmentVariableHelper$getField(System.getenv().javaClass, System.getenv(), "m")!!</ID>
     <ID>UnsafeCallOnNullableType:PartitionParserTest.kt$PartitionParserTest$PartitionParser.parse(BundledResources.ENDPOINTS_FILE)!!</ID>
     <ID>UnsafeCallOnNullableType:ZipUtilsTest.kt$ZipUtilsTest$zipFile!!</ID>
-    <ID>UseCheckOrError:LambdaRuntime.kt$LambdaRuntime$throw IllegalStateException("LambdaRuntime has no runtime or override string")</ID>
-    <ID>UseCheckOrError:ToolkitRegionProvider.kt$ToolkitRegionProvider$throw IllegalStateException("$serviceId in ${region.partitionId} lacks a partitionEndpoint")</ID>
-    <ID>UseCheckOrError:ToolkitRegionProvider.kt$ToolkitRegionProvider$throw IllegalStateException("$serviceId is not global in ${region.partitionId}")</ID>
-    <ID>UseCheckOrError:ToolkitRegionProvider.kt$ToolkitRegionProvider$throw IllegalStateException("Partition data is missing for ${region.partitionId}")</ID>
-    <ID>UseCheckOrError:ToolkitRegionProvider.kt$ToolkitRegionProvider$throw IllegalStateException("Unknown service $serviceId in ${region.partitionId}")</ID>
   </CurrentIssues>
 </SmellBaseline>

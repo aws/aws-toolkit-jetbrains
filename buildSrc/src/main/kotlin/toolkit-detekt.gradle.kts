@@ -28,6 +28,7 @@ detekt {
 
 tasks.withType<Detekt> {
     jvmTarget = project.jvmTarget().get().majorVersion
+    include("**/*.kt")
 
     reports {
         html.required.set(true) // Human readable report
@@ -38,5 +39,6 @@ tasks.withType<Detekt> {
 tasks.withType<DetektCreateBaselineTask> {
     jvmTarget = project.jvmTarget().get().majorVersion
     // weird issue where the baseline tasks can't find the source code
-    source(projectDir)
+    source.plus(projectDir)
+    include("**/*.kt")
 }

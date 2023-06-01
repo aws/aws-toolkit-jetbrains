@@ -54,13 +54,8 @@
     <ID>FunctionNaming:LambdaGutterMarkHighlightingTest.kt$LambdaGutterMarkHighlightingTest$@Test fun testSerializer_MethodLevelNonInherited_NotDetected()</ID>
     <ID>FunctionNaming:LambdaGutterMarkHighlightingTest.kt$LambdaGutterMarkHighlightingTest$@Test fun testSerializer_MethodLevel_Detected()</ID>
     <ID>FunctionNaming:LambdaGutterMarkHighlightingTest.kt$LambdaGutterMarkHighlightingTest$@Test fun testSerializer_NoSerializer_NotDetected()</ID>
-    <ID>UnnecessaryApply:DotnetDebugUtils.kt$DotnetDebugUtils$apply { enableHeuristicPathResolve.set(true) }</ID>
     <ID>UnsafeCallOnNullableType:AwsReuseSolutionTestBase.kt$AwsReuseSolutionTestBase$this.myProject!!</ID>
-    <ID>UnsafeCallOnNullableType:DotnetDebugUtils.kt$DotnetDebugUtils$promise.get()!!</ID>
     <ID>UnusedParameter:DotNetHandlerCompletionProviderTest.kt$DotNetHandlerCompletionProviderTest$name: String</ID>
-    <ID>UseCheckOrError:DebuggingSteps.kt$throw IllegalStateException( "Command did not return expected result within $duration, last attempt; cmd: '${cmd.commandLineString}', " + "exitCode: ${lastAttemptOutput?.exitCode}, stdOut: '${lastAttemptOutput?.stdout?.trim()}', stdErr: '${lastAttemptOutput?.stderr?.trim()}'" )</ID>
-    <ID>UseCheckOrError:DotNetLambdaBuilder.kt$DotNetLambdaBuilder$throw IllegalStateException(message("lambda.run.configuration.handler_root_not_found"))</ID>
     <ID>UseCheckOrError:RiderTestFrameworkUtils.kt$throw IllegalStateException("Failed to locate dotnet version: ${output.stderr}")</ID>
-    <ID>UseCheckOrError:RiderTestUtils.kt$throw IllegalStateException("Took too long to execute Rider run configuration!")</ID>
   </CurrentIssues>
 </SmellBaseline>
