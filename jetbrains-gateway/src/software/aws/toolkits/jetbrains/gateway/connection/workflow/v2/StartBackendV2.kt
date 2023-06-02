@@ -13,6 +13,7 @@ import com.jetbrains.gateway.ssh.HostDeployInputs
 import com.jetbrains.gateway.ssh.deploy.DeployTargetInfo
 import com.jetbrains.gateway.ssh.deploy.LoggingHostCommandExecutorWrapper
 import com.jetbrains.gateway.ssh.deploy.executeCommand
+import com.jetbrains.gateway.ssh.deploy.impl.SshCommandExecutor
 import com.jetbrains.rd.util.lifetime.Lifetime
 import software.aws.toolkits.jetbrains.gateway.WorkspaceIdentifier
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsSshConnectionConfigModifier
@@ -34,7 +35,7 @@ class StartBackendV2(
         val creds = RemoteCredentialsHolder().apply {
             setHost("${CawsSshConnectionConfigModifier.HOST_PREFIX}${identifier.friendlyString}")
         }
-        val executor = CawsHostCommandExecutor(creds)
+        val executor = SshCommandExecutor(creds, allowDialogs = true)
 
         lifetime.startBackgroundAsync {
             lifetime.startUnderModalProgressAsync(message("caws.connecting.in_progress"), true) {
