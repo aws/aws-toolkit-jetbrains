@@ -263,7 +263,7 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
 
     runInEdtAndWait {
         projectsManager.waitForReadingCompletion()
-        check(ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromString("232.6734.9")) == 0) {
+        check(ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromString("232.6734.9")) <= 0) {
             "FIXME: uncomment waitForResolvingCompletion"
         }
         // will be re-added in next EAP
