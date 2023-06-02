@@ -140,7 +140,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         credentialLoadCallback(CredentialsChangeEvent(profilesAdded, profilesModified, profilesRemoved))
 
         notifyUserOfResult(newProfiles, initialLoad)
-        if (profilesAdded.isNotEmpty()) {
+        if (profilesAdded.isNotEmpty() && newProfiles.validProfiles.size == 1) {
             ApplicationManager.getApplication().messageBus.syncPublisher(NEW_PROFILE_ADDED).changeConnection(profilesAdded.first())
         }
     }
