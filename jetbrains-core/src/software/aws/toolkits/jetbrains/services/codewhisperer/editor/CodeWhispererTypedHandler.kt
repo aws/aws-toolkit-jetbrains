@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import kotlinx.coroutines.Job
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -27,10 +26,10 @@ class CodeWhispererTypedHandler : TypedHandlerDelegate() {
 
         val language = CodeWhispererLanguageManager.getInstance().getLanguage(psiFiles)
 
-        if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() && language is CodeWhispererJava) {
+        if ((CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() && language.isClassifierSupported()) || language.isAllClassifier()) {
             CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.Classifier())
         } else {
-            triggerOnIdle = CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.IdleTime)
+            triggerOnIdle = CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.IdleTime())
         }
 
         return Result.CONTINUE

@@ -25,12 +25,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
+import software.amazon.awssdk.services.codecatalyst.model.ConflictException
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -62,6 +64,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 @ExtendWith(ApplicationExtension::class)
 @SsoLogin("codecatalyst-test-account")
+@DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
 class DevEnvConnectTest : AfterAllCallback {
     companion object {
         @JvmField
@@ -80,14 +83,22 @@ class DevEnvConnectTest : AfterAllCallback {
                     }
             } ?: error("CodeCatalyst user doesn't have access to a paid space")
 
-            val project = client.createProject {
-                it.spaceName(space)
-                it.displayName("aws-jetbrains-toolkit-integ-test-project")
-                it.description("Project used by AWS Toolkit Jetbrains integration tests")
+            val projectName = "aws-jetbrains-toolkit-integ-test-project"
+            val project = try {
+                client.createProject {
+                    it.spaceName(space)
+                    it.displayName(projectName)
+                    it.description("Project used by AWS Toolkit Jetbrains integration tests")
+                }.name()
+            } catch (e: ConflictException) {
+                client.getProject {
+                    it.spaceName(space)
+                    it.name(projectName)
+                }.name()
             }
 
             builder.spaceName(space)
-            builder.projectName(project.name())
+            builder.projectName(project)
             builder.ides({ ide ->
                 ide.name("IntelliJ")
                 ide.runtime("public.ecr.aws/jetbrains/iu:release")
@@ -165,6 +176,7 @@ class DevEnvConnectTest : AfterAllCallback {
     }
 
     private lateinit var connectionHandle: GatewayConnectionHandle
+
     @TestFactory
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
     fun `test connect to devenv`(): Iterator<DynamicTest> = sequence<DynamicTest> {

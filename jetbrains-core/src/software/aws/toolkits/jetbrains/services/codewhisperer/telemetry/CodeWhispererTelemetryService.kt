@@ -14,7 +14,6 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
@@ -156,11 +155,26 @@ class CodeWhispererTelemetryService {
         val automatedTriggerType = requestContext.triggerTypeInfo.automatedTriggerType
         val triggerChar = if (automatedTriggerType is CodeWhispererAutomatedTriggerType.SpecialChar) {
             automatedTriggerType.specialChar.toString()
-        } else null
+        } else {
+            null
+        }
 
-        val classifierResult = if (requestContext.fileContextInfo.programmingLanguage is CodeWhispererJava) {
-            CodeWhispererAutoTriggerService.getClassifierResultIfNeeded(requestContext.editor)
-        } else null
+        val language = requestContext.fileContextInfo.programmingLanguage
+
+        val shouldIncludeClassifier = language.isAllClassifier() ||
+            (language.isClassifierSupported() && CodeWhispererAutoTriggerService.getInstance().isClassifierGroup())
+
+        val classifierResult = if (shouldIncludeClassifier) {
+            requestContext.triggerTypeInfo.automatedTriggerType.calculationResult
+        } else {
+            null
+        }
+
+        val classifierThreshold = if (shouldIncludeClassifier) {
+            CodeWhispererAutoTriggerService.getThreshold(language)
+        } else {
+            null
+        }
 
         CodewhispererTelemetry.userTriggerDecision(
             project = requestContext.project,
@@ -172,7 +186,7 @@ class CodeWhispererTelemetryService {
             codewhispererCharactersAccepted = null,
             codewhispererCharactersRecommended = null,
             codewhispererCompletionType = responseContext.completionType,
-            codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType(),
+            codewhispererLanguage = language.toTelemetryType(),
             codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
             codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
             codewhispererLineNumber = requestContext.caretPosition.line,
@@ -187,7 +201,8 @@ class CodeWhispererTelemetryService {
             codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
             codewhispererPreviousSuggestionState = previousUserTriggerDecision,
             codewhispererSuggestionState = suggestionState,
-            codewhispererClassifierResult = classifierResult
+            codewhispererClassifierResult = classifierResult,
+            codewhispererClassifierThreshold = classifierThreshold
         )
     }
 
@@ -317,8 +332,9 @@ class CodeWhispererTelemetryService {
             }
         }
 
-        return if (isEmpty) CodewhispererPreviousSuggestionState.Empty
-        else CodewhispererPreviousSuggestionState.Discard
+        return if (isEmpty) {
+            CodewhispererPreviousSuggestionState.Empty
+        } else CodewhispererPreviousSuggestionState.Discard
     }
 
     fun sendPerceivedLatencyEvent(
