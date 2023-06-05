@@ -1,5 +1,10 @@
 {
     "types": [
+        {
+            "name": "elementId",
+            "type": "string",
+            "description": "An identifier associated with a UI element"
+        }
     ],
     "metrics": [
         {
@@ -10,6 +15,11 @@
                     "type": "result"
                 }
             ]
+        },
+        {
+            "name": "ui_click",
+            "description": "User clicked/activated a UI element. This does not necessarily have to be an explicit mouse click. Any user action that has the same behavior as a mouse click can use this event.",
+            "metadata": [{ "type": "elementId" }]
         }
     ]
 }
