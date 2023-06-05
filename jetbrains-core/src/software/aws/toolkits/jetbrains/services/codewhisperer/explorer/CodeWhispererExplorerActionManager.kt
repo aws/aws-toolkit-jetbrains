@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.TokenD
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.net.URI
 
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
@@ -32,7 +33,7 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
     fun performAction(project: Project, actionId: String) {
         when (actionId) {
             ACTION_WHAT_IS_CODEWHISPERER -> {
-                showWhatIsCodeWhisperer()
+                showWhatIsCodeWhisperer(project)
             }
             ACTION_ENABLE_CODEWHISPERER -> {
                 enableCodeWhisperer(project)
@@ -91,9 +92,10 @@ internal class CodeWhispererExplorerActionManager : PersistentStateComponent<Cod
         actionState.token = token
     }
 
-    fun showWhatIsCodeWhisperer() {
+    fun showWhatIsCodeWhisperer(project: Project?) {
         val uri = URI(CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI)
         BrowserUtil.browse(uri)
+        UiTelemetry.click(project, "cw_learnMore_Cta")
     }
 
     fun showTokenRegistrationPage() {

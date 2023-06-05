@@ -16,7 +16,6 @@ buildscript {
     println("Using rd-gen: $rdversion")
 
     repositories {
-        maven("https://www.myget.org/F/rd-snapshots/maven/")
         mavenCentral()
     }
 

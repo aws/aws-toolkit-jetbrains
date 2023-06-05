@@ -22,6 +22,6 @@ class CodeWhispererWhatIsAction :
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        CodeWhispererExplorerActionManager.getInstance().showWhatIsCodeWhisperer()
+        CodeWhispererExplorerActionManager.getInstance().showWhatIsCodeWhisperer(e.project)
     }
 }
