@@ -19,6 +19,6 @@ class CodeWhispererLearnMoreAction :
     DumbAware {
 
     override fun actionPerformed(e: AnActionEvent) {
-        CodeWhispererExplorerActionManager.getInstance().showWhatIsCodeWhisperer()
+        CodeWhispererExplorerActionManager.getInstance().showWhatIsCodeWhisperer(e.project)
     }
 }

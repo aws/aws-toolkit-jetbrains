@@ -16,12 +16,18 @@ buildscript {
     println("Using rd-gen: $rdversion")
 
     repositories {
-        maven("https://www.myget.org/F/rd-snapshots/maven/")
         mavenCentral()
     }
 
     dependencies {
-        classpath("com.jetbrains.rd:rd-gen:$rdversion")
+        // was hosted on myget and artifacts are no longer publicly available
+        // this is a multiplatform project, so it was nontrivial to pull in as a source dependency
+        // instead we built it manually from https://github.com/JetBrains/rd, branch 212
+        if (rdversion.startsWith("0.212")) {
+            classpath(files("thirdparty/rd-gen.jar", "thirdparty/rd-core-jvm-SNAPSHOT.jar"))
+        } else {
+            classpath("com.jetbrains.rd:rd-gen:$rdversion")
+        }
     }
 }
 
