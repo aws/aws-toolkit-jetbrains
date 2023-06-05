@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile
 
 object VgoCompatShims {
     @JvmStatic
+    @Suppress("UnusedParameter")
     fun newVgoModule(project: Project, root: VirtualFile, importPath: String, goVersion: String?, dependencies: Map<String, VgoDependency>) =
         VgoStandaloneModule(root, importPath, goVersion, dependencies.values)
 }
