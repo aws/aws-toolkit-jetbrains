@@ -135,7 +135,7 @@ class CodeWhispererRecommendationManager {
             val truncated = it.toBuilder()
                 .content(truncatedContent)
                 .build()
-            val isDiscardedByUserInputForTruncated = !truncated.content().startsWith(userInput)
+            val isDiscardedByUserInputForTruncated = !truncated.content().startsWith(userInput) || truncated.content() == userInput
             if (isDiscardedByUserInputForTruncated) {
                 return@map DetailContext(requestId, it, truncated, isDiscarded = true, isTruncatedOnRight = true, rightOverlap = overlap)
             }
