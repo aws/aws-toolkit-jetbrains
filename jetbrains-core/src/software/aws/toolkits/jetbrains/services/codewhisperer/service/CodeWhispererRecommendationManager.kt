@@ -119,7 +119,7 @@ class CodeWhispererRecommendationManager {
     ): List<DetailContext> {
         val seen = mutableSetOf<String>()
         return recommendations.map {
-            val isDiscardedByUserInput = !it.content().startsWith(userInput)
+            val isDiscardedByUserInput = !it.content().startsWith(userInput) || it.content() == userInput
             if (isDiscardedByUserInput) {
                 return@map DetailContext(requestId, it, it, isDiscarded = true, isTruncatedOnRight = false, rightOverlap = "")
             }
