@@ -170,7 +170,7 @@ class DevEnvConnectTest : AfterAllCallback {
         connection = ManagedBearerSsoConnection(SONO_URL, SONO_REGION, listOf("codecatalyst:read_write"))
         // pin connection to avoid dialog prompt
         ConnectionPinningManager.getInstance().setPinnedConnection(CodeCatalystConnection.getInstance(), connection)
-//        (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
+        (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
 
         (service<JetBrainsClientDownloaderConfigurationProvider>() as TestJetBrainsClientDownloaderConfigurationProvider).apply {
             guestConfigFolder = tempDir.resolve("config")
