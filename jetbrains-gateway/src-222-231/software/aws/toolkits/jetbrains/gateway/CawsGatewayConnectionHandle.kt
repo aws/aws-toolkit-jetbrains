@@ -13,7 +13,7 @@ class CawsGatewayConnectionHandle(
     private val envId: String,
     private val componentProvider: (GatewayConnectionHandle) -> JComponent
 ) : GatewayConnectionHandle(lifetime) {
-    // framework does not call componentProvider is not called in test mode
+    // framework does not call componentProvider in test mode
     private val component = componentProvider(this)
 
     override fun customComponentProvider() = DefaultCustomConnectionFrameComponentProvider(getTitle()) {
