@@ -5,15 +5,20 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 
-sealed class CodeWhispererAutomatedTriggerType(val telemetryType: CodewhispererAutomatedTriggerType) {
-    data class Classifier(val calculationResult: Double = 0.0) : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
-    data class SpecialChar(val specialChar: Char) : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.SpecialCharacters)
+sealed class CodeWhispererAutomatedTriggerType(
+    val telemetryType: CodewhispererAutomatedTriggerType,
+    var calculationResult: Double? = null
+) {
+    class Classifier : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
+    class SpecialChar(val specialChar: Char) :
+        CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.SpecialCharacters)
 
-    object Enter : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Enter)
+    class Enter : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Enter)
 
-    object IntelliSense : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IntelliSenseAcceptance)
+    class IntelliSense :
+        CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IntelliSenseAcceptance)
 
-    object IdleTime : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
+    class IdleTime : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.IdleTime)
 
-    object Unknown : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
+    class Unknown : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Unknown)
 }

@@ -249,7 +249,9 @@ class CodeWhispererTelemetryServiceTest {
                 "codewhispererTriggerCharacter" to requestContext.triggerTypeInfo.automatedTriggerType.let {
                     if (it is CodeWhispererAutomatedTriggerType.SpecialChar) {
                         it.specialChar.toString()
-                    } else null
+                    } else {
+                        null
+                    }
                 },
                 "codewhispererTypeaheadLength" to recommendationContext.userInputSinceInvocation.length,
                 "codewhispererTimeSinceLastDocumentChange" to timeSinceDocumentChanged,
@@ -401,13 +403,13 @@ fun aRequestContext(project: Project): RequestContext {
     val triggerType = listOf(CodewhispererTriggerType.AutoTrigger, CodewhispererTriggerType.OnDemand).random()
     val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {
         listOf(
-            CodeWhispererAutomatedTriggerType.IdleTime,
-            CodeWhispererAutomatedTriggerType.Enter,
+            CodeWhispererAutomatedTriggerType.IdleTime(),
+            CodeWhispererAutomatedTriggerType.Enter(),
             CodeWhispererAutomatedTriggerType.SpecialChar('a'),
-            CodeWhispererAutomatedTriggerType.IntelliSense
+            CodeWhispererAutomatedTriggerType.IntelliSense()
         ).random()
     } else {
-        CodeWhispererAutomatedTriggerType.Unknown
+        CodeWhispererAutomatedTriggerType.Unknown()
     }
 
     return RequestContext(

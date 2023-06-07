@@ -27,7 +27,6 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.layout.panel
 import com.intellij.util.ui.JBFont
 import com.jetbrains.gateway.api.ConnectionRequestor
-import com.jetbrains.gateway.api.DefaultCustomConnectionFrameComponentProvider
 import com.jetbrains.gateway.api.GatewayConnectionHandle
 import com.jetbrains.gateway.api.GatewayConnectionProvider
 import com.jetbrains.gateway.api.GatewayUI
@@ -117,10 +116,9 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         val lifetime = Lifetime.Eternal.createNested()
         val workflowDisposable = Lifetime.Eternal.createNestedDisposable()
 
-        return object : GatewayConnectionHandle(lifetime) {
+        return CawsGatewayConnectionHandle(lifetime, envId) {
             // reference lost with all the blocks
-            private val handle = this
-            private val component = let { _ ->
+            it.let { gatewayHandle ->
                 val view = JBTabbedPane()
                 val workflowEmitter = TabbedWorkflowEmitter(view, workflowDisposable)
 
@@ -230,7 +228,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         GatewayUI.getInstance().connect(parameters)
                                     }
                                 }
-                                terminate()
+                                gatewayHandle.terminate()
                                 return@startUnderModalProgressAsync JLabel()
                             }
 
@@ -238,7 +236,9 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 val (backendVersion, getBackendVersionTime) = measureTimedValue {
                                     tryOrNull {
                                         executor.executeCommandNonInteractive(
-                                            "sh", "-c", GET_IDE_BACKEND_VERSION_COMMAND,
+                                            "sh",
+                                            "-c",
+                                            GET_IDE_BACKEND_VERSION_COMMAND,
                                             timeout = Duration.ofSeconds(15)
                                         ).stdout
                                     }
@@ -279,7 +279,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 lifetime.createNested(),
                                 parameters,
                                 executor,
-                                handle,
+                                gatewayHandle,
                                 id,
                                 connectionParams.gitSettings,
                                 toolkitInstallSettings,
@@ -359,14 +359,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                     }
                 }
             }
-
-            override fun customComponentProvider() = DefaultCustomConnectionFrameComponentProvider(getTitle()) {
-                component
-            }
-
-            override fun getTitle(): String = message("caws.connection_progress_panel_title", envId)
-
-            override fun hideToTrayOnStart(): Boolean = true
         }
     }
 
