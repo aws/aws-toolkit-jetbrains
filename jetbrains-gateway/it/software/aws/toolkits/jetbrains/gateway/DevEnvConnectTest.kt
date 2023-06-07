@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.util.ExecUtil
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceOrNull
@@ -20,7 +19,6 @@ import com.jetbrains.gateway.api.ConnectionRequestor
 import com.jetbrains.gateway.api.GatewayConnectionHandle
 import com.jetbrains.rd.util.lifetime.isNotAlive
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
@@ -184,9 +182,6 @@ class DevEnvConnectTest : AfterAllCallback {
     @TestFactory
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
     fun `test connect to devenv`(): Iterator<DynamicTest> = sequence<DynamicTest> {
-        // having issues running on 222, technically works on 223, but cleanup fails
-        assumeTrue(ApplicationInfo.getInstance().build.baselineVersion >= 231)
-
         connectionHandle = runBlocking {
             CawsConnectionProvider().connect(
                 mapOf(

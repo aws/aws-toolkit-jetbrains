@@ -52,7 +52,10 @@ class StartBackendV2(
                 // force-hide meaningless 'upgrade' prompt for user
                 hostinfo.loggingCommandExecutor.executeCommand(
                     lifetime,
-                    "sudo", "sh", "-c", "mkdir -p /etc/xdg/JetBrains/RemoteDev/ && echo 'true' > /etc/xdg/JetBrains/RemoteDev/disableManualDeployment"
+                    "sudo",
+                    "sh",
+                    "-c",
+                    "mkdir -p /etc/xdg/JetBrains/RemoteDev/ && echo 'true' > /etc/xdg/JetBrains/RemoteDev/disableManualDeployment"
                 )
 
                 val deployData = hostinfo.upgrade(accessor)

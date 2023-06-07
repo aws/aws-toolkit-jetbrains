@@ -39,7 +39,6 @@ import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.await
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
-import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.utils.AttributeBagKey
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -67,7 +66,6 @@ import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceListStateC
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceNotifications
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
-import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
@@ -166,12 +164,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     codecatalystDevEnvironmentWorkflowError = errorMessageDuringStateValidation
                                 )
                             }
-
-                            val isSmallInstance = cawsClient.getDevEnvironment {
-                                it.id(envId)
-                                it.projectName(projectName)
-                                it.spaceName(spaceName)
-                            }.instanceType().equals(InstanceType.DEV_STANDARD1_SMALL)
 
                             lifetime.launchIOBackground {
                                 ApplicationManager.getApplication().messageBus.syncPublisher(WorkspaceNotifications.TOPIC)
@@ -279,11 +271,9 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 lifetime.createNested(),
                                 parameters,
                                 executor,
-                                gatewayHandle,
                                 id,
                                 connectionParams.gitSettings,
-                                toolkitInstallSettings,
-                                isSmallInstance
+                                toolkitInstallSettings
                             ).await()
                         }.invokeOnCompletion { e ->
                             if (e == null) {
@@ -392,16 +382,14 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         lifetime: LifetimeDefinition,
         parameters: Map<String, String>,
         executor: CawsCommandExecutor,
-        gatewayHandle: GatewayConnectionHandle,
         envId: WorkspaceIdentifier,
         gitSettings: GitSettings,
         toolkitInstallSettings: ToolkitInstallSettings,
-        isSmallInstance: Boolean
     ): AsyncPromise<Unit> {
         val remoteScriptPath = "/tmp/${UUID.randomUUID()}"
         val remoteProjectName = (gitSettings as? GitSettings.GitRepoSettings)?.repoName
 
-        val steps = buildList<Step> {
+        val steps = buildList {
             add(CopyScripts(remoteScriptPath, executor))
 
             when (gitSettings) {
