@@ -141,7 +141,7 @@ class CodeWhispererRecommendationManager {
             }
 
             val reformatted = reformat(requestContext, truncated)
-            val isDiscardedByRightContextTruncationDedupe = truncated.content().isEmpty() || !seen.add(reformatted.content()) || truncatedContent == userInput
+            val isDiscardedByRightContextTruncationDedupe = !seen.add(reformatted.content())
             DetailContext(
                 requestId,
                 it,
