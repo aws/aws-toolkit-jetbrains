@@ -1,3 +1,6 @@
+# _1.52.1_ (2023-06-07)
+- **(Bug Fix)** Clarify next steps when attempting to use CodeWhisperer
+
 # _1.52_ (2022-10-19)
 - **(Feature)** Added 2022.3 support
 - **(Bug Fix)** Fix `credential_process` retrieval when command contains quoted arguments on Windows ([#3322](https://github.com/aws/aws-toolkit-jetbrains/issues/3322))
