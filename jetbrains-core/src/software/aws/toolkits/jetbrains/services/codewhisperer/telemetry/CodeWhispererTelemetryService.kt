@@ -171,7 +171,7 @@ class CodeWhispererTelemetryService {
         }
 
         val classifierThreshold = if (shouldIncludeClassifier) {
-            CodeWhispererAutoTriggerService.getThreshold(language)
+            CodeWhispererAutoTriggerService.getThreshold()
         } else {
             null
         }
