@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.tools.MockToolManagerRule
 import software.aws.toolkits.jetbrains.core.tools.ToolManager
+import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
 import software.aws.toolkits.jetbrains.gateway.connection.StdOutResult
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
@@ -193,9 +194,21 @@ class DevEnvConnectTest : AfterAllCallback {
             )
         } ?: error("null connection handle")
 
+        yield(test(::`wait for environment ready`))
+
+        // inject token to backend launcher script to enable the host status endpoint
+        println(
+            ssmFactory.executeSshCommand {
+                it.addToRemoteCommand(
+                    """
+                    grep -q "CWM_HOST_STATUS_OVER_HTTP_TOKEN" $IDE_BACKEND_DIR/bin/remote-dev-server.sh || sed -i.bak '2iexport CWM_HOST_STATUS_OVER_HTTP_TOKEN=$hostToken'
+                    """.trimIndent()
+                )
+            }
+        )
+
         yieldAll(
             listOf(
-                test(::`wait for environment ready`),
                 test(::`poll for bootstrap script availability`),
                 test(::`wait for backend start`),
                 test(::`wait for backend connect`)
