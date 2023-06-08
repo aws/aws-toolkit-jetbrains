@@ -201,7 +201,7 @@ class DevEnvConnectTest : AfterAllCallback {
             ssmFactory.executeSshCommand {
                 it.addToRemoteCommand(
                     """
-                    grep -q "CWM_HOST_STATUS_OVER_HTTP_TOKEN" $IDE_BACKEND_DIR/bin/remote-dev-server.sh || sed -i.bak '2iexport CWM_HOST_STATUS_OVER_HTTP_TOKEN=$hostToken'
+                    grep -q "CWM_HOST_STATUS_OVER_HTTP_TOKEN" $IDE_BACKEND_DIR/bin/remote-dev-server.sh || sed -i.bak '2iexport CWM_HOST_STATUS_OVER_HTTP_TOKEN=$hostToken' $IDE_BACKEND_DIR/bin/remote-dev-server.sh
                     """.trimIndent()
                 )
             }
