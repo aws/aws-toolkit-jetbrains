@@ -8,6 +8,7 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceOrNull
+import com.intellij.openapi.util.Disposer
 import com.intellij.remoteDev.downloader.JetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.downloader.TestJetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.hostStatus.UnattendedHostStatus
@@ -167,6 +168,7 @@ class DevEnvConnectTest : AfterAllCallback {
         // can probably abstract this out as an extension
         // force auth to complete now
         connection = ManagedBearerSsoConnection(SONO_URL, SONO_REGION, listOf("codecatalyst:read_write"))
+        Disposer.register(disposable, connection)
         // pin connection to avoid dialog prompt
         ConnectionPinningManager.getInstance().setPinnedConnection(CodeCatalystConnection.getInstance(), connection)
         (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
@@ -274,12 +276,16 @@ class DevEnvConnectTest : AfterAllCallback {
     fun `wait for backend connect`() = runBlocking {
         waitUntil(
             succeedOn = { status ->
-                status.projects?.any { it.users.size > 1 } == true
+                status?.projects?.any { it.users.size > 1 } == true
             },
             failOn = { connectionHandle.lifetime.isNotAlive },
             maxDuration = Duration.ofMinutes(5),
             call = {
-                UnattendedHostStatus.fromJson(HttpRequests.request(endpoint).readString())
+                // can potentially have a socket reset which will lead to a very confusing error that's hard to debug
+                // due to the Gateway connection executor continuing to run
+                tryOrNull {
+                    UnattendedHostStatus.fromJson(HttpRequests.request(endpoint).readString())
+                }
             }
         )
 
