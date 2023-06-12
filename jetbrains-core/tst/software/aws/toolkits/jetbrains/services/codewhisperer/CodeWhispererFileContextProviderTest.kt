@@ -218,6 +218,8 @@ class CodeWhispererFileContextProviderTest {
      *          - MainTest.java
      *
      */
+    // TODO: unignore this case once we configure isUtgSupport = true
+    @Ignore
     @Test
     fun `extractSupplementalFileContext from tst file should extract focal file`() {
         val module = fixture.addModule("main")
