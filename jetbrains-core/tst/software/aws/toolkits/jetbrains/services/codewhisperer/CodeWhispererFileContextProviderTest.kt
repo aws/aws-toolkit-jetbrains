@@ -62,11 +62,6 @@ class CodeWhispererFileContextProviderTest {
             context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
             assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isEmpty()
             assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isEmpty()
-
-            // TODO: the following assertions will fail as in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile)
-//            context = aFileContextInfo(CodeWhispererJava.INSTANCE)
-//            assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isNotEmpty
-//            assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isNotEmpty
         }
     }
 
