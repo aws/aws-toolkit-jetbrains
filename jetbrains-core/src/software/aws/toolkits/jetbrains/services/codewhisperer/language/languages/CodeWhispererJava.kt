@@ -23,8 +23,6 @@ class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isSupplementalContextSupported() = true
 
-    override fun isUTGSupported(): Boolean = true
-
     companion object {
         const val ID = "java"
 
