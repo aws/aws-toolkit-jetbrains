@@ -6,9 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -36,18 +33,10 @@ import kotlin.math.exp
 
 data class ClassifierResult(val shouldTrigger: Boolean, val calculatedResult: Double = 0.0)
 
-data class CodeWhispererAutotriggerState(
-    var isClassifierGroup: Boolean? = null,
-    var isExpThreshold: Boolean? = null
-)
-
-@State(name = "codewhispererAutotriggerStates", storages = [Storage("aws.xml")])
-class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, PersistentStateComponent<CodeWhispererAutotriggerState>, Disposable {
+class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposable {
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val previousUserTriggerDecisions = CircularFifoQueue<CodewhispererPreviousSuggestionState>(5)
 
-    private var isClassifierGroup: Boolean? = null
-    private var isExpThreshold: Boolean? = null
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
 
@@ -59,28 +48,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         previousUserTriggerDecisions.add(decision)
     }
 
-    fun determineUserGroupIfNeeded() {
-        if (isClassifierGroup == null) {
-            isClassifierGroup = Math.random() <= 0.50
-        }
-    }
-
-    fun determineThresholdGroupIfNeeded() {
-        if (isExpThreshold == null) {
-            isExpThreshold = Math.random() <= 0.50
-        }
-    }
-
-    fun isClassifierGroup() = isClassifierGroup ?: run {
-        determineUserGroupIfNeeded()
-        return false
-    }
-
-    fun isExpThreshold() = isExpThreshold ?: run {
-        determineThresholdGroupIfNeeded()
-        return false
-    }
-
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
@@ -90,13 +57,20 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         } ?: CodeWhispererUnknownLanguage.INSTANCE
 
         // we need classifier result for any type of triggering for classifier group for supported languages
-        return if ((language.isClassifierSupported() && isClassifierGroup()) || language.isAllClassifier()) {
+        return if (
+            (language.isClassifierSupported() && CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.Classifier) ||
+            language.isAllClassifier()
+        ) {
             triggerType.calculationResult = classifierResult.calculatedResult
 
             when (triggerType) {
                 // only invoke service if result > threshold for classifier trigger
                 is CodeWhispererAutomatedTriggerType.Classifier -> run {
-                    if (classifierResult.shouldTrigger) { invoke(editor, triggerType) } else null
+                    if (classifierResult.shouldTrigger) {
+                        invoke(editor, triggerType)
+                    } else {
+                        null
+                    }
                 }
 
                 // invoke whatever the result is for char / enter based trigger
@@ -149,13 +123,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
                 }
             }
         }
-    }
-
-    override fun getState(): CodeWhispererAutotriggerState = CodeWhispererAutotriggerState(isClassifierGroup, isExpThreshold)
-
-    override fun loadState(state: CodeWhispererAutotriggerState) {
-        isClassifierGroup = state.isClassifierGroup
-        isExpThreshold = state.isExpThreshold
     }
 
     private fun scheduleReset() {
@@ -292,17 +259,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Persist
         fun getThreshold(): Double = triggerThreshold
 
         fun sigmoid(x: Double): Double = 1 / (1 + exp(-x))
-
-        fun getClassifierResultIfNeeded(editor: Editor): Double? {
-            val language = runReadAction {
-                FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
-            } ?: CodeWhispererUnknownLanguage.INSTANCE
-            return if (CodeWhispererAutoTriggerService.getInstance().isClassifierGroup() || language.isAllClassifier()) {
-                CodeWhispererAutoTriggerService.getInstance().shouldTriggerClassifier(editor).calculatedResult
-            } else {
-                null
-            }
-        }
     }
 }
 
