@@ -41,7 +41,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (runOnce) return
 
         // Reconnect CodeWhisperer on startup
-        promptReAuth(project)
+        promptReAuth(project, true)
 
         // install intellsense autotrigger listener, this only need to be executed 1 time
         project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntelliSenseAutoTriggerListener)
