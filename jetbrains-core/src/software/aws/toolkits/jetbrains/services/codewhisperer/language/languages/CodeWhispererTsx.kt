@@ -17,6 +17,8 @@ class CodeWhispererTsx private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun isClassifierSupported(): Boolean = true
 
+    override fun isAllClassifier(): Boolean = true
+
     companion object {
         const val ID = "tsx"
 
