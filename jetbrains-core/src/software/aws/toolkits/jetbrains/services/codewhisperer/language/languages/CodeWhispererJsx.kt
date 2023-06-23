@@ -15,6 +15,8 @@ class CodeWhispererJsx private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = CodeWhispererJavaScript.INSTANCE
 
+    override fun isClassifierSupported(): Boolean = true
+
     companion object {
         const val ID = "jsx"
 
