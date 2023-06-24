@@ -37,6 +37,8 @@ interface FileCrawler {
      * @return its source file e.g. Main.java, main.py or most relevant file if any
      */
     fun findFocalFileForTest(psiFile: PsiFile): VirtualFile?
+
+    fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile>
 }
 
 class NoOpFileCrawler : FileCrawler {
@@ -46,6 +48,10 @@ class NoOpFileCrawler : FileCrawler {
     override fun findFocalFileForTest(psiFile: PsiFile): VirtualFile? = null
 
     override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
+
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+        return emptyList()
+    }
 }
 
 abstract class CodeWhispererFileCrawler : FileCrawler {

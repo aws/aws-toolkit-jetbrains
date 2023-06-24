@@ -35,6 +35,7 @@ import java.util.Collections
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
+// TODO: if we decide not using this strategy any more, remove it
 private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
@@ -127,9 +128,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 it.forEachIndexed { index, chunk ->
                     LOG.info {
                         """
-                            | Chunk ${index + 1}:
+                            |---------------------------------------------------------------
+                            | Chunk $index:
+                            |    path = ${chunk.path},
+                            |    score = ${chunk.score},
                             |    content = ${chunk.content}
-                            |    path = ${chunk.path}
+                            |----------------------------------------------------------------
                         """.trimMargin()
                     }
                 }
@@ -188,7 +192,13 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
-            runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
+            runReadAction {
+                runBlocking {
+                    val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
+                    val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantFilesInEditors(psiFile) }
+                    FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
+                }
+            }
         } catch (e: TimeoutCancellationException) {
             throw e
         }
@@ -210,7 +220,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         // step 2: bm25 calculation
         val timeBeforeBm25 = System.currentTimeMillis()
         val top3Chunks: List<BM25Result> = BM250kapi(first60Chunks.map { it.content }).topN(query)
-        LOG.info { "Time ellapsed for BM25 algorithm: ${System.currentTimeMillis() - timeBeforeBm25} ms; \nResult: $top3Chunks" }
+        LOG.info { "Time ellapsed for BM25 algorithm: ${System.currentTimeMillis() - timeBeforeBm25} ms" }
 
         yield()
 
