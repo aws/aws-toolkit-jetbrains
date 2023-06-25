@@ -16,9 +16,8 @@ object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val testFilenamePattern: Regex = Regex("""(?:test_([^/\\]+)\.py|([^/\\]+)_test\.py)${'$'}""")
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
-    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
-        TODO("Not yet implemented, implement it when we are ready to enable python cross file")
-    }
+    // TODO: Add implementation once we enable python cross file
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun guessSourceFileName(tstFileName: String): String {
         assert(testFilenamePattern.matches(tstFileName))

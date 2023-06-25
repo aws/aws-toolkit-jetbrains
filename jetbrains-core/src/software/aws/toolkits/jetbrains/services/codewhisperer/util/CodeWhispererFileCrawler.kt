@@ -49,9 +49,7 @@ class NoOpFileCrawler : FileCrawler {
 
     override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
-    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
-        return emptyList()
-    }
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> = emptyList()
 }
 
 abstract class CodeWhispererFileCrawler : FileCrawler {

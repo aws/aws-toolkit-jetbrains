@@ -35,15 +35,11 @@ import java.util.Collections
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
-// TODO: if we decide not using this strategy any more, remove it
 private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
             val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
-            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>>(
-                { psiFile -> fileCrawler.listFilesImported(psiFile) },
-                { psiFile -> fileCrawler.listFilesWithinSamePackage(psiFile) }
-            )
+            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantFilesInEditors(psiFile) }
             FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
         }
     }
@@ -192,13 +188,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
-            runReadAction {
-                runBlocking {
-                    val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
-                    val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantFilesInEditors(psiFile) }
-                    FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
-                }
-            }
+            runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
         } catch (e: TimeoutCancellationException) {
             throw e
         }

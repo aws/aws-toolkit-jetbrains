@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtilCore
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
