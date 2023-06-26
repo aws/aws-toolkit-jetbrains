@@ -81,7 +81,7 @@ class UpdateWorkspaceSettingsTab : GatewayControlCenterTabProvider {
                     it.projectName(projectName)
                 }
 
-                val isFree = isSubscriptionFreeTier(existingProject = null, client, org)
+                val isFree = isSubscriptionFreeTier(client, org)
 
                 val alias = textBox(lifetime, false, "caws.development.workspace.alias", UpdateSourceTrigger.TextChanged)
                 initialEnv.alias()?.let { alias.text.set(it) }
@@ -167,9 +167,9 @@ class UpdateWorkspaceSettingsTab : GatewayControlCenterTabProvider {
                                         combobox(lifetime, instanceSize, selectedValue = initialEnv.instanceType(), handleSelected = {
                                             instanceSizeSelected = it
                                         }, presentation = {
-                                                // TODO: Velox to provide API for this info
-                                                label(it.toString().substringAfter("dev.standard1.").capitalize())
-                                            })
+                                            // TODO: Velox to provide API for this info
+                                            label(it.toString().substringAfter("dev.standard1.").capitalize())
+                                        })
                                     }
                                 }
                             }

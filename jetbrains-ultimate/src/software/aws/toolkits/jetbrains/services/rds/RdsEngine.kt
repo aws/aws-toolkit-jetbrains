@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.rds
 
 import com.intellij.database.dataSource.DataSourceSslConfiguration
+import com.intellij.icons.AllIcons
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.resources.message
@@ -32,7 +33,7 @@ sealed class RdsEngine(val engines: Set<String>, val icon: Icon, val additionalI
     open fun sslConfig(): DataSourceSslConfiguration? = null
 
     companion object {
-        fun values(): Set<RdsEngine> = setOf(MySql, AuroraMySql, Postgres, AuroraPostgres)
+        fun values(): Set<RdsEngine> = setOf(Maria, MySql, AuroraMySql, Postgres, AuroraPostgres)
         fun fromEngine(engine: String) = values().find { it.engines.contains(engine) } ?: throw IllegalArgumentException("Unknown RDS engine $engine")
     }
 }
@@ -51,12 +52,17 @@ abstract class PostgresBase(engine: Set<String>, additionalInfo: String? = null)
     override fun iamUsername(username: String) = username.lowercase()
 }
 
+object Maria : RdsEngine(setOf("mariadb"), AllIcons.Providers.Mariadb, null) {
+    override fun sslConfig(): DataSourceSslConfiguration = RequireSsl
+    override fun connectionStringUrl(endpoint: String) = "jdbc:$JDBC_MARIADB://$endpoint/"
+}
+
 object MySql : MySqlBase(setOf("mysql")) {
     override fun connectionStringUrl(endpoint: String) = "jdbc:$JDBC_MYSQL://$endpoint/"
 }
 
-// aurora == 5.6, aurora-mysql == 5.7
-object AuroraMySql : MySqlBase(setOf("aurora", "aurora-mysql"), additionalInfo = message("rds.aurora")) {
+// aurora-mysql == 5.7
+object AuroraMySql : MySqlBase(setOf("aurora-mysql"), additionalInfo = message("rds.aurora")) {
     // The docs recommend using MariaDB instead of MySQL to connect to MySQL Aurora DBs:
     // https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Connecting.html#Aurora.Connecting.AuroraMySQL
     override fun connectionStringUrl(endpoint: String) = "jdbc:$JDBC_MYSQL_AURORA://$endpoint/"

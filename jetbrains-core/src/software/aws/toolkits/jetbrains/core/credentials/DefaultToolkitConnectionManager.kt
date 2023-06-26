@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 @State(name = "connectionManager", storages = [Storage("aws.xml")])
 class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStateComponent<ToolkitConnectionManagerState> {
     init {
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
@@ -38,8 +38,8 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
     }
 
     private var connection: ToolkitConnection? = null
-    private val pinningManager: ConnectionPinningManager?
-        get() = project?.let { ConnectionPinningManager.getInstance(it) }
+
+    private val pinningManager: ConnectionPinningManager = ConnectionPinningManager.getInstance()
 
     private val defaultConnection: ToolkitConnection?
         get() {
@@ -59,7 +59,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
     @Synchronized
     override fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection? {
-        val pinnedConnection = pinningManager?.getPinnedConnection(feature)
+        val pinnedConnection = pinningManager.getPinnedConnection(feature)
         if (pinnedConnection != null) {
             return pinnedConnection
         }
@@ -85,33 +85,47 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
     override fun loadState(state: ToolkitConnectionManagerState) {
         state.activeConnectionId?.let {
-            connection = ToolkitAuthManager.getInstance().getConnection(it)
+            val idSegments = it.split(";")
+            val activeConnectionIdWithRegion =
+                if (idSegments.size == 2) {
+                    "${idSegments[0]};us-east-1;${idSegments[1]}"
+                } else {
+                    it
+                }
+            connection = ToolkitAuthManager.getInstance().getConnection(activeConnectionIdWithRegion)
         }
     }
 
     @Synchronized
-    override fun switchConnection(connection: ToolkitConnection?) {
+    override fun switchConnection(newConnection: ToolkitConnection?) {
         val oldConnection = this.connection
-        val newConnection = connection
 
         if (oldConnection != newConnection) {
+            val application = ApplicationManager.getApplication()
             this.connection = newConnection
 
-            val pinningManager = pinningManager
-            if (oldConnection != null && newConnection != null && pinningManager != null) {
+            if (newConnection != null) {
                 val featuresToPin = mutableListOf<FeatureWithPinnedConnection>()
                 FeatureWithPinnedConnection.EP_NAME.forEachExtensionSafe {
-                    if (!pinningManager.isFeaturePinned(it) && it.supportsConnectionType(oldConnection) && !it.supportsConnectionType(newConnection)) {
+                    if (!pinningManager.isFeaturePinned(it) &&
+                        (
+                            (oldConnection == null && it.supportsConnectionType(newConnection)) ||
+                                (oldConnection != null && it.supportsConnectionType(oldConnection) != it.supportsConnectionType(newConnection))
+                            )
+                    ) {
                         featuresToPin.add(it)
                     }
                 }
 
                 if (featuresToPin.isNotEmpty()) {
-                    pinningManager.maybePinFeatures(oldConnection, newConnection, featuresToPin)
+                    application.executeOnPooledThread {
+                        pinningManager.maybePinFeatures(oldConnection, newConnection, featuresToPin)
+                        application.messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(newConnection)
+                    }
                 }
             }
 
-            ApplicationManager.getApplication().messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(connection)
+            application.messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(newConnection)
         }
     }
 }

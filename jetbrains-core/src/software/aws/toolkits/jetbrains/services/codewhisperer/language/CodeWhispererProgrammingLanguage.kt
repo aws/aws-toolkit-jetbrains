@@ -17,6 +17,16 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun isCodeScanSupported(): Boolean = false
 
+    open fun isImportAdderSupported(): Boolean = false
+
+    open fun isClassifierSupported(): Boolean = false
+
+    open fun isAllClassifier(): Boolean = false
+
+    open fun isSupplementalContextSupported(): Boolean = false
+
+    open fun isUTGSupported(): Boolean = false
+
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 
     final override fun equals(other: Any?): Boolean {

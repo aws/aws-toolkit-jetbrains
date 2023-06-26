@@ -37,7 +37,8 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
-import software.amazon.awssdk.services.codewhisperer.model.Reference
+import software.amazon.awssdk.services.codewhispererruntime.model.Import
+import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -160,10 +161,18 @@ class CodeWhispererPopupManager {
         }
         val typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
         val isFirstTimeShowingPopup = indexChange == 0 && typeaheadChange.isEmpty()
-        sessionContext = SessionContext(typeahead, typeaheadOriginal, selectedIndex, sessionContext.seen, isFirstTimeShowingPopup)
+        sessionContext = SessionContext(
+            typeahead,
+            typeaheadOriginal,
+            selectedIndex,
+            sessionContext.seen,
+            isFirstTimeShowingPopup,
+            sessionContext.toBeRemovedHighlighter
+        )
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-            states, sessionContext
+            states,
+            sessionContext
         )
     }
 
@@ -191,6 +200,7 @@ class CodeWhispererPopupManager {
         val validSelectedIndex = getValidSelectedIndex(details, userInput, selectedIndex, typeaheadOriginal)
         updateSelectedRecommendationLabelText(validSelectedIndex, validCount)
         updateNavigationPanel(validSelectedIndex, validCount)
+        updateImportPanel(details[selectedIndex].recommendation.mostRelevantMissingImports())
         updateCodeReferencePanel(states.requestContext.project, details[selectedIndex].recommendation.references())
     }
 
@@ -225,7 +235,9 @@ class CodeWhispererPopupManager {
         if (isScrolling ||
             CodeWhispererInvocationStatus.getInstance().hasExistingInvocation() ||
             !sessionContext.isFirstTimeShowingPopup
-        ) return
+        ) {
+            return
+        }
         CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
     }
 
@@ -510,6 +522,21 @@ class CodeWhispererPopupManager {
         val multipleRecommendation = validCount > 1
         popupComponents.prevButton.isEnabled = multipleRecommendation && validSelectedIndex != 0
         popupComponents.nextButton.isEnabled = multipleRecommendation && validSelectedIndex != validCount - 1
+    }
+
+    private fun updateImportPanel(imports: List<Import>) {
+        popupComponents.panel.apply {
+            if (components.contains(popupComponents.importPanel)) {
+                remove(popupComponents.importPanel)
+            }
+        }
+        if (imports.isEmpty()) return
+
+        val firstImport = imports.first()
+        val choice = if (imports.size > 2) 2 else imports.size - 1
+        val message = message("codewhisperer.popup.import_info", firstImport.statement(), imports.size - 1, choice)
+        popupComponents.panel.add(popupComponents.importPanel, horizontalPanelConstraints)
+        popupComponents.importLabel.text = message
     }
 
     private fun updateCodeReferencePanel(project: Project, references: List<Reference>) {

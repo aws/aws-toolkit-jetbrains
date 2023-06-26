@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.testFramework.ApplicationRule
+import com.intellij.testFramework.RuleChain
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -32,6 +33,7 @@ import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationRes
 import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.utils.rules.SsoLoginCallbackProviderRule
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -46,22 +48,23 @@ class SsoAccessTokenProviderTest {
     private val clientId = aString()
     private val clientSecret = aString()
 
-    private lateinit var ssoLoginCallback: SsoLoginCallback
     private lateinit var ssoOidcClient: SsoOidcClient
     private lateinit var sut: SsoAccessTokenProvider
     private lateinit var ssoCache: SsoCache
 
+    private val applicationRule = ApplicationRule()
+    private val ssoCallbackRule = SsoLoginCallbackProviderRule()
+
     @JvmField
     @Rule
-    val applicationRule = ApplicationRule()
+    val ruleChain = RuleChain(applicationRule, ssoCallbackRule)
 
     @Before
     fun setUp() {
         ssoOidcClient = delegateMock()
-        ssoLoginCallback = mock()
         ssoCache = mock()
 
-        sut = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoLoginCallback, ssoCache, ssoOidcClient, clock = clock)
+        sut = SsoAccessTokenProvider(ssoUrl, ssoRegion, ssoCache, ssoOidcClient, clock = clock)
     }
 
     @Test
@@ -100,7 +103,9 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
+
                 )
             )
 
@@ -144,7 +149,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
                 )
             )
 
@@ -177,6 +183,7 @@ class SsoAccessTokenProviderTest {
         val startTime = Instant.now()
         val accessToken = runBlocking { sut.accessToken() }
         val callDuration = Duration.between(startTime, Instant.now())
+        val creationTime = sut.authorizationCreationTime
 
         assertThat(accessToken).usingRecursiveComparison()
             .isEqualTo(
@@ -184,7 +191,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = creationTime
                 )
             )
 
@@ -273,7 +281,8 @@ class SsoAccessTokenProviderTest {
                     ssoUrl,
                     ssoRegion,
                     "accessToken",
-                    expiresAt = clock.instant().plusSeconds(180)
+                    expiresAt = clock.instant().plusSeconds(180),
+                    createdAt = sut.authorizationCreationTime
                 )
             )
 

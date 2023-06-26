@@ -7,6 +7,8 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.util.ExecUtil
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -23,6 +25,8 @@ import com.intellij.util.text.SemVer
 import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackSummary
 import software.amazon.awssdk.services.lambda.model.PackageType
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
@@ -51,8 +55,9 @@ import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
 import software.aws.toolkits.telemetry.SyncedResources
+import java.net.URI
 
-class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
+class SyncServerlessAppAction : AnAction(
     message("serverless.application.sync"),
     null,
     AwsIcons.Resources.SERVERLESS_APP
@@ -71,20 +76,39 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     project = project,
                     content = (samExecutable as ExecutableInstance.BadExecutable).validationError
                 )
+                LOG.warn { "Invalid SAM CLI Executable" }
                 return@thenAccept
             }
 
             val execVersion = SemVer.parseFromText(samExecutable.version) ?: error("SAM CLI version could not detected")
-            val minVersion = SemVer("1.53.0", 1, 53, 0)
-            val minVersionForUseContainer = SemVer("1.57.0", 1, 57, 0)
+            val minVersion = SemVer("1.78.0", 1, 78, 0)
+
             if (!execVersion.isGreaterOrEqualThan(minVersion)) {
                 notifyError(
                     message("sam.cli.version.warning"),
                     message(
                         "sam.cli.version.upgrade.required",
-                        execVersion.parsedVersion, minVersion.parsedVersion
+                        execVersion.parsedVersion,
+                        minVersion.parsedVersion
                     ),
-                    project = project
+                    project = project,
+                    listOf(
+                        NotificationAction.createSimple(message("sam.cli.version.upgrade.reason")) {
+                            BrowserUtil.browse(
+                                URI(
+                                    "https://aws.amazon.com/about-aws/whats-new/2023/03/aws-toolkits-jetbrains-vs-code-sam-accelerate/"
+                                )
+                            )
+                        },
+                        NotificationAction.createSimple(message("sam.cli.version.upgrade.instructions")) {
+                            BrowserUtil.browse(
+                                URI(
+                                    "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/" +
+                                        "manage-sam-cli-versions.html#manage-sam-cli-versions-upgrade"
+                                )
+                            )
+                        }
+                    )
                 )
                 return@thenAccept
             }
@@ -93,13 +117,14 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
 
             validateTemplateFile(project, templateFile)?.let {
                 notifyError(content = it, project = project)
+                LOG.warn { it }
                 return@thenAccept
             }
 
             val templateFunctions = SamTemplateUtils.findFunctionsFromTemplate(project, templateFile)
             val hasImageFunctions: Boolean = templateFunctions.any { (it as? SamFunction)?.packageType() == PackageType.IMAGE }
             val lambdaType = if (hasImageFunctions) LambdaPackageType.Image else LambdaPackageType.Zip
-            val syncedResourceType = if (codeOnly) SyncedResources.CodeOnly else SyncedResources.AllResources
+            val syncedResourceType = SyncedResources.AllResources
 
             ProgressManager.getInstance().run(
                 object : Task.WithResult<PreSyncRequirements, Exception>(
@@ -108,15 +133,12 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                     false
                 ) {
                     override fun compute(indicator: ProgressIndicator): PreSyncRequirements {
-                        val dockerDoesntExist = if (execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                            try {
-                                val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
-                                processOutput.exitCode != 0
-                            } catch (e: Exception) {
-                                true
-                            }
-                        } else {
-                            null
+                        val dockerDoesntExist = try {
+                            val processOutput = ExecUtil.execAndGetOutput(GeneralCommandLine("docker", "ps"))
+                            processOutput.exitCode != 0
+                        } catch (e: Exception) {
+                            LOG.warn(e) { "Docker could not be found" }
+                            true
                         }
 
                         val activeStacks = project.getResourceNow(CloudFormationResources.ACTIVE_STACKS, forceFetch = true, useStale = false)
@@ -158,23 +180,18 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                             saveSettings(project, templateFile, settings)
 
                             if (settings.useContainer) {
-                                if (!execVersion.isGreaterOrEqualThan(minVersionForUseContainer)) {
-                                    notifyError(
-                                        message("sam.cli.version.warning"),
-                                        message(
-                                            "sam.cli.version.upgrade.required",
-                                            execVersion.parsedVersion,
-                                            minVersionForUseContainer.parsedVersion
-                                        ),
-                                        project = project
-                                    )
-                                    return@runInEdt
-                                }
-
                                 when (result.dockerDoesntExist) {
                                     null -> return@runInEdt
                                     true -> {
                                         Messages.showWarningDialog(message("lambda.debug.docker.not_connected"), message("docker.not.found"))
+                                        SamTelemetry.sync(
+                                            project = project,
+                                            result = Result.Failed,
+                                            syncedResources = syncedResourceType,
+                                            lambdaPackageType = lambdaType,
+                                            version = SamCommon.getVersionString(),
+                                            reason = "Docker not available"
+                                        )
                                         return@runInEdt
                                     }
 
@@ -203,7 +220,7 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
             val environment = ExecutionEnvironmentBuilder.create(
                 project,
                 DefaultRunExecutor.getRunExecutorInstance(),
-                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath, codeOnly)
+                SyncApplicationRunProfile(project, settings, project.getConnectionSettingsOrThrow(), templatePath)
             ).build()
 
             environment.runner.execute(environment)
@@ -239,6 +256,10 @@ class SyncServerlessAppAction(private val codeOnly: Boolean = false) : AnAction(
                 }
             }
         }
+    }
+
+    companion object {
+        private val LOG = getLogger<SyncServerlessAppAction>()
     }
 }
 
