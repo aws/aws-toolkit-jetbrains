@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -55,6 +56,7 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
+    protected val fileSperator: String = if (SystemInfo.isWindows) """\""" else "/"
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
@@ -90,6 +92,26 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             } else {
                 acc
             }
+        }
+
+        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile, seperator: String): Int {
+            val targetFilePaths = targetFile.path.split(seperator)
+            val candidateFilePaths = candidateFile.path.split(seperator)
+
+            var i = 0
+            while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {
+                val dir1 = targetFilePaths[i]
+                val dir2 = candidateFilePaths[i]
+
+                if (dir1 != dir2) {
+                    break
+                }
+
+                i++
+            }
+
+            return targetFilePaths.subList(fromIndex = i, toIndex = targetFilePaths.size).size +
+                candidateFilePaths.subList(fromIndex = i, toIndex = candidateFilePaths.size).size
         }
     }
 }
