@@ -38,7 +38,11 @@ object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
             return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it, fileSperator)
         }
 
-        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }.filter {
+            it.name != psiFile.virtualFile.name &&
+                it.extension == psiFile.virtualFile.extension &&
+                !TestSourcesFilter.isTestSources(it, psiFile.project)
+        }
     }
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> {
