@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import java.io.File
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -56,7 +57,7 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
-    protected val fileSperator: String = if (SystemInfo.isWindows) """\""" else "/"
+    protected val fileSperator: String = File.separator
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
