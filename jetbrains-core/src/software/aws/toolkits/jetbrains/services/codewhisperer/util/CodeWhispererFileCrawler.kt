@@ -10,7 +10,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import java.io.File
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -56,7 +55,13 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
-    protected val fileSperator: String = File.separator
+
+    /**
+     * For [LocalFileSystem](implementation of virfual file system), the path will be an absolute file path with file separator characters replaced
+     * by forward slash "/"
+     * @see [VirtualFile.getPath]
+     */
+    protected val fileSeperator: String = "/"
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
