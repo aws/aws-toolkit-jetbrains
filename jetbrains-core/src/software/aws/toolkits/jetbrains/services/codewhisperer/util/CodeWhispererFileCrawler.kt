@@ -100,8 +100,8 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
 
         fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile, seperator: String): Int {
-            val targetFilePaths = targetFile.path.split(seperator)
-            val candidateFilePaths = candidateFile.path.split(seperator)
+            val targetFilePaths = targetFile.path.split(seperator).dropLast(1)
+            val candidateFilePaths = candidateFile.path.split(seperator).dropLast(1)
 
             var i = 0
             while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {
