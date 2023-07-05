@@ -219,7 +219,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             contentToChunk[bm25Result.docString]?.let {
                 Chunk(content = it.nextChunk, path = it.path, score = bm25Result.score)
             }
-        }
+        }.filter { it.content.isNotBlank() }
     }
 
     @VisibleForTesting
@@ -235,7 +235,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                     content = UTG_PREFIX + file.content().let { it.substring(0, minOf(it.length, UTG_SEGMENT_SIZE)) },
                     path = relativePath
                 )
-            )
+            ).filter { chunk -> chunk.content.isNotBlank() }
         }.orEmpty()
     }
 
