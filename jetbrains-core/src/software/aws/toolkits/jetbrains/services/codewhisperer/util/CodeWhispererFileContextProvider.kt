@@ -219,7 +219,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             contentToChunk[bm25Result.docString]?.let {
                 if (it.nextChunk.isNotBlank()) {
                     Chunk(content = it.nextChunk, path = it.path, score = bm25Result.score)
-                } else null
+                } else {
+                    null
+                }
             }
         }
     }
