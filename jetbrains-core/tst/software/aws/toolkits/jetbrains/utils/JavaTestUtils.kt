@@ -263,13 +263,6 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
 
     runInEdtAndWait {
         projectsManager.waitForReadingCompletion()
-        check(ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromString("232.6734.9")) <= 0) {
-            "FIXME: uncomment waitForResolvingCompletion"
-        }
-        // will be re-added in next EAP
-        // https://github.com/JetBrains/intellij-community/commit/0488a28a89b661c2cbf0706060bee2f7bd367237
-        // projectsManager.waitForResolvingCompletion()
-        // projectsManager.scheduleImportInTests(poms)
         projectsManager.importProjects()
     }
 
