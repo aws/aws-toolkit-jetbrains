@@ -8,7 +8,7 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
 // import com.intellij.database.dataSource.url.ui.DatabaseUIUtils
-import software.aws.toolkits.jetbrains.CreateConstraints
+import software.aws.toolkits.jetbrains.UiConstraints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import org.jetbrains.annotations.TestOnly
@@ -30,8 +30,8 @@ class IamAuthWidget : AwsAuthWidget() {
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
         val regionLabel = JBLabel(message("redshift.cluster_id"))
-        panel.add(regionLabel, CreateConstraints.createLabelConstraints(3, 0, regionLabel.preferredSize.getWidth()))
-        panel.add(clusterIdSelector, CreateConstraints.createSimpleConstraints(3, 1, 3))
+        panel.add(regionLabel, UiConstraints.createLabelConstraints(3, 0, regionLabel.preferredSize.getWidth()))
+        panel.add(clusterIdSelector, UiConstraints.createSimpleConstraints(3, 1, 3))
         return panel
     }
 

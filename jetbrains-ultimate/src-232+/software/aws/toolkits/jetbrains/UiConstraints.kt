@@ -3,4 +3,4 @@
 
 package software.aws.toolkits.jetbrains
 
-typealias CreateConstraints = com.intellij.database.dataSource.url.ui.DatabaseUIUtils
+typealias UiConstraints = com.intellij.database.dataSource.url.ui.DatabaseUIUtils
