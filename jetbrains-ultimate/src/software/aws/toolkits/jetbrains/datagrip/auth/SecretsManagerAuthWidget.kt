@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.intellij.database.dataSource.DataSourceUiUtil
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
+import software.aws.toolkits.jetbrains.CreateConstraints
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
@@ -32,9 +32,9 @@ class SecretsManagerAuthWidget : AwsAuthWidget(userFieldEnabled = false) {
     override fun createPanel(): JPanel {
         val panel = super.createPanel()
         val secretLabel = JBLabel(message("datagrip.secret_id"))
-        panel.add(secretLabel, UrlPropertiesPanel.createLabelConstraints(3, 0, secretLabel.preferredSize.getWidth()))
-        panel.add(secretIdSelector, UrlPropertiesPanel.createSimpleConstraints(3, 1, 3))
-        panel.add(urlFromSecret, UrlPropertiesPanel.createSimpleConstraints(4, 1, 3))
+        panel.add(secretLabel, CreateConstraints.createLabelConstraints(3, 0, secretLabel.preferredSize.getWidth()))
+        panel.add(secretIdSelector, CreateConstraints.createSimpleConstraints(3, 1, 3))
+        panel.add(urlFromSecret, CreateConstraints.createSimpleConstraints(4, 1, 3))
         return panel
     }
 

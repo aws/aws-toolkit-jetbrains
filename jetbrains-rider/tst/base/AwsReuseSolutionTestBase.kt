@@ -7,6 +7,7 @@ import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.jetbrains.rider.projectView.solutionDirectory
+import com.jetbrains.rider.test.OpenSolutionParams
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
 import com.jetbrains.rider.test.protocol.testProtocolHost
@@ -39,7 +40,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     protected open fun getCustomSolutionFileName(): String? = null
     protected open fun preprocessTempDirectory(tempDir: File) {}
 
-    override val testCaseNameToTempDir: String
+    val testCaseNameToTempDir: String
         get() = getSolutionDirectoryName()
 
     // TODO: Remove when https://youtrack.jetbrains.com/issue/RIDER-47995 is fixed FIX_WHEN_MIN_IS_213
@@ -51,7 +52,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     @BeforeClass(alwaysRun = true)
     fun setUpClassSolution() {
         val host = ApplicationManager.getApplication().testProtocolHost
-        setUpCustomToolset(msBuild, host)
         openSolution(getSolutionDirectoryName())
     }
 
@@ -86,7 +86,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
         useCachedTemplates = false
 
-        myProject = openSolution(solutionDirName, params)
+        myProject = openSolution(File(solutionDirName), params)
     }
 
     override val backendShellLoadTimeout: Duration = backendStartTimeout

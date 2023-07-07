@@ -63,7 +63,7 @@ public class VgoTestUtil {
                                                 @Nullable VgoDependencyImpl replace) {
         String dirName = dir != null ? dir : String.format("%s@%s", importPath, version);
         String dirPath = FileUtil.join(GOPATH, "pkg", GoConstants.VGO_DIR_NAME, dirName);
-        return new VgoDependencyImpl(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false);
+        return new VgoDependencyImpl(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false, null, null, null, null);
     }
 
     public static PsiFile setupVgoIntegration(@NotNull CodeInsightTestFixture fixture) {

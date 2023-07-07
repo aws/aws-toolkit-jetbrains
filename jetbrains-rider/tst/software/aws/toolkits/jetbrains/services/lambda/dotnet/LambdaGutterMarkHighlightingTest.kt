@@ -4,8 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.backendStartTimeout
-import base.msBuild
-import base.setUpCustomToolset
+// import base.setUpCustomToolset
 import com.intellij.openapi.application.ApplicationManager
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
@@ -26,7 +25,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     @BeforeSuite
     fun setMsBuildVersion() {
         val host = ApplicationManager.getApplication().testProtocolHost
-        setUpCustomToolset(msBuild, host)
+        // setUpCustomToolset(msBuild, host)
     }
 
     override val backendLoadedTimeout: Duration = backendStartTimeout

@@ -1,31 +1,31 @@
-// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
+ // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.lambda.dotnet
+ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.NavigatablePsiElement
-import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.workspaceModel.ide.WorkspaceModel
-import com.jetbrains.rd.framework.impl.RpcTimeouts
-import com.jetbrains.rider.model.MethodExistingRequest
-import com.jetbrains.rider.model.backendPsiHelperModel
-import com.jetbrains.rider.model.publishableProjectsModel
-import com.jetbrains.rider.projectView.solution
-import com.jetbrains.rider.projectView.workspace.getId
-import com.jetbrains.rider.projectView.workspace.getProjectModelEntities
-import com.jetbrains.rider.projectView.workspace.isProject
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.protocol.HandlerExistRequest
-import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
-import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
-import java.nio.file.Path
+ import com.intellij.openapi.project.Project
+ import com.intellij.openapi.vfs.VirtualFile
+ import com.intellij.psi.NavigatablePsiElement
+ import com.intellij.psi.PsiElement
+ import com.intellij.psi.search.GlobalSearchScope
+ import software.aws.toolkits.jetbrains.services.lambda.WorkSpaceModel
+ import com.jetbrains.rd.framework.impl.RpcTimeouts
+ import com.jetbrains.rider.model.MethodExistingRequest
+ import com.jetbrains.rider.model.backendPsiHelperModel
+ import com.jetbrains.rider.model.publishableProjectsModel
+ import com.jetbrains.rider.projectView.solution
+ import com.jetbrains.rider.projectView.workspace.getId
+ import com.jetbrains.rider.projectView.workspace.getProjectModelEntities
+ import com.jetbrains.rider.projectView.workspace.isProject
+ import software.aws.toolkits.core.utils.getLogger
+ import software.aws.toolkits.core.utils.warn
+ import software.aws.toolkits.jetbrains.protocol.HandlerExistRequest
+ import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
+ import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
+ import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
+ import java.nio.file.Path
 
-class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
+ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(
         project: Project,
         handler: String,
@@ -82,7 +82,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     }
 
     private fun getProjectId(project: Project, assemblyName: String): Int? {
-        val workspaceModel = WorkspaceModel.getInstance(project)
+        val workspaceModel = WorkSpaceModel.getInstance(project)
         val publishableProjects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
         val projectToProcess = publishableProjects.find { it.projectName == assemblyName }
         if (projectToProcess == null) {
@@ -103,4 +103,4 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     private companion object {
         private val LOG = getLogger<DotNetLambdaHandlerResolver>()
     }
-}
+ }

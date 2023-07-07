@@ -8,7 +8,7 @@ import com.intellij.database.dataSource.DatabaseCredentialsAuthProviderUi
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
-import com.intellij.database.dataSource.url.ui.UrlPropertiesPanel
+import software.aws.toolkits.jetbrains.CreateConstraints
 import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
@@ -45,10 +45,10 @@ abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : Databa
 
         val credsLabel = JBLabel(message("aws_connection.credentials.label"))
         val regionLabel = JBLabel(message("aws_connection.region.label"))
-        panel.add(credsLabel, UrlPropertiesPanel.createLabelConstraints(1, 0, credsLabel.preferredSize.getWidth()))
-        panel.add(credentialSelector, UrlPropertiesPanel.createSimpleConstraints(1, 1, 3))
-        panel.add(regionLabel, UrlPropertiesPanel.createLabelConstraints(2, 0, regionLabel.preferredSize.getWidth()))
-        panel.add(regionSelector, UrlPropertiesPanel.createSimpleConstraints(2, 1, 3))
+        panel.add(credsLabel, CreateConstraints.createLabelConstraints(1, 0, credsLabel.preferredSize.getWidth()))
+        panel.add(credentialSelector, CreateConstraints.createSimpleConstraints(1, 1, 3))
+        panel.add(regionLabel, CreateConstraints.createLabelConstraints(2, 0, regionLabel.preferredSize.getWidth()))
+        panel.add(regionSelector, CreateConstraints.createSimpleConstraints(2, 1, 3))
 
         return panel
     }
