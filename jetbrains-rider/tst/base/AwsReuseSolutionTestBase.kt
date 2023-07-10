@@ -51,7 +51,6 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
     @BeforeClass(alwaysRun = true)
     fun setUpClassSolution() {
-        val host = ApplicationManager.getApplication().testProtocolHost
         openSolution(getSolutionDirectoryName())
     }
 

@@ -22,12 +22,6 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
     }
 
-    @BeforeSuite
-    fun setMsBuildVersion() {
-        val host = ApplicationManager.getApplication().testProtocolHost
-        // setUpCustomToolset(msBuild, host)
-    }
-
     override val backendLoadedTimeout: Duration = backendStartTimeout
     override val backendShellLoadTimeout: Duration = backendStartTimeout
 

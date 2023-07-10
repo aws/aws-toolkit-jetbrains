@@ -6,4 +6,4 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 
-fun VirtualFileUrl.VirtualFile(): VirtualFile? = this.virtualFile
+fun VirtualFileUrl.toVirtualFile(): VirtualFile? = this.virtualFile

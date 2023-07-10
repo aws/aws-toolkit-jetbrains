@@ -15,7 +15,7 @@ import com.jetbrains.rider.projectView.workspace.containingProjectEntity
 import com.jetbrains.rider.projectView.workspace.getProjectModelEntity
 import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
 import com.jetbrains.rider.util.idea.getPsiFile
-import software.aws.toolkits.jetbrains.core.compatability.VirtualFile
+import software.aws.toolkits.jetbrains.core.compatability.toVirtualFile
 import javax.swing.Icon
 
 /**
@@ -51,5 +51,5 @@ class RiderLambdaHandlerFakePsiElement(
         .getProjectModelEntity(fileId)
         ?.containingProjectEntity()
         ?.url
-        ?.VirtualFile()
+        ?.toVirtualFile()
 }
