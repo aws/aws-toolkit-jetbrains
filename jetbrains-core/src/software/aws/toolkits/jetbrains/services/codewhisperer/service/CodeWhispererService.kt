@@ -512,7 +512,7 @@ class CodeWhispererService {
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.CrossFile && !isTstFile) {
+        val supplementalContext = if (!isTstFile) {
             runBlocking {
                 try {
                     withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {

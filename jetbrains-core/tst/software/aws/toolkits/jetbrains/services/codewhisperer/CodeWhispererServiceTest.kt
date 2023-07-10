@@ -10,6 +10,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.TimeoutCancellationException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -49,8 +50,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun `getRequestContext - cross file context should be non-null for cross-file user group`() {
-        whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
+    fun `getRequestContext - cross file context should be non-null`() {
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
             onBlocking { this.extractSupplementalFileContext(any(), any()) } doThrow TimeoutCancellationException::class
@@ -85,6 +85,7 @@ class CodeWhispererServiceTest {
         assertThat(actual.supplementalContext).isNotNull
     }
 
+    @Ignore("Enable it if cross file for other language is enabled and requires A/B")
     @Test
     fun `getRequestContext - cross file context should be null for non-cross-file user group`() {
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.Control)
