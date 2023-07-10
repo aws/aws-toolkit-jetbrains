@@ -35,7 +35,7 @@ object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
         }
 
         val fileToFileDistanceList = openedFiles.map {
-            return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it, fileSeperator)
+            return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
         }
 
         return fileToFileDistanceList.sortedBy { it.second }.map { it.first }

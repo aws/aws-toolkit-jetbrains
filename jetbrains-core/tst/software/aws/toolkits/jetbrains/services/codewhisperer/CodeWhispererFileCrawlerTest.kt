@@ -56,22 +56,22 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
         val fileWithDistance5 = fixture.addFileToProject("ui/popup/components/CodeWhispererPopup.java", aString())
         val fileWithDistance6 = fixture.addFileToProject("ui/popup/components/actions/AcceptRecommendationAction.java", aString())
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance0.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance0.virtualFile))
             .isEqualTo(0)
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance1.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance1.virtualFile))
             .isEqualTo(1)
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance3.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance3.virtualFile))
             .isEqualTo(3)
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance4.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance4.virtualFile))
             .isEqualTo(4)
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance5.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance5.virtualFile))
             .isEqualTo(5)
 
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance6.virtualFile, "/"))
+        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance6.virtualFile))
             .isEqualTo(6)
     }
 

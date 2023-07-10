@@ -56,13 +56,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
 
-    /**
-     * For [LocalFileSystem](implementation of virfual file system), the path will be an absolute file path with file separator characters replaced
-     * by forward slash "/"
-     * @see [VirtualFile.getPath]
-     */
-    protected val fileSeperator: String = "/"
-
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
             it.path.endsWith(fileExtension)
@@ -99,9 +92,14 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             }
         }
 
-        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile, seperator: String): Int {
-            val targetFilePaths = targetFile.path.split(seperator).dropLast(1)
-            val candidateFilePaths = candidateFile.path.split(seperator).dropLast(1)
+        /**
+         * For [LocalFileSystem](implementation of virtual file system), the path will be an absolute file path with file separator characters replaced
+         * by forward slash "/"
+         * @see [VirtualFile.getPath]
+         */
+        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile): Int {
+            val targetFilePaths = targetFile.path.split("/").dropLast(1)
+            val candidateFilePaths = candidateFile.path.split("/").dropLast(1)
 
             var i = 0
             while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {
