@@ -512,7 +512,7 @@ class CodeWhispererService {
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.CrossFile && !isTstFile) {
+        val supplementalContext = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.CrossFile) {
             runBlocking {
                 try {
                     withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
@@ -530,13 +530,18 @@ class CodeWhispererService {
                             targetFileName = fileContext.filename
                         )
                     } else {
-                        LOG.error(e) { "Run into unexpected error when fetching supplemental context" }
+                        LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
                         null
                     }
                 }
             }
         } else {
-            null
+            SupplementalContextInfo(
+                isUtg = isTstFile,
+                contents = emptyList(),
+                latency = 0,
+                targetFileName = fileContext.filename
+            )
         }
 
         // 3. caret position
