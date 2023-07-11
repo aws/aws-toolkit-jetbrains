@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.lambda.completion
 
 import base.allowCustomDotnetRoots
 import base.backendStartTimeout
-import com.intellij.openapi.application.ApplicationManager
 import com.jetbrains.rd.ide.model.IconModel
 import com.jetbrains.rd.ui.icons.toIdeaIcon
 import com.jetbrains.rider.test.annotations.TestEnvironment

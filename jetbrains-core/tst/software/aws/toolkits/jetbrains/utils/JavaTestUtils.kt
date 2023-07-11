@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
@@ -20,7 +19,6 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.impl.JavaAwareProjectJdkTableImpl
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.roots.ModuleRootModificationUtil
-import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.util.SystemInfo

@@ -3,5 +3,4 @@
 
 package software.aws.toolkits.jetbrains.services.lambda
 
-typealias WorkSpaceModel = com.intellij.platform.backend.workspace.WorkspaceModel
-
+typealias WorkspaceModel = com.intellij.platform.backend.workspace.WorkspaceModel

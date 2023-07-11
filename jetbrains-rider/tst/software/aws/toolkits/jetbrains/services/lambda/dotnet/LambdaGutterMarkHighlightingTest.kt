@@ -4,13 +4,9 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.backendStartTimeout
-// import base.setUpCustomToolset
-import com.intellij.openapi.application.ApplicationManager
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
-import com.jetbrains.rider.test.protocol.testProtocolHost
-import org.testng.annotations.BeforeSuite
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel

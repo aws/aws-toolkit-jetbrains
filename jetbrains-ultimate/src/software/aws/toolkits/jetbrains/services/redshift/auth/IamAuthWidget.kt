@@ -7,12 +7,11 @@ import com.intellij.database.dataSource.DataSourceUiUtil
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
-// import com.intellij.database.dataSource.url.ui.DatabaseUIUtils
-import software.aws.toolkits.jetbrains.UiConstraints
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.redshift.RedshiftClient
+import software.aws.toolkits.jetbrains.UiConstraints
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget
 import software.aws.toolkits.resources.message

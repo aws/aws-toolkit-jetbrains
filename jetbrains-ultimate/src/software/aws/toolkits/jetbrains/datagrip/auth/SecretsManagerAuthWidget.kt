@@ -5,13 +5,13 @@ package software.aws.toolkits.jetbrains.datagrip.auth
 
 import com.intellij.database.dataSource.DataSourceUiUtil
 import com.intellij.database.dataSource.LocalDataSource
-import software.aws.toolkits.jetbrains.UiConstraints
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
+import software.aws.toolkits.jetbrains.UiConstraints
 import software.aws.toolkits.jetbrains.services.rds.RdsResources
 import software.aws.toolkits.jetbrains.services.redshift.RedshiftUtils
 import software.aws.toolkits.jetbrains.ui.AwsAuthWidget

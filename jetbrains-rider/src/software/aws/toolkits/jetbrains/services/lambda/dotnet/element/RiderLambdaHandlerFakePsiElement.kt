@@ -10,12 +10,12 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.FakePsiElement
-import software.aws.toolkits.jetbrains.services.lambda.WorkSpaceModel
 import com.jetbrains.rider.projectView.workspace.containingProjectEntity
 import com.jetbrains.rider.projectView.workspace.getProjectModelEntity
 import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
 import com.jetbrains.rider.util.idea.getPsiFile
 import software.aws.toolkits.jetbrains.core.compatability.toVirtualFile
+import software.aws.toolkits.jetbrains.services.lambda.WorkspaceModel
 import javax.swing.Icon
 
 /**
@@ -32,7 +32,7 @@ class RiderLambdaHandlerFakePsiElement(
 ) : FakePsiElement() {
     override fun getParent() = null
 
-    override fun getContainingFile(): PsiFile? = WorkSpaceModel
+    override fun getContainingFile(): PsiFile? = WorkspaceModel
         .getInstance(project)
         .getProjectModelEntity(fileId)
         ?.getVirtualFileAsContentRoot()
@@ -46,7 +46,7 @@ class RiderLambdaHandlerFakePsiElement(
     override fun toString() = name
     override fun getManager() = PsiManager.getInstance(project)
 
-    fun getContainingProjectFile(): VirtualFile? = WorkSpaceModel
+    fun getContainingProjectFile(): VirtualFile? = WorkspaceModel
         .getInstance(project)
         .getProjectModelEntity(fileId)
         ?.containingProjectEntity()

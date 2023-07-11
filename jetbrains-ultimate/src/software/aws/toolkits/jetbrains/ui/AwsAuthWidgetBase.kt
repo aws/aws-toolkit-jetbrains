@@ -8,11 +8,11 @@ import com.intellij.database.dataSource.DatabaseCredentialsAuthProviderUi
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.url.template.ParametersHolder
 import com.intellij.database.dataSource.url.template.UrlEditorModel
-import software.aws.toolkits.jetbrains.UiConstraints
 import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
+import software.aws.toolkits.jetbrains.UiConstraints
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
