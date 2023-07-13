@@ -8,21 +8,21 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBScrollPane
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 
 class CodeWhispererCodeReferenceToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowContent = toolWindow.contentManager.factory.createContent(
             JBScrollPane(CodeWhispererCodeReferenceManager.getInstance(project).codeReferenceComponents.contentPanel, 20, 30),
-            null, false
+            null,
+            false
         )
 
         toolWindowContent.isCloseable = false
         toolWindow.contentManager.addContent(toolWindowContent)
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean =
-        CodeWhispererExplorerActionManager.getInstance().hasAcceptedTermsOfService()
+    override fun shouldBeAvailable(project: Project): Boolean = isCodeWhispererEnabled(project)
 
     companion object {
         const val id = "aws.codewhisperer.codereference"

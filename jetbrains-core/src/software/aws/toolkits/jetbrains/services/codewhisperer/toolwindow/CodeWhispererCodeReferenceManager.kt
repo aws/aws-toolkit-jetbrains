@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsListener
@@ -23,8 +22,8 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
-import software.amazon.awssdk.services.codewhisperer.model.Recommendation
-import software.amazon.awssdk.services.codewhisperer.model.Reference
+import software.amazon.awssdk.services.codewhispererruntime.model.Completion
+import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getPopupPositionAboveText
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -45,7 +44,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
 
     init {
         // Listen for global scheme changes
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        project.messageBus.connect().subscribe(
             EditorColorsManager.TOPIC,
             EditorColorsListener { scheme ->
                 if (scheme == null) return@EditorColorsListener
@@ -82,7 +81,8 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
             codeReferenceComponents.contentPanel.apply {
                 add(
                     codeReferenceComponents.codeReferenceRecordPanel(reference, relativePath, lineNums),
-                    horizontalPanelConstraints, components.size - 1
+                    horizontalPanelConstraints,
+                    components.size - 1
                 )
 
                 // add each line of the original reference a JPanel to the tool window content panel
@@ -90,7 +90,8 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
                     if (line.isEmpty()) return@forEach
                     add(
                         codeReferenceComponents.codeContentPanel(line),
-                        horizontalPanelConstraints, components.size - 1
+                        horizontalPanelConstraints,
+                        components.size - 1
                     )
                 }
             }
@@ -110,7 +111,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         return lineNums
     }
 
-    fun getOriginalContentLines(detail: Recommendation, i: Int): List<String> {
+    fun getOriginalContentLines(detail: Completion, i: Int): List<String> {
         val originalSpan = detail.references()[i].recommendationContentSpan()
         return detail.content()
             .substring(originalSpan.start(), originalSpan.end())

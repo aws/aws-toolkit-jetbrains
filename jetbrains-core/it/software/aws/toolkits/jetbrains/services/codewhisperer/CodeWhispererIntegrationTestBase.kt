@@ -28,12 +28,14 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.services.codewhisperer.model.ListRecommendationsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
@@ -85,7 +87,7 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         assumeTrue("CI doesn't have Builder ID credentials", System.getenv("CI").isNullOrBlank())
         MockClientManager.useRealImplementations(disposableRule.disposable)
 
-        loginSso(projectRule.project, SONO_URL)
+        loginSso(projectRule.project, SONO_URL, SONO_REGION, CODEWHISPERER_SCOPES)
         val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL)
         val connection = ToolkitAuthManager.getInstance().getConnection(connectionId) ?: return
         val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
@@ -103,7 +105,6 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         ApplicationManager.getApplication().replaceService(CodeWhispererTelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
 
         stateManager = CodeWhispererExplorerActionManager.getInstance()
-        stateManager.setHasAcceptedTermsOfService(true)
         stateManager.setAutoEnabled(false)
 
         popupManager = spy(CodeWhispererPopupManager.getInstance())
@@ -154,8 +155,8 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         }
     }
 
-    fun withCodeWhispererServiceInvokedAndWait(manual: Boolean = true, runnable: (ListRecommendationsResponse) -> Unit) {
-        val responseCaptor = argumentCaptor<ListRecommendationsResponse>()
+    fun withCodeWhispererServiceInvokedAndWait(manual: Boolean = true, runnable: (GenerateCompletionsResponse) -> Unit) {
+        val responseCaptor = argumentCaptor<GenerateCompletionsResponse>()
         val statesCaptor = argumentCaptor<InvocationContext>()
         invokeCodeWhispererService(manual)
         verify(codewhispererService, timeout(5000).atLeastOnce()).validateResponse(responseCaptor.capture())
@@ -204,7 +205,7 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         return runBlocking {
             var issues = emptyList<CodeWhispererCodeScanIssue>()
             if (success) {
-                verify(scanManager, timeout(60000).atLeastOnce()).renderResponseOnUIThread(issuesCaptor.capture())
+                verify(scanManager, timeout(60000).atLeastOnce()).renderResponseOnUIThread(issuesCaptor.capture(), any(), any())
                 issues = issuesCaptor.lastValue
             }
             verify(telemetryServiceSpy, timeout(60000).atLeastOnce()).sendSecurityScanEvent(codeScanEventCaptor.capture(), anyOrNull())
@@ -219,7 +220,7 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         assertThat(response.responseContext.codeScanTotalIssues).isEqualTo(0)
         assertThat(response.responseContext.codeScanJobId).isNull()
         val exceptionCaptor = argumentCaptor<Exception>()
-        verify(scanManager, atLeastOnce()).handleException(exceptionCaptor.capture())
+        verify(scanManager, atLeastOnce()).handleException(any(), exceptionCaptor.capture())
         val e = exceptionCaptor.lastValue
         assertThat(e is CodeWhispererCodeScanException).isTrue
         assertThat(e.message).isEqualTo(message)

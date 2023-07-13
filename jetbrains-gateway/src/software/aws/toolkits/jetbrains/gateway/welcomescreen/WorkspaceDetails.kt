@@ -73,7 +73,8 @@ class WorkspaceDetails(ws: Workspace, workspaces: WorkspaceList, cawsClient: Cod
             ws.status == DevEnvironmentStatus.FAILED -> JBLabel(AllIcons.General.Error)
             else -> JBLabel(AwsGatewayIcons.GATEWAY_STOPPED)
         }
-        statusIconLabel.toolTipText = ws.status.name
+
+        statusIconLabel.toolTipText = if (!ws.statusReason.isNullOrBlank()) "${ws.status.name}: ${ws.statusReason}" else ws.status.name
 
         val (ideIcon, ideToolTip) = ws.platformProduct?.let {
             it.icon to it.ideName
@@ -269,7 +270,7 @@ class ConfigureAction(private val ws: Workspace, private val workspaceList: Work
                     error(message("caws.configure_workspace_not_running"))
                 }
 
-                isSubscriptionFreeTier(ws.identifier.project, cawsClient, ws.identifier.project.space)
+                isSubscriptionFreeTier(cawsClient, ws.identifier.project.space)
             }
 
             launchChildOnUi {

@@ -145,16 +145,17 @@ dependencies {
     implementation(libs.commonmark)
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
-    testImplementation(libs.wiremock)
+    testImplementation(libs.mockk)
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
+    testImplementation(libs.wiremock)
 }
 
 // fix implicit dependency on generated source
-tasks.withType<Detekt>() {
+tasks.withType<Detekt> {
     dependsOn(generateTelemetry)
 }
 
-tasks.withType<DetektCreateBaselineTask>() {
+tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
 }

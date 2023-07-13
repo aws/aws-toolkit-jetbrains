@@ -15,6 +15,14 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun isCodeScanSupported(): Boolean = true
 
+    override fun isImportAdderSupported(): Boolean = true
+
+    override fun isClassifierSupported(): Boolean = true
+
+    override fun isAllClassifier(): Boolean = true
+
+    override fun isUTGSupported() = true
+
     companion object {
         const val ID = "python"
 

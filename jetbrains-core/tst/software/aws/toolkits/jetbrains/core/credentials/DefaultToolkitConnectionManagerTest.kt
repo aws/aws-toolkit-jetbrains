@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
@@ -72,6 +73,27 @@ class DefaultToolkitConnectionManagerTest {
     }
 
     @Test
+    fun `loads a us-east-1 connection from state that does not contain the region string`() {
+        credManager.clear()
+        assertThat(sut.activeConnection()).isEqualTo(null)
+
+        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
+        sut.loadState(ToolkitConnectionManagerState("sso;https://view.awsapps.com/start"))
+
+        assertThat(sut.activeConnection()).isEqualTo(connection)
+    }
+
+    @Test
+    fun `loads null connection from state which has an invalid format`() {
+        credManager.clear()
+        assertThat(sut.activeConnection()).isEqualTo(null)
+
+        sut.loadState(ToolkitConnectionManagerState("An invalid active connection id"))
+
+        assertThat(sut.activeConnection()).isEqualTo(null)
+    }
+
+    @Test
     fun `switch connection to null will fall back to IAM credential if applicable`() {
         val bearerConnection = ManagedBearerSsoConnection(aString(), "us-east-1", emptyList())
         configureSut(sut, bearerConnection)
@@ -103,9 +125,10 @@ class DefaultToolkitConnectionManagerTest {
         val pinningMock = mock<ConnectionPinningManager>()
         val feature = mock<FeatureWithPinnedConnection> {
             on { it.supportsConnectionType(any()) } doReturn true
+            on { it.featureId } doReturn "test"
         }
 
-        projectRule.project.replaceService(ConnectionPinningManager::class.java, pinningMock, disposableRule.disposable)
+        ApplicationManager.getApplication().replaceService(ConnectionPinningManager::class.java, pinningMock, disposableRule.disposable)
         assertThat(sut.activeConnectionForFeature(feature)).isNull()
 
         val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
