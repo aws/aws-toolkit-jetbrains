@@ -12,7 +12,7 @@ import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 
 class DotNetLambdaBuilderTest : AwsReuseSolutionTestBase() {
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = "testData/solutions/SamHelloWorldApp/SamHelloWorldApp.sln"
 
     private val sut = DotNetLambdaBuilder()
 
