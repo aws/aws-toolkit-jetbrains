@@ -188,13 +188,13 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2023.2-EAP7-SNAPSHOT",
+                sdkVersion = "2023.2-EAP8-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2023.2.2", // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
-                nugetVersion = "2023.2.0-eap07" //  https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
+                rdGenVersion = "2023.2.3", // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
+                nugetVersion = "2023.2.0-eap08" //  https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
             )
         ),
 

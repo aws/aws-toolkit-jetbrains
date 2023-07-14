@@ -16,7 +16,7 @@ import software.aws.toolkits.jetbrains.services.lambda.Lambda
  */
 class DotNetLambdaHandlerResolverTest : AwsReuseSolutionTestBase() {
 
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = "testData/solutions/SamHelloWorldApp/SamHelloWorldApp.sln"
 
     @Test
     fun testHandler_SingleValidHandler() {
