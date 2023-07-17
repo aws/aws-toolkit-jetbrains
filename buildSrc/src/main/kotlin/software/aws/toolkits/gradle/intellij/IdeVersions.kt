@@ -156,23 +156,23 @@ object IdeVersions {
             name = "2023.2",
             gateway = ProductProfile(
                 sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "232.8453-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "232.8660-EAP-CANDIDATE-SNAPSHOT",
                 plugins = arrayOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "232.8453-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "232.8660-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:232.8453.116",
-                    "Docker:232.8453.129"
+                    "PythonCore:232.8660.48",
+                    "Docker:232.8660.60"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "232.8453-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "232.8660-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -181,20 +181,22 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
-                    "Pythonid:232.8453.116",
-                    "org.jetbrains.plugins.go:232.8453.116",
+                    "Pythonid:232.8660.48",
+                    "org.jetbrains.plugins.go:232.8660.48",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
                     "org.intellij.intelliLang"
                 )
             ),
+            // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
+            //  https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
             rider = RiderProfile(
-                sdkVersion = "2023.2-EAP8-SNAPSHOT",
+                sdkVersion = "2023.2-EAP9-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2023.2.3", // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
-                nugetVersion = "2023.2.0-eap08" //  https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
+                rdGenVersion = "2023.2.3",
+                nugetVersion = "2023.2.0-eap09"
             )
         ),
 

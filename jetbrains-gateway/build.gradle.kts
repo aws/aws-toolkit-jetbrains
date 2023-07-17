@@ -3,6 +3,7 @@
 
 import net.bytebuddy.utility.RandomString
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
+import org.jetbrains.kotlin.storage.CacheResetOnProcessCanceled.enabled
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -123,11 +124,11 @@ tasks.integrationTest {
     environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)
 }
 
-//tasks.inspectClassesForKotlinIC {
-//    // > Task :jetbrains-gateway:inspectClassesForKotlinIC FAILED
-//    // * What went wrong:
-//    // Execution failed for task ':jetbrains-gateway:inspectClassesForKotlinIC'.
-//    // > Cannot access input property 'sourceSetOutputClassesDir$kotlin_gradle_plugin_common' of task ':jetbrains-gateway:inspectClassesForKotlinIC'. Accessing unreadable inputs or outputs is not supported. Declare the task as untracked by using Task.doNotTrackState(). See https://docs.gradle.org/8.0.2/userguide/incremental_build.html#disable-state-tracking for more details.
-//    //    > Failed to normalize content of 'C:\codebuild\tmp\output\src284282039\src\github.com\aws\aws-toolkit-jetbrains\jetbrains-gateway\build\classes\kotlin\main\classpath.index'.
-//    enabled = false
-//}
+tasks.inspectClassesForKotlinIC {
+    // > Task :jetbrains-gateway:inspectClassesForKotlinIC FAILED
+    // * What went wrong:
+    // Execution failed for task ':jetbrains-gateway:inspectClassesForKotlinIC'.
+    // > Cannot access input property 'sourceSetOutputClassesDir$kotlin_gradle_plugin_common' of task ':jetbrains-gateway:inspectClassesForKotlinIC'. Accessing unreadable inputs or outputs is not supported. Declare the task as untracked by using Task.doNotTrackState(). See https://docs.gradle.org/8.0.2/userguide/incremental_build.html#disable-state-tracking for more details.
+    //    > Failed to normalize content of 'C:\codebuild\tmp\output\src284282039\src\github.com\aws\aws-toolkit-jetbrains\jetbrains-gateway\build\classes\kotlin\main\classpath.index'.
+    enabled = false
+}
