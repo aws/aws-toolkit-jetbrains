@@ -46,7 +46,7 @@
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
 
             <separator/>
-            <action id="serverless.application.deploy.rider" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
+            <action class="software.aws.toolkits.jetbrains.services.lambda.actions.SyncServerlessApplicationAction" id="serverless.sync.infra.rider"/>
             <separator/>
         </group>
     </actions>
