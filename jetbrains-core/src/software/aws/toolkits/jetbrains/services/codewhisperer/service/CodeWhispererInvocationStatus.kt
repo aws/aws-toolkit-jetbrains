@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class CodeWhispererInvocationStatus {
     private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
+    private var invokingSessionId: String? = null
     private var timeAtLastInvocationComplete: Instant? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
         private set
@@ -25,7 +26,7 @@ class CodeWhispererInvocationStatus {
 
     fun checkExistingInvocationAndSet(): Boolean =
         if (isInvokingCodeWhisperer.getAndSet(true)) {
-            LOG.debug { "Have existing CodeWhisperer invocation" }
+            LOG.debug { "Have existing CodeWhisperer invocation, sessionId: $invokingSessionId" }
             true
         } else {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(true)
@@ -73,6 +74,11 @@ class CodeWhispererInvocationStatus {
 
     fun setInvocationStart() {
         timeAtLastInvocationStart = Instant.now()
+    }
+
+    fun setInvocationSessionId(sessionId: String?) {
+        LOG.debug { "Set current CodeWhisperer invocation sessionId: $sessionId" }
+        invokingSessionId = sessionId
     }
 
     fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
