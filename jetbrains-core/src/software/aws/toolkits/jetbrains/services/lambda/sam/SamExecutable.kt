@@ -12,7 +12,6 @@ import software.aws.toolkits.jetbrains.core.executables.AutoResolvable
 import software.aws.toolkits.jetbrains.core.executables.ExecutableCommon
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
 import software.aws.toolkits.jetbrains.core.executables.Validatable
-import software.aws.toolkits.jetbrains.services.lambda.deploy.DeployServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.sam.sync.SyncServerlessApplicationSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedImageTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.AppBasedZipTemplate
@@ -147,53 +146,7 @@ fun GeneralCommandLine.samPackageCommand(
     }
 }
 
-fun GeneralCommandLine.samDeployCommand(
-    environmentVariables: Map<String, String>,
-    templatePath: Path,
-    settings: DeployServerlessApplicationSettings
-) = this.apply {
-    withEnvironment(environmentVariables)
-    withWorkDirectory(templatePath.parent.toAbsolutePath().toString())
 
-    addParameter("deploy")
-    addParameter("--template-file")
-    addParameter(templatePath.toString())
-    addParameter("--stack-name")
-    addParameter(settings.stackName)
-    addParameter("--s3-bucket")
-    addParameter(settings.bucket)
-    settings.ecrRepo?.let {
-        addParameter("--image-repository")
-        addParameter(it)
-    }
-
-    if (settings.capabilities.isNotEmpty()) {
-        addParameter("--capabilities")
-        addParameters(settings.capabilities.map { it.capability })
-    }
-
-    addParameter("--no-execute-changeset")
-
-    if (settings.parameters.isNotEmpty()) {
-        addParameter("--parameter-overrides")
-        // Even though keys must be alphanumeric, escape it so that it is "valid" enough so that CFN can return a validation error instead of us failing
-        settings.parameters.forEach { (key, value) ->
-            addParameter(
-                "${escapeParameter(key)}=${escapeParameter(value)}"
-            )
-        }
-    }
-
-    if (settings.tags.isNotEmpty()) {
-        addParameter("--tags")
-        // Even though keys must be alphanumeric, escape it so that it is "valid" enough so that CFN can return a validation error instead of us failing
-        settings.tags.forEach { (key, value) ->
-            addParameter(
-                "${escapeParameter(key)}=${escapeParameter(value)}"
-            )
-        }
-    }
-}
 
 private fun escapeParameter(param: String): String {
     // Invert the quote if the string is already quoted
