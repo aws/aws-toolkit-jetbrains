@@ -40,6 +40,7 @@ class CodeWhispererInvocationStatus {
         if (isInvokingCodeWhisperer.compareAndSet(true, false)) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(false)
             LOG.debug { "Ending CodeWhisperer invocation" }
+            invokingSessionId = null
         }
     }
 
