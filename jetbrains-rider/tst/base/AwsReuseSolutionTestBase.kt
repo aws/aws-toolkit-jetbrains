@@ -13,6 +13,7 @@ import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
+import software.aws.toolkits.jetbrains.utils.openSolutionFile
 import java.io.File
 import java.time.Duration
 
@@ -83,7 +84,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
 
         useCachedTemplates = false
 
-        myProject = openSolution(File(solutionDirName), params)
+        myProject = openSolution(openSolutionFile(solutionDirName), params)
     }
 
     override val backendShellLoadTimeout: Duration = backendStartTimeout

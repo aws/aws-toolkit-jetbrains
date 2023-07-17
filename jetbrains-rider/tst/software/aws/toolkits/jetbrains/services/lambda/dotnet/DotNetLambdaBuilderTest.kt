@@ -10,9 +10,10 @@ import com.jetbrains.rider.projectView.solutionDirectory
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
+import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 
 class DotNetLambdaBuilderTest : AwsReuseSolutionTestBase() {
-    override fun getSolutionDirectoryName(): String = "testData/solutions/SamHelloWorldApp/SamHelloWorldApp.sln"
+    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     private val sut = DotNetLambdaBuilder()
 
