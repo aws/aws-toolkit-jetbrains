@@ -1,4 +1,4 @@
-// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 // Taken from https://docs.gradle.org/current/userguide/structuring_software_products.html
