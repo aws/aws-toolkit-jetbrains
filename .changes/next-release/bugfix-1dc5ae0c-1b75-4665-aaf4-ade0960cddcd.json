@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "CodeWhisperer: FileCrawler try read access from non AWT thread"
+}
