@@ -8,7 +8,6 @@ import com.goide.project.GoModuleLibrariesService;
 import com.goide.vgo.configuration.VgoProjectSettings;
 import com.goide.vgo.mod.psi.VgoFile;
 import com.goide.vgo.project.VgoDependency;
-import com.goide.vgo.project.VgoDependencyImpl;
 import com.goide.vgo.project.VgoExcludeRootsPolicy;
 import com.goide.vgo.project.VgoModule;
 import com.goide.vgo.project.VgoModulesRegistry;
@@ -37,6 +36,8 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.go.VgoCompatShims;
+import software.aws.toolkits.jetbrains.go.VgoDependencyInstance;
+
 
 public class VgoTestUtil {
     private static final String GOPATH = getGoTestDataPath("vgo/src/test/testData/mockGoPath").getAbsolutePath();
@@ -48,22 +49,22 @@ public class VgoTestUtil {
     public static final String DEFAULT_IMPORT_PATH = "jetbrains.com/hello";
 
     @NotNull
-    private static Pair<String, VgoDependencyImpl> dependencyPair(@NotNull String importPath,
-                                                                  @NotNull String version,
-                                                                  @Nullable String dir,
-                                                                  @Nullable VgoDependencyImpl replace) {
-        VgoDependencyImpl dependency = dependency(importPath, version, dir, replace);
+    private static Pair<String, com.goide.vgo.project.VgoDependencyImpl> dependencyPair(@NotNull String importPath,
+                                                                                        @NotNull String version,
+                                                                                        @Nullable String dir,
+                                                                                        @Nullable com.goide.vgo.project.VgoDependencyImpl replace) {
+        com.goide.vgo.project.VgoDependencyImpl dependency = dependency(importPath, version, dir, replace);
         return Pair.create(dependency.getDirPath(), dependency);
     }
 
     @NotNull
-    private static VgoDependencyImpl dependency(@NotNull String importPath,
-                                                @NotNull String version,
-                                                @Nullable String dir,
-                                                @Nullable VgoDependencyImpl replace) {
+    private static com.goide.vgo.project.VgoDependencyImpl dependency(@NotNull String importPath,
+                                                                      @NotNull String version,
+                                                                      @Nullable String dir,
+                                                                      @Nullable com.goide.vgo.project.VgoDependencyImpl replace) {
         String dirName = dir != null ? dir : String.format("%s@%s", importPath, version);
         String dirPath = FileUtil.join(GOPATH, "pkg", GoConstants.VGO_DIR_NAME, dirName);
-        return new VgoDependencyImpl(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false, null, null, null, null);
+        return VgoDependencyInstance.getVgoDependencyImplInstance(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false);
     }
 
     public static PsiFile setupVgoIntegration(@NotNull CodeInsightTestFixture fixture) {

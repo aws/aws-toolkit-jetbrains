@@ -6,13 +6,13 @@ package base
 import com.intellij.ide.GeneralSettings
 import com.intellij.openapi.project.Project
 import com.jetbrains.rider.projectView.solutionDirectory
-import com.jetbrains.rider.test.OpenSolutionParams
 import com.jetbrains.rider.test.base.BaseTestWithSolutionBase
 import com.jetbrains.rider.test.debugger.XDebuggerTestHelper
 import com.jetbrains.rider.test.scriptingApi.getVirtualFileFromPath
 import com.jetbrains.rider.test.scriptingApi.useCachedTemplates
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
+import software.aws.toolkits.jetbrains.utils.OpenSolutionFileParams
 import software.aws.toolkits.jetbrains.utils.openSolutionFile
 import java.io.File
 import java.time.Duration
@@ -74,7 +74,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolutionBase() {
     private fun openSolution(solutionDirName: String) {
         GeneralSettings.getInstance().isConfirmExit = false
 
-        val params = OpenSolutionParams()
+        val params = OpenSolutionFileParams()
         params.backendLoadedTimeout = backendStartTimeout
         params.customSolutionName = getCustomSolutionFileName()
         params.preprocessTempDirectory = { preprocessTempDirectory(it) }

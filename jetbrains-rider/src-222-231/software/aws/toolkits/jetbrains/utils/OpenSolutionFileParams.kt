@@ -3,4 +3,6 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+typealias OpenSolutionFileParams = com.jetbrains.rider.test.base.BaseTestWithSolutionBase.OpenSolutionParams
+
 fun openSolutionFile(solutionDirName: String) = solutionDirName

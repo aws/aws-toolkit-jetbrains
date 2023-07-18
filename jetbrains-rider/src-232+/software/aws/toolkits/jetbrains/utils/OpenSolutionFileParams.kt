@@ -5,4 +5,5 @@ package software.aws.toolkits.jetbrains.utils
 
 import java.io.File
 
+typealias OpenSolutionFileParams = com.jetbrains.rider.test.OpenSolutionParams
 fun openSolutionFile(solutionDirName: String) = File(solutionDirName)
