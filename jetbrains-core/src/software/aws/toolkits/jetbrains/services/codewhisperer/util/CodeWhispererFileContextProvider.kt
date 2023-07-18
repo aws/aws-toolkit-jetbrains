@@ -29,6 +29,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
@@ -108,11 +110,27 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo? {
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = isTestFile(psiFile)
+        val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
+        val language = targetContext.programmingLanguage
 
         val chunks = if (isTst && targetContext.programmingLanguage.isUTGSupported()) {
-            extractSupplementalFileContextForTst(psiFile, targetContext)
+            if (userGroup == CodeWhispererUserGroup.CrossFile) {
+                extractSupplementalFileContextForTst(psiFile, targetContext)
+            } else {
+                emptyList()
+            }
         } else if (!isTst && targetContext.programmingLanguage.isSupplementalContextSupported()) {
-            extractSupplementalFileContextForSrc(psiFile, targetContext)
+            when (language) {
+                is CodeWhispererJava -> extractSupplementalFileContextForSrc(psiFile, targetContext)
+
+                is CodeWhispererPython -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
+                    extractSupplementalFileContextForSrc(psiFile, targetContext)
+                } else {
+                    emptyList()
+                }
+
+                else -> emptyList()
+            }
         } else {
             LOG.debug { "${if (isTst) "UTG" else "CrossFile"} not supported for ${targetContext.programmingLanguage.languageId}" }
             null
