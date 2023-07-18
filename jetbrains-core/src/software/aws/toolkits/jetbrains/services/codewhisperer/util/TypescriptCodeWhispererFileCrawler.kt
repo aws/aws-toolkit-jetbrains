@@ -7,8 +7,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 
 object TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = ".ts"
-    override val dialects: Set<String> = setOf(".ts", ".tsx")
+    override val fileExtension: String = "ts"
+    override val dialects: Set<String> = setOf("ts", "tsx")
 
     // TODO: Add implementation when UTG is enabled
     override val testFilenamePattern: Regex = "".toRegex()

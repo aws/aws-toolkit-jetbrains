@@ -4,8 +4,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 
 object JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = ".js"
-    override val dialects: Set<String> = setOf(".js", ".jsx")
+    override val fileExtension: String = "js"
+    override val dialects: Set<String> = setOf("js", "jsx")
 
     // TODO: Add implementation when UTG is enabled
     override val testFilenamePattern: Regex = "".toRegex()

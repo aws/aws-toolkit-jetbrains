@@ -12,8 +12,9 @@ import com.jetbrains.python.psi.PyFile
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 
 object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = ".py"
-    override val dialects: Set<String> = setOf(".py")
+    override val fileExtension: String = "py"
+    override val dialects: Set<String> = setOf("py")
+
     override val testFilenamePattern: Regex = Regex("""(?:test_([^/\\]+)\.py|([^/\\]+)_test\.py)${'$'}""")
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 

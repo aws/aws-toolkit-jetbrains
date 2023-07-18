@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -70,14 +71,18 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
         val targetFile = psiFile.virtualFile
 
-        val openedFiles = FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
-            it.name != psiFile.virtualFile.name &&
-                isSameDialect(psiFile.virtualFile.extension) &&
-                !TestSourcesFilter.isTestSources(it, psiFile.project)
+        val openedFiles = runReadAction {
+            FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
+                it.name != psiFile.virtualFile.name &&
+                    isSameDialect(psiFile.virtualFile.extension) &&
+                    !TestSourcesFilter.isTestSources(it, psiFile.project)
+            }
         }
 
-        val fileToFileDistanceList = openedFiles.map {
-            return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+        val fileToFileDistanceList = runReadAction {
+            openedFiles.map {
+                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+            }
         }
 
         return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
