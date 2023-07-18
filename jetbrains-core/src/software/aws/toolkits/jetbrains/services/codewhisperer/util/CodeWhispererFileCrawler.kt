@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -38,6 +39,9 @@ interface FileCrawler {
      */
     fun findFocalFileForTest(psiFile: PsiFile): VirtualFile?
 
+    /**
+     * List files opened in the editors and sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
+     */
     fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile>
 }
 
@@ -61,6 +65,22 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             it.path.endsWith(fileExtension)
         }
     }.orEmpty()
+
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+        val targetFile = psiFile.virtualFile
+
+        val openedFiles = FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
+            it.name != psiFile.virtualFile.name &&
+                it.extension == psiFile.virtualFile.extension &&
+                !TestSourcesFilter.isTestSources(it, psiFile.project)
+        }
+
+        val fileToFileDistanceList = openedFiles.map {
+            return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+        }
+
+        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+    }
 
     abstract fun guessSourceFileName(tstFileName: String): String
 

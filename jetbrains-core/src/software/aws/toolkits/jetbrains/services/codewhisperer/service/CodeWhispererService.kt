@@ -534,7 +534,6 @@ class CodeWhispererService {
             }
         }
 
-
         // 3. caret position
         val caretPosition = runReadAction { getCaretPosition(editor) }
 
