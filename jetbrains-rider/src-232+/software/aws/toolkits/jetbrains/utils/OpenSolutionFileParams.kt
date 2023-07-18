@@ -7,3 +7,5 @@ import java.io.File
 
 typealias OpenSolutionFileParams = com.jetbrains.rider.test.OpenSolutionParams
 fun openSolutionFile(solutionDirName: String) = File(solutionDirName)
+
+const val OPEN_SOLUTION_DIR_NAME: String = "testData/solutions/SamHelloWorldApp/SamHelloWorldApp.sln"

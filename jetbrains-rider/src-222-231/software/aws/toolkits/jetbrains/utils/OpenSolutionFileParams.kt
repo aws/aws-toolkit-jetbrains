@@ -6,3 +6,8 @@ package software.aws.toolkits.jetbrains.utils
 typealias OpenSolutionFileParams = com.jetbrains.rider.test.base.BaseTestWithSolutionBase.OpenSolutionParams
 
 fun openSolutionFile(solutionDirName: String) = solutionDirName
+
+const val OPEN_SOLUTION_DIR_NAME: String = "SamHelloWorldApp"
+
+override val testCaseNameToTempDir: String
+    get() = getSolutionDirectoryName()
