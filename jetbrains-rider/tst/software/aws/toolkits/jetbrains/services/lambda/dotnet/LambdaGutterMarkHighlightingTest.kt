@@ -10,6 +10,7 @@ import com.jetbrains.rider.test.base.BaseTestWithMarkup
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
+import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 import java.time.Duration
 
 class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
@@ -21,7 +22,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     override val backendLoadedTimeout: Duration = backendStartTimeout
     override val backendShellLoadTimeout: Duration = backendStartTimeout
 
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     @Test
     fun testClass_FunctionClass_Detected() = verifyLambdaGutterMark()

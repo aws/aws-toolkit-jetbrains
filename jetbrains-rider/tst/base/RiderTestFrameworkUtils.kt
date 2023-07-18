@@ -58,12 +58,6 @@ val msBuild by lazy {
 fun allowCustomDotnetRoots() {
     // Rider Test Framework miss VFS root access for the case when running tests on local environment with custom SDK path
     // This should be fixed on Rider Test Framework level. Workaround it until related ticket RIDER-47995 is fixed.
-//    VfsRootAccess.allowRootAccess(
-//        ApplicationManager.getApplication(),
-//        dotNetSdk,
-//        File(TestEnvironmentInstance.dotnetCoreCliPath).parentFile.absolutePath
-//    )
-
     VfsRootAccess.allowRootAccess(
         ApplicationManager.getApplication(),
         dotNetSdk
