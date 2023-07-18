@@ -127,19 +127,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             when (language) {
                 is CodeWhispererJava -> extractSupplementalFileContextForSrc(psiFile, targetContext)
 
-                is CodeWhispererPython -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
-                    extractSupplementalFileContextForSrc(psiFile, targetContext)
-                } else {
-                    emptyList()
-                }
-
-                is CodeWhispererJavaScript -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
-                    extractSupplementalFileContextForSrc(psiFile, targetContext)
-                } else {
-                    emptyList()
-                }
-
-                is CodeWhispererTypeScript -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
+                is CodeWhispererPython, is CodeWhispererJavaScript, is CodeWhispererTypeScript -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
                     extractSupplementalFileContextForSrc(psiFile, targetContext)
                 } else {
                     emptyList()
