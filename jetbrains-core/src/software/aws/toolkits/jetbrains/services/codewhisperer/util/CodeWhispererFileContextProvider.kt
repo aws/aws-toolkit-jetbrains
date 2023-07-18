@@ -111,7 +111,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         val chunks = if (isTst && targetContext.programmingLanguage.isUTGSupported()) {
             extractSupplementalFileContextForTst(psiFile, targetContext)
-        } else if (!isTst && targetContext.programmingLanguage.isSupplementalContextSupported()) {
+        } else if (!isTst && targetContext.programmingLanguage.isCrossFileSupported()) {
             extractSupplementalFileContextForSrc(psiFile, targetContext)
         } else {
             LOG.debug { "${if (isTst) "UTG" else "CrossFile"} not supported for ${targetContext.programmingLanguage.languageId}" }
@@ -181,7 +181,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
-        if (!targetContext.programmingLanguage.isSupplementalContextSupported()) return emptyList()
+        if (!targetContext.programmingLanguage.isCrossFileSupported()) return emptyList()
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")

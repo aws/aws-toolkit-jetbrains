@@ -91,7 +91,7 @@ class CodeWhispererTelemetryService {
             requestContext.supplementalContext?.isUtg == true
         ) {
             requestContext.supplementalContext
-        } else if (requestContext.fileContextInfo.programmingLanguage.isSupplementalContextSupported() &&
+        } else if (requestContext.fileContextInfo.programmingLanguage.isCrossFileSupported() &&
             requestContext.supplementalContext?.isUtg == false
         ) {
             requestContext.supplementalContext

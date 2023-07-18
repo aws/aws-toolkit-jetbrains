@@ -21,7 +21,7 @@ class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isAllClassifier(): Boolean = true
 
-    override fun isSupplementalContextSupported() = true
+    override fun isCrossFileSupported() = true
 
     override fun isUTGSupported() = true
 

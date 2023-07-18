@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -49,6 +50,9 @@ class NoOpFileCrawler : FileCrawler {
 
     override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
+    /**
+     * @return list of files opened in the editors sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
+     */
     override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> = emptyList()
 }
 
@@ -61,6 +65,22 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             it.path.endsWith(fileExtension)
         }
     }.orEmpty()
+
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+        val targetFile = psiFile.virtualFile
+
+        val openedFiles = FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
+            it.name != psiFile.virtualFile.name &&
+                it.extension == psiFile.virtualFile.extension &&
+                !TestSourcesFilter.isTestSources(it, psiFile.project)
+        }
+
+        val fileToFileDistanceList = openedFiles.map {
+            return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+        }
+
+        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+    }
 
     abstract fun guessSourceFileName(tstFileName: String): String
 
@@ -93,6 +113,10 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
 
         /**
+         * @return file distance between two files
+         * e.g. distance between /A/B/C/d.java and /A/B/e.java is 1
+         * e.g. distance betweeb /A/b.java and /A/c.java is 0
+         *
          * For [LocalFileSystem](implementation of virtual file system), the path will be an absolute file path with file separator characters replaced
          * by forward slash "/"
          * @see [VirtualFile.getPath]

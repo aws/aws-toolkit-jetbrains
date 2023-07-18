@@ -23,7 +23,7 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun isAllClassifier(): Boolean = false
 
-    open fun isSupplementalContextSupported(): Boolean = false
+    open fun isCrossFileSupported(): Boolean = false
 
     open fun isUTGSupported(): Boolean = false
 
