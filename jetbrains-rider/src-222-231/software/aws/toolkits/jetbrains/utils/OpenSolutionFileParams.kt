@@ -8,6 +8,3 @@ typealias OpenSolutionFileParams = com.jetbrains.rider.test.base.BaseTestWithSol
 fun openSolutionFile(solutionDirName: String) = solutionDirName
 
 const val OPEN_SOLUTION_DIR_NAME: String = "SamHelloWorldApp"
-
-override val testCaseNameToTempDir: String
-    get() = getSolutionDirectoryName()
