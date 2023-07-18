@@ -19,7 +19,7 @@ import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 
 // version1: Utilize PSI import elements to resolve imported files
 object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = ".java"
+    override val fileExtension: String = "java"
     override val testFilenamePattern: Regex = """(?:Test([^/\\]+)\.java|([^/\\]+)Test\.java)$""".toRegex()
 
     override fun guessSourceFileName(tstFileName: String): String = tstFileName.substring(0, tstFileName.length - "Test.java".length) + ".java"
