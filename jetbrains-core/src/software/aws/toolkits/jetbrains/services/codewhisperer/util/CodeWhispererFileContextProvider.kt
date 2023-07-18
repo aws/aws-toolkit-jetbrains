@@ -24,6 +24,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
@@ -49,6 +50,7 @@ private val codewhispererCodeChunksIndex = GistManager.getInstance()
 private fun getFileCrawlerForLanguage(programmingLanguage: CodeWhispererProgrammingLanguage) = when (programmingLanguage) {
     is CodeWhispererJava -> JavaCodeWhispererFileCrawler
     is CodeWhispererPython -> PythonCodeWhispererFileCrawler
+    is CodeWhispererJavaScript -> JavascriptCodeWhispererFileCrawler
     else -> NoOpFileCrawler()
 }
 
@@ -124,6 +126,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererJava -> extractSupplementalFileContextForSrc(psiFile, targetContext)
 
                 is CodeWhispererPython -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
+                    extractSupplementalFileContextForSrc(psiFile, targetContext)
+                } else {
+                    emptyList()
+                }
+
+                is CodeWhispererJavaScript -> if (userGroup == CodeWhispererUserGroup.CrossFile) {
                     extractSupplementalFileContextForSrc(psiFile, targetContext)
                 } else {
                     emptyList()
