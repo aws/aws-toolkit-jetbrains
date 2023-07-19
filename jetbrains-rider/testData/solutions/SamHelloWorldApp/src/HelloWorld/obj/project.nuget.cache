@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "dgSpecHash": "K32kyd1hE7bQUvnVjIDecUxxeGRweqKWngNhwNDHYnMU3rM/uaEvFUNjEAvXjzrPjH7f9Bsh8AMkjTPRjz88Jw==",
+  "success": true,
+  "projectFilePath": "/Users/vchikoti/Desktop/vc_work/aws-toolkit-jetbrains/jetbrains-rider/testData/solutions/SamHelloWorldApp/src/HelloWorld/HelloWorld.csproj",
+  "expectedPackageFiles": [
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.apigatewayevents/2.0.0/amazon.lambda.apigatewayevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.applicationloadbalancerevents/2.0.0/amazon.lambda.applicationloadbalancerevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.cloudwatchevents/2.0.0/amazon.lambda.cloudwatchevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.cloudwatchlogsevents/2.0.0/amazon.lambda.cloudwatchlogsevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.cognitoevents/2.0.0/amazon.lambda.cognitoevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.configevents/2.0.0/amazon.lambda.configevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.core/2.1.0/amazon.lambda.core.2.1.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.dynamodbevents/2.0.0/amazon.lambda.dynamodbevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.kinesisanalyticsevents/2.0.0/amazon.lambda.kinesisanalyticsevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.kinesisevents/2.0.0/amazon.lambda.kinesisevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.kinesisfirehoseevents/2.0.0/amazon.lambda.kinesisfirehoseevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.lexevents/2.0.0/amazon.lambda.lexevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.s3events/2.0.0/amazon.lambda.s3events.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.serialization.systemtextjson/2.1.0/amazon.lambda.serialization.systemtextjson.2.1.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.simpleemailevents/2.0.0/amazon.lambda.simpleemailevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.snsevents/2.0.0/amazon.lambda.snsevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/amazon.lambda.sqsevents/2.0.0/amazon.lambda.sqsevents.2.0.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/awssdk.core/3.7.0/awssdk.core.3.7.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/awssdk.dynamodbv2/3.7.0/awssdk.dynamodbv2.3.7.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/awssdk.kinesis/3.7.0/awssdk.kinesis.3.7.0.nupkg.sha512",
+    "/Users/vchikoti/.nuget/packages/awssdk.s3/3.7.0/awssdk.s3.3.7.0.nupkg.sha512"
+  ],
+  "logs": []
+}
