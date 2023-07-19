@@ -32,15 +32,14 @@ object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
 
     override fun findFocalFileForTest(psiFile: PsiFile): VirtualFile? = findSourceFileByName(psiFile) ?: findRelevantFileFromEditors(psiFile)
 
-    private fun findSourceFileByName(psiFile: PsiFile): VirtualFile? {
-        return super.listFilesUnderProjectRoot(psiFile.project).find {
-            !it.isDirectory &&
-                it.isWritable &&
-                it.name != psiFile.virtualFile.name &&
-                // TODO: should we use strict equal instead?
-                it.name.contains(guessSourceFileName(psiFile.name))
-        }
+    private fun findSourceFileByName(psiFile: PsiFile): VirtualFile? = super.listFilesUnderProjectRoot(psiFile.project).find {
+        !it.isDirectory &&
+            it.isWritable &&
+            it.name != psiFile.virtualFile.name &&
+            // TODO: should we use strict equal instead?
+            it.name.contains(guessSourceFileName(psiFile.name))
     }
+
 
     /**
      * check files in editors and pick one which has most substring matches to the target
