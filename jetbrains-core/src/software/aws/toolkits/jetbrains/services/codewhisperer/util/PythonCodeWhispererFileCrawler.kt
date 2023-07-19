@@ -40,7 +40,6 @@ object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
             it.name.contains(guessSourceFileName(psiFile.name))
     }
 
-
     /**
      * check files in editors and pick one which has most substring matches to the target
      */

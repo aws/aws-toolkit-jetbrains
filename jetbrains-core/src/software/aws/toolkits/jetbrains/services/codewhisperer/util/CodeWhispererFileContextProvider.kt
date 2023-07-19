@@ -198,13 +198,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
-    override fun isTestFile(psiFile: PsiFile) = when (psiFile.programmingLanguage()) {
-        is CodeWhispererJava -> TestSourcesFilter.isTestSources(psiFile.virtualFile, project)
-        is CodeWhispererPython -> PythonCodeWhispererFileCrawler.testFilenamePattern.matches(psiFile.name)
-        is CodeWhispererJavaScript, is CodeWhispererJsx -> JavascriptCodeWhispererFileCrawler.testFilenamePattern.matches(psiFile.name)
-        is CodeWhispererTypeScript, is CodeWhispererTsx -> TypescriptCodeWhispererFileCrawler.testFilenamePattern.matches(psiFile.name)
-        else -> true
-    }
+    override fun isTestFile(psiFile: PsiFile) = TestSourcesFilter.isTestSources(psiFile.virtualFile, project) ||
+        psiFile.virtualFile.path.contains("""/test/""") ||
+        psiFile.virtualFile.path.contains("""/tst/""")
 
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
