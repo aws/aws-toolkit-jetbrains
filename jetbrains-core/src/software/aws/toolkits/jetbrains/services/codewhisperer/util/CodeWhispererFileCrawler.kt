@@ -7,6 +7,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -39,6 +40,9 @@ interface FileCrawler {
      */
     fun findFocalFileForTest(psiFile: PsiFile): VirtualFile?
 
+    /**
+     * List files opened in the editors and sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
+     */
     fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile>
 }
 
@@ -56,6 +60,7 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
+    abstract val dialects: Set<String>
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
@@ -63,7 +68,31 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+        val targetFile = psiFile.virtualFile
+
+        val openedFiles = runReadAction {
+            FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
+                it.name != psiFile.virtualFile.name &&
+                    isSameDialect(psiFile.virtualFile.extension) &&
+                    !TestSourcesFilter.isTestSources(it, psiFile.project)
+            }
+        }
+
+        val fileToFileDistanceList = runReadAction {
+            openedFiles.map {
+                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+            }
+        }
+
+        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+    }
+
     abstract fun guessSourceFileName(tstFileName: String): String
+
+    private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
+        dialects.contains(fileExt)
+    } ?: false
 
     companion object {
         fun searchRelevantFileInEditors(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
