@@ -201,8 +201,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     override fun isTestFile(psiFile: PsiFile): Boolean {
         val path = runReadAction { contentRootPathProvider.getPathToElement(project, psiFile.virtualFile, null) ?: psiFile.virtualFile.path }
         return TestSourcesFilter.isTestSources(psiFile.virtualFile, project) ||
-            path.contains("""/test/""") ||
-            path.contains("""/tst/""")
+            path.contains("""test/""") ||
+            path.contains("""tst/""") ||
+            path.contains("""tests/""")
     }
 
     @VisibleForTesting
