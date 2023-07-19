@@ -255,23 +255,25 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val focalFile = getFileCrawlerForLanguage(targetContext.programmingLanguage).findFocalFileForTest(psiFile)
 
         return focalFile?.let { file ->
-            val relativePath = contentRootPathProvider.getPathToElement(project, file, null) ?: file.path
-            val content = file.content()
+            runReadAction {
+                val relativePath = runReadAction { contentRootPathProvider.getPathToElement(project, file, null) ?: file.path }
+                val content = runReadAction { file.content() }
 
-            if (content.isBlank()) {
-                emptyList()
-            } else {
-                listOf(
-                    Chunk(
-                        content = CodeWhispererConstants.Utg.UTG_PREFIX + file.content().let {
-                            it.substring(
-                                0,
-                                minOf(it.length, CodeWhispererConstants.Utg.UTG_SEGMENT_SIZE)
-                            )
-                        },
-                        path = relativePath
+                if (content.isBlank()) {
+                    emptyList()
+                } else {
+                    listOf(
+                        Chunk(
+                            content = CodeWhispererConstants.Utg.UTG_PREFIX + file.content().let {
+                                it.substring(
+                                    0,
+                                    minOf(it.length, CodeWhispererConstants.Utg.UTG_SEGMENT_SIZE)
+                                )
+                            },
+                            path = relativePath
+                        )
                     )
-                )
+                }
             }
         }.orEmpty()
     }
