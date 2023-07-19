@@ -256,8 +256,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         return focalFile?.let { file ->
             runReadAction {
-                val relativePath = runReadAction { contentRootPathProvider.getPathToElement(project, file, null) ?: file.path }
-                val content = runReadAction { file.content() }
+                val relativePath = contentRootPathProvider.getPathToElement(project, file, null) ?: file.path
+                val content = file.content()
 
                 if (content.isBlank()) {
                     emptyList()
