@@ -36,7 +36,7 @@ object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
         return super.listFilesUnderProjectRoot(psiFile.project).find {
             !it.isDirectory &&
                 it.isWritable &&
-                it.name !=  psiFile.virtualFile.name &&
+                it.name != psiFile.virtualFile.name &&
                 // TODO: should we use strict equal instead?
                 it.name.contains(guessSourceFileName(psiFile.name))
         }
