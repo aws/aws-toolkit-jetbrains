@@ -198,9 +198,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
-    override fun isTestFile(psiFile: PsiFile) = TestSourcesFilter.isTestSources(psiFile.virtualFile, project) ||
-        psiFile.virtualFile.path.contains("""/test/""") ||
-        psiFile.virtualFile.path.contains("""/tst/""")
+    override fun isTestFile(psiFile: PsiFile): Boolean {
+        val path = runReadAction { contentRootPathProvider.getPathToElement(project, psiFile.virtualFile, null) ?: psiFile.virtualFile.path }
+        return TestSourcesFilter.isTestSources(psiFile.virtualFile, project) ||
+            path.contains("""/test/""") ||
+            path.contains("""/tst/""")
+    }
 
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
