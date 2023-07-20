@@ -167,7 +167,7 @@ object IdeVersions {
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                     "PythonCore:232.8660.48",
-                    "Docker:232.8660.60"
+                    "Docker:232.8660.88"
                 )
             ),
             ultimate = ProductProfile(
@@ -187,8 +187,6 @@ object IdeVersions {
                     "org.intellij.intelliLang"
                 )
             ),
-            // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
-            //  https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
             rider = RiderProfile(
                 sdkVersion = "2023.2-EAP9-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
@@ -233,8 +231,8 @@ class RiderProfile(
     sdkVersion: String,
     plugins: Array<String>,
     val netFrameworkTarget: String,
-    val rdGenVersion: String, // https://www.myget.org/feed/rd-snapshots/package/maven/com.jetbrains.rd/rd-gen
-    val nugetVersion: String // https://www.nuget.org/packages/JetBrains.Rider.SDK/
+    val rdGenVersion: String, // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.2/versions
+    val nugetVersion: String // https://www.nuget.org/packages?q=JetBrains.Rider.SDK+
 ) : ProductProfile(IdeFlavor.RD, sdkVersion, plugins)
 
 class Profile(

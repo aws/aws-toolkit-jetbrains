@@ -56,7 +56,6 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
                 handler = handler
             )
             assertThat(runConfiguration).isNotNull
-            println("what is project value: $project")
             runConfiguration.checkConfiguration()
         }
     }
