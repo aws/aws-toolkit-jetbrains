@@ -45,7 +45,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
     }
 
     @Ignore
-    fun testHandler_ValidHandler() {
+    fun `testHandler ValidHandler`() {
         val handler = "HelloWorld::HelloWorld.Function::FunctionHandler"
         preWarmLambdaHandlerValidation(project, handler)
 
