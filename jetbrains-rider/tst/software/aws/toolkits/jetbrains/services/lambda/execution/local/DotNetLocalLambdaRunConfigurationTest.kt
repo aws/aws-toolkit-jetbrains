@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
+import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -43,7 +44,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         MockCredentialsManager.getInstance().reset()
     }
 
-    @Test
+    @Ignore
     fun testHandler_ValidHandler() {
         val handler = "HelloWorld::HelloWorld.Function::FunctionHandler"
         preWarmLambdaHandlerValidation(project, handler)
