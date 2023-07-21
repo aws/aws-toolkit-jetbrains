@@ -18,10 +18,11 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 import software.aws.toolkits.resources.message
 
 class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     override val waitForCaches = true
 

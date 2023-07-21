@@ -8,10 +8,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 
 class DotNetHandlerCompletionProviderTest : AwsReuseSolutionTestBase() {
 
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     override val waitForCaches = true
 
