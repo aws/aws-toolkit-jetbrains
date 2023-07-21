@@ -188,13 +188,13 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2023.2-EAP2-SNAPSHOT",
+                sdkVersion = "2023.2-EAP9-SNAPSHOT",
                 plugins = commonPlugins223 + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2023.2.1",
-                nugetVersion = "2023.2.0-eap02"
+                rdGenVersion = "2023.2.3",
+                nugetVersion = "2023.2.0-eap09"
             )
         ),
 
@@ -231,7 +231,7 @@ class RiderProfile(
     sdkVersion: String,
     plugins: Array<String>,
     val netFrameworkTarget: String,
-    val rdGenVersion: String, // https://www.myget.org/feed/rd-snapshots/package/maven/com.jetbrains.rd/rd-gen
+    val rdGenVersion: String, // https://central.sonatype.com/artifact/com.jetbrains.rd/rd-gen/2023.2.3/versions
     val nugetVersion: String // https://www.nuget.org/packages/JetBrains.Rider.SDK/
 ) : ProductProfile(IdeFlavor.RD, sdkVersion, plugins)
 
