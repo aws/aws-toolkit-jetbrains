@@ -15,6 +15,12 @@ class CodeWhispererTsx private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = CodeWhispererTypeScript.INSTANCE
 
+    override fun isClassifierSupported(): Boolean = true
+
+    override fun isAllClassifier(): Boolean = true
+
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "tsx"
 

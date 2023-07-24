@@ -15,6 +15,10 @@ class CodeWhispererTypeScript private constructor() : CodeWhispererProgrammingLa
 
     override fun isClassifierSupported(): Boolean = true
 
+    override fun isAllClassifier(): Boolean = true
+
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "typescript"
 

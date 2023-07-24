@@ -26,6 +26,7 @@ object CodeWhispererConstants {
     const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
+    const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
 
     // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
     // avoid ThrottlingException as much as possible.
@@ -73,5 +74,14 @@ object CodeWhispererConstants {
 
         val Sigv4ClientRegion = Region.US_EAST_1
         val BearerClientRegion = Region.US_EAST_1
+    }
+
+    object CrossFile {
+        const val CHUNK_SIZE = 60
+    }
+
+    object Utg {
+        const val UTG_SEGMENT_SIZE = 10200
+        const val UTG_PREFIX = "UTG\n"
     }
 }
