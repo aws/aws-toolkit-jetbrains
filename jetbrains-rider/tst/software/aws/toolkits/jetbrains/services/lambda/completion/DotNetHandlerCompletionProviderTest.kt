@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.completion
 
 import base.AwsReuseSolutionTestBase
 import org.assertj.core.api.Assertions.assertThat
+import org.testng.annotations.DataProvider
 import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
