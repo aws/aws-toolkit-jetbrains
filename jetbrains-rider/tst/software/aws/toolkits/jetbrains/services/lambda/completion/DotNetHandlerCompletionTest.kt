@@ -11,7 +11,6 @@ import com.jetbrains.rider.test.annotations.TestEnvironment
 import com.jetbrains.rider.test.base.BaseTestWithSolution
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
-import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.services.lambda.compat.CachedImageIcon
 import java.time.Duration
@@ -30,10 +29,9 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
         allowCustomDotnetRoots()
     }
 
-    @Ignore("test for 232")
     @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
     @TestEnvironment(solution = "SamHelloWorldApp")
-    fun `testDetermineHandlers singleHandler`() {
+    fun testDetermineHandlers_SingleHandler() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
 
         assertThat(handlers.size).isEqualTo(1)
