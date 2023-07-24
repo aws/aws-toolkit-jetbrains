@@ -16,10 +16,10 @@ class DotNetHandlerCompletionProviderTest : AwsReuseSolutionTestBase() {
 
     override val waitForCaches = true
 
-//    @DataProvider(name = "handlerCompletionSupportedData")
-//    fun handlerCompletionSupportData() = arrayOf(
-//        arrayOf("DotNet60", LambdaRuntime.DOTNET6_0)
-//    )
+    @DataProvider(name = "handlerCompletionSupportedData")
+    fun handlerCompletionSupportData() = arrayOf(
+        arrayOf("DotNet60", LambdaRuntime.DOTNET6_0)
+    )
 
     @Ignore("test for 232")
     @Test(
