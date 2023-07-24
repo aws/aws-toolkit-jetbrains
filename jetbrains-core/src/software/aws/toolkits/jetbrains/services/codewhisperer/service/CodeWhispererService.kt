@@ -170,15 +170,16 @@ class CodeWhispererService {
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                     startTime = endTime
                     val requestId = response.responseMetadata().requestId()
+                    val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
                         requestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
                         requestContext.latencyContext.paginationFirstCompletionTime = latency
                         requestContext.latencyContext.firstRequestId = requestId
+                        CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                     }
                     if (response.nextToken().isEmpty()) {
                         requestContext.latencyContext.paginationAllCompletionsEnd = System.nanoTime()
                     }
-                    val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     val emptyRecommendations = checkEmptyRecommendations(response.completions())
                     val completionType = checkCompletionType(response.completions(), emptyRecommendations)
                     val responseContext = ResponseContext(sessionId, completionType)
@@ -269,6 +270,7 @@ class CodeWhispererService {
                 }
                 val exceptionType = e::class.simpleName
                 val responseContext = ResponseContext(sessionId, CodewhispererCompletionType.Unknown)
+                CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                 logServiceInvocation(requestId, requestContext, responseContext, emptyList(), null, exceptionType)
                 CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
                     requestId,
@@ -332,6 +334,7 @@ class CodeWhispererService {
 
         if (requestContext.editor.isDisposed) {
             LOG.debug { "Stop showing CodeWhisperer recommendations since editor is disposed. RequestId: $requestId" }
+            CodeWhispererPopupManager.getInstance().cancelPopup(popup)
             return null
         }
 
@@ -511,36 +514,27 @@ class CodeWhispererService {
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.CrossFile) {
-            runBlocking {
-                try {
-                    withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-                        FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
+        val supplementalContext = runBlocking {
+            try {
+                withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
+                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
+                }
+            } catch (e: Exception) {
+                if (e is TimeoutCancellationException) {
+                    LOG.debug {
+                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
                     }
-                } catch (e: Exception) {
-                    if (e is TimeoutCancellationException) {
-                        LOG.debug {
-                            "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                        }
-                        SupplementalContextInfo(
-                            isUtg = isTstFile,
-                            contents = emptyList(),
-                            latency = System.currentTimeMillis() - startFetchingTimestamp,
-                            targetFileName = fileContext.filename
-                        )
-                    } else {
-                        LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                        null
-                    }
+                    SupplementalContextInfo(
+                        isUtg = isTstFile,
+                        contents = emptyList(),
+                        latency = System.currentTimeMillis() - startFetchingTimestamp,
+                        targetFileName = fileContext.filename
+                    )
+                } else {
+                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                    null
                 }
             }
-        } else {
-            SupplementalContextInfo(
-                isUtg = isTstFile,
-                contents = emptyList(),
-                latency = 0,
-                targetFileName = fileContext.filename
-            )
         }
 
         // 3. caret position
