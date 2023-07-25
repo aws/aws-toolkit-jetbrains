@@ -19,8 +19,6 @@ import kotlinx.coroutines.yield
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
@@ -144,24 +142,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         }
 
         return chunks?.let {
-            if (it.isNotEmpty()) {
-                LOG.info { "Successfully fetched supplemental context." }
-                it.forEachIndexed { index, chunk ->
-                    LOG.info {
-                        """
-                            |---------------------------------------------------------------
-                            | Chunk $index:
-                            |    path = ${chunk.path},
-                            |    score = ${chunk.score},
-                            |    content = ${chunk.content}
-                            |----------------------------------------------------------------
-                        """.trimMargin()
-                    }
-                }
-            } else {
-                LOG.warn { "Failed to fetch supplemental context, empty list." }
-            }
-
             SupplementalContextInfo(
                 isUtg = isTst,
                 contents = it,
@@ -188,13 +168,11 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 chunks.addAll(file.toCodeChunk(relativePath))
                 hasUsed.add(file)
                 if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
-                    LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
                     return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
                 }
             }
         }
 
-        LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
@@ -214,19 +192,17 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
 
         // step 1: prepare data
+        val timeBeforeChunkFetching = System.currentTimeMillis()
         val first60Chunks: List<Chunk> = try {
             runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
         } catch (e: TimeoutCancellationException) {
             throw e
         }
+        LOG.debug { "Time elapsed for fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks: ${System.currentTimeMillis() - timeBeforeChunkFetching}ms" }
 
         yield()
 
         if (first60Chunks.isEmpty()) {
-            LOG.warn {
-                "0 chunks was found for supplemental context, fileName=${targetContext.filename}, " +
-                    "programmingLanaugage: ${targetContext.programmingLanguage}"
-            }
             return emptyList()
         }
 
@@ -237,7 +213,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         // step 2: bm25 calculation
         val timeBeforeBm25 = System.currentTimeMillis()
         val top3Chunks: List<BM25Result> = BM250kapi(first60Chunks.map { it.content }).topN(query)
-        LOG.info { "Time ellapsed for BM25 algorithm: ${System.currentTimeMillis() - timeBeforeBm25} ms" }
+        LOG.debug { "Time elapsed for BM25 algorithm: ${System.currentTimeMillis() - timeBeforeBm25}ms" }
 
         yield()
 

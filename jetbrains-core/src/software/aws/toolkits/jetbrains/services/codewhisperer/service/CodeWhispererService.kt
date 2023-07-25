@@ -521,9 +521,6 @@ class CodeWhispererService {
                 }
             } catch (e: Exception) {
                 if (e is TimeoutCancellationException) {
-                    LOG.debug {
-                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                    }
                     SupplementalContextInfo(
                         isUtg = isTstFile,
                         contents = emptyList(),
@@ -535,6 +532,38 @@ class CodeWhispererService {
                     null
                 }
             }
+        }?.also {
+            if (it.isProcessTimeout) {
+                LOG.debug { "Supplemental context fetch timed out in ${it.latency}ms" }
+            } else {
+                LOG.debug { "Supplemental context fetch succeeded in ${it.latency}ms" }
+                LOG.debug {
+                    """IsUtg = ${it.isUtg},
+                        Latency = ${it.latency},
+                        ContentLength = ${it.contentLength},
+                        numberOfChunk = ${it.contents.size}
+                    """.trimIndent()
+                }
+
+                if (it.contents.isNotEmpty()) {
+                    it.contents.forEachIndexed { index, chunk ->
+                        LOG.debug {
+                            """
+                            |---------------------------------------------------------------
+                            | Chunk $index:
+                            |    isUtg = ${it.isUtg},
+                            |    path = ${chunk.path},
+                            |    score = ${chunk.score},
+                            |    content = ${chunk.content}
+                            |----------------------------------------------------------------
+                        """.trimMargin()
+                        }
+                    }
+                } else {
+                    LOG.debug { "Supplemental context was empty" }
+                }
+            }
+
         }
 
         // 3. caret position
