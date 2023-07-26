@@ -65,7 +65,7 @@ sealed class CodeScanSessionConfig(
 
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${selectedFile.path}" }
 
-        val (includedSourceFiles, payloadSize, totalLines, _) = when (selectedFile.path.startsWith(projectRoot.path)) {
+        val payloadMetadata = when (selectedFile.path.startsWith(projectRoot.path)) {
             true -> includeDependencies()
             false -> {
                 // Set project root as the parent of the selected file.
@@ -75,14 +75,14 @@ sealed class CodeScanSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(includedSourceFiles.map { Path.of(it) })
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
             selectedFile.programmingLanguage().toTelemetryType(),
-            totalLines,
-            includedSourceFiles.size,
+            payloadMetadata.linesScanned,
+            payloadMetadata.sourceFiles.size,
             Instant.now().toEpochMilli() - start,
-            includedSourceFiles.mapNotNull { Path.of(it).toFile().toVirtualFile() },
-            payloadSize,
+            payloadMetadata.sourceFiles.mapNotNull { Path.of(it).toFile().toVirtualFile() },
+            payloadMetadata.payloadSize,
             srcZip.length()
         )
 
