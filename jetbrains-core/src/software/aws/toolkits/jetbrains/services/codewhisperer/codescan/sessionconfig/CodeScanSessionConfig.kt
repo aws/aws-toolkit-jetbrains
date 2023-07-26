@@ -65,7 +65,7 @@ sealed class CodeScanSessionConfig(
 
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${selectedFile.path}" }
 
-        val (includedSourceFiles, payloadSize, totalLines, _) = when(selectedFile.path.startsWith(projectRoot.path)) {
+        val (includedSourceFiles, payloadSize, totalLines, _) = when (selectedFile.path.startsWith(projectRoot.path)) {
             true -> includeDependencies()
             false -> {
                 // Set project root as the parent of the selected file.
@@ -89,14 +89,13 @@ sealed class CodeScanSessionConfig(
         return Payload(payloadContext, srcZip)
     }
 
-    open fun includeFileOutsideProjectRoot(): PayloadMetadata {
+    open fun includeFileOutsideProjectRoot(): PayloadMetadata =
         // Handle the case where the selected file is outside the project root.
-        return PayloadMetadata(
+        PayloadMetadata(
             setOf(selectedFile.path),
             selectedFile.length,
             Files.lines(selectedFile.toNioPath()).count().toLong()
         )
-    }
 
     open fun includeDependencies(): PayloadMetadata {
         val includedSourceFiles = mutableSetOf<String>()
