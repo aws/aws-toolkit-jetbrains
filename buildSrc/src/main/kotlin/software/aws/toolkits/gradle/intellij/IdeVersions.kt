@@ -166,8 +166,8 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:232.8660.48",
-                    "Docker:232.8660.88"
+                    "PythonCore:232.8660.142",
+                    "Docker:232.8660.158"
                 )
             ),
             ultimate = ProductProfile(
@@ -181,8 +181,8 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
-                    "Pythonid:232.8660.48",
-                    "org.jetbrains.plugins.go:232.8660.48",
+                    "Pythonid:232.8660.142",
+                    "org.jetbrains.plugins.go:232.8660.142",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
                     "org.intellij.intelliLang"
                 )
