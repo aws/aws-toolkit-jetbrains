@@ -120,7 +120,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
 
     fun checkActiveCodeWhispererConnectionType(project: Project) = when {
         actionState.token != null -> CodeWhispererLoginType.Accountless
-        isAccessTokenExpired(project) || isRefreshTokenExpired(project) -> CodeWhispererLoginType.Expired
+        isRefreshTokenExpired(project) -> CodeWhispererLoginType.Expired
         else -> {
             val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
             if (conn != null) {
