@@ -45,7 +45,7 @@ private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
             val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
-            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantFilesInEditors(psiFile) }
+            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantOpenedFilesInEditors(psiFile) }
             FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
         }
     }

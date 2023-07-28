@@ -19,8 +19,10 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.PythonCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 open class CodeWhispererFileCrawlerTest(projectRule: CodeInsightTestFixtureRule) {
     @JvmField
@@ -76,7 +78,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
     }
 
     @Test
-    fun listRelevantFilesInEditor() {
+    fun listRelevantOpenedFilesInEditors() {
         val recommendationServiceFile = fixture.addFileToProject("service/CodewhispererRecommendationService.java", aString())
         val fileContextProviderFile = fixture.addFileToProject("service/microService/CodeWhispererFileContextProvider.java", aString())
         val constantFile = fixture.addFileToProject("util/CodeWhispererConstants.java", aString())
@@ -92,7 +94,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             }
         }
 
-        val actual = sut.listRelevantFilesInEditors(fileContextProviderFile)
+        val actual = sut.listRelevantOpenedFilesInEditors(fileContextProviderFile)
         assertThat(actual).isEqualTo(
             listOf(
                 recommendationServiceFile.virtualFile,
@@ -105,74 +107,24 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
     }
 
     @Test
-    fun `findFilesUnderProjectRoot`() {
-        val mainClass = fixture.addFileToProject(
-            "Main.java",
-            """
-            package com.cw.file_crawler_test;
-            
-            import java.util.Map;
-            import java.util.regex.Pattern;
-            
-            import com.cw.file_crawler_test.utils.AnotherClass;
-            import com.cw.file_crawler_test.service.controllers.MyController;
-            
-            public class Main {
-            };
-            """.trimIndent()
-        )
+    fun findFilesUnderProjectRoot() {
+        val mainClass = fixture.addFileToProject("Main.java", "")
+        val controllerClass = fixture.addFileToProject("service/controllers/MyController.java", "")
+        val anotherClass = fixture.addFileToProject("/utils/AnotherClass.java", "")
+        val notImportedClass = fixture.addFileToProject("/utils/NotImported.java", "")
+        val notImportedClass2 = fixture.addFileToProject("/utils/NotImported2.java", "")
 
-        val controllerClass = fixture.addFileToProject(
-            "service/controllers/MyController.java",
-            """
-                package com.cw.file_crawler_test.service.controllers;
-                
-                public class MyController {}
-            """.trimIndent()
-        )
+        runReadAction {
+            val actual = sut.listFilesUnderProjectRoot(project)
+            val expected = listOf<PsiFile>(mainClass, controllerClass, anotherClass, notImportedClass, notImportedClass2)
+                .map { it.virtualFile }
+                .toSet()
 
-        val anotherClass = fixture.addFileToProject(
-            "/utils/AnotherClass.java",
-            """
-                package com.cw.file_crawler_test.utils;
-                
-                public class AnotherClass {}
-            """.trimIndent()
-        )
-
-        val notImportedClass = fixture.addFileToProject(
-            "/utils/NotImported.java",
-            """
-                package com.cw.file_crawler_test.utils;
-                
-                public class NotImported {}
-            """.trimIndent()
-        )
-
-        val notImportedClass2 = fixture.addFileToProject(
-            "/utils/NotImported2.java",
-            """
-                package com.cw.file_crawler_test.utils;
-                
-                public class NotImported2 {}
-            """.trimIndent()
-        )
-
-        fun assertCrawlerFindCorrectFiles(sut: CodeWhispererFileCrawler) {
-            runReadAction {
-                val actual = sut.listFilesUnderProjectRoot(project)
-                val expected = listOf<PsiFile>(mainClass, controllerClass, anotherClass, notImportedClass, notImportedClass2)
-                    .map { it.virtualFile }
-                    .toSet()
-
-                assertThat(actual).hasSize(expected.size)
-                actual.forEach {
-                    assertThat(expected.contains(it)).isTrue
-                }
+            assertThat(actual).hasSize(expected.size)
+            actual.forEach {
+                assertThat(expected.contains(it)).isTrue
             }
         }
-
-        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler)
     }
 
     @Test
@@ -291,7 +243,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
         val file2 = fixture.addFileToProject("Class2.java", "trivial string 2")
         val file3 = fixture.addFileToProject("Class3.java", "trivial string 3")
         val tstPsi = fixture.addFileToProject(
-            "/tst/java/NotMatchingFileNameTest.java",
+            "/tst/java/MainTestNotFollowingNamingConvention.java",
             """
             public class MainTest {
                 public void testRunApp() {
@@ -309,18 +261,14 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             fixture.openFileInEditor(tstPsi.virtualFile)
         }
 
-        fun assertCrawlerFindCorrectFiles(sut: FileCrawler) {
-            runInEdtAndWait {
-                val openedFiles = EditorFactory.getInstance().allEditors.size
+        runInEdtAndWait {
+            val openedFiles = EditorFactory.getInstance().allEditors.size
 
-                val actual = sut.findFocalFileForTest(tstPsi)
+            val actual = sut.findFocalFileForTest(tstPsi)
 
-                assertThat(openedFiles).isEqualTo(5)
-                assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
-            }
+            assertThat(openedFiles).isEqualTo(5)
+            assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
         }
-
-        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler)
     }
 
     @Test
@@ -337,5 +285,99 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
 
         val actual = CodeWhispererFileCrawler.countSubstringMatches(targetElements, elementsToCheck)
         assertThat(actual).isEqualTo(4)
+    }
+
+    @Test
+    fun `guessSourceFileName java`() {
+        val sut = JavaCodeWhispererFileCrawler
+
+        assertThat(sut.guessSourceFileName("FooTest.java")).isEqualTo("Foo.java")
+        assertThat(sut.guessSourceFileName("FooBarTest.java")).isEqualTo("FooBar.java")
+    }
+
+    @Test
+    fun `guessSourceFileName java - sad path`() {
+        val sut = JavaCodeWhispererFileCrawler
+
+        assertThat(sut.guessSourceFileName("Foo.java")).isNull()
+        assertThat(sut.guessSourceFileName("FooBar.java")).isNull()
+    }
+}
+
+class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCodeInsightTestFixtureRule()) {
+    lateinit var sut: CodeWhispererFileCrawler
+
+    @Before
+    override fun setup() {
+        super.setup()
+        sut = PythonCodeWhispererFileCrawler
+    }
+
+    @Test
+    fun `findFocalFileForTest by name`() {
+        val mainPsi = fixture.addFileToProject("main.py", aString())
+        fixture.addFileToProject("another_class.py", aString())
+        fixture.addFileToProject("class2.py", aString())
+        fixture.addFileToProject("class3.py", aString())
+        val tstPsi = fixture.addFileToProject("/test/test_main.py", aString())
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(tstPsi.virtualFile)
+            val actual = sut.findFocalFileForTest(tstPsi)
+            assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
+        }
+    }
+
+    @Test
+    fun `findFocalFileForTest by content`() {
+        val mainPsi = fixture.addFileToProject(
+            "main.py",
+            """
+            def add(num1, num2):
+                return num1 + num2
+                
+            if __name__ == 'main':
+                
+            """.trimIndent()
+        )
+        val file1 = fixture.addFileToProject("Class1.java", "trivial string 1")
+        val file2 = fixture.addFileToProject("Class2.java", "trivial string 2")
+        val file3 = fixture.addFileToProject("Class3.java", "trivial string 3")
+        val tstPsi = fixture.addFileToProject(
+            "/test/main_test_not_following_naming_convention.py",
+            """
+            class TestClass(unittest.TestCase):
+                def test_add_numbers(self):
+                    result = add(1, 2)
+                    self.assertEqual(result, 8, "")
+            """.trimIndent()
+        )
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(mainPsi.virtualFile)
+            fixture.openFileInEditor(file1.virtualFile)
+            fixture.openFileInEditor(file2.virtualFile)
+            fixture.openFileInEditor(file3.virtualFile)
+            fixture.openFileInEditor(tstPsi.virtualFile)
+        }
+
+        runInEdtAndWait {
+            val openedFiles = EditorFactory.getInstance().allEditors.size
+
+            val actual = sut.findFocalFileForTest(tstPsi)
+
+            assertThat(openedFiles).isEqualTo(5)
+            assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
+        }
+    }
+
+    @Test
+    fun `guessSourceFileName python`() {
+        val sut = PythonCodeWhispererFileCrawler
+
+        assertThat(sut.guessSourceFileName("test_foo_bar.py")).isEqualTo("foo_bar.py")
+        assertThat(sut.guessSourceFileName("test_foo.py")).isEqualTo("foo.py")
+        assertThat(sut.guessSourceFileName("foo_test.py")).isEqualTo("foo.py")
+        assertThat(sut.guessSourceFileName("foo_test.py")).isEqualTo("foo.py")
     }
 }
