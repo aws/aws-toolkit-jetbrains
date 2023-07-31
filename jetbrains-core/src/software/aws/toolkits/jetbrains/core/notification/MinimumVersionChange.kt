@@ -55,7 +55,7 @@ class MinimumVersionChange @JvmOverloads constructor(isUnderTest: Boolean = fals
     }
 
     companion object {
-        const val MIN_VERSION = 222
+        const val MIN_VERSION = 223
         const val MIN_VERSION_HUMAN = "2022.3"
 
         // Used by tests to make sure the prompt never shows up
