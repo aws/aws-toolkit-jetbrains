@@ -3,13 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -38,6 +42,9 @@ interface FileCrawler {
      */
     fun findFocalFileForTest(psiFile: PsiFile): VirtualFile?
 
+    /**
+     * List files opened in the editors and sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
+     */
     fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile>
 }
 
@@ -55,6 +62,7 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val testFilenamePattern: Regex
+    abstract val dialects: Set<String>
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
@@ -62,22 +70,55 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
+    override fun listRelevantFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+        val targetFile = psiFile.virtualFile
+        val language = psiFile.programmingLanguage()
+
+        val isTestFilePredicate: (file: VirtualFile, project: Project) -> Boolean = if (language is CodeWhispererJava) {
+            { file, project -> TestSourcesFilter.isTestSources(file, project) }
+        } else {
+            { file, _ -> testFilenamePattern.matches(file.name) }
+        }
+
+        val openedFiles = runReadAction {
+            FileEditorManager.getInstance(psiFile.project).openFiles.toList().filter {
+                it.name != psiFile.virtualFile.name &&
+                    isSameDialect(psiFile.virtualFile.extension) &&
+                    !isTestFilePredicate(it, psiFile.project)
+            }
+        }
+
+        val fileToFileDistanceList = runReadAction {
+            openedFiles.map {
+                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+            }
+        }
+
+        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+    }
+
     abstract fun guessSourceFileName(tstFileName: String): String
+
+    private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
+        dialects.contains(fileExt)
+    } ?: false
 
     companion object {
         fun searchRelevantFileInEditors(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
             val project = target.project
             val targetElements = keywordProducer(target)
 
-            return FileEditorManager.getInstance(project).openFiles
-                .filter { openedFile ->
-                    openedFile.name != target.virtualFile.name && openedFile.extension == target.virtualFile.extension
-                }
-                .mapNotNull { openedFile -> PsiManager.getInstance(project).findFile(openedFile) }
-                .maxByOrNull {
-                    val elementsToCheck = keywordProducer(it)
-                    countSubstringMatches(targetElements, elementsToCheck)
-                }?.virtualFile
+            return runReadAction {
+                FileEditorManager.getInstance(project).openFiles
+                    .filter { openedFile ->
+                        openedFile.name != target.virtualFile.name && openedFile.extension == target.virtualFile.extension
+                    }
+                    .mapNotNull { openedFile -> PsiManager.getInstance(project).findFile(openedFile) }
+                    .maxByOrNull {
+                        val elementsToCheck = keywordProducer(it)
+                        countSubstringMatches(targetElements, elementsToCheck)
+                    }?.virtualFile
+            }
         }
 
         /**
