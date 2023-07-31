@@ -4,13 +4,11 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.credentials.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ValidateDocker
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
 import software.aws.toolkits.jetbrains.services.lambda.upload.FunctionDetails
@@ -19,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.lambda.upload.ZipBasedCode
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 fun createLambdaWorkflowForZip(
     project: Project,
@@ -195,7 +192,6 @@ fun updateLambdaCodeWorkflowForImage(
         )
     )
 }
-
 
 private fun createAwsEnvVars(project: Project): Map<String, String> {
     val connectSettings = AwsConnectionManager.getInstance(project).connectionSettings()

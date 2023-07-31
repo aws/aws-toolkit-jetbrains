@@ -146,8 +146,6 @@ fun GeneralCommandLine.samPackageCommand(
     }
 }
 
-
-
 private fun escapeParameter(param: String): String {
     // Invert the quote if the string is already quoted
     val quote = if (param.startsWith("\"") || param.endsWith("\"")) {

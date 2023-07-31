@@ -277,8 +277,6 @@ class SamExecutableTest {
         assertThat(cmd.environment).containsEntry("Foo", "Bar")
     }
 
-
-
     @Test
     fun `sam init with zip app template is correct`() {
         val outputDir = tempFolder.newFolder()
