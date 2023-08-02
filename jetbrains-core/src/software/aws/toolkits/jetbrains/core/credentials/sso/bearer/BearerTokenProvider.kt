@@ -34,7 +34,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
-internal interface BearerTokenLogoutSupport
+interface BearerTokenLogoutSupport
 
 interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBearerTokenProviderDelegate {
     /**
@@ -207,8 +207,8 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
     }
 }
 
-internal val DEFAULT_STALE_DURATION = Duration.ofMinutes(15)
-internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
+val DEFAULT_STALE_DURATION = Duration.ofMinutes(15)
+val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 
 val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> ClientOverrideConfiguration.Builder = { configuration ->
     configuration.nullDefaultProfileFile()

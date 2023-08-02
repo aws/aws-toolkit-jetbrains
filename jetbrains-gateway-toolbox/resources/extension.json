@@ -1,0 +1,14 @@
+{
+  "id": "sample",
+  "version": "0.1",
+  "meta": {
+    "readableName": "Sample plugin",
+    "description": "Sample description",
+    "vendor": "Sample vendor",
+    "url": "https://example.com"
+  },
+  "compatibleVersionRange": {
+    "from": "2.0",
+    "to": "2.1.0.0"
+  }
+}

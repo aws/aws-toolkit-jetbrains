@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.caws
 
 import com.intellij.openapi.extensions.ExtensionNotApplicableException
+import com.jetbrains.rdserver.unattendedHost.UnattendedStatusUtil
 import com.jetbrains.rdserver.unattendedHost.customization.DefaultGatewayExitCustomizationProvider
 import com.jetbrains.rdserver.unattendedHost.customization.GatewayClientCustomizationProvider
 import com.jetbrains.rdserver.unattendedHost.customization.GatewayExitCustomizationProvider

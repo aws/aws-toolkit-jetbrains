@@ -29,6 +29,7 @@ import com.jetbrains.rd.ui.bedsl.dsl.withColor
 import com.jetbrains.rd.ui.bedsl.dsl.withMargin
 import com.jetbrains.rd.ui.bedsl.link
 import com.jetbrains.rd.util.lifetime.Lifetime
+import com.jetbrains.rdserver.unattendedHost.UnattendedStatusUtil
 import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayControlCenterTabProvider
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.core.utils.error
@@ -67,6 +68,8 @@ class UpdateWorkspaceSettingsTab : GatewayControlCenterTabProvider {
         }
     }.also {
         lifetime.launchIOBackground {
+            UnattendedStatusUtil.getStatus()
+
             try {
                 val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
                     ?: error("Failed to fetch connection settings from Dev Environment")

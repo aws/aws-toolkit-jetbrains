@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+
+  "definitions": {
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Version name in SemVer notation.",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*))+$"
+    }
+  },
+
+  "type": "object",
+  "description": "Toolbox Gateway extension description.",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique plugin id, must match JetBrains Marketplace plugin id."
+    },
+    "version": {
+      "type": "string",
+      "$ref": "#/definitions/version",
+      "description": "Version number in SemVer notation."
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "readableName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Plugin name as displayed in the UI"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line description as displayed in the UI"
+        },
+        "vendor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Vendor name as displayed in the UI"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Plguin homepage URL."
+        }
+      },
+      "required": ["readableName", "description", "vendor", "url"],
+      "additionalProperties": false
+    },
+    "compatibleVersionRange": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "$ref": "#/definitions/version",
+          "description": "Minimal compatible version of the Toolbox App"
+        },
+        "to": {
+          "type": "string",
+          "$ref": "#/definitions/version",
+          "description": "Maximum compatible version of the Toolbox App (can be omitted)"
+        }
+      },
+      "required": ["from"],
+      "additionalProperties": false
+    }
+  },
+
+  "required": ["id", "name", "description", "url", "icon_url"],
+  "additionalProperties": false
+}

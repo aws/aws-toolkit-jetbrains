@@ -40,6 +40,7 @@ when (providers.gradleProperty("ideProfileName").get()) {
     "2022.2", "2022.3" -> {}
     else -> {
         include("jetbrains-gateway")
+        include("jetbrains-gateway-toolbox")
     }
 }
 

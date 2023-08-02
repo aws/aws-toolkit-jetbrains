@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.caws
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import java.time.Duration
+import kotlin.streams.asSequence
 
 object CawsResources {
     val ID = ClientBackedCachedResource(CodeCatalystClient::class, "caws.person.id", Duration.ofDays(1)) {
@@ -35,6 +36,23 @@ object CawsResources {
             listAccessibleProjectsPaginator { it.spaceName(space) }
                 .items()
                 .map { CawsProject(space = space, project = it.name()) }
+        }
+    }
+
+    val ALL_PROJECTS_ASYNC = ClientBackedCachedResource(CodeCatalystClient::class, "caws.projects", Duration.ofDays(1)) {
+        sequence<CawsProject> {
+            listSpacesPaginator {}
+                .items()
+                .stream()
+                .asSequence()
+                .forEach {
+                    val space = it.name()
+                    yieldAll(
+                        listAccessibleProjectsPaginator { it.spaceName(space) }
+                            .items()
+                            .map { CawsProject(space = space, project = it.name()) }
+                    )
+                }
         }
     }
 

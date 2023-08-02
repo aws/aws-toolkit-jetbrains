@@ -61,7 +61,7 @@ class DiskSsoSessionConnection(
     }
 }
 
-private fun tokenConnection(provider: BearerTokenProvider, region: String) =
+fun tokenConnection(provider: BearerTokenProvider, region: String) =
     TokenConnectionSettings(
         ToolkitBearerTokenProvider(provider),
         AwsRegionProvider.getInstance().get(region) ?: error("Partition data is missing for $region")

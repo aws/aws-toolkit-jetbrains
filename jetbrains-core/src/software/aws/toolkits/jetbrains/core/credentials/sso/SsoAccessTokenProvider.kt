@@ -45,7 +45,7 @@ class SsoAccessTokenProvider(
             region = ssoRegion
         )
     }
-    internal val accessTokenCacheKey by lazy {
+    val accessTokenCacheKey by lazy {
         AccessTokenCacheKey(
             connectionId = ssoRegion,
             startUrl = ssoUrl,

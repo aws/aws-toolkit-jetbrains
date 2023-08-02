@@ -1,0 +1,9 @@
+{
+    "icons": {
+        "expui": {
+            "toolwindow": {
+                "AWS_smile.svg": "icons/logos/AWS.svg"
+            }
+        }
+    }
+}
