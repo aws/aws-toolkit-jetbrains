@@ -160,9 +160,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             return runReadAction {
                 FileEditorManager.getInstance(project).openFiles
                     .filter { openedFile ->
-                        openedFile.name != target.virtualFile.name &&
-                            openedFile.extension == target.virtualFile.extension &&
-                            target.virtualFile.nameWithoutExtension.contains(openedFile.nameWithoutExtension)
+                        openedFile.name != target.virtualFile.name && openedFile.extension == target.virtualFile.extension
                     }
                     .mapNotNull { openedFile -> PsiManager.getInstance(project).findFile(openedFile) }
                     .maxByOrNull {
