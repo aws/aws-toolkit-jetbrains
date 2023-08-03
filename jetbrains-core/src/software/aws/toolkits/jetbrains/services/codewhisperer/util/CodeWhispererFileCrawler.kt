@@ -39,7 +39,7 @@ interface FileCrawler {
      * @param psiFile psi of the test file we are searching with, e.g. MainTest.java
      * @return its source file e.g. Main.java, main.py or most relevant file if any
      */
-    fun findFocalFileForTest(psiFile: PsiFile): VirtualFile?
+    fun listUtgCandidate(psiFile: PsiFile): VirtualFile?
 
     /**
      * List files opened in the editors and sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
@@ -49,7 +49,7 @@ interface FileCrawler {
      * (3) non-test file which will be determined by [FileCrawler.isTestFile]
      * (4) writable file
      */
-    fun listRelevantOpenedFilesInEditors(psiFile: PsiFile): List<VirtualFile>
+    fun listCrossFileCandidate(psiFile: PsiFile): List<VirtualFile>
 
     /**
      * Determine if the file given is test file or not based on its path and file name
@@ -61,11 +61,11 @@ class NoOpFileCrawler : FileCrawler {
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = emptyList()
-    override fun findFocalFileForTest(psiFile: PsiFile): VirtualFile? = null
+    override fun listUtgCandidate(psiFile: PsiFile): VirtualFile? = null
 
     override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
-    override fun listRelevantOpenedFilesInEditors(psiFile: PsiFile): List<VirtualFile> = emptyList()
+    override fun listCrossFileCandidate(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun isTestFile(virtualFile: VirtualFile, project: Project): Boolean = false
 }
@@ -73,11 +73,12 @@ class NoOpFileCrawler : FileCrawler {
 abstract class CodeWhispererFileCrawler : FileCrawler {
     abstract val fileExtension: String
     abstract val dialects: Set<String>
-    abstract val testFilePatterns: List<Regex>
+    abstract val testFileNamingPatterns: List<Regex>
 
     override fun isTestFile(virtualFile: VirtualFile, project: Project): Boolean {
         val filePath = virtualFile.path
 
+        // if file path itself explicitly explains the file is under test sources
         if (TestSourcesFilter.isTestSources(virtualFile, project) ||
             filePath.contains("""test/""") ||
             filePath.contains("""tst/""") ||
@@ -86,12 +87,14 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             return true
         }
 
-        return testFilePatterns.any { it.matches(virtualFile.name) }
+        // no explicit clue from the file path, use regexes based on naming conventions
+        return testFileNamingPatterns.any { it.matches(virtualFile.name) }
     }
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = project.guessProjectDir()?.let { rootDir ->
         VfsUtil.collectChildrenRecursively(rootDir).filter {
-            !it.isDirectory
+            // TODO: need to handle cases js vs. jsx, ts vs. tsx when we enable js/ts utg since we likely have different file extensions
+            it.path.endsWith(fileExtension)
         }
     }.orEmpty()
 
@@ -106,7 +109,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }.orEmpty()
     }
 
-    override fun listRelevantOpenedFilesInEditors(psiFile: PsiFile): List<VirtualFile> {
+    override fun listCrossFileCandidate(psiFile: PsiFile): List<VirtualFile> {
         val targetFile = psiFile.virtualFile
 
         val openedFiles = runReadAction {
@@ -126,9 +129,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
     }
 
-    override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
-
-    override fun findFocalFileForTest(psiFile: PsiFile): VirtualFile? = findSourceFileByName(psiFile) ?: findSourceFileByContent(psiFile)
+    override fun listUtgCandidate(psiFile: PsiFile): VirtualFile? = findSourceFileByName(psiFile) ?: findSourceFileByContent(psiFile)
 
     abstract fun findSourceFileByName(psiFile: PsiFile): VirtualFile?
 
@@ -137,7 +138,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     // TODO: need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
     fun guessSourceFileName(tstFileName: String): String? {
         val srcFileName = tryOrNull {
-            testFilePatterns.firstNotNullOf { regex ->
+            testFileNamingPatterns.firstNotNullOf { regex ->
                 regex.find(tstFileName)?.groupValues?.get(1)
             }
         }

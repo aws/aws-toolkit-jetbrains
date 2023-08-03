@@ -11,10 +11,12 @@ import com.jetbrains.python.psi.PyFile
 object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "py"
     override val dialects: Set<String> = setOf("py")
-    override val testFilePatterns: List<Regex> = listOf(
+    override val testFileNamingPatterns: List<Regex> = listOf(
         Regex("""^test_(.+).py$"""),
         Regex("""^(.+)_test.py$""")
     )
+
+    override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun findSourceFileByName(psiFile: PsiFile): VirtualFile? = super.listFilesUnderProjectRoot(psiFile.project).find {
         !it.isDirectory &&

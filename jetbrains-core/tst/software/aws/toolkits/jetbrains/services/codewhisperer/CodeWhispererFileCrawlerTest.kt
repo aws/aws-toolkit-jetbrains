@@ -94,7 +94,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             }
         }
 
-        val actual = sut.listRelevantOpenedFilesInEditors(fileContextProviderFile)
+        val actual = sut.listCrossFileCandidate(fileContextProviderFile)
         assertThat(actual).isEqualTo(
             listOf(
                 recommendationServiceFile.virtualFile,
@@ -214,7 +214,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             runInEdtAndWait {
                 fixture.openFileInEditor(tstPsi.virtualFile)
 
-                val actual = sut.findFocalFileForTest(tstPsi)
+                val actual = sut.listUtgCandidate(tstPsi)
 
                 assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
             }
@@ -264,7 +264,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
         runInEdtAndWait {
             val openedFiles = EditorFactory.getInstance().allEditors.size
 
-            val actual = sut.findFocalFileForTest(tstPsi)
+            val actual = sut.listUtgCandidate(tstPsi)
 
             assertThat(openedFiles).isEqualTo(5)
             assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
@@ -323,7 +323,7 @@ class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCo
 
         runInEdtAndWait {
             fixture.openFileInEditor(tstPsi.virtualFile)
-            val actual = sut.findFocalFileForTest(tstPsi)
+            val actual = sut.listUtgCandidate(tstPsi)
             assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
         }
     }
@@ -364,7 +364,7 @@ class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCo
         runInEdtAndWait {
             val openedFiles = EditorFactory.getInstance().allEditors.size
 
-            val actual = sut.findFocalFileForTest(tstPsi)
+            val actual = sut.listUtgCandidate(tstPsi)
 
             assertThat(openedFiles).isEqualTo(5)
             assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
