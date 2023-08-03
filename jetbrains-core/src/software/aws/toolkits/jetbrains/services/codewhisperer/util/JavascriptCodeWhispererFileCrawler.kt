@@ -16,8 +16,6 @@ object JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
-    override fun listUtgCandidate(psiFile: PsiFile): VirtualFile? = null
-
     override fun findSourceFileByName(psiFile: PsiFile): VirtualFile? = null
 
     override fun findSourceFileByContent(psiFile: PsiFile): VirtualFile? = null
