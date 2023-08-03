@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isAccessTokenExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isRefreshTokenExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.time.LocalDateTime
