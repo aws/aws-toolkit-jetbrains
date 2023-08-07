@@ -20,7 +20,10 @@ import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "java"
     override val dialects: Set<String> = setOf("java")
-    override val testFileNamingPatterns = listOf(Regex("""^(.+)Test(\.java)$"""))
+    override val testFileNamingPatterns = listOf(
+        Regex("""^(.+)Test(\.java)$"""),
+        Regex("""^(.+)Tests(\.java)$""")
+    )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> {
         if (psiFile !is PsiJavaFile) return emptyList()

@@ -113,6 +113,9 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
 
         val file6 = fixture.addFileToProject("test/services/BarServiceTest.java", "")
         assertThat(sut.isTestFile(file6.virtualFile, project)).isTrue
+
+        val file7 = fixture.addFileToProject("FooTests.java", "")
+        assertThat(sut.isTestFile(file7.virtualFile, project)).isTrue
     }
 
     @Test
