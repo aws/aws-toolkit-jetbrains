@@ -80,9 +80,9 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         // if file path itself explicitly explains the file is under test sources
         if (TestSourcesFilter.isTestSources(virtualFile, project) ||
-            filePath.contains("""test/""") ||
-            filePath.contains("""tst/""") ||
-            filePath.contains("""tests/""")
+            filePath.contains("""test/""", ignoreCase = true) ||
+            filePath.contains("""tst/""", ignoreCase = true) ||
+            filePath.contains("""tests/""", ignoreCase = true)
         ) {
             return true
         }

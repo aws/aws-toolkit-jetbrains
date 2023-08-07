@@ -500,6 +500,12 @@ class JsCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(CodeInsightT
 
         val file7 = fixture.addFileToProject("tests/services/barService.spec.jsx", "")
         assertThat(sut.isTestFile(file7.virtualFile, project)).isTrue
+
+        val file8 = fixture.addFileToProject("foo.Test.js", "")
+        assertThat(sut.isTestFile(file8.virtualFile, project)).isTrue
+
+        val file9 = fixture.addFileToProject("foo.Spec.js", "")
+        assertThat(sut.isTestFile(file9.virtualFile, project)).isTrue
     }
 
     @Test
@@ -563,6 +569,12 @@ class TsCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(CodeInsightT
 
         val file7 = fixture.addFileToProject("tests/services/barService.spec.tsx", "")
         assertThat(sut.isTestFile(file7.virtualFile, project)).isTrue
+
+        val file8 = fixture.addFileToProject("foo.Test.ts", "")
+        assertThat(sut.isTestFile(file8.virtualFile, project)).isTrue
+
+        val file9 = fixture.addFileToProject("foo.Spec.ts", "")
+        assertThat(sut.isTestFile(file9.virtualFile, project)).isTrue
     }
 
     @Test
