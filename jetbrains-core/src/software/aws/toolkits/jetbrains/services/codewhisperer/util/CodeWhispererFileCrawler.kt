@@ -135,17 +135,17 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
     abstract fun findSourceFileByContent(psiFile: PsiFile): VirtualFile?
 
-    // TODO: need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
+    // TODO: may need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
     fun guessSourceFileName(tstFileName: String): String? {
         val srcFileName = tryOrNull {
             testFileNamingPatterns.firstNotNullOf { regex ->
-                regex.find(tstFileName)?.groupValues?.get(1)
+                regex.find(tstFileName)?.groupValues?.let { groupValues ->
+                    groupValues.get(1) + groupValues.get(2)
+                }
             }
         }
 
-        return srcFileName?.let {
-            it + ".$fileExtension"
-        }
+        return srcFileName
     }
 
     private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {

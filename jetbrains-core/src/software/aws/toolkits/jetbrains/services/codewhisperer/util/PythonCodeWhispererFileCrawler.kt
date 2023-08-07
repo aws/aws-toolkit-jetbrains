@@ -12,8 +12,8 @@ object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "py"
     override val dialects: Set<String> = setOf("py")
     override val testFileNamingPatterns: List<Regex> = listOf(
-        Regex("""^test_(.+).py$"""),
-        Regex("""^(.+)_test.py$""")
+        Regex("""^test_(.+)(\.py)$"""),
+        Regex("""^(.+)_test(\.py)$""")
     )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()

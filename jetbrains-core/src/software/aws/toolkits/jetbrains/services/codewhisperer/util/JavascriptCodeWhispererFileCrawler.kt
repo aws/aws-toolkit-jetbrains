@@ -10,8 +10,8 @@ object JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "js"
     override val dialects: Set<String> = setOf("js", "jsx")
     override val testFileNamingPatterns: List<Regex> = listOf(
-        Regex("""^(.+)\.test\.(?:js|jsx)\$"""),
-        Regex("""^(.+)\.spec\.(?:js|jsx)\$""")
+        Regex("""^(.+)\.test(\.js|\.jsx)$"""),
+        Regex("""^(.+)\.spec(\.js|\.jsx)$""")
     )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()

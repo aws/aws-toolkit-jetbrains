@@ -10,8 +10,8 @@ object TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "ts"
     override val dialects: Set<String> = setOf("ts", "tsx")
     override val testFileNamingPatterns: List<Regex> = listOf(
-        Regex("""^(.+)\.test\.(?:ts|tsx)\$"""),
-        Regex("""^(.+)\.spec\.(?:ts|tsx)\$""")
+        Regex("""^(.+)\.test(\.ts|\.tsx)$"""),
+        Regex("""^(.+)\.spec(\.ts|\.tsx)$""")
     )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
