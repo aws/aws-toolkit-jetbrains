@@ -117,14 +117,34 @@ class CodeWhispererFileContextProviderTest {
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
+        assertThat(
+            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
+                CodeWhispererJavaScript.INSTANCE,
+                CodeWhispererUserGroup.Control
+            )
+        ).isFalse
+        assertThat(
+            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
+                CodeWhispererJavaScript.INSTANCE,
+                CodeWhispererUserGroup.CrossFile
+            )
+        ).isTrue
 
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
+        assertThat(
+            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
+                CodeWhispererTypeScript.INSTANCE,
+                CodeWhispererUserGroup.Control
+            )
+        ).isFalse
+        assertThat(
+            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
+                CodeWhispererTypeScript.INSTANCE,
+                CodeWhispererUserGroup.CrossFile
+            )
+        ).isTrue
 
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
