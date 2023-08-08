@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
+import io.ktor.util.reflect.instanceOf
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +35,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSql
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavascriptCodeWhispererFileCrawler
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.NoOpFileCrawler
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.PythonCodeWhispererFileCrawler
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.TypescriptCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import kotlin.reflect.full.createInstance
@@ -126,6 +132,24 @@ class CodeWhispererProgrammingLanguageTest {
     class TestLanguage : CodeWhispererProgrammingLanguage() {
         override val languageId: String = "test-language"
         override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Unknown
+    }
+
+    @Test
+    fun getFileCrawler() {
+        assertThat(CodeWhispererJava.INSTANCE.fileCrawler).isSameAs(JavaCodeWhispererFileCrawler)
+        assertThat(CodeWhispererPython.INSTANCE.fileCrawler).isSameAs(PythonCodeWhispererFileCrawler)
+        assertThat(CodeWhispererJavaScript.INSTANCE.fileCrawler).isSameAs(JavascriptCodeWhispererFileCrawler)
+        assertThat(CodeWhispererJsx.INSTANCE.fileCrawler).isSameAs(JavascriptCodeWhispererFileCrawler)
+        assertThat(CodeWhispererTypeScript.INSTANCE.fileCrawler).isSameAs(TypescriptCodeWhispererFileCrawler)
+        assertThat(CodeWhispererTsx.INSTANCE.fileCrawler).isSameAs(TypescriptCodeWhispererFileCrawler)
+
+        assertThat(CodeWhispererCpp.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererC.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererCsharp.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererRuby.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererKotlin.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererSql.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
+        assertThat(CodeWhispererShell.INSTANCE.fileCrawler).isInstanceOf(NoOpFileCrawler::class.java)
     }
 
     @Test
