@@ -9,7 +9,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
-import io.ktor.util.reflect.instanceOf
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test

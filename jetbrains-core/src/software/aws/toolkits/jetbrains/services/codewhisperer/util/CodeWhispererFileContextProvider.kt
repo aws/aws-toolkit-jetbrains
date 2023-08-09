@@ -23,11 +23,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
