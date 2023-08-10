@@ -3,12 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ExtensionTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -77,6 +77,31 @@ class CodeWhispererLanguageManagerTest {
 
     @Test
     fun `test getProgrammingLanguage(virtualFile)`() {
+        ExtensionTestUtil.maskExtensions(
+            CodeWhispererProgrammingLanguage.EP_NAME,
+            listOf(
+                CodeWhispererJava.INSTANCE,
+                CodeWhispererPython.INSTANCE,
+                CodeWhispererJavaScript.INSTANCE,
+                CodeWhispererJsx.INSTANCE,
+                CodeWhispererTypeScript.INSTANCE,
+                CodeWhispererTsx.INSTANCE,
+                CodeWhispererCsharp.INSTANCE,
+                CodeWhispererGo.INSTANCE,
+                CodeWhispererKotlin.INSTANCE,
+                CodeWhispererPhp.INSTANCE,
+                CodeWhispererRuby.INSTANCE,
+                CodeWhispererScala.INSTANCE,
+                CodeWhispererSql.INSTANCE,
+                CodeWhispererPlainText.INSTANCE,
+                CodeWhispererCpp.INSTANCE,
+                CodeWhispererC.INSTANCE,
+                CodeWhispererShell.INSTANCE,
+                CodeWhispererRust.INSTANCE
+            ),
+            disposableRule.disposable
+        )
+
         testGetProgrammingLanguageUtil(listOf("java", "Java", "JAVA"), listOf("java"), CodeWhispererJava::class.java)
         testGetProgrammingLanguageUtil(listOf("python", "Python"), listOf("py"), CodeWhispererPython::class.java)
         testGetProgrammingLanguageUtil(listOf("javascript", "JavaScript"), listOf("js"), CodeWhispererJavaScript::class.java)
@@ -99,6 +124,11 @@ class CodeWhispererLanguageManagerTest {
 
     @Test
     fun `psiFile passed to getProgrammingLanguage(psiFile) returns null`() {
+        ExtensionTestUtil.maskExtensions(
+            CodeWhispererProgrammingLanguage.EP_NAME,
+            listOf(CodeWhispererPython.INSTANCE),
+            disposableRule.disposable
+        )
         // psiFile.virtualFile potentially will return null if virtualFile only exist in the memory instead of the disk
         val psiFileMock = mock<PsiFile> {
             on { virtualFile } doReturn null
@@ -153,7 +183,7 @@ class CodeWhispererProgrammingLanguageTest {
 
     @Test
     fun `test language isSupport`() {
-        EP_NAME.extensionList.forEach { language ->
+        CodeWhispererProgrammingLanguage.EP_NAME.extensionList.forEach { language ->
             val telemetryType = language.toTelemetryType()
             val shouldSupportAutoCompletion = true
 
@@ -211,9 +241,5 @@ class CodeWhispererProgrammingLanguageTest {
         set.add(instance1)
         val flag = set.contains(instance2)
         assertThat(flag).isTrue
-    }
-
-    companion object {
-        val EP_NAME = ExtensionPointName<CodeWhispererProgrammingLanguage>("aws.toolkit.codewhisperer.programmingLanguage")
     }
 }
