@@ -18,6 +18,9 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.samInitCommand
 import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.SamTelemetry
+import software.aws.toolkits.telemetry.SyncedResources
 
 object SamInitRunner {
     private val LOG = getLogger<SamInitRunner>()
@@ -33,7 +36,13 @@ object SamInitRunner {
         ExecutableManager.getInstance().getExecutable<SamExecutable>().thenApply {
             val samExecutable = when (it) {
                 is ExecutableInstance.Executable -> it
-                else -> throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError)
+                else -> {
+                    SamTelemetry.init(
+                        result = Result.Failed,
+                        reason = "Invalid SAM CLI executable"
+                    )
+                    throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError)
+                }
             }
 
             val extraContent = if (schemaParameters?.templateExtraContext != null) {
