@@ -5,56 +5,40 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.filecrawler.JavaCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
+import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
-class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeInsightTestFixtureRule()) {
+class JavaCodeWhispererFileCrawlerTest {
+    @Rule
+    @JvmField
+    val projectRule: CodeInsightTestFixtureRule = JavaCodeInsightTestFixtureRule()
+
+
     lateinit var sut: CodeWhispererFileCrawler
 
+    lateinit var project: Project
+    lateinit var fixture: CodeInsightTestFixture
+
     @Before
-    override fun setup() {
-        super.setup()
+    fun setup() {
         sut = JavaCodeWhispererFileCrawler()
-    }
 
-    @Test
-    fun getFileDistance() {
-        val targetFile = fixture.addFileToProject("service/microService/CodeWhispererFileContextProvider.java", aString())
-
-        val fileWithDistance0 = fixture.addFileToProject("service/microService/CodeWhispererFileCrawler.java", aString())
-        val fileWithDistance1 = fixture.addFileToProject("service/CodewhispererRecommendationService.java", aString())
-        val fileWithDistance3 = fixture.addFileToProject("util/CodeWhispererConstants.java", aString())
-        val fileWithDistance4 = fixture.addFileToProject("ui/popup/CodeWhispererPopupManager.java", aString())
-        val fileWithDistance5 = fixture.addFileToProject("ui/popup/components/CodeWhispererPopup.java", aString())
-        val fileWithDistance6 = fixture.addFileToProject("ui/popup/components/actions/AcceptRecommendationAction.java", aString())
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance0.virtualFile))
-            .isEqualTo(0)
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance1.virtualFile))
-            .isEqualTo(1)
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance3.virtualFile))
-            .isEqualTo(3)
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance4.virtualFile))
-            .isEqualTo(4)
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance5.virtualFile))
-            .isEqualTo(5)
-
-        assertThat(CodeWhispererFileCrawler.getFileDistance(targetFile.virtualFile, fileWithDistance6.virtualFile))
-            .isEqualTo(6)
+        project = projectRule.project
+        fixture = projectRule.fixture
     }
 
     @Test
@@ -288,22 +272,6 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             assertThat(openedFiles).isEqualTo(5)
             assertThat(actual).isNotNull.isEqualTo(mainPsi.virtualFile)
         }
-    }
-
-    @Test
-    fun `test util countSubstringMatches`() {
-        val elementsToCheck = listOf("apple", "pineapple", "banana", "chocolate", "fries", "laptop", "amazon", "codewhisperer", "aws")
-        val targetElements = listOf(
-            "an apple a day, keep doctors away",
-            "codewhisperer is the best AI code generator",
-            "chocolateCake",
-            "green apple is sour",
-            "pineapple juice",
-            "chocolate cake is good"
-        )
-
-        val actual = CodeWhispererFileCrawler.countSubstringMatches(targetElements, elementsToCheck)
-        assertThat(actual).isEqualTo(4)
     }
 
     @Test

@@ -13,6 +13,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.countSubstringMatches
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getFileDistance
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -122,7 +124,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         val fileToFileDistanceList = runReadAction {
             openedFiles.map {
-                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+                return@map it to getFileDistance(targetFile = targetFile, candidateFile = it)
             }
         }
 
@@ -148,63 +150,28 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         return srcFileName
     }
 
+    /**
+     * @param keywordProducer a function defining how we find keywords from psiFiles, this function will be appied on both target files and candidate files
+     * and return the file with the highest similarity of keywords that targetFile has
+     */
+    fun searchKeywordsInOpenedFile(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
+        val project = target.project
+        val targetElements = keywordProducer(target)
+
+        return runReadAction {
+            FileEditorManager.getInstance(project).openFiles
+                .filter { openedFile ->
+                    openedFile.name != target.virtualFile.name && openedFile.extension == target.virtualFile.extension
+                }
+                .mapNotNull { openedFile -> PsiManager.getInstance(project).findFile(openedFile) }
+                .maxByOrNull {
+                    val elementsToCheck = keywordProducer(it)
+                    countSubstringMatches(targetElements, elementsToCheck)
+                }?.virtualFile
+        }
+    }
+
     private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
         dialects.contains(fileExt)
     } ?: false
-
-    companion object {
-        fun searchKeywordsInOpenedFile(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
-            val project = target.project
-            val targetElements = keywordProducer(target)
-
-            return runReadAction {
-                FileEditorManager.getInstance(project).openFiles
-                    .filter { openedFile ->
-                        openedFile.name != target.virtualFile.name && openedFile.extension == target.virtualFile.extension
-                    }
-                    .mapNotNull { openedFile -> PsiManager.getInstance(project).findFile(openedFile) }
-                    .maxByOrNull {
-                        val elementsToCheck = keywordProducer(it)
-                        countSubstringMatches(targetElements, elementsToCheck)
-                    }?.virtualFile
-            }
-        }
-
-        /**
-         * how many elements in elementsToCheck is contained (as substring) in targetElements
-         */
-        fun countSubstringMatches(targetElements: List<String>, elementsToCheck: List<String>): Int = elementsToCheck.fold(0) { acc, elementToCheck ->
-            val hasTarget = targetElements.any { it.contains(elementToCheck, ignoreCase = true) }
-            if (hasTarget) {
-                acc + 1
-            } else {
-                acc
-            }
-        }
-
-        /**
-         * For [LocalFileSystem](implementation of virtual file system), the path will be an absolute file path with file separator characters replaced
-         * by forward slash "/"
-         * @see [VirtualFile.getPath]
-         */
-        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile): Int {
-            val targetFilePaths = targetFile.path.split("/").dropLast(1)
-            val candidateFilePaths = candidateFile.path.split("/").dropLast(1)
-
-            var i = 0
-            while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {
-                val dir1 = targetFilePaths[i]
-                val dir2 = candidateFilePaths[i]
-
-                if (dir1 != dir2) {
-                    break
-                }
-
-                i++
-            }
-
-            return targetFilePaths.subList(fromIndex = i, toIndex = targetFilePaths.size).size +
-                candidateFilePaths.subList(fromIndex = i, toIndex = candidateFilePaths.size).size
-        }
-    }
 }

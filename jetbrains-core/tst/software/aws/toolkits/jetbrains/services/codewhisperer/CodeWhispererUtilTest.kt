@@ -9,6 +9,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.countSubstringMatches
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 
@@ -22,6 +25,52 @@ class CodeWhispererUtilTest {
     @Before
     fun setup() {
         fixture = projectRule.fixture
+    }
+
+    @Test
+    fun getFileDistance() {
+        val targetFile = fixture.addFileToProject("service/microService/CodeWhispererFileContextProvider.java", aString())
+
+        val fileWithDistance0 = fixture.addFileToProject("service/microService/CodeWhispererFileCrawler.java", aString())
+        val fileWithDistance1 = fixture.addFileToProject("service/CodewhispererRecommendationService.java", aString())
+        val fileWithDistance3 = fixture.addFileToProject("util/CodeWhispererConstants.java", aString())
+        val fileWithDistance4 = fixture.addFileToProject("ui/popup/CodeWhispererPopupManager.java", aString())
+        val fileWithDistance5 = fixture.addFileToProject("ui/popup/components/CodeWhispererPopup.java", aString())
+        val fileWithDistance6 = fixture.addFileToProject("ui/popup/components/actions/AcceptRecommendationAction.java", aString())
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance0.virtualFile))
+            .isEqualTo(0)
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance1.virtualFile))
+            .isEqualTo(1)
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance3.virtualFile))
+            .isEqualTo(3)
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance4.virtualFile))
+            .isEqualTo(4)
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance5.virtualFile))
+            .isEqualTo(5)
+
+        assertThat(CodeWhispererUtil.getFileDistance(targetFile.virtualFile, fileWithDistance6.virtualFile))
+            .isEqualTo(6)
+    }
+
+    @Test
+    fun `test util countSubstringMatches`() {
+        val elementsToCheck = listOf("apple", "pineapple", "banana", "chocolate", "fries", "laptop", "amazon", "codewhisperer", "aws")
+        val targetElements = listOf(
+            "an apple a day, keep doctors away",
+            "codewhisperer is the best AI code generator",
+            "chocolateCake",
+            "green apple is sour",
+            "pineapple juice",
+            "chocolate cake is good"
+        )
+
+        val actual = countSubstringMatches(targetElements, elementsToCheck)
+        assertThat(actual).isEqualTo(4)
     }
 
     @Test

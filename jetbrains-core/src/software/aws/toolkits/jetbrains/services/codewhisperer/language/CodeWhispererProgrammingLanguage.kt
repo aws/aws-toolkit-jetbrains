@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
-import com.intellij.openapi.extensions.ExtensionPointName
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.NoOpFileCrawler
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -43,8 +42,4 @@ abstract class CodeWhispererProgrammingLanguage {
      * override hashCode is the backup plan if another object is being created
      */
     final override fun hashCode(): Int = this.languageId.hashCode()
-
-    companion object {
-        val EP_NAME = ExtensionPointName<CodeWhispererProgrammingLanguage>("aws.toolkit.codewhisperer.programmingLanguage")
-    }
 }

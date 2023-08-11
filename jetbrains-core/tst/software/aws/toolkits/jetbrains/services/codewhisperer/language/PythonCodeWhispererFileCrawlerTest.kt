@@ -4,22 +4,35 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.project.Project
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.filecrawler.PythonCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
+import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
-class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCodeInsightTestFixtureRule()) {
+class PythonCodeWhispererFileCrawlerTest {
+    @JvmField
+    @Rule
+    val projectRule: CodeInsightTestFixtureRule = PythonCodeInsightTestFixtureRule()
+
     lateinit var sut: CodeWhispererFileCrawler
 
+    lateinit var project: Project
+    lateinit var fixture: CodeInsightTestFixture
+
     @Before
-    override fun setup() {
-        super.setup()
+    fun setup() {
         sut = PythonCodeWhispererFileCrawler()
+
+        project = projectRule.project
+        fixture = projectRule.fixture
     }
 
     @Test
