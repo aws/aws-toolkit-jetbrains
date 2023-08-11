@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -20,8 +19,6 @@ import software.aws.toolkits.core.utils.tryOrNull
  * since different language has its own way importing other files or its own naming style for test file
  */
 interface FileCrawler {
-    val id: String
-
     /**
      * parse the import statements provided a file
      * @param psiFile of the file we are search with
@@ -58,15 +55,9 @@ interface FileCrawler {
      * Determine if the file given is test file or not based on its path and file name
      */
     fun isTestFile(virtualFile: VirtualFile, project: Project): Boolean
-
-    companion object {
-        val EP_NAME = ExtensionPointName<FileCrawler>("aws.toolkit.codewhisperer.fileCrawler")
-    }
 }
 
 class NoOpFileCrawler : FileCrawler {
-    override val id = "noOp"
-
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = emptyList()
@@ -162,7 +153,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     } ?: false
 
     companion object {
-        fun searchRelevantFileInEditors(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
+        fun searchKeywordsInOpenedFile(target: PsiFile, keywordProducer: (psiFile: PsiFile) -> List<String>): VirtualFile? {
             val project = target.project
             val targetElements = keywordProducer(target)
 
