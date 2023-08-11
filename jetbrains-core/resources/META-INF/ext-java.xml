@@ -25,6 +25,7 @@
     </extensions>
     <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava"/>
+        <fileCrawler implementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler"/>
         <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererJavaImportAdder"/>
     </extensions>
 </idea-plugin>

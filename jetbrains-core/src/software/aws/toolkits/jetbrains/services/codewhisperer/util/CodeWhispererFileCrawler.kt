@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -55,6 +56,10 @@ interface FileCrawler {
      * Determine if the file given is test file or not based on its path and file name
      */
     fun isTestFile(virtualFile: VirtualFile, project: Project): Boolean
+
+    companion object {
+        val EP_NAME = ExtensionPointName<FileCrawler>("aws.toolkit.codewhisperer.fileCrawler")
+    }
 }
 
 class NoOpFileCrawler : FileCrawler {

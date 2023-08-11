@@ -19,9 +19,7 @@ import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavascriptCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.PythonCodeWhispererFileCrawler
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.TypescriptCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
@@ -46,7 +44,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
     @Before
     override fun setup() {
         super.setup()
-        sut = JavaCodeWhispererFileCrawler
+        sut = JavaCodeWhispererFileCrawler()
     }
 
     @Test
@@ -237,7 +235,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             }
         }
 
-        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler)
+        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler())
         // can't make it work right since the temp file created is not in the real file system
         // Naive crawler will actually read the file system thun unable to find files
         //        assertCrawlerFindCorrectFiles(NaiveJavaCodeWhispererFileCrawler(project))
@@ -261,7 +259,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
             }
         }
 
-        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler)
+        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler())
     }
 
     @Test
@@ -330,7 +328,7 @@ class JavaCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(JavaCodeIn
 
     @Test
     fun `guessSourceFileName java`() {
-        val sut = JavaCodeWhispererFileCrawler
+        val sut = JavaCodeWhispererFileCrawler()
 
         assertThat(sut.guessSourceFileName("FooTest.java")).isEqualTo("Foo.java")
         assertThat(sut.guessSourceFileName("FooBarTest.java")).isEqualTo("FooBar.java")
@@ -345,7 +343,7 @@ class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCo
     @Before
     override fun setup() {
         super.setup()
-        sut = PythonCodeWhispererFileCrawler
+        sut = PythonCodeWhispererFileCrawler()
     }
 
     @Test
@@ -447,150 +445,12 @@ class PythonCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(PythonCo
 
     @Test
     fun `guessSourceFileName python`() {
-        val sut = PythonCodeWhispererFileCrawler
+        val sut = PythonCodeWhispererFileCrawler()
 
         assertThat(sut.guessSourceFileName("test_foo_bar.py")).isEqualTo("foo_bar.py")
         assertThat(sut.guessSourceFileName("test_foo.py")).isEqualTo("foo.py")
         assertThat(sut.guessSourceFileName("foo_test.py")).isEqualTo("foo.py")
         assertThat(sut.guessSourceFileName("foo_test.py")).isEqualTo("foo.py")
         assertThat(sut.guessSourceFileName("foo_bar_no_idea.py")).isNull()
-    }
-}
-
-class JsCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(CodeInsightTestFixtureRule()) {
-    lateinit var sut: CodeWhispererFileCrawler
-
-    @Before
-    override fun setup() {
-        super.setup()
-        sut = JavascriptCodeWhispererFileCrawler
-    }
-
-    @Test
-    fun `isTest - should return false`() {
-        val file1 = fixture.addFileToProject("src/utils/foo.js", "")
-        assertThat(sut.isTestFile(file1.virtualFile, project)).isFalse
-
-        val file2 = fixture.addFileToProject("src/controler/bar.jsx", "")
-        assertThat(sut.isTestFile(file2.virtualFile, project)).isFalse
-
-        val file3 = fixture.addFileToProject("main.js", "")
-        assertThat(sut.isTestFile(file3.virtualFile, project)).isFalse
-
-        val file4 = fixture.addFileToProject("component/dto/boo.jsx", "")
-        assertThat(sut.isTestFile(file4.virtualFile, project)).isFalse
-    }
-
-    @Test
-    fun `isTest - should return true`() {
-        val file1 = fixture.addFileToProject("tst/components/foo.test.js", "")
-        assertThat(sut.isTestFile(file1.virtualFile, project)).isTrue
-
-        val file2 = fixture.addFileToProject("test/components/foo.spec.js", "")
-        assertThat(sut.isTestFile(file2.virtualFile, project)).isTrue
-
-        val file3 = fixture.addFileToProject("tests/components/foo.test.jsx", "")
-        assertThat(sut.isTestFile(file3.virtualFile, project)).isTrue
-
-        val file4 = fixture.addFileToProject("foo.spec.jsx", "")
-        assertThat(sut.isTestFile(file4.virtualFile, project)).isTrue
-
-        val file5 = fixture.addFileToProject("foo.test.js", "")
-        assertThat(sut.isTestFile(file5.virtualFile, project)).isTrue
-
-        val file6 = fixture.addFileToProject("src/tst/services/fooService.test.js", "")
-        assertThat(sut.isTestFile(file6.virtualFile, project)).isTrue
-
-        val file7 = fixture.addFileToProject("tests/services/barService.spec.jsx", "")
-        assertThat(sut.isTestFile(file7.virtualFile, project)).isTrue
-
-        val file8 = fixture.addFileToProject("foo.Test.js", "")
-        assertThat(sut.isTestFile(file8.virtualFile, project)).isTrue
-
-        val file9 = fixture.addFileToProject("foo.Spec.js", "")
-        assertThat(sut.isTestFile(file9.virtualFile, project)).isTrue
-    }
-
-    @Test
-    fun `guessSourceFileName javascript`() {
-        assertThat(sut.guessSourceFileName("fooBar.test.js")).isEqualTo("fooBar.js")
-        assertThat(sut.guessSourceFileName("fooBar.spec.js")).isEqualTo("fooBar.js")
-        assertThat(sut.guessSourceFileName("fooBarNoIdea.js")).isNull()
-    }
-
-    @Test
-    fun `guessSourceFileName jsx`() {
-        assertThat(sut.guessSourceFileName("fooBar.test.jsx")).isEqualTo("fooBar.jsx")
-        assertThat(sut.guessSourceFileName("fooBar.spec.jsx")).isEqualTo("fooBar.jsx")
-        assertThat(sut.guessSourceFileName("fooBarNoIdea.jsx")).isNull()
-    }
-}
-
-class TsCodeWhispererFileCrawlerTest : CodeWhispererFileCrawlerTest(CodeInsightTestFixtureRule()) {
-    lateinit var sut: CodeWhispererFileCrawler
-
-    @Before
-    override fun setup() {
-        super.setup()
-        sut = TypescriptCodeWhispererFileCrawler
-    }
-
-    @Test
-    fun `isTest - should return false`() {
-        val file1 = fixture.addFileToProject("src/utils/foo.ts", "")
-        assertThat(sut.isTestFile(file1.virtualFile, project)).isFalse
-
-        val file2 = fixture.addFileToProject("src/controler/bar.tsx", "")
-        assertThat(sut.isTestFile(file2.virtualFile, project)).isFalse
-
-        val file3 = fixture.addFileToProject("main.ts", "")
-        assertThat(sut.isTestFile(file3.virtualFile, project)).isFalse
-
-        val file4 = fixture.addFileToProject("component/dto/boo.tsx", "")
-        assertThat(sut.isTestFile(file4.virtualFile, project)).isFalse
-    }
-
-    @Test
-    fun `isTest - should return true`() {
-        val file1 = fixture.addFileToProject("tst/components/foo.test.ts", "")
-        assertThat(sut.isTestFile(file1.virtualFile, project)).isTrue
-
-        val file2 = fixture.addFileToProject("test/components/foo.spec.ts", "")
-        assertThat(sut.isTestFile(file2.virtualFile, project)).isTrue
-
-        val file3 = fixture.addFileToProject("tests/components/foo.test.tsx", "")
-        assertThat(sut.isTestFile(file3.virtualFile, project)).isTrue
-
-        val file4 = fixture.addFileToProject("foo.spec.tsx", "")
-        assertThat(sut.isTestFile(file4.virtualFile, project)).isTrue
-
-        val file5 = fixture.addFileToProject("foo.test.ts", "")
-        assertThat(sut.isTestFile(file5.virtualFile, project)).isTrue
-
-        val file6 = fixture.addFileToProject("src/tst/services/fooService.test.ts", "")
-        assertThat(sut.isTestFile(file6.virtualFile, project)).isTrue
-
-        val file7 = fixture.addFileToProject("tests/services/barService.spec.tsx", "")
-        assertThat(sut.isTestFile(file7.virtualFile, project)).isTrue
-
-        val file8 = fixture.addFileToProject("foo.Test.ts", "")
-        assertThat(sut.isTestFile(file8.virtualFile, project)).isTrue
-
-        val file9 = fixture.addFileToProject("foo.Spec.ts", "")
-        assertThat(sut.isTestFile(file9.virtualFile, project)).isTrue
-    }
-
-    @Test
-    fun `guessSourceFileName typescript`() {
-        assertThat(sut.guessSourceFileName("fooBar.test.ts")).isEqualTo("fooBar.ts")
-        assertThat(sut.guessSourceFileName("fooBar.spec.ts")).isEqualTo("fooBar.ts")
-        assertThat(sut.guessSourceFileName("fooBarNoIdea.ts")).isNull()
-    }
-
-    @Test
-    fun `guessSourceFileName tsx`() {
-        assertThat(sut.guessSourceFileName("fooBar.test.tsx")).isEqualTo("fooBar.tsx")
-        assertThat(sut.guessSourceFileName("fooBar.spec.tsx")).isEqualTo("fooBar.tsx")
-        assertThat(sut.guessSourceFileName("fooBarNoIdea.tsx")).isNull()
     }
 }

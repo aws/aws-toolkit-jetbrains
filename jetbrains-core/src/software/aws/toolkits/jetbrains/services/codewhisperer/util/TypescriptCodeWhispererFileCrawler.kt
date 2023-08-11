@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 
-object TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+class TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "ts"
     override val dialects: Set<String> = setOf("ts", "tsx")
     override val testFileNamingPatterns: List<Regex> = listOf(

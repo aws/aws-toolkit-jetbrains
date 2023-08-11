@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.ExtensionTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -14,8 +13,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.JavaScriptCodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
@@ -36,11 +33,6 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     @Before
     override fun setup() {
         super.setup()
-        ExtensionTestUtil.maskExtensions(
-            CodeWhispererProgrammingLanguage.EP_NAME,
-            listOf(CodeWhispererJavaScript.INSTANCE),
-            disposableRule.disposable
-        )
         setupJavaScriptProject()
         sessionConfigSpy = spy(CodeScanSessionConfig.create(testJs, project) as JavaScriptCodeScanSessionConfig)
         setupResponse(testJs.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))

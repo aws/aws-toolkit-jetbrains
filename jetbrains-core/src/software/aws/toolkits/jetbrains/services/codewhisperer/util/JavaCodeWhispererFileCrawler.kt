@@ -17,7 +17,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import kotlinx.coroutines.yield
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 
-object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+class JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "java"
     override val dialects: Set<String> = setOf("java")
     override val testFileNamingPatterns = listOf(

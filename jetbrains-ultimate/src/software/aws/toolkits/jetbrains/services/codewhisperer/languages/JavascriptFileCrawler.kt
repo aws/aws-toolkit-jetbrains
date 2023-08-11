@@ -1,10 +1,11 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.util
+package software.aws.toolkits.jetbrains.services.codewhisperer.languages
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 
 class JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "js"

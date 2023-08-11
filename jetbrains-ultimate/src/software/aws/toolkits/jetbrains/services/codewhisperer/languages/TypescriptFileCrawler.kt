@@ -1,17 +1,18 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.util
+package software.aws.toolkits.jetbrains.services.codewhisperer.languages
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 
-class JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = "js"
-    override val dialects: Set<String> = setOf("js", "jsx")
+class TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+    override val fileExtension: String = "ts"
+    override val dialects: Set<String> = setOf("ts", "tsx")
     override val testFileNamingPatterns: List<Regex> = listOf(
-        Regex("""^(.+)\.(?i:t)est(\.js|\.jsx)$"""),
-        Regex("""^(.+)\.(?i:s)pec(\.js|\.jsx)$""")
+        Regex("""^(.+)\.(?i:t)est(\.ts|\.tsx)$"""),
+        Regex("""^(.+)\.(?i:s)pec(\.ts|\.tsx)$""")
     )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
