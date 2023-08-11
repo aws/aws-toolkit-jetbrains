@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.language.filecraw
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.classreader.CodeWhispererPythonReader
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.classreader.FileReader
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.classreader.FileReaderKey
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.FileReader
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.FileReaderKey
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 
 class PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
@@ -31,7 +31,7 @@ class PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
      * check files in editors and pick one which has most substring matches to the target
      */
     override fun findSourceFileByContent(psiFile: PsiFile): VirtualFile? = searchKeywordsInOpenedFile(psiFile) { myPsiFile ->
-        FileReader.EP_NAME.findFirstSafe { it is CodeWhispererPythonReader }?.let {
+        FileReader.EP_NAME.findFirstSafe { it is CodeWhispererPythonClassResolver }?.let {
             val classAndMethods = it.readClass(myPsiFile)
             val func = it.readTopLevelFunc(myPsiFile)
             val clazz = classAndMethods[FileReaderKey.ClassName].orEmpty()
