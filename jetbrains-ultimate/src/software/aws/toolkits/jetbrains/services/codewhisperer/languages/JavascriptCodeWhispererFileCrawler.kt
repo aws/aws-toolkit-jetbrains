@@ -7,12 +7,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 
-class TypescriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
-    override val fileExtension: String = "ts"
-    override val dialects: Set<String> = setOf("ts", "tsx")
+class JavascriptCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+    override val id: String = "javascript"
+    override val fileExtension: String = "js"
+    override val dialects: Set<String> = setOf("js", "jsx")
     override val testFileNamingPatterns: List<Regex> = listOf(
-        Regex("""^(.+)\.(?i:t)est(\.ts|\.tsx)$"""),
-        Regex("""^(.+)\.(?i:s)pec(\.ts|\.tsx)$""")
+        Regex("""^(.+)\.(?i:t)est(\.js|\.jsx)$"""),
+        Regex("""^(.+)\.(?i:s)pec(\.js|\.jsx)$""")
     )
 
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()

@@ -5,13 +5,12 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.language.language
 
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.NoOpFileCrawler
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
 class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage() {
     override val languageId: String = ID
-    override val fileCrawler: FileCrawler = FileCrawler.EP_NAME.findFirstSafe { it is JavaCodeWhispererFileCrawler }
+    override val fileCrawler: FileCrawler = FileCrawler.EP_NAME.findFirstSafe { it.id == "java" }
         ?: NoOpFileCrawler()
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Java

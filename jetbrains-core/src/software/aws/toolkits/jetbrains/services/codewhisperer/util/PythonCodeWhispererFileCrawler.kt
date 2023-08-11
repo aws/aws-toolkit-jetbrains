@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile
 import com.jetbrains.python.psi.PyFile
 
 class PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+    override val id = "python"
     override val fileExtension: String = "py"
     override val dialects: Set<String> = setOf("py")
     override val testFileNamingPatterns: List<Regex> = listOf(

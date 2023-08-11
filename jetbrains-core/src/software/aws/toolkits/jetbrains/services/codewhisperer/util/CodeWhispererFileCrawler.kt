@@ -20,6 +20,8 @@ import software.aws.toolkits.core.utils.tryOrNull
  * since different language has its own way importing other files or its own naming style for test file
  */
 interface FileCrawler {
+    val id: String
+
     /**
      * parse the import statements provided a file
      * @param psiFile of the file we are search with
@@ -63,6 +65,8 @@ interface FileCrawler {
 }
 
 class NoOpFileCrawler : FileCrawler {
+    override val id = "noOp"
+
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = emptyList()

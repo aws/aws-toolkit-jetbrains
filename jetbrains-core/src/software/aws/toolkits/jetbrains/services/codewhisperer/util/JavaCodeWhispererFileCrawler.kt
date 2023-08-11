@@ -18,6 +18,7 @@ import kotlinx.coroutines.yield
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 
 class JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
+    override val id = "java"
     override val fileExtension: String = "java"
     override val dialects: Set<String> = setOf("java")
     override val testFileNamingPatterns = listOf(
