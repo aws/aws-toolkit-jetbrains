@@ -27,7 +27,6 @@ class JavaCodeWhispererFileCrawlerTest {
     @JvmField
     val projectRule: CodeInsightTestFixtureRule = JavaCodeInsightTestFixtureRule()
 
-
     lateinit var sut: CodeWhispererFileCrawler
 
     lateinit var project: Project

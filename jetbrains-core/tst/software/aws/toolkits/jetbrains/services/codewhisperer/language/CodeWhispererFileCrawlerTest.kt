@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
-class CodeWhispererFileCrawlerCommonTest {
+class CodeWhispererFileCrawlerTest {
     @JvmField
     @Rule
     val projectRule: CodeInsightTestFixtureRule = CodeInsightTestFixtureRule()
@@ -104,3 +104,4 @@ class CodeWhispererFileCrawlerCommonTest {
         }
     }
 }
+
