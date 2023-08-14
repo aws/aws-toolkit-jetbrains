@@ -562,7 +562,7 @@ class JsCodeWhispererFileCrawlerTest {
 
     @Before
     fun setup() {
-        sut = TypescriptCodeWhispererFileCrawler
+        sut = JavascriptCodeWhispererFileCrawler
 
         project = projectRule.project
         fixture = projectRule.fixture
@@ -640,7 +640,7 @@ class TsCodeWhispererFileCrawlerTest {
 
     @Before
     fun setup() {
-        sut = JavascriptCodeWhispererFileCrawler
+        sut = TypescriptCodeWhispererFileCrawler
 
         project = projectRule.project
         fixture = projectRule.fixture
