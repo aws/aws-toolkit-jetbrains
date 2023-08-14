@@ -87,9 +87,9 @@ object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
      */
     override fun findSourceFileByContent(target: PsiFile): VirtualFile? = searchRelevantFileInEditors(target) { myPsiFile ->
         CodeWhispererClassResolver.EP_NAME.findFirstSafe { it is CodeWhispereJavaClassResolver }?.let {
-            val classAndMethos = it.resolveClassAndMembers(myPsiFile)
-            val clazz = classAndMethos[ClassResolverKey.ClassName].orEmpty()
-            val methods = classAndMethos[ClassResolverKey.MethodName].orEmpty()
+            val classAndMethods = it.resolveClassAndMembers(myPsiFile)
+            val clazz = classAndMethods[ClassResolverKey.ClassName].orEmpty()
+            val methods = classAndMethods[ClassResolverKey.MethodName].orEmpty()
 
             clazz + methods
         }.orEmpty()
