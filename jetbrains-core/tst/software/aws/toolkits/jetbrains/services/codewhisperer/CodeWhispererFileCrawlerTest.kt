@@ -38,6 +38,7 @@ class CodeWhispererFileCrawlerTest {
     lateinit var fixture: CodeInsightTestFixture
     lateinit var project: Project
 
+    @Before
     fun setup() {
         fixture = projectRule.fixture
         project = projectRule.project

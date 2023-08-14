@@ -16,8 +16,8 @@ import com.intellij.psi.search.GlobalSearchScope
 import kotlinx.coroutines.yield
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.ClassResolverKey
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispereJavaClassResolver
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver
 
 object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "java"
@@ -86,7 +86,7 @@ object JavaCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
      * check files in editors and pick one which has most substring matches to the target
      */
     override fun findSourceFileByContent(target: PsiFile): VirtualFile? = searchRelevantFileInEditors(target) { myPsiFile ->
-        CodeWhispererClassResolver.EP_NAME.findFirstSafe { it is CodeWhispererPythonClassResolver }?.let {
+        CodeWhispererClassResolver.EP_NAME.findFirstSafe { it is CodeWhispereJavaClassResolver }?.let {
             val classAndMethos = it.resolveClassAndMembers(myPsiFile)
             val clazz = classAndMethos[ClassResolverKey.ClassName].orEmpty()
             val methods = classAndMethos[ClassResolverKey.MethodName].orEmpty()
