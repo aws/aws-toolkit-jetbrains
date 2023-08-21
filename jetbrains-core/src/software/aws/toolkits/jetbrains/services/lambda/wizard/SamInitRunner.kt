@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.schemas.SchemaTemplateParameters
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.SamTelemetry
-import software.aws.toolkits.telemetry.SyncedResources
 
 object SamInitRunner {
     private val LOG = getLogger<SamInitRunner>()

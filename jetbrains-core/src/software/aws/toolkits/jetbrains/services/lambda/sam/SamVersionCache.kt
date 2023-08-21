@@ -36,7 +36,7 @@ object SamVersionCache : FileInfoCache<SemVer>() {
             val tree = SamCommon.mapper.readTree(output)
             val version = tree.get(SamCommon.SAM_INFO_VERSION_KEY).asText()
             val semVerVersion = SemVer.parseFromText(version)
-            if(semVerVersion == null) {
+            if (semVerVersion == null) {
                 SamTelemetry.info(result = Result.Failed, reason = "UndetectableSamCliVersion")
             } else {
                 SamTelemetry.info(result = Result.Succeeded)
