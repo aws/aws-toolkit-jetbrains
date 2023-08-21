@@ -39,7 +39,7 @@ object SamInitRunner {
                 else -> {
                     SamTelemetry.init(
                         result = Result.Failed,
-                        reason = "Invalid SAM CLI executable"
+                        reason = "InvalidSamCli"
                     )
                     throw RuntimeException((it as? ExecutableInstance.BadExecutable)?.validationError)
                 }

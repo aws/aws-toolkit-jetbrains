@@ -23,21 +23,21 @@ object SamVersionCache : FileInfoCache<SemVer>() {
         if (process.exitCode != 0) {
             val output = process.stderr.trimEnd()
             if (output.contains(SamCommon.SAM_INVALID_OPTION_SUBSTRING)) {
-                SamTelemetry.info(result = Result.Failed, reason = "SAM CLI provided unexpected output")
+                SamTelemetry.info(result = Result.Failed, reason = "SamCliUnexpectedOutput")
                 throw IllegalStateException(message("executableCommon.unexpected_output", SamCommon.SAM_NAME, output))
             }
             throw IllegalStateException(output)
         } else {
             val output = process.stdout.trimEnd()
             if (output.isEmpty()) {
-                SamTelemetry.info(result = Result.Failed, reason = "SAM CLI provided empty output")
+                SamTelemetry.info(result = Result.Failed, reason = "SamCliNoOutput")
                 throw IllegalStateException(message("executableCommon.empty_info", SamCommon.SAM_NAME))
             }
             val tree = SamCommon.mapper.readTree(output)
             val version = tree.get(SamCommon.SAM_INFO_VERSION_KEY).asText()
             val semVerVersion = SemVer.parseFromText(version)
             if(semVerVersion == null) {
-                SamTelemetry.info(result = Result.Failed, reason = "Could not determine SAM CLI version")
+                SamTelemetry.info(result = Result.Failed, reason = "UndetectableSamCliVersion")
             } else {
                 SamTelemetry.info(result = Result.Succeeded)
             }

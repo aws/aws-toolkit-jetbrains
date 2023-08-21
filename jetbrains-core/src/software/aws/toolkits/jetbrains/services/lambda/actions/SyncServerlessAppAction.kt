@@ -81,7 +81,7 @@ class SyncServerlessAppAction : AnAction(
                     project = project,
                     result = Result.Failed,
                     syncedResources = SyncedResources.AllResources,
-                    reason = "Invalid SAM CLI executable"
+                    reason = "InvalidSamCli"
                 )
                 return@thenAccept
             }
@@ -120,7 +120,7 @@ class SyncServerlessAppAction : AnAction(
                     project = project,
                     result = Result.Failed,
                     syncedResources = SyncedResources.AllResources,
-                    reason = "Older SAM CLI version"
+                    reason = "OldSamCliVersion"
                 )
                 return@thenAccept
             }
@@ -134,7 +134,7 @@ class SyncServerlessAppAction : AnAction(
                     project = project,
                     result = Result.Failed,
                     syncedResources = SyncedResources.AllResources,
-                    reason = "Template file unparseable"
+                    reason = "UnparseableTemplateFile"
                 )
                 return@thenAccept
             }
@@ -208,7 +208,7 @@ class SyncServerlessAppAction : AnAction(
                                             syncedResources = syncedResourceType,
                                             lambdaPackageType = lambdaType,
                                             version = SamCommon.getVersionString(),
-                                            reason = "Docker not available"
+                                            reason = "DockerNotFound"
                                         )
                                         return@runInEdt
                                     }
