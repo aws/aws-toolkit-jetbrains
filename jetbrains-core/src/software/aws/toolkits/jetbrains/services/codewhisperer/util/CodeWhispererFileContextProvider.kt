@@ -8,7 +8,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.util.gist.GistManager
@@ -44,19 +43,11 @@ private val contentRootPathProvider = CopyContentRootPathProvider()
 private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
-            val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
-            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listRelevantFilesInEditors(psiFile) }
+            val fileCrawler = psiFile.programmingLanguage().fileCrawler
+            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listCrossFileCandidate(psiFile) }
             FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
         }
     }
-
-private fun getFileCrawlerForLanguage(programmingLanguage: CodeWhispererProgrammingLanguage) = when (programmingLanguage) {
-    is CodeWhispererJava -> JavaCodeWhispererFileCrawler
-    is CodeWhispererPython -> PythonCodeWhispererFileCrawler
-    is CodeWhispererJavaScript, is CodeWhispererJsx -> JavascriptCodeWhispererFileCrawler
-    is CodeWhispererTypeScript, is CodeWhispererTsx -> TypescriptCodeWhispererFileCrawler
-    else -> NoOpFileCrawler()
-}
 
 private object CodeWhispererCodeChunkExternalizer : DataExternalizer<List<Chunk>> {
     override fun save(out: DataOutput, value: List<Chunk>) {
@@ -96,6 +87,10 @@ interface FileContextProvider {
 
     suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk>
 
+    /**
+     * It will actually delegate to invoke corresponding [CodeWhispererFileCrawler.isTestFile] for each language
+     * as different languages have their own naming conventions.
+     */
     fun isTestFile(psiFile: PsiFile): Boolean
 
     companion object {
@@ -116,31 +111,27 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo? {
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = isTestFile(psiFile)
-        val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         val language = targetContext.programmingLanguage
+        val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
-        val chunks = if (isTst && targetContext.programmingLanguage.isUTGSupported()) {
-            if (userGroup == CodeWhispererUserGroup.CrossFile) {
-                extractSupplementalFileContextForTst(psiFile, targetContext)
-            } else {
-                emptyList()
-            }
-        } else if (!isTst && targetContext.programmingLanguage.isSupplementalContextSupported()) {
-            when (language) {
-                is CodeWhispererJava -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-
-                is CodeWhispererPython, is CodeWhispererJavaScript, is CodeWhispererTypeScript, is CodeWhispererJsx, is CodeWhispererTsx ->
-                    if (userGroup == CodeWhispererUserGroup.CrossFile) {
-                        extractSupplementalFileContextForSrc(psiFile, targetContext)
-                    } else {
-                        emptyList()
-                    }
-
-                else -> emptyList()
+        val chunks = if (isTst) {
+            when (shouldFetchUtgContext(language, group)) {
+                true -> extractSupplementalFileContextForTst(psiFile, targetContext)
+                false -> emptyList()
+                null -> {
+                    LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
+                    null
+                }
             }
         } else {
-            LOG.debug { "${if (isTst) "UTG" else "CrossFile"} not supported for ${targetContext.programmingLanguage.languageId}" }
-            null
+            when (shouldFetchCrossfileContext(language, group)) {
+                true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
+                false -> emptyList()
+                null -> {
+                    LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
+                    null
+                }
+            }
         }
 
         return chunks?.let {
@@ -188,23 +179,17 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 chunks.addAll(file.toCodeChunk(relativePath))
                 hasUsed.add(file)
                 if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
-                    LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
+                    LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
                     return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
                 }
             }
         }
 
-        LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
+        LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
-    override fun isTestFile(psiFile: PsiFile): Boolean {
-        val path = runReadAction { contentRootPathProvider.getPathToElement(project, psiFile.virtualFile, null) ?: psiFile.virtualFile.path }
-        return TestSourcesFilter.isTestSources(psiFile.virtualFile, project) ||
-            path.contains("""test/""") ||
-            path.contains("""tst/""") ||
-            path.contains("""tests/""")
-    }
+    override fun isTestFile(psiFile: PsiFile) = psiFile.programmingLanguage().fileCrawler.isTestFile(psiFile.virtualFile, psiFile.project)
 
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
@@ -257,7 +242,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
         if (!targetContext.programmingLanguage.isUTGSupported()) return emptyList()
 
-        val focalFile = getFileCrawlerForLanguage(targetContext.programmingLanguage).findFocalFileForTest(psiFile)
+        val focalFile = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
 
         return focalFile?.let { file ->
             runReadAction {
@@ -285,5 +270,33 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()
+
+        fun shouldFetchUtgContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+            if (!language.isUTGSupported()) {
+                return null
+            }
+
+            return when (language) {
+                is CodeWhispererJava -> true
+                else -> userGroup == CodeWhispererUserGroup.CrossFile
+            }
+        }
+
+        fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+            if (!language.isSupplementalContextSupported()) {
+                return null
+            }
+
+            return when (language) {
+                is CodeWhispererJava,
+                is CodeWhispererPython,
+                is CodeWhispererJavaScript,
+                is CodeWhispererTypeScript,
+                is CodeWhispererJsx,
+                is CodeWhispererTsx -> true
+
+                else -> userGroup == CodeWhispererUserGroup.CrossFile
+            }
+        }
     }
 }
