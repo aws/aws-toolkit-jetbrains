@@ -25,6 +25,7 @@ class DeleteResourceDialog(
         emptyText.text = message("delete_resource.confirmation_text")
         accessibleContext.accessibleName = message("general.delete_accessible_name")
     }
+
     private val warningIcon = JBLabel(Messages.getWarningIcon())
     private val component by lazy {
         panel {
@@ -33,11 +34,7 @@ class DeleteResourceDialog(
                 label(message("delete_resource.message", resourceType, resourceName))
             }
             row {
-                textField().align(Align.FILL)
-                    .applyToComponent {
-                        emptyText.text = message("delete_resource.confirmation_text")
-                        accessibleContext.accessibleName = message("general.delete_accessible_name")
-                    }
+                cell(deleteResourceConfirmation).align(Align.FILL)
             }
             row { }.comment(comment).apply {
                 this.component.isVisible = this@DeleteResourceDialog.comment.isNotEmpty()

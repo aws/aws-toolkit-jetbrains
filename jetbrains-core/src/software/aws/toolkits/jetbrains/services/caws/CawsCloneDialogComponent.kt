@@ -73,7 +73,7 @@ class CawsCloneDialogComponent(
             }
         }
     }
-    
+
     private val browseButton = SelectChildTextFieldWithBrowseButton(
         ClonePathProvider.defaultParentDirectoryPath(project, GitRememberedInputs.getInstance())
     ).apply {
