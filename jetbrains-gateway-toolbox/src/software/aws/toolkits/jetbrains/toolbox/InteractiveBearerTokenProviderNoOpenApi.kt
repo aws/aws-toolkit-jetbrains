@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.toolbox
 
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
@@ -32,7 +34,11 @@ class InteractiveBearerTokenProviderNoOpenApi(
     override val id = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
-    private val ssoOidcClient: SsoOidcClient = buildUnmanagedSsoOidcClient(region)
+    private val ssoOidcClient: SsoOidcClient = SsoOidcClient.builder()
+        .credentialsProvider(AnonymousCredentialsProvider.create())
+        .region(Region.of(region))
+        .build()
+
     private val accessTokenProvider =
         SsoAccessTokenProvider(
             startUrl,
@@ -76,7 +82,6 @@ class InteractiveBearerTokenProviderNoOpenApi(
     override fun invalidate() {
         accessTokenProvider.invalidate()
         lastToken.set(null)
-        BearerTokenProviderListener.notifyCredUpdate(id)
     }
 
     override fun reauthenticate() {
@@ -84,7 +89,6 @@ class InteractiveBearerTokenProviderNoOpenApi(
         invalidate()
         accessTokenProvider.accessToken().also {
             lastToken.set(it)
-            BearerTokenProviderListener.notifyCredUpdate(id)
         }
     }
 }

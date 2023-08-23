@@ -13,12 +13,14 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
+//import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
+import java.awt.Desktop
+import java.net.URI
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -54,7 +56,7 @@ class SsoAccessTokenProvider(
     }
 
     fun accessToken(): AccessToken {
-        assertIsNonDispatchThread()
+//        assertIsNonDispatchThread()
 
         loadAccessToken()?.let {
             return it
@@ -118,12 +120,25 @@ class SsoAccessTokenProvider(
     }
 
     private fun pollForToken(): AccessToken {
-        val onPendingToken = service<SsoLoginCallbackProvider>().getProvider(ssoUrl)
-        val progressIndicator = ProgressManager.getInstance().progressIndicator
+        val onPendingToken = object : SsoLoginCallback {
+            override fun tokenPending(authorization: Authorization) {
+                Desktop.getDesktop().browse(URI(authorization.verificationUriComplete))
+            }
+
+            override fun tokenRetrieved() {
+                println("tokenRetrieved")
+            }
+
+            override fun tokenRetrievalFailure(e: Exception) {
+                println(e)
+            }
+        }
+//        val onPendingToken = service<SsoLoginCallbackProvider>().getProvider(ssoUrl)
+//        val progressIndicator = ProgressManager.getInstance().progressIndicator
         val registration = registerClient()
         val authorization = authorizeClient(registration)
 
-        progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
+//        progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
         onPendingToken.tokenPending(authorization)
 
         var backOffTime = Duration.ofSeconds(authorization.pollInterval)
@@ -149,7 +164,8 @@ class SsoAccessTokenProvider(
                 throw e
             }
 
-            sleepWithCancellation(backOffTime, progressIndicator)
+            Thread.sleep(backOffTime.toMillis())
+//            sleepWithCancellation(backOffTime, null)
         }
     }
 
