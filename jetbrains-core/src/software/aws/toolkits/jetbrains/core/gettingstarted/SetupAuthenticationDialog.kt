@@ -7,12 +7,13 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.util.Disposer
+import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
 import com.intellij.ui.components.JBTabbedPane
@@ -20,8 +21,10 @@ import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
+import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
+import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.regions.Region
@@ -34,6 +37,8 @@ import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.ui.AsyncComboBox
+import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import javax.swing.Action
@@ -96,7 +101,6 @@ class SetupAuthenticationDialog(
     private val promptForIdcPermissionSet: Boolean = false,
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
-    private val idcWrapper = BorderLayoutPanel()
     private val idcTab = idcTab()
     private val builderIdTab = builderIdTab()
     private val iamTab = iamTab()
@@ -116,6 +120,24 @@ class SetupAuthenticationDialog(
         wrappers[SetupAuthenticationTabs.BUILDER_ID]?.addToCenter(builderIdTab)
         wrappers[SetupAuthenticationTabs.IAM_LONG_LIVED]?.addToCenter(iamTab)
 
+        idcTab.registerValidators(myDisposable) { validations ->
+            if (selectedTab() == SetupAuthenticationTabs.IDENTITY_CENTER) {
+                setOKActionEnabled(validations.values.all { it.okEnabled })
+            }
+        }
+
+        builderIdTab.registerValidators(myDisposable) { validations ->
+            if (selectedTab() == SetupAuthenticationTabs.BUILDER_ID) {
+                setOKActionEnabled(validations.values.all { it.okEnabled })
+            }
+        }
+
+        iamTab.registerValidators(myDisposable) { validations ->
+            if (selectedTab() == SetupAuthenticationTabs.IAM_LONG_LIVED) {
+                setOKActionEnabled(validations.values.all { it.okEnabled })
+            }
+        }
+
         tabSettings.forEach { tab, settings ->
             val notice = settings.notice
 
@@ -129,12 +151,15 @@ class SetupAuthenticationDialog(
                         SetupAuthenticationNotice.NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.backgroundColor()
                     }
 
+                    val defaultInsets = if (ExperimentalUI.isNewUI()) JBInsets.create(9, 16) else JBInsets.create(5, 10)
                     border = BorderFactory.createCompoundBorder(
                         // outside border
                         BorderFactory.createMatteBorder(0, 0, 1, 0, JBUI.CurrentTheme.NotificationWarning.borderColor()),
                         // inside border
+                        // helper util not available in JBUI until 232
+                        // https://github.com/JetBrains/intellij-community/blob/222/platform/platform-api/src/com/intellij/ui/EditorNotificationPanel.java#L135-L136
                         JBUI.Borders.empty(
-                            JBUI.CurrentTheme.Editor.Notification.borderInsetsWithoutStatus()
+                            JBUI.insets("Editor.Notification.borderInsets", defaultInsets)
                         )
                     )
                 }
@@ -161,21 +186,23 @@ class SetupAuthenticationDialog(
         (rootTabPane.selectedComponent as? DialogPanel)?.apply()
     }
 
-    override fun doValidateAll(): List<ValidationInfo> {
-        val selection = rootTabPane.selectedComponent
-        if (selection == idcWrapper) {
-            val idcTabValidation = idcTab.validateAll()
-            if (idcTabValidation.isNotEmpty()) {
-                return idcTabValidation
+    override fun doValidateAll(): List<ValidationInfo> =
+        when (selectedTab()) {
+            SetupAuthenticationTabs.IDENTITY_CENTER -> {
+                idcTab.validateAll()
             }
 
-            return emptyList()
-        } else {
-            return (selection as? DialogPanel)?.validateAll().orEmpty()
-        }
-    }
+            SetupAuthenticationTabs.IAM_LONG_LIVED -> {
+                iamTab.validateAll()
+            }
 
-    override fun doOKAction() {
+            SetupAuthenticationTabs.BUILDER_ID -> {
+                emptyList()
+            }
+        }
+
+    @VisibleForTesting
+    public override fun doOKAction() {
         if (!okAction.isEnabled) {
             return
         }
@@ -202,7 +229,7 @@ class SetupAuthenticationDialog(
                     }
 
                     override fun createCenterPanel() = idcRolePopup(tokenProvider)
-                }.showAndGet()
+                }.show()
             }
 
             SetupAuthenticationTabs.BUILDER_ID -> {
@@ -223,6 +250,7 @@ class SetupAuthenticationDialog(
         row(message("gettingstarted.setup.idc.startUrl")) {
             textField()
                 .comment(message("gettingstarted.setup.idc.startUrl.comment"))
+                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .bindText(state.idcTabState::startUrl)
         }
 
@@ -233,6 +261,7 @@ class SetupAuthenticationDialog(
                 },
                 SimpleListCellRenderer.create("null") { it.displayName }
             ).bindItem(state.idcTabState::region.toNullableProperty())
+                .errorOnApply(message("gettingstarted.setup.error.not_selected")) { it.selected() == null }
         }
     }
 
@@ -242,22 +271,31 @@ class SetupAuthenticationDialog(
         }
 
         row {
-            val roles = ApplicationManager.getApplication().executeOnPooledThread<List<RoleInfo>> {
+            val combo = AsyncComboBox<RoleInfo> { label, value, _ ->
+                value ?: return@AsyncComboBox
+                label.text = "${value.roleName()} (${value.accountId()})"
+            }
+            Disposer.register(myDisposable, combo)
+            combo.proposeModelUpdate { model ->
                 val token = tokenProvider.resolveToken().token()
                 val client = AwsClientManager.getInstance().createUnmanagedClient<SsoClient>(
                     AnonymousCredentialsProvider.create(),
                     Region.of(state.idcTabState.region.id)
                 )
 
-                return@executeOnPooledThread client.listAccounts { it.accessToken(token) }.accountList().flatMap { account ->
-                    client.listAccountRoles {
-                        it.accessToken(token)
-                        it.accountId(account.accountId())
-                    }.roleList()
-                }
+                client.listAccounts { it.accessToken(token) }
+                    .accountList()
+                    .flatMap { account ->
+                        client.listAccountRoles {
+                            it.accessToken(token)
+                            it.accountId(account.accountId())
+                        }.roleList()
+                    }.forEach {
+                        model.addElement(it)
+                    }
             }
 
-            comboBox(roles.get())
+            cell(combo)
                 .bindItem(state.idcTabState::roleInfo)
         }
     }
@@ -291,17 +329,20 @@ class SetupAuthenticationDialog(
 
         row(message("gettingstarted.setup.iam.profile")) {
             textField()
-                .comment("Used by AWS Toolkit to list added credentials")
+                .comment(message("gettingstarted.setup.iam.profile.comment"))
+                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .bindText(state.iamTabState::profileName)
         }
 
         row(message("gettingstarted.setup.iam.access_key")) {
             textField()
+                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .bindText(state.iamTabState::accessKey)
         }
 
         row(message("gettingstarted.setup.iam.secret_key")) {
             textField()
+                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .bindText(state.iamTabState::secretKey)
         }
     }
