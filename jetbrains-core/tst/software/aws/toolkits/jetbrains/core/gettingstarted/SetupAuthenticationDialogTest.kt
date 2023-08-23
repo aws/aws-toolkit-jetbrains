@@ -12,6 +12,7 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
@@ -23,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 
 @ExtendWith(MockKExtension::class)
+@DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2022.2", disabledReason = "NPE in platform validation logic")
 class SetupAuthenticationDialogTest {
     companion object {
         @JvmField
@@ -94,6 +96,20 @@ class SetupAuthenticationDialogTest {
                     assertThat(error.message).contains("Must not be empty")
                 }
             }
+        }
+    }
+
+    @Test
+    fun `validate Builder ID tab`() {
+        val state = SetupAuthenticationDialogState().apply {
+            selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
+        }
+
+        runInEdtAndWait {
+            val validation = SetupAuthenticationDialog(projectExtension.project, state = state)
+                .performValidateAll()
+
+            assertThat(validation).isEmpty()
         }
     }
 
