@@ -296,7 +296,7 @@ class SetupAuthenticationDialog(
             }
 
             cell(combo)
-                .bindItem(state.idcTabState::roleInfo)
+                .bindItem(state.idcTabState::roleInfo.toNullableProperty())
         }
     }
 
