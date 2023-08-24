@@ -17,6 +17,7 @@ import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -183,7 +184,19 @@ class SetupAuthenticationDialog(
     }
 
     override fun applyFields() {
-        (rootTabPane.selectedComponent as? DialogPanel)?.apply()
+        when (selectedTab()) {
+            SetupAuthenticationTabs.IDENTITY_CENTER -> {
+                idcTab.apply()
+            }
+
+            SetupAuthenticationTabs.IAM_LONG_LIVED -> {
+                iamTab.apply()
+            }
+
+            SetupAuthenticationTabs.BUILDER_ID -> {
+                builderIdTab.apply()
+            }
+        }
     }
 
     override fun doValidateAll(): List<ValidationInfo> =
@@ -250,6 +263,7 @@ class SetupAuthenticationDialog(
         row(message("gettingstarted.setup.idc.startUrl")) {
             textField()
                 .comment(message("gettingstarted.setup.idc.startUrl.comment"))
+                .align(AlignX.FILL)
                 .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .bindText(state.idcTabState::startUrl)
         }
@@ -296,6 +310,7 @@ class SetupAuthenticationDialog(
             }
 
             cell(combo)
+                .align(AlignX.FILL)
                 .bindItem(state.idcTabState::roleInfo.toNullableProperty())
         }
     }
