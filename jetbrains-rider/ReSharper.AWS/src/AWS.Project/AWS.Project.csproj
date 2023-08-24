@@ -3,11 +3,12 @@
     <PropertyGroup>
         <TargetFramework>$(NetFrameworkTarget)</TargetFramework>
         <RootNamespace>AWS.Project</RootNamespace>
+        <LangVersion>8</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Rider.SDK" Version="$(RiderSDKVersion)" />
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.$(NetFrameworkTarget)" Version="1.0.2" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.$(NetFrameworkTarget)" Version="1.0.*" />
     </ItemGroup>
 
 </Project>

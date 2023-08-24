@@ -261,8 +261,6 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
 
     runInEdtAndWait {
         projectsManager.waitForReadingCompletion()
-        projectsManager.waitForResolvingCompletion()
-        projectsManager.scheduleImportInTests(poms)
         projectsManager.importProjects()
     }
 

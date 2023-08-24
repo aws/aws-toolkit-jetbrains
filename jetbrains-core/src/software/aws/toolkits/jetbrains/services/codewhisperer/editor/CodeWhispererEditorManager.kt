@@ -30,7 +30,8 @@ class CodeWhispererEditorManager {
         val typeahead = sessionContext.typeahead
         val detail = recommendationContext.details[selectedIndex]
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
-            detail, recommendationContext.userInputSinceInvocation
+            detail,
+            recommendationContext.userInputSinceInvocation
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -58,7 +59,8 @@ class CodeWhispererEditorManager {
                     PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
                     rangeMarker,
                     remainingRecommendation,
-                    selectedIndex
+                    selectedIndex,
+                    detail.completionType
                 )
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(

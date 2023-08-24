@@ -1,3 +1,59 @@
+# _1.75_ (2023-08-03)
+- **(Feature)** Add support for Lambda runtime Python 3.11
+- **(Bug Fix)** codewhisperer: file context fetching not considering file extension correctly
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2023.1 and for for IDEs based on the 2022.2 platform
+
+# _1.74_ (2023-07-25)
+- **(Feature)** Explorer is automatically refreshed with new credentials when they are added to credential file.
+- **(Feature)** Added 2023.2 support
+- **(Bug Fix)** Fix 'No display name is specified for configurable' in 2023.2
+
+# _1.73_ (2023-07-19)
+- **(Feature)** CodeWhisperer: Improve Java suggestion quality with enhanced file context fetching
+- **(Bug Fix)** CodeWhisperer: Run read operation in the background thread without runReadAction
+- **(Bug Fix)** CodeWhisperer: Fix an issue where CodeWhisperer would stuck in the invocation state indefinitely
+
+# _1.72_ (2023-07-11)
+- **(Feature)** CodeWhisperer: Improve suggestion quality with enhanced file context fetching
+- **(Bug Fix)** Fix AWS Lambda configuration window resize ([#3657](https://github.com/aws/aws-toolkit-jetbrains/issues/3657))
+
+# _1.71_ (2023-07-06)
+- **(Bug Fix)** Fix inproper request format when sending empty supplemental context
+
+# _1.70_ (2023-06-27)
+- **(Feature)** CodeWhisperer improves auto-suggestions for tsx and jsx
+- **(Bug Fix)** Show re-authenticate prompt when invoking CodeWhisperer APIs while connection expired
+
+# _1.69_ (2023-06-13)
+- **(Feature)** CodeWhisperer improves auto-suggestions for python csharp typescript and javascript
+- **(Feature)** Removed 10 secs delay when connecting to Dev environments of Small Instance Size
+- **(Feature)** CodeWhisperer: Improve file context fetching logic
+- **(Bug Fix)** Inlay not supported exception in injected editor
+- **(Bug Fix)** fix right context merging not accounting userinput, which result in cases CodeWhisperer still show recommendation where user already type the content of recommendation out thus no character is being inserted by CodeWhisperer
+- **(Bug Fix)** Add error notification to upgrade SAM CLI v1.85-1.86.1 if on windows
+- **(Bug Fix)** Always use AWS smile logo to reduce confusion if users are on the 'New UI' ([#3636](https://github.com/aws/aws-toolkit-jetbrains/issues/3636))
+- **(Removal)** Remove support for Gateway 2022.2 and 2022.3.
+
+# _1.68_ (2023-05-30)
+- **(Feature)** CodeWhisperer supports application wide connections
+- **(Feature)** CodeWhisperer improves auto-suggestions for java
+- **(Bug Fix)** Fix threading issue preventing SAM Applications from opening in Rider 2023.1
+- **(Bug Fix)** Fix issue reconnecting to CodeWhisperer using an Identity Center directory outside of us-east-1 ([#3662](https://github.com/aws/aws-toolkit-jetbrains/issues/3662))
+- **(Bug Fix)** Fix 'null' is not a connection when authenticating to CodeWhisperer
+- **(Bug Fix)** CodeWhisperer: user is sometimes required to re-login before token expiration
+- **(Bug Fix)** Fix issue where the "Do not ask again" option is not respected when switching connections on CodeWhisperer/CodeCatalyst
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2022.2 and version 2022.3
+- **(Removal)** Remove support for Aurora MySQL v1 ([#3356](https://github.com/aws/aws-toolkit-jetbrains/issues/3356))
+- **(Removal)** Removed support for 2022.1.x IDEs
+
+# _1.67_ (2023-04-27)
+- **(Feature)** Using the least permissive set of scopes for features during BuilderID/SSO login. Using the same connection for multiple features will request additional scopes to be used.
+- **(Feature)** Add support for Lambda Runtime Java17
+- **(Bug Fix)** Fix the Add Connection Dialog box references to the correct documentation pages
+- **(Bug Fix)** Fix thread access during validation of SAM templates
+- **(Bug Fix)** [CodeWhisperer]: login session length should increase to it's expected length. Users will now see less frequent expired sessions.
+- **(Bug Fix)** Improve handling of disk errors related to SSO and align folder permissions with AWS CLI
+
 # _1.66_ (2023-04-19)
 - **(Feature)** Display current space and project name on status bar while working in a CodeCatalyst Dev Environment
 - **(Feature)** Add support for Lambda runtime Python 3.10

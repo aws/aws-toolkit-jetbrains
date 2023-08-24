@@ -23,10 +23,12 @@
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python38ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python39ImageDebugSupport"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python310ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python311ImageDebugSupport"/>
         <sam.projectWizard id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonSamProjectWizard"/>
     </extensions>
     <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython"/>
+        <classResolver implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver"/>
         <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererPythonImportAdder"/>
     </extensions>
 </idea-plugin>

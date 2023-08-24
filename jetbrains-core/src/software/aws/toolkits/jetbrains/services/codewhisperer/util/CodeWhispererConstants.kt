@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import java.awt.Font
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
@@ -26,6 +28,7 @@ object CodeWhispererConstants {
     const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
+    const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
 
     // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
     // avoid ThrottlingException as much as possible.
@@ -73,5 +76,15 @@ object CodeWhispererConstants {
 
         val Sigv4ClientRegion = Region.US_EAST_1
         val BearerClientRegion = Region.US_EAST_1
+    }
+
+    object CrossFile {
+        val CHUNK_SIZE
+            get() = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.Control) 60 else 1000
+    }
+
+    object Utg {
+        const val UTG_SEGMENT_SIZE = 10200
+        const val UTG_PREFIX = "UTG\n"
     }
 }

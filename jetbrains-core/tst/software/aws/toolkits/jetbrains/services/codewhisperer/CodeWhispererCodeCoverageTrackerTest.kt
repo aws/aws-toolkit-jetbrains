@@ -35,7 +35,6 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.test.notNull
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
@@ -52,8 +51,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCoverageTokens
@@ -81,6 +82,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
+
     @Rule
     @JvmField
     val projectRule: CodeInsightTestFixtureRule
@@ -135,6 +137,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
 internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCoverageTrackerTestBase(PythonCodeInsightTestFixtureRule()) {
     private lateinit var invocationContext: InvocationContext
     private lateinit var sessionContext: SessionContext
+
     @Before
     override fun setup() {
         super.setup()
@@ -149,12 +152,23 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             mock(),
             mock(),
             FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE),
+            SupplementalContextInfo(false, emptyList(), 0, ""),
             null,
             mock()
         )
-        val responseContext = ResponseContext("sessionId", CodewhispererCompletionType.Block)
+        val responseContext = ResponseContext("sessionId")
         val recommendationContext = RecommendationContext(
-            listOf(DetailContext("requestId", pythonResponse.completions()[0], pythonResponse.completions()[0], false, false)),
+            listOf(
+                DetailContext(
+                    "requestId",
+                    pythonResponse.completions()[0],
+                    pythonResponse.completions()[0],
+                    false,
+                    false,
+                    "",
+                    CodewhispererCompletionType.Block
+                )
+            ),
             "x, y",
             "x, y",
             mock()
@@ -171,7 +185,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(0)
         val javaInstance = CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererJava.INSTANCE)
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(1)
-        assertThat(javaInstance).notNull
+        assertThat(javaInstance).isNotNull
 
         val javaInstance2 = CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererJava.INSTANCE)
         assertThat(CodeWhispererCodeCoverageTracker.getInstancesMap()).hasSize(1)
@@ -361,6 +375,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test emitCodeWhispererCodeContribution`() {
+        val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         val rangeMarkerMock1 = mock<RangeMarker> {
             on { isValid } doReturn true
             on { getUserData(any<Key<String>>()) } doReturn "foo"
@@ -389,7 +404,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             1,
             CWSPR_PERCENTAGE to "99",
             CWSPR_ACCEPTED_TOKENS to "99",
-            CWSPR_TOTAL_TOKENS to "100"
+            CWSPR_TOTAL_TOKENS to "100",
+            "codewhispererUserGroup" to userGroup.name,
         )
     }
 

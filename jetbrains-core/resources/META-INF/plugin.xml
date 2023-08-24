@@ -119,6 +119,8 @@ with what features/services are supported.
                   topic="software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateChangedNotificationHandler"
                   topic="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceStateMutationHandler"/>
+        <listener class="software.aws.toolkits.jetbrains.core.credentials.RefreshExplorerCredentials"
+                  topic="software.aws.toolkits.jetbrains.core.credentials.ChangeConnectionSettingIfValid"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.SuggestEditExperimentListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.dynamic.UpdateOnExperimentState"
@@ -177,6 +179,7 @@ with what features/services are supported.
         <extensionPoint name="devTools.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.DevToolsServiceNode" dynamic="true"/>
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
         <extensionPoint name="codewhisperer.programmingLanguage" interface="software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage" dynamic="true"/>
+        <extensionPoint name="codewhisperer.classResolver" interface="software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver" dynamic="true"/>
         <extensionPoint name="codewhisperer.importAdder" interface="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdder" dynamic="true"/>
     </extensionPoints>
 
@@ -229,14 +232,14 @@ with what features/services are supported.
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
-        <projectService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager"
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager"
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.pinning.DefaultConnectionPinningManager"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"/>
 
-        <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
-        <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory"/>
-        <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.services.caws.CawsStatusBarInstaller"/>
+        <statusBarWidgetFactory id="AwsSettingsPanel" implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
+        <statusBarWidgetFactory id="aws.codewhisperer" implementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory"/>
+        <statusBarWidgetFactory id="CawsSpaceProjectInfo" implementation="software.aws.toolkits.jetbrains.services.caws.CawsStatusBarInstaller"/>
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.executables.ExecutableLoader"/>
@@ -289,19 +292,22 @@ with what features/services are supported.
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.inlay.CodeWhispererInlayManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererLicenseInfoManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
                         testServiceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.MockCodeWhispererClientAdaptor"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
+                        serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
 
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider"/>
 
         <toolWindow id="aws.toolkit.explorer" anchor="left" secondary="true"
                     factoryClass="software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory"
-                    icon="AwsIcons.Logos.AWS"/>
+                    icon="AwsIcons.Logos.AWS_SMILE_SMALL"/>
 
         <toolWindow id="aws.cloudformation" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindowFactory" icon="AwsIcons.Logos.CLOUD_FORMATION_TOOL"/>
@@ -315,12 +321,49 @@ with what features/services are supported.
         <toolWindow id="aws.codewhisperer.codereference" anchor="bottom" doNotActivateOnStart="true" canCloseContents="true"
                     factoryClass="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory" icon="AllIcons.Actions.Preview"/>
 
-        <applicationConfigurable id="aws" groupId="tools" key="aws.settings.title" instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"/>
-        <projectConfigurable id="aws.lambda" parentId="aws" instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"/>
-        <applicationConfigurable parentId="aws" key="aws.settings.dynamic_resources_configurable.title" instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable" />
-        <applicationConfigurable id="aws.experiments" parentId="aws" instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"/>
-        <applicationConfigurable id="aws.tools" parentId="aws" instance="software.aws.toolkits.jetbrains.core.tools.ToolConfigurable"/>
-        <projectConfigurable id="aws.codewhisperer" parentId="aws" instance="software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable"/>
+        <!-- plugin configurables -->
+        <applicationConfigurable
+            id="aws"
+            groupId="tools"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.title"
+            instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"
+        />
+        <projectConfigurable
+            parentId="aws"
+            id="aws.lambda"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.lambda.configurable.title"
+            instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"
+        />
+        <applicationConfigurable
+            parentId="aws"
+            id="aws.dynamicresources"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.dynamic_resources_configurable.title"
+            instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
+        />
+        <applicationConfigurable
+            parentId="aws"
+            id="aws.experiments"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.toolkit.experimental.title"
+            instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"
+        />
+        <applicationConfigurable
+            parentId="aws"
+            id="aws.tools"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="executableCommon.configurable.title"
+            instance="software.aws.toolkits.jetbrains.core.tools.ToolConfigurable"
+        />
+        <projectConfigurable
+            parentId="aws"
+            id="aws.codewhisperer"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.codewhisperer.configurable.title"
+            instance="software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable"
+        />
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaRunner"/>

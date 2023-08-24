@@ -37,6 +37,7 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.jetbrains.go.VgoCompatShims;
+import software.aws.toolkits.jetbrains.go.VgoDependencyInstance;
 
 public class VgoTestUtil {
     private static final String GOPATH = getGoTestDataPath("vgo/src/test/testData/mockGoPath").getAbsolutePath();
@@ -63,7 +64,7 @@ public class VgoTestUtil {
                                                 @Nullable VgoDependencyImpl replace) {
         String dirName = dir != null ? dir : String.format("%s@%s", importPath, version);
         String dirPath = FileUtil.join(GOPATH, "pkg", GoConstants.VGO_DIR_NAME, dirName);
-        return new VgoDependencyImpl(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false);
+        return VgoDependencyInstance.getVgoDependencyImplInstance(importPath, version, null, PathUtil.toSystemIndependentName(FileUtil.toCanonicalPath(dirPath)), replace, false);
     }
 
     public static PsiFile setupVgoIntegration(@NotNull CodeInsightTestFixture fixture) {
@@ -104,7 +105,7 @@ public class VgoTestUtil {
                                             @NotNull Map<String, VgoDependency> dependencies) {
         String goModPath = modulePath != null ? FileUtil.join(modulePath, VgoUtil.GO_MOD) : VgoUtil.GO_MOD;
         PsiFile file = fixture.addFileToProject(goModPath, "module \"" + importPath + "\"");
-        return VgoCompatShims.newVgoModule(file.getVirtualFile().getParent(), importPath, null, dependencies);
+        return VgoCompatShims.newVgoModule(fixture.getProject(), file.getVirtualFile().getParent(), importPath, null, dependencies);
     }
 
     public static void setupVgoIntegration(@NotNull CodeInsightTestFixture fixture, @NotNull List<VgoModule> modules) {

@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import kotlin.math.max
 
 class CodeWhispererRecommendationManager {
@@ -119,9 +120,17 @@ class CodeWhispererRecommendationManager {
     ): List<DetailContext> {
         val seen = mutableSetOf<String>()
         return recommendations.map {
-            val isDiscardedByUserInput = !it.content().startsWith(userInput)
+            val isDiscardedByUserInput = !it.content().startsWith(userInput) || it.content() == userInput
             if (isDiscardedByUserInput) {
-                return@map DetailContext(requestId, it, it, isDiscarded = true, isTruncatedOnRight = false, rightOverlap = "")
+                return@map DetailContext(
+                    requestId,
+                    it,
+                    it,
+                    isDiscarded = true,
+                    isTruncatedOnRight = false,
+                    rightOverlap = "",
+                    getCompletionType(it)
+                )
             }
 
             val overlap = findRightContextOverlap(requestContext, it)
@@ -135,20 +144,29 @@ class CodeWhispererRecommendationManager {
             val truncated = it.toBuilder()
                 .content(truncatedContent)
                 .build()
-            val isDiscardedByUserInputForTruncated = !truncated.content().startsWith(userInput)
+            val isDiscardedByUserInputForTruncated = !truncated.content().startsWith(userInput) || truncated.content() == userInput
             if (isDiscardedByUserInputForTruncated) {
-                return@map DetailContext(requestId, it, truncated, isDiscarded = true, isTruncatedOnRight = true, rightOverlap = overlap)
+                return@map DetailContext(
+                    requestId,
+                    it,
+                    truncated,
+                    isDiscarded = true,
+                    isTruncatedOnRight = true,
+                    rightOverlap = overlap,
+                    getCompletionType(it)
+                )
             }
 
             val reformatted = reformat(requestContext, truncated)
-            val isDiscardedByRightContextTruncationDedupe = truncated.content().isEmpty() || !seen.add(reformatted.content())
+            val isDiscardedByRightContextTruncationDedupe = !seen.add(reformatted.content())
             DetailContext(
                 requestId,
                 it,
                 reformatted,
                 isDiscardedByRightContextTruncationDedupe,
                 truncated.content().length != it.content().length,
-                overlap
+                overlap,
+                getCompletionType(it)
             )
         }
     }
