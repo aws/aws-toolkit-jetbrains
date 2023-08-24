@@ -52,9 +52,10 @@ open class OuterPanel(
                         foreground = Paneltext.TITLE_TEXT_FONTCOLOR
                     }
                 }
-                    .rowComment(
-                        message("aws.onboarding.getstarted.panel.comment_link", "<a>${message("aws.onboarding.getstarted.panel.share_feedback")}")
-                    ) { hyperlinkEvent ->
+                row {
+                    text(message("aws.onboarding.getstarted.panel.comment_link_doc"))
+                    text(message("aws.onboarding.getstarted.panel.comment_link_github"))
+                    text(message("aws.onboarding.getstarted.panel.share_feedback")) { hyperlinkEvent ->
                         close(OK_EXIT_CODE)
                         val actionEvent = AnActionEvent.createFromInputEvent(
                             hyperlinkEvent.inputEvent,
@@ -63,6 +64,7 @@ open class OuterPanel(
                         ) { if (PlatformDataKeys.PROJECT.`is`(it)) project else null }
                         ActionManager.getInstance().getAction("aws.toolkit.getstarted.shareFeedback").actionPerformed(actionEvent)
                     }
+                }
             }
         }
 
@@ -131,14 +133,13 @@ class CodeCatalystPanel : BorderLayoutPanel() {
                                 putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                             }
                         }
-                        // topGap(TopGap.SMALL)
                     }
 
                     row {
                         label(message("caws.getstarted.panel.question.text")).applyToComponent { foreground = Paneltext.TEXT_FONTCOLOR }
                     }
                     row {
-                        browserLink(message("caws.getstarted.panel.link_text"), url = CODEWHISPERER_LEARN_MORE_URI)
+                        browserLink(message("caws.getstarted.panel.link_text"), CawsEndpoints.CAWS_SPACES_DOC)
                     }
                 }
             }
