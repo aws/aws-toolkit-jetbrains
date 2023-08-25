@@ -270,9 +270,7 @@ class SetupAuthenticationDialog(
 
         row(message("gettingstarted.setup.idc.region")) {
             comboBox(
-                AwsRegionProvider.getInstance().let { provider ->
-                    provider.allRegions().values.filter { provider.isServiceSupported(it, "sso") }
-                },
+                AwsRegionProvider.getInstance().allRegionsForService("sso").values,
                 SimpleListCellRenderer.create("null") { it.displayName }
             ).bindItem(state.idcTabState::region.toNullableProperty())
                 .errorOnApply(message("gettingstarted.setup.error.not_selected")) { it.selected() == null }

@@ -15,13 +15,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.mockito.kotlin.any
+import software.aws.toolkits.core.region.Endpoint
+import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
 
 @ExtendWith(MockKExtension::class)
 @DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2022.2", disabledReason = "NPE in platform validation logic")
@@ -36,14 +38,27 @@ class SetupAuthenticationDialogTest {
     @RegisterExtension
     val mockClientManager = MockClientManagerExtension()
 
+    @JvmField
+    @RegisterExtension
+    val mockRegionProvider = MockRegionProviderExtension()
+
     @Test
     fun `login to IdC tab`() {
         mockkStatic(::loginSso)
         every { loginSso(any(), any(), any(), any()) } answers { mockk() }
 
         val startUrl = aString()
-        val region = anAwsRegion()
+        val region = mockRegionProvider.createAwsRegion()
         val scopes = listOf(aString(), aString(), aString())
+        mockRegionProvider.addService(
+            "sso",
+            Service(
+                endpoints = mapOf(region.id to Endpoint()),
+                isRegionalized = true,
+                partitionEndpoint = region.partitionId
+            )
+        )
+
         val state = SetupAuthenticationDialogState().apply {
             idcTabState.apply {
                 this.startUrl = startUrl
