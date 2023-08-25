@@ -19,21 +19,20 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvid
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCredentialProvider
 import java.util.Optional
 
-const val PROFILE_SSO_SESSION_PROPERTY = "sso_session"
-const val SSO_SESSION_SECTION_NAME = "sso-session"
 class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkAutoCloseable {
     private val ssoClient: SsoClient
     private val ssoOidcClient: SsoOidcClient
     private val credentialsProvider: SsoCredentialProvider
     private val mySsoSection: SsoMetadata
     init {
-        val ssoSession = profile.requiredProperty(PROFILE_SSO_SESSION_PROPERTY)
-        val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoSession)
+        val ssoSession = profile.requiredProperty(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY)
+        val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SsoSessionConstants.SSO_SESSION_SECTION_NAME, ssoSession)
         val clientManager = AwsClientManager.getInstance()
 
         mySsoSection = SsoMetadata(
             ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_REGION).toString(),
-            ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_START_URL).toString()
+            ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_START_URL).toString(),
+            ssoSessionSection?.get()?.requiredProperty(SsoSessionConstants.SSO_REGISTRATION_SCOPES).toString()
         )
 
         ssoClient = clientManager.createUnmanagedClient(AnonymousCredentialsProvider.create(), Region.of(mySsoSection.ssoRegion))
@@ -65,5 +64,12 @@ class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkA
 
 data class SsoMetadata(
     val ssoRegion: String,
-    val ssoStartUrl: String
+    val ssoStartUrl: String,
+    val ssoRegistrationScopes: String
 )
+
+object SsoSessionConstants {
+    const val PROFILE_SSO_SESSION_PROPERTY = "sso_session"
+    const val SSO_SESSION_SECTION_NAME = "sso-session"
+    const val SSO_REGISTRATION_SCOPES: String = "sso_registration_scopes"
+}

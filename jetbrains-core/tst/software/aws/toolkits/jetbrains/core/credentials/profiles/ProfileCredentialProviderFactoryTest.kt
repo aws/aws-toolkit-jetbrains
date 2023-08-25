@@ -757,6 +757,7 @@ class ProfileCredentialProviderFactoryTest {
             [sso-session my-sso]
             sso_region=us-east-2
             sso_start_url=ValidUrl
+            sso_registration_scopes = sso:validAcc:validAccess
             """.trimIndent()
         )
 

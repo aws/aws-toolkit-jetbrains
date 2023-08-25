@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials.profiles
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperty
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
 import software.aws.toolkits.resources.message
 
 data class Profiles(val validProfiles: Map<String, Profile>, val invalidProfiles: Map<String, Exception>)

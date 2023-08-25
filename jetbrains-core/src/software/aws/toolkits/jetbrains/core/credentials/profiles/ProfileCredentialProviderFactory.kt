@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCr
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.profiles.Ec2MetadataConfigProvider.getEc2MedataEndpoint
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCache
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.ProfilesNotification
