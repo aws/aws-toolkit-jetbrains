@@ -56,7 +56,6 @@ open class OuterPanel(
                     text(message("aws.onboarding.getstarted.panel.comment_link_doc"))
                     text(message("aws.onboarding.getstarted.panel.comment_link_github"))
                     text(message("aws.onboarding.getstarted.panel.share_feedback")) { hyperlinkEvent ->
-                        close(OK_EXIT_CODE)
                         val actionEvent = AnActionEvent.createFromInputEvent(
                             hyperlinkEvent.inputEvent,
                             Paneltext.SHARE_FEEDBACK_LINK,
@@ -85,14 +84,15 @@ open class OuterPanel(
             }
             row {
                 // CodeWhisperer auth bullets
-                cell(CodeWhispererAuthBullets(message("codewhisperer.experiment")))
-                // Resource Explorer panel auth bullets
-                cell(ResourceExplorerAuthBullets(message("aws.getstarted.resource.panel_title")))
-                // CodeCatalyst panel auth bullets
-                cell(CodeCatalystAuthBullets(message("caws.devtoolPanel.title")))
+                cell(PanelAuthBullets(message("codewhisperer.experiment")))
+//                // Resource Explorer panel auth bullets
+                cell(PanelAuthBullets(message("aws.getstarted.resource.panel_title")))
+//                // CodeCatalyst panel auth bullets
+                cell(PanelAuthBullets(message("caws.devtoolPanel.title")))
             }
         }
     }
+
     override fun createCenterPanel(): JComponent = panel
 }
 
@@ -276,9 +276,14 @@ class ShareFeedbackInGetStarted : DumbAwareAction() {
     }
 }
 
-class CodeWhispererAuthBullets(private var panelTitle: String) : BorderLayoutPanel() {
-
+class PanelAuthBullets(private var panelTitle: String) : BorderLayoutPanel() {
     init {
+
+        val serviceTitleMap: MutableMap<String, List<BulletAuthPanel>> = HashMap()
+        serviceTitleMap.put(message("codewhisperer.experiment"), codeWhispererBulletsLists)
+        serviceTitleMap.put(message("aws.getstarted.resource.panel_title"), resourceBulletsLists)
+        serviceTitleMap.put(message("caws.devtoolPanel.title"), codeCatalystBulletsLists)
+
         addToCenter(
             panel {
                 indent {
@@ -286,118 +291,15 @@ class CodeWhispererAuthBullets(private var panelTitle: String) : BorderLayoutPan
                     row {
                         label(panelTitle).applyToComponent { font = JBFont.h3() }
                     }
-                    row {
-                        text(Paneltext.COMMIT_ICON)
-                        panel {
-                            row(message("iam_identity_center.name")) {
+
+                    for (bullet in serviceTitleMap.get(panelTitle)!!) {
+                        row {
+                            text(bullet.icon)
+                            panel {
+                                row(bullet.titleName) {
+                                }.rowComment(bullet.comment)
+                                    .enabled(bullet.enable)
                             }
-                                .rowComment(message("aws.onboarding.getstarted.panel.idc_row_comment_text"))
-                        }
-                    }
-
-                    row {
-                        text(Paneltext.COMMIT_ICON)
-                        panel {
-                            row(message("aws_builder_id.service_name")) {
-                            }.rowComment("Need to insert tagline")
-                        }
-                    }
-                    row {
-                        text(Paneltext.CANCEL_ICON)
-                        panel {
-                            row(message("settings.credentials.iam")) {
-                            }
-                                .rowComment(message("aws.getstarted.auth.panel.notSupport_text"))
-                        }
-                    }
-                }
-            }
-        )
-
-        border = IdeBorderFactory.createRoundedBorder().apply {
-            setColor(CodeWhispererColorUtil.POPUP_BUTTON_BORDER)
-            preferredSize = Dimension(Paneltext.PANEL_WIDTH, Paneltext.BULLET_PANEL_HEIGHT)
-        }
-    }
-}
-
-class ResourceExplorerAuthBullets(private var panelTitle: String) : BorderLayoutPanel() {
-
-    init {
-        addToCenter(
-            panel {
-                indent {
-
-                    row {
-                        label(panelTitle).applyToComponent { font = JBFont.h3() }
-                    }
-
-                    row {
-                        text(Paneltext.COMMIT_ICON)
-                        panel {
-                            row(message("iam_identity_center.name")) {
-                            }.rowComment(message("aws.onboarding.getstarted.panel.idc_row_comment_text"))
-                        }
-                    }
-
-                    row {
-                        text(Paneltext.CANCEL_ICON)
-                        panel {
-                            row(message("aws_builder_id.service_name")) {
-                            }.rowComment(message("aws.getstarted.auth.panel.notSupport_text"))
-                        }
-                    }
-
-                    row {
-                        text(Paneltext.COMMIT_ICON)
-                        panel {
-                            row(message("settings.credentials.iam")) {
-                            }.rowComment(message("aws.getstarted.auth.panel.notSupport_text"))
-                        }
-                    }
-                }
-            }
-        )
-
-        border = IdeBorderFactory.createRoundedBorder().apply {
-            setColor(CodeWhispererColorUtil.POPUP_BUTTON_BORDER)
-            preferredSize = Dimension(Paneltext.PANEL_WIDTH, Paneltext.BULLET_PANEL_HEIGHT)
-        }
-    }
-}
-
-class CodeCatalystAuthBullets(private var panelTitle: String) : BorderLayoutPanel() {
-
-    init {
-        addToCenter(
-            panel {
-                indent {
-
-                    row {
-                        label(panelTitle).applyToComponent { font = JBFont.h3() }
-                    }
-
-                    row {
-                        text(Paneltext.CANCEL_ICON)
-                        panel {
-                            row(message("iam_identity_center.name")) {
-                            }.rowComment(message("aws.getstarted.auth.panel.notSupport_text"))
-                        }
-                    }
-
-                    row {
-                        text(Paneltext.COMMIT_ICON)
-                        panel {
-                            row(message("aws_builder_id.service_name")) {
-                            }.rowComment("Need to insert tagline")
-                        }
-                    }
-
-                    row {
-                        text(Paneltext.CANCEL_ICON)
-                        panel {
-                            row(message("settings.credentials.iam")) {
-                            }.rowComment(message("aws.getstarted.auth.panel.notSupport_text"))
                         }
                     }
                 }
@@ -421,3 +323,28 @@ object Paneltext {
     const val PANEL_HEIGHT = 350
     const val BULLET_PANEL_HEIGHT = 200
 }
+
+data class BulletAuthPanel(
+    val icon: String,
+    val titleName: String,
+    val comment: String,
+    val enable: Boolean = true
+)
+
+val codeWhispererBulletsLists: List<BulletAuthPanel> = listOf(
+    BulletAuthPanel(Paneltext.COMMIT_ICON, message("iam_identity_center.name"), message("aws.onboarding.getstarted.panel.idc_row_comment_text")),
+    BulletAuthPanel(Paneltext.COMMIT_ICON, message("aws_builder_id.service_name"), "Need to insert tagline"),
+    BulletAuthPanel(Paneltext.CANCEL_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"), false)
+)
+
+val resourceBulletsLists: List<BulletAuthPanel> = listOf(
+    BulletAuthPanel(Paneltext.COMMIT_ICON, message("iam_identity_center.name"), message("aws.onboarding.getstarted.panel.idc_row_comment_text")),
+    BulletAuthPanel(Paneltext.CANCEL_ICON, message("aws_builder_id.service_name"), "Need to insert tagline", false),
+    BulletAuthPanel(Paneltext.COMMIT_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"))
+)
+
+val codeCatalystBulletsLists: List<BulletAuthPanel> = listOf(
+    BulletAuthPanel(Paneltext.CANCEL_ICON, message("iam_identity_center.name"), message("aws.getstarted.auth.panel.notSupport_text"), false),
+    BulletAuthPanel(Paneltext.COMMIT_ICON, message("aws_builder_id.service_name"), "Need to insert tagline"),
+    BulletAuthPanel(Paneltext.CANCEL_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"), false)
+)
