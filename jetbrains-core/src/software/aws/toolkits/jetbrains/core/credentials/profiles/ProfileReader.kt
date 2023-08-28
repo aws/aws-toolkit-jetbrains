@@ -7,7 +7,10 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_REGISTRATION_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.resources.message
+import java.util.Optional
 
 data class Profiles(val validProfiles: Map<String, Profile>, val invalidProfiles: Map<String, Exception>)
 
@@ -38,7 +41,7 @@ private fun validateProfile(profile: Profile, allProfiles: Map<String, Profile>)
         profile.propertyExists(ProfileProperty.ROLE_ARN) -> validateAssumeRoleProfile(profile, allProfiles)
         profile.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> validateStaticSessionProfile(profile)
         profile.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> validateBasicProfile(profile)
-        profile.propertyExists(PROFILE_SSO_SESSION_PROPERTY) -> validateProfileSsoSession(profile)
+        profile.propertyExists(PROFILE_SSO_SESSION_PROPERTY) -> validateSsoSection(profile)
         profile.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> {
             // NO-OP Always valid
         }
@@ -80,8 +83,19 @@ private fun validateBasicProfile(profile: Profile) {
     profile.requiredProperty(ProfileProperty.AWS_SECRET_ACCESS_KEY)
 }
 
-private fun validateProfileSsoSession(profile: Profile) {
+private fun validateSsoSection(profile: Profile) {
     profile.requiredProperty(PROFILE_SSO_SESSION_PROPERTY)
     profile.requiredProperty(ProfileProperty.SSO_ACCOUNT_ID)
     profile.requiredProperty(ProfileProperty.SSO_ROLE_NAME)
+
+    val ssoSessionName = profile.property(PROFILE_SSO_SESSION_PROPERTY)
+    val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoSessionName.get())
+
+    if (ssoSessionSection?.get() != null) {
+        ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_START_URL)
+        ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_REGION)
+        ssoSessionSection.get().property(SSO_REGISTRATION_SCOPES)
+    } else {
+        throw IllegalArgumentException(message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()))
+    }
 }
