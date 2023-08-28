@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLoginLearnMoreAction
@@ -35,6 +36,16 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+
+fun checkIfIamIdentityCenterConnection(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        checkIfIamIdentityCenterConnection(it, callback)
+    }
+
+fun checkIfIamIdentityCenterConnection(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
+    if (connection.isSono()) return
+    callback(connection)
+}
 
 fun VirtualFile.content(): String = VfsUtil.loadText(this)
 

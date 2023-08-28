@@ -9,10 +9,14 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.jetbrains.annotations.TestOnly
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -27,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.checkIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -57,6 +62,7 @@ class CodeWhispererTelemetryService {
     companion object {
         fun getInstance(): CodeWhispererTelemetryService = service()
         val LOG = getLogger<CodeWhispererTelemetryService>()
+        const val NO_ACCEPTED_INDEX = -1
     }
 
     fun sendFailedServiceInvocationEvent(project: Project, exceptionType: String?) {
@@ -175,7 +181,9 @@ class CodeWhispererTelemetryService {
         responseContext: ResponseContext,
         recommendationContext: RecommendationContext,
         suggestionState: CodewhispererSuggestionState,
-        popupShownTime: Duration?
+        popupShownTime: Duration?,
+        suggestionReferenceCount: Int,
+        lineCount: Int
     ) {
         val totalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
             grandTotal + detail.recommendation.mostRelevantMissingImports().size
@@ -212,6 +220,31 @@ class CodeWhispererTelemetryService {
         ) {
             CodewhispererCompletionType.Block
         } else CodewhispererCompletionType.Line
+
+        // only send if it's a pro tier user
+        projectCoroutineScope(requestContext.project).launch {
+            checkIfIamIdentityCenterConnection(requestContext.project) {
+                try {
+                    val response = CodeWhispererClientAdaptor.getInstance(requestContext.project)
+                        .putUserTriggerDecisionTelemetry(
+                            requestContext,
+                            responseContext,
+                            completionType,
+                            suggestionState,
+                            suggestionReferenceCount,
+                            lineCount
+                        )
+                    LOG.debug {
+                        "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
+                    }
+                } catch (e: Exception) {
+                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                    LOG.debug {
+                        "Failed to send user trigger decision telemetry. RequestId: ${requestId}, ErrorMessage: ${e.message}"
+                    }
+                }
+            }
+        }
 
         CodewhispererTelemetry.userTriggerDecision(
             project = requestContext.project,
@@ -337,12 +370,21 @@ class CodeWhispererTelemetryService {
             // the order of the following matters
             // step 1, send out current decision
             previousUserTriggerDecisionTimestamp = Instant.now()
+            val referenceCount = if (detailContexts.map { it.recommendation }.any { it.hasReferences() }) 1 else 0
+            val acceptedContent =
+                if (sessionContext.selectedIndex != NO_ACCEPTED_INDEX)
+                    detailContexts[sessionContext.selectedIndex].recommendation.content()
+                else
+                    ""
+            val lineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
             sendUserTriggerDecisionEvent(
                 requestContext,
                 responseContext,
                 recommendationContext,
                 CodewhispererSuggestionState.from(this.toString()),
                 popupShownTime,
+                referenceCount,
+                lineCount
             )
 
             // step 2, put current decision into queue for later reference
