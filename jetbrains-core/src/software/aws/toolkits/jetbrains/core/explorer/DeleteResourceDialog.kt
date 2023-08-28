@@ -37,7 +37,7 @@ class DeleteResourceDialog(
                 cell(deleteResourceConfirmation).align(Align.FILL)
             }
             row { }.comment(comment).apply {
-                this.component.isVisible = this@DeleteResourceDialog.comment.isNotEmpty()
+                this.component.isVisible = this@DeleteResourceDialog.comment.isNotBlank()
             }
         }
     }
