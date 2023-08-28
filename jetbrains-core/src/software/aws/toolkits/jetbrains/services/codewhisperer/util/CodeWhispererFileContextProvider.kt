@@ -43,19 +43,11 @@ private val contentRootPathProvider = CopyContentRootPathProvider()
 private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
-            val fileCrawler = getFileCrawlerForLanguage(psiFile.programmingLanguage())
+            val fileCrawler = psiFile.programmingLanguage().fileCrawler
             val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listCrossFileCandidate(psiFile) }
             FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
         }
     }
-
-private fun getFileCrawlerForLanguage(programmingLanguage: CodeWhispererProgrammingLanguage) = when (programmingLanguage) {
-    is CodeWhispererJava -> JavaCodeWhispererFileCrawler
-    is CodeWhispererPython -> PythonCodeWhispererFileCrawler
-    is CodeWhispererJavaScript, is CodeWhispererJsx -> JavascriptCodeWhispererFileCrawler
-    is CodeWhispererTypeScript, is CodeWhispererTsx -> TypescriptCodeWhispererFileCrawler
-    else -> NoOpFileCrawler()
-}
 
 private object CodeWhispererCodeChunkExternalizer : DataExternalizer<List<Chunk>> {
     override fun save(out: DataOutput, value: List<Chunk>) {
@@ -187,17 +179,17 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 chunks.addAll(file.toCodeChunk(relativePath))
                 hasUsed.add(file)
                 if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
-                    LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
+                    LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
                     return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
                 }
             }
         }
 
-        LOG.debug { "finish fetching 60 chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
+        LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
-    override fun isTestFile(psiFile: PsiFile) = getFileCrawlerForLanguage(psiFile.programmingLanguage()).isTestFile(psiFile.virtualFile, psiFile.project)
+    override fun isTestFile(psiFile: PsiFile) = psiFile.programmingLanguage().fileCrawler.isTestFile(psiFile.virtualFile, psiFile.project)
 
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
@@ -250,7 +242,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
         if (!targetContext.programmingLanguage.isUTGSupported()) return emptyList()
 
-        val focalFile = getFileCrawlerForLanguage(targetContext.programmingLanguage).listUtgCandidate(psiFile)
+        val focalFile = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
 
         return focalFile?.let { file ->
             runReadAction {
@@ -296,7 +288,13 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
 
             return when (language) {
-                is CodeWhispererJava -> true
+                is CodeWhispererJava,
+                is CodeWhispererPython,
+                is CodeWhispererJavaScript,
+                is CodeWhispererTypeScript,
+                is CodeWhispererJsx,
+                is CodeWhispererTsx -> true
+
                 else -> userGroup == CodeWhispererUserGroup.CrossFile
             }
         }
