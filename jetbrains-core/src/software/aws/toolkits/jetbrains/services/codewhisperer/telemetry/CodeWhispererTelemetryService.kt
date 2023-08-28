@@ -31,7 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.checkIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -223,7 +223,7 @@ class CodeWhispererTelemetryService {
 
         // only send if it's a pro tier user
         projectCoroutineScope(requestContext.project).launch {
-            checkIfIamIdentityCenterConnection(requestContext.project) {
+            runIfIamIdentityCenterConnection(requestContext.project) {
                 try {
                     val response = CodeWhispererClientAdaptor.getInstance(requestContext.project)
                         .putUserTriggerDecisionTelemetry(

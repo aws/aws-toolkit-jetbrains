@@ -37,12 +37,12 @@ import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 
-fun checkIfIamIdentityCenterConnection(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+fun runIfIamIdentityCenterConnection(project: Project, callback: (connection: ToolkitConnection) -> Any?) =
     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        checkIfIamIdentityCenterConnection(it, callback)
+        runIfIamIdentityCenterConnection(it, callback)
     }
 
-fun checkIfIamIdentityCenterConnection(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
+fun runIfIamIdentityCenterConnection(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Any?) {
     if (connection.isSono()) return
     callback(connection)
 }

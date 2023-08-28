@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.checkIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -53,7 +53,7 @@ class CodeWhispererUtilTest {
         val oldCount = modificationTracker.modificationCount
 
         val ssoConn = ManagedBearerSsoConnection(startUrl = "fake url", region = "us-east-1", scopes = CODEWHISPERER_SCOPES)
-        checkIfIamIdentityCenterConnection(ssoConn) { modificationTracker.incModificationCount() }
+        runIfIamIdentityCenterConnection(ssoConn) { modificationTracker.incModificationCount() }
 
         val newCount = modificationTracker.modificationCount
         assertThat(newCount).isEqualTo(oldCount + 1L)
@@ -65,7 +65,7 @@ class CodeWhispererUtilTest {
         val oldCount = modificationTracker.modificationCount
 
         val builderIdConn = ManagedBearerSsoConnection(startUrl = SONO_URL, region = SONO_REGION, scopes = CODEWHISPERER_SCOPES)
-        checkIfIamIdentityCenterConnection(builderIdConn) { modificationTracker.incModificationCount() }
+        runIfIamIdentityCenterConnection(builderIdConn) { modificationTracker.incModificationCount() }
 
         val newCount = modificationTracker.modificationCount
         assertThat(newCount).isEqualTo(oldCount)

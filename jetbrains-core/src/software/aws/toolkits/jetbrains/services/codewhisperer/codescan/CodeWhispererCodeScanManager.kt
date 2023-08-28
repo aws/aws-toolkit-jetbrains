@@ -69,7 +69,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.checkIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIamIdentityCenterConnection
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
@@ -402,13 +402,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
         programmingLanguage: CodeWhispererProgrammingLanguage?,
         codeScanJobId: String?
     ) {
-        checkIfIamIdentityCenterConnection(project) {
+        runIfIamIdentityCenterConnection(project) {
             try {
                 val response = CodeWhispererClientAdaptor.getInstance(project)
                     .sendCodeScanTelemetry(programmingLanguage, codeScanJobId)
                 LOG.debug { "Successfully sent code scan telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {
-                LOG.error(e) { "Failed to send code scan telemetry." }
+                LOG.debug(e) { "Failed to send code scan telemetry." }
             }
         }
     }
