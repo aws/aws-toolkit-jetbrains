@@ -102,10 +102,6 @@ with what features/services are supported.
         <xi:fallback/>
     </xi:include>
 
-    <xi:include href="/META-INF/IU-222.xml" xpointer="xpointer(/idea-plugin/*)">
-        <xi:fallback/>
-    </xi:include>
-
     <xi:include href="/META-INF/RD.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include>
@@ -179,6 +175,7 @@ with what features/services are supported.
         <extensionPoint name="devTools.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.DevToolsServiceNode" dynamic="true"/>
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
         <extensionPoint name="codewhisperer.programmingLanguage" interface="software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage" dynamic="true"/>
+        <extensionPoint name="codewhisperer.classResolver" interface="software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver" dynamic="true"/>
         <extensionPoint name="codewhisperer.importAdder" interface="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdder" dynamic="true"/>
     </extensionPoints>
 
@@ -236,9 +233,9 @@ with what features/services are supported.
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"/>
 
-        <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
+        <statusBarWidgetFactory id="AwsSettingsPanel" implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
         <statusBarWidgetFactory id="aws.codewhisperer" implementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory"/>
-        <statusBarWidgetFactory implementation="software.aws.toolkits.jetbrains.services.caws.CawsStatusBarInstaller"/>
+        <statusBarWidgetFactory id="CawsSpaceProjectInfo" implementation="software.aws.toolkits.jetbrains.services.caws.CawsStatusBarInstaller"/>
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.executables.ExecutableLoader"/>
