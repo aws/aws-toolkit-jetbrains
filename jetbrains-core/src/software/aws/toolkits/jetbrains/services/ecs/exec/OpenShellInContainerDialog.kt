@@ -46,7 +46,7 @@ class OpenShellInContainerDialog(
     private val shellList = listOf("/bin/bash", "/bin/sh", "/bin/zsh")
     private val shellOption = CollectionComboBoxModel(shellList)
 
-    var task: String? = ""
+    var task: String? = null
     var shell: String = ""
 
     val taskList = ResourceSelector.builder().resource(
@@ -60,9 +60,6 @@ class OpenShellInContainerDialog(
     }
 
     override fun createCenterPanel(): JComponent = panel {
-        row {
-        }
-
         row(message("ecs.execute_command_task.label")) {
             cell(taskList)
                 .bindItem(::task)

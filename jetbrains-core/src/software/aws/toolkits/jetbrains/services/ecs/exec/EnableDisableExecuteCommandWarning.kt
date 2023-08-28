@@ -7,8 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.dsl.builder.bindSelected
-import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.layout.panel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings
 import software.aws.toolkits.resources.message
@@ -24,19 +23,22 @@ class EnableDisableExecuteCommandWarning(private val project: Project, private v
     private val component by lazy {
         panel {
             row {
-                cell(warningIcon)
-                label(message("ecs.execute_command_enable_warning")).visible(enable)
-                label(message("ecs.execute_command_disable_warning")).visible(!enable)
+                warningIcon(grow)
+                label(message("ecs.execute_command_enable_warning")).constraints(grow).visible(enable)
+                label(message("ecs.execute_command_disable_warning")).constraints(grow).visible(!enable)
             }
 
             row {
-                checkBox(message("ecs.execute_command.production_warning.checkbox_label", serviceName))
-                    .bindSelected(::confirmNonProduction)
-                    .errorOnApply(message("general.confirm_proceed")) { !it.isSelected }
+                checkBox(
+                    message("ecs.execute_command.production_warning.checkbox_label", serviceName),
+                    { confirmNonProduction },
+                    { confirmNonProduction = it }
+                ).withErrorOnApplyIf(message("general.confirm_proceed")) { !it.isSelected }
+                    .constraints(grow)
             }
 
             row {
-                checkBox(message("general.notification.action.hide_forever")).bindSelected({ dontDisplayWarning }, { dontDisplayWarning = it })
+                checkBox(message("general.notification.action.hide_forever"), { dontDisplayWarning }, { dontDisplayWarning = it })
             }
         }
     }
