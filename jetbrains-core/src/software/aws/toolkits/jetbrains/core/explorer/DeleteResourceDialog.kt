@@ -36,9 +36,7 @@ class DeleteResourceDialog(
             row {
                 cell(deleteResourceConfirmation).align(Align.FILL)
             }
-            row { }.comment(comment).apply {
-                this.component.isVisible = this@DeleteResourceDialog.comment.isNotBlank()
-            }
+            row { }.comment(comment).visible(this@DeleteResourceDialog.comment.isNotBlank())
         }
     }
 
