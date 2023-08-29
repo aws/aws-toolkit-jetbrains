@@ -211,7 +211,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             } catch (e: Exception) {
                 val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
                 LOG.debug {
-                    "Failed to send code percentage telemetry. RequestId: ${requestId}, ErrorMessage: ${e.message}"
+                    "Failed to send code percentage telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
                 }
             }
         }

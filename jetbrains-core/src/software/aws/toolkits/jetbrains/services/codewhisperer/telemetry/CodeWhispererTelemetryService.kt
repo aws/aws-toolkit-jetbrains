@@ -62,7 +62,6 @@ class CodeWhispererTelemetryService {
     companion object {
         fun getInstance(): CodeWhispererTelemetryService = service()
         val LOG = getLogger<CodeWhispererTelemetryService>()
-        const val NO_ACCEPTED_INDEX = -1
     }
 
     fun sendFailedServiceInvocationEvent(project: Project, exceptionType: String?) {
@@ -240,7 +239,7 @@ class CodeWhispererTelemetryService {
                 } catch (e: Exception) {
                     val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
                     LOG.debug {
-                        "Failed to send user trigger decision telemetry. RequestId: ${requestId}, ErrorMessage: ${e.message}"
+                        "Failed to send user trigger decision telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
                     }
                 }
             }
@@ -370,12 +369,14 @@ class CodeWhispererTelemetryService {
             // the order of the following matters
             // step 1, send out current decision
             previousUserTriggerDecisionTimestamp = Instant.now()
+
             val referenceCount = if (detailContexts.map { it.recommendation }.any { it.hasReferences() }) 1 else 0
             val acceptedContent =
-                if (sessionContext.selectedIndex != NO_ACCEPTED_INDEX)
+                if (hasUserAccepted) {
                     detailContexts[sessionContext.selectedIndex].recommendation.content()
-                else
+                } else {
                     ""
+                }
             val lineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
             sendUserTriggerDecisionEvent(
                 requestContext,

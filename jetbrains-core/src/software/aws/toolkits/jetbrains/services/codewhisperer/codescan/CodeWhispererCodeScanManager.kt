@@ -42,6 +42,7 @@ import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.core.utils.debug
@@ -61,6 +62,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
@@ -172,7 +174,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         var getProjectSize: Deferred<Long?> = async { null }
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         var codeScanJobId: String? = null
-        var language: CodeWhispererProgrammingLanguage? = null
+        var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
         try {
             val file = FileEditorManager.getInstance(project).selectedEditor?.file
                 ?: noFileOpenError()
@@ -399,7 +401,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun sendCodeScanTelemetryToServiceAPI(
         project: Project,
-        programmingLanguage: CodeWhispererProgrammingLanguage?,
+        programmingLanguage: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?
     ) {
         runIfIamIdentityCenterConnection(project) {
@@ -408,7 +410,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     .sendCodeScanTelemetry(programmingLanguage, codeScanJobId)
                 LOG.debug { "Successfully sent code scan telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {
-                LOG.debug(e) { "Failed to send code scan telemetry." }
+                val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                LOG.debug {
+                    "Failed to send code scan telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                }
             }
         }
     }

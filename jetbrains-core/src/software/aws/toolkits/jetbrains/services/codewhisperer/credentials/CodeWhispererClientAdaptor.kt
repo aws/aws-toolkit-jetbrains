@@ -91,12 +91,12 @@ interface CodeWhispererClientAdaptor : Disposable {
     fun sendUserModificationTelemetry(
         sessionId: String,
         requestId: String,
-        language: CodeWhispererProgrammingLanguage?,
+        language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double
     ): SendTelemetryEventResponse
 
     fun sendCodeScanTelemetry(
-        language: CodeWhispererProgrammingLanguage?,
+        language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?
     ): SendTelemetryEventResponse
 
@@ -107,7 +107,6 @@ interface CodeWhispererClientAdaptor : Disposable {
             CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless
 
         const val INVALID_CODESCANJOBID = "Invalid_CodeScanJobID"
-        const val UNKNOWN_LANGUAGE = "UNKNOWN"
     }
 }
 
@@ -224,7 +223,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun sendUserModificationTelemetry(
         sessionId: String,
         requestId: String,
-        language: CodeWhispererProgrammingLanguage?,
+        language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
@@ -232,7 +231,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.sessionId(sessionId)
                 it.requestId(requestId)
                 it.programmingLanguage { languageBuilder ->
-                    languageBuilder.languageName(language?.languageId ?: CodeWhispererClientAdaptor.UNKNOWN_LANGUAGE)
+                    languageBuilder.languageName(language.languageId)
                 }
                 it.modificationPercentage(modificationPercentage)
                 it.timestamp(Instant.now())
@@ -241,13 +240,13 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     }
 
     override fun sendCodeScanTelemetry(
-        language: CodeWhispererProgrammingLanguage?,
+        language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanEvent {
                 it.programmingLanguage { languageBuilder ->
-                    languageBuilder.languageName(language?.languageId ?: CodeWhispererClientAdaptor.UNKNOWN_LANGUAGE)
+                    languageBuilder.languageName(language.languageId)
                 }
                 it.codeScanJobId(if (codeScanJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODESCANJOBID else codeScanJobId)
                 it.timestamp(Instant.now())

@@ -126,7 +126,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test accepting recommendation will send user modification events with 1 accepted other unseen`() {
-        val trackerSpy = spy(CodeWhispererUserModificationTracker(projectRule.project))
+        val trackerSpy = spy(CodeWhispererUserModificationTracker.getInstance(projectRule.project))
         val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         projectRule.project.replaceService(CodeWhispererUserModificationTracker::class.java, trackerSpy, disposableRule.disposable)
 
