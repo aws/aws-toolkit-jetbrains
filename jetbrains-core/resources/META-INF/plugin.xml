@@ -470,7 +470,7 @@ with what features/services are supported.
             <add-to-group group-id="EditorPopupMenu"/>
         </action>
 
-        <action id="aws.toolkit.getstarted.shareFeedback" class = "software.aws.toolkits.jetbrains.core.gettingstarted.ShareFeedbackInGetStarted"/>
+        <action id="aws.toolkit.getstarted.shareFeedback" class = "software.aws.toolkits.jetbrains.core.gettingstarted.editor.ShareFeedbackInGetStarted"/>
 
         <action id="aws.toolkit.toolwindow.explorer.newConnection" class="software.aws.toolkits.jetbrains.core.credentials.actions.ExplorerNewConnectionAction"/>
 
