@@ -8,13 +8,13 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.BottomGap
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.or
 import com.intellij.ui.layout.selected
 import software.amazon.awssdk.services.apprunner.model.ConnectionSummary
@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.ui.ResourceSelector
 import software.aws.toolkits.jetbrains.ui.intTextField
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
-import software.aws.toolkits.jetbrains.utils.ui.contextualHelp
 import software.aws.toolkits.jetbrains.utils.ui.installOnParent
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.jetbrains.utils.ui.visibleIf
@@ -102,17 +101,19 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
                 .apply { component.emptyText.text = "111111111111.dkr.ecr.us-east-1.amazonaws.com/name:tag" }
                 .bindText(::containerUri)
                 .errorOnApply(message("apprunner.creation.panel.image.uri.missing")) { it.text.isBlank() }
+                .align(AlignX.FILL)
         }
 
         row(message("apprunner.creation.panel.start_command")) {
             textField()
                 .apply { component.toolTipText = message("apprunner.creation.panel.start_command.image.tooltip") }
                 .bindText({ startCommand ?: "" }, { startCommand = it })
+                .align(AlignX.FILL)
         }
 
         row(message("apprunner.creation.panel.port")) {
             intTextField(range = IntRange(1, 65535)).bindIntText(::port)
-                .columns(40)
+                .align(AlignX.FILL)
         }
 
         row {
@@ -130,7 +131,7 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
                     toolTipText = message("apprunner.creation.panel.image.access_role.tooltip")
                 }
             cell(ecrPolicy)
-                .errorOnApply(message("apprunner.creation.panel.image.access_role.missing")) { it.selected() == null }
+                .errorOnApply(message("apprunner.creation.panel.image.access_role.missing")) { it.selected() == null && ecr.isSelected }
                 .visibleIf(ecr.selected)
                 .columns(40)
             button(message("general.create_button")) {
@@ -151,9 +152,11 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
         }
         row {
             label(message("apprunner.creation.panel.cpu"))
-            comboBox(DefaultComboBoxModel(CreationPanel.cpuValues.toTypedArray())).bindItem({ cpu }, { it?.let { cpu = it } }).errorOnApply(message("apprunner.creation.panel.cpu.missing")) { it.selected() == null }
+            comboBox(DefaultComboBoxModel(CreationPanel.cpuValues.toTypedArray())).bindItem({ cpu }, { it?.let { cpu = it } }).errorOnApply(
+                message("apprunner.creation.panel.cpu.missing")
+            ) { it.selected() == null }
             label(message("apprunner.creation.panel.memory"))
-            comboBox(DefaultComboBoxModel(CreationPanel.memoryValues.toTypedArray())).bindItem( { memory }, { it?.let { memory = it } })
+            comboBox(DefaultComboBoxModel(CreationPanel.memoryValues.toTypedArray())).bindItem({ memory }, { it?.let { memory = it } })
                 .errorOnApply(message("apprunner.creation.panel.memory.missing")) { it.selected() == null }
         }
     }
@@ -199,7 +202,6 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
                 .errorOnApply(message("apprunner.creation.panel.repository.connection.missing")) { it.isLoading || it.selected() == null }
                 .resizableColumn()
                 .align(Align.FILL)
-
         }.contextHelp(message("apprunner.creation.panel.repository.connection.help"))
         row {
             label(message("apprunner.creation.panel.repository.url")).apply {
@@ -210,7 +212,7 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
             textField().bindText(::branch).columns(15)
         }
         buttonsGroup {
-            row(message("apprunner.creation.panel.repository.configuration")){
+            row(message("apprunner.creation.panel.repository.configuration")) {
                 cell(repoConfigFromSettings)
                 cell(repoConfigFromFile)
             }
@@ -223,13 +225,12 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
         }
         row {
             label(message("apprunner.creation.panel.cpu"))
-            comboBox(DefaultComboBoxModel(CreationPanel.cpuValues.toTypedArray())).bindItem( { cpu }, { it?.let { cpu = it } })
+            comboBox(DefaultComboBoxModel(CreationPanel.cpuValues.toTypedArray())).bindItem({ cpu }, { it?.let { cpu = it } })
                 .errorOnApply(message("apprunner.creation.panel.cpu.missing")) { it.selected() == null }
                 .resizableColumn().align(Align.FILL)
             label(message("apprunner.creation.panel.memory"))
-            comboBox(DefaultComboBoxModel(CreationPanel.memoryValues.toTypedArray())).bindItem( { memory }, { it?.let { memory = it } })
+            comboBox(DefaultComboBoxModel(CreationPanel.memoryValues.toTypedArray())).bindItem({ memory }, { it?.let { memory = it } })
                 .errorOnApply(message("apprunner.creation.panel.memory.missing")) { it.selected() == null }
-
         }
     }
 
@@ -238,7 +239,6 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
             textField().bindText(::name)
                 .errorOnApply(message("apprunner.creation.panel.name.missing")) { it.text.isNullOrBlank() }
                 .columns(40)
-
         }
         buttonsGroup {
             row(message("apprunner.creation.panel.source")) {
@@ -286,7 +286,6 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
         row(message("apprunner.creation.panel.environment")) {
             cell(environmentVariables)
                 .resizableColumn().align(Align.FILL)
-
         }
     }
 }

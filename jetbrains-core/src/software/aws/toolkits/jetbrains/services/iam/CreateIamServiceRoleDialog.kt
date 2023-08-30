@@ -38,10 +38,10 @@ class CreateIamServiceRoleDialog(
             textField().bindText(::name).columns(size).errorOnApply(message("iam.create.role.missing.role.name")) { it.text.isNullOrBlank() }
         }
         row(message("iam.create.role.managed_policies")) {
-            textField().bindText({managedPolicyName}, {}).columns(size).apply { component.isEditable = false }
+            textField().bindText({ managedPolicyName }, {}).columns(size).apply { component.isEditable = false }
         }
         row(message("iam.create.role.trust.editor.name")) {
-            textField().bindText({serviceUri}, {}).columns(size).apply { component.isEditable = false }
+            textField().bindText({ serviceUri }, {}).columns(size).apply { component.isEditable = false }
         }
     }
 
