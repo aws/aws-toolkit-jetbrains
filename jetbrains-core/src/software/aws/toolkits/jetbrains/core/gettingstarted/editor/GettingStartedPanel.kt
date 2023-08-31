@@ -251,7 +251,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         }
     }
 
-    class PanelAuthBullets(private var panelTitle: String?) : BorderLayoutPanel() {
+    class PanelAuthBullets(private val panelTitle: String) : BorderLayoutPanel() {
 
         val codeWhispererBulletsLists: List<BulletAuthPanel> = listOf(
             BulletAuthPanel(PanelConstants.COMMIT_ICON, message("iam_identity_center.name"), message("aws.onboarding.getstarted.panel.idc_row_comment_text")),
@@ -283,16 +283,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                     indent {
 
                         row {
-                            panelTitle?.let { label(it).bold().applyToComponent { foreground = PanelConstants.TITLE_TEXT_FONTCOLOR } }
+                            panelTitle.let { label(it).bold().applyToComponent { foreground = PanelConstants.TITLE_TEXT_FONTCOLOR } }
                         }
 
-                        for (bullet in serviceTitleMap.get(panelTitle)!!) {
-                            row {
-                                text(bullet.icon)
-                                panel {
-                                    row(bullet.titleName) {
-                                    }.rowComment(bullet.comment)
-                                        .enabled(bullet.enable)
+                        val defaultList: List<BulletAuthPanel> = mutableListOf()
+
+                        val bulletsList: List<BulletAuthPanel> = serviceTitleMap[panelTitle] ?: defaultList
+
+                        panelTitle.let {
+                            for (bullet in bulletsList) {
+                                row {
+                                    text(bullet.icon)
+                                    panel {
+                                        row(bullet.titleName) {
+                                        }.rowComment(bullet.comment)
+                                            .enabled(bullet.enable)
+                                    }
                                 }
                             }
                         }
