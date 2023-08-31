@@ -14,7 +14,6 @@ import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
@@ -22,11 +21,14 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import icons.AwsIcons
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_TITLE_FONT
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_WIDTH
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.TITLE_TEXT_FONTCOLOR
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.resources.message
-import java.awt.Color
 import java.awt.Dimension
 
 class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
@@ -42,7 +44,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 label(message("aws.onboarding.getstarted.panel.title")).applyToComponent {
                                     font = JBFont.h1().asBold()
-                                    foreground = PanelConstants.TITLE_TEXT_FONTCOLOR
+                                    foreground = TITLE_TEXT_FONTCOLOR
                                 }
                             }
                             row {
@@ -63,8 +65,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                     group(
                         JBLabel(message("aws.onboarding.getstarted.panel.group_title"))
                             .apply {
-                                font = JBFont.h2().asBold()
-                                foreground = PanelConstants.TITLE_TEXT_FONTCOLOR
+                                font = PANEL_TITLE_FONT
+                                foreground = TITLE_TEXT_FONTCOLOR
                             }
                     ) {
                         row {
@@ -101,9 +103,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                 panel {
                     indent {
                         row {
-                            label(message("caws.devtoolPanel.title")).bold()
+                            label(message("caws.devtoolPanel.title"))
                                 .applyToComponent {
-                                    foreground = PanelConstants.TITLE_TEXT_FONTCOLOR
+                                    font = PANEL_TITLE_FONT
+                                    foreground = TITLE_TEXT_FONTCOLOR
                                 }
                         }
 
@@ -152,9 +155,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                 panel {
                     indent {
                         row {
-                            label(message("aws.getstarted.resource.panel_title")).bold()
+                            label(message("aws.getstarted.resource.panel_title"))
                                 .applyToComponent {
-                                    foreground = PanelConstants.TITLE_TEXT_FONTCOLOR
+                                    font = PANEL_TITLE_FONT
+                                    foreground = TITLE_TEXT_FONTCOLOR
                                 }
                         }
                         row {
@@ -207,8 +211,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                 panel {
                     indent {
                         row {
-                            label(message("codewhisperer.experiment")).bold()
-                                .applyToComponent { foreground = PanelConstants.TITLE_TEXT_FONTCOLOR }
+                            label(message("codewhisperer.experiment"))
+                                .applyToComponent {
+                                    font = PANEL_TITLE_FONT
+                                    foreground = TITLE_TEXT_FONTCOLOR
+                                }
                         }
                         row {
                             panel {
@@ -273,32 +280,30 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
 
         init {
 
-            val serviceTitleMap: MutableMap<String, List<BulletAuthPanel>> = HashMap()
-            serviceTitleMap.put(message("codewhisperer.experiment"), codeWhispererBulletsLists)
-            serviceTitleMap.put(message("aws.getstarted.resource.panel_title"), resourceBulletsLists)
-            serviceTitleMap.put(message("caws.devtoolPanel.title"), codeCatalystBulletsLists)
+            val serviceTitleMap = mapOf(
+                message("codewhisperer.experiment") to codeWhispererBulletsLists,
+                message("aws.getstarted.resource.panel_title") to resourceBulletsLists,
+                message("caws.devtoolPanel.title") to codeCatalystBulletsLists
+            )
 
             addToCenter(
                 panel {
                     indent {
 
                         row {
-                            panelTitle.let { label(it).bold().applyToComponent { foreground = PanelConstants.TITLE_TEXT_FONTCOLOR } }
+                            label(panelTitle).applyToComponent {
+                                font = PANEL_TITLE_FONT
+                                foreground = TITLE_TEXT_FONTCOLOR
+                            }
                         }
 
-                        val defaultList: List<BulletAuthPanel> = mutableListOf()
-
-                        val bulletsList: List<BulletAuthPanel> = serviceTitleMap[panelTitle] ?: defaultList
-
-                        panelTitle.let {
-                            for (bullet in bulletsList) {
-                                row {
-                                    text(bullet.icon)
-                                    panel {
-                                        row(bullet.titleName) {
-                                        }.rowComment(bullet.comment)
-                                            .enabled(bullet.enable)
-                                    }
+                        serviceTitleMap[panelTitle]?.forEach { bullet ->
+                            row {
+                                text(bullet.icon)
+                                panel {
+                                    row(bullet.titleName) {
+                                    }.rowComment(bullet.comment)
+                                        .enabled(bullet.enable)
                                 }
                             }
                         }
@@ -308,7 +313,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
 
             border = IdeBorderFactory.createRoundedBorder().apply {
                 setColor(PanelConstants.TEXT_FONTCOLOR)
-                preferredSize = Dimension(PanelConstants.PANEL_WIDTH, PanelConstants.BULLET_PANEL_HEIGHT)
+                preferredSize = Dimension(PANEL_WIDTH, BULLET_PANEL_HEIGHT)
             }
         }
     }
@@ -322,7 +327,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         const val COMMIT_ICON = "<icon src='AllIcons.General.InspectionsOK'/>&nbsp;"
         const val CANCEL_ICON = "<icon src='AllIcons.CodeWithMe.CwmTerminate'/>&nbsp;"
         val TEXT_FONTCOLOR = UIUtil.getLabelForeground()
-        val TITLE_TEXT_FONTCOLOR = JBColor(Color.WHITE, Color.WHITE)
+        val TITLE_TEXT_FONTCOLOR = UIUtil.getLabelTextForeground()
+        val PANEL_TITLE_FONT = JBFont.h2().asBold()
         const val PANEL_WIDTH = 300
         const val PANEL_HEIGHT = 450
         const val BULLET_PANEL_HEIGHT = 200
