@@ -9,7 +9,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CollectionComboBoxModel
-import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
@@ -76,8 +76,7 @@ class OpenShellInContainerDialog(
                 })
                 .errorOnApply(message("ecs.execute_command_shell_comboBox_empty")) { it.editor.item.toString().isBlank() }
                 .applyToComponent { isEditable = true }
-                .resizableColumn()
-                .align(Align.FILL)
+                .align(AlignX.FILL)
         }
     }
 
