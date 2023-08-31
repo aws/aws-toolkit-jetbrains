@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -110,7 +109,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         row {
                             panel {
                                 row {
-                                    text(message("caws.getstarted.panel.image"))
+                                    text("image/ gif")
                                 }
                             }
                         }
@@ -160,7 +159,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         row {
                             panel {
                                 row {
-                                    text(message("caws.getstarted.panel.image"))
+                                    text("image/ gif")
                                 }
                             }
                         }
@@ -213,7 +212,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         row {
                             panel {
                                 row {
-                                    text(message("caws.getstarted.panel.image"))
+                                    text("image/ gif")
                                 }
                             }
                         }
