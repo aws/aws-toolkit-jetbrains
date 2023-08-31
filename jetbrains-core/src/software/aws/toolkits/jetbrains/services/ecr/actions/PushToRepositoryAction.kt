@@ -30,6 +30,7 @@ import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.layout.applyToComponent
@@ -68,7 +69,6 @@ import software.aws.toolkits.telemetry.EcrTelemetry
 import software.aws.toolkits.telemetry.Result
 import javax.swing.JTextField
 import javax.swing.plaf.basic.BasicComboBoxEditor
-import com.intellij.ui.dsl.builder.panel as panelv2
 
 class PushToRepositoryAction : EcrDockerAction() {
     override fun actionPerformed(selected: EcrRepositoryNode, e: AnActionEvent) {
@@ -157,7 +157,7 @@ internal class PushToEcrDialog(
         }
     }
 
-    override fun createCenterPanel() = panelv2 {
+    override fun createCenterPanel() = panel {
         // valid tag is ascii letters, numbers, underscores, periods, or dashes
         // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
         val validTagRegex = "[a-zA-Z0-9_.-]{1,128}".toRegex()
@@ -201,7 +201,7 @@ internal class PushToEcrDialog(
         }
     }
 
-    private fun localImageSelectorPanel() = panelv2 {
+    private fun localImageSelectorPanel() = panel {
         row(message("ecr.push.source")) {
             comboBox(
                 localImageRepoTags,
@@ -216,7 +216,7 @@ internal class PushToEcrDialog(
         }
     }
 
-    private fun dockerfileConfigurationSelectorPanel() = panelv2 {
+    private fun dockerfileConfigurationSelectorPanel() = panel {
         row(message("ecr.dockerfile.configuration.label")) {
             val model = CollectionComboBoxModel<DockerRunConfiguration>()
             rebuildRunConfigurationComboBoxModel(model)
