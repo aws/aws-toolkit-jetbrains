@@ -7,7 +7,6 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileProperty
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
-import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_REGISTRATION_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.resources.message
 import java.util.Optional
@@ -94,8 +93,7 @@ private fun validateSsoSection(profile: Profile) {
     if (ssoSessionSection?.get() != null) {
         ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_START_URL)
         ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_REGION)
-        ssoSessionSection.get().property(SSO_REGISTRATION_SCOPES)
     } else {
-        throw IllegalArgumentException(message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()))
+        require(false) { message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()) }
     }
 }

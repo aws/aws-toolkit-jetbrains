@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.sso.model.RoleInfo
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.SsoSessionConfigurationManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -105,6 +106,8 @@ class SetupAuthenticationDialog(
     private val builderIdTab = builderIdTab()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
+    lateinit var roleName: String
+    private lateinit var accountId: String
 
     init {
         title = message("gettingstarted.setup.title")
@@ -253,6 +256,13 @@ class SetupAuthenticationDialog(
         }
 
         close(OK_EXIT_CODE)
+        SsoSessionConfigurationManager().writeSsoSessionProfileToConfigFile(
+            state.idcTabState.region.id,
+            state.idcTabState.startUrl,
+            scopes,
+            accountId,
+            roleName
+        )
     }
 
     private fun selectedTab() = wrappers.entries.firstOrNull { (_, wrapper) -> wrapper == rootTabPane.selectedComponent }?.key
@@ -285,6 +295,8 @@ class SetupAuthenticationDialog(
             val combo = AsyncComboBox<RoleInfo> { label, value, _ ->
                 value ?: return@AsyncComboBox
                 label.text = "${value.roleName()} (${value.accountId()})"
+                accountId = value.accountId()
+                roleName = value.roleName()
             }
             Disposer.register(myDisposable, combo)
             combo.proposeModelUpdate { model ->

@@ -19,6 +19,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -88,7 +89,8 @@ class ProfileCredentialProviderFactoryTest {
             on { profileLoadCallback.invoke(credentialChangeEvent.capture()) }.thenReturn(Unit)
         }
 
-        ApplicationManager.getApplication().replaceService(ProfileWatcher::class.java, mockProfileWatcher, disposableRule.disposable)
+        ApplicationManager.getApplication()
+            .replaceService(ProfileWatcher::class.java, mockProfileWatcher, disposableRule.disposable)
 
         TestDialogManager.setTestInputDialog { MFA_TOKEN }
     }
@@ -330,7 +332,8 @@ class ProfileCredentialProviderFactoryTest {
         argumentCaptor<CredentialsChangeEvent> {
             verify(profileLoadCallback, times(2)).invoke(capture())
 
-            assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar")).has(profileName("baz"))
+            assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar"))
+                .has(profileName("baz"))
             assertThat(firstValue.modified).isEmpty()
             assertThat(firstValue.removed).isEmpty()
 
@@ -379,7 +382,8 @@ class ProfileCredentialProviderFactoryTest {
         argumentCaptor<CredentialsChangeEvent> {
             verify(profileLoadCallback, times(2)).invoke(capture())
 
-            assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar")).has(profileName("baz"))
+            assertThat(firstValue.added).hasSize(3).has(profileName("foo")).has(profileName("bar"))
+                .has(profileName("baz"))
             assertThat(firstValue.modified).isEmpty()
             assertThat(firstValue.removed).isEmpty()
 
@@ -708,7 +712,10 @@ class ProfileCredentialProviderFactoryTest {
         FileUtil.writeToFile(profileFile, content)
     }
 
-    private fun profileName(expectedProfileName: String, defaultRegion: String? = null): Condition<Iterable<CredentialIdentifier>> =
+    private fun profileName(
+        expectedProfileName: String,
+        defaultRegion: String? = null
+    ): Condition<Iterable<CredentialIdentifier>> =
         object : Condition<Iterable<CredentialIdentifier>>(expectedProfileName) {
             override fun matches(value: Iterable<CredentialIdentifier>): Boolean = value.any {
                 it.id == "profile:$expectedProfileName" && defaultRegion?.let { dr -> it.defaultRegionId == dr } ?: true
@@ -722,12 +729,19 @@ class ProfileCredentialProviderFactoryTest {
         return factory
     }
 
-    private fun findCredentialIdentifier(profileName: String) = credentialChangeEvent.allValues.flatMap { it.added }.first { it.id == "profile:$profileName" }
+    private fun findCredentialIdentifier(profileName: String): CredentialIdentifier {
+        try {
+            return credentialChangeEvent.allValues.flatMap { it.added }.first { it.id == "profile:$profileName" }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
 
-    private fun ProfileCredentialProviderFactory.createProvider(validProfile: CredentialIdentifier) = this.createAwsCredentialProvider(
-        validProfile,
-        getDefaultRegion(),
-    )
+    private fun ProfileCredentialProviderFactory.createProvider(validProfile: CredentialIdentifier) =
+        this.createAwsCredentialProvider(
+            validProfile,
+            getDefaultRegion(),
+        )
 
     private class MockProfileWatcher : ProfileWatcher {
         private val listeners = mutableListOf<() -> Unit>()
@@ -767,8 +781,45 @@ class ProfileCredentialProviderFactoryTest {
         val providerFactory = createProviderFactory()
         val validProfile = findCredentialIdentifier("sso")
         val credentialsProvider = providerFactory.createProvider(validProfile)
-
         assertThat(credentialsProvider).isInstanceOf<ProfileSsoSessionProvider>()
+    }
+
+    @Test
+    fun `invalid sso-session profile`() {
+        writeProfileFile(
+            """
+            [profile sso]
+            sso_session = my-sso
+            sso_account_id=111222333444
+            sso_role_name=RoleName
+
+            [sso-session my-sso]
+            sso_start_url=ValidUrl
+            sso_registration_scopes = sso:validAcc:validAccess,sso:validAcc
+            """.trimIndent()
+        )
+
+        clientManager.create<SsoClient>()
+        clientManager.create<SsoOidcClient>()
+
+        assertThrows<Exception> { findCredentialIdentifier("sso") }
+    }
+
+    @Test
+    fun `profile without sso-session section`() {
+        writeProfileFile(
+            """
+            [profile sso]
+            sso_session = my-sso
+            sso_account_id=111222333444
+            sso_role_name=RoleName
+            """.trimIndent()
+        )
+
+        clientManager.create<SsoClient>()
+        clientManager.create<SsoOidcClient>()
+
+        assertThrows<Exception> { findCredentialIdentifier("sso") }
     }
 
     private companion object {

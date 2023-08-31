@@ -131,6 +131,18 @@ object DefaultConfigFileWriter : ConfigFileWriter {
         # [profile user1]
         # aws_access_key_id = [accessKey1]
         # aws_secret_access_key = [secretKey1]
+        
+        
+        
+        [profile profileName]
+        sso_session = [ssoSessionName]
+        sso_account_id = [accountId]
+        sso_role_name = [roleName]
+
+        [sso-session ssoSessionName]
+        sso_region = [region]
+        sso_start_url = [startUrl]
+        sso_registration_scopes = [scopes]
         """.trimIndent()
 
     override fun createFile(file: File) {

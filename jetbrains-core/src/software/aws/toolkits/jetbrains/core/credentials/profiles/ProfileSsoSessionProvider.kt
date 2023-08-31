@@ -28,11 +28,13 @@ class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkA
         val ssoSession = profile.requiredProperty(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY)
         val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SsoSessionConstants.SSO_SESSION_SECTION_NAME, ssoSession)
         val clientManager = AwsClientManager.getInstance()
+//        var list = listOf("")
+        // val list = ssoSessionSection?.get()?.property(SsoSessionConstants.SSO_REGISTRATION_SCOPES)
 
         mySsoSection = SsoMetadata(
             ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_REGION).toString(),
             ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_START_URL).toString(),
-            ssoSessionSection?.get()?.requiredProperty(SsoSessionConstants.SSO_REGISTRATION_SCOPES).toString()
+            listOf(ssoSessionSection?.get()?.property(SsoSessionConstants.SSO_REGISTRATION_SCOPES).toString())
         )
 
         ssoClient = clientManager.createUnmanagedClient(AnonymousCredentialsProvider.create(), Region.of(mySsoSection.ssoRegion))
@@ -42,7 +44,8 @@ class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkA
             mySsoSection.ssoStartUrl,
             mySsoSection.ssoRegion,
             diskCache,
-            ssoOidcClient
+            ssoOidcClient,
+            mySsoSection.ssoRegistrationScopes
         )
 
         credentialsProvider = SsoCredentialProvider(
@@ -65,7 +68,7 @@ class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkA
 data class SsoMetadata(
     val ssoRegion: String,
     val ssoStartUrl: String,
-    val ssoRegistrationScopes: String
+    val ssoRegistrationScopes: List<String>
 )
 
 object SsoSessionConstants {

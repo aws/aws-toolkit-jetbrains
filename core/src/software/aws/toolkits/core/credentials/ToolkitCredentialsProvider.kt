@@ -120,10 +120,11 @@ class ToolkitBearerTokenProvider(val delegate: ToolkitBearerTokenProviderDelegat
         fun ssoIdentifier(startUrl: String, region: String = DEFAULT_SSO_REGION) = "sso;$region;$startUrl"
 
         // TODO: For AWS Builder ID, we only have startUrl for now instead of each users' metadata data i.e. Email address
-        fun ssoDisplayName(startUrl: String) = if (startUrl == SONO_URL) {
+        fun ssoDisplayName(startUrl: String, region: String) = if (startUrl == SONO_URL) {
             message("aws_builder_id.service_name")
         } else {
-            message("iam_identity_center.service_name", extractOrgID(startUrl))
+            val ssoSessionProfileName = "${extractOrgID(startUrl)}-$region"
+            message("iam_identity_center.service_name", ssoSessionProfileName)
         }
 
         fun diskSessionIdentifier(profileName: String) = "diskSessionProfile;$profileName"
@@ -135,4 +136,4 @@ private const val SONO_URL = "https://view.awsapps.com/start"
 
 const val DEFAULT_SSO_REGION = "us-east-1"
 
-private fun extractOrgID(startUrl: String) = startUrl.removePrefix("https://").removeSuffix(".awsapps.com/start")
+fun extractOrgID(startUrl: String) = startUrl.removePrefix("https://").removeSuffix(".awsapps.com/start")
