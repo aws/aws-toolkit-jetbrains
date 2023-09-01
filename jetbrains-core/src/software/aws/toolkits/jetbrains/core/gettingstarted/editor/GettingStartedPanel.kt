@@ -37,9 +37,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
             panel {
                 indent {
                     row {
-                        apply {
-                            icon(AwsIcons.Logos.AWS_SMILE_LARGE)
-                        }
+                        icon(AwsIcons.Logos.AWS_SMILE_LARGE)
                         panel {
                             row {
                                 label(message("aws.onboarding.getstarted.panel.title")).applyToComponent {
