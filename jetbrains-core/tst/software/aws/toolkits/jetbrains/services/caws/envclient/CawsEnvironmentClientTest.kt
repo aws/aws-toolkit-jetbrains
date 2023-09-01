@@ -72,7 +72,7 @@ class CawsEnvironmentClientTest {
     }
 
     @Test
-    fun `putActivity puts timestamp`() {
+    fun `getActivity returns timestamp`() {
         wireMockRule.stubFor(
             WireMock.any(WireMock.urlPathEqualTo("/activity"))
                 .willReturn(
@@ -86,18 +86,7 @@ class CawsEnvironmentClientTest {
                     )
                 )
         )
-        wireMockRule.stubFor(
-            WireMock.any(WireMock.urlPathEqualTo("/activity")).withMetadata(Metadata(mutableMapOf("1" to "2"))) .willReturn(
-                WireMock.aResponse().withBody(
-                    // language=JSON
-                    """
-                            {
-                                "timestamp": "222"
-                            }
-                            """.trimIndent()
-                )
-            )
-        )
+
         assertThat(sut.getActivity().timestamp).isEqualTo("112222444455555")
 
     }

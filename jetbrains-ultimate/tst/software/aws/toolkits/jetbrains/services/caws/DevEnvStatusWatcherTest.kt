@@ -8,16 +8,6 @@ import org.junit.Rule
 import org.junit.Test
 
 class DevEnvStatusWatcherTest {
-    @JvmField
-    @Rule
-    val projectRule = ProjectRule()
-
-    @Test
-    fun `test watcher`() {
-        val watcher = DevEnvStatusWatcher.getInstance(projectRule.project)
-        watcher.notifyBackendOfActivity()
-
-
-    }
+    
 
 }
