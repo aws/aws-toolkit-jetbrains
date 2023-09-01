@@ -211,7 +211,6 @@ internal class PushToEcrDialog(
             ).bindItem(::localImage.toNullableProperty())
                 .applyToComponent { ComboboxSpeedSearch(this) }
                 .errorOnApply(message("ecr.image.not_selected")) { it.selected() == null }
-                .resizableColumn()
                 .columns(30) // The size of the entire dialog is doubling if specific columns are not set for this component
         }
     }
