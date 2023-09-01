@@ -13,7 +13,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.ContextHelpLabel
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
