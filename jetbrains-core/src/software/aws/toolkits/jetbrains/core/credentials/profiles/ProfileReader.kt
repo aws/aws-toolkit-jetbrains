@@ -90,10 +90,9 @@ private fun validateSsoSection(profile: Profile) {
     val ssoSessionName = profile.property(PROFILE_SSO_SESSION_PROPERTY)
     val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoSessionName.get())
 
-    if (ssoSessionSection?.get() != null) {
-        ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_START_URL)
-        ssoSessionSection.get().requiredProperty(ProfileProperty.SSO_REGION)
-    } else {
-        require(false) { message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()) }
-    }
+    ssoSessionSection?.get()?.let {
+        it.requiredProperty(ProfileProperty.SSO_START_URL)
+        it.requiredProperty(ProfileProperty.SSO_REGION)
+    } ?: error(message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()))
+
 }

@@ -99,7 +99,7 @@ class SetupAuthenticationDialog(
     private val scopes: List<String> = emptyList(),
     private val state: SetupAuthenticationDialogState = SetupAuthenticationDialogState(),
     private val tabSettings: Map<SetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
-    private val promptForIdcPermissionSet: Boolean = false,
+    private val promptForIdcPermissionSet: Boolean = true,
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
@@ -107,7 +107,7 @@ class SetupAuthenticationDialog(
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
     lateinit var roleName: String
-    private lateinit var accountId: String
+    lateinit var accountId: String
 
     init {
         title = message("gettingstarted.setup.title")
