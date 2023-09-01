@@ -52,6 +52,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -202,8 +203,8 @@ class ExplorerToolWindow(private val project: Project) :
                 runInEdt {
                     treePanelWrapper.setContent(
                         CenteredInfoPanel().apply {
-                            if (CredentialManager.getInstance().getCredentialIdentifiers().isEmpty()) {
-                                // if no iam credentials...
+                            if (!newConnection.isSono() || CredentialManager.getInstance().getCredentialIdentifiers().isEmpty()) {
+                                // if no iam credentials or we're connected to identity center...
                                 addLine(message("gettingstarted.explorer.iam.add.info"))
                                 addDefaultActionButton(message("gettingstarted.explorer.iam.add")) {
                                     // if builder id, popup identity center add connection

@@ -124,7 +124,7 @@ abstract class CawsLoadingPanel(protected val lifetime: Lifetime, private val se
     }
 
     protected fun buildLoadError(e: Throwable) =
-        InfoPanel()
+        infoPanel()
             .addLine(message("caws.list_workspaces_failed"), isError = true)
             .addLine(e.message ?: message("general.unknown_error"), isError = true)
             .addAction(message("settings.retry")) { lifetime.launchOnUi { startLoading() } }
@@ -141,7 +141,7 @@ abstract class CawsLoadingPanel(protected val lifetime: Lifetime, private val se
         )
     }
 
-    protected fun InfoPanel() = CenteredInfoPanel().apply {
+    protected fun infoPanel() = CenteredInfoPanel().apply {
         add(
             JBLabel().apply {
                 icon = AwsIcons.Logos.AWS_SMILE_LARGE

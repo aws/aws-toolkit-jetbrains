@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.ContextHelpLabel
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
@@ -60,6 +61,7 @@ data class SetupAuthenticationDialogState(
     val selectedTab = graph.property(SetupAuthenticationTabs.IDENTITY_CENTER)
 
     data class IdentityCenterTabState(
+        var profileName: String = "",
         var startUrl: String = "",
         var region: AwsRegion = AwsRegionProvider.getInstance().defaultRegion(),
         var rolePopupState: IdcRolePopupState = IdcRolePopupState()
@@ -264,6 +266,13 @@ class SetupAuthenticationDialog(
         ?: error("Could not determine selected tab")
 
     private fun idcTab() = panel {
+        row(message("gettingstarted.setup.iam.profile")) {
+            textField()
+                .comment(message("gettingstarted.setup.idc.profile.comment"))
+                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
+                .bindText(state.idcTabState::profileName)
+        }
+
         row(message("gettingstarted.setup.idc.startUrl")) {
             textField()
                 .comment(message("gettingstarted.setup.idc.startUrl.comment"))
@@ -330,7 +339,6 @@ class SetupAuthenticationDialog(
 }
 
 data class IdcRolePopupState(
-    var profileName: String = "",
     var roleInfo: RoleInfo? = null
 )
 
@@ -350,14 +358,7 @@ class IdcRolePopup(
             label(message("gettingstarted.setup.idc.roleLabel"))
         }
 
-        row(message("gettingstarted.setup.iam.profile")) {
-            textField()
-                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
-                .comment(message("gettingstarted.setup.iam.profile.comment"))
-                .bindText(state::profileName)
-        }
-
-        row(message("gettingstarted.setup.idc.role")) {
+        row {
             val combo = AsyncComboBox<RoleInfo> { label, value, _ ->
                 value ?: return@AsyncComboBox
                 label.text = "${value.roleName()} (${value.accountId()})"
