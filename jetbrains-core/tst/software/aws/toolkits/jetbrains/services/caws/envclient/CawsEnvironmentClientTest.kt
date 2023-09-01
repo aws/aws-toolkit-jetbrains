@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.caws.envclient
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.common.Metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import org.assertj.core.api.Assertions.assertThat
@@ -68,5 +69,36 @@ class CawsEnvironmentClientTest {
         )
 
         assertThat(sut.getStatus().status).isEqualTo(GetStatusResponse.Status.IMAGES_UPDATE_AVAILABLE)
+    }
+
+    @Test
+    fun `putActivity puts timestamp`() {
+        wireMockRule.stubFor(
+            WireMock.any(WireMock.urlPathEqualTo("/activity"))
+                .willReturn(
+                    WireMock.aResponse().withBody(
+                        // language=JSON
+                        """
+                            {
+                                "timestamp": "112222444455555"
+                            }
+                            """.trimIndent()
+                    )
+                )
+        )
+        wireMockRule.stubFor(
+            WireMock.any(WireMock.urlPathEqualTo("/activity")).withMetadata(Metadata(mutableMapOf("1" to "2"))) .willReturn(
+                WireMock.aResponse().withBody(
+                    // language=JSON
+                    """
+                            {
+                                "timestamp": "222"
+                            }
+                            """.trimIndent()
+                )
+            )
+        )
+        assertThat(sut.getActivity().timestamp).isEqualTo("112222444455555")
+
     }
 }

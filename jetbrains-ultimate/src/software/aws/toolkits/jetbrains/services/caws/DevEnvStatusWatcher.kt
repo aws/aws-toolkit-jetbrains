@@ -8,10 +8,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.jetbrains.rdserver.unattendedHost.UnattendedStatusUtil
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
@@ -19,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
@@ -26,9 +29,13 @@ class DevEnvStatusWatcher : StartupActivity {
 
     companion object {
         fun getInstance(project: Project) = project.service<DevEnvStatusWatcher>()
+        private val LOG = getLogger<DevEnvStatusWatcher>()
     }
 
     override fun runActivity(project: Project) {
+        if(!isRunningOnRemoteBackend()){
+            return
+        }
         val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
             ?: error("Failed to fetch connection settings from Dev Environment")
         val envId = System.getenv(CawsConstants.CAWS_ENV_ID_VAR) ?: error("envId env var null")
@@ -44,6 +51,7 @@ class DevEnvStatusWatcher : StartupActivity {
             }
             val inactivityTimeout = initialEnv.inactivityTimeoutMinutes()
             if (inactivityTimeout == 0) {
+                LOG.info("Dev environment inactivity timeout is 0, not monitoring")
                 return@launch
             }
             val inactivityTimeoutInSeconds = inactivityTimeout * 60
@@ -77,19 +85,22 @@ class DevEnvStatusWatcher : StartupActivity {
                             lastControllerActivity = actualInactivityDuration
                         }
                     } catch (e: Exception) {
-                        notifyError(e.message.toString())
+                        val preMessage = "Error while checking if Dev Environment should continue working"
+                        LOG.error(preMessage + ": " +e.message)
+                        notifyError(preMessage, e.message.toString())
                     }
                 }
-                Thread.sleep(30000)
+                delay(30000)
             }
         }
     }
 
-    private fun notifyBackendOfActivity() {
+    fun notifyBackendOfActivity() {
         val request = UpdateActivityRequest(
             timestamp = System.currentTimeMillis().toString()
         )
         CawsEnvironmentClient.getInstance().putActivityTimestamp(request)
     }
+
     
 }
