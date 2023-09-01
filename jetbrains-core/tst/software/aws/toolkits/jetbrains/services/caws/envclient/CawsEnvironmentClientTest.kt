@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.caws.envclient
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.common.Metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import org.assertj.core.api.Assertions.assertThat
@@ -82,12 +81,11 @@ class CawsEnvironmentClientTest {
                             {
                                 "timestamp": "112222444455555"
                             }
-                            """.trimIndent()
+                        """.trimIndent()
                     )
                 )
         )
 
         assertThat(sut.getActivity().timestamp).isEqualTo("112222444455555")
-
     }
 }

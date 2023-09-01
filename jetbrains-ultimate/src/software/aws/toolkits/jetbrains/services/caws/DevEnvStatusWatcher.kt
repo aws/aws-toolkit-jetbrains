@@ -33,7 +33,7 @@ class DevEnvStatusWatcher : StartupActivity {
     }
 
     override fun runActivity(project: Project) {
-        if(!isRunningOnRemoteBackend()){
+        if (!isRunningOnRemoteBackend()) {
             return
         }
         val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
@@ -60,12 +60,7 @@ class DevEnvStatusWatcher : StartupActivity {
             while (true) {
                 val statusJson = UnattendedStatusUtil.getStatus()
                 val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
-                actualInactivityDuration = if (lastActivityTime > lastControllerActivity) {
-                    lastActivityTime - lastControllerActivity
-                } else {
-                    notifyBackendOfActivity()
-                    lastActivityTime
-                }
+                actualInactivityDuration = getActualInactivityDuration(lastActivityTime, lastControllerActivity)
 
                 if (actualInactivityDuration >= (inactivityTimeoutInSeconds - 300)) {
                     try {
@@ -86,7 +81,7 @@ class DevEnvStatusWatcher : StartupActivity {
                         }
                     } catch (e: Exception) {
                         val preMessage = "Error while checking if Dev Environment should continue working"
-                        LOG.error(preMessage + ": " +e.message)
+                        LOG.error(preMessage + ": " + e.message)
                         notifyError(preMessage, e.message.toString())
                     }
                 }
@@ -95,12 +90,20 @@ class DevEnvStatusWatcher : StartupActivity {
         }
     }
 
+    fun getActualInactivityDuration(
+        lastActivityTime: Long,
+        lastControllerActivity: Long
+    ): Long = if (lastActivityTime > lastControllerActivity) {
+        lastActivityTime - lastControllerActivity
+    } else {
+        notifyBackendOfActivity()
+        lastActivityTime
+    }
+
     fun notifyBackendOfActivity() {
         val request = UpdateActivityRequest(
             timestamp = System.currentTimeMillis().toString()
         )
         CawsEnvironmentClient.getInstance().putActivityTimestamp(request)
     }
-
-    
 }
