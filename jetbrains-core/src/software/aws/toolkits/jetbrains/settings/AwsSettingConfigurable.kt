@@ -40,7 +40,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
     private val defaultRegionHandling : ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
     private val profilesNotification : ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
-    private var enableTelemetry: JBCheckBox = JBCheckBox()
+    val enableTelemetry: JBCheckBox = JBCheckBox()
     override fun createComponent(): JComponent? = panel {
         group(message("aws.settings.serverless_label")) {
             row{
