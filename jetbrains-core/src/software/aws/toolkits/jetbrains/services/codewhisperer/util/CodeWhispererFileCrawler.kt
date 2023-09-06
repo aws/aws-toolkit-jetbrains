@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -39,7 +40,7 @@ interface FileCrawler {
      * @param target psi of the test file we are searching with, e.g. MainTest.java
      * @return its source file e.g. Main.java, main.py or most relevant file if any
      */
-    fun listUtgCandidate(target: PsiFile): VirtualFile?
+    fun listUtgCandidate(target: PsiFile): ListUtgCandidateResult
 
     /**
      * List files opened in the editors and sorted by file distance @see [CodeWhispererFileCrawler.getFileDistance]
@@ -55,27 +56,19 @@ interface FileCrawler {
      * Determine if the file given is test file or not based on its path and file name
      */
     fun isTestFile(target: VirtualFile, project: Project): Boolean
-
-    fun findSourceFileByName(target: PsiFile): VirtualFile?
-
-    fun findSourceFileByContent(target: PsiFile): VirtualFile?
 }
 
 class NoOpFileCrawler : FileCrawler {
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = emptyList()
-    override fun listUtgCandidate(target: PsiFile): VirtualFile? = null
+    override fun listUtgCandidate(target: PsiFile) = ListUtgCandidateResult(null, UtgStrategy.Empty)
 
     override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = emptyList()
 
     override fun isTestFile(target: VirtualFile, project: Project): Boolean = false
-
-    override fun findSourceFileByName(target: PsiFile): VirtualFile? = null
-
-    override fun findSourceFileByContent(target: PsiFile): VirtualFile? = null
 }
 
 abstract class CodeWhispererFileCrawler : FileCrawler {
@@ -137,7 +130,19 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
     }
 
-    override fun listUtgCandidate(target: PsiFile): VirtualFile? = findSourceFileByName(target) ?: findSourceFileByContent(target)
+    override fun listUtgCandidate(target: PsiFile): ListUtgCandidateResult {
+        val byName = findSourceFileByName(target)
+        if (byName != null) {
+            return ListUtgCandidateResult(byName, UtgStrategy.ByName)
+        }
+
+        val byContent = findSourceFileByContent(target)
+        if (byContent != null) {
+            return ListUtgCandidateResult(byContent, UtgStrategy.ByContent)
+        }
+
+        return ListUtgCandidateResult(null, UtgStrategy.Empty)
+    }
 
     // TODO: may need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
     fun guessSourceFileName(tstFileName: String): String? {
@@ -151,6 +156,10 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         return srcFileName
     }
+
+    abstract fun findSourceFileByName(target: PsiFile): VirtualFile?
+
+    abstract fun findSourceFileByContent(target: PsiFile): VirtualFile?
 
     private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
         dialects.contains(fileExt)

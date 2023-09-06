@@ -263,28 +263,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             )
         }
 
-        val byName by lazy { targetContext.programmingLanguage.fileCrawler.findSourceFileByName(psiFile) }
-        val byContent by lazy { targetContext.programmingLanguage.fileCrawler.findSourceFileByContent(psiFile) }
-        val strategy: SupplementalContextStrategy
+        val utgCandidateResult = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
+        val focalFile = utgCandidateResult.vfile
+        val strategy = utgCandidateResult.strategy
 
-        val focalFile = if (byName != null) {
-            strategy = UtgStrategy.ByName
-            byName
-        } else {
-            strategy = UtgStrategy.ByContent
-            byContent
-        }
 
-        if (focalFile == null) {
-            return SupplementalContextInfo(
-                isUtg = false,
-                contents = emptyList(),
-                targetFileName = targetContext.filename,
-                strategy = UtgStrategy.Empty
-            )
-        }
-
-        return focalFile.let { file ->
+        return focalFile?.let { file ->
             runReadAction {
                 val relativePath = contentRootPathProvider.getPathToElement(project, file, null) ?: file.path
                 val content = file.content()
@@ -312,6 +296,13 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                     strategy = strategy
                 )
             }
+        } ?: run {
+            return SupplementalContextInfo(
+                isUtg = false,
+                contents = emptyList(),
+                targetFileName = targetContext.filename,
+                strategy = UtgStrategy.Empty
+            )
         }
     }
 
