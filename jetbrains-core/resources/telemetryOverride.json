@@ -1,6 +1,11 @@
 {
     "types": [
         {
+            "name": "codewhispererSupplementalContextStrategyId",
+            "type": "string",
+            "description": "Name tag or identifier for supplemental context fetching strategy being used for us to easier analyze corresponding acceptance rate"
+        },
+        {
             "name": "codecatalyst_createDevEnvironmentRepoType",
             "type": "string",
             "description": "Type of Git repository provided to the Amazon CodeCatalyst dev environment create wizard",
@@ -37,6 +42,125 @@
     ],
     "metrics": [
         {
+            "name": "codewhisperer_userTriggerDecision",
+            "description": "User decision aggregated at trigger level",
+            "metadata": [
+                {
+                    "type": "codewhispererSessionId",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererFirstRequestId"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererIsPartialAcceptance",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererPartialAcceptanceCount",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererCharactersAccepted",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererCharactersRecommended",
+                    "required": false
+                },
+                {
+                    "type": "reason",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererCompletionType"
+                },
+                {
+                    "type": "codewhispererLanguage"
+                },
+                {
+                    "type": "codewhispererTriggerType"
+                },
+                {
+                    "type": "codewhispererAutomatedTriggerType",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererLineNumber"
+                },
+                {
+                    "type": "codewhispererCursorOffset"
+                },
+                {
+                    "type": "codewhispererSuggestionCount"
+                },
+                {
+                    "type": "codewhispererSuggestionImportCount"
+                },
+                {
+                    "type": "codewhispererTotalShownTime",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererTriggerCharacter",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererTypeaheadLength"
+                },
+                {
+                    "type": "codewhispererTimeSinceLastDocumentChange",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererTimeSinceLastUserDecision",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererTimeToFirstRecommendation",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererPreviousSuggestionState",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererSuggestionState"
+                },
+                {
+                    "type": "codewhispererClassifierResult",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererSupplementalContextTimeout",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererSupplementalContextIsUtg",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererSupplementalContextLength",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererSupplementalContextStrategyId",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererClassifierThreshold",
+                    "required": false
+                },
+                {
+                    "type": "codewhispererUserGroup"
+                }
+            ]
+        },
+        {
             "name": "aws_openLocalTerminal",
             "description": "Open local terminal with aws connection injected",
             "metadata": [
@@ -45,7 +169,6 @@
                 }
             ]
         },
-
         {
             "name": "codecatalyst_createDevEnvironment",
             "description": "Create an Amazon CodeCatalyst Dev Environment",

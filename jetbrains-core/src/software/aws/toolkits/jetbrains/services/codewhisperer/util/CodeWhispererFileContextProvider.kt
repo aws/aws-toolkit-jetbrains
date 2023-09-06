@@ -114,10 +114,10 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val language = targetContext.programmingLanguage
         val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
-        val chunks = if (isTst) {
+        val supplementalContext = if (isTst) {
             when (shouldFetchUtgContext(language, group)) {
                 true -> extractSupplementalFileContextForTst(psiFile, targetContext)
-                false -> emptyList()
+                false -> null
                 null -> {
                     LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
                     null
@@ -126,7 +126,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         } else {
             when (shouldFetchCrossfileContext(language, group)) {
                 true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-                false -> emptyList()
+                false -> null
                 null -> {
                     LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
                     null
@@ -134,10 +134,10 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
         }
 
-        return chunks?.let {
-            if (it.isNotEmpty()) {
+        return supplementalContext?.let {
+            if (it.contents.isNotEmpty()) {
                 LOG.info { "Successfully fetched supplemental context." }
-                it.forEachIndexed { index, chunk ->
+                it.contents.forEachIndexed { index, chunk ->
                     LOG.info {
                         """
                             |---------------------------------------------------------------
@@ -153,12 +153,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 LOG.warn { "Failed to fetch supplemental context, empty list." }
             }
 
-            SupplementalContextInfo(
-                isUtg = isTst,
-                contents = it,
-                latency = System.currentTimeMillis() - startFetchingTimestamp,
-                targetFileName = targetContext.filename
-            )
+            it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
         }
     }
 
@@ -192,8 +187,15 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     override fun isTestFile(psiFile: PsiFile) = psiFile.programmingLanguage().fileCrawler.isTestFile(psiFile.virtualFile, psiFile.project)
 
     @VisibleForTesting
-    suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
-        if (!targetContext.programmingLanguage.isSupplementalContextSupported()) return emptyList()
+    suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+        if (!targetContext.programmingLanguage.isSupplementalContextSupported()) {
+            return SupplementalContextInfo(
+                isUtg = false,
+                contents = emptyList(),
+                targetFileName = targetContext.filename,
+                strategy = CrossFileStrategy.Empty
+            )
+        }
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
@@ -212,7 +214,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 "0 chunks was found for supplemental context, fileName=${targetContext.filename}, " +
                     "programmingLanaugage: ${targetContext.programmingLanguage}"
             }
-            return emptyList()
+            return SupplementalContextInfo(
+                isUtg = false,
+                contents = emptyList(),
+                targetFileName = targetContext.filename,
+                strategy = CrossFileStrategy.Empty
+            )
         }
 
         // we need to keep the reference to Chunk object because we will need to get "nextChunk" later after calculation
@@ -227,7 +234,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         yield()
 
         // we use nextChunk as supplemental context
-        return top3Chunks.mapNotNull { bm25Result ->
+        val crossfileContext = top3Chunks.mapNotNull { bm25Result ->
             contentToChunk[bm25Result.docString]?.let {
                 if (it.nextChunk.isNotBlank()) {
                     Chunk(content = it.nextChunk, path = it.path, score = bm25Result.score)
@@ -236,20 +243,53 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 }
             }
         }
+
+        return SupplementalContextInfo(
+            isUtg = false,
+            contents = crossfileContext,
+            targetFileName = targetContext.filename,
+            strategy = CrossFileStrategy.OpenTabsBM25
+        )
     }
 
     @VisibleForTesting
-    fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): List<Chunk> {
-        if (!targetContext.programmingLanguage.isUTGSupported()) return emptyList()
+    fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+        if (!targetContext.programmingLanguage.isUTGSupported()) {
+            return SupplementalContextInfo(
+                isUtg = true,
+                contents = emptyList(),
+                targetFileName = targetContext.filename,
+                strategy = UtgStrategy.Empty
+            )
+        }
 
-        val focalFile = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
+        val byName by lazy { targetContext.programmingLanguage.fileCrawler.findSourceFileByName(psiFile) }
+        val byContent by lazy { targetContext.programmingLanguage.fileCrawler.findSourceFileByContent(psiFile) }
+        val strategy: SupplementalContextStrategy
 
-        return focalFile?.let { file ->
+        val focalFile = if (byName != null) {
+            strategy = UtgStrategy.ByName
+            byName
+        } else {
+            strategy = UtgStrategy.ByContent
+            byContent
+        }
+
+        if (focalFile == null) {
+            return SupplementalContextInfo(
+                isUtg = false,
+                contents = emptyList(),
+                targetFileName = targetContext.filename,
+                strategy = UtgStrategy.Empty
+            )
+        }
+
+        return focalFile.let { file ->
             runReadAction {
                 val relativePath = contentRootPathProvider.getPathToElement(project, file, null) ?: file.path
                 val content = file.content()
 
-                if (content.isBlank()) {
+                val utgContext = if (content.isBlank()) {
                     emptyList()
                 } else {
                     listOf(
@@ -264,8 +304,15 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                         )
                     )
                 }
+
+                SupplementalContextInfo(
+                    isUtg = true,
+                    contents = utgContext,
+                    targetFileName = targetContext.filename,
+                    strategy = strategy
+                )
             }
-        }.orEmpty()
+        }
     }
 
     companion object {

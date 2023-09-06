@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
@@ -39,8 +40,9 @@ data class FileContextInfo(
 data class SupplementalContextInfo(
     val isUtg: Boolean,
     val contents: List<Chunk>,
-    val latency: Long,
-    val targetFileName: String
+    val targetFileName: String,
+    val strategy: SupplementalContextStrategy,
+    val latency: Long = 0L,
 ) {
     val contentLength: Int
         get() = contents.fold(0) { acc, chunk ->

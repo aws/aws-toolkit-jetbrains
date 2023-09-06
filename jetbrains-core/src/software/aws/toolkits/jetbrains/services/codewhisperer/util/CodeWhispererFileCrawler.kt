@@ -55,6 +55,10 @@ interface FileCrawler {
      * Determine if the file given is test file or not based on its path and file name
      */
     fun isTestFile(target: VirtualFile, project: Project): Boolean
+
+    fun findSourceFileByName(target: PsiFile): VirtualFile?
+
+    fun findSourceFileByContent(target: PsiFile): VirtualFile?
 }
 
 class NoOpFileCrawler : FileCrawler {
@@ -68,6 +72,10 @@ class NoOpFileCrawler : FileCrawler {
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = emptyList()
 
     override fun isTestFile(target: VirtualFile, project: Project): Boolean = false
+
+    override fun findSourceFileByName(target: PsiFile): VirtualFile? = null
+
+    override fun findSourceFileByContent(target: PsiFile): VirtualFile? = null
 }
 
 abstract class CodeWhispererFileCrawler : FileCrawler {
@@ -130,10 +138,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }
 
     override fun listUtgCandidate(target: PsiFile): VirtualFile? = findSourceFileByName(target) ?: findSourceFileByContent(target)
-
-    abstract fun findSourceFileByName(target: PsiFile): VirtualFile?
-
-    abstract fun findSourceFileByContent(target: PsiFile): VirtualFile?
 
     // TODO: may need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
     fun guessSourceFileName(tstFileName: String): String? {
