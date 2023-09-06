@@ -8,7 +8,6 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.panel
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.apprunner.AppRunnerClient
@@ -49,8 +48,7 @@ class PauseServiceAction :
             override fun getHelpId(): String = HelpIds.APPRUNNER_PAUSE_RESUME.id
             override fun createCenterPanel(): JComponent = panel {
                 row {
-                    JBLabel().apply {
-                        text = message("apprunner.pause.warning", selected.service.serviceName())
+                    label(message("apprunner.pause.warning", selected.service.serviceName())).applyToComponent {
                         icon = Messages.getWarningIcon()
                         iconTextGap = 8
                     }
