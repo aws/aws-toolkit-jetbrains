@@ -10,6 +10,7 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.text.SemVer
 import software.amazon.awssdk.services.lambda.model.PackageType
@@ -89,7 +90,7 @@ class SamInitSelectionPanel(
             panel {
                 wizardFragments.values.forEach {
                     row {
-                        cell(it)
+                        cell(it).align(AlignX.FILL)
                     }
                 }
             }

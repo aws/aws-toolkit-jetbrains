@@ -13,6 +13,7 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.layout.applyToComponent
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,7 +63,7 @@ class OpenShellInContainerDialog(
     override fun createCenterPanel(): JComponent = panel {
         row(message("ecs.execute_command_task.label")) {
             cell(taskList)
-                .bindItem(::task)
+                .bindItem(::task.toNullableProperty())
                 .errorOnApply(message("ecs.execute_command_task_comboBox_empty")) {
                     it.selected().isNullOrEmpty()
                 }.columns(30)
