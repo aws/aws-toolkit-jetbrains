@@ -93,8 +93,6 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
         toolTipText = message("apprunner.creation.panel.repository.file.tooltip")
     }
 
-    val widthGroup = "WidthGroup"
-
     val imagePanel = panel {
         row(message("apprunner.creation.panel.image.uri")) {
             textField()
@@ -269,20 +267,6 @@ class CreationPanel(private val project: Project, ecrUri: String? = null) {
                 .resizableColumn()
                 .align(Align.FILL)
         }
-        /*row {
-            subRowIndent = 0
-            cell(isFullWidth = true) {
-                // TODO HACK making this flow right means we don't have issues with weird spacing above or
-                // to the left
-                repoPanel(grow)
-                    .installOnParent { repo.isSelected }
-                    .visibleIf(repo.selected)
-
-                imagePanel(grow)
-                    .installOnParent { ecr.isSelected || ecrPublic.isSelected }
-                    .visibleIf(ecr.selected.or(ecrPublic.selected))
-            }
-        }*/
         row(message("apprunner.creation.panel.environment")) {
             cell(environmentVariables)
                 .resizableColumn().align(Align.FILL)
