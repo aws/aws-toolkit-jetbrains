@@ -70,7 +70,7 @@ data class SupplementalContextInfo(
         )
 
         fun emptyUtgFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = false,
+            isUtg = true,
             contents = emptyList(),
             targetFileName = targetFileName,
             strategy = UtgStrategy.Empty,
