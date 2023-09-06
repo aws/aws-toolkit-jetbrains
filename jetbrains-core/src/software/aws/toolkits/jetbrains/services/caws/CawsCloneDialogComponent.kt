@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
+import com.intellij.collaboration.ui.CollaborationToolsUIUtil
 import com.intellij.dvcs.repo.ClonePathProvider
 import com.intellij.dvcs.ui.CloneDvcsValidationUtils
 import com.intellij.dvcs.ui.SelectChildTextFieldWithBrowseButton
@@ -21,8 +22,10 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.listCellRenderer
-import com.intellij.ui.layout.panel
 import com.intellij.util.ui.StatusText
 import com.intellij.util.ui.UIUtil
 import git4idea.checkout.GitCheckoutProvider
@@ -37,7 +40,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
-import software.aws.toolkits.jetbrains.core.CollaborationToolsUIUtil
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
@@ -49,7 +51,6 @@ import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
 import java.nio.file.Paths
 import javax.swing.JComponent
-import javax.swing.JSeparator
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 class CawsCloneDialogComponent(
@@ -138,21 +139,16 @@ class CawsCloneDialogComponent(
                     it.presentableString
                 }
                 val label = CawsLetterBadge(connectionSettings)
-
-                cell(isFullWidth = true) {
-                    searchField.textEditor(growX)
-                    JSeparator(JSeparator.VERTICAL)(growY)
-                    component(label)
-                }
+                cell(searchField.textEditor).resizableColumn().align(Align.FILL)
+                cell(label).align(AlignX.RIGHT)
             }
 
             row {
-                scrollPane(repoList)
-                    .constraints(growX)
-            }
+                scrollCell(repoList).resizableColumn().align(Align.FILL)
+            }.resizableRow()
 
             row(message("caws.clone_dialog_directory")) {
-                browseButton()
+                cell(browseButton).align(Align.FILL)
             }
         }
 
