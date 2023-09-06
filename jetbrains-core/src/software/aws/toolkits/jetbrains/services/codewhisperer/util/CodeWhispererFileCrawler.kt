@@ -144,6 +144,10 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         return ListUtgCandidateResult(null, UtgStrategy.Empty)
     }
 
+    abstract fun findSourceFileByName(target: PsiFile): VirtualFile?
+
+    abstract fun findSourceFileByContent(target: PsiFile): VirtualFile?
+
     // TODO: may need to update when we enable JS/TS UTG, since we have to factor in .jsx/.tsx combinations
     fun guessSourceFileName(tstFileName: String): String? {
         val srcFileName = tryOrNull {
@@ -156,10 +160,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         return srcFileName
     }
-
-    abstract fun findSourceFileByName(target: PsiFile): VirtualFile?
-
-    abstract fun findSourceFileByContent(target: PsiFile): VirtualFile?
 
     private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
         dialects.contains(fileExt)

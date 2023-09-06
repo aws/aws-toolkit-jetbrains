@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -58,6 +59,24 @@ data class SupplementalContextInfo(
 
     val isProcessTimeout: Boolean
         get() = latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
+
+    companion object {
+        fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
+            isUtg = false,
+            contents = emptyList(),
+            targetFileName = targetFileName,
+            strategy = CrossFileStrategy.Empty,
+            latency = 0L
+        )
+
+        fun emptyUtgFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
+            isUtg = false,
+            contents = emptyList(),
+            targetFileName = targetFileName,
+            strategy = UtgStrategy.Empty,
+            latency = 0L
+        )
+    }
 }
 
 data class RecommendationContext(

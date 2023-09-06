@@ -189,12 +189,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         if (!targetContext.programmingLanguage.isSupplementalContextSupported()) {
-            return SupplementalContextInfo(
-                isUtg = false,
-                contents = emptyList(),
-                targetFileName = targetContext.filename,
-                strategy = CrossFileStrategy.Empty
-            )
+            return SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
@@ -214,12 +209,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 "0 chunks was found for supplemental context, fileName=${targetContext.filename}, " +
                     "programmingLanaugage: ${targetContext.programmingLanguage}"
             }
-            return SupplementalContextInfo(
-                isUtg = false,
-                contents = emptyList(),
-                targetFileName = targetContext.filename,
-                strategy = CrossFileStrategy.Empty
-            )
+            return SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
 
         // we need to keep the reference to Chunk object because we will need to get "nextChunk" later after calculation
@@ -255,12 +245,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     @VisibleForTesting
     fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         if (!targetContext.programmingLanguage.isUTGSupported()) {
-            return SupplementalContextInfo(
-                isUtg = true,
-                contents = emptyList(),
-                targetFileName = targetContext.filename,
-                strategy = UtgStrategy.Empty
-            )
+            return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
         }
 
         val utgCandidateResult = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
@@ -297,12 +282,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 )
             }
         } ?: run {
-            return SupplementalContextInfo(
-                isUtg = false,
-                contents = emptyList(),
-                targetFileName = targetContext.filename,
-                strategy = UtgStrategy.Empty
-            )
+            return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
         }
     }
 
