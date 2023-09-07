@@ -117,7 +117,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val supplementalContext = if (isTst) {
             when (shouldFetchUtgContext(language, group)) {
                 true -> extractSupplementalFileContextForTst(psiFile, targetContext)
-                false -> null
+                false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
                 null -> {
                     LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
                     null
@@ -126,7 +126,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         } else {
             when (shouldFetchCrossfileContext(language, group)) {
                 true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-                false -> null
+                false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
                 null -> {
                     LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
                     null
@@ -251,7 +251,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val utgCandidateResult = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
         val focalFile = utgCandidateResult.vfile
         val strategy = utgCandidateResult.strategy
-
 
         return focalFile?.let { file ->
             runReadAction {
