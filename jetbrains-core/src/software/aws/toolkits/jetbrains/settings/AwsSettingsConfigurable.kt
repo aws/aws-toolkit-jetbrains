@@ -32,20 +32,17 @@ import javax.swing.JComponent
 class AwsSettingsConfigurable : SearchableConfigurable {
     private val samExecutableInstance: SamExecutable
         get() = ExecutableType.getExecutable(SamExecutable::class.java)
-    lateinit var samExecutablePath: TextFieldWithBrowseButton
-        private set
-    private val samTextboxInput: String?
-        get() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
+    val samExecutablePath: TextFieldWithBrowseButton = createCliConfigurationElement(samExecutableInstance, SAM)
 
     private val defaultRegionHandling: ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
     private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
     val enableTelemetry: JBCheckBox = JBCheckBox()
-    override fun createComponent(): JComponent? = panel {
+    override fun createComponent(): JComponent = panel {
         group(message("aws.settings.serverless_label")) {
             row {
                 label(message("aws.settings.sam.location"))
-                samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
+                // samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
                 cell(samExecutablePath).align(AlignX.FILL).resizableColumn()
                 browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
             }
@@ -77,7 +74,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         }
     }
 
-    override fun isModified(): Boolean = samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
+    override fun isModified(): Boolean = getSamPathWithoutSpaces() != getSavedExecutablePath(samExecutableInstance, false) ||
         defaultRegionHandling.selectedItem != AwsSettings.getInstance().useDefaultCredentialRegion ||
         profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification ||
         enableTelemetry.isSelected != AwsSettings.getInstance().isTelemetryEnabled
@@ -88,7 +85,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
             "sam",
             samExecutableInstance,
             getSavedExecutablePath(samExecutableInstance, false),
-            samTextboxInput
+            getSamPathWithoutSpaces()
         )
         saveAwsSettings()
     }
@@ -198,6 +195,8 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         awsSettings.useDefaultCredentialRegion = defaultRegionHandling.selectedItem as? UseAwsCredentialRegion ?: UseAwsCredentialRegion.Never
         awsSettings.profilesNotification = profilesNotification.selectedItem as? ProfilesNotification ?: ProfilesNotification.Always
     }
+
+    private fun getSamPathWithoutSpaces() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
 
     companion object {
         private const val SAM = "sam"
