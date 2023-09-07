@@ -408,7 +408,7 @@ fun rolePopupFromConnection(project: Project, connection: AwsBearerTokenConnecti
     }
 }
 
-fun requestCredentialsForExplorer(project: Project) {
+fun requestCredentialsForExplorer(project: Project) =
     SetupAuthenticationDialog(
         project,
         tabSettings = mapOf(
@@ -416,11 +416,10 @@ fun requestCredentialsForExplorer(project: Project) {
                 disabled = true,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.ERROR,
-                    "Resource Explorer does not support authentication with AWS Builder ID.",
+                    message("gettingstarted.setup.explorer.no_builder_id"),
                     "https://docs.aws.amazon.com/signin/latest/userguide/differences-aws_builder_id.html"
                 )
             )
         ),
         promptForIdcPermissionSet = true
     ).show()
-}
