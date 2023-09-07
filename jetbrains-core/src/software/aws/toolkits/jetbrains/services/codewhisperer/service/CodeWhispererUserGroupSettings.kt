@@ -61,7 +61,7 @@ class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUse
             resetGroupSettings()
         }
 
-        return getGroup<CodeWhispererUserGroup>() ?: determineUserGroup()
+        return CodeWhispererUserGroup.CrossFile
     }
 
     fun isExpThreshold(): Boolean {
