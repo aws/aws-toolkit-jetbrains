@@ -47,7 +47,7 @@ class ToolConfigurable : BoundConfigurable(message("executableCommon.configurabl
     override fun apply() {
         panel.apply()
     }
-    
+
     override fun getId(): String = "aws.tools"
 
     private fun setEmptyText(toolType: ToolType<Version>, field: JBTextField) {
