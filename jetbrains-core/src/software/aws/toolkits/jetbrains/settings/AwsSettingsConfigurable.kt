@@ -62,13 +62,11 @@ class AwsSettingsConfigurable : SearchableConfigurable {
             }
 
             row {
-                cell(enableTelemetry).applyToComponent {
-                    this.isSelected = AwsSettings.getInstance().isTelemetryEnabled
-                }
-
-                val enableTelemetryText = "<html>${message("aws.settings.telemetry.option")} <a href=\"https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html\">${message(
-                    "general.details"
-                )}</a></html>"
+                cell(enableTelemetry).applyToComponent { this.isSelected = AwsSettings.getInstance().isTelemetryEnabled }
+                val enableTelemetryText =
+                    "<html>${message("aws.settings.telemetry.option")}" +
+                        " <a href=\"https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html\">" +
+                        "${message("general.details")}</a></html>"
                 cell(JBLabel(enableTelemetryText).setCopyable(true))
             }
         }
