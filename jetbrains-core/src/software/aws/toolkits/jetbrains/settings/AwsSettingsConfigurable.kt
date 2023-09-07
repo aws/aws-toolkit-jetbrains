@@ -37,48 +37,50 @@ class AwsSettingsConfigurable : SearchableConfigurable {
     private val samTextboxInput: String?
         get() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
 
-    private val defaultRegionHandling : ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
-    private val profilesNotification : ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
+    private val defaultRegionHandling: ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
+    private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
     val enableTelemetry: JBCheckBox = JBCheckBox()
     override fun createComponent(): JComponent? = panel {
         group(message("aws.settings.serverless_label")) {
-            row{
+            row {
                 label(message("aws.settings.sam.location"))
                 samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
                 cell(samExecutablePath).align(AlignX.FILL).resizableColumn()
                 browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
             }
         }
-        group(message("aws.settings.global_label")){
-            row{
+        group(message("aws.settings.global_label")) {
+            row {
                 label(message("settings.credentials.prompt_for_default_region_switch.setting_label"))
                 cell(defaultRegionHandling).resizableColumn().align(AlignX.FILL).applyToComponent {
                     this.selectedItem = AwsSettings.getInstance().useDefaultCredentialRegion ?: UseAwsCredentialRegion.Never
                 }
             }
-            row{
+            row {
                 label(message("settings.profiles.label"))
                 cell(profilesNotification).resizableColumn().align(AlignX.FILL).applyToComponent {
                     this.selectedItem = AwsSettings.getInstance().profilesNotification ?: ProfilesNotification.Always
                 }
             }
 
-            row{
+            row {
                 cell(enableTelemetry).applyToComponent {
                     this.isSelected = AwsSettings.getInstance().isTelemetryEnabled
                 }
-                cell(JBLabel(message("aws.settings.telemetry.option")).setCopyable(true))
+
+                val enableTelemetryText = "<html>${message("aws.settings.telemetry.option")} <a href=\"https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html\">${message(
+                    "general.details"
+                )}</a></html>"
+                cell(JBLabel(enableTelemetryText).setCopyable(true))
             }
         }
     }
 
-    override fun isModified(): Boolean {
-        return samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
-            defaultRegionHandling.selectedItem != AwsSettings.getInstance().useDefaultCredentialRegion ||
-            profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification ||
-            enableTelemetry.isSelected != AwsSettings.getInstance().isTelemetryEnabled
-    }
+    override fun isModified(): Boolean = samTextboxInput != getSavedExecutablePath(samExecutableInstance, false) ||
+        defaultRegionHandling.selectedItem != AwsSettings.getInstance().useDefaultCredentialRegion ||
+        profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification ||
+        enableTelemetry.isSelected != AwsSettings.getInstance().isTelemetryEnabled
 
     override fun apply() {
         validateAndSaveCliSettings(
@@ -200,6 +202,4 @@ class AwsSettingsConfigurable : SearchableConfigurable {
     companion object {
         private const val SAM = "sam"
     }
-
 }
-
