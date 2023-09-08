@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KProperty0
 import kotlin.reflect.jvm.isAccessible
 
@@ -187,6 +188,15 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
+        var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
+
+        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
+        // suggestion to be now.
+        if (e2eLatency < 0) {
+            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
+                System.nanoTime() - requestContext.latencyContext.codewhispererEndToEndStart
+            ).toDouble()
+        }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -194,8 +204,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.completionType(completionType.toCodeWhispererSdkType())
                     it.programmingLanguage { builder -> builder.languageName(programmingLanguage.languageId) }
                     it.sessionId(responseContext.sessionId)
-                    it.recommendationLatencyMilliseconds(requestContext.latencyContext.getCodeWhispererEndToEndLatency())
-
+                    it.recommendationLatencyMilliseconds(e2eLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)

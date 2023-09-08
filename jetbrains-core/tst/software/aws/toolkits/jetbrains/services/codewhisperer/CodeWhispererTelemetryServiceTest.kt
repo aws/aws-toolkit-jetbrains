@@ -584,6 +584,8 @@ class CodeWhispererTelemetryServiceTest {
             1,
             50
         )
+
+        verifyNoInteractions(mockClient)
     }
 }
 

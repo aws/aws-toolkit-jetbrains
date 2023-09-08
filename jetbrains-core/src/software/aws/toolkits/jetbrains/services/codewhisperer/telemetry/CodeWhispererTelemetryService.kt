@@ -182,7 +182,7 @@ class CodeWhispererTelemetryService {
         suggestionState: CodewhispererSuggestionState,
         popupShownTime: Duration?,
         suggestionReferenceCount: Int,
-        lineCount: Int
+        generatedLineCount: Int
     ) {
         val totalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
             grandTotal + detail.recommendation.mostRelevantMissingImports().size
@@ -231,7 +231,7 @@ class CodeWhispererTelemetryService {
                             completionType,
                             suggestionState,
                             suggestionReferenceCount,
-                            lineCount
+                            generatedLineCount
                         )
                     LOG.debug {
                         "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
@@ -377,7 +377,7 @@ class CodeWhispererTelemetryService {
                 } else {
                     ""
                 }
-            val lineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
+            val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
             sendUserTriggerDecisionEvent(
                 requestContext,
                 responseContext,
@@ -385,7 +385,7 @@ class CodeWhispererTelemetryService {
                 CodewhispererSuggestionState.from(this.toString()),
                 popupShownTime,
                 referenceCount,
-                lineCount
+                generatedLineCount
             )
 
             // step 2, put current decision into queue for later reference
