@@ -79,8 +79,7 @@ object CodeWhispererConstants {
     }
 
     object CrossFile {
-        val CHUNK_SIZE
-            get() = if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() == CodeWhispererUserGroup.Control) 60 else 1000
+        val CHUNK_SIZE = 60
     }
 
     object Utg {
