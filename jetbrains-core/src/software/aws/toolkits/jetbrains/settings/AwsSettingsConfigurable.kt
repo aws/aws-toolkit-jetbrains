@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -12,7 +13,6 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBCheckBox
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
@@ -63,11 +63,9 @@ class AwsSettingsConfigurable : SearchableConfigurable {
 
             row {
                 cell(enableTelemetry).applyToComponent { this.isSelected = AwsSettings.getInstance().isTelemetryEnabled }
-                val enableTelemetryText =
-                    "<html>${message("aws.settings.telemetry.option")}" +
-                        " <a href=\"https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html\">" +
-                        "${message("general.details")}</a></html>"
-                cell(JBLabel(enableTelemetryText).setCopyable(true))
+                text(message("aws.settings.telemetry.option") + " <a>${message("general.details")}</a>") {
+                    BrowserUtil.open("https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html")
+                }
             }
         }
     }
