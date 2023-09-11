@@ -468,8 +468,6 @@ with what features/services are supported.
 
         <action id="aws.toolkit.getstarted.shareFeedback" class = "software.aws.toolkits.jetbrains.core.gettingstarted.editor.ShareFeedbackInGetStarted"/>
 
-        <action id= "aws.toolkit.AuthDialogAction" class="software.aws.toolkits.jetbrains.core.gettingstarted.editor.AuthDialogAction"/>
-
         <action id="aws.toolkit.toolwindow.explorer.newConnection" class="software.aws.toolkits.jetbrains.core.credentials.actions.ExplorerNewConnectionAction"/>
 
         <action id="aws.toolkit.toolwindow.credentials.rightGroup.more" class="software.aws.toolkits.jetbrains.core.credentials.actions.MoreConnectionActionsAction"/>

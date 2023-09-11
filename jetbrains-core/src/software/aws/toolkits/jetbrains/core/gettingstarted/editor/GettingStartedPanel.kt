@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -26,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.SetupAuthenticationDi
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_TITLE_FONT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_WIDTH
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.SETUP_AUTH_DIALOG
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.TITLE_TEXT_FONTCOLOR
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
@@ -145,7 +143,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
 
             border = IdeBorderFactory.createRoundedBorder().apply {
                 setColor(PanelConstants.TEXT_FONTCOLOR)
-                preferredSize = Dimension(PanelConstants.PANEL_WIDTH, PanelConstants.PANEL_HEIGHT)
+                preferredSize = Dimension(PANEL_WIDTH, PanelConstants.PANEL_HEIGHT)
             }
         }
     }
@@ -201,7 +199,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
 
             border = IdeBorderFactory.createRoundedBorder().apply {
                 setColor(PanelConstants.TEXT_FONTCOLOR)
-                preferredSize = Dimension(PanelConstants.PANEL_WIDTH, PanelConstants.PANEL_HEIGHT)
+                preferredSize = Dimension(PANEL_WIDTH, PanelConstants.PANEL_HEIGHT)
             }
         }
     }
@@ -246,13 +244,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             label(message("codewhisperer.gettingstarted.panel.licence_comment")).applyToComponent { foreground = PanelConstants.TEXT_FONTCOLOR }
                         }
                         row {
-                            text(message("aws.onboarding.getstarted.panel.login_with_iam")) { hyperlinkEvent ->
-                                val actionEvent = AnActionEvent.createFromInputEvent(
-                                    hyperlinkEvent.inputEvent,
-                                    SETUP_AUTH_DIALOG,
-                                    null
-                                ) { if (PlatformDataKeys.PROJECT.`is`(it)) project else null }
-                                ActionManager.getInstance().getAction("aws.toolkit.AuthDialogAction").actionPerformed(actionEvent)
+                            text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
+                                SetupAuthenticationDialog(project).show()
                             }
                         }
                     }
@@ -366,14 +359,6 @@ class ShareFeedbackInGetStarted : DumbAwareAction() {
     override fun actionPerformed(e: AnActionEvent) {
         runInEdt {
             FeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
-        }
-    }
-}
-
-class AuthDialogAction : DumbAwareAction() {
-    override fun actionPerformed(e: AnActionEvent) {
-        runInEdt {
-            SetupAuthenticationDialog(e.getRequiredData(LangDataKeys.PROJECT)).show()
         }
     }
 }
