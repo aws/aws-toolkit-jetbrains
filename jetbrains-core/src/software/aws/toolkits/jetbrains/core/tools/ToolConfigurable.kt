@@ -31,7 +31,11 @@ class ToolConfigurable : BoundConfigurable(message("executableCommon.configurabl
                             it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
                                 manager.validateCompatability(Path.of(path), toolType).toValidationInfo(toolType, component)
                             }
-                        }.applyToComponent {
+                        }/*.validationOnInput {
+                            it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
+                                manager.validateCompatability(Path.of(path), toolType).toValidationInfo(toolType, component)
+                            }
+                        }*/.applyToComponent {
                             setEmptyText(toolType, textField as JBTextField)
                         }.resizableColumn()
                         .align(Align.FILL)
