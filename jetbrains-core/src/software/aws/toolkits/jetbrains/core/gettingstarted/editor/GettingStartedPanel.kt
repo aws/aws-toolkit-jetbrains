@@ -325,7 +325,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         const val AWS_TOOLKIT_DOC = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html"
         const val GITHUB_LINK = "https://github.com/aws/aws-toolkit-jetbrains"
         const val SHARE_FEEDBACK_LINK = "FeedbackDialog"
-        const val SETUP_AUTH_DIALOG = "SetupAuthenticationDialog"
         const val COMMIT_ICON = "<icon src='AllIcons.General.InspectionsOK'/>&nbsp;"
         const val CANCEL_ICON = "<icon src='AllIcons.CodeWithMe.CwmTerminate'/>&nbsp;"
         val TEXT_FONTCOLOR = UIUtil.getLabelForeground()
