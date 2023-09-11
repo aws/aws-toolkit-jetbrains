@@ -27,15 +27,11 @@ class ToolConfigurable : BoundConfigurable(message("executableCommon.configurabl
                             { settings.getExecutablePath(toolType) ?: "" },
                             { settings.setExecutablePath(toolType, it.takeIf { v -> v.isNotBlank() }) }
                         )
-                        .validationOnApply {
+                        .validationOnInput {
                             it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
                                 manager.validateCompatability(Path.of(path), toolType).toValidationInfo(toolType, component)
                             }
-                        }/*.validationOnInput {
-                            it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
-                                manager.validateCompatability(Path.of(path), toolType).toValidationInfo(toolType, component)
-                            }
-                        }*/.applyToComponent {
+                        }.applyToComponent {
                             setEmptyText(toolType, textField as JBTextField)
                         }.resizableColumn()
                         .align(Align.FILL)
