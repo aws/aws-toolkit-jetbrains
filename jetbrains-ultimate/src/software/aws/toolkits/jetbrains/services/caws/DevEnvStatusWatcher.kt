@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
@@ -28,12 +29,11 @@ import software.aws.toolkits.resources.message
 class DevEnvStatusWatcher : StartupActivity {
 
     companion object {
-        fun getInstance(project: Project) = project.service<DevEnvStatusWatcher>()
         private val LOG = getLogger<DevEnvStatusWatcher>()
     }
 
     override fun runActivity(project: Project) {
-        if (!isRunningOnRemoteBackend()) {
+        if (!isRunningOnRemoteBackend() && System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
             return
         }
         val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
@@ -60,6 +60,7 @@ class DevEnvStatusWatcher : StartupActivity {
             while (true) {
                 val statusJson = UnattendedStatusUtil.getStatus()
                 val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
+                // actualInactivityDuration = CawsEnvironmentClient.getInstance().getActivity().timestamp
                 actualInactivityDuration = getActualInactivityDuration(lastActivityTime, lastControllerActivity)
 
                 if (actualInactivityDuration >= (inactivityTimeoutInSeconds - 300)) {
@@ -81,7 +82,7 @@ class DevEnvStatusWatcher : StartupActivity {
                         }
                     } catch (e: Exception) {
                         val preMessage = "Error while checking if Dev Environment should continue working"
-                        LOG.error(preMessage + ": " + e.message)
+                        LOG.error(e){preMessage}
                         notifyError(preMessage, e.message.toString())
                     }
                 }

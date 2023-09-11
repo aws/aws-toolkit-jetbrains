@@ -21,14 +21,14 @@ class DevEnvStatusWatcherTest {
 
     @Test
     fun `If there has been no activity for a few seconds, it returns the number of seconds since last activity`() {
-        val watcher = DevEnvStatusWatcher.getInstance(projectRule.project)
+        val watcher = DevEnvStatusWatcher()
         val actualInactivityDuration = watcher.getActualInactivityDuration(lastActivityTime, secondsRecordedSinceLastPrompt)
         assertThat(actualInactivityDuration).isEqualTo(600)
     }
 
     @Test
     fun `If there is no editor activity after prompt, it returns the number of seconds since last activity`() {
-        val watcher = DevEnvStatusWatcher.getInstance(projectRule.project)
+        val watcher = DevEnvStatusWatcher()
         secondsRecordedSinceLastPrompt = lastActivityTime
         lastActivityTime = 640
         val actualInactivityDuration = watcher.getActualInactivityDuration(lastActivityTime, secondsRecordedSinceLastPrompt)
@@ -37,7 +37,7 @@ class DevEnvStatusWatcherTest {
 
     @Test
     fun `If there is editor activity after prompt, it returns the number of seconds since last activity`() {
-        val watcher = DevEnvStatusWatcher.getInstance(projectRule.project)
+        val watcher = DevEnvStatusWatcher()
         secondsRecordedSinceLastPrompt = 300
         lastActivityTime = 20
         val actualInactivityDuration = watcher.getActualInactivityDuration(lastActivityTime, secondsRecordedSinceLastPrompt)
