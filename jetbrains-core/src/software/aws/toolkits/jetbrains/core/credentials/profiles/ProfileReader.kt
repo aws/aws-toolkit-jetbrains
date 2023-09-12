@@ -94,5 +94,4 @@ private fun validateSsoSection(profile: Profile) {
         it.requiredProperty(ProfileProperty.SSO_START_URL)
         it.requiredProperty(ProfileProperty.SSO_REGION)
     } ?: error(message("credentials.ssoSession.validation_error", profile.name(), ssoSessionName.get()))
-
 }
