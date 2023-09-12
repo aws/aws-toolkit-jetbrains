@@ -4,12 +4,21 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererKotlin
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPhp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRust
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererScala
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererShell
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSql
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
@@ -22,10 +31,22 @@ object CodeWhispererClassifierConstants {
         "Windows 7" to 0.0335,
     )
 
+    val osMapExp: Map<String, Double> = mapOf(
+        "Mac OS X" to -0.0501,
+        "Windows 10" to 0.1411,
+        "Windows" to 0.1182,
+        "win32" to 0.1058,
+    )
+
     // these are used for 100% classifier driven auto trigger
     val triggerTypeCoefficientMap: Map<CodewhispererAutomatedTriggerType, Double> = mapOf(
         CodewhispererAutomatedTriggerType.SpecialCharacters to 0.0624,
         CodewhispererAutomatedTriggerType.Enter to 0.207
+    )
+
+    val triggerTypeCoefficientMapExp: Map<CodewhispererAutomatedTriggerType, Double> = mapOf(
+        CodewhispererAutomatedTriggerType.SpecialCharacters to 0.025,
+        CodewhispererAutomatedTriggerType.Enter to 0.2241
     )
 
     val languageMap: Map<CodeWhispererProgrammingLanguage, Double> = mapOf(
@@ -39,30 +60,66 @@ object CodeWhispererClassifierConstants {
         CodeWhispererJsx.INSTANCE to -0.361063
     )
 
+    val languageMapExp: Map<CodeWhispererProgrammingLanguage, Double> = mapOf(
+        CodeWhispererPython.INSTANCE to -0.2029,
+        CodeWhispererJava.INSTANCE to -0.2286,
+        CodeWhispererJavaScript.INSTANCE to -0.3701,
+        CodeWhispererCsharp.INSTANCE to -0.248,
+        CodeWhispererPlainText.INSTANCE to 0.0,
+        CodeWhispererTypeScript.INSTANCE to -0.492,
+        CodeWhispererTsx.INSTANCE to -0.492,
+        CodeWhispererJsx.INSTANCE to -0.3701,
+        CodeWhispererShell.INSTANCE to -0.4533,
+        CodeWhispererRuby.INSTANCE to -0.4498,
+        CodeWhispererSql.INSTANCE to -0.4419,
+        CodeWhispererRust.INSTANCE to -0.364,
+        CodeWhispererKotlin.INSTANCE to -0.3344,
+        CodeWhispererPhp.INSTANCE to -0.2521,
+        CodeWhispererGo.INSTANCE to -0.196,
+        CodeWhispererScala.INSTANCE to -0.1886,
+        CodeWhispererCpp.INSTANCE to -0.1161
+    )
+
     // other metadata coefficient
     const val lineNumCoefficient = 2.4507
+    const val lineNumCoefficientExp = 0.066
 
     const val cursorOffsetCoefficient = -1.9998
 
     // length of the current line of left_context
     const val lengthOfLeftCurrentCoefficient = -1.0103
+    const val lengthOfLeftCurrentCoefficientExp = -1.217
 
     // length of the previous line of left context
     const val lengthOfLeftPrevCoefficient = 0.4099
+    const val lengthOfLeftPrevCoefficientExp = 0.3403
 
     // lenght of right_context
     const val lengthofRightCoefficient = -0.426
+    const val lengthofRightCoefficientExp = -0.3354
 
     const val lineDiffCoefficient = 0.377
 
     const val prevDecisionAcceptCoefficient = 1.2233
+    const val prevDecisionAcceptCoefficientExp = 0.616
 
     const val prevDecisionRejectCoefficient = -0.1507
+    const val prevDecisionRejectCoefficientExp = -0.1266
 
     const val prevDecisionOtherCoefficient = -0.0093
+    const val prevDecisionOtherCoefficientExp = 0.0
 
     // intercept of logistic regression classifier
     const val intercept = -0.04756079
+    const val interceptExp = 0.14018218
+
+    // length of left context
+    const val lengthLeft0To5Exp = -0.9889
+    const val lengthLeft5To10Exp = -0.5842
+    const val lengthLeft10To20Exp = -0.5162
+    const val lengthLeft20To30Exp = -0.329
+    const val lengthLeft30To40Exp = -0.1525
+    const val lengthLeft40To50Exp = -0.0812
 
     val coefficientsMap = mapOf<String, Double>(
         "False" to -0.1006,
@@ -284,5 +341,354 @@ object CodeWhispererClassifierConstants {
         "|" to -0.2508,
         "}" to -0.9324,
         "~" to -0.2903
+    )
+
+    val coefficientsMapExp = mapOf<String, Double>(
+        "true" to -1.6948,
+        "false" to -1.4366,
+        "throw" to 1.0439,
+        "elif" to 1.0115,
+        "6" to -0.972,
+        "pass" to -0.9688,
+        "8" to -0.9349,
+        "5" to -0.9332,
+        "static" to -0.9325,
+        "0" to -0.9184,
+        "False" to -0.8644,
+        "None" to -0.8633,
+        "True" to -0.8559,
+        "null" to -0.839,
+        "any" to -0.8165,
+        "except" to 0.8086,
+        "7" to -0.7957,
+        "1" to -0.7845,
+        "nil" to -0.7811,
+        "async" to -0.7767,
+        "break" to -0.7731,
+        "4" to -0.7477,
+        "end" to -0.7141,
+        "/" to -0.7045,
+        "(" to 0.6662,
+        "switch" to 0.6539,
+        "2" to -0.651,
+        "9" to -0.6462,
+        "catch" to 0.6222,
+        "\\" to -0.6198,
+        ";" to -0.6126,
+        "continue" to -0.6103,
+        "foreach" to 0.6026,
+        "private" to -0.5876,
+        "final" to -0.5823,
+        "case" to 0.5748,
+        "float" to -0.5673,
+        "for" to 0.5592,
+        "this" to 0.549,
+        "3" to -0.5424,
+        "@" to 0.5399,
+        "list" to 0.5331,
+        "await" to -0.5247,
+        "]" to -0.5212,
+        "struct" to -0.5109,
+        "or" to 0.5054,
+        "try" to -0.4872,
+        "let" to -0.4863,
+        "AS" to 0.4804,
+        "val" to -0.4602,
+        "map" to 0.4598,
+        ": " to 0.4588,
+        "auto" to -0.4562,
+        "delete" to 0.4511,
+        "print" to 0.4486,
+        "export" to -0.4452,
+        ")" to -0.4422,
+        "readonly" to -0.4408,
+        "new" to 0.4236,
+        "$" to 0.4197,
+        "implements" to 0.4044,
+        "W" to 0.3999,
+        "with" to 0.3867,
+        "void" to -0.3861,
+        "=" to 0.3784,
+        "q" to 0.3696,
+        "using" to 0.3695,
+        "boolean" to -0.3687,
+        "namespace" to -0.3659,
+        "const" to -0.3654,
+        " " to 0.3627,
+        "array" to 0.3601,
+        "*" to -0.3529,
+        "mut" to -0.3512,
+        "#" to 0.3477,
+        "range" to 0.3442,
+        "p" to 0.3366,
+        "h" to 0.3311,
+        "require" to 0.3299,
+        "o" to 0.3248,
+        "local" to 0.3203,
+        "import" to -0.3179,
+        "{" to 0.3109,
+        "i" to 0.3106,
+        "params" to 0.3016,
+        "c" to 0.3006,
+        "extern" to -0.2991,
+        "f" to 0.2977,
+        "}" to -0.2956,
+        "r" to 0.29,
+        "if" to 0.289,
+        "u" to 0.2885,
+        "public" to -0.2876,
+        ">" to -0.2833,
+        "package" to 0.2789,
+        "raise" to 0.273,
+        "AND" to -0.2714,
+        "loop" to 0.2686,
+        "a" to 0.2663,
+        "ref" to 0.2598,
+        "abstract" to -0.2419,
+        "n" to 0.24,
+        "+" to -0.236,
+        "e" to 0.2345,
+        "impl" to 0.2337,
+        "E" to 0.2309,
+        "int" to -0.2305,
+        "SELECT" to -0.2297,
+        "ON" to 0.2291,
+        "t" to 0.2255,
+        "then" to 0.223,
+        "m" to 0.221,
+        "virtual" to -0.2206,
+        "module" to 0.2199,
+        "global" to -0.2178,
+        "C" to 0.2145,
+        "in" to 0.214,
+        "mod" to 0.2127,
+        "j" to 0.2106,
+        "R" to 0.2065,
+        "w" to 0.2045,
+        "isset" to 0.2024,
+        "var" to -0.2017,
+        "s" to 0.1994,
+        "func" to 0.1974,
+        "echo" to 0.196,
+        "select" to -0.1946,
+        "assert" to 0.1941,
+        "del" to 0.1911,
+        "exit" to -0.1889,
+        "uint" to -0.1835,
+        "as" to 0.183,
+        "source" to -0.1805,
+        "double" to -0.1799,
+        "l" to 0.1794,
+        "class" to -0.1747,
+        "WHERE" to -0.1707,
+        "d" to 0.1704,
+        "include" to 0.1698,
+        "IF" to -0.1693,
+        "FROM" to 0.1673,
+        "^" to -0.1644,
+        "S" to 0.1631,
+        "|" to 0.1594,
+        "v" to 0.1589,
+        "object" to 0.1587,
+        "debugger" to -0.1567,
+        "b" to 0.1567,
+        "P" to 0.1554,
+        "y" to 0.155,
+        "empty" to 0.1504,
+        "[" to 0.1502,
+        "where" to -0.1499,
+        "." to 0.1473,
+        "lambda" to 0.1473,
+        "operator" to 0.1454,
+        "JOIN" to 0.1448,
+        "else" to -0.1438,
+        "N" to 0.143,
+        "super" to 0.1426,
+        "extends" to 0.1422,
+        "unset" to 0.1418,
+        "g" to 0.1381,
+        "bool" to -0.138,
+        "long" to -0.1377,
+        "K" to 0.1374,
+        "undef" to -0.1365,
+        "internal" to -0.1316,
+        "CASE" to 0.1314,
+        "typeof" to 0.1295,
+        "F" to 0.1289,
+        "event" to 0.1283,
+        "Z" to -0.1276,
+        "finally" to 0.1269,
+        "z" to -0.126,
+        "do" to -0.1239,
+        "from" to 0.1228,
+        "constructor" to 0.12,
+        "!" to 0.118,
+        "&" to 0.1168,
+        "'" to 0.1162,
+        "OR" to 0.1152,
+        "<" to 0.1135,
+        "typedef" to 0.113,
+        "`" to 0.1123,
+        "number" to -0.1099,
+        "Y" to 0.1094,
+        "?" to 0.1086,
+        "DISTINCT" to -0.1079,
+        "A" to 0.1046,
+        "next" to 0.1034,
+        "B" to 0.1,
+        "pub" to -0.0994,
+        "M" to 0.0993,
+        "when" to 0.0986,
+        "short" to -0.0985,
+        "elseif" to 0.0908,
+        "move" to 0.0905,
+        "UPDATE" to 0.0897,
+        "register" to -0.0897,
+        "IS" to 0.0881,
+        "done" to -0.0881,
+        "inline" to -0.0878,
+        "trait" to -0.0874,
+        "mutable" to 0.0865,
+        "_" to 0.0854,
+        "Q" to 0.0846,
+        "X" to 0.0837,
+        "NOT" to -0.0832,
+        "type" to 0.0827,
+        "INTO" to 0.0825,
+        "function" to -0.0812,
+        "not" to -0.0807,
+        "endif" to 0.0781,
+        "x" to 0.0778,
+        "END" to 0.0772,
+        "IN" to 0.0769,
+        "NULL" to 0.0748,
+        "fi" to -0.073,
+        "D" to 0.0716,
+        "keyof" to 0.0713,
+        "crate" to -0.0707,
+        "while" to 0.0702,
+        "dyn" to -0.0698,
+        "%" to -0.0688,
+        "BEGIN" to 0.0681,
+        "self" to -0.068,
+        "string" to 0.068,
+        "bigint" to -0.0678,
+        "H" to 0.0668,
+        "WHEN" to 0.0664,
+        "delegate" to -0.065,
+        "fixed" to 0.0647,
+        "instanceof" to 0.064,
+        "unique" to 0.0631,
+        "~" to 0.0611,
+        "elsif" to 0.0605,
+        "interface" to -0.0587,
+        "signed" to -0.0587,
+        "USING" to -0.0571,
+        "override" to -0.0569,
+        "I" to 0.0566,
+        "begin" to -0.0564,
+        "rescue" to 0.0563,
+        "defer" to -0.0546,
+        "default" to -0.0532,
+        "J" to -0.0529,
+        "O" to 0.0512,
+        "include_once" to -0.0507,
+        "until" to -0.0506,
+        "unsafe" to -0.0473,
+        "alias" to -0.047,
+        "yield" to 0.0466,
+        "template" to 0.0431,
+        "enum" to 0.0429,
+        "protected" to -0.0412,
+        "asm" to -0.0411,
+        "die" to 0.041,
+        "GET" to -0.0403,
+        "RETURN" to -0.0394,
+        "HAVING" to 0.0386,
+        "char" to 0.0379,
+        "AVG" to 0.0378,
+        "FOR" to -0.0371,
+        "RETURNING" to -0.0368,
+        "VALUES" to 0.0367,
+        "native" to -0.0366,
+        "PROCEDURE" to -0.0356,
+        "chan" to -0.0354,
+        "T" to -0.0349,
+        "FUNCTION" to -0.0347,
+        "\"" to 0.0341,
+        "typename" to 0.0341,
+        "stackalloc" to -0.034,
+        "shift" to 0.0328,
+        "throws" to 0.0318,
+        "and" to 0.0312,
+        "G" to -0.0311,
+        "L" to 0.0309,
+        "THEN" to -0.0288,
+        "LIMIT" to -0.0284,
+        "ELSE" to 0.0283,
+        "V" to -0.0271,
+        "decimal" to -0.0269,
+        "LIKE" to -0.0261,
+        "unless" to -0.026,
+        "asserts" to 0.025,
+        "fn" to -0.0248,
+        "checked" to 0.0245,
+        "byte" to 0.0241,
+        "redo" to 0.0225,
+        "reinterpret_cast" to 0.0223,
+        "wchar_t" to 0.022,
+        "INDEX" to 0.0219,
+        "def" to 0.0217,
+        "return" to 0.0209,
+        "transient" to -0.0206,
+        "FETCH" to 0.0202,
+        "exec" to -0.0192,
+        "sealed" to -0.0192,
+        "U" to 0.0187,
+        "eval" to -0.0185,
+        "explicit" to -0.0183,
+        "__LINE__" to 0.018,
+        "typeid" to -0.0179,
+        "MAX" to 0.0174,
+        "synchronized" to -0.0161,
+        "REFERENCES" to -0.0155,
+        "friend" to 0.0154,
+        "never" to -0.0153,
+        "require_once" to -0.0152,
+        "FIRST" to -0.015,
+        "DECLARE" to -0.0142,
+        "out" to -0.0137,
+        "symbol" to -0.012,
+        "fallthrough" to 0.0117,
+        "," to 0.0111,
+        "union" to 0.0109,
+        "-" to 0.0109,
+        "use" to 0.0103,
+        "k" to -0.0102,
+        "sizeof" to 0.0083,
+        "base" to 0.0065,
+        "OPEN" to 0.0064,
+        "SUM" to 0.0062,
+        "implicit" to -0.0059,
+        "declare" to 0.0057,
+        "clone" to -0.0057,
+        "retry" to -0.0057,
+        "UNION" to -0.0055,
+        "go" to -0.0051,
+        "CLOSE" to 0.0046,
+        "ensure" to -0.0046,
+        "lock" to 0.0045,
+        "esac" to -0.0029,
+        "match" to 0.0027,
+        "COUNT" to 0.0026,
+        "unsigned" to -0.0024,
+        "BETWEEN" to -0.0024,
+        "is" to -0.0023,
+        "SET" to -0.0022,
+        "SIGNAL" to 0.0015,
+        "infer" to -0.0014,
+        "VIEW" to 0.0013,
+        "goto" to -0.0003,
+        "CALL" to -0.0002
     )
 }
