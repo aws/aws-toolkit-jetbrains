@@ -374,7 +374,7 @@ class CodeWhispererFileContextProviderTest {
 
             assertThat(supplementalContext?.contents?.get(0)?.content)
                 .isNotNull
-                .isEqualTo("UTG\n$JAVA_MAIN")
+                .isEqualTo(JAVA_MAIN)
         }
 
         runBlocking {

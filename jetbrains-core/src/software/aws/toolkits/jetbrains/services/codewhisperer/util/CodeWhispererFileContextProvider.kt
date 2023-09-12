@@ -254,7 +254,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 } else {
                     listOf(
                         Chunk(
-                            content = CodeWhispererConstants.Utg.UTG_PREFIX + file.content().let {
+                            content = file.content().let {
                                 it.substring(
                                     0,
                                     minOf(it.length, CodeWhispererConstants.Utg.UTG_SEGMENT_SIZE)
