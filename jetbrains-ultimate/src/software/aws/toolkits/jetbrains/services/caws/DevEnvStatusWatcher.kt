@@ -91,7 +91,7 @@ class DevEnvStatusWatcher : StartupActivity {
                         }
 
                         if (ans) {
-                            notifyBackendOfActivity()
+                            notifyBackendOfActivity(System.currentTimeMillis().toString())
                         }
                     } catch (e: Exception) {
                         val preMessage = "Error while checking if Dev Environment should continue working"
