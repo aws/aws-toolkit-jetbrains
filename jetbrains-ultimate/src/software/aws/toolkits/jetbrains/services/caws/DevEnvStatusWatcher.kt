@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.openapi.ui.MessageDialogBuilder
@@ -66,7 +65,7 @@ class DevEnvStatusWatcher : StartupActivity {
             while (true) {
                 val statusJson = UnattendedStatusUtil.getStatus()
                 val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
-                if(lastActivityTime < secondsSinceLastControllerActivity) {
+                if (lastActivityTime < secondsSinceLastControllerActivity) {
                     // update the API in case of any activity
                     notifyBackendOfActivity((System.currentTimeMillis() - (lastActivityTime * 1000)).toString())
                 }
@@ -75,7 +74,7 @@ class DevEnvStatusWatcher : StartupActivity {
                 val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity().timestamp ?: System.currentTimeMillis().toString()
                 val now = Instant.now().toEpochMilli()
                 val durationRecordedSinceLastActivity = now - lastRecordedActivityTime.toLong()
-                val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity/1000
+                val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity / 1000
 
                 if (secondsRecordedSinceLastActivity >= (inactivityTimeoutInSeconds - 300)) {
                     try {
@@ -95,7 +94,7 @@ class DevEnvStatusWatcher : StartupActivity {
                         }
                     } catch (e: Exception) {
                         val preMessage = "Error while checking if Dev Environment should continue working"
-                        LOG.error(e){preMessage}
+                        LOG.error(e) { preMessage }
                         notifyError(preMessage, e.message.toString())
                     }
                 }
