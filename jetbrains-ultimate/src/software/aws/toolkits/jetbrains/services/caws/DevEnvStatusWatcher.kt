@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActi
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import java.time.Instant
 
 class DevEnvStatusWatcher : StartupActivity {
 
@@ -55,17 +56,30 @@ class DevEnvStatusWatcher : StartupActivity {
                 return@launch
             }
             val inactivityTimeoutInSeconds = inactivityTimeout * 60
-            var actualInactivityDuration: Long = 0
-            var lastControllerActivity: Long = 0
+
+            // ensure the JetBrains inactivity tracker and the activity api are in sync
+            val jbActivityStatusJson = UnattendedStatusUtil.getStatus()
+            val jbActivityStatus = jbActivityStatusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
+            notifyBackendOfActivity((System.currentTimeMillis() - (jbActivityStatus * 1000)).toString())
+            var secondsSinceLastControllerActivity = jbActivityStatus
+
             while (true) {
                 val statusJson = UnattendedStatusUtil.getStatus()
                 val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
-                // actualInactivityDuration = CawsEnvironmentClient.getInstance().getActivity().timestamp
-                actualInactivityDuration = getActualInactivityDuration(lastActivityTime, lastControllerActivity)
+                if(lastActivityTime < secondsSinceLastControllerActivity) {
+                    // update the API in case of any activity
+                    notifyBackendOfActivity((System.currentTimeMillis() - (lastActivityTime * 1000)).toString())
+                }
+                secondsSinceLastControllerActivity = lastActivityTime
 
-                if (actualInactivityDuration >= (inactivityTimeoutInSeconds - 300)) {
+                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity().timestamp
+                val now = Instant.now().toEpochMilli()
+                val durationRecordedSinceLastActivity = now - lastRecordedActivityTime?.toLong()!!
+                val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity/1000
+
+                if (secondsRecordedSinceLastActivity >= (inactivityTimeoutInSeconds - 300)) {
                     try {
-                        val inactivityDurationInMinutes = actualInactivityDuration / 60
+                        val inactivityDurationInMinutes = secondsRecordedSinceLastActivity / 60
                         val ans = runBlocking {
                             val continueWorking = withContext(getCoroutineUiContext()) {
                                 return@withContext MessageDialogBuilder.okCancel(
@@ -78,7 +92,6 @@ class DevEnvStatusWatcher : StartupActivity {
 
                         if (ans) {
                             notifyBackendOfActivity()
-                            lastControllerActivity = actualInactivityDuration
                         }
                     } catch (e: Exception) {
                         val preMessage = "Error while checking if Dev Environment should continue working"
@@ -91,19 +104,9 @@ class DevEnvStatusWatcher : StartupActivity {
         }
     }
 
-    fun getActualInactivityDuration(
-        lastActivityTime: Long,
-        lastControllerActivity: Long
-    ): Long = if (lastActivityTime > lastControllerActivity) {
-        lastActivityTime - lastControllerActivity
-    } else {
-        notifyBackendOfActivity()
-        lastActivityTime
-    }
-
-    fun notifyBackendOfActivity() {
+    fun notifyBackendOfActivity(timestamp: String = System.currentTimeMillis().toString()) {
         val request = UpdateActivityRequest(
-            timestamp = System.currentTimeMillis().toString()
+            timestamp = timestamp
         )
         CawsEnvironmentClient.getInstance().putActivityTimestamp(request)
     }
