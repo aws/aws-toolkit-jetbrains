@@ -72,9 +72,9 @@ class DevEnvStatusWatcher : StartupActivity {
                 }
                 secondsSinceLastControllerActivity = lastActivityTime
 
-                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity().timestamp
+                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity().timestamp ?: System.currentTimeMillis().toString()
                 val now = Instant.now().toEpochMilli()
-                val durationRecordedSinceLastActivity = now - lastRecordedActivityTime?.toLong()!!
+                val durationRecordedSinceLastActivity = now - lastRecordedActivityTime.toLong()
                 val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity/1000
 
                 if (secondsRecordedSinceLastActivity >= (inactivityTimeoutInSeconds - 300)) {
