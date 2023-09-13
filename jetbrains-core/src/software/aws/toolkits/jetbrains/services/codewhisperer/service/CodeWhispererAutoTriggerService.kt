@@ -159,9 +159,11 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         val leftContextLines = caretContext.leftFileContext.split(Regex("\r?\n"))
         val leftContextLength = caretContext.leftFileContext.length
         val leftContextAtCurrentLine = caretContext.leftContextOnCurrentLine
-        val keyword = leftContextAtCurrentLine.trim().split(" ").let { tokens ->
+        var keyword = ""
+        val lastToken = leftContextAtCurrentLine.trim().split(" ").let { tokens ->
             if (tokens.size - 1 >= 0) tokens[tokens.size - 1] else ""
         }
+        if (lastToken.length > 1) keyword = lastToken
 
         val lengthOfLeftCurrent = leftContextAtCurrentLine.length
         val lengthOfLeftPrev = if (leftContextLines.size - 2 >= 0) {
