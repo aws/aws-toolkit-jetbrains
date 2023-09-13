@@ -59,7 +59,6 @@ data class SetupAuthenticationDialogState(
 ) {
     private val graph = PropertyGraph()
     val selectedTab = graph.property(SetupAuthenticationTabs.IDENTITY_CENTER)
-
     data class IdentityCenterTabState(
         var profileName: String = "",
         var startUrl: String = "",
@@ -105,15 +104,14 @@ class SetupAuthenticationDialog(
     private val scopes: List<String> = emptyList(),
     private val state: SetupAuthenticationDialogState = SetupAuthenticationDialogState(),
     private val tabSettings: Map<SetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
-    private val promptForIdcPermissionSet: Boolean = true,
+    private val promptForIdcPermissionSet: Boolean = false,
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
     private val builderIdTab = builderIdTab()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    lateinit var roleName: String
-    lateinit var accountId: String
+    private var scopesList: List<String> = emptyList()
 
     init {
         title = message("gettingstarted.setup.title")
@@ -237,7 +235,7 @@ class SetupAuthenticationDialog(
 
         when (selectedTab()) {
             SetupAuthenticationTabs.IDENTITY_CENTER -> {
-                val scopes = if (promptForIdcPermissionSet) {
+                scopesList = if (promptForIdcPermissionSet) {
                     (scopes + IDENTITY_CENTER_ROLE_ACCESS_SCOPE).toSet().toList()
                 } else {
                     scopes
@@ -248,7 +246,7 @@ class SetupAuthenticationDialog(
                     return
                 }
 
-                val rolePopup = IdcRolePopup(project, state.idcTabState.region.id, tokenProvider)
+                val rolePopup = IdcRolePopup(project, state.idcTabState.region.id, tokenProvider, state.idcTabState.rolePopupState)
 
                 // not using showAndGet() because it throws in test mode
                 rolePopup.show()
@@ -266,14 +264,16 @@ class SetupAuthenticationDialog(
             }
         }
 
-        close(OK_EXIT_CODE)
-        SsoSessionConfigurationManager().writeSsoSessionProfileToConfigFile(
+        SsoSessionConfigurationManager().updateSsoSessionProfileToConfigFile(
+            state.idcTabState.profileName,
             state.idcTabState.region.id,
             state.idcTabState.startUrl,
-            scopes,
-            accountId,
-            roleName
+            scopesList,
+            state.idcTabState.rolePopupState.roleInfo?.accountId() ?: "",
+            state.idcTabState.rolePopupState.roleInfo?.roleName() ?: ""
         )
+
+        close(OK_EXIT_CODE)
     }
 
     private fun selectedTab() = wrappers.entries.firstOrNull { (_, wrapper) -> wrapper == rootTabPane.selectedComponent }?.key
@@ -360,7 +360,7 @@ class IdcRolePopup(
     project: Project,
     private val region: String,
     private val tokenProvider: SdkTokenProvider,
-    val state: IdcRolePopupState = IdcRolePopupState()
+    val state: IdcRolePopupState
 ) : DialogWrapper(project) {
     init {
         title = message("gettingstarted.setup.idc.role.title")
@@ -376,6 +376,10 @@ class IdcRolePopup(
             val combo = AsyncComboBox<RoleInfo> { label, value, _ ->
                 value ?: return@AsyncComboBox
                 label.text = "${value.roleName()} (${value.accountId()})"
+                state.roleInfo = RoleInfo.builder()
+                    .roleName(value.roleName())
+                    .accountId(value.accountId())
+                    .build()
             }
 
             Disposer.register(myDisposable, combo)
@@ -417,7 +421,7 @@ fun rolePopupFromConnection(project: Project, connection: AwsBearerTokenConnecti
                 connection.getConnectionSettings().tokenProvider
             }
 
-            IdcRolePopup(project, connection.region, tokenProvider)
+            IdcRolePopup(project, connection.region, tokenProvider, state = IdcRolePopupState(null))
                 .show()
         }
     }

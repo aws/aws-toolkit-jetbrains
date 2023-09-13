@@ -85,10 +85,8 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            val setupAuthenticationDialog = SetupAuthenticationDialog(projectExtension.project, state = state)
-            setupAuthenticationDialog.roleName = "Admin"
-            setupAuthenticationDialog.accountId = "123456"
-            setupAuthenticationDialog.doOKAction()
+            SetupAuthenticationDialog(projectExtension.project, state = state)
+                .doOKAction()
         }
 
         verify {

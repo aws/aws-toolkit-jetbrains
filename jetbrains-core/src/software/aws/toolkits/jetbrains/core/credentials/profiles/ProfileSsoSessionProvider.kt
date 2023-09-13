@@ -28,8 +28,6 @@ class ProfileSsoSessionProvider(profile: Profile) : AwsCredentialsProvider, SdkA
         val ssoSession = profile.requiredProperty(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY)
         val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SsoSessionConstants.SSO_SESSION_SECTION_NAME, ssoSession)
         val clientManager = AwsClientManager.getInstance()
-//        var list = listOf("")
-        // val list = ssoSessionSection?.get()?.property(SsoSessionConstants.SSO_REGISTRATION_SCOPES)
 
         mySsoSection = SsoMetadata(
             ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_REGION).toString(),

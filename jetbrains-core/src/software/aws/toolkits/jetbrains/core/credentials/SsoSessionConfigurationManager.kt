@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.util.io.FileUtil
+import software.amazon.awssdk.profiles.Profile
+import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
 import software.amazon.awssdk.profiles.ProfileProperty.SSO_ACCOUNT_ID
 import software.amazon.awssdk.profiles.ProfileProperty.SSO_REGION
@@ -14,27 +16,75 @@ import software.aws.toolkits.jetbrains.core.credentials.SsoProfileConstants.SSO_
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_REGISTRATION_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
+import java.io.File
+import java.util.Optional
 
 class SsoSessionConfigurationManager {
 
     val profileFile = ProfileFileLocation.configurationFilePath().toFile()
+    private fun writeSsoSessionProfileToConfigFile(
+        ssoProfileName: String,
+        ssoRegion: String,
+        startUrl: String,
+        scopesList: List<String>,
+        accountId: String,
+        roleName: String
+    ) {
+        val ssoSessionSectionName = "${extractOrgID(startUrl)}-$ssoRegion"
+        val configContents =
+            """ 
+            [$SSO_SESSION_PROFILE_NAME $ssoProfileName]
+            $PROFILE_SSO_SESSION_PROPERTY=$ssoSessionSectionName
+            $SSO_ACCOUNT_ID=$accountId
+            $SSO_ROLE_NAME=$roleName            
+            
+            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            $SSO_REGION=$ssoRegion
+            $SSO_START_URL=$startUrl
+            $SSO_REGISTRATION_SCOPES=${scopesList.joinToString(",")} 
+            """.trimIndent()
 
-    // writing sso-session format to the config file
-    fun writeSsoSessionProfileToConfigFile(ssoRegion: String, startUrl: String, scopes: List<String>, accountId: String, roleName: String) {
-        val ssoSessionName = "${extractOrgID(startUrl)}-$ssoRegion"
-
-        val configContents = buildString {
-            // Hardcoded the profile name for now, eventually profileName should populate from Idc dialogbox
-            append("\n[$SSO_SESSION_PROFILE_NAME givenProfileName]\n")
-            append("$PROFILE_SSO_SESSION_PROPERTY=$ssoSessionName\n")
-            append("$SSO_ACCOUNT_ID=$accountId\n")
-            append("$SSO_ROLE_NAME=${roleName}\n\n")
-            append("[$SSO_SESSION_SECTION_NAME $ssoSessionName]\n")
-            append("$SSO_REGION=$ssoRegion\n")
-            append("$SSO_START_URL=$startUrl\n")
-            append("$SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}\n")
-        }
         writeProfileFile(configContents)
+    }
+
+    fun updateSsoSessionProfileToConfigFile(
+        ssoProfileName: String,
+        ssoRegion: String,
+        startUrl: String,
+        scopes: List<String>,
+        accountId: String,
+        roleName: String
+    ) {
+        val ssoSessionSectionName = "${extractOrgID(startUrl)}-$ssoRegion"
+
+        val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoSessionSectionName)
+
+        if (ssoSessionSection?.isEmpty == false) {
+            val existing = """
+            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            $SSO_REGION=${ssoSessionSection.get().property(SSO_REGION)}
+            $SSO_START_URL=${ssoSessionSection.get().property(SSO_START_URL)}
+            $SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}
+            """.trimIndent()
+
+            val updateContents = """
+            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            $SSO_REGION=$ssoRegion
+            $SSO_START_URL=$startUrl
+            $SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}
+            """.trimIndent()
+            replaceUpdatedSsoSession(profileFile, existing, updateContents)
+        } else {
+            // SSO session block doesn't exist, create a new one
+            writeSsoSessionProfileToConfigFile(ssoProfileName, ssoRegion, startUrl, scopes, accountId, roleName)
+        }
+    }
+
+    private fun replaceUpdatedSsoSession(file: File, existingSsoSession: String, updateSsoSession: String) {
+        val content = file.readText()
+        val updatedContent = content.replace(existingSsoSession, updateSsoSession)
+
+        file.writeText(updatedContent)
     }
 
     private fun writeProfileFile(content: String) {
