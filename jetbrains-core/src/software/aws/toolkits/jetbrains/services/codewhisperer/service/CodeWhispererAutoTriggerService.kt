@@ -185,19 +185,13 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
             } else CodeWhispererClassifierConstants.osMap["Mac OS X"] ?: 0.0
         } else if (SystemInfo.isWindows) {
             val osVersion = SystemInfo.OS_VERSION
-            if (osVersion.contains("11", true)) {
+            if (osVersion.contains("11", true) || osVersion.contains("10", true)) {
                 if (isExperimentGroup) {
                     CodeWhispererClassifierConstants.osMapExp["Windows 10"]
                 } else {
                     CodeWhispererClassifierConstants.osMap["Windows 10"]
                 }
-            } else if (osVersion.contains("10", true)) {
-                if (isExperimentGroup) {
-                    CodeWhispererClassifierConstants.osMapExp["Windows 10"]
-                } else {
-                    CodeWhispererClassifierConstants.osMap["Windows 10"]
-                }
-            } else if (osVersion.contains("7", true)) {
+            }  else if (osVersion.contains("7", true)) {
                 if (isExperimentGroup) {
                     CodeWhispererClassifierConstants.osMapExp["Windows"]
                 } else {
