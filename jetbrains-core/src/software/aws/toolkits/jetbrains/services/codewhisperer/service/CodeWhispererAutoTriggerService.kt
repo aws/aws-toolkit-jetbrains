@@ -403,9 +403,9 @@ private enum class VariableTypeNeedNormalize {
         )
 
         private val maxxExp = NormalizedCoefficientsExp(
-            lineNum = 4335.0,
+            lineNum = 4631.0,
             lenLeftCur = 157.0,
-            lenLeftPrev = 173.0,
+            lenLeftPrev = 176.0,
             lenRight = 10239.0,
         )
 
