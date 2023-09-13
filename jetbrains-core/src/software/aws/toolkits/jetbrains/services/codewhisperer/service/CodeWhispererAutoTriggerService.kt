@@ -193,7 +193,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
                 } else {
                     CodeWhispererClassifierConstants.osMap["Windows 10"]
                 }
-            }  else if (osVersion.contains("7", true)) {
+            } else if (osVersion.contains("7", true)) {
                 if (isExperimentGroup) {
                     CodeWhispererClassifierConstants.osMapExp["Windows"]
                 } else {
