@@ -11,7 +11,6 @@ import software.amazon.awssdk.profiles.ProfileProperty.SSO_ACCOUNT_ID
 import software.amazon.awssdk.profiles.ProfileProperty.SSO_REGION
 import software.amazon.awssdk.profiles.ProfileProperty.SSO_ROLE_NAME
 import software.amazon.awssdk.profiles.ProfileProperty.SSO_START_URL
-import software.aws.toolkits.core.credentials.extractOrgID
 import software.aws.toolkits.jetbrains.core.credentials.SsoProfileConstants.SSO_SESSION_PROFILE_NAME
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_REGISTRATION_SCOPES
@@ -30,15 +29,14 @@ class SsoSessionConfigurationManager {
         accountId: String,
         roleName: String
     ) {
-        val ssoSessionSectionName = "${extractOrgID(startUrl)}-$ssoRegion"
         val configContents =
             """ 
             [$SSO_SESSION_PROFILE_NAME $ssoProfileName]
-            $PROFILE_SSO_SESSION_PROPERTY=$ssoSessionSectionName
+            $PROFILE_SSO_SESSION_PROPERTY=$ssoProfileName
             $SSO_ACCOUNT_ID=$accountId
             $SSO_ROLE_NAME=$roleName            
             
-            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            [$SSO_SESSION_SECTION_NAME $ssoProfileName]
             $SSO_REGION=$ssoRegion
             $SSO_START_URL=$startUrl
             $SSO_REGISTRATION_SCOPES=${scopesList.joinToString(",")} 
@@ -55,20 +53,18 @@ class SsoSessionConfigurationManager {
         accountId: String,
         roleName: String
     ) {
-        val ssoSessionSectionName = "${extractOrgID(startUrl)}-$ssoRegion"
-
-        val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoSessionSectionName)
+        val ssoSessionSection: Optional<Profile>? = ProfileFile.defaultProfileFile().getSection(SSO_SESSION_SECTION_NAME, ssoProfileName)
 
         if (ssoSessionSection?.isEmpty == false) {
             val existing = """
-            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            [$SSO_SESSION_SECTION_NAME $ssoProfileName]
             $SSO_REGION=${ssoSessionSection.get().property(SSO_REGION)}
             $SSO_START_URL=${ssoSessionSection.get().property(SSO_START_URL)}
             $SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}
             """.trimIndent()
 
             val updateContents = """
-            [$SSO_SESSION_SECTION_NAME $ssoSessionSectionName]
+            [$SSO_SESSION_SECTION_NAME $ssoProfileName]
             $SSO_REGION=$ssoRegion
             $SSO_START_URL=$startUrl
             $SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}

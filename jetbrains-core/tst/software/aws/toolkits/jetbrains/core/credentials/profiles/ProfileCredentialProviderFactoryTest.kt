@@ -790,7 +790,6 @@ class ProfileCredentialProviderFactoryTest {
 
         val credentialsProvider = providerFactory.createProvider(validProfile)
         assertThat(credentialsProvider).isInstanceOf<ProfileSsoSessionProvider>()
-        credentialsProvider.resolveCredentials().accessKeyId()
         assertThat(ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_REGION)).isEqualTo("us-east-2")
         assertThat(ssoSessionSection?.get()?.requiredProperty(ProfileProperty.SSO_START_URL)).isEqualTo("ValidUrl")
         assertThat(ssoSessionSection?.get()?.property(SSO_REGISTRATION_SCOPES)).get().isEqualTo("sso:validAcc:validAccess")

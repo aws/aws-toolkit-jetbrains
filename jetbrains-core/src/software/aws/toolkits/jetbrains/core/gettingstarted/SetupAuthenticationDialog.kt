@@ -111,7 +111,6 @@ class SetupAuthenticationDialog(
     private val builderIdTab = builderIdTab()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    private var scopesList: List<String> = emptyList()
 
     init {
         title = message("gettingstarted.setup.title")
@@ -232,14 +231,13 @@ class SetupAuthenticationDialog(
         }
 
         applyFields()
-
+        val scopesList = if (promptForIdcPermissionSet) {
+            (scopes + IDENTITY_CENTER_ROLE_ACCESS_SCOPE).toSet().toList()
+        } else {
+            scopes
+        }
         when (selectedTab()) {
             SetupAuthenticationTabs.IDENTITY_CENTER -> {
-                scopesList = if (promptForIdcPermissionSet) {
-                    (scopes + IDENTITY_CENTER_ROLE_ACCESS_SCOPE).toSet().toList()
-                } else {
-                    scopes
-                }
                 val tokenProvider = loginSso(project, state.idcTabState.startUrl, state.idcTabState.region.id, scopes)
 
                 if (!promptForIdcPermissionSet) {
