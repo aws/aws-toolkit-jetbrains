@@ -28,6 +28,7 @@ import com.intellij.util.ui.components.BorderLayoutPanel
 import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo
@@ -274,6 +275,7 @@ class SetupAuthenticationDialog(
             textField()
                 .comment(message("gettingstarted.setup.idc.profile.comment"))
                 .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
+                .errorOnApply(message("gettingstarted.setup.idc.profile.error_message")) { ProfileFile.defaultProfileFile().profiles().containsKey(it.text) }
                 .bindText(state.idcTabState::profileName)
         }
 
