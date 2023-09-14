@@ -267,8 +267,8 @@ class SetupAuthenticationDialog(
             state.idcTabState.region.id,
             state.idcTabState.startUrl,
             scopesList,
-            state.idcTabState.rolePopupState.roleInfo?.accountId() ?: "",
-            state.idcTabState.rolePopupState.roleInfo?.roleName() ?: ""
+            state.idcTabState.rolePopupState.roleInfo?.accountId().orEmpty(),
+            state.idcTabState.rolePopupState.roleInfo?.roleName().orEmpty()
         )
 
         close(OK_EXIT_CODE)
