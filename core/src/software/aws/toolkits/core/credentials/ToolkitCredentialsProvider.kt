@@ -136,4 +136,4 @@ private const val SONO_URL = "https://view.awsapps.com/start"
 
 const val DEFAULT_SSO_REGION = "us-east-1"
 
-fun extractOrgID(startUrl: String) = startUrl.removePrefix("https://").removeSuffix(".awsapps.com/start")
+private fun extractOrgID(startUrl: String) = startUrl.removePrefix("https://").removeSuffix(".awsapps.com/start")

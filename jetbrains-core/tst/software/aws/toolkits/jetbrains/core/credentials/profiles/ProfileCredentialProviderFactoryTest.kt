@@ -734,13 +734,7 @@ class ProfileCredentialProviderFactoryTest {
         return factory
     }
 
-    private fun findCredentialIdentifier(profileName: String): CredentialIdentifier {
-        try {
-            return credentialChangeEvent.allValues.flatMap { it.added }.first { it.id == "profile:$profileName" }
-        } catch (e: Exception) {
-            throw e
-        }
-    }
+    private fun findCredentialIdentifier(profileName: String) = credentialChangeEvent.allValues.flatMap { it.added }.first { it.id == "profile:$profileName" }
 
     private fun ProfileCredentialProviderFactory.createProvider(validProfile: CredentialIdentifier) =
         this.createAwsCredentialProvider(
