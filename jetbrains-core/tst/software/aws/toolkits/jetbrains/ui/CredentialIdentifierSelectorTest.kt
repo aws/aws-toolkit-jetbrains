@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.ui
 
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
+import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.layout.applyToComponent
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -15,6 +17,8 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.aCredentialsIdentifier
 import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.credentialSelector
 import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.validCredentialSelector
+import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.validateSelection
+import software.aws.toolkits.jetbrains.utils.ui.selected
 
 class CredentialIdentifierSelectorTest {
     private lateinit var credentialIdentifiers: List<CredentialIdentifier>
@@ -86,23 +90,27 @@ class CredentialIdentifierSelectorTest {
     inner class ValidSelectorUiDslTest {
         lateinit var credentialIdentifierUiDsl: CredentialIdentifier
         lateinit var selector: CredentialIdentifierSelector
-        fun panel() = validatingPanel(disposableRule.disposable) {
+        fun panel() = com.intellij.ui.dsl.builder.panel {
             row {
-                validCredentialSelector(::credentialIdentifierUiDsl, credentialIdentifiers).applyToComponent {
-                    selector = this
+                selector = CredentialIdentifierSelector(credentialIdentifiers)
+                cell(selector).bindItem(::credentialIdentifierUiDsl.toNullableProperty()).validationOnInput{
+                    this.validateSelection(it)
+                }.validationOnApply{
+                    this.validateSelection(it)
                 }
             }
         }
-    }
+        }
+
+
 
     inner class SelectorUiDslTest {
         var credentialIdentifierUiDsl: CredentialIdentifier? = null
         lateinit var selector: CredentialIdentifierSelector
-        fun panel() = validatingPanel(disposableRule.disposable) {
+        fun panel() = com.intellij.ui.dsl.builder.panel {
             row {
-                credentialSelector(::credentialIdentifierUiDsl, credentialIdentifiers).applyToComponent {
-                    selector = this
-                }
+                selector = CredentialIdentifierSelector(credentialIdentifiers)
+                cell(selector).bindItem(::credentialIdentifierUiDsl.toNullableProperty())
             }
         }
     }
@@ -110,10 +118,7 @@ class CredentialIdentifierSelectorTest {
     @Test
     fun `empty late init in ui dsl leads to no selection`() {
         val test = ValidSelectorUiDslTest()
-        test.panel()
-
-        assertThat(test.selector.isSelectionValid()).isFalse
-        assertThat(test.selector.getSelectedValidCredentialIdentifier()).isNull()
+        assertThatThrownBy { test.credentialIdentifierUiDsl }.isInstanceOf(UninitializedPropertyAccessException::class.java)
     }
 
     @Test
@@ -122,7 +127,6 @@ class CredentialIdentifierSelectorTest {
         val selection = credentialIdentifiers.random()
         test.credentialIdentifierUiDsl = selection
         test.panel()
-
         assertThat(test.selector.isSelectionValid()).isTrue
         assertThat(test.selector.getSelectedValidCredentialIdentifier()).isEqualTo(selection)
     }
@@ -130,24 +134,24 @@ class CredentialIdentifierSelectorTest {
     @Test
     fun `valid selection is applied to field`() {
         val test = ValidSelectorUiDslTest()
-        val panel = test.panel()
-
         val selection = credentialIdentifiers.random()
-        test.selector.setSelectedCredentialIdentifier(selection)
+        test.credentialIdentifierUiDsl = selection
+        val panel = test.panel()
         panel.apply()
-
-        assertThat(panel.runValidation()).isTrue
+        assertThat(panel.validateAll()).isEmpty()
         assertThat(test.credentialIdentifierUiDsl).isEqualTo(selection)
     }
 
     @Test
     fun `invalid selection is not applied to field when valid is required`() {
         val test = ValidSelectorUiDslTest()
+        assertThatThrownBy { test.credentialIdentifierUiDsl }.isInstanceOf(UninitializedPropertyAccessException::class.java)
+        val selection = CredentialIdentifierSelector.InvalidCredentialIdentifier("random")
+        test.credentialIdentifierUiDsl = selection
         val panel = test.panel()
         panel.apply()
+        assertThat(panel.isValid).isFalse
 
-        assertThat(panel.runValidation()).isFalse
-        assertThatThrownBy { test.credentialIdentifierUiDsl }.isInstanceOf(UninitializedPropertyAccessException::class.java)
     }
 
     @Test
@@ -155,8 +159,7 @@ class CredentialIdentifierSelectorTest {
         val test = SelectorUiDslTest()
         val panel = test.panel()
         panel.apply()
-
-        assertThat(panel.runValidation()).isTrue
+        assertThat(panel.validateAll()).isEmpty()
         assertThat(test.credentialIdentifierUiDsl).isNull()
     }
 }

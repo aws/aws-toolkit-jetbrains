@@ -14,6 +14,8 @@ import com.intellij.ui.layout.PropertyBinding
 import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.ValidationInfoBuilder
 import com.intellij.ui.layout.applyToComponent
+import org.jetbrains.annotations.TestOnly
+import org.junit.Test
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialType
@@ -83,7 +85,7 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
      */
     fun getSelectedValidCredentialIdentifier(): CredentialIdentifier? = comboBoxModel.selected?.takeIf { isSelectionValid() }
 
-    private class InvalidCredentialIdentifier(override val id: String) : CredentialIdentifier {
+    class InvalidCredentialIdentifier(override val id: String) : CredentialIdentifier {
         override val displayName: String = message("credentials.invalid.not_found", id)
         override val factoryId: String = "InvalidCredentialIdentifier"
         override val credentialType: CredentialType? = null
@@ -120,7 +122,7 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
                 .withValidationOnInput { validateSelection(it) }
         }
 
-        private fun ValidationInfoBuilder.validateSelection(selector: CredentialIdentifierSelector): ValidationInfo? = if (!selector.isSelectionValid()) {
+        fun ValidationInfoBuilder.validateSelection(selector: CredentialIdentifierSelector): ValidationInfo? = if (!selector.isSelectionValid()) {
             error(message("credentials.invalid.invalid_selection"))
         } else {
             null
@@ -139,6 +141,7 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
                     binding
                 )
         }
+
     }
 }
 
