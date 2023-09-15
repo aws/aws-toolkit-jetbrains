@@ -381,7 +381,7 @@ class CodeWhispererService {
                     false,
                     false,
                     "",
-                    CodewhispererCompletionType.Unknown
+                    CodewhispererCompletionType.Line
                 ),
                 -1,
                 CodewhispererSuggestionState.Empty,
