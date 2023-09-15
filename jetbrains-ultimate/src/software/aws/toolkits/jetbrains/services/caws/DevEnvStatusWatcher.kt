@@ -33,7 +33,7 @@ class DevEnvStatusWatcher : StartupActivity {
     }
 
     override fun runActivity(project: Project) {
-        if (!isRunningOnRemoteBackend() && System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
+        if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
             return
         }
         val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
@@ -71,7 +71,12 @@ class DevEnvStatusWatcher : StartupActivity {
                 }
                 secondsSinceLastControllerActivity = lastActivityTime
 
-                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity().timestamp ?: System.currentTimeMillis().toString()
+                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity()?.timestamp
+                if(lastRecordedActivityTime == null) {
+                    LOG.error("Couldn't retrieve last recorded activity from API")
+                    return@launch
+                }
+
                 val now = Instant.now().toEpochMilli()
                 val durationRecordedSinceLastActivity = now - lastRecordedActivityTime.toLong()
                 val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity / 1000

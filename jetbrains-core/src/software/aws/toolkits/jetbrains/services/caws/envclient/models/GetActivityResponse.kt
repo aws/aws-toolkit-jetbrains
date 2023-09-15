@@ -4,5 +4,5 @@
 package software.aws.toolkits.jetbrains.services.caws.envclient.models
 
 data class GetActivityResponse(
-    val timestamp: String?
+    val timestamp: String
 )

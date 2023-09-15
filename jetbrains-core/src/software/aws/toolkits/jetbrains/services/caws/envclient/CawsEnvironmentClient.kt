@@ -91,13 +91,16 @@ class CawsEnvironmentClient(
         return objectMapper.readValue(response.entity.content)
     }
 
-    fun getActivity(): GetActivityResponse = try {
+    fun getActivity(): GetActivityResponse? = try {
         val request = HttpGet("$endpoint/activity")
         val response = execute(request)
+        if(response.statusLine.statusCode == 400) {
+            throw Exception("Inactivity tracking may not enabled")
+        }
         objectMapper.readValue<GetActivityResponse>(response.entity.content)
     } catch (e: Exception) {
         LOG.error(e) { "Couldn't parse response from /activity API" }
-        GetActivityResponse(timestamp = null)
+        null
     }
 
     fun putActivityTimestamp(request: UpdateActivityRequest) {
