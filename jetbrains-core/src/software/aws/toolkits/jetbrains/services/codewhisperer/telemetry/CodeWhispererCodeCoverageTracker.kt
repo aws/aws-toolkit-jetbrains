@@ -9,14 +9,17 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.refactoring.suggested.range
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import info.debatty.java.stringsimilarity.Levenshtein
 import org.jetbrains.annotations.TestOnly
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -27,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIamIdentityCenterConnection
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
 import java.time.Instant
@@ -35,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 abstract class CodeWhispererCodeCoverageTracker(
+    private val project: Project,
     private val timeWindowInSec: Long,
     private val language: CodeWhispererProgrammingLanguage,
     private val rangeMarkers: MutableList<RangeMarker>,
@@ -67,7 +72,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     @Synchronized
     fun activateTrackerIfNotActive() {
         // tracker will only be activated if and only if IsTelemetryEnabled = true && isActive = false
-        if (!isTelemetryEnabled() || isTrackerActive()) return
+        if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
 
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
@@ -76,10 +81,8 @@ abstract class CodeWhispererCodeCoverageTracker(
                 override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
                     if (states.requestContext.fileContextInfo.programmingLanguage != language) return
                     rangeMarkers.add(rangeMarker)
-                    val originalRecommendation = extractRangeMarkerString(rangeMarker)
-                    originalRecommendation?.let {
-                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, it)
-                    }
+                    val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
+                    rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
                 }
             }
         )
@@ -95,7 +98,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             }
         )
         startTime = Instant.now()
-        isActive.set(true)
         scheduleCodeWhispererCodeCoverageTracker()
     }
 
@@ -110,6 +112,9 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
         // This case capture IDE reformatting the document, which will be blank string
         if (isDocumentEventFromReformatting(event)) return
+
+        // Don't capture deletion events
+        if (event.newLength <= event.oldLength) return
         incrementTotalTokens(event.document, event.newLength - event.oldLength)
     }
 
@@ -177,6 +182,8 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     internal fun emitCodeWhispererCodeContribution() {
+        // If the user is inactive, don't emit the telemetry
+        if (percentage == null) return
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
             // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
@@ -193,6 +200,22 @@ abstract class CodeWhispererCodeCoverageTracker(
             val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
             runReadAction {
                 incrementAcceptedTokens(rangeMarker.document, delta)
+            }
+        }
+
+        runIfIamIdentityCenterConnection(project) {
+            try {
+                val response = CodeWhispererClientAdaptor.getInstance(project).putCodePercentageTelemetry(
+                    language,
+                    acceptedTokensSize,
+                    totalTokensSize
+                )
+                LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
+            } catch (e: Exception) {
+                val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                LOG.debug {
+                    "Failed to send code percentage telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                }
             }
         }
 
@@ -234,14 +257,15 @@ abstract class CodeWhispererCodeCoverageTracker(
         private val instances: MutableMap<CodeWhispererProgrammingLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
         fun calculatePercentage(acceptedTokens: Int, totalTokens: Int): Int = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToInt()
-        fun getInstance(language: CodeWhispererProgrammingLanguage): CodeWhispererCodeCoverageTracker = when (val instance = instances[language]) {
-            null -> {
-                val newTracker = DefaultCodeWhispererCodeCoverageTracker(language)
-                instances[language] = newTracker
-                newTracker
+        fun getInstance(project: Project, language: CodeWhispererProgrammingLanguage): CodeWhispererCodeCoverageTracker =
+            when (val instance = instances[language]) {
+                null -> {
+                    val newTracker = DefaultCodeWhispererCodeCoverageTracker(project, language)
+                    instances[language] = newTracker
+                    newTracker
+                }
+                else -> instance
             }
-            else -> instance
-        }
 
         @TestOnly
         fun getInstancesMap(): MutableMap<CodeWhispererProgrammingLanguage, CodeWhispererCodeCoverageTracker> {
@@ -251,7 +275,8 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 }
 
-class DefaultCodeWhispererCodeCoverageTracker(language: CodeWhispererProgrammingLanguage) : CodeWhispererCodeCoverageTracker(
+class DefaultCodeWhispererCodeCoverageTracker(project: Project, language: CodeWhispererProgrammingLanguage) : CodeWhispererCodeCoverageTracker(
+    project,
     5 * TOTAL_SECONDS_IN_MINUTE,
     language,
     mutableListOf(),

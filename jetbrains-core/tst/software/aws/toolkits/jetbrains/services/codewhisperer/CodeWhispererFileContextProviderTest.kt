@@ -78,7 +78,7 @@ class CodeWhispererFileContextProviderTest {
         assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
 
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
-        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(1000)
+        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
     }
 
     @Test
@@ -184,12 +184,12 @@ class CodeWhispererFileContextProviderTest {
         runBlocking {
             var context = aFileContextInfo(CodeWhispererCsharp.INSTANCE)
 
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
 
             context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
         }
     }
 
