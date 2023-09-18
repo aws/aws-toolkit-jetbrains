@@ -1,3 +1,10 @@
+# _1.78_ (2023-09-08)
+- **(Bug Fix)** Fix 'not recognzied as an ... command' when connecting to CodeCatalyst Dev Environments on Windows
+
+# _1.77_ (2023-08-29)
+- **(Removal)** Removed support for 2022.2.x IDEs
+- **(Removal)** Removed support for Gateway 2023.1
+
 # _1.76_ (2023-08-15)
 - **(Feature)** CodeWhisperer: Improve file context fetching for Python Typescript Javascript source files
 - **(Feature)** CodeWhisperer: Improve file context fetching for Java test files
