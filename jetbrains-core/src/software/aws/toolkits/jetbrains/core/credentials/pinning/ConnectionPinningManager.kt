@@ -3,28 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.pinning
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.MessageDialogBuilder
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.UiTelemetry
 import java.util.concurrent.ConcurrentHashMap
 
 interface FeatureWithPinnedConnection {
@@ -120,11 +111,6 @@ class DefaultConnectionPinningManager :
     }
 
     override fun dispose() {}
-
-    private fun bearerTokenConnectionString(oldConnection: ToolkitConnection?, newConnection: ToolkitConnection): String {
-        val connection = if (oldConnection is AwsBearerTokenConnection) oldConnection else newConnection
-        return if (connection.isSono()) message("aws_builder_id.service_name") else message("iam_identity_center.name")
-    }
 }
 
 data class ConnectionPinningManagerState(

@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.core.credentials.pinning
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.ui.TestDialog
-import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
@@ -17,8 +15,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsCredentialConnection
