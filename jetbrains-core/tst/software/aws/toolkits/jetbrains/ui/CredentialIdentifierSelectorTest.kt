@@ -7,7 +7,6 @@ import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.toNullableProperty
-import com.intellij.ui.layout.applyToComponent
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -15,10 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.aCredentialsIdentifier
-import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.credentialSelector
-import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.validCredentialSelector
 import software.aws.toolkits.jetbrains.ui.CredentialIdentifierSelector.Companion.validateSelection
-import software.aws.toolkits.jetbrains.utils.ui.selected
 
 class CredentialIdentifierSelectorTest {
     private lateinit var credentialIdentifiers: List<CredentialIdentifier>
@@ -93,16 +89,14 @@ class CredentialIdentifierSelectorTest {
         fun panel() = com.intellij.ui.dsl.builder.panel {
             row {
                 selector = CredentialIdentifierSelector(credentialIdentifiers)
-                cell(selector).bindItem(::credentialIdentifierUiDsl.toNullableProperty()).validationOnInput{
+                cell(selector).bindItem(::credentialIdentifierUiDsl.toNullableProperty()).validationOnInput {
                     this.validateSelection(it)
-                }.validationOnApply{
+                }.validationOnApply {
                     this.validateSelection(it)
                 }
             }
         }
-        }
-
-
+    }
 
     inner class SelectorUiDslTest {
         var credentialIdentifierUiDsl: CredentialIdentifier? = null
@@ -151,7 +145,6 @@ class CredentialIdentifierSelectorTest {
         val panel = test.panel()
         panel.apply()
         assertThat(panel.isValid).isFalse
-
     }
 
     @Test

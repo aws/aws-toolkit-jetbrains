@@ -14,8 +14,6 @@ import com.intellij.ui.layout.PropertyBinding
 import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.ValidationInfoBuilder
 import com.intellij.ui.layout.applyToComponent
-import org.jetbrains.annotations.TestOnly
-import org.junit.Test
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialType
@@ -141,7 +139,6 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
                     binding
                 )
         }
-
     }
 }
 
