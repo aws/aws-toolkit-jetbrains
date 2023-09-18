@@ -19,7 +19,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -54,34 +53,39 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun confirmConfigFileCreated_bothFilesDoNotExist() {
-        val writer = mock<ConfigFileWriter> {
-            on { createFile(any()) }.doAnswer { it.getArgument<File>(0).writeText("hello") }
-        }
-
         val configFile = File(folderRule.newFolder(), "config")
         val credFile = File(folderRule.newFolder(), "credentials")
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+            on { createConfigFile() }.doAnswer { it.getArgument<File>(0).writeText("hello") }
+        }
+
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
-        verify(writer).createFile(configFile)
+        verify(writer).createConfigFile()
 
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("config") }
     }
 
     @Test
     fun bothFilesOpened_bothFilesExists() {
-        val writer = mock<ConfigFileWriter>()
-
         val configFile = folderRule.newFile("config")
         val credFile = folderRule.newFile("credentials")
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+        }
+
         // IDE interprets blank files with no extension as binary
         configFile.writeText("config")
         credFile.writeText("cred")
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
@@ -95,13 +99,16 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun configFileOpened_onlyConfigExists() {
-        val writer = mock<ConfigFileWriter>()
-
         val configFile = folderRule.newFile("config")
-        val credFile = File(folderRule.newFolder(), "credentials")
+        val credFile = folderRule.newFile("credentials")
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+        }
+
         configFile.writeText("config")
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
@@ -113,13 +120,16 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun credentialFileOpened_onlyCredentialsExists() {
-        val writer = mock<ConfigFileWriter>()
-
-        val configFile = File(folderRule.newFolder(), "config")
+        val configFile = folderRule.newFile("config")
         val credFile = folderRule.newFile("credentials")
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+        }
+
         credFile.writeText("cred")
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
@@ -131,10 +141,12 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun emptyFileCanBeOpenedAsPlainText() {
-        val writer = mock<ConfigFileWriter>()
-
-        val configFile = File(folderRule.newFolder(), "config")
+        val configFile = folderRule.newFile("config")
         val credFile = folderRule.newFile("credentials")
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+        }
 
         // Mark the file as unknown for the purpose of the test. This is needed because some
         // other extensions can have weird file type association patterns (like Docker having
@@ -149,7 +161,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
             }
         }
 
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.OK)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
@@ -166,12 +178,14 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
     @Test
     fun negativeConfirmationDoesNotCreateFile() {
-        val writer = mock<ConfigFileWriter>()
+        val configFile = folderRule.newFile("config")
+        val credFile = folderRule.newFile("credentials")
+        val writer = mock<ConfigFilesFacade> {
+            on { configPath }.thenReturn(configFile.toPath())
+            on { credentialsPath }.thenReturn(credFile.toPath())
+        }
 
-        val configFile = File(folderRule.newFolder(), "config")
-        val credFile = File(folderRule.newFolder(), "credentials")
-
-        val sut = CreateOrUpdateCredentialProfilesAction(writer, configFile, credFile)
+        val sut = CreateOrUpdateCredentialProfilesAction(writer)
         TestDialogManager.setTestDialog(TestDialog.NO)
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
