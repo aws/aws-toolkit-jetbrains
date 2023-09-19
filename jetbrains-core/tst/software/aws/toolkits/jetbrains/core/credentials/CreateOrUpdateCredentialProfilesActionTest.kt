@@ -19,6 +19,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -59,7 +60,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
         val writer = mock<ConfigFilesFacade> {
             on { configPath }.thenReturn(configFile.toPath())
             on { credentialsPath }.thenReturn(credFile.toPath())
-            on { createConfigFile() }.doAnswer { it.getArgument<File>(0).writeText("hello") }
+            on { createConfigFile() }.doAnswer { configFile.writeText("hello") }
         }
 
         val sut = CreateOrUpdateCredentialProfilesAction(writer)
@@ -90,6 +91,8 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
+        verify(writer, atLeastOnce()).configPath
+        verify(writer, atLeastOnce()).credentialsPath
         verifyNoMoreInteractions(writer)
 
         assertThat(fileEditorManager.openFiles).hasSize(2)
@@ -101,6 +104,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
     fun configFileOpened_onlyConfigExists() {
         val configFile = folderRule.newFile("config")
         val credFile = folderRule.newFile("credentials")
+        credFile.delete()
         val writer = mock<ConfigFilesFacade> {
             on { configPath }.thenReturn(configFile.toPath())
             on { credentialsPath }.thenReturn(credFile.toPath())
@@ -113,6 +117,8 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
+        verify(writer, atLeastOnce()).configPath
+        verify(writer, atLeastOnce()).credentialsPath
         verifyNoMoreInteractions(writer)
 
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("config") }
@@ -121,6 +127,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
     @Test
     fun credentialFileOpened_onlyCredentialsExists() {
         val configFile = folderRule.newFile("config")
+        configFile.delete()
         val credFile = folderRule.newFile("credentials")
         val writer = mock<ConfigFilesFacade> {
             on { configPath }.thenReturn(configFile.toPath())
@@ -134,6 +141,8 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
+        verify(writer, atLeastOnce()).configPath
+        verify(writer, atLeastOnce()).credentialsPath
         verifyNoMoreInteractions(writer)
 
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo("credentials") }
@@ -143,6 +152,7 @@ class CreateOrUpdateCredentialProfilesActionTest {
     fun emptyFileCanBeOpenedAsPlainText() {
         val configFile = folderRule.newFile("config")
         val credFile = folderRule.newFile("credentials")
+        configFile.delete()
         val writer = mock<ConfigFilesFacade> {
             on { configPath }.thenReturn(configFile.toPath())
             on { credentialsPath }.thenReturn(credFile.toPath())
@@ -166,6 +176,8 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
+        verify(writer, atLeastOnce()).configPath
+        verify(writer, atLeastOnce()).credentialsPath
         verifyNoMoreInteractions(writer)
 
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying {
@@ -190,6 +202,8 @@ class CreateOrUpdateCredentialProfilesActionTest {
 
         sut.actionPerformed(TestActionEvent { projectRule.project })
 
+        verify(writer, atLeastOnce()).configPath
+        verify(writer, atLeastOnce()).credentialsPath
         verifyNoMoreInteractions(writer)
     }
 }
