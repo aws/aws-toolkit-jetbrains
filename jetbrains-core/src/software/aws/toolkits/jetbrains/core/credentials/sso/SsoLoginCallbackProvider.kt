@@ -36,7 +36,7 @@ object SsoPrompt : SsoLoginCallback {
 
             if (result) {
                 AwsTelemetry.loginWithBrowser(project = null, Result.Succeeded, CredentialType.SsoProfile)
-                BrowserUtil.browse(authorization.verificationUri)
+                BrowserUtil.browse(authorization.verificationUriComplete)
             } else {
                 AwsTelemetry.loginWithBrowser(project = null, Result.Cancelled, CredentialType.SsoProfile)
                 throw ProcessCanceledException(IllegalStateException(message("credentials.sso.login.cancelled")))
@@ -62,7 +62,7 @@ object BearerTokenPrompt : SsoLoginCallback {
 
             if (codeCopied) {
                 AwsTelemetry.loginWithBrowser(project = null, Result.Succeeded, CredentialType.BearerToken)
-                BrowserUtil.browse(authorization.verificationUri)
+                BrowserUtil.browse(authorization.verificationUriComplete)
             } else {
                 AwsTelemetry.loginWithBrowser(project = null, Result.Cancelled, CredentialType.BearerToken)
             }
