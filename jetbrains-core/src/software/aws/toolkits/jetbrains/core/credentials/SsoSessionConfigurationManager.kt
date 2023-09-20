@@ -21,7 +21,7 @@ import java.util.Optional
 class SsoSessionConfigurationManager {
 
     val profileFile = ProfileFileLocation.configurationFilePath().toFile()
-    private fun writeSsoSessionProfileToConfigFile(
+    fun writeSsoSessionProfileToConfigFile(
         ssoProfileName: String,
         ssoRegion: String,
         startUrl: String,
@@ -29,18 +29,17 @@ class SsoSessionConfigurationManager {
         accountId: String,
         roleName: String
     ) {
-        val configContents =
-            """ 
+        val configContents = """
             [$SSO_SESSION_PROFILE_NAME $ssoProfileName]
             $PROFILE_SSO_SESSION_PROPERTY=$ssoProfileName
             $SSO_ACCOUNT_ID=$accountId
-            $SSO_ROLE_NAME=$roleName            
+            $SSO_ROLE_NAME=$roleName
             
             [$SSO_SESSION_SECTION_NAME $ssoProfileName]
             $SSO_REGION=$ssoRegion
             $SSO_START_URL=$startUrl
-            $SSO_REGISTRATION_SCOPES=${scopesList.joinToString(",")} 
-            """.trimIndent()
+            $SSO_REGISTRATION_SCOPES=${scopesList.joinToString(",")}
+        """.trimIndent()
 
         writeProfileFile(configContents)
     }
