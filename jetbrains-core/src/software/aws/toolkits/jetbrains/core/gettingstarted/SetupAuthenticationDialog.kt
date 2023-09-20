@@ -263,6 +263,9 @@ class SetupAuthenticationDialog(
         }
 
         SsoSessionConfigurationManager().updateSsoSessionProfileToConfigFile(
+            "${state.idcTabState.profileName}-" +
+                "${state.idcTabState.rolePopupState.roleInfo?.accountId()}-" +
+                "${state.idcTabState.rolePopupState.roleInfo?.roleName()}",
             state.idcTabState.profileName,
             state.idcTabState.region.id,
             state.idcTabState.startUrl,

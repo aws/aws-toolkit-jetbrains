@@ -16,12 +16,13 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConst
 
 class SsoSessionConfigurationManagerTest {
     private lateinit var ssoSessionConfigurationManager: SsoSessionConfigurationManager
-    private val testProfileName = "testProfile"
-    private val testRegion = "us-west-1"
-    private val testStartUrl = "https://example.com"
-    private val testScopesList = listOf("scope1", "scope2")
-    private val testAccountId = "123456789"
-    private val testRoleName = "TestRole"
+    private val idcProfileName = "testProfile-123456789-TestRole"
+    private val ssoSessionProfileName = "testProfile"
+    private val ssoRegion = "us-west-1"
+    private val ssoStartUrl = "https://example.com"
+    private val scopesList = listOf("scope1", "scope2")
+    private val accountId = "123456789"
+    private val roleName = "TestRole"
 
     @BeforeEach
     fun setUp() {
@@ -31,25 +32,26 @@ class SsoSessionConfigurationManagerTest {
     @Test
     fun `write sso-session profile to config file`() {
         ssoSessionConfigurationManager.writeSsoSessionProfileToConfigFile(
-            testProfileName,
-            testRegion,
-            testStartUrl,
-            testScopesList,
-            testAccountId,
-            testRoleName
+            idcProfileName,
+            ssoSessionProfileName,
+            ssoRegion,
+            ssoStartUrl,
+            scopesList,
+            accountId,
+            roleName
         )
 
         val fileContents = ssoSessionConfigurationManager.profileFile.readText()
         val expectedContents = """
-            [$SSO_SESSION_PROFILE_NAME $testProfileName]
-            $PROFILE_SSO_SESSION_PROPERTY=$testProfileName
-            $SSO_ACCOUNT_ID=$testAccountId
-            $SSO_ROLE_NAME=$testRoleName
+            [$SSO_SESSION_PROFILE_NAME $idcProfileName]
+            $PROFILE_SSO_SESSION_PROPERTY=$ssoSessionProfileName
+            $SSO_ACCOUNT_ID=$accountId
+            $SSO_ROLE_NAME=$roleName
             
-            [$SSO_SESSION_SECTION_NAME $testProfileName]
-            $SSO_REGION=$testRegion
-            $SSO_START_URL=$testStartUrl
-            ${SsoSessionConstants.SSO_REGISTRATION_SCOPES}=${testScopesList.joinToString(",")}
+            [$SSO_SESSION_SECTION_NAME $ssoSessionProfileName]
+            $SSO_REGION=$ssoRegion
+            $SSO_START_URL=$ssoStartUrl
+            ${SsoSessionConstants.SSO_REGISTRATION_SCOPES}=${scopesList.joinToString(",")}
         """.trimIndent()
 
         assert(fileContents.trim().contains(expectedContents.trim()))

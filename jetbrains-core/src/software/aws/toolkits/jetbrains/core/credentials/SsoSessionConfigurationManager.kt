@@ -22,6 +22,7 @@ class SsoSessionConfigurationManager {
 
     val profileFile = ProfileFileLocation.configurationFilePath().toFile()
     fun writeSsoSessionProfileToConfigFile(
+        idcProfileName: String,
         ssoProfileName: String,
         ssoRegion: String,
         startUrl: String,
@@ -30,7 +31,7 @@ class SsoSessionConfigurationManager {
         roleName: String
     ) {
         val configContents = """
-            [$SSO_SESSION_PROFILE_NAME $ssoProfileName]
+            [$SSO_SESSION_PROFILE_NAME $idcProfileName]
             $PROFILE_SSO_SESSION_PROPERTY=$ssoProfileName
             $SSO_ACCOUNT_ID=$accountId
             $SSO_ROLE_NAME=$roleName
@@ -45,6 +46,7 @@ class SsoSessionConfigurationManager {
     }
 
     fun updateSsoSessionProfileToConfigFile(
+        idcProfileName: String,
         ssoProfileName: String,
         ssoRegion: String,
         startUrl: String,
@@ -56,7 +58,7 @@ class SsoSessionConfigurationManager {
 
         if (ssoSessionSection?.isEmpty == false) {
             val existing = """
-            [$SSO_SESSION_SECTION_NAME $ssoProfileName]
+            [$SSO_SESSION_SECTION_NAME $idcProfileName]
             $SSO_REGION=${ssoSessionSection.get().property(SSO_REGION)}
             $SSO_START_URL=${ssoSessionSection.get().property(SSO_START_URL)}
             $SSO_REGISTRATION_SCOPES=${scopes.joinToString(",")}
@@ -71,7 +73,7 @@ class SsoSessionConfigurationManager {
             replaceUpdatedSsoSession(profileFile, existing, updateContents)
         } else {
             // SSO session block doesn't exist, create a new one
-            writeSsoSessionProfileToConfigFile(ssoProfileName, ssoRegion, startUrl, scopes, accountId, roleName)
+            writeSsoSessionProfileToConfigFile(idcProfileName, ssoProfileName, ssoRegion, startUrl, scopes, accountId, roleName)
         }
     }
 
