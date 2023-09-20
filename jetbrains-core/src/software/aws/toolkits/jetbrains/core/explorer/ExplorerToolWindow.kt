@@ -10,14 +10,10 @@ import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Separator
-import com.intellij.openapi.actionSystem.ex.ActionManagerEx
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -28,7 +24,6 @@ import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.JBColor
-import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.panels.NonOpaquePanel
@@ -42,7 +37,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import org.jetbrains.concurrency.CancellablePromise
-import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
@@ -54,15 +48,12 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
-import software.aws.toolkits.jetbrains.core.explorer.actions.CopyArnAction
-import software.aws.toolkits.jetbrains.core.explorer.actions.DeleteResourceAction
+import software.aws.toolkits.jetbrains.core.explorer.actions.AwsExplorerActionPopupHandler
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
-import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceResourceTypeNode
-import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.MouseEvent
@@ -81,7 +72,6 @@ class ExplorerToolWindow(project: Project) :
     ConnectionSettingsStateChangeNotifier,
     ToolkitConnectionManagerListener,
     Disposable {
-    private val actionManager = ActionManagerEx.getInstanceEx()
     private val treePanelWrapper = NonOpaquePanel()
     private val awsTreeModel = AwsExplorerTreeStructure(project)
 
@@ -174,11 +164,13 @@ class ExplorerToolWindow(project: Project) :
                                 invalidateTree()
                                 awsTreePanel
                             }
+
                             else -> createInfoPanel(credentialstate)
                         }
                     )
                 }
             }
+
             null, is AwsBearerTokenConnection -> {
                 runInEdt {
                     treePanelWrapper.setContent(
@@ -188,6 +180,7 @@ class ExplorerToolWindow(project: Project) :
                     )
                 }
             }
+
             else -> {
                 // TODO: tree doesn't support other connection types yet
             }
@@ -250,36 +243,7 @@ class ExplorerToolWindow(project: Project) :
             }
         }.installOn(awsTree)
 
-        awsTree.addMouseListener(
-            object : PopupHandler() {
-                override fun invokePopup(comp: Component?, x: Int, y: Int) {
-                    // Build a right click menu based on the selected first node
-                    // All nodes must be the same type (e.g. all S3 buckets, or a service node)
-                    val explorerNode = getSelectedNodesSameType<AwsExplorerNode<*>>()?.get(0) ?: return
-                    val actionGroupName = (explorerNode as? ResourceActionNode)?.actionGroupName()
-
-                    val totalActions = mutableListOf<AnAction>()
-
-                    (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
-
-                    if (explorerNode is AwsExplorerResourceNode<*>) {
-                        totalActions.add(CopyArnAction())
-                    }
-
-                    totalActions.find { it is DeleteResourceAction<*> }?.let {
-                        totalActions.remove(it)
-                        totalActions.add(Separator.create())
-                        totalActions.add(it)
-                    }
-
-                    val actionGroup = DefaultActionGroup(totalActions)
-                    if (actionGroup.childrenCount > 0) {
-                        val popupMenu = actionManager.createActionPopupMenu(ToolkitPlaces.EXPLORER_TOOL_WINDOW, actionGroup)
-                        popupMenu.component.show(comp, x, y)
-                    }
-                }
-            }
-        )
+        awsTree.addMouseListener(AwsExplorerActionPopupHandler { getSelectedNodesSameType<AwsExplorerNode<*>>()?.get(0) })
 
         return awsTree
     }
