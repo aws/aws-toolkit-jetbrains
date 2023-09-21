@@ -119,7 +119,7 @@ object IdeVersions {
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2023.2.2",
+                sdkVersion = "2023.2",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -131,8 +131,7 @@ object IdeVersions {
                     "Pythonid:232.8660.185",
                     "org.jetbrains.plugins.go:232.8660.142",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
-                    "org.intellij.intelliLang",
-                    "com.intellij.modules.rust-capable"
+                    "org.intellij.intelliLang"
                 )
             ),
             rider = RiderProfile(
