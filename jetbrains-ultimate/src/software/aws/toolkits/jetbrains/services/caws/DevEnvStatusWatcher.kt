@@ -105,7 +105,7 @@ class DevEnvStatusWatcher : StartupActivity {
                 }
 
                 if (ans) {
-                    notifyBackendOfActivity(getActivityTime(0).toString())
+                    notifyBackendOfActivity(getActivityTime().toString())
                 }
             } catch (e: Exception) {
                 val preMessage = "Error while checking if Dev Environment should continue working"
@@ -131,5 +131,5 @@ class DevEnvStatusWatcher : StartupActivity {
         CawsEnvironmentClient.getInstance().putActivityTimestamp(request)
     }
 
-    private fun getActivityTime(timeDuration: Long): Long = Instant.now().minus(timeDuration, ChronoUnit.SECONDS).toEpochMilli()
+    private fun getActivityTime(secondsSinceLastActivity: Long = 0): Long = Instant.now().minus(secondsSinceLastActivity, ChronoUnit.SECONDS).toEpochMilli()
 }
