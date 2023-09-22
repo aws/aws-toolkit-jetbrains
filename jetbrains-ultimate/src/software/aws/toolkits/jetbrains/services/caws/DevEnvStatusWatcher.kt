@@ -21,9 +21,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -65,51 +63,68 @@ class DevEnvStatusWatcher : StartupActivity {
             var secondsSinceLastControllerActivity = jbActivityStatus
 
             while (true) {
-                val statusJson = UnattendedStatusUtil.getStatus()
-                val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
-
-                if (lastActivityTime < secondsSinceLastControllerActivity) {
-                    // update the API in case of any activity
-                    notifyBackendOfActivity((getActivityTime(lastActivityTime).toString()))
-                }
-                secondsSinceLastControllerActivity = lastActivityTime
-
-                val lastRecordedActivityTime = CawsEnvironmentClient.getInstance().getActivity()?.timestamp
-                if(lastRecordedActivityTime == null) {
-                    LOG.error("Couldn't retrieve last recorded activity from API")
-                    return@launch
-                }
-                val durationRecordedSinceLastActivity = Instant.now().toEpochMilli().minus(lastRecordedActivityTime.toLong())
-                val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity / 1000
-
-                if (secondsRecordedSinceLastActivity >= (inactivityTimeoutInSeconds - 300)) {
-                    try {
-                        val inactivityDurationInMinutes = secondsRecordedSinceLastActivity / 60
-                        val ans = runBlocking {
-                            val continueWorking = withContext(getCoroutineUiContext()) {
-                                return@withContext MessageDialogBuilder.okCancel(
-                                    message("caws.devenv.continue.working.after.timeout.title"),
-                                    message("caws.devenv.continue.working.after.timeout", inactivityDurationInMinutes)
-                                ).ask(project)
-                            }
-                            return@runBlocking continueWorking
-                        }
-
-                        if (ans) {
-                            notifyBackendOfActivity(getActivityTime(0).toString())
-                        }
-                    } catch (e: Exception) {
-                        val preMessage = "Error while checking if Dev Environment should continue working"
-                        LOG.error(e) { preMessage }
-                        notifyError(preMessage, e.message.toString())
-                    }
-                }
+                val response = checkHeartbeat(secondsSinceLastControllerActivity, inactivityTimeoutInSeconds, project)
+                if (response.first) return@launch
                 delay(30000)
+                secondsSinceLastControllerActivity = response.second
             }
         }
     }
 
-    private fun notifyBackendOfActivity(timestamp: String = Instant.now().toEpochMilli().toString()) {
+    fun checkHeartbeat(
+        secondsSinceLastControllerActivity: Long,
+        inactivityTimeoutInSeconds: Int,
+        project: Project
+    ): Pair<Boolean, Long> {
+        val lastActivityTime = getJbRecordedActivity()
+
+        if (lastActivityTime < secondsSinceLastControllerActivity) {
+            // update the API in case of any activity
+            notifyBackendOfActivity((getActivityTime(lastActivityTime).toString()))
+        }
+
+        val lastRecordedActivityTime = getLastRecordedApiActivity()
+        if (lastRecordedActivityTime == null) {
+            LOG.error("Couldn't retrieve last recorded activity from API")
+            return Pair(true, lastActivityTime)
+        }
+        val durationRecordedSinceLastActivity = Instant.now().toEpochMilli().minus(lastRecordedActivityTime.toLong())
+        val secondsRecordedSinceLastActivity = durationRecordedSinceLastActivity / 1000
+
+        if (secondsRecordedSinceLastActivity >= (inactivityTimeoutInSeconds - 300)) {
+            try {
+                val inactivityDurationInMinutes = secondsRecordedSinceLastActivity / 60
+                val ans = runBlocking {
+                    val continueWorking = withContext(getCoroutineUiContext()) {
+                        return@withContext MessageDialogBuilder.okCancel(
+                            message("caws.devenv.continue.working.after.timeout.title"),
+                            message("caws.devenv.continue.working.after.timeout", inactivityDurationInMinutes)
+                        ).ask(project)
+                    }
+                    return@runBlocking continueWorking
+                }
+
+                if (ans) {
+                    notifyBackendOfActivity(getActivityTime(0).toString())
+                }
+            } catch (e: Exception) {
+                val preMessage = "Error while checking if Dev Environment should continue working"
+                LOG.error(e) { preMessage }
+                notifyError(preMessage, e.message.toString())
+            }
+        }
+        return Pair(false, lastActivityTime)
+    }
+
+    fun getLastRecordedApiActivity(): String? = CawsEnvironmentClient.getInstance().getActivity()?.timestamp
+
+    fun getJbRecordedActivity(): Long {
+        val statusJson = UnattendedStatusUtil.getStatus()
+        val lastActivityTime = statusJson.projects?.first()?.secondsSinceLastControllerActivity ?: 0
+        return lastActivityTime
+    }
+
+    fun notifyBackendOfActivity(timestamp: String = Instant.now().toEpochMilli().toString()) {
         val request = UpdateActivityRequest(
             timestamp = timestamp
         )

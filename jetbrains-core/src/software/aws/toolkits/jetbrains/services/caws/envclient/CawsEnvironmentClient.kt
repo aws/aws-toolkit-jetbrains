@@ -94,7 +94,7 @@ class CawsEnvironmentClient(
     fun getActivity(): GetActivityResponse? = try {
         val request = HttpGet("$endpoint/activity")
         val response = execute(request)
-        if(response.statusLine.statusCode == 400) {
+        if (response.statusLine.statusCode == 400) {
             throw Exception("Inactivity tracking may not enabled")
         }
         objectMapper.readValue<GetActivityResponse>(response.entity.content)
