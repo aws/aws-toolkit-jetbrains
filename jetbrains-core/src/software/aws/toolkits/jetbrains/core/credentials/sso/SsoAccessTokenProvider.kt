@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
 import org.jetbrains.annotations.TestOnly
+import software.amazon.awssdk.auth.token.credentials.SdkToken
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
@@ -33,7 +35,7 @@ class SsoAccessTokenProvider(
     private val client: SsoOidcClient,
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
-) {
+) : SdkTokenProvider {
 
     @TestOnly
     var authorizationCreationTime = Instant.now(clock)
@@ -52,6 +54,8 @@ class SsoAccessTokenProvider(
             scopes = scopes
         )
     }
+
+    override fun resolveToken() = accessToken()
 
     fun accessToken(): AccessToken {
         assertIsNonDispatchThread()
