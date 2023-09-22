@@ -25,7 +25,7 @@ import software.aws.toolkits.telemetry.Result
 import java.awt.datatransfer.StringSelection
 import javax.swing.JComponent
 
-class CopyUserCodeForLoginDialog(
+class ConfirmUserCodeLoginDialog(
     private val authCode: String,
     private val dialogTitle: String,
     private val credentialType: CredentialType
@@ -62,11 +62,6 @@ class CopyUserCodeForLoginDialog(
         title = dialogTitle
         setOKButtonText(message("aws.sso.signing.device.code"))
         super.init()
-    }
-
-    override fun doOKAction() {
-        CopyPasteManager.getInstance().setContents(StringSelection(authCode))
-        super.doOKAction()
     }
 
     override fun doCancelAction() {
