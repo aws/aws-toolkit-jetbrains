@@ -88,9 +88,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 PanelAuthBullets(
                                     message("codewhisperer.experiment"),
                                     listOf(
-                                        AuthPanelBullet(PanelConstants.COMMIT_ICON, message("iam_identity_center.name"), message("aws.onboarding.getstarted.panel.idc_row_comment_text")),
-                                        AuthPanelBullet(PanelConstants.COMMIT_ICON, message("aws_builder_id.service_name"), "Need to insert tagline"),
-                                        AuthPanelBullet(PanelConstants.CANCEL_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"), false)
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("iam_identity_center.name"),
+                                            message("aws.onboarding.getstarted.panel.idc_row_comment_text")
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("aws_builder_id.service_name"),
+                                            "Need to insert tagline"
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.CANCEL_ICON,
+                                            message("settings.credentials.iam"),
+                                            message("aws.getstarted.auth.panel.notSupport_text"),
+                                            false
+                                        )
                                     )
                                 )
                             )
@@ -99,9 +112,21 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 PanelAuthBullets(
                                     message("aws.getstarted.resource.panel_title"),
                                     listOf(
-                                        AuthPanelBullet(PanelConstants.COMMIT_ICON, message("iam_identity_center.name"), message("aws.onboarding.getstarted.panel.idc_row_comment_text")),
-                                        AuthPanelBullet(PanelConstants.CANCEL_ICON, message("aws_builder_id.service_name"), "Need to insert tagline", false),
-                                        AuthPanelBullet(PanelConstants.COMMIT_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"))
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("iam_identity_center.name"),
+                                            message("aws.onboarding.getstarted.panel.idc_row_comment_text")
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("aws_builder_id.service_name"),
+                                            "Need to insert tagline"
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("settings.credentials.iam"),
+                                            message("aws.getstarted.auth.panel.notSupport_text")
+                                        )
                                     )
                                 )
                             )
@@ -110,9 +135,23 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 PanelAuthBullets(
                                     message("caws.devtoolPanel.title"),
                                     listOf(
-                                        AuthPanelBullet(PanelConstants.CANCEL_ICON, message("iam_identity_center.name"), message("aws.getstarted.auth.panel.notSupport_text"), false),
-                                        AuthPanelBullet(PanelConstants.COMMIT_ICON, message("aws_builder_id.service_name"), "Need to insert tagline"),
-                                        AuthPanelBullet(PanelConstants.CANCEL_ICON, message("settings.credentials.iam"), message("aws.getstarted.auth.panel.notSupport_text"), false)
+                                        AuthPanelBullet(
+                                            PanelConstants.CANCEL_ICON,
+                                            message("iam_identity_center.name"),
+                                            message("aws.getstarted.auth.panel.notSupport_text"),
+                                            false
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.COMMIT_ICON,
+                                            message("aws_builder_id.service_name"),
+                                            "Need to insert tagline"
+                                        ),
+                                        AuthPanelBullet(
+                                            PanelConstants.CANCEL_ICON,
+                                            message("settings.credentials.iam"),
+                                            message("aws.getstarted.auth.panel.notSupport_text"),
+                                            false
+                                        )
                                     )
                                 )
                             )
@@ -152,7 +191,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         }
 
                         row {
-                            button(message("caws.getstarted.panel.login")) {}.applyToComponent {
+                            button(message("caws.getstarted.panel.login")) {
+                            }.applyToComponent {
                                 putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                             }
                         }
@@ -200,10 +240,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         }
 
                         row {
-                            button(message("aws.onboarding.getstarted.panel.button_iam_login")) {}
-                                .applyToComponent {
-                                    putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }
+                            button(message("aws.onboarding.getstarted.panel.button_iam_login")) {
+                            }.applyToComponent {
+                                putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+                            }
+
                             topGap(TopGap.MEDIUM)
                         }
 
@@ -247,10 +288,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                         }
 
                         row {
-                            button(message("codewhisperer.gettingstarted.panel.login_button")) {}
-                                .applyToComponent {
-                                    putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }
+                            button(message("codewhisperer.gettingstarted.panel.login_button")) {
+                            }.applyToComponent {
+                                putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+                            }
+
                             topGap(TopGap.SMALL)
                         }
 
@@ -299,7 +341,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                     }
                 }
             )
-
         }
     }
 
