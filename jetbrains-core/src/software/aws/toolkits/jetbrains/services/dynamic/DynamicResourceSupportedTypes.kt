@@ -10,7 +10,16 @@ import com.intellij.openapi.components.service
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 
-class DynamicResourceSupportedTypes {
+interface DynamicResourceSupportedTypes {
+    companion object {
+        fun getInstance(): DynamicResourceSupportedTypes = service()
+    }
+
+    fun getSupportedTypes(): List<String>
+    fun getDocs(resourceType: String): String?
+}
+
+class DefaultDynamicResourceSupportedTypes : DynamicResourceSupportedTypes {
 
     private val supportedTypes by lazy {
         runUnderProgressIfNeeded(null, message("dynamic_resources.loading_manifest"), cancelable = false) {
@@ -20,12 +29,11 @@ class DynamicResourceSupportedTypes {
         }
     }
 
-    fun getSupportedTypes(): List<String> = supportedTypes.filterValues { it.operations.contains(PermittedOperation.LIST) }.keys.toList()
+    override fun getSupportedTypes(): List<String> = supportedTypes.filterValues { it.operations.contains(PermittedOperation.LIST) }.keys.toList()
 
-    fun getDocs(resourceType: String) = supportedTypes[resourceType]?.documentation
+    override fun getDocs(resourceType: String) = supportedTypes[resourceType]?.documentation
 
     companion object {
-        fun getInstance(): DynamicResourceSupportedTypes = service()
         private val MAPPER = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
 }
