@@ -33,7 +33,6 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -58,14 +57,14 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
             row {
                 icon(AllIcons.Toolwindows.ToolWindowDebugger)
                 link(message("feedback.report.issue.link")) {
-                    BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n$toolkitMetadata", Charsets.UTF_8.name())}")
+                    BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n$TOOLKIT_METADATA", Charsets.UTF_8.name())}")
                 }
             }
             row {
                 icon(AllIcons.Actions.IntentionBulbGrey)
 
                 link(message("feedback.request.feature.link")) {
-                    BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n$toolkitMetadata", Charsets.UTF_8.name())}")
+                    BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n$TOOLKIT_METADATA", Charsets.UTF_8.name())}")
                 }
             }
             row {
@@ -179,16 +178,6 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
 
     companion object {
         const val MAX_LENGTH = 2000 // backend restriction
-        private const val GITHUB_LINK_BASE = "https://github.com/aws/aws-toolkit-jetbrains/issues/new?body="
-        private const val TOOLKIT_REPOSITORY_LINK = "https://github.com/aws/aws-toolkit-jetbrains"
-        private val toolkitMetadata = ClientMetadata.DEFAULT_METADATA.let {
-            """
-                ---
-                Toolkit: ${it.productName} ${it.productVersion}
-                OS: ${it.os} ${it.osVersion}
-                IDE: ${it.parentProduct} ${it.parentProductVersion}
-            """.trimIndent()
-        }
     }
 }
 
