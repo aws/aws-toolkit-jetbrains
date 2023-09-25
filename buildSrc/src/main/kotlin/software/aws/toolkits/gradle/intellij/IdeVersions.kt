@@ -86,7 +86,7 @@ object IdeVersions {
                     "Pythonid:231.8109.175",
                     "org.jetbrains.plugins.go:231.8109.175",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
-                    "org.intellij.intelliLang"
+                    "org.intellij.intelliLang",
                 )
             ),
             rider = RiderProfile(

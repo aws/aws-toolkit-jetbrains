@@ -86,6 +86,6 @@ class CawsEnvironmentClientTest {
                 )
         )
 
-        assertThat(sut.getActivity().timestamp).isEqualTo("112222444455555")
+        assertThat(sut.getActivity()?.timestamp).isEqualTo("112222444455555")
     }
 }
