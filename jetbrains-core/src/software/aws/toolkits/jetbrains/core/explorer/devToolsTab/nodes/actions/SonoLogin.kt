@@ -17,6 +17,5 @@ class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
         ApplicationManager.getApplication().executeOnPooledThread {
             SonoCredentialManager.loginSono(project)
         }
-
     }
 }

@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
 @State(name = "gettingStarted", storages = [Storage("aws.xml")])
-class GettingStartedSettings: PersistentStateComponent<GettingStartedSettingsConfiguration> {
+class GettingStartedSettings : PersistentStateComponent<GettingStartedSettingsConfiguration> {
     private var state = GettingStartedSettingsConfiguration()
     override fun getState(): GettingStartedSettingsConfiguration? = state
 
@@ -17,10 +17,10 @@ class GettingStartedSettings: PersistentStateComponent<GettingStartedSettingsCon
         this.state = state
     }
 
-    var gettingStartedPageFirstInstance: Boolean
-        get() = state.gettingStartedPageFirstInstance
+    var displayPageFirstInstance: Boolean
+        get() = state.displayPageFirstInstance
         set(value) {
-            state.gettingStartedPageFirstInstance = value
+            state.displayPageFirstInstance = value
         }
 
     companion object {
@@ -28,5 +28,5 @@ class GettingStartedSettings: PersistentStateComponent<GettingStartedSettingsCon
     }
 }
 data class GettingStartedSettingsConfiguration(
-    var gettingStartedPageFirstInstance: Boolean = true
+    var displayPageFirstInstance: Boolean = true
 )

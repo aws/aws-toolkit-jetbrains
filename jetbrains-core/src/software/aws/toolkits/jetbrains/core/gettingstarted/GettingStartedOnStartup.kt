@@ -13,28 +13,28 @@ import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
 
-class GettingStartedOnStartup: StartupActivity {
+class GettingStartedOnStartup : StartupActivity {
     override fun runActivity(project: Project) {
         try {
-
             val settings = GettingStartedSettings.getInstance()
-            if (settings.gettingStartedPageFirstInstance) {
+            if (!settings.displayPageFirstInstance) {
+                return
+            } else {
                 GettingStartedPanel.openPanel(project)
-                AuthTelemetry.addConnection(project,
+                AuthTelemetry.addConnection(
+                    project,
                     source = "firstStartup",
                     featureId = FeatureId.Unknown,
                     credentialSourceId = CredentialSourceId.Unknown,
                     isAggregated = true,
                     result = Result.Succeeded
                 )
-                settings.gettingStartedPageFirstInstance = false
-            } else {
-                return
+                settings.displayPageFirstInstance = false
             }
-
         } catch (e: Exception) {
             LOG.error("Error opening getting started panel", e)
-            AuthTelemetry.addConnection(project,
+            AuthTelemetry.addConnection(
+                project,
                 source = "firstStartup",
                 featureId = FeatureId.Unknown,
                 credentialSourceId = CredentialSourceId.Unknown,
@@ -43,9 +43,7 @@ class GettingStartedOnStartup: StartupActivity {
                 reason = "Error opening getting started panel"
             )
         }
-
     }
-
 
     companion object {
         val LOG = getLogger<GettingStartedOnStartup>()
