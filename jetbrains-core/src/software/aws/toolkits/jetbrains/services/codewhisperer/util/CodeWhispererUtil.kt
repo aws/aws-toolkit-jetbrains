@@ -196,12 +196,13 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
         if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
-                notifyConnectionExpiredRequestReauth(project)
+                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                    notifyConnectionExpiredRequestReauth(project)
+                }
                 if (!isPluginStarting) {
                     CodeWhispererService.markReAuthPromptShown()
                 }
