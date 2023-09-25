@@ -71,6 +71,9 @@ class DevEnvStatusWatcher : StartupActivity {
         }
     }
 
+    // This function returns a Pair The first value is a boolean indicating if the API returned the last recorded activity.
+    // If inactivity tracking is disabled or if the value returned by the API is unparseable, the heartbeat is not sent
+    // The second value indicates the seconds since last activity as recorded by JB in the most recent run
     fun checkHeartbeat(
         secondsSinceLastControllerActivity: Long,
         inactivityTimeoutInSeconds: Int,
