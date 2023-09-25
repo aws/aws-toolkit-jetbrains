@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
@@ -51,7 +52,7 @@ class DevEnvStatusWatcher : StartupActivity {
             }
             val inactivityTimeout = initialEnv.inactivityTimeoutMinutes()
             if (inactivityTimeout == 0) {
-                LOG.info("Dev environment inactivity timeout is 0, not monitoring")
+                LOG.info {"Dev environment inactivity timeout is 0, not monitoring" }
                 return@launch
             }
             val inactivityTimeoutInSeconds = inactivityTimeout * 60
@@ -88,7 +89,7 @@ class DevEnvStatusWatcher : StartupActivity {
 
         val lastRecordedActivityTime = getLastRecordedApiActivity()
         if (lastRecordedActivityTime == null) {
-            LOG.error("Couldn't retrieve last recorded activity from API")
+            LOG.error {"Couldn't retrieve last recorded activity from API" }
             return Pair(true, lastActivityTime)
         }
         val durationRecordedSinceLastActivity = Instant.now().toEpochMilli().minus(lastRecordedActivityTime.toLong())
