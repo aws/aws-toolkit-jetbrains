@@ -12,8 +12,6 @@ class GettingStartedVirtualFile : LightVirtualFile(message("gettingstarted.edito
     override fun isWritable() = false
     override fun isDirectory() = false
 
-    override fun hashCode(): Int = toString().hashCode()
-    override fun equals(other: Any?): Boolean {
-        return other is GettingStartedVirtualFile && name == other.name
-    }
+    override fun hashCode() = toString().hashCode()
+    override fun equals(other: Any?) = other is GettingStartedVirtualFile && name == other.name
 }
