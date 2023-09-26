@@ -196,3 +196,9 @@ data class LatencyContext(
         codewhispererPreprocessingEnd - codewhispererPreprocessingStart
     ).toDouble()
 }
+
+data class TryExampleRowContext(
+    val description: String,
+    val filename: String?,
+    val fileContent: String
+)

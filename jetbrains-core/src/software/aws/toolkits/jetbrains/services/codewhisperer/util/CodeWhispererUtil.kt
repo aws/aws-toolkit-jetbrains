@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -29,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowA
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -36,6 +39,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 
 fun runIfIamIdentityCenterConnection(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
@@ -196,12 +200,13 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
         if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
-                notifyConnectionExpiredRequestReauth(project)
+                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                    notifyConnectionExpiredRequestReauth(project)
+                }
                 if (!isPluginStarting) {
                     CodeWhispererService.markReAuthPromptShown()
                 }
@@ -251,6 +256,14 @@ object CodeWhispererUtil {
         ApplicationManager.getApplication().executeOnPooledThread {
             loginSso(project, connection.startUrl, connection.region, connection.scopes)
         }
+    }
+
+    // We want to know if a specific trigger happens in the Getting Started page examples files.
+    // We use the current file name to know this info. If file name doesn't match any of the below, we will assume
+    // that it's coming from a normal file and return null.
+    fun getGettingStartedTaskType(editor: Editor): CodewhispererGettingStartedTask? {
+        val filename = (editor as EditorImpl).virtualFile?.name ?: return null
+        return taskTypeToFilename.filter { filename.startsWith(it.value) }.keys.firstOrNull()
     }
 }
 
