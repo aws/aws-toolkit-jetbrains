@@ -121,7 +121,7 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         }
     }
 
-    private fun<T> disposeAndNotify(connection: T) where T : ToolkitConnection, T: Disposable {
+    private fun<T> disposeAndNotify(connection: T) where T : ToolkitConnection, T : Disposable {
         ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
             .invalidate(connection.id)
         Disposer.dispose(connection)
@@ -201,7 +201,11 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             )
         }
 
-        is DetectedDiskSsoSessionProfile -> DetectedDiskSsoSessionConnection(sessionProfileName = profile.profileName, startUrl = profile.startUrl, region = profile.ssoRegion)
+        is DetectedDiskSsoSessionProfile -> DetectedDiskSsoSessionConnection(
+            sessionProfileName = profile.profileName,
+            startUrl = profile.startUrl,
+            region = profile.ssoRegion
+        )
     }
 
     companion object {

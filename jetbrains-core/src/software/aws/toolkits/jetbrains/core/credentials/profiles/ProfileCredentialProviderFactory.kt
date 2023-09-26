@@ -27,7 +27,6 @@ import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.SsoSessionIdentifier
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -279,7 +278,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
     private fun createSsoSessionProfileProvider(profile: Profile): AwsCredentialsProvider {
         val ssoSessionName = profile.requiredProperty(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY)
         val ssoSession = profileHolder.getSsoSession(ssoSessionName)
-            ?: error("Profile ${profile.name()} refers to sso-session ${ssoSessionName} which appears to have been removed")
+            ?: error("Profile ${profile.name()} refers to sso-session $ssoSessionName which appears to have been removed")
 
         return ProfileSsoSessionProvider(ssoSession, profile)
     }

@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
 import org.jetbrains.annotations.TestOnly
-import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException

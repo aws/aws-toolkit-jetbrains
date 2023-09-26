@@ -250,8 +250,8 @@ class ProfileReaderTest {
             """.trimIndent()
         )
 
-        val (_, _, validSsoSessions, invalidSsoSessions) = validateAndGetProfiles()
-        assertThat(validSsoSessions).hasSize(1).allSatisfy { profileName, profile ->
+        val result = validateAndGetProfiles()
+        assertThat(result.validSsoSessions).hasSize(1).allSatisfy { profileName, profile ->
             assertThat(profileName).isEqualTo("validSession")
             assertThat(profile.name()).isEqualTo(profileName)
             assertThat(profile.properties()).containsExactlyInAnyOrderEntriesOf(
@@ -261,7 +261,7 @@ class ProfileReaderTest {
                 )
             )
         }
-        assertThat(invalidSsoSessions).hasSize(2)
+        assertThat(result.invalidSsoSessions).hasSize(2)
     }
 
     @Test
@@ -279,8 +279,8 @@ class ProfileReaderTest {
             """.trimIndent()
         )
 
-        val (validProfiles, invalidProfiles, validSsoSessions, invalidSsoSessions) = validateAndGetProfiles()
-        assertThat(validProfiles).hasSize(1).allSatisfy { profileName, profile ->
+        val result = validateAndGetProfiles()
+        assertThat(result.validProfiles).hasSize(1).allSatisfy { profileName, profile ->
             assertThat(profileName).isEqualTo("ssoProfile")
             assertThat(profile.name()).isEqualTo(profileName)
             assertThat(profile.properties()).containsExactlyInAnyOrderEntriesOf(
@@ -291,9 +291,9 @@ class ProfileReaderTest {
                 )
             )
         }
-        assertThat(invalidProfiles).isEmpty()
-        assertThat(validSsoSessions).hasSize(1)
-        assertThat(invalidSsoSessions).isEmpty()
+        assertThat(result.invalidProfiles).isEmpty()
+        assertThat(result.validSsoSessions).hasSize(1)
+        assertThat(result.invalidSsoSessions).isEmpty()
     }
 
     @Test
