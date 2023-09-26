@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
 import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
@@ -32,7 +33,7 @@ class GettingStartedOnStartup : StartupActivity {
                 settings.displayPageFirstInstance = false
             }
         } catch (e: Exception) {
-            LOG.error("Error opening getting started panel", e)
+            LOG.error(e) {"Error opening getting started panel" }
             AuthTelemetry.addConnection(
                 project,
                 source = "firstStartup",
