@@ -153,7 +153,9 @@ class DefaultConfigFilesFacade(
             error("sso-session is only allowed in 'config'")
         }
 
-        // behavior is different between config/credentials
+        // "credentials" file doesn't have the "profile" prefix
+        // and "sso-session" is not allowed in the "config" file
+        // https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html#cli-configure-files-format
         val sectionTitle = if (!isConfigFile || profile.name().trim() == "default") {
             profile.name()
         } else {
