@@ -33,7 +33,7 @@ class GettingStartedOnStartup : StartupActivity {
                 settings.displayPageFirstInstance = false
             }
         } catch (e: Exception) {
-            LOG.error(e) {"Error opening getting started panel" }
+            LOG.error(e) { "Error opening getting started panel" }
             AuthTelemetry.addConnection(
                 project,
                 source = "firstStartup",
