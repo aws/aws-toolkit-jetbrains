@@ -52,7 +52,7 @@ class DevEnvStatusWatcher : StartupActivity {
             }
             val inactivityTimeout = initialEnv.inactivityTimeoutMinutes()
             if (inactivityTimeout == 0) {
-                LOG.info {"Dev environment inactivity timeout is 0, not monitoring" }
+                LOG.info { "Dev environment inactivity timeout is 0, not monitoring" }
                 return@launch
             }
             val inactivityTimeoutInSeconds = inactivityTimeout * 60
@@ -89,7 +89,7 @@ class DevEnvStatusWatcher : StartupActivity {
 
         val lastRecordedActivityTime = getLastRecordedApiActivity()
         if (lastRecordedActivityTime == null) {
-            LOG.error {"Couldn't retrieve last recorded activity from API" }
+            LOG.error { "Couldn't retrieve last recorded activity from API" }
             return Pair(true, lastActivityTime)
         }
         val durationRecordedSinceLastActivity = Instant.now().toEpochMilli().minus(lastRecordedActivityTime.toLong())

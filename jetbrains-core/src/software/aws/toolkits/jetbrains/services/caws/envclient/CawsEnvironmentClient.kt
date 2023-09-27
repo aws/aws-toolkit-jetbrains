@@ -100,7 +100,6 @@ class CawsEnvironmentClient(
         } else {
             objectMapper.readValue<GetActivityResponse>(response.entity.content)
         }
-
     } catch (e: Exception) {
         LOG.error(e) { "Couldn't parse response from /activity API" }
         null
