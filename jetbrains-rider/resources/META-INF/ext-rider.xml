@@ -43,8 +43,6 @@
             <add-to-group group-id="SolutionExplorerPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
-
-
         </group>
     </actions>
 
