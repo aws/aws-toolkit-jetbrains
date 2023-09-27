@@ -330,6 +330,6 @@ class ProfileReaderTest {
         val (validProfiles, invalidProfiles) = validateAndGetProfiles()
         assertThat(validProfiles).isEmpty()
         assertThat(invalidProfiles.map { it.key to it.value.message })
-            .contains("ssoProfile" to message("credentials.profile.missing_property", "ssoProfile", "sso_start_url"))
+            .contains("ssoProfile" to message("credentials.profile.missing_property", "invalidSession", "sso_start_url"))
     }
 }
