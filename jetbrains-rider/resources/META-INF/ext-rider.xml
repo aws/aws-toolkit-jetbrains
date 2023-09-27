@@ -39,7 +39,6 @@
     </extensions>
 
     <actions>
-        <unregister id="serverless.application.deploy"/>
         <group id="aws.toolkit.serverless.template.rider">
             <add-to-group group-id="SolutionExplorerPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
