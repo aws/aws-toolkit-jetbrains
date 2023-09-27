@@ -15,7 +15,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
-import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsRequest
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsResponse
