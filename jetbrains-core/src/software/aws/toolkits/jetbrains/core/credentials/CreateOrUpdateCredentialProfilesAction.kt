@@ -65,7 +65,7 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
 
         val fileEditorManager = FileEditorManager.getInstance(project)
 
-        localFileSystem.refreshFiles(virtualFiles, /* async */ false, /* recursive */ false) {
+        localFileSystem.refreshFiles(virtualFiles, false, false) {
             virtualFiles.forEach {
                 if (it.fileType == FileTypes.UNKNOWN) {
                     ApplicationManager.getApplication().runWriteAction {
@@ -76,7 +76,7 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
                     }
                 }
 
-                if (fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), /* focusEditor */ true) == null) {
+                if (fileEditorManager.openTextEditor(OpenFileDescriptor(project, it),true) == null) {
                     AwsTelemetry.openCredentials(project, success = false)
                     throw RuntimeException(message("credentials.could_not_open", it))
                 }
