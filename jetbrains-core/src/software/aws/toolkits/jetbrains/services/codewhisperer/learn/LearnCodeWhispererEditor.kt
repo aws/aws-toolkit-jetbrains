@@ -51,7 +51,7 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
-    private var languageButtons = mutableListOf<Cell<JButton>>()
+    private val languageButtons = mutableListOf<Cell<JButton>>()
     private val contentPanel = panel {
         row {
             panel {
@@ -190,13 +190,13 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
 
         return button(text) {
             LearnCodeWhispererManager.getInstance(project).language = buttonLanguage
-            languageButtons.forEach {
-                it.applyToComponent {
+            languageButtons.forEach { button ->
+                button.applyToComponent {
                     border = BorderFactory.createEmptyBorder(3, 3, 3, 3)
                     font = font.deriveFont(Font.PLAIN)
                 }
             }
-            languageButtons.filter { it.component.text == text }[0].applyToComponent {
+            languageButtons.filter { button -> button.component.text == text }[0].applyToComponent {
                 border = BorderFactory.createCompoundBorder(
                     CustomRadiusRoundedBorder(1, 30, JBColor.BLUE),
                     BorderFactory.createEmptyBorder(2, 2, 2, 2)
