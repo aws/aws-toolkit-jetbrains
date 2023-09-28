@@ -338,7 +338,7 @@ object LearnCodeWhispererUIComponents {
 
     // "Code Scan" section components
     val codeScanDescriptionPanel = JPanel(GridBagLayout()).apply {
-        add(JLabel(message("codewhisperer.learn_page.codescan.description.part_1")), inlineLabelConstraints)
+        add(JLabel(message("codewhisperer.learn_page.codescan.description")), inlineLabelConstraints)
         add(
             BrowserLink(
                 message("codewhisperer.learn_page.learn_more"),
