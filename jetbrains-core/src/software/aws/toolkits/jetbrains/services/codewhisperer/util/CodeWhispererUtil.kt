@@ -262,6 +262,7 @@ object CodeWhispererUtil {
     // We use the current file name to know this info. If file name doesn't match any of the below, we will assume
     // that it's coming from a normal file and return null.
     fun getGettingStartedTaskType(editor: Editor): CodewhispererGettingStartedTask? {
+        if (ApplicationManager.getApplication().isUnitTestMode) return null
         val filename = (editor as EditorImpl).virtualFile?.name ?: return null
         return taskTypeToFilename.filter { filename.startsWith(it.value) }.keys.firstOrNull()
     }
