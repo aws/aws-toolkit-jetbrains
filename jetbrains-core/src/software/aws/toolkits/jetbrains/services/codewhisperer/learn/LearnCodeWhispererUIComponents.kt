@@ -42,11 +42,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_SUPPORTED_LANG_URI
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_WORKSHOP_URI
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.AUTO_TRIGGER_CONTENT_PYTHON
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.COMMENT_AS_PROMPT_CONTENT_PYTHON
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.MANUAL_TRIGGER_CONTENT_PYTHON
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.NAVIGATION_CONTENT_PYTHON
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.UNIT_TEST_CONTENT_PYTHON
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TryExampleFileContent.tryExampleFileContexts
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.resources.message
@@ -252,8 +247,7 @@ object LearnCodeWhispererUIComponents {
         CodewhispererGettingStartedTask.AutoTrigger to
             TryExampleRowContext(
                 message("codewhisperer.learn_page.examples.tasks.description_1"),
-                taskTypeToFilename[CodewhispererGettingStartedTask.AutoTrigger],
-                AUTO_TRIGGER_CONTENT_PYTHON
+                taskTypeToFilename[CodewhispererGettingStartedTask.AutoTrigger]
             ),
         CodewhispererGettingStartedTask.ManualTrigger to
             TryExampleRowContext(
@@ -262,26 +256,22 @@ object LearnCodeWhispererUIComponents {
                 } else {
                     message("codewhisperer.learn_page.examples.tasks.description_2.win")
                 },
-                taskTypeToFilename[CodewhispererGettingStartedTask.ManualTrigger],
-                MANUAL_TRIGGER_CONTENT_PYTHON
+                taskTypeToFilename[CodewhispererGettingStartedTask.ManualTrigger]
             ),
         CodewhispererGettingStartedTask.CommentAsPrompt to
             TryExampleRowContext(
                 message("codewhisperer.learn_page.examples.tasks.description_3"),
-                taskTypeToFilename[CodewhispererGettingStartedTask.CommentAsPrompt],
-                COMMENT_AS_PROMPT_CONTENT_PYTHON
+                taskTypeToFilename[CodewhispererGettingStartedTask.CommentAsPrompt]
             ),
         CodewhispererGettingStartedTask.UnitTest to
             TryExampleRowContext(
                 message("codewhisperer.learn_page.examples.tasks.description_4"),
-                taskTypeToFilename[CodewhispererGettingStartedTask.UnitTest],
-                UNIT_TEST_CONTENT_PYTHON
+                taskTypeToFilename[CodewhispererGettingStartedTask.UnitTest]
             ),
         CodewhispererGettingStartedTask.Navigation to
             TryExampleRowContext(
                 message("codewhisperer.learn_page.examples.tasks.description_5"),
-                taskTypeToFilename[CodewhispererGettingStartedTask.Navigation],
-                NAVIGATION_CONTENT_PYTHON
+                taskTypeToFilename[CodewhispererGettingStartedTask.Navigation]
             )
     )
 

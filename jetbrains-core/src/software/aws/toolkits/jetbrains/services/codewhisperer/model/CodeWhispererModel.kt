@@ -199,6 +199,5 @@ data class LatencyContext(
 
 data class TryExampleRowContext(
     val description: String,
-    val filename: String?,
-    val fileContent: String
+    val filename: String?
 )

@@ -98,23 +98,22 @@ object CodeWhispererConstants {
     }
 
     object TryExampleFileContent {
-        fun String.toNonPythonStyle(): String = this.replace("#", "//")
 
-        const val AUTO_TRIGGER_CONTENT_PYTHON =
+        private const val AUTO_TRIGGER_CONTENT_PYTHON =
 """# TODO: place you cursor at the end of the code and press Enter to generate a suggestion.
 # tip: press tab to accept the suggestion
 
 fake_users = [
     { "name": "User 1", "id": "user1", "city": "San Francisco", "state": "CA" },"""
 
-        const val AUTO_TRIGGER_CONTENT_TS_JS =
+        private const val AUTO_TRIGGER_CONTENT_TS_JS =
 """// TODO: place your cursor at the end of line 5 and press Enter to generate a suggestion.
 // Tip: press tab to accept the suggestion.
 
 const fake_users = [
     { "name": "User 1", "id": "user1", "city": "San Francisco", "state": "CA" },"""
 
-        const val AUTO_TRIGGER_CONTENT_JAVA =
+        private const val AUTO_TRIGGER_CONTENT_JAVA =
 """import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -135,7 +134,7 @@ public class Main {
         
     }
 }"""
-        const val AUTO_TRIGGER_CONTENT_CSHARP =
+        private const val AUTO_TRIGGER_CONTENT_CSHARP =
 """using System;
 using System.Collections.Generic;
 
@@ -159,18 +158,18 @@ public class Program
     }
 }"""
 
-        const val MANUAL_TRIGGER_CONTENT_PYTHON =
+        private const val MANUAL_TRIGGER_CONTENT_PYTHON =
 """# TODO: Pressing either Option + C on MacOS or Alt + C on Windows on a new line.
 
 # Function to upload a file to an S3 bucket
 """
 
-        const val MANUAL_TRIGGER_CONTENT_TS_JS =
+        private const val MANUAL_TRIGGER_CONTENT_TS_JS =
 """// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
 // Function to upload a file to an S3 bucket.
 """
 
-        const val MANUAL_TRIGGER_CONTENT_JAVA =
+        private const val MANUAL_TRIGGER_CONTENT_JAVA =
 """// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
 
 public class S3Uploader {
@@ -181,7 +180,7 @@ public class S3Uploader {
     }
 }"""
 
-        const val MANUAL_TRIGGER_CONTENT_CSHARP =
+        private const val MANUAL_TRIGGER_CONTENT_CSHARP =
 """// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
 
 public class S3Uploader 
@@ -193,30 +192,32 @@ public class S3Uploader
     }
 }"""
 
-        const val COMMENT_AS_PROMPT_CONTENT_PYTHON =
+        private const val COMMENT_AS_PROMPT_CONTENT_PYTHON =
 """# TODO: place your cursor at the end of line 4 and press Enter to generate a suggestion.
 # Tip: press tab to accept the suggestion.
 
 # Function to upload a file to an S3 bucket."""
 
-        const val COMMENT_AS_PROMPT_CONTENT_NON_PYTHON =
+        private const val COMMENT_AS_PROMPT_CONTENT_NON_PYTHON =
 """// TODO: place your cursor at the end of line 4 and press Enter to generate a suggestion.
 // Tip: press tab to accept the suggestion.
 
 // Function to upload a file to an S3 bucket."""
 
-        const val NAVIGATION_CONTENT_PYTHON =
-"""# TODO: CodeWhisperer generates multiple code suggestions. Use the left and right arrow keys to navigate between them.
+        private const val NAVIGATION_CONTENT_PYTHON =
+"""# TODO: place your cursor at the end of line 4 and press Enter to generate a suggestion.
+# CodeWhisperer generates multiple code suggestions. Use the left and right arrow keys to navigate between them.
 
-# Function to upload a file to an S3 bucket.
+# Function to upload a file to an AWS S3 bucket.
 """
-        const val NAVIGATION_CONTENT_NON_PYTHON =
-"""// TODO: CodeWhisperer generates multiple code suggestions. Use the left and right arrow keys to navigate between them.
+        private const val NAVIGATION_CONTENT_NON_PYTHON =
+"""// TODO: place your cursor at the end of line 4 and press Enter to generate a suggestion.
+// CodeWhisperer generates multiple code suggestions. Use the left and right arrow keys to navigate between them.
 
-// Function to upload a file to an S3 bucket.
+// Function to upload a file to an AWS S3 bucket.
 """
 
-        const val UNIT_TEST_CONTENT_PYTHON =
+        private const val UNIT_TEST_CONTENT_PYTHON =
 """# TODO: Ask CodeWhisperer to write unit tests.
 
 def sum(a, b):
@@ -225,7 +226,7 @@ def sum(a, b):
 # Write a test case.
 """
 
-        const val UNIT_TEST_CONTENT_TS_JS =
+        private const val UNIT_TEST_CONTENT_TS_JS =
 """// TODO: Ask CodeWhisperer to write unit tests.
 
 // Function to sum two numbers.
@@ -236,7 +237,7 @@ function sum(a, b) {
 // Write a test case for the sum function.
 """
 
-        const val UNIT_TEST_CONTENT_JAVA =
+        private const val UNIT_TEST_CONTENT_JAVA =
 """// TODO: Ask CodeWhisperer to write unit tests.
 
 // Write a test case for the sum function.
@@ -258,7 +259,7 @@ public class SumFunction {
     
 }"""
 
-        const val UNIT_TEST_CONTENT_CSHARP =
+        private const val UNIT_TEST_CONTENT_CSHARP =
 """// TODO: Ask CodeWhisperer to write unit tests.
 
 using System;
