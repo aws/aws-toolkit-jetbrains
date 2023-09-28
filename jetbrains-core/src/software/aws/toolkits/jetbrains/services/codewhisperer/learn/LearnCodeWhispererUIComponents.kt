@@ -179,7 +179,7 @@ object LearnCodeWhispererUIComponents {
             isOpaque = false
             border = BorderFactory.createEmptyBorder(0, 0, 5, 0)
             addActionListener {
-                UiTelemetry.click(null as Project?, "codewhisperer_Workshop_LearnMore")
+                UiTelemetry.click(null as Project?, "codewhisperer_Prompt_Eng")
                 BrowserUtil.browse(URI(CODEWHISPERER_WORKSHOP_URI))
             }
         }
@@ -197,7 +197,7 @@ object LearnCodeWhispererUIComponents {
                         CODEWHISPERER_WORKSHOP_URI
                     ).apply {
                         addActionListener {
-                            UiTelemetry.click(null as Project?, "codewhisperer_Workshop_LearnMore")
+                            UiTelemetry.click(null as Project?, "codewhisperer_Prompt_Eng")
                         }
                     },
                     inlineLabelConstraints
