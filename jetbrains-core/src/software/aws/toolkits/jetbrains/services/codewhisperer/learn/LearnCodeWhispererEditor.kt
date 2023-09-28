@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import com.intellij.ui.SeparatorComponent
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.BottomGap
 import com.intellij.ui.dsl.builder.Cell
@@ -118,7 +119,7 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
                 }.bottomGap(BottomGap.SMALL)
                 row {
                     icon(ImageIcon(LearnCodeWhispererUIComponents.javaClass.classLoader.getResource("codewhisperer/codescan.png")))
-                        .widthGroup(RIGHT_PANEL_WIDTH_GROUP)
+                        .widthGroup(RIGHT_PANEL_WIDTH_GROUP).align(AlignX.LEFT)
                 }
             }
         }

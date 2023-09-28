@@ -338,25 +338,19 @@ object LearnCodeWhispererUIComponents {
 
     // "Code Scan" section components
     val codeScanDescriptionPanel = JPanel(GridBagLayout()).apply {
-        add(JLabel(message("codewhisperer.learn_page.codescan.description.part_1")), horizontalPanelConstraints)
+        add(JLabel(message("codewhisperer.learn_page.codescan.description.part_1")), inlineLabelConstraints)
         add(
-            JPanel(GridBagLayout()).apply {
-                add(JLabel(message("codewhisperer.learn_page.codescan.description.part_2")), inlineLabelConstraints)
-                add(
-                    BrowserLink(
-                        message("codewhisperer.learn_page.learn_more"),
-                        CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI
-                    ).apply {
-                        addActionListener {
-                            UiTelemetry.click(null as Project?, "codewhisperer_ScanCode_LearnMore")
-                        }
-                    },
-                    inlineLabelConstraints
-                )
-                addHorizontalGlue()
+            BrowserLink(
+                message("codewhisperer.learn_page.learn_more"),
+                CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI
+            ).apply {
+                addActionListener {
+                    UiTelemetry.click(null as Project?, "codewhisperer_ScanCode_LearnMore")
+                }
             },
-            horizontalPanelConstraints
+            inlineLabelConstraints
         )
+        addHorizontalGlue()
     }
 
     private fun createOrOpenFileInEditor(project: Project, fileName: String, content: String): Pair<Editor?, Boolean> {
