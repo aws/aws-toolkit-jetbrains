@@ -274,7 +274,7 @@ fun aRecommendationContext(): RecommendationContext {
     val details = mutableListOf<DetailContext>()
     val size = Random.nextInt(1, 5)
     for (i in 1..size) {
-        details[i] = DetailContext(
+        details.add(i - 1, DetailContext(
             aString(),
             aCompletion(),
             aCompletion(),
@@ -282,7 +282,7 @@ fun aRecommendationContext(): RecommendationContext {
             listOf(true, false).random(),
             aString(),
             CodewhispererCompletionType.Line
-        )
+        ))
     }
 
     return RecommendationContext(
