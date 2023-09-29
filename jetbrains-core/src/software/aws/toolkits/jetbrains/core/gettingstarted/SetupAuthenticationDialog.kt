@@ -13,7 +13,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
 import com.intellij.ui.components.JBTabbedPane
@@ -22,7 +21,6 @@ import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
-import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
 import org.jetbrains.annotations.VisibleForTesting
@@ -45,6 +43,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
+import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
@@ -158,22 +157,12 @@ class SetupAuthenticationDialog(
                         SetupAuthenticationNotice.NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.backgroundColor()
                     }
 
-                    val defaultInsets = if (ExperimentalUI.isNewUI()) JBInsets.create(9, 16) else JBInsets.create(5, 10)
                     val borderColor = when (notice.type) {
                         SetupAuthenticationNotice.NoticeType.WARNING -> JBUI.CurrentTheme.NotificationWarning.borderColor()
                         SetupAuthenticationNotice.NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.borderColor()
                     }
 
-                    border = BorderFactory.createCompoundBorder(
-                        // outside border
-                        BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor),
-                        // inside border
-                        // helper util not available in JBUI until 232
-                        // https://github.com/JetBrains/intellij-community/blob/222/platform/platform-api/src/com/intellij/ui/EditorNotificationPanel.java#L135-L136
-                        JBUI.Borders.empty(
-                            JBUI.insets("Editor.Notification.borderInsets", defaultInsets)
-                        )
-                    )
+                    border = editorNotificationCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor))
                 }
             )
         }
@@ -359,7 +348,7 @@ class IdcRolePopup(
     project: Project,
     private val region: String,
     private val tokenProvider: SdkTokenProvider,
-    val state: IdcRolePopupState
+    val state: IdcRolePopupState = IdcRolePopupState()
 ) : DialogWrapper(project) {
     init {
         title = message("gettingstarted.setup.idc.role.title")
@@ -416,8 +405,7 @@ fun rolePopupFromConnection(project: Project, connection: AwsBearerTokenConnecti
                 connection.getConnectionSettings().tokenProvider
             }
 
-            IdcRolePopup(project, connection.region, tokenProvider, state = IdcRolePopupState(null))
-                .show()
+            IdcRolePopup(project, connection.region, tokenProvider).show()
         }
     }
 }
@@ -474,4 +462,4 @@ fun requestCredentialsForExplorer(project: Project) =
             )
         ),
         promptForIdcPermissionSet = true
-    ).show()
+    ).showAndGet()
