@@ -93,7 +93,9 @@ with what features/services are supported.
     <depends optional="true" config-file="ext-scala.xml">org.intellij.scala</depends>
     <depends optional="true" config-file="ext-kotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="ext-shell.xml">com.jetbrains.sh</depends>
-    <depends optional="true" config-file="ext-rust.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="ext-rust-deprecated.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="ext-rust.xml">com.jetbrains.rust</depends>
+
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
     </xi:include>
@@ -125,6 +127,8 @@ with what features/services are supported.
                   topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.startup.CodeWhispererProjectStartupSettingsListener"
                   topic="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener"/>
+        <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.startup.CodeWhispererProjectStartupSettingsListener"
+                  topic="software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener"/>
     </projectListeners>
 
     <applicationListeners>
@@ -297,6 +301,7 @@ with what features/services are supported.
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager" />
 
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider"/>
@@ -405,6 +410,7 @@ with what features/services are supported.
         <editorFactoryListener implementation="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorListener"/>
         <editorActionHandler action="EditorEnter" implementationClass="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEnterHandler" order="first, before editorEnter"/>
         <actionPromoter order="last" implementation="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter"/>
+        <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit">
@@ -551,10 +557,6 @@ with what features/services are supported.
                     class="software.aws.toolkits.jetbrains.services.lambda.actions.DeleteFunctionAction"/>
         </group>
 
-        <group id="aws.toolkit.explorer.cloudformation" popup="true" compact="false">
-            <action id="cloudformation.serverless.deploy" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
-        </group>
-
         <group id="aws.toolkit.explorer.cloudformation.stack" popup="true" compact="false">
             <action id="cloudformation.stack.view"
                     class="software.aws.toolkits.jetbrains.services.cloudformation.stack.OpenStackUiAction"/>
@@ -669,7 +671,6 @@ with what features/services are supported.
 
         <action class="software.aws.toolkits.jetbrains.core.credentials.ConfigureAwsConnectionAction" id="aws.settings.selector" icon="AwsIcons.Logos.AWS"/>
         <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials" icon="AwsIcons.Logos.AWS"/>
-        <action class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction" id="serverless.application.deploy" />
 
         <action class="software.aws.toolkits.jetbrains.services.lambda.actions.SyncServerlessApplicationAction" id="serverless.sync.infra"/>
         <action class="software.aws.toolkits.jetbrains.services.lambda.actions.SyncServerlessAppAction" id="serverless.sync.app"/>

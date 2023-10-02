@@ -1,3 +1,10 @@
+# _1.80_ (2023-09-29)
+- **(Feature)** Authentication: When signing in to AWS Builder Id or IAM Identity Center (SSO), verify the device code matches instead of copy-pasting it
+- **(Feature)** CodeWhisperer: Improve the onboarding experience by showing a new onboarding tutorial to first-time users.
+- **(Bug Fix)** Fix issue displaying SSO code on new UI in Windows
+
+# _1.79_ (2023-09-15)
+
 # _1.78_ (2023-09-08)
 - **(Bug Fix)** Fix 'not recognzied as an ... command' when connecting to CodeCatalyst Dev Environments on Windows
 
