@@ -12,7 +12,6 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.core.region.Endpoint
@@ -25,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
 
 @ExtendWith(MockKExtension::class)
-@DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2022.2", disabledReason = "NPE in platform validation logic")
 class SetupAuthenticationDialogTest {
     companion object {
         @JvmField
