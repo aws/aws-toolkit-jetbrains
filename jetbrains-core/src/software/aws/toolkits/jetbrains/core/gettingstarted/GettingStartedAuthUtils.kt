@@ -45,32 +45,9 @@ fun rolePopupFromConnection(project: Project, connection: AwsBearerTokenConnecti
                     scopes = scopes
                 )
 
-                try {
-                    val newConnection = ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(profile) {
-                        reauthProviderIfNeeded(project, it)
-                    }
-
-                    configFilesFacade.updateSectionInConfig(
-                        SsoSessionConstants.SSO_SESSION_SECTION_NAME,
-                        Profile.builder()
-                            .name(session)
-                            .properties(
-                                mapOf(
-                                    "sso_start_url" to profile.startUrl,
-                                    "sso_region" to profile.ssoRegion,
-                                    "sso_registration_scopes" to scopes.joinToString(",")
-                                )
-                            ).build()
-                    )
-
-                    newConnection
-                } catch (e: Exception) {
-                    val message = ssoErrorMessageFromException(e)
-
-                    LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
-                    Messages.showErrorDialog(project, message, message("gettingstarted.explorer.iam.add"))
-                    return@runInEdt
-                }
+                authAndUpdateConfig(project, profile, configFilesFacade) {
+                    Messages.showErrorDialog(project, it, message("gettingstarted.explorer.iam.add"))
+                } ?: return@runInEdt
             } else {
                 reauthProviderIfNeeded(project, connection)
                 connection
@@ -149,4 +126,38 @@ internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
 
         message(baseMessage, "${e.javaClass.name}: ${e.message}")
     }
+}
+
+internal fun authAndUpdateConfig(
+    project: Project,
+    profile: UserConfigSsoSessionProfile,
+    configFilesFacade: ConfigFilesFacade,
+    onError: (String) -> Unit
+): BearerSsoConnection? {
+    val connection = try {
+        ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(profile) {
+            reauthProviderIfNeeded(project, it)
+        }
+    } catch (e: Exception) {
+        val message = ssoErrorMessageFromException(e)
+
+        onError(message)
+        LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
+        return null
+    }
+
+    configFilesFacade.updateSectionInConfig(
+        SsoSessionConstants.SSO_SESSION_SECTION_NAME,
+        Profile.builder()
+            .name(profile.configSessionName)
+            .properties(
+                mapOf(
+                    "sso_start_url" to profile.startUrl,
+                    "sso_region" to profile.ssoRegion,
+                    "sso_registration_scopes" to profile.scopes.joinToString(",")
+                )
+            ).build()
+    )
+
+    return connection
 }

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
+import com.intellij.testFramework.DisposableExtension
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
@@ -14,10 +15,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.mockito.kotlin.any
 import software.aws.toolkits.core.region.Endpoint
 import software.aws.toolkits.core.region.Service
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
+import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -33,6 +37,10 @@ class SetupAuthenticationDialogTest {
 
     @JvmField
     @RegisterExtension
+    val disposableExtension = DisposableExtension()
+
+    @JvmField
+    @RegisterExtension
     val mockClientManager = MockClientManagerExtension()
 
     @JvmField
@@ -41,8 +49,7 @@ class SetupAuthenticationDialogTest {
 
     @Test
     fun `login to IdC tab`() {
-        mockkStatic(::loginSso)
-        every { loginSso(any(), any(), any(), any()) } answers { mockk() }
+        mockkStatic(::authAndUpdateConfig)
 
         val startUrl = aString()
         val region = mockRegionProvider.createAwsRegion()
@@ -56,6 +63,8 @@ class SetupAuthenticationDialogTest {
             )
         )
 
+        val configFacade = mockk<ConfigFilesFacade>(relaxed = true)
+
         val state = SetupAuthenticationDialogState().apply {
             idcTabState.apply {
                 this.startUrl = startUrl
@@ -64,19 +73,18 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            SetupAuthenticationDialog(projectExtension.project, scopes = scopes, state = state)
+            SetupAuthenticationDialog(projectExtension.project, scopes = scopes, state = state, configFilesFacade = configFacade)
                 .doOKAction()
         }
 
         verify {
-            loginSso(projectExtension.project, startUrl, region.id, scopes)
+            authAndUpdateConfig(projectExtension.project, UserConfigSsoSessionProfile("", region.id, startUrl, scopes), configFacade, any())
         }
     }
 
     @Test
     fun `login to IdC tab and request role`() {
-        mockkStatic(::loginSso)
-        every { loginSso(any(), any(), any(), any()) } answers { mockk() }
+        mockkStatic(::authAndUpdateConfig)
 
         val startUrl = aString()
         val region = mockRegionProvider.createAwsRegion()
@@ -90,6 +98,8 @@ class SetupAuthenticationDialogTest {
             )
         )
 
+        val configFacade = mockk<ConfigFilesFacade>(relaxed = true)
+
         val state = SetupAuthenticationDialogState().apply {
             idcTabState.apply {
                 this.startUrl = startUrl
@@ -98,12 +108,23 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            SetupAuthenticationDialog(projectExtension.project, scopes = scopes, state = state, promptForIdcPermissionSet = true)
+            SetupAuthenticationDialog(
+                projectExtension.project,
+                scopes = scopes,
+                state = state,
+                promptForIdcPermissionSet = true,
+                configFilesFacade = configFacade
+            )
                 .doOKAction()
         }
 
         verify {
-            loginSso(projectExtension.project, startUrl, region.id, scopes + "sso:account:access")
+            authAndUpdateConfig(
+                projectExtension.project,
+                UserConfigSsoSessionProfile("", region.id, startUrl, scopes + "sso:account:access"),
+                configFacade,
+                any()
+            )
         }
     }
 

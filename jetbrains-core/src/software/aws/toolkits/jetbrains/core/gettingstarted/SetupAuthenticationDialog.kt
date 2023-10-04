@@ -25,16 +25,12 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.profiles.Profile
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
-import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -47,8 +43,6 @@ import javax.swing.Action
 import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JLabel
-
-private val LOG = getLogger<SetupAuthenticationDialog>()
 
 data class SetupAuthenticationDialogState(
     var idcTabState: IdentityCenterTabState = IdentityCenterTabState(),
@@ -241,31 +235,9 @@ class SetupAuthenticationDialog(
                     scopes = scopes
                 )
 
-                val connection = try {
-                    ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(profile) {
-                        reauthProviderIfNeeded(project, it)
-                    }
-                } catch (e: Exception) {
-                    val message = ssoErrorMessageFromException(e)
-
-                    setErrorText(message)
-                    LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
-                    return
-                }
-
-                configFilesFacade.updateSectionInConfig(
-                    SSO_SESSION_SECTION_NAME,
-                    Profile.builder()
-                        .name(profileName)
-                        .properties(
-                            mapOf(
-                                "sso_start_url" to state.idcTabState.startUrl,
-                                "sso_region" to state.idcTabState.region.id,
-                                "sso_registration_scopes" to scopes.joinToString(",")
-                            )
-                        ).build()
-                )
-                val tokenProvider = connection.getConnectionSettings().tokenProvider
+                val connection = authAndUpdateConfig(project, profile, configFilesFacade) {
+                    setErrorText(it)
+                } ?: return
 
                 if (!promptForIdcPermissionSet) {
                     ToolkitConnectionManager.getInstance(project).switchConnection(connection)
@@ -273,6 +245,7 @@ class SetupAuthenticationDialog(
                     return
                 }
 
+                val tokenProvider = connection.getConnectionSettings().tokenProvider
                 val rolePopup = IdcRolePopup(
                     project,
                     state.idcTabState.region.id,
