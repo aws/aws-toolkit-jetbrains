@@ -423,7 +423,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     }
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }.align(AlignX.FILL)
+                                }
 
                                 topGap(TopGap.MEDIUM)
                             }
@@ -439,7 +439,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Opening...") {}.applyToComponent {
                                     this.isEnabled = false
-                                }.align(AlignX.FILL)
+                                }
                             }
                             row {
                                 label(message("aws.getstarted.resource.panel_question_text"))
@@ -455,7 +455,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     AwsToolkitExplorerToolWindow.getInstance(project).selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)?.isVisible = true
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }.align(AlignX.FILL)
+                                }
                             }
                             row {
                                 label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
@@ -488,7 +488,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     }
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }.align(AlignX.FILL)
+                                }
                             }
                             row {
                                 label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
@@ -546,7 +546,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelNotConnected)
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }.align(AlignX.FILL)
+                                }
 
 
                                 topGap(TopGap.SMALL)
@@ -565,7 +565,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Connecting in browser...") {}.applyToComponent {
                                     this.isEnabled = false
-                                }.align(AlignX.FILL)
+                                }
                             }
                             row {
                                 label(message("codewhisperer.gettingstarted.panel.licence_comment"))
@@ -580,7 +580,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Learn") {
                                     LearnCodeWhispererEditorProvider.openEditor(project)
-                                }.align(AlignX.FILL)
+                                }
                             }
                             row {
                                 label("Connected with AWS Builder ID").applyToComponent { this.icon =  PanelConstants.COMMIT_ICON}
@@ -601,7 +601,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelReauthenticationRequired)
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                                }.align(AlignX.FILL)
+                                }
 
                                 topGap(TopGap.SMALL)
                             }
