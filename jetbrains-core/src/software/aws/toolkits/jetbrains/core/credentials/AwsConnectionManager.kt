@@ -186,8 +186,22 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
                 promise.setResult(ConnectionState.ValidConnection(credentialsProvider, region))
             } catch (e: Exception) {
                 LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
-                success = false
-                promise.setResult(ConnectionState.InvalidConnection(e))
+                val result = if (credentialsIdentifier is PostValidateInteractiveCredential) {
+                    try {
+                        credentialsIdentifier.handleValidationException(e)
+                    } catch (nested: Exception) {
+                        success = false
+                        LOGGER.warn(e) { "$credentialsIdentifier threw while attempting to handle initial validation exception" }
+                        null
+                    }
+                } else {
+                    null
+                }
+
+                if (result == null) {
+                    success = false
+                }
+                promise.setResult(result ?: ConnectionState.InvalidConnection(e))
             } finally {
                 AwsTelemetry.validateCredentials(
                     project,
