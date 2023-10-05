@@ -305,7 +305,7 @@ class SetupAuthenticationDialog(
                 .comment(message("gettingstarted.setup.idc.startUrl.comment"))
                 .align(AlignX.FILL)
                 .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
-                .errorOnApply("User should not perform Identity Center login with AWS Builder ID url") { it.text == SONO_URL }
+                .errorOnApply(message("gettingstarted.setup.idc.no_builder_id")) { it.text == SONO_URL }
                 .bindText(state.idcTabState::startUrl)
         }
 
