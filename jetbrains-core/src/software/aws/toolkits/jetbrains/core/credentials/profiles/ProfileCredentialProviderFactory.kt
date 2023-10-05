@@ -223,7 +223,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             val sessionProperty = profile.property(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY)
             if (sessionProperty.isPresent) {
                 val session = sessionProperty.get()
-                if (ssoModified.any { it.id == session }) {
+                if (ssoModified.any { it.profileName == session }) {
                     profilesModified.add(profileId)
                 }
             }

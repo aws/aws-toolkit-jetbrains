@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
