@@ -215,6 +215,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         lateinit var panelReauthenticationRequired: Panel
         lateinit var panelConnectionInProgress : Panel
 
+
         init {
             addToCenter(
                 panel {
@@ -247,7 +248,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     val loginSuccess = tryOrNull {
                                         controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
                                         loginSso(project, SONO_URL, SONO_REGION, CODECATALYST_SCOPES)
-
                                     } != null
 
                                     handleLogin(loginSuccess)
@@ -551,6 +551,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
 
+
                                 topGap(TopGap.SMALL)
                             }
 
@@ -625,7 +626,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                 }
             )
         }
-
+        
         private fun handleCodeWhispererLogin(authResult: Boolean, revertToPanel: Panel) {
             handleLogin(authResult)
             if (authResult) {
