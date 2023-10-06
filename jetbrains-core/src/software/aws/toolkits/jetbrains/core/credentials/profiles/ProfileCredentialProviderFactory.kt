@@ -29,6 +29,7 @@ import software.aws.toolkits.core.credentials.CredentialSourceId
 import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
+import software.aws.toolkits.core.credentials.SsoSessionBackedCredentialIdentifier
 import software.aws.toolkits.core.credentials.SsoSessionIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
@@ -83,16 +84,17 @@ private class ProfileCredentialsIdentifierLegacySso(
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials
 
-private class ProfileCredentialsIdentifierSso(
+class ProfileCredentialsIdentifierSso internal constructor(
     profileName: String,
     private val ssoSessionName: String,
     defaultRegionId: String?,
     credentialType: CredentialType?
-) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), PostValidateInteractiveCredential {
+) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), PostValidateInteractiveCredential, SsoSessionBackedCredentialIdentifier {
+    override val sessionIdentifier = "$SSO_SESSION_SECTION_NAME:$ssoSessionName"
+
     override fun handleValidationException(e: Exception): ConnectionState.RequiresUserAction? {
         // in the new SSO flow, we must attempt validation before knowing if user action is truly required
-        // true exception could be further up the chain
-        if (e is SsoOidcException || e.cause is SsoOidcException) {
+        if (findUpException<SsoOidcException>(e) || findUpException<IllegalStateException>(e)) {
             return ConnectionState.RequiresUserAction(
                 object : InteractiveCredential, CredentialIdentifier by this {
                     override val userActionDisplayMessage = message("credentials.sso.display", displayName)
@@ -101,7 +103,7 @@ private class ProfileCredentialsIdentifierSso(
                         override fun actionPerformed(e: AnActionEvent) {
                             val session = CredentialManager.getInstance()
                                 .getSsoSessionIdentifiers()
-                                .first { it.id == "$SSO_SESSION_SECTION_NAME:$ssoSessionName" }
+                                .first { it.id == sessionIdentifier }
                             val connection = ToolkitAuthManager.getInstance().getOrCreateSsoConnection(
                                 UserConfigSsoSessionProfile(
                                     configSessionName = ssoSessionName,
@@ -121,6 +123,20 @@ private class ProfileCredentialsIdentifierSso(
         }
 
         return null
+    }
+
+    // true exception could be further up the chain
+    private inline fun<reified T : Throwable> findUpException(e: Throwable?): Boolean {
+        // inline fun can't use recursion
+        var throwable = e
+        while (throwable != null) {
+            if (throwable is T) {
+                return true
+            }
+            throwable = throwable.cause
+        }
+
+        return false
     }
 }
 

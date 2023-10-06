@@ -190,8 +190,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
                     try {
                         credentialsIdentifier.handleValidationException(e)
                     } catch (nested: Exception) {
-                        success = false
-                        LOGGER.warn(e) { "$credentialsIdentifier threw while attempting to handle initial validation exception" }
+                        LOGGER.warn(nested) { "$credentialsIdentifier threw while attempting to handle initial validation exception" }
                         null
                     }
                 } else {
