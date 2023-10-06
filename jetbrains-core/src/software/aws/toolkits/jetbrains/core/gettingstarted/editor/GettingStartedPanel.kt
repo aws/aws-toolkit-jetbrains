@@ -210,11 +210,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
     private inner class CodeCatalystPanel : FeatureDescriptionPanel() {
         override val loginSuccessTitle = message("gettingstarted.setup.auth.success.title", message("caws.devtoolPanel.title"))
         override val loginSuccessBody = message("gettingstarted.setup.auth.success.body", message("caws.devtoolPanel.title"))
-        lateinit var panelNotConnected : Panel
+        lateinit var panelNotConnected: Panel
         lateinit var panelConnected: Panel
         lateinit var panelReauthenticationRequired: Panel
-        lateinit var panelConnectionInProgress : Panel
-
+        lateinit var panelConnectionInProgress: Panel
 
         init {
             addToCenter(
@@ -263,14 +262,12 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                             .withPosition(Balloon.Position.above)
 
                                         showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
-
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                     }
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
-
                             }
 
                             row {
@@ -303,10 +300,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }
                             }
                             row {
-                                label("Connected with AWS Builder ID").applyToComponent { this.icon =  PanelConstants.COMMIT_ICON}
+                                label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Sign out")  {
+                                link("Sign out") {
                                     val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
                                     logoutFromSsoConnection(project, connection) {
                                         controlPanelVisibility(panelConnected, panelNotConnected)
@@ -347,7 +344,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 label("AWS Builder ID Expired").applyToComponent { icon = PanelConstants.CANCEL_ICON }
                             }
                             row {
-                                link("Sign out")  {
+                                link("Sign out") {
                                     val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
                                     logoutFromSsoConnection(project, connection) {
                                         controlPanelVisibility(panelConnected, panelNotConnected)
@@ -355,25 +352,19 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }
                             }
                         }.visible(builderIdConnectionValidity() == ValidConn.ExPIRED)
-
-
-
-
                     }
                 }
             )
         }
-
-
     }
 
     private inner class ResourceExplorerPanel : FeatureDescriptionPanel() {
         override val loginSuccessTitle = message("gettingstarted.setup.auth.success.iam.title")
         override val loginSuccessBody = message("gettingstarted.setup.auth.success.iam.body")
-        lateinit var panelNotConnected : Panel
+        lateinit var panelNotConnected: Panel
         lateinit var panelConnected: Panel
         lateinit var panelReauthenticationRequired: Panel
-        lateinit var panelConnectionInProgress : Panel
+        lateinit var panelConnectionInProgress: Panel
 
         init {
             addToCenter(
@@ -412,7 +403,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     handleLogin(loginSuccess)
 
                                     if (loginSuccess) {
-                                        val tooltip = GotItTooltip("$GOT_IT_ID_PREFIX.explorer", message("gettingstarted.explorer.gotit.explorer.body"), project)
+                                        val tooltip = GotItTooltip(
+                                            "$GOT_IT_ID_PREFIX.explorer",
+                                            message("gettingstarted.explorer.gotit.explorer.body"),
+                                            project
+                                        )
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
@@ -461,16 +456,15 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Sign out")  {
-
+                                link("Sign out") {
                                 }
-                                link("Add another"){
+                                link("Add another") {
                                     requestCredentialsForExplorer(project)
                                 }
                             }
                         }.visible(!iamCredentialsValidity(project))
                         panelReauthenticationRequired = panel {
-                            row{
+                            row {
                                 button("Reauthenticate") {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
                                     val loginSuccess = requestCredentialsForExplorer(project)
@@ -478,7 +472,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
 
                                     if (loginSuccess) {
                                         controlPanelVisibility(panelConnectionInProgress, panelConnected)
-                                        val tooltip = GotItTooltip("$GOT_IT_ID_PREFIX.explorer", message("gettingstarted.explorer.gotit.explorer.body"), project)
+                                        val tooltip = GotItTooltip(
+                                            "$GOT_IT_ID_PREFIX.explorer",
+                                            message("gettingstarted.explorer.gotit.explorer.body"),
+                                            project
+                                        )
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
@@ -494,13 +492,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Add another"){
+                                link("Add another") {
                                     requestCredentialsForExplorer(project)
                                 }
                             }
                         }.visible(iamCredentialsValidity(project))
-
-
                     }
                 }
             )
@@ -510,10 +506,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
     private inner class CodeWhispererPanel : FeatureDescriptionPanel() {
         override val loginSuccessTitle = message("gettingstarted.setup.auth.success.title", message("codewhisperer.experiment"))
         override val loginSuccessBody = message("gettingstarted.setup.auth.success.body", message("codewhisperer.experiment"))
-        lateinit var panelNotConnected : Panel
+        lateinit var panelNotConnected: Panel
         lateinit var panelConnected: Panel
         lateinit var panelReauthenticationRequired: Panel
-        lateinit var panelConnectionInProgress : Panel
+        lateinit var panelConnectionInProgress: Panel
         init {
             addToCenter(
                 panel {
@@ -547,7 +543,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
-
 
                                 topGap(TopGap.SMALL)
                             }
@@ -583,10 +578,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }
                             }
                             row {
-                                label("Connected with AWS Builder ID").applyToComponent { this.icon =  PanelConstants.COMMIT_ICON}
+                                label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Sign out")  {
+                                link("Sign out") {
                                     val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
                                     logoutFromSsoConnection(project, connection) {
                                         controlPanelVisibility(panelConnected, panelNotConnected)
@@ -598,7 +593,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Reauthenticate") {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
-                                    handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelReauthenticationRequired)
+                                    handleCodeWhispererLogin(
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true),
+                                        panelReauthenticationRequired
+                                    )
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
@@ -606,10 +604,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 topGap(TopGap.SMALL)
                             }
                             row {
-                                label("Connected with AWS Builder ID").applyToComponent { this.icon =  PanelConstants.COMMIT_ICON}
+                                label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Sign out")  {
+                                link("Sign out") {
                                     val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
                                     logoutFromSsoConnection(project, connection) {
                                         controlPanelVisibility(panelConnected, panelNotConnected)
@@ -617,8 +615,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }
                             }
                         }.visible(builderIdConnectionValidity() == ValidConn.ExPIRED)
-
-
                     }
                 }
             )
@@ -774,8 +770,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
             true
         )
     }
-
-
 }
 
 class ShareFeedbackInGetStarted : DumbAwareAction() {
@@ -790,27 +784,30 @@ fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
     currentPanel.visible(false)
     newPanel.visible(true)
 }
+
 fun builderIdConnectionValidity(): ValidConn {
     val connections = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>()
     val size = connections.size
-    if(size == 1) {
+    if (size == 1) {
         connections.map {
-            if(it.lazyIsUnauthedBearerConnection()) {
+            if (it.lazyIsUnauthedBearerConnection()) {
                 return ValidConn.ExPIRED
-            } else return ValidConn.VALID
+            } else {
+                return ValidConn.VALID
+            }
         }
-    } else return ValidConn.NOT_CONNECTED
+    } else {
+        return ValidConn.NOT_CONNECTED
+    }
 
     return ValidConn.NOT_CONNECTED
 }
 
-fun iamCredentialsValidity(project: Project): Boolean {
-    return AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
-}
+fun iamCredentialsValidity(project: Project): Boolean =
+    AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
 
 enum class ValidConn {
     ExPIRED,
     VALID,
     NOT_CONNECTED
 }
-
