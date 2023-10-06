@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
-import com.intellij.testFramework.DisposableExtension
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
@@ -34,10 +33,6 @@ class SetupAuthenticationDialogTest {
         @RegisterExtension
         val projectExtension = ProjectExtension()
     }
-
-    @JvmField
-    @RegisterExtension
-    val disposableExtension = DisposableExtension()
 
     @JvmField
     @RegisterExtension
@@ -73,8 +68,13 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            SetupAuthenticationDialog(projectExtension.project, scopes = scopes, state = state, configFilesFacade = configFacade)
-                .doOKAction()
+            SetupAuthenticationDialog(projectExtension.project, scopes = scopes, state = state, configFilesFacade = configFacade).apply {
+                try {
+                    doOKAction()
+                } finally {
+                    close(0)
+                }
+            }
         }
 
         verify {
@@ -114,8 +114,13 @@ class SetupAuthenticationDialogTest {
                 state = state,
                 promptForIdcPermissionSet = true,
                 configFilesFacade = configFacade
-            )
-                .doOKAction()
+            ).apply {
+                try {
+                    doOKAction()
+                } finally {
+                    close(0)
+                }
+            }
         }
 
         verify {
@@ -138,8 +143,13 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            SetupAuthenticationDialog(projectExtension.project, state = state)
-                .doOKAction()
+            SetupAuthenticationDialog(projectExtension.project, state = state).apply {
+                try {
+                    doOKAction()
+                } finally {
+                    close(0)
+                }
+            }
         }
 
         verify {
@@ -154,8 +164,13 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            val validation = SetupAuthenticationDialog(projectExtension.project, state = state)
-                .performValidateAll()
+            val validation = SetupAuthenticationDialog(projectExtension.project, state = state).run {
+                try {
+                    performValidateAll()
+                } finally {
+                    close(0)
+                }
+            }
 
             assertThat(validation).satisfies {
                 assertThat(it).hasSize(2)
@@ -173,8 +188,13 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            val validation = SetupAuthenticationDialog(projectExtension.project, state = state)
-                .performValidateAll()
+            val validation = SetupAuthenticationDialog(projectExtension.project, state = state).run {
+                try {
+                    performValidateAll()
+                } finally {
+                    close(0)
+                }
+            }
 
             assertThat(validation).isEmpty()
         }
@@ -188,8 +208,13 @@ class SetupAuthenticationDialogTest {
         }
 
         runInEdtAndWait {
-            val validation = SetupAuthenticationDialog(projectExtension.project, state = state)
-                .performValidateAll()
+            val validation = SetupAuthenticationDialog(projectExtension.project, state = state).run {
+                try {
+                    performValidateAll()
+                } finally {
+                    close(0)
+                }
+            }
 
             assertThat(validation).satisfies {
                 assertThat(it).hasSize(3)
