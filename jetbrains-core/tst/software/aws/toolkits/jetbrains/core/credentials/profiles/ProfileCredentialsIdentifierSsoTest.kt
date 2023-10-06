@@ -3,10 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
@@ -15,7 +16,7 @@ import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 
-@TestApplication
+@ExtendWith(ApplicationExtension::class)
 class ProfileCredentialsIdentifierSsoTest {
     private val sut = ProfileCredentialsIdentifierSso("", "", "", null)
 
