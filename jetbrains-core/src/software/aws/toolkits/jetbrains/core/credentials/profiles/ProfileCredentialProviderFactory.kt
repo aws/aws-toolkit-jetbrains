@@ -99,7 +99,7 @@ class ProfileCredentialsIdentifierSso internal constructor(
                 object : InteractiveCredential, CredentialIdentifier by this {
                     override val userActionDisplayMessage = message("credentials.sso.display", displayName)
                     override val userActionShortDisplayMessage = message("credentials.sso.display.short")
-                    override val userAction = object : AnAction("Sign in to SSO session '$ssoSessionName'"), DumbAware {
+                    override val userAction = object : AnAction(message("credentials.sso.login.session", ssoSessionName)), DumbAware {
                         override fun actionPerformed(e: AnActionEvent) {
                             val session = CredentialManager.getInstance()
                                 .getSsoSessionIdentifiers()
