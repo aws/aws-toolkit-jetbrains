@@ -5,9 +5,11 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -24,24 +26,35 @@ import com.intellij.ui.dsl.builder.BottomGap
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.Alarm
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import icons.AwsIcons
+import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
@@ -54,15 +67,43 @@ import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
 import javax.swing.Icon
 import javax.swing.JComponent
 
-class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
+class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), Disposable {
     private val infoBanner = ConnectionInfoBanner()
+    private val featureSetPanel = FeatureColumns()
+    private val alarm = Alarm()
     init {
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String) {
+                    alarm.cancelAllRequests()
+                    alarm.addRequest (
+                        {
+                            featureSetPanel.setFeatureContent()
+                        },
+                        1000
+                    )
+                    super.onChange(providerId)
+                }
+            })
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(ToolkitConnectionManagerListener.TOPIC,
+            object : ToolkitConnectionManagerListener {
+                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    alarm.cancelAllRequests()
+                    alarm.addRequest(
+                        {
+                            featureSetPanel.setFeatureContent()
+                        },
+                        1000
+                    )
+                }
+            })
         addToCenter(
             panel {
                 indent {
@@ -103,14 +144,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 font = PANEL_TITLE_FONT
                             }
                     ) {
+                        featureSetPanel.setFeatureContent()
                         row {
-                            // CodeWhisperer panel
-                            cell(CodeWhispererPanel())
-                            // Resource Explorer Panel
-                            cell(ResourceExplorerPanel())
-                            // CodeCatalyst Panel
-                            cell(CodeCatalystPanel())
+                            cell(featureSetPanel)
                         }
+
                     }
 
                     collapsibleGroup(message("aws.onboarding.getstarted.panel.bottom_text_question")) {
@@ -276,7 +314,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 browserLink(message("caws.getstarted.panel.link_text"), CawsEndpoints.CAWS_SPACES_DOC)
                             }
-                        }
+                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.NOT_CONNECTED)
                         panelConnectionInProgress = panel {
                             row {
                                 button("Logging in....") {}.applyToComponent {
@@ -295,8 +333,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Open CodeCatalyst menu") {
                                     AwsToolkitExplorerToolWindow.getInstance(project).selectTab(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)?.isVisible = true
-                                }.applyToComponent {
-                                    putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
                             }
                             row {
@@ -310,7 +346,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     }
                                 }
                             }
-                        }.visible(builderIdConnectionValidity() == ValidConn.VALID)
+                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.VALID)
 
                         panelReauthenticationRequired = panel {
                             row {
@@ -351,7 +387,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     }
                                 }
                             }
-                        }.visible(builderIdConnectionValidity() == ValidConn.ExPIRED)
+                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.ExPIRED)
                     }
                 }
             )
@@ -365,6 +401,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         lateinit var panelConnected: Panel
         lateinit var panelReauthenticationRequired: Panel
         lateinit var panelConnectionInProgress: Panel
+
 
         init {
             addToCenter(
@@ -394,7 +431,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 url = PanelConstants.RESOURCE_EXPLORER_LEARN_MORE
                             )
                         }
-
                         panelNotConnected = panel {
                             row {
                                 button(message("aws.onboarding.getstarted.panel.button_iam_login")) {
@@ -448,21 +484,21 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             row {
                                 button("Open Resource Explorer") {
                                     AwsToolkitExplorerToolWindow.getInstance(project).selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)?.isVisible = true
-                                }.applyToComponent {
-                                    putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
                             }
+
                             row {
                                 label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
-                            }
+                            }.visible(checkIamConnectionValidity(project).connectionType == CWConnectionType.IAM)
                             row {
-                                link("Sign out") {
-                                }
+                                label("Connected with IAM Identity Center").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                            }.visible(checkIamConnectionValidity(project).connectionType == CWConnectionType.IAM_IDC)
+                            row {
                                 link("Add another") {
                                     requestCredentialsForExplorer(project)
                                 }
                             }
-                        }.visible(!iamCredentialsValidity(project))
+                        }.visible(checkIamConnectionValidity(project).isConnectionValid == ValidConn.VALID)
                         panelReauthenticationRequired = panel {
                             row {
                                 button("Reauthenticate") {
@@ -489,14 +525,24 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 }
                             }
                             row {
-                                label("Connected with IAM").applyToComponent { icon = PanelConstants.COMMIT_ICON }
+                                button("Open Resource Explorer") {
+                                    AwsToolkitExplorerToolWindow.getInstance(project).selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)?.isVisible = true
+                                }
                             }
+                            row {
+                                label("IAM Identity Center Connection Expired").applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                            }.visible(checkIamConnectionValidity(project).connectionType == CWConnectionType.IAM_IDC)
+
+                            row {
+                                label("Invalid IAM Credentials").applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                            }.visible(checkIamConnectionValidity(project).connectionType == CWConnectionType.IAM)
+
                             row {
                                 link("Add another") {
                                     requestCredentialsForExplorer(project)
                                 }
                             }
-                        }.visible(iamCredentialsValidity(project))
+                        }.visible(checkIamConnectionValidity(project).isConnectionValid == ValidConn.ExPIRED)
                     }
                 }
             )
@@ -555,7 +601,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
                                 }
                             }
-                        }.visible(builderIdConnectionValidity().equals(ValidConn.NOT_CONNECTED))
+                        }.visible( checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.NOT_CONNECTED)
+
                         panelConnectionInProgress = panel {
                             row {
                                 button("Connecting in browser...") {}.applyToComponent {
@@ -579,16 +626,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                             }
                             row {
                                 label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
-                            }
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            row {
+                                label("Connected with IAM Identity Center").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
                             row {
                                 link("Sign out") {
-                                    val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
-                                    logoutFromSsoConnection(project, connection) {
-                                        controlPanelVisibility(panelConnected, panelNotConnected)
+                                    val connection = checkBearerConnectionValidity(project, "Codewhisperer").activeConnection
+                                    if (connection != null) {
+                                        logoutFromSsoConnection(project, connection) {
+                                            controlPanelVisibility(panelConnected, panelNotConnected)
+                                        }
                                     }
                                 }
-                            }
-                        }.visible(builderIdConnectionValidity() == ValidConn.VALID)
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                        }.visible( checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.VALID)
+
                         panelReauthenticationRequired = panel {
                             row {
                                 button("Reauthenticate") {
@@ -604,8 +657,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                 topGap(TopGap.SMALL)
                             }
                             row {
-                                label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
-                            }
+                                label("AWS Builder ID Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            row {
+                                label("IAM Identity Center Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
                             row {
                                 link("Sign out") {
                                     val connection = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().first()
@@ -613,8 +669,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                         controlPanelVisibility(panelConnected, panelNotConnected)
                                     }
                                 }
-                            }
-                        }.visible(builderIdConnectionValidity() == ValidConn.ExPIRED)
+                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                        }.visible( checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.ExPIRED)
                     }
                 }
             )
@@ -675,6 +731,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         }
     }
 
+
     private abstract inner class FeatureDescriptionPanel : GettingStartedBorderedPanel() {
         abstract val loginSuccessTitle: String
         abstract val loginSuccessBody: String
@@ -687,7 +744,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
             }
         }
     }
-
     private class ConnectionInfoBanner : BorderLayoutPanel(10, 0) {
         private val wrapper = Wrapper()
         init {
@@ -761,6 +817,31 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         val enable: Boolean = true
     )
 
+
+
+    private inner class FeatureColumns : BorderLayoutPanel(10, 0) {
+        private val wrapper = Wrapper()
+        init {
+            addToCenter(wrapper)
+        }
+
+        fun setFeatureContent() {
+            wrapper.setContent(
+                panel {
+                    row {
+                        // CodeWhisperer panel
+                        cell(CodeWhispererPanel())
+                        // Resource Explorer Panel
+                        cell(ResourceExplorerPanel())
+                        // CodeCatalyst Panel
+                        cell(CodeCatalystPanel())
+                    }
+                }
+            )
+        }
+
+    }
+
     companion object {
         fun openPanel(project: Project) = FileEditorManager.getInstance(project).openTextEditor(
             OpenFileDescriptor(
@@ -769,6 +850,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
             ),
             true
         )
+    }
+
+    override fun dispose() {
+
     }
 }
 
@@ -780,34 +865,4 @@ class ShareFeedbackInGetStarted : DumbAwareAction() {
     }
 }
 
-fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
-    currentPanel.visible(false)
-    newPanel.visible(true)
-}
 
-fun builderIdConnectionValidity(): ValidConn {
-    val connections = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>()
-    val size = connections.size
-    if (size == 1) {
-        connections.map {
-            if (it.lazyIsUnauthedBearerConnection()) {
-                return ValidConn.ExPIRED
-            } else {
-                return ValidConn.VALID
-            }
-        }
-    } else {
-        return ValidConn.NOT_CONNECTED
-    }
-
-    return ValidConn.NOT_CONNECTED
-}
-
-fun iamCredentialsValidity(project: Project): Boolean =
-    AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
-
-enum class ValidConn {
-    ExPIRED,
-    VALID,
-    NOT_CONNECTED
-}
