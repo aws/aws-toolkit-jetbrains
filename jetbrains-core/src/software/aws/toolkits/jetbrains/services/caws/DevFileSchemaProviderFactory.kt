@@ -24,12 +24,11 @@ class DevFileSchemaProviderFactory : JsonSchemaProviderFactory {
             override fun getSchemaFile(): VirtualFile? {
                 val latestTag = jacksonObjectMapper().readTree(URL("https://api.github.com/repos/devfile/api/releases/latest")).get("tag_name").textValue()
                 val schemaUrl: String = "https://raw.githubusercontent.com/devfile/api/$latestTag/schemas/latest/devfile.json"
-                return JsonFileResolver.urlToFile(schemaUrl)}
+                return JsonFileResolver.urlToFile(schemaUrl) }
 
             override fun getSchemaType(): SchemaType = SchemaType.remoteSchema
 
             override fun getSchemaVersion(): JsonSchemaVersion = JsonSchemaVersion.SCHEMA_7
         }
     )
-
 }
