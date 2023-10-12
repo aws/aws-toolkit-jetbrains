@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.jsonSchema.extension.JsonSchemaFileProvider
@@ -11,6 +12,7 @@ import com.jetbrains.jsonSchema.extension.SchemaType
 import com.jetbrains.jsonSchema.impl.JsonSchemaVersion
 import com.jetbrains.jsonSchema.remote.JsonFileResolver
 import software.aws.toolkits.resources.message
+import java.net.URL
 
 class DevFileSchemaProviderFactory : JsonSchemaProviderFactory {
     override fun getProviders(project: Project): List<JsonSchemaFileProvider> = listOf(
@@ -19,7 +21,10 @@ class DevFileSchemaProviderFactory : JsonSchemaProviderFactory {
 
             override fun isAvailable(file: VirtualFile): Boolean = file.name.matches(Regex("devfile\\.y[a]?ml", RegexOption.IGNORE_CASE))
 
-            override fun getSchemaFile(): VirtualFile? = JsonFileResolver.urlToFile(schemaUrl)
+            override fun getSchemaFile(): VirtualFile? {
+                val latestTag = jacksonObjectMapper().readTree(URL("https://api.github.com/repos/devfile/api/releases/latest")).get("tag_name").textValue()
+                val schemaUrl: String = "https://raw.githubusercontent.com/devfile/api/$latestTag/schemas/latest/devfile.json"
+                return JsonFileResolver.urlToFile(schemaUrl)}
 
             override fun getSchemaType(): SchemaType = SchemaType.remoteSchema
 
@@ -27,7 +32,4 @@ class DevFileSchemaProviderFactory : JsonSchemaProviderFactory {
         }
     )
 
-    private companion object {
-        const val schemaUrl: String = "https://github.com/devfile/api/releases/latest/download/devfile.json"
-    }
 }
