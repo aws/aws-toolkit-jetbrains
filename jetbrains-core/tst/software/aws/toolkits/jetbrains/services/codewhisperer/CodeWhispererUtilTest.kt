@@ -7,6 +7,7 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -21,6 +22,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
+import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 
@@ -38,6 +40,7 @@ class CodeWhispererUtilTest {
     val regionProvider = MockRegionProviderRule()
 
     lateinit var fixture: CodeInsightTestFixture
+    private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
     fun setup() {
@@ -45,10 +48,16 @@ class CodeWhispererUtilTest {
         fixture = projectRule.fixture
 
         clientManager.create<SsoOidcClient>()
+        isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
+    }
+
+    @After
+    fun tearDown() {
+        AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
     }
 
     @Test
-    fun `checkIfIdentityCenterLogin will execute callback if the connection is IamIdentityCenter`() {
+    fun `checkIfIdentityCenterLoginOrTelemetryEnabled will execute callback if the connection is IamIdentityCenter`() {
         val modificationTracker = SimpleModificationTracker()
         val oldCount = modificationTracker.modificationCount
 
@@ -60,11 +69,12 @@ class CodeWhispererUtilTest {
     }
 
     @Test
-    fun `checkIfIdentityCenterLogin will return null if the connection is not IamIdentityCenter`() {
+    fun `checkIfIdentityCenterLoginOrTelemetryEnabled will return null if the connection is not IamIdentityCenter and telemetry not enabled`() {
         val modificationTracker = SimpleModificationTracker()
         val oldCount = modificationTracker.modificationCount
 
         val builderIdConn = ManagedBearerSsoConnection(startUrl = SONO_URL, region = SONO_REGION, scopes = CODEWHISPERER_SCOPES)
+        AwsSettings.getInstance().isTelemetryEnabled = false
         runIfIdcConnectionOrTelemetryEnabled(builderIdConn) { modificationTracker.incModificationCount() }
 
         val newCount = modificationTracker.modificationCount
