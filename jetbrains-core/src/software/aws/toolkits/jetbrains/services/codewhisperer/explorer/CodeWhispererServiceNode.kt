@@ -60,21 +60,6 @@ class CodeWhispererServiceNode(
     }
     private val learnCodeWhispererNode by lazy { LearnCodeWhispererNode(nodeProject) }
 
-    init {
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
-            ToolkitConnectionManagerListener.TOPIC,
-            object : ToolkitConnectionManagerListener {
-                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    // TODO: Move this IF block into nullifyAccountlessCredentialIfNeeded()
-                    if (newConnection is AwsBearerTokenConnection) {
-                        CodeWhispererExplorerActionManager.getInstance().nullifyAccountlessCredentialIfNeeded()
-                    }
-                    project.refreshDevToolTree()
-                }
-            }
-        )
-    }
-
     override fun onDoubleClick(event: MouseEvent) {}
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
