@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
-import com.intellij.testFramework.DisposableExtension
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.runInEdtAndWait
 import io.mockk.every
