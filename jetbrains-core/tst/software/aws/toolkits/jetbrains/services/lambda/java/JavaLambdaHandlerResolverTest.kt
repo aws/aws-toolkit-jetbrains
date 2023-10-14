@@ -8,6 +8,7 @@ import com.intellij.openapi.project.DumbServiceImpl
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -526,11 +527,10 @@ class JavaLambdaHandlerResolverTest {
 
     private fun runInDumbMode(block: () -> Unit) {
         val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
-        try {
-            runInEdtAndWait { dumbServiceImpl.isDumb = true }
-            block()
-        } finally {
-            runInEdtAndWait { dumbServiceImpl.isDumb = false }
+        runBlocking {
+            dumbServiceImpl.runInDumbMode {
+                block()
+            }
         }
     }
 }
