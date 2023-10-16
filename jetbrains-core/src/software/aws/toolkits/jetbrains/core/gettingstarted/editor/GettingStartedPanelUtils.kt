@@ -17,8 +17,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.utils.notifyInfo
-
 
 data class ValidActiveIamConnection(
     val isConnectionValid: ValidConn,
@@ -26,7 +24,7 @@ data class ValidActiveIamConnection(
     val connectionType: CWConnectionType?
 )
 
-data class ValidActiveConnection (
+data class ValidActiveConnection(
     val isConnectionValid: ValidConn,
     val activeConnection: AwsBearerTokenConnection?,
     val connectionType: CWConnectionType?
@@ -40,10 +38,11 @@ enum class CWConnectionType {
 }
 
 enum class ValidConn {
-    ExPIRED,
+    EXPIRED,
     VALID,
     NOT_CONNECTED
 }
+
 fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
     currentPanel.visible(false)
     newPanel.visible(true)
@@ -51,34 +50,45 @@ fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
 
 fun checkBearerConnectionValidity(project: Project, source: String): ValidActiveConnection {
     val connections = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>()
-    if(connections.size < 1) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
+    if (connections.size < 1) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
 
-    val activeConnection =  if(source == "Codewhisperer")  {
+    val activeConnection = if (source == "Codewhisperer") {
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
     } else if (source == "CodeCatalyst") {
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
     } else {
         ToolkitConnectionManager.getInstance(project).activeConnection()
     }
-    if(activeConnection == null) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
+    if (activeConnection == null) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
     activeConnection as AwsBearerTokenConnection
     val connectionType = if (activeConnection.startUrl == SONO_URL) CWConnectionType.BUILDER_ID else CWConnectionType.IAM_IDC
     if (activeConnection.lazyIsUnauthedBearerConnection()) {
-        return ValidActiveConnection(ValidConn.ExPIRED, activeConnection, connectionType)
+        return ValidActiveConnection(ValidConn.EXPIRED, activeConnection, connectionType)
     } else {
         return ValidActiveConnection(ValidConn.VALID, activeConnection, connectionType)
     }
 }
 
-fun checkIamConnectionValidity(project: Project) : ValidActiveIamConnection {
-    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ValidActiveIamConnection(ValidConn.NOT_CONNECTED, null, null)
+fun checkIamConnectionValidity(project: Project): ValidActiveIamConnection {
+    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ValidActiveIamConnection(
+        ValidConn.NOT_CONNECTED,
+        null,
+        null
+    )
     val invalidConnection = AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
-    return if(invalidConnection) ValidActiveIamConnection(ValidConn.ExPIRED, currConn, isCredentialSso(currConn.shortName)) else
+    return if (invalidConnection) {
+        ValidActiveIamConnection(ValidConn.EXPIRED, currConn, isCredentialSso(currConn.shortName))
+    } else {
         ValidActiveIamConnection(ValidConn.VALID, currConn, isCredentialSso(currConn.shortName))
+    }
 }
 
-fun isCredentialSso(providerId: String) : CWConnectionType {
+fun isCredentialSso(providerId: String): CWConnectionType {
     val profileName = providerId.split("-").first()
-    val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map { it.id.substringAfter("${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:") }
-    return if(profileName in ssoSessionIds) CWConnectionType.IAM_IDC else CWConnectionType.IAM
+    val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map {
+        it.id.substringAfter(
+            "${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:"
+        )
+    }
+    return if (profileName in ssoSessionIds) CWConnectionType.IAM_IDC else CWConnectionType.IAM
 }
