@@ -43,18 +43,23 @@ enum class ValidConn {
     NOT_CONNECTED
 }
 
+enum class BearerTokenFeatureSet {
+    CODEWHISPERER,
+    CODECATALYST
+}
+
 fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
     currentPanel.visible(false)
     newPanel.visible(true)
 }
 
-fun checkBearerConnectionValidity(project: Project, source: String): ValidActiveConnection {
+fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSet): ValidActiveConnection {
     val connections = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>()
     if (connections.size < 1) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
 
-    val activeConnection = if (source == "Codewhisperer") {
+    val activeConnection = if (source == BearerTokenFeatureSet.CODEWHISPERER) {
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-    } else if (source == "CodeCatalyst") {
+    } else if (source == BearerTokenFeatureSet.CODECATALYST) {
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
     } else {
         ToolkitConnectionManager.getInstance(project).activeConnection()

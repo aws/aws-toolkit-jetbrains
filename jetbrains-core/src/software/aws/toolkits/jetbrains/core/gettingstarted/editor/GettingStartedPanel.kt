@@ -81,7 +81,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         },
                         1000
                     )
-                    super.onChange(providerId)
                 }
             }
         )
@@ -308,7 +307,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 browserLink(message("caws.getstarted.panel.link_text"), CawsEndpoints.CAWS_SPACES_DOC)
                             }
-                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.NOT_CONNECTED)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST).isConnectionValid == ValidConn.NOT_CONNECTED)
                         panelConnectionInProgress = panel {
                             row {
                                 button("Connecting in browser...") {}.applyToComponent {
@@ -342,7 +341,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     }
                                 }
                             }
-                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.VALID)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST).isConnectionValid == ValidConn.VALID)
 
                         panelReauthenticationRequired = panel {
                             row {
@@ -385,7 +384,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     }
                                 }
                             }
-                        }.visible(checkBearerConnectionValidity(project, "CodeCatalyst").isConnectionValid == ValidConn.EXPIRED)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST).isConnectionValid == ValidConn.EXPIRED)
                     }
                 }
             )
@@ -598,7 +597,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
                                 }
                             }
-                        }.visible(checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.NOT_CONNECTED)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).isConnectionValid == ValidConn.NOT_CONNECTED)
 
                         panelConnectionInProgress = panel {
                             row {
@@ -623,13 +622,13 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                             row {
                                 label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.BUILDER_ID)
                             row {
                                 label("Connected with IAM Identity Center").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
                             row {
                                 link("Sign out") {
-                                    val connection = checkBearerConnectionValidity(project, "Codewhisperer").activeConnection
+                                    val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).activeConnection
                                     if (connection != null) {
                                         logoutFromSsoConnection(project, connection) {
                                             controlPanelVisibility(panelConnected, panelNotConnected)
@@ -640,14 +639,14 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
                                 }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.BUILDER_ID)
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelConnected)
                                 }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
-                        }.visible(checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.VALID)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).isConnectionValid == ValidConn.VALID)
 
                         panelReauthenticationRequired = panel {
                             row {
@@ -665,10 +664,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                             row {
                                 label("AWS Builder ID Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.BUILDER_ID)
                             row {
                                 label("IAM Identity Center Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
                             row {
                                 link("Sign out") {
                                     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
@@ -681,14 +680,14 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
                                 }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.BUILDER_ID)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.BUILDER_ID)
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelConnected)
                                 }
-                            }.visible(checkBearerConnectionValidity(project, "Codewhisperer").connectionType == CWConnectionType.IAM_IDC)
-                        }.visible(checkBearerConnectionValidity(project, "Codewhisperer").isConnectionValid == ValidConn.EXPIRED)
+                            }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
+                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).isConnectionValid == ValidConn.EXPIRED)
                     }
                 }
             )
