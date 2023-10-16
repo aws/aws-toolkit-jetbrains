@@ -28,8 +28,7 @@ class CredentialStatusNotification(private val project: Project) : ConnectionSet
                         message,
                         newState.displayMessage
                     ),
-                    createNotificationExpiringAction(actionManager.getAction("aws.settings.upsertCredentials")),
-                    createNotificationExpiringAction(RefreshConnectionAction(message("settings.retry")))
+                    *newState.actions.map { createNotificationExpiringAction(it) }.toTypedArray()
                 )
             )
         }
