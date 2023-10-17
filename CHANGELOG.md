@@ -1,7 +1,15 @@
+# _1.83_ (2023-10-13)
+- **(Feature)** CodeWhisperer: improve auto-suggestions for additional languages
+
+# _1.82_ (2023-10-06)
+- **(Bug Fix)** CodeWhisperer: Fixed an issue where the "Learn CodeWhisperer" page is shown for Gateway host
+
 # _1.80_ (2023-09-29)
 - **(Feature)** Authentication: When signing in to AWS Builder Id or IAM Identity Center (SSO), verify the device code matches instead of copy-pasting it
 - **(Feature)** CodeWhisperer: Improve the onboarding experience by showing a new onboarding tutorial to first-time users.
 - **(Bug Fix)** Fix issue displaying SSO code on new UI in Windows
+
+# _1.81_ (2023-09-29)
 
 # _1.79_ (2023-09-15)
 
