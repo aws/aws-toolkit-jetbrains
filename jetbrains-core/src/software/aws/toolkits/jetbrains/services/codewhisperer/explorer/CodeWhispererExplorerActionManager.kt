@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.isRefreshTokenExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
-import java.time.LocalDateTime
 
 // TODO: refactor this class, now it's managing action and state
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
@@ -62,14 +61,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.HasShownNewOnboardingPage] = hasShownNewOnboardingPage
     }
 
-    fun setAccountlessNotificationWarnTimestamp() {
-        actionState.accountlessWarnTimestamp = LocalDateTime.now().format(CodeWhispererConstants.TIMESTAMP_FORMATTER)
-    }
-
-    fun setAccountlessNotificationErrorTimestamp() {
-        actionState.accountlessErrorTimestamp = LocalDateTime.now().format(CodeWhispererConstants.TIMESTAMP_FORMATTER)
-    }
-
     fun getAccountlessWarnNotificationTimestamp(): String? = actionState.accountlessWarnTimestamp
 
     fun getAccountlessErrorNotificationTimestamp(): String? = actionState.accountlessErrorTimestamp
@@ -90,12 +81,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
 
     fun setConnectionExpiredDoNotShowAgain(doNotShowAgain: Boolean) {
         actionState.value[CodeWhispererExploreStateType.ConnectionExpiredDoNotShowAgain] = doNotShowAgain
-    }
-
-    fun getAccountlessNullified(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.AccountlessNullified, false)
-
-    fun setAccountlessNullified(accountlessNullified: Boolean) {
-        actionState.value[CodeWhispererExploreStateType.AccountlessNullified] = accountlessNullified
     }
 
     fun setAutoSuggestion(project: Project, isAutoEnabled: Boolean) {
@@ -133,13 +118,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
             } else {
                 CodeWhispererLoginType.Logout
             }
-        }
-    }
-
-    fun nullifyAccountlessCredentialIfNeeded() {
-        if (actionState.token != null) {
-            setAccountlessNullified(true)
-            actionState.token = null
         }
     }
 

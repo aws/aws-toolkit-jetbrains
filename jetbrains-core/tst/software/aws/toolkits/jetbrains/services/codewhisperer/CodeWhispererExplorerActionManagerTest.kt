@@ -108,8 +108,6 @@ class CodeWhispererExplorerActionManagerTest {
             .isNotNull
             .isEqualTo("foo")
 
-        mockManager.nullifyAccountlessCredentialIfNeeded()
-
         assertThat(mockManager.state.token)
             .isNull()
     }

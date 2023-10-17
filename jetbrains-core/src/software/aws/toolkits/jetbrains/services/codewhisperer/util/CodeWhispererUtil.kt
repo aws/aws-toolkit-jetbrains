@@ -24,12 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLoginLearnMoreAction
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererSsoLearnMoreAction
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionError
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionWarn
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionError
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
@@ -37,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -171,30 +164,6 @@ object CodeWhispererUtil {
             project,
         )
     }
-
-    // show when user login with Accountless
-    fun notifyWarnAccountless() = notifyWarn(
-        "",
-        message("codewhisperer.notification.accountless.warn.message"),
-        null,
-        listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionWarn(), DoNotShowAgainActionWarn())
-    )
-
-    // show after user selects Don't Show Again in Accountless login message
-    fun notifyInfoAccountless() = notifyInfo(
-        "",
-        message("codewhisperer.notification.accountless.info.dont.show.again.message"),
-        null,
-        listOf(CodeWhispererLoginLearnMoreAction())
-    )
-
-    // show when user login with Accountless and Accountless is not supported by CW
-    fun notifyErrorAccountless() = notifyError(
-        "",
-        message("codewhisperer.notification.accountless.error.message"),
-        null,
-        listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError(), DoNotShowAgainActionError())
-    )
 
     fun isAccessTokenExpired(project: Project): Boolean {
         val tokenProvider = tokenProvider(project) ?: return false
