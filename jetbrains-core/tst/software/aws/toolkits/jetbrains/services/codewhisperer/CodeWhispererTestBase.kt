@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
@@ -54,6 +55,7 @@ import software.aws.toolkits.resources.message
 
 // TODO: restructure testbase, too bulky and hard to debug
 open class CodeWhispererTestBase {
+    var applicationRule = ApplicationRule()
     var projectRule = PythonCodeInsightTestFixtureRule()
     val mockClientManagerRule = MockClientManagerRule()
     val mockCredentialRule = MockCredentialManagerRule()
@@ -61,7 +63,7 @@ open class CodeWhispererTestBase {
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
+    val ruleChain = RuleChain(applicationRule, projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
 
     protected lateinit var mockClient: CodeWhispererRuntimeClient
 
