@@ -310,7 +310,9 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST).isConnectionValid == ValidConn.NOT_CONNECTED)
                         panelConnectionInProgress = panel {
                             row {
-                                button("Connecting in browser...") {}.applyToComponent {
+                                button(
+                                    message("gettingstarted.connecting.in.browser")
+                                ) {}.applyToComponent {
                                     this.isEnabled = false
                                 }
                             }
@@ -332,7 +334,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 label("Connected with AWS Builder ID").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
                             }
                             row {
-                                link("Sign out") {
+                                link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
                                         CodeCatalystConnection.getInstance()
                                     ) as AwsBearerTokenConnection
@@ -372,7 +374,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                             }
                             row {
-                                label("AWS Builder ID Expired").applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { icon = PanelConstants.CANCEL_ICON }
                             }
                             row {
                                 link("Sign out") {
@@ -526,7 +528,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                             }
                             row {
-                                label("IAM Identity Center Connection Expired").applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { icon = PanelConstants.CANCEL_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == CWConnectionType.IAM_IDC)
 
                             row {
@@ -601,7 +603,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                         panelConnectionInProgress = panel {
                             row {
-                                button("Connecting in browser...") {}.applyToComponent {
+                                button(message("gettingstarted.connecting.in.browser")) {}.applyToComponent {
                                     this.isEnabled = false
                                 }
                             }
@@ -616,7 +618,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }.visible(false)
                         panelConnected = panel {
                             row {
-                                button("Learn") {
+                                button(message("codewhisperer.explorer.learn")) {
                                     LearnCodeWhispererEditorProvider.openEditor(project)
                                 }
                             }
@@ -627,7 +629,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 label("Connected with IAM Identity Center").applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
                             }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
                             row {
-                                link("Sign out") {
+                                link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).activeConnection
                                     if (connection != null) {
                                         logoutFromSsoConnection(project, connection) {
@@ -663,13 +665,13 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 topGap(TopGap.SMALL)
                             }
                             row {
-                                label("AWS Builder ID Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
                             }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.BUILDER_ID)
                             row {
-                                label("IAM Identity Center Expired").applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
                             }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == CWConnectionType.IAM_IDC)
                             row {
-                                link("Sign out") {
+                                link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
                                         CodeWhispererConnection.getInstance()
                                     ) as AwsBearerTokenConnection
