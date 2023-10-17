@@ -153,7 +153,7 @@ class CodeWhispererFileContextProviderTest {
 
     @Ignore("Reenable this once we have any partial support language")
     @Test
-    fun `shouldFetchCrossfileContext - partially support`() {
+    fun `shouldFetchCrossfileContext - partially support123`() {
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
     }
