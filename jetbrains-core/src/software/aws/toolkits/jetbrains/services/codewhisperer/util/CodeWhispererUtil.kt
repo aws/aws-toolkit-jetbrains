@@ -43,15 +43,13 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 
-fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    if (project.isDisposed) {
-        null
-    } else {
-        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-            calculateIfIamIdentityCenterConnection(it, calculationTask)
-        }
+fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? = if (project.isDisposed) {
+    null
+} else {
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        calculateIfIamIdentityCenterConnection(it, calculationTask)
     }
-
+}
 
 fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
     if (connection.isSono()) {
