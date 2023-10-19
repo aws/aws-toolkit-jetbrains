@@ -98,7 +98,7 @@ Sometimes we'll introduce experimental features that we're trying out. These may
 aren't ready for prime-time we'll hide them behind an experimental feature flag. 
 
 Experimental features can be enabled in the settings/preferences
-(`Settings -> Tools -> AWS -> Experimental Features`) or via the Addtional Settings (![Gear Icon][gear-icon]) in the AWS Explorer Tool Window. 
+(`Settings -> Tools -> AWS -> Experimental Features`) or via the Additional Settings (![Gear Icon][gear-icon]) in the AWS Explorer Tool Window. 
 
 Please note that experimental features may be disabled / removed at any time.
 
