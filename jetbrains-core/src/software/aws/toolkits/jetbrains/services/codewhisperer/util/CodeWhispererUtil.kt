@@ -71,7 +71,6 @@ fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection
     }
 }
 
-
 fun runIfIdcConnectionOrTelemetryEnabled(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
     if (connection.isSono() && !isTelemetryEnabled()) return
     callback(connection)
