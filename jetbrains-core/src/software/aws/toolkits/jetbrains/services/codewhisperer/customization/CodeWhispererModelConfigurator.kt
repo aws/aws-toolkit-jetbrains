@@ -225,17 +225,19 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             true -> true
 
             null -> run {
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    // will update devTool tree
-                    listCustomizations(project, passive = true) != null
-                    project.refreshDevToolTree()
+                if (!ApplicationManager.getApplication().isUnitTestMode) {
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        // will update devTool tree
+                        listCustomizations(project, passive = true) != null
+                        project.refreshDevToolTree()
+                    }
                 }
 
                 false
             }
 
             false -> run {
-                if (forceUpdate) {
+                if (forceUpdate && !ApplicationManager.getApplication().isUnitTestMode) {
                     ApplicationManager.getApplication().executeOnPooledThread {
                         // will update devTool tree
                         val updatedValue = listCustomizations(project, passive = true) != null
