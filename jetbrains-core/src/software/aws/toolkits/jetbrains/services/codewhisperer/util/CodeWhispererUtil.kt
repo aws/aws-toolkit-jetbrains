@@ -61,10 +61,16 @@ fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, ca
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
 // 2. It will be sent for IdC users, regardless of telemetry optout status.
-fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) {
+    if (project.isDisposed) {
+        return
+    }
+
     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
         runIfIdcConnectionOrTelemetryEnabled(it, callback)
     }
+}
+
 
 fun runIfIdcConnectionOrTelemetryEnabled(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
     if (connection.isSono() && !isTelemetryEnabled()) return
