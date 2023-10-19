@@ -18,29 +18,11 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 
-data class ValidActiveIamConnection(
-    val isConnectionValid: ValidConn,
-    val activeConnection: CredentialIdentifier?,
-    val connectionType: CWConnectionType?
-)
-
-data class ValidActiveConnection(
-    val isConnectionValid: ValidConn,
-    val activeConnection: AwsBearerTokenConnection?,
-    val connectionType: CWConnectionType?
-)
-
-enum class CWConnectionType {
+enum class ActiveConnectionType {
     BUILDER_ID,
     IAM_IDC,
     IAM,
     UNKNOWN
-}
-
-enum class ValidConn {
-    EXPIRED,
-    VALID,
-    NOT_CONNECTED
 }
 
 enum class BearerTokenFeatureSet {
@@ -53,9 +35,51 @@ fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
     newPanel.visible(true)
 }
 
-fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSet): ValidActiveConnection {
+sealed interface ActiveConnection {
+    var activeConnectionBearer: AwsBearerTokenConnection?
+    var connectionType: ActiveConnectionType?
+    var activeConnectionIam: CredentialIdentifier?
+
+    data class ExpiredBearer(
+        override var activeConnectionBearer: AwsBearerTokenConnection?,
+        override var connectionType: ActiveConnectionType?,
+        override var activeConnectionIam: CredentialIdentifier? = null
+    ) : ActiveConnection
+
+    data class ExpiredIam(
+        override var activeConnectionBearer: AwsBearerTokenConnection? = null,
+        override var connectionType: ActiveConnectionType?,
+        override var activeConnectionIam: CredentialIdentifier?
+    ) : ActiveConnection
+
+    data class ValidBearer(
+        override var activeConnectionBearer: AwsBearerTokenConnection?,
+        override var connectionType: ActiveConnectionType?,
+        override var activeConnectionIam: CredentialIdentifier? = null
+    ) : ActiveConnection
+
+    data class ValidIam(
+        override var activeConnectionBearer: AwsBearerTokenConnection? = null,
+        override var connectionType: ActiveConnectionType?,
+        override var activeConnectionIam: CredentialIdentifier?
+    ) : ActiveConnection
+
+    object NotConnected : ActiveConnection {
+        override var activeConnectionBearer: AwsBearerTokenConnection?
+            get() = null
+            set(value) {}
+        override var connectionType: ActiveConnectionType?
+            get() = null
+            set(value) {}
+        override var activeConnectionIam: CredentialIdentifier?
+            get() = null
+            set(value) {}
+    }
+}
+
+fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSet): ActiveConnection {
     val connections = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>()
-    if (connections.size < 1) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
+    if (connections.isEmpty()) return ActiveConnection.NotConnected
 
     val activeConnection = if (source == BearerTokenFeatureSet.CODEWHISPERER) {
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
@@ -64,36 +88,32 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
     } else {
         ToolkitConnectionManager.getInstance(project).activeConnection()
     }
-    if (activeConnection == null) return ValidActiveConnection(ValidConn.NOT_CONNECTED, null, null)
+    if (activeConnection == null) return ActiveConnection.NotConnected
     activeConnection as AwsBearerTokenConnection
-    val connectionType = if (activeConnection.startUrl == SONO_URL) CWConnectionType.BUILDER_ID else CWConnectionType.IAM_IDC
-    if (activeConnection.lazyIsUnauthedBearerConnection()) {
-        return ValidActiveConnection(ValidConn.EXPIRED, activeConnection, connectionType)
+    val connectionType = if (activeConnection.startUrl == SONO_URL) ActiveConnectionType.BUILDER_ID else ActiveConnectionType.IAM_IDC
+    return if (activeConnection.lazyIsUnauthedBearerConnection()) {
+        ActiveConnection.ExpiredBearer(activeConnection, connectionType)
     } else {
-        return ValidActiveConnection(ValidConn.VALID, activeConnection, connectionType)
+        ActiveConnection.ValidBearer(activeConnection, connectionType)
     }
 }
 
-fun checkIamConnectionValidity(project: Project): ValidActiveIamConnection {
-    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ValidActiveIamConnection(
-        ValidConn.NOT_CONNECTED,
-        null,
-        null
-    )
+fun checkIamConnectionValidity(project: Project): ActiveConnection {
+    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ActiveConnection.NotConnected
     val invalidConnection = AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
     return if (invalidConnection) {
-        ValidActiveIamConnection(ValidConn.EXPIRED, currConn, isCredentialSso(currConn.shortName))
+        ActiveConnection.ExpiredIam(connectionType = isCredentialSso(currConn.shortName), activeConnectionIam = currConn)
     } else {
-        ValidActiveIamConnection(ValidConn.VALID, currConn, isCredentialSso(currConn.shortName))
+        ActiveConnection.ValidIam(connectionType = isCredentialSso(currConn.shortName), activeConnectionIam = currConn)
     }
 }
 
-fun isCredentialSso(providerId: String): CWConnectionType {
+fun isCredentialSso(providerId: String): ActiveConnectionType {
     val profileName = providerId.split("-").first()
     val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map {
         it.id.substringAfter(
             "${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:"
         )
     }
-    return if (profileName in ssoSessionIds) CWConnectionType.IAM_IDC else CWConnectionType.IAM
+    return if (profileName in ssoSessionIds) ActiveConnectionType.IAM_IDC else ActiveConnectionType.IAM
 }
