@@ -116,17 +116,17 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     message("codewhisperer.experiment"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.CHECKMARK_ICON,
                                             message("iam_identity_center.name"),
                                             message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.CHECKMARK_ICON,
                                             message("aws_builder_id.service_name"),
                                             "Need to insert tagline"
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            PanelConstants.X_ICON,
                                             message("settings.credentials.iam"),
                                             message("aws.getstarted.auth.panel.notSupport_text"),
                                             false
@@ -140,17 +140,17 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     message("aws.getstarted.resource.panel_title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.CHECKMARK_ICON,
                                             message("iam_identity_center.name"),
                                             message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.X_ICON,
                                             message("aws_builder_id.service_name"),
                                             "Need to insert tagline"
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.CHECKMARK_ICON,
                                             message("settings.credentials.iam"),
                                             message("aws.getstarted.auth.panel.notSupport_text")
                                         )
@@ -163,18 +163,18 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
                                     message("caws.devtoolPanel.title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            PanelConstants.X_ICON,
                                             message("iam_identity_center.name"),
                                             message("aws.getstarted.auth.panel.notSupport_text"),
                                             false
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            PanelConstants.CHECKMARK_ICON,
                                             message("aws_builder_id.service_name"),
                                             "Need to insert tagline"
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            PanelConstants.X_ICON,
                                             message("settings.credentials.iam"),
                                             message("aws.getstarted.auth.panel.notSupport_text"),
                                             false
@@ -509,8 +509,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel() {
         const val RESOURCE_EXPLORER_LEARN_MORE = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/working-with-aws.html"
         const val RESOURCE_EXPLORER_SIGNUP_DOC = "https://aws.amazon.com/free/"
         const val SHARE_FEEDBACK_LINK = "FeedbackDialog"
-        val COMMIT_ICON = AllIcons.General.InspectionsOK
-        val CANCEL_ICON = AllIcons.Ide.Notification.Close
+        val CHECKMARK_ICON = AllIcons.General.InspectionsOK
+        val X_ICON = AllIcons.Ide.Notification.Close
         val PANEL_TITLE_FONT = JBFont.h2().asBold()
         const val PANEL_WIDTH = 300
         const val PANEL_HEIGHT = 450
