@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
@@ -57,6 +58,10 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
     }
 
     private fun scheduleCodeWhispererTracker() {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
+
         if (!alarm.isDisposed && !isShuttingDown.get()) {
             alarm.addRequest({ flush() }, DEFAULT_CHECK_INTERVAL.toMillis())
         }

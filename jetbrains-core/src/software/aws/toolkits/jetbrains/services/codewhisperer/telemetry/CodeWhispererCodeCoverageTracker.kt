@@ -147,6 +147,10 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     private fun scheduleCodeWhispererCodeCoverageTracker() {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
+
         if (!alarm.isDisposed && !isShuttingDown.get()) {
             alarm.addRequest({ flush() }, Duration.ofSeconds(timeWindowInSec).toMillis())
         }

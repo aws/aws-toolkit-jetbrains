@@ -220,24 +220,26 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
      * then will try fetch the latest from the server in the background thread and update the UI correspondingly
      */
     override fun shouldDisplayCustomNode(project: Project, forceUpdate: Boolean): Boolean = calculateIfIamIdentityCenterConnection(project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return@calculateIfIamIdentityCenterConnection false
+        }
+
         val cachedValue = connectionIdToIsAllowlisted[it.id]
         when (cachedValue) {
             true -> true
 
             null -> run {
-                if (!ApplicationManager.getApplication().isUnitTestMode) {
-                    ApplicationManager.getApplication().executeOnPooledThread {
-                        // will update devTool tree
-                        listCustomizations(project, passive = true) != null
-                        project.refreshDevToolTree()
-                    }
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    // will update devTool tree
+                    listCustomizations(project, passive = true) != null
+                    project.refreshDevToolTree()
                 }
 
                 false
             }
 
             false -> run {
-                if (forceUpdate && !ApplicationManager.getApplication().isUnitTestMode) {
+                if (forceUpdate) {
                     ApplicationManager.getApplication().executeOnPooledThread {
                         // will update devTool tree
                         val updatedValue = listCustomizations(project, passive = true) != null
