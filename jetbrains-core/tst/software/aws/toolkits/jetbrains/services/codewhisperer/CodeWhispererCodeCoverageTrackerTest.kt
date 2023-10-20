@@ -564,5 +564,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
             }
         """.trimIndent()
         assertThat(fixture.editor.document.text.trimEnd()).isEqualTo(formatted)
+
+        tracker.forceTrackerFlush()
     }
 }
