@@ -226,7 +226,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test tracker is listening to document changes and increment totalTokens - add new code`() {
-        val sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE))
+        sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
 
@@ -253,7 +253,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test tracker is listening to document changes and increment totalTokens - delete code should not affect`() {
-        val sut = TestCodePercentageTracker(
+        sut = TestCodePercentageTracker(
             project,
             TOTAL_SECONDS_IN_MINUTE,
             CodeWhispererPython.INSTANCE,
@@ -276,7 +276,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test tracker documentChanged - will not increment tokens on blank string of length greater than 1`() {
-        val sut = TestCodePercentageTracker(
+        sut = TestCodePercentageTracker(
             project,
             TOTAL_SECONDS_IN_MINUTE,
             CodeWhispererPython.INSTANCE,
@@ -297,7 +297,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test msg CODEWHISPERER_USER_ACTION_PERFORMED will add rangeMarker in the list`() {
-        val sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, language = CodeWhispererPython.INSTANCE))
+        sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, language = CodeWhispererPython.INSTANCE))
         sut.activateTrackerIfNotActive()
         val rangeMarkerMock = runInEdtAndGet {
             spy(fixture.editor.document.createRangeMarker(0, 3)) {
@@ -319,14 +319,14 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test 0 totalTokens will return null`() {
-        val sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, language = CodeWhispererJava.INSTANCE))
+        sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, language = CodeWhispererJava.INSTANCE))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererJava.INSTANCE] = sut
         assertThat(sut.percentage).isNull()
     }
 
     @Test
     fun `test flush() will reset tokens and reschedule next telemetry sending`() {
-        val sut = TestCodePercentageTracker(
+        sut = TestCodePercentageTracker(
             project,
             TOTAL_SECONDS_IN_MINUTE,
             CodeWhispererPython.INSTANCE,
@@ -350,7 +350,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         // when user delete whole recommendation, rangeMarker will be isValid = false
         val rangeMarkerMock: RangeMarker = mock()
         whenever(rangeMarkerMock.isValid).thenReturn(false)
-        val sut = spy(
+        sut = spy(
             TestCodePercentageTracker(
                 project,
                 TOTAL_SECONDS_IN_MINUTE,
@@ -369,7 +369,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test flush() will call emitTelemetry automatically schedule next call`() {
-        val sut = spy(
+        sut = spy(
             TestCodePercentageTracker(
                 project,
                 TOTAL_SECONDS_IN_MINUTE,
@@ -395,7 +395,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             on { document } doReturn fixture.editor.document
         }
 
-        val sut = spy(
+        sut = spy(
             TestCodePercentageTracker(
                 project,
                 TOTAL_SECONDS_IN_MINUTE,
@@ -426,7 +426,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     @Test
     fun `test flush() won't emit telemetry event when users not enabling telemetry`() {
         AwsSettings.getInstance().isTelemetryEnabled = false
-        val sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE))
+        sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE))
         doNothing().whenever(sut).emitCodeWhispererCodeContribution()
 
         sut.activateTrackerIfNotActive()
@@ -482,7 +482,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test flush() won't emit telemetry when users are not editing the document (totalTokens == 0)`() {
-        val sut = TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE)
+        sut = TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE)
         sut.activateTrackerIfNotActive()
         assertThat(sut.activeRequestCount()).isEqualTo(1)
         sut.forceTrackerFlush()
@@ -522,7 +522,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
             }            
         """.trimIndent()
         val file = fixture.configureByText("test.java", codeNeedToBeReformatted)
-        val sut = spy(
+        sut = spy(
             TestCodePercentageTracker(
                 project,
                 TOTAL_SECONDS_IN_MINUTE,
