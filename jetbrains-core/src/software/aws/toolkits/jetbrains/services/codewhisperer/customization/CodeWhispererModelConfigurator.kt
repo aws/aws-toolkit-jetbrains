@@ -231,7 +231,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 null -> run {
                     ApplicationManager.getApplication().executeOnPooledThread {
                         // will update devTool tree
-                        listCustomizations(project, passive = true) != null
+                        listCustomizations(project, passive = true)
                         project.refreshDevToolTree()
                     }
 
