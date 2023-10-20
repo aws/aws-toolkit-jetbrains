@@ -56,7 +56,6 @@ private fun notifyNewCustomization(project: Project) {
     )
 }
 
-// TODO: better to split this component into two parts, of which one is application level component and one is project level component in the long run
 // A component responsible managing client's codewhisperer model configuration (currently customization feature only support enterprise tier users)
 interface CodeWhispererModelConfigurator {
     fun showConfigDialog(project: Project)
