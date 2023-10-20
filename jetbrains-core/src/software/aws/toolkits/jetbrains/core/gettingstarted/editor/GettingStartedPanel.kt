@@ -77,13 +77,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String) {
-                    alarm.cancelAllRequests()
-                    alarm.addRequest(
-                        {
-                            featureSetPanel.setFeatureContent()
-                        },
-                        1000
-                    )
+                    connectionUpdated()
                 }
             }
         )
@@ -91,13 +85,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    alarm.cancelAllRequests()
-                    alarm.addRequest(
-                        {
-                            featureSetPanel.setFeatureContent()
-                        },
-                        1000
-                    )
+                    connectionUpdated()
                 }
             }
         )
@@ -231,6 +219,16 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
         )
 
         border = JBUI.Borders.empty(JBUI.scale(32), JBUI.scale(16))
+    }
+
+    private fun connectionUpdated() {
+        alarm.cancelAllRequests()
+        alarm.addRequest(
+            {
+                featureSetPanel.setFeatureContent()
+            },
+            1000
+        )
     }
 
     private fun showGotIt(tabName: String, tooltip: GotItTooltip) {

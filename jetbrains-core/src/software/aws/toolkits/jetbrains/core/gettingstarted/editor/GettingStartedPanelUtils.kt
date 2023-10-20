@@ -36,44 +36,43 @@ fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
 }
 
 sealed interface ActiveConnection {
-    var activeConnectionBearer: AwsBearerTokenConnection?
-    var connectionType: ActiveConnectionType?
-    var activeConnectionIam: CredentialIdentifier?
+    val activeConnectionBearer: AwsBearerTokenConnection?
+    val connectionType: ActiveConnectionType?
+    val activeConnectionIam: CredentialIdentifier?
 
     data class ExpiredBearer(
-        override var activeConnectionBearer: AwsBearerTokenConnection?,
-        override var connectionType: ActiveConnectionType?,
-        override var activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionBearer: AwsBearerTokenConnection?,
+        override val connectionType: ActiveConnectionType?,
+        override val activeConnectionIam: CredentialIdentifier? = null
     ) : ActiveConnection
 
     data class ExpiredIam(
-        override var activeConnectionBearer: AwsBearerTokenConnection? = null,
-        override var connectionType: ActiveConnectionType?,
-        override var activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionBearer: AwsBearerTokenConnection? = null,
+        override val connectionType: ActiveConnectionType?,
+        override val activeConnectionIam: CredentialIdentifier?
     ) : ActiveConnection
 
     data class ValidBearer(
-        override var activeConnectionBearer: AwsBearerTokenConnection?,
-        override var connectionType: ActiveConnectionType?,
-        override var activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionBearer: AwsBearerTokenConnection?,
+        override val connectionType: ActiveConnectionType?,
+        override val activeConnectionIam: CredentialIdentifier? = null
     ) : ActiveConnection
 
     data class ValidIam(
-        override var activeConnectionBearer: AwsBearerTokenConnection? = null,
-        override var connectionType: ActiveConnectionType?,
-        override var activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionBearer: AwsBearerTokenConnection? = null,
+        override val connectionType: ActiveConnectionType?,
+        override val activeConnectionIam: CredentialIdentifier?
     ) : ActiveConnection
 
     object NotConnected : ActiveConnection {
-        override var activeConnectionBearer: AwsBearerTokenConnection?
+        override val activeConnectionBearer: AwsBearerTokenConnection?
             get() = null
-            set(value) {}
-        override var connectionType: ActiveConnectionType?
+
+        override val connectionType: ActiveConnectionType?
             get() = null
-            set(value) {}
-        override var activeConnectionIam: CredentialIdentifier?
+
+        override val activeConnectionIam: CredentialIdentifier?
             get() = null
-            set(value) {}
     }
 }
 
