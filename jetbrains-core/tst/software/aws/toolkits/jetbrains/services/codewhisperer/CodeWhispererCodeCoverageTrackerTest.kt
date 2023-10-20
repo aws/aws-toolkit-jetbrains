@@ -205,7 +205,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     }
 
     @Test
-    fun `test tracker is listening to cwspr recommendation service invocation`() {
+    fun `test tracker is listening to codewhisperer recommendation service invocation`() {
         val pythonTracker = TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE)
         val jsxTracker = TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererJsx.INSTANCE)
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = pythonTracker
@@ -218,6 +218,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         ApplicationManager.getApplication().messageBus.syncPublisher(CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED).onSuccess(fileContextInfo)
         assertThat(pythonTracker.serviceInvocationCount).isEqualTo(1)
         assertThat(jsxTracker.serviceInvocationCount).isEqualTo(0)
+
+        pythonTracker.forceTrackerFlush()
     }
 
     @Test
@@ -245,6 +247,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
         assertThat(pythonTracker.totalTokensSize).isEqualTo(oldSize + anotherCode.length)
+
+        pythonTracker.forceTrackerFlush()
     }
 
     @Test
@@ -268,6 +272,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         }
 
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+
+        pythonTracker.forceTrackerFlush()
     }
 
     @Test
@@ -289,6 +295,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         }
 
         assertThat(pythonTracker.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+
+        pythonTracker.forceTrackerFlush()
     }
 
     @Test
@@ -311,6 +319,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val argumentCaptor = argumentCaptor<String>()
         verify(rangeMarkerMock, atLeastOnce()).putUserData(any<Key<String>>(), argumentCaptor.capture())
         assertThat(argumentCaptor.firstValue).isEqualTo(pythonTestLeftContext.substring(0, 3))
+
+        pythonTracker.forceTrackerFlush()
     }
 
     @Test
