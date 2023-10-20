@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.ui.GotItTooltip
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.AlignX
@@ -123,15 +124,20 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         bottomGap(BottomGap.MEDIUM)
                     }
 
-                    group(
-                        JBLabel(message("aws.onboarding.getstarted.panel.group_title"))
-                            .apply {
-                                font = PANEL_TITLE_FONT
+                    // can't use group() because the font cant be overridden
+                    row {
+                        panel {
+                            row {
+                                cell(TitledSeparator(message("aws.onboarding.getstarted.panel.group_title"))).applyToComponent {
+                                    border = null
+                                    setTitleFont(JBFont.h1().asBold())
+                                }.align(AlignX.FILL)
                             }
-                    ) {
-                        featureSetPanel.setFeatureContent()
-                        row {
-                            cell(featureSetPanel)
+
+                            featureSetPanel.setFeatureContent()
+                            row {
+                                cell(featureSetPanel)
+                            }
                         }
                     }
 
