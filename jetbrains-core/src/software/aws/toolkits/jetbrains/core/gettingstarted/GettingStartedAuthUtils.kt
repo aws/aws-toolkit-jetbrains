@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.resources.message
@@ -95,6 +96,46 @@ fun requestCredentialsForCodeWhisperer(project: Project, popupBuilderIdTab: Bool
         scopes = CODEWHISPERER_SCOPES,
         promptForIdcPermissionSet = false
     ).showAndGet()
+
+
+fun requestCredentialsForCodeCatalyst(project: Project, popupBuilderIdTab: Boolean = true) =
+    SetupAuthenticationDialog(
+        project,
+        state = SetupAuthenticationDialogState().also {
+            if (popupBuilderIdTab) {
+                it.selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
+            }
+        },
+        tabSettings = mapOf(
+            SetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
+                disabled = false,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.WARNING,
+                    message("gettingstarted.setup.codecatalyst.use_builder_id"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            ),
+            SetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
+                disabled = false,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.WARNING,
+                    message("gettingstarted.setup.codecatalyst.use_identity_center"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            ),
+            SetupAuthenticationTabs.IAM_LONG_LIVED to AuthenticationTabSettings(
+                disabled = true,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.ERROR,
+                    message("gettingstarted.setup.codewhisperer.no_iam"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            )
+        ),
+        scopes = CODECATALYST_SCOPES,
+        promptForIdcPermissionSet = false
+    ).showAndGet()
+
 
 fun requestCredentialsForExplorer(project: Project) =
     SetupAuthenticationDialog(

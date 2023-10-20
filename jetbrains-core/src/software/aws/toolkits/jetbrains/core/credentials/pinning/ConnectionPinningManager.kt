@@ -10,7 +10,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
@@ -88,11 +87,10 @@ class DefaultConnectionPinningManager :
             "${features.dropLast(1).joinToString(",") { it.featureName }} and ${features.last().featureName}"
         }
 
-        val connectionToPin = if (oldConnection is AwsBearerTokenConnection) oldConnection else newConnection
         features.forEach {
-            setPinnedConnection(it, connectionToPin)
+            setPinnedConnection(it, newConnection)
         }
-        notifyInfo(message("credentials.switch.notification.title", featuresString, connectionToPin.label))
+        notifyInfo(message("credentials.switch.notification.title", featuresString, newConnection.label))
     }
 
     override fun getState() = ConnectionPinningManagerState(
