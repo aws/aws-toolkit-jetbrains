@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
@@ -259,7 +260,8 @@ class CodeWhispererService {
 
                 if (
                     CodeWhispererConstants.Customization.customizationNotFoundExceptionPredicate(e) ||
-                    CodeWhispererConstants.Customization.invalidCustomizationExceptionPredicate(e)
+                    CodeWhispererConstants.Customization.invalidCustomizationExceptionPredicate(e) ||
+                    e is ResourceNotFoundException
                 ) {
                     (e as CodeWhispererRuntimeException)
 
