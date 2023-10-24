@@ -145,7 +145,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             // CodeWhisperer auth bullets
                             cell(
                                 PanelAuthBullets(
-                                    message("codewhisperer.experiment"),
+                                    message("codewhisperer.learn_page.header.title"),
                                     listOf(
                                         AuthPanelBullet(
                                             PanelConstants.COMMIT_ICON,
@@ -155,7 +155,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         AuthPanelBullet(
                                             PanelConstants.COMMIT_ICON,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.onboarding.getstarted.panel.builderid_row_comment_text")
                                         ),
                                         AuthPanelBullet(
                                             PanelConstants.CANCEL_ICON,
@@ -179,12 +179,12 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         AuthPanelBullet(
                                             PanelConstants.COMMIT_ICON,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.getstarted.auth.panel.notSupport_text")
                                         ),
                                         AuthPanelBullet(
                                             PanelConstants.COMMIT_ICON,
                                             message("settings.credentials.iam"),
-                                            message("aws.getstarted.auth.panel.notSupport_text")
+                                            message("aws.onboarding.getstarted.panel.iam_row_comment_text")
                                         )
                                     )
                                 )
@@ -192,7 +192,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             // CodeCatalyst panel auth bullets
                             cell(
                                 PanelAuthBullets(
-                                    message("caws.devtoolPanel.title"),
+                                    message("caws.title"),
                                     listOf(
                                         AuthPanelBullet(
                                             PanelConstants.CANCEL_ICON,
@@ -203,7 +203,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         AuthPanelBullet(
                                             PanelConstants.COMMIT_ICON,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.onboarding.getstarted.panel.builderid_row_comment_text")
                                         ),
                                         AuthPanelBullet(
                                             PanelConstants.CANCEL_ICON,
@@ -258,7 +258,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                 panel {
                     indent {
                         row {
-                            label(message("caws.devtoolPanel.title"))
+                            label(message("caws.title"))
                                 .applyToComponent {
                                     font = PANEL_TITLE_FONT
                                 }
@@ -593,7 +593,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                 panel {
                     indent {
                         row {
-                            label(message("codewhisperer.experiment"))
+                            label(message("codewhisperer.learn_page.header.title"))
                                 .applyToComponent {
                                     font = PANEL_TITLE_FONT
                                 }
