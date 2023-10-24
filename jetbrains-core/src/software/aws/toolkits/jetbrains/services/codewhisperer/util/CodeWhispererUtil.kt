@@ -43,6 +43,18 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 
+fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        calculateIfIamIdentityCenterConnection(it, calculationTask)
+    }
+
+fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
+    if (connection.isSono()) {
+        null
+    } else {
+        calculationTask(connection)
+    }
+
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
 // 2. It will be sent for IdC users, regardless of telemetry optout status.
@@ -207,7 +219,7 @@ object CodeWhispererUtil {
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
         if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
-        return maybeReauthProviderIfNeeded(project, tokenProvider) {
+        return maybeReauthProviderIfNeeded(project, tokenProvider, isBuilderId = tokenConnection(project).isSono()) {
             runInEdt {
                 project.refreshDevToolTree()
                 if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
@@ -247,14 +259,17 @@ object CodeWhispererUtil {
         return connection.startUrl
     }
 
-    private fun tokenProvider(project: Project) = (
+    private fun tokenConnection(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
             .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
         )
-        ?.getConnectionSettings()
-        ?.tokenProvider
-        ?.delegate as? BearerTokenProvider
+
+    private fun tokenProvider(project: Project) =
+        tokenConnection(project)
+            ?.getConnectionSettings()
+            ?.tokenProvider
+            ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
