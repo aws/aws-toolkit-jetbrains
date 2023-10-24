@@ -267,9 +267,9 @@ object CodeWhispererUtil {
 
     private fun tokenProvider(project: Project) =
         tokenConnection(project)
-        ?.getConnectionSettings()
-        ?.tokenProvider
-        ?.delegate as? BearerTokenProvider
+            ?.getConnectionSettings()
+            ?.tokenProvider
+            ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
