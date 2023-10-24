@@ -299,7 +299,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                     }
@@ -548,7 +548,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, null, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
                                     }
