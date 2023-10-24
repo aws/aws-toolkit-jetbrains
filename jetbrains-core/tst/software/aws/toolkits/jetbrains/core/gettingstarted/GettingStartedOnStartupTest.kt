@@ -10,6 +10,7 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.mockkObject
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -34,11 +35,16 @@ class GettingStartedOnStartupTest {
 
     private val sut = GettingStartedOnStartup()
 
+    @AfterEach
+    fun afterEach() {
+        GettingStartedSettings.getInstance().shouldDisplayPage = true
+        getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java)?.deleteIfExists()
+    }
+
     @Test
     fun `does not show screen if aws settings exist and has credentials`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns null
-        GettingStartedSettings.getInstance().shouldDisplayPage = true
         val fp = getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java) ?: error(
             "could not determine persistent storage for GettingStartedSettings"
         )
@@ -70,7 +76,7 @@ class GettingStartedOnStartupTest {
     fun `shows screen if aws settings exist and no credentials`() {
         mockkObject(GettingStartedPanel.Companion)
         every { GettingStartedPanel.openPanel(any()) } returns null
-        GettingStartedSettings.getInstance().shouldDisplayPage = true
+        credManagerExtension.clear()
         val fp = getPersistentStateComponentStorageLocation(GettingStartedSettings::class.java) ?: error(
             "could not determine persistent storage for GettingStartedSettings"
         )
@@ -81,7 +87,7 @@ class GettingStartedOnStartupTest {
             fp.deleteIfExists()
         }
 
-        verify(exactly = 0) {
+        verify {
             GettingStartedPanel.openPanel(projectExtension.project)
         }
     }
