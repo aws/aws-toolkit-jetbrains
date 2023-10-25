@@ -3,28 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
-import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.util.ExecUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
-import com.intellij.util.io.write
-import com.jetbrains.rd.util.string.println
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.SsoSessionIdentifier
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.inputStreamIfExists
-import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
@@ -38,12 +29,8 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConst
 import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.explorer.refreshAwsTree
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import java.io.IOException
-import kotlin.io.path.Path
 
 private val LOG = LoggerFactory.getLogger("GettingStartedAuthUtils")
 
