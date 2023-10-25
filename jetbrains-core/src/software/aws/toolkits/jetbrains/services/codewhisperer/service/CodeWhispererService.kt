@@ -259,7 +259,6 @@ class CodeWhispererService {
                 val displayMessage: String
 
                 if (
-                    CodeWhispererConstants.Customization.customizationNotFoundExceptionPredicate(e) ||
                     CodeWhispererConstants.Customization.invalidCustomizationExceptionPredicate(e) ||
                     e is ResourceNotFoundException
                 ) {
