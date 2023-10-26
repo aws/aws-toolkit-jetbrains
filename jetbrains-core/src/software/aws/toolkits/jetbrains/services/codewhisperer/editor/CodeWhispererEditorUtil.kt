@@ -90,6 +90,16 @@ object CodeWhispererEditorUtil {
         )
     }
 
+    fun shouldSkipInvokingBasedOnRightContext(editor: Editor): Boolean {
+        val caretContext = runReadAction { CodeWhispererEditorUtil.extractCaretContext(editor) }
+        val rightContextLines = caretContext.rightFileContext.split(Regex("\r?\n"))
+        val rightContextCurrentLine = if (rightContextLines.isEmpty()) "" else rightContextLines[0]
+
+        return rightContextCurrentLine.isNotEmpty() &&
+            !rightContextCurrentLine.startsWith(" ") &&
+            rightContextCurrentLine.trim() != ("}")
+    }
+
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.
      */

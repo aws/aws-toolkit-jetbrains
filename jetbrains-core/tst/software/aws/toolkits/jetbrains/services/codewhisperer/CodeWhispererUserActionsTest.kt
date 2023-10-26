@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.codeInsight.codeVision.ui.visibleAreaChanged
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_DELETE_LINE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_DELETE_TO_WORD_START
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT_WITH_SELECTION
@@ -20,7 +19,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -144,6 +142,35 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
             val listener = CodeWhispererScrollListener(states)
             listener.visibleAreaChanged(event)
             verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `test special characters should not trigger CodeWhisperer for user group when there is immediate right context`() {
+        testInputSpecialCharWithRightContext("add", false)
+    }
+
+    @Test
+    fun `test special characters should trigger CodeWhisperer for user group when it is not immediate or is single }`() {
+        testInputSpecialCharWithRightContext("}", true)
+        testInputSpecialCharWithRightContext(" add", true)
+        testInputSpecialCharWithRightContext("\nadd", true)
+    }
+
+    private fun testInputSpecialCharWithRightContext(rightContext: String, shouldtrigger: Boolean) {
+        CodeWhispererExplorerActionManager.getInstance().setAutoEnabled(true)
+        setFileContext(pythonFileName, "def", rightContext)
+        projectRule.fixture.type('{')
+        if (shouldtrigger) {
+            val popupCaptor = argumentCaptor<JBPopup>()
+            verify(popupManagerSpy, timeout(5000).atLeastOnce())
+                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+            runInEdtAndWait {
+                popupManagerSpy.closePopup(popupCaptor.lastValue)
+            }
+        } else {
+            verify(popupManagerSpy, times(0))
+                .showPopup(any(), any(), any(), any(), any())
         }
     }
 

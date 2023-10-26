@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.hint.HintManager
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -28,12 +29,14 @@ import kotlinx.coroutines.withTimeout
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
@@ -45,6 +48,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -73,6 +77,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStra
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
@@ -159,7 +164,11 @@ class CodeWhispererService {
         var lastRecommendationIndex = -1
 
         val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-            buildCodeWhispererRequest(requestContext.fileContextInfo, requestContext.supplementalContext)
+            buildCodeWhispererRequest(
+                requestContext.fileContextInfo,
+                requestContext.supplementalContext,
+                requestContext.customizationArn
+            )
         )
         coroutineScope.launch {
             try {
@@ -248,7 +257,54 @@ class CodeWhispererService {
                 val requestId: String
                 val sessionId: String
                 val displayMessage: String
-                if (e is CodeWhispererException) {
+
+                if (
+                    CodeWhispererConstants.Customization.invalidCustomizationExceptionPredicate(e) ||
+                    e is ResourceNotFoundException
+                ) {
+                    (e as CodeWhispererRuntimeException)
+
+                    requestId = e.requestId() ?: ""
+                    sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                    val exceptionType = e::class.simpleName
+                    val responseContext = ResponseContext(sessionId)
+
+                    CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
+                        requestId,
+                        requestContext,
+                        responseContext,
+                        lastRecommendationIndex,
+                        false,
+                        0.0,
+                        exceptionType
+                    )
+
+                    LOG.debug {
+                        "The provided customization ${requestContext.customizationArn} is not found, " +
+                            "will fallback to the default and retry generate completion"
+                    }
+                    logServiceInvocation(requestId, requestContext, responseContext, emptyList(), null, exceptionType)
+
+                    notifyInfo(
+                        title = "",
+                        content = message("codewhisperer.notification.custom.not_available"),
+                        project = requestContext.project,
+                        notificationActions = listOf(NotificationAction.create("Got it") { _, notification -> notification.expire() })
+                    )
+                    CodeWhispererInvocationStatus.getInstance().finishInvocation()
+                    CodeWhispererInvocationStatus.getInstance().setInvocationComplete()
+
+                    requestContext.customizationArn?.let { CodeWhispererModelConfigurator.getInstance().invalidateCustomization(it) }
+
+                    projectCoroutineScope(requestContext.project).launch {
+                        showRecommendationsInPopup(
+                            requestContext.editor,
+                            requestContext.triggerTypeInfo,
+                            requestContext.latencyContext
+                        )
+                    }
+                    return@launch
+                } else if (e is CodeWhispererException) {
                     requestId = e.requestId() ?: ""
                     sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
@@ -554,7 +610,11 @@ class CodeWhispererService {
 
         // 4. connection
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, latencyContext)
+
+        // 5. customization
+        val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
+
+        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, latencyContext, customizationArn)
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
@@ -686,7 +746,8 @@ class CodeWhispererService {
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextInfo?
+            supplementalContext: SupplementalContextInfo?,
+            customizationArn: String?
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -713,6 +774,7 @@ class CodeWhispererService {
                 .fileContext(fileContext)
                 .supplementalContexts(supplementalContexts)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
+                .customizationArn(customizationArn)
                 .build()
         }
     }
@@ -726,7 +788,8 @@ data class RequestContext(
     val fileContextInfo: FileContextInfo,
     val supplementalContext: SupplementalContextInfo?,
     val connection: ToolkitConnection?,
-    val latencyContext: LatencyContext
+    val latencyContext: LatencyContext,
+    val customizationArn: String?
 )
 
 data class ResponseContext(

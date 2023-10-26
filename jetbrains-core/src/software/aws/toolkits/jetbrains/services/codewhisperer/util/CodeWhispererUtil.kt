@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
@@ -42,13 +43,28 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 
-fun runIfIamIdentityCenterConnection(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        runIfIamIdentityCenterConnection(it, callback)
+        calculateIfIamIdentityCenterConnection(it, calculationTask)
     }
 
-fun runIfIamIdentityCenterConnection(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
-    if (connection.isSono()) return
+fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
+    if (connection.isSono()) {
+        null
+    } else {
+        calculationTask(connection)
+    }
+
+// Controls the condition to send telemetry event to CodeWhisperer service, currently:
+// 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
+// 2. It will be sent for IdC users, regardless of telemetry optout status.
+fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        runIfIdcConnectionOrTelemetryEnabled(it, callback)
+    }
+
+fun runIfIdcConnectionOrTelemetryEnabled(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
+    if (connection.isSono() && !isTelemetryEnabled()) return
     callback(connection)
 }
 
