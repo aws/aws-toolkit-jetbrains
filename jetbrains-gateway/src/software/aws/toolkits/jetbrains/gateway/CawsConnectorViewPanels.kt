@@ -8,7 +8,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.progress.ModalTaskOwner
 import com.intellij.openapi.progress.TaskCancellation
-import com.intellij.openapi.progress.indeterminateStep
 import com.intellij.openapi.rd.createNestedDisposable
 import com.intellij.openapi.rd.util.launchOnUi
 import com.intellij.openapi.rd.util.startChildSyncIOBackgroundAsync
@@ -19,6 +18,7 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.openapi.util.Disposer
+import com.intellij.platform.util.progress.indeterminateStep
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleListCellRenderer
