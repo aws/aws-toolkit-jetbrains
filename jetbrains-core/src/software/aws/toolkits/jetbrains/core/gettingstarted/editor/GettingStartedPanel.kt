@@ -298,7 +298,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                         row {
                             browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl()).actionListener { event, component ->
-                                UiTelemetry.click(project, "CawsDocumentation")
+                                UiTelemetry.click(project, "CodecatalystDocumentation")
                             }
                         }
                         panelNotConnected = panel {
