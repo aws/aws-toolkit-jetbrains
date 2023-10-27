@@ -81,7 +81,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     private val featureSetPanel = FeatureColumns()
     private val alarm = Alarm()
     private val oldConnectionCount = getConnectionCount()
-    private val initialEnabledConnection = getEnabledConnections(project).toString()
+    private val initialEnabledConnection = getEnabledConnections(project)
     init {
         background = WelcomeScreenUIManager.getMainAssociatedComponentBackground()
 
@@ -297,7 +297,9 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }
 
                         row {
-                            browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl())
+                            browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl()).actionListener { event, component ->
+                                UiTelemetry.click(project, "CawsDocumentation")
+                            }
                         }
                         panelNotConnected = panel {
                             row {
@@ -318,7 +320,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         )
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
-                                        
+
                                         showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                         AuthTelemetry.addConnection(
                                             project,
@@ -522,7 +524,9 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             browserLink(
                                 message("codewhisperer.gettingstarted.panel.learn_more"),
                                 url = PanelConstants.RESOURCE_EXPLORER_LEARN_MORE
-                            )
+                            ).actionListener { event, component ->
+                                UiTelemetry.click(project, "ResourceExplorerDocumentation")
+                            }
                         }
                         panelNotConnected = panel {
                             row {
@@ -673,7 +677,9 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }
 
                         row {
-                            browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), url = CODEWHISPERER_LEARN_MORE_URI)
+                            browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), url = CODEWHISPERER_LEARN_MORE_URI).actionListener { event, component ->
+                                UiTelemetry.click(project, "CodeWhispererDocumentation")
+                            }
                         }
                         panelNotConnected = panel {
                             row {
