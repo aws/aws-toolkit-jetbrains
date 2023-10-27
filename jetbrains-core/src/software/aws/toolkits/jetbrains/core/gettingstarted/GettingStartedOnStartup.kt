@@ -8,6 +8,8 @@ import com.intellij.openapi.startup.StartupActivity
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -30,6 +32,16 @@ class GettingStartedOnStartup : StartupActivity {
                     isAggregated = true,
                     result = Result.Succeeded
                 )
+                AuthTelemetry.addedConnections(
+                    project,
+                    source = "firstStartup",
+                    authConnectionsCount = getConnectionCount(),
+                    newAuthConnectionsCount = 0,
+                    enabledAuthConnections = getEnabledConnections(project),
+                    newEnabledAuthConnections = "",
+                    attempts = 1,
+                    result = Result.Succeeded
+                )
                 settings.displayPageFirstInstance = false
             }
         } catch (e: Exception) {
@@ -42,6 +54,16 @@ class GettingStartedOnStartup : StartupActivity {
                 isAggregated = false,
                 result = Result.Failed,
                 reason = "Error opening getting started panel"
+            )
+            AuthTelemetry.addedConnections(
+                project,
+                source = "firstStartup",
+                authConnectionsCount = getConnectionCount(),
+                newAuthConnectionsCount = 0,
+                enabledAuthConnections = getEnabledConnections(project),
+                newEnabledAuthConnections = "",
+                attempts = 1,
+                result = Result.Failed
             )
         }
     }
