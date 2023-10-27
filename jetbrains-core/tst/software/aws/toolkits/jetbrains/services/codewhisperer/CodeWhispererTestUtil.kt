@@ -313,10 +313,10 @@ fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggest
             DetailContext(aString(), completion, completion, Random.nextBoolean(), Random.nextBoolean(), aString(), CodewhispererCompletionType.Line)
         } else if (decision == CodewhispererSuggestionState.Discard) {
             val completion = aCompletion()
-            DetailContext(aString(), completion, completion, true, Random.nextBoolean(), aString(), CodewhispererCompletionType.Unknown)
+            DetailContext(aString(), completion, completion, true, Random.nextBoolean(), aString(), CodewhispererCompletionType.Line)
         } else {
             val completion = aCompletion()
-            DetailContext(aString(), completion, completion, false, Random.nextBoolean(), aString(), CodewhispererCompletionType.Unknown)
+            DetailContext(aString(), completion, completion, false, Random.nextBoolean(), aString(), CodewhispererCompletionType.Line)
         }
 
         details.add(toAdd)

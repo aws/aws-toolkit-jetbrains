@@ -265,7 +265,7 @@ class CodeWhispererTelemetryServiceTest {
                 1,
                 "codewhispererSessionId" to responseContext.sessionId,
                 "codewhispererFirstRequestId" to requestContext.latencyContext.firstRequestId,
-                "codewhispererCompletionType" to CodewhispererCompletionType.Line,
+                "codewhispererCompletionType" to recommendationContext.details[0].completionType,
                 "codewhispererLanguage" to requestContext.fileContextInfo.programmingLanguage.toTelemetryType(),
                 "codewhispererTriggerType" to requestContext.triggerTypeInfo.triggerType,
                 "codewhispererAutomatedTriggerType" to requestContext.triggerTypeInfo.automatedTriggerType.telemetryType,
@@ -467,12 +467,7 @@ class CodeWhispererTelemetryServiceTest {
         val expectedSuggestionReferenceCount = 1
         val expectedGeneratedLineCount = 50
         val expectedCharCount = 100
-        val expectedCompletionType = if (expectedRecommendationContext.details.any {
-                it.completionType == CodewhispererCompletionType.Block
-            }
-        ) {
-            CodewhispererCompletionType.Block
-        } else CodewhispererCompletionType.Line
+        val expectedCompletionType = expectedRecommendationContext.details[0].completionType
         sut.sendUserTriggerDecisionEvent(
             expectedRequestContext,
             expectedResponseContext,
