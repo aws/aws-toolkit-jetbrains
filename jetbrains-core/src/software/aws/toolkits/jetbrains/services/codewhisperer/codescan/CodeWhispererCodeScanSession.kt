@@ -316,7 +316,14 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                             file = file,
                             project = sessionContext.project,
                             title = it.title,
-                            description = it.description
+                            description = it.description,
+                            detectorId = it.detectorId,
+                            detectorName = it.detectorName,
+                            findingId = it.findingId,
+                            relatedVulnerabilities = it.relatedVulnerabilities,
+                            severity = it.severity,
+                            recommendation = it.remediation.recommendation,
+                            suggestedFixes = it.remediation.suggestedFixes
                         )
                     }
                 }
@@ -369,10 +376,22 @@ internal data class CodeScanRecommendation(
     val startLine: Int,
     val endLine: Int,
     val title: String,
-    val description: Description
+    val description: Description,
+    val detectorId: String,
+    val detectorName: String,
+    val findingId: String,
+    val relatedVulnerabilities: List<String>,
+    val severity: String,
+    val remediation: Remediation
 )
 
 data class Description(val text: String, val markdown: String)
+
+data class Remediation(val recommendation: Recommendation, val suggestedFixes: List<SuggestedFix>)
+
+data class Recommendation(val text: String, val url: String)
+
+data class SuggestedFix(val description: String, val code: String)
 
 data class CodeScanSessionContext(
     val project: Project,
