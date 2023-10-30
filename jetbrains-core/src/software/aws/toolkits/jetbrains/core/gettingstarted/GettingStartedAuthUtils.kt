@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -15,8 +14,6 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.inputStreamIfExists
-import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
@@ -24,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
@@ -178,11 +174,10 @@ fun deleteSsoConnectionExplorer(connection: CredentialIdentifier) {
 
 fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
 
-
 fun getSsoSessionProfileNameFromBearer(connection: AwsBearerTokenConnection): String =
     connection.id.substringAfter("${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:")
 
 fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
     connection as ProfileCredentialsIdentifierSso
-    return  connection.ssoSessionName
+    return connection.ssoSessionName
 }
