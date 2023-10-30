@@ -18,9 +18,10 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.ui.popup.Balloon
+import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.components.JBLabel
+import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.BottomGap
@@ -54,6 +55,8 @@ import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWin
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -69,7 +72,6 @@ import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
-import javax.swing.Icon
 import javax.swing.JComponent
 
 class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), Disposable {
@@ -77,6 +79,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     private val featureSetPanel = FeatureColumns()
     private val alarm = Alarm()
     init {
+        background = WelcomeScreenUIManager.getMainAssociatedComponentBackground()
+
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
@@ -127,15 +131,20 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         bottomGap(BottomGap.MEDIUM)
                     }
 
-                    group(
-                        JBLabel(message("aws.onboarding.getstarted.panel.group_title"))
-                            .apply {
-                                font = PANEL_TITLE_FONT
+                    // can't use group() because the font cant be overridden
+                    row {
+                        panel {
+                            row {
+                                cell(TitledSeparator(message("aws.onboarding.getstarted.panel.group_title"))).applyToComponent {
+                                    border = null
+                                    setTitleFont(JBFont.h1().asBold())
+                                }.align(AlignX.FILL)
                             }
-                    ) {
-                        featureSetPanel.setFeatureContent()
-                        row {
-                            cell(featureSetPanel)
+
+                            featureSetPanel.setFeatureContent()
+                            row {
+                                cell(featureSetPanel)
+                            }
                         }
                     }
 
@@ -147,23 +156,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             // CodeWhisperer auth bullets
                             cell(
                                 PanelAuthBullets(
-                                    message("codewhisperer.experiment"),
+                                    message("codewhisperer.learn_page.header.title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            true,
                                             message("iam_identity_center.name"),
                                             message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            true,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.onboarding.getstarted.panel.builderid_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            false,
                                             message("settings.credentials.iam"),
                                             message("aws.getstarted.auth.panel.notSupport_text"),
-                                            false
                                         )
                                     )
                                 )
@@ -174,19 +182,19 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     message("aws.getstarted.resource.panel_title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            true,
                                             message("iam_identity_center.name"),
                                             message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            false,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.getstarted.auth.panel.notSupport_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            true,
                                             message("settings.credentials.iam"),
-                                            message("aws.getstarted.auth.panel.notSupport_text")
+                                            message("aws.onboarding.getstarted.panel.iam_row_comment_text")
                                         )
                                     )
                                 )
@@ -194,24 +202,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             // CodeCatalyst panel auth bullets
                             cell(
                                 PanelAuthBullets(
-                                    message("caws.devtoolPanel.title"),
+                                    message("caws.title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            false,
                                             message("iam_identity_center.name"),
-                                            message("aws.getstarted.auth.panel.notSupport_text"),
-                                            false
+                                            message("aws.getstarted.auth.panel.notSupport_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.COMMIT_ICON,
+                                            true,
                                             message("aws_builder_id.service_name"),
-                                            "Need to insert tagline"
+                                            message("aws.onboarding.getstarted.panel.builderid_row_comment_text")
                                         ),
                                         AuthPanelBullet(
-                                            PanelConstants.CANCEL_ICON,
+                                            false,
                                             message("settings.credentials.iam"),
-                                            message("aws.getstarted.auth.panel.notSupport_text"),
-                                            false
+                                            message("aws.getstarted.auth.panel.notSupport_text")
                                         )
                                     )
                                 )
@@ -219,6 +225,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }
                     }
                 }
+            }.apply {
+                isOpaque = false
             }
         )
 
@@ -235,13 +243,14 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
         )
     }
 
-    private fun showGotIt(tabName: String, tooltip: GotItTooltip) {
+    private fun showGotIt(tabName: String, nodeName: String?, tooltip: GotItTooltip) {
         AwsToolkitExplorerToolWindow.toolWindow(project).activate {
             AwsToolkitExplorerToolWindow.getInstance(project).selectTab(tabName)?.let {
                 if (tabName == AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID) {
-                    DevToolsToolWindow.getInstance(project).makeServiceChildrenVisible()
+                    DevToolsToolWindow.getInstance(project).showGotIt(nodeName, tooltip)
+                } else {
+                    tooltip.show(it as JComponent, GotItTooltip.TOP_MIDDLE)
                 }
-                tooltip.show(it as JComponent, GotItTooltip.TOP_MIDDLE)
             }
         }
     }
@@ -259,7 +268,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                 panel {
                     indent {
                         row {
-                            label(message("caws.devtoolPanel.title"))
+                            label(message("caws.title"))
                                 .applyToComponent {
                                     font = PANEL_TITLE_FONT
                                 }
@@ -300,7 +309,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                     }
@@ -349,7 +358,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
 
                             row {
-                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
@@ -383,7 +392,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
                                     }
@@ -410,7 +419,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
 
                             row {
-                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { icon = PanelConstants.X_ICON }
                             }
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
@@ -424,6 +433,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) is ActiveConnection.ExpiredBearer)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -481,7 +492,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, null, tooltip)
                                         controlPanelVisibility(panelConnectionInProgress, panelConnected)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
@@ -521,10 +532,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                             }
                             row {
-                                label(message("gettingstarted.auth.connected.iam")).applyToComponent { icon = PanelConstants.COMMIT_ICON }
+                                label(message("gettingstarted.auth.connected.iam")).applyToComponent { icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM)
                             row {
-                                label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                                label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
                             row{
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
@@ -562,7 +573,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, null, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
                                     }
@@ -576,7 +587,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                             }
                             row {
-                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { icon = PanelConstants.X_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
 
                             row{
@@ -594,7 +605,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }.visible(checkIamConnectionValidity(project).connectionType== ActiveConnectionType.IAM_IDC)
 
                             row {
-                                label(message("gettingstarted.auth.iam.invalid")).applyToComponent { icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.iam.invalid")).applyToComponent { icon = PanelConstants.X_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM)
 
                             row {
@@ -604,6 +615,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ExpiredIam)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -621,7 +634,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                 panel {
                     indent {
                         row {
-                            label(message("codewhisperer.experiment"))
+                            label(message("codewhisperer.learn_page.header.title"))
                                 .applyToComponent {
                                     font = PANEL_TITLE_FONT
                                 }
@@ -685,12 +698,12 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                             }
                             row {
-                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
                                 checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
-                                label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.COMMIT_ICON }
+                                label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(
                                 checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
                             )
@@ -741,12 +754,12 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 topGap(TopGap.SMALL)
                             }
                             row {
-                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
                                 checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
                             )
                             row {
-                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.CANCEL_ICON }
+                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
                             }.visible(
                                 checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
                             )
@@ -782,6 +795,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             )
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER) is ActiveConnection.ExpiredBearer)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -794,7 +809,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                     .withHeader(message("codewhisperer.explorer.tooltip.title"))
                     .withPosition(Balloon.Position.above)
 
-                showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CodeWhispererExplorerRootNode.NODE_NAME, tooltip)
             } else {
                 controlPanelVisibility(panelConnectionInProgress, revertToPanel)
             }
@@ -808,7 +823,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             addToCenter(
                 panel {
                     indent {
-
                         row {
                             label(panelTitle).applyToComponent {
                                 font = PANEL_TITLE_FONT
@@ -817,7 +831,13 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                         bullets.forEach { bullet ->
                             row {
-                                icon(bullet.icon)
+                                val icon = if (bullet.enable) {
+                                    PanelConstants.CHECKMARK_ICON
+                                } else {
+                                    PanelConstants.X_ICON
+                                }
+
+                                icon(icon)
                                 panel {
                                     row(bullet.titleName) {
                                     }.rowComment(bullet.comment)
@@ -826,6 +846,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -838,6 +860,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             border = IdeBorderFactory.createRoundedBorder().apply {
                 setColor(UIUtil.getLabelForeground())
             }
+
+            isOpaque = false
         }
     }
 
@@ -853,6 +877,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             }
         }
     }
+
     private class ConnectionInfoBanner : BorderLayoutPanel(10, 0) {
         private val wrapper = Wrapper()
         init {
@@ -913,8 +938,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
         const val SHARE_FEEDBACK_LINK = "FeedbackDialog"
         const val SET_UP_CODECATALYST = "https://docs.aws.amazon.com/codecatalyst/latest/userguide/setting-up-topnode.html"
         const val CREATE_CODECATALYST_SPACE = "https://codecatalyst.aws/spaces/create"
-        val COMMIT_ICON = AllIcons.General.InspectionsOK
-        val CANCEL_ICON = AllIcons.Ide.Notification.Close
+        val CHECKMARK_ICON = AllIcons.General.InspectionsOK
+        val X_ICON = AllIcons.Ide.Notification.Close
         val PANEL_TITLE_FONT = JBFont.h2().asBold()
         const val PANEL_WIDTH = 300
         const val PANEL_HEIGHT = 450
@@ -922,15 +947,16 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     }
 
     data class AuthPanelBullet(
-        val icon: Icon,
+        val enable: Boolean,
         val titleName: String,
-        val comment: String,
-        val enable: Boolean = true
+        val comment: String
     )
 
     private inner class FeatureColumns : BorderLayoutPanel(10, 0) {
         private val wrapper = Wrapper()
         init {
+            isOpaque = false
+
             addToCenter(wrapper)
         }
 
@@ -945,6 +971,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         // CodeCatalyst Panel
                         cell(CodeCatalystPanel())
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
