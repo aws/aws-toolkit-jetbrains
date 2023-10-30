@@ -17,6 +17,7 @@ import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
+import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.TitledSeparator
@@ -52,6 +53,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -77,6 +80,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     private val featureSetPanel = FeatureColumns()
     private val alarm = Alarm()
     init {
+        background = WelcomeScreenUIManager.getMainAssociatedComponentBackground()
+
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
@@ -221,6 +226,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         }
                     }
                 }
+            }.apply {
+                isOpaque = false
             }
         )
 
@@ -237,13 +244,14 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
         )
     }
 
-    private fun showGotIt(tabName: String, tooltip: GotItTooltip) {
+    private fun showGotIt(tabName: String, nodeName: String?, tooltip: GotItTooltip) {
         AwsToolkitExplorerToolWindow.toolWindow(project).activate {
             AwsToolkitExplorerToolWindow.getInstance(project).selectTab(tabName)?.let {
                 if (tabName == AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID) {
-                    DevToolsToolWindow.getInstance(project).makeServiceChildrenVisible()
+                    DevToolsToolWindow.getInstance(project).showGotIt(nodeName, tooltip)
+                } else {
+                    tooltip.show(it as JComponent, GotItTooltip.TOP_MIDDLE)
                 }
-                tooltip.show(it as JComponent, GotItTooltip.TOP_MIDDLE)
             }
         }
     }
@@ -296,7 +304,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                     }
@@ -379,7 +387,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
                                             .withPosition(Balloon.Position.above)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
                                     }
@@ -420,6 +428,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) is ActiveConnection.ExpiredBearer)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -472,7 +482,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, null, tooltip)
                                         controlPanelVisibility(panelConnectionInProgress, panelConnected)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
@@ -540,7 +550,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                             .withHeader(message("gettingstarted.explorer.gotit.explorer.title"))
                                             .withPosition(Balloon.Position.below)
 
-                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, tooltip)
+                                        showGotIt(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID, null, tooltip)
                                     } else {
                                         controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
                                     }
@@ -568,6 +578,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ExpiredIam)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -728,6 +740,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             )
                         }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER) is ActiveConnection.ExpiredBearer)
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -740,7 +754,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                     .withHeader(message("codewhisperer.explorer.tooltip.title"))
                     .withPosition(Balloon.Position.above)
 
-                showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, tooltip)
+                showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CodeWhispererExplorerRootNode.NODE_NAME, tooltip)
             } else {
                 controlPanelVisibility(panelConnectionInProgress, revertToPanel)
             }
@@ -754,7 +768,6 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             addToCenter(
                 panel {
                     indent {
-
                         row {
                             label(panelTitle).applyToComponent {
                                 font = PANEL_TITLE_FONT
@@ -778,6 +791,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }
                         }
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
@@ -790,6 +805,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             border = IdeBorderFactory.createRoundedBorder().apply {
                 setColor(UIUtil.getLabelForeground())
             }
+
+            isOpaque = false
         }
 
         private val indentSize = IntelliJSpacingConfiguration().horizontalIndent
@@ -896,6 +913,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     private inner class FeatureColumns : BorderLayoutPanel(10, 0) {
         private val wrapper = Wrapper()
         init {
+            isOpaque = false
+
             addToCenter(wrapper)
         }
 
@@ -910,6 +929,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         // CodeCatalyst Panel
                         cell(CodeCatalystPanel())
                     }
+                }.apply {
+                    isOpaque = false
                 }
             )
         }
