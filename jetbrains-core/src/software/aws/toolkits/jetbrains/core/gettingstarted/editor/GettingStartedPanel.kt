@@ -38,25 +38,22 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
+import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
+import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -427,7 +424,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         CodeCatalystConnection.getInstance()
                                     ) as AwsBearerTokenConnection
                                     logoutFromSsoConnection(project, connection) {
-                                         controlPanelVisibility(panelConnected, panelNotConnected)
+                                        controlPanelVisibility(panelConnected, panelNotConnected)
                                     }
                                 }
                             }
@@ -537,19 +534,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
-                            row{
+                            row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val activeConnection = checkIamConnectionValidity(project)
                                     val connection = activeConnection.activeConnectionIam
-                                    if(connection != null) {
-                                        val confirmDeletion = MessageDialogBuilder.okCancel(message("gettingstarted.auth.idc.sign.out.confirmation.title"), message("gettingstarted.auth.idc.sign.out.confirmation")).yesText(message("general.confirm")).ask(project)
-                                        if(confirmDeletion) {
+                                    if (connection != null) {
+                                        val confirmDeletion = MessageDialogBuilder.okCancel(
+                                            message("gettingstarted.auth.idc.sign.out.confirmation.title"),
+                                            message("gettingstarted.auth.idc.sign.out.confirmation")
+                                        ).yesText(message("general.confirm")).ask(project)
+                                        if (confirmDeletion) {
                                             deleteSsoConnectionExplorer(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
                                 }
-                            }.visible(checkIamConnectionValidity(project).connectionType== ActiveConnectionType.IAM_IDC)
+                            }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
                             row {
                                 link(message("general.add.another")) {
                                     requestCredentialsForExplorer(project)
@@ -590,19 +590,22 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 label(message("gettingstarted.auth.idc.expired")).applyToComponent { icon = PanelConstants.X_ICON }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
 
-                            row{
+                            row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val activeConnection = checkIamConnectionValidity(project)
                                     val connection = activeConnection.activeConnectionIam
-                                    if(connection != null) {
-                                        val confirmDeletion = MessageDialogBuilder.okCancel(message("gettingstarted.auth.idc.sign.out.confirmation.title"), message("gettingstarted.auth.idc.sign.out.confirmation")).yesText(message("general.confirm")).ask(project)
-                                        if(confirmDeletion) {
+                                    if (connection != null) {
+                                        val confirmDeletion = MessageDialogBuilder.okCancel(
+                                            message("gettingstarted.auth.idc.sign.out.confirmation.title"),
+                                            message("gettingstarted.auth.idc.sign.out.confirmation")
+                                        ).yesText(message("general.confirm")).ask(project)
+                                        if (confirmDeletion) {
                                             deleteSsoConnectionExplorer(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
                                 }
-                            }.visible(checkIamConnectionValidity(project).connectionType== ActiveConnectionType.IAM_IDC)
+                            }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
 
                             row {
                                 label(message("gettingstarted.auth.iam.invalid")).applyToComponent { icon = PanelConstants.X_ICON }
@@ -712,14 +715,17 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection != null) {
-                                        if(validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-                                            val confirmDeletion = MessageDialogBuilder.okCancel(message("gettingstarted.auth.idc.sign.out.confirmation.title"), message("gettingstarted.auth.idc.sign.out.confirmation")).yesText(message("general.confirm")).ask(project)
-                                            if(confirmDeletion) {
+                                        if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+                                            val confirmDeletion = MessageDialogBuilder.okCancel(
+                                                message("gettingstarted.auth.idc.sign.out.confirmation.title"),
+                                                message("gettingstarted.auth.idc.sign.out.confirmation")
+                                            ).yesText(message("general.confirm")).ask(project)
+                                            if (confirmDeletion) {
                                                 deleteSsoConnectionCW(connection)
                                             }
                                         }
                                         logoutFromSsoConnection(project, connection) {
-                                             controlPanelVisibility(panelConnected, panelNotConnected)
+                                            controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
                                 }
@@ -728,10 +734,13 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
                                 }.visible(
-                                    checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
+                                    checkBearerConnectionValidity(
+                                        project,
+                                        BearerTokenFeatureSet.CODEWHISPERER
+                                    ).connectionType == ActiveConnectionType.BUILDER_ID
                                 )
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
-                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
+                                    controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelConnected)
                                 }.visible(
                                     checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.IAM_IDC
@@ -742,7 +751,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                         panelReauthenticationRequired = panel {
                             row {
                                 button(message("general.auth.reauthenticate")) {
-                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
+                                    controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
                                     handleCodeWhispererLogin(
                                         requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true),
                                         panelReauthenticationRequired
@@ -768,9 +777,12 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection != null) {
-                                        if(validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-                                            val confirmDeletion = MessageDialogBuilder.okCancel(message("gettingstarted.auth.idc.sign.out.confirmation.title"), message("gettingstarted.auth.idc.sign.out.confirmation")).yesText(message("general.confirm")).ask(project)
-                                            if(confirmDeletion) {
+                                        if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+                                            val confirmDeletion = MessageDialogBuilder.okCancel(
+                                                message("gettingstarted.auth.idc.sign.out.confirmation.title"),
+                                                message("gettingstarted.auth.idc.sign.out.confirmation")
+                                            ).yesText(message("general.confirm")).ask(project)
+                                            if (confirmDeletion) {
                                                 deleteSsoConnectionCW(connection)
                                             }
                                         }
@@ -787,7 +799,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             )
                             row {
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
-                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
+                                    controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true), panelConnected)
                                 }
                             }.visible(
