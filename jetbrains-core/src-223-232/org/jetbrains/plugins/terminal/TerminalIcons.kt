@@ -2,4 +2,4 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.jetbrains.plugins.terminal
 
-typealias org.jetbrains.plugins.terminal.TerminalIcons = icons.TerminalIcons
+typealias TerminalIcons = icons.TerminalIcons
