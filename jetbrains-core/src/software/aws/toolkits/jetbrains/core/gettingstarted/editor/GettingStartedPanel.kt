@@ -28,7 +28,7 @@ import com.intellij.ui.dsl.builder.IntelliJSpacingConfiguration
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.UnscaledGaps
+import com.intellij.ui.dsl.gridLayout.Gaps
 import com.intellij.util.Alarm
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
@@ -818,7 +818,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                     // Image.SCALE_DEFAULT is the only valid parameter for gifs
                     .getScaledInstance(PANEL_WIDTH - (indentSize * 2), -1, if (path.endsWith("gif")) Image.SCALE_DEFAULT else Image.SCALE_SMOOTH)
                 cell(JLabel(ImageIcon(image)))
-                    .customize(UnscaledGaps.EMPTY)
+                    .customize(Gaps.EMPTY)
             }
         }
     }
