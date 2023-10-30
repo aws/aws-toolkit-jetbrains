@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.testFramework.LightVirtualFile
 import software.aws.toolkits.resources.message
 
-class GettingStartedVirtualFile : LightVirtualFile(message("gettingstarted.editor.title")) {
+class GettingStartedVirtualFile(val firstInstance: Boolean) : LightVirtualFile(message("gettingstarted.editor.title")) {
     override fun toString() = "GettingStartedVirtualFile[${getName()}]"
     override fun getPath() = getName()
     override fun isWritable() = false

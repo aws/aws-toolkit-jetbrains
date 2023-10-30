@@ -29,7 +29,6 @@ import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -41,6 +40,7 @@ import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
@@ -107,7 +107,8 @@ enum class SourceOfEntry {
     RESOURCE_EXPLORER,
     CODECATALYST,
     CODEWHISPERER,
-    EXPLORER
+    EXPLORER,
+    FIRST_STARTUP
 }
 
 class SetupAuthenticationDialog(
@@ -118,7 +119,8 @@ class SetupAuthenticationDialog(
     private val promptForIdcPermissionSet: Boolean = false,
     private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
     private val sourceOfEntry: SourceOfEntry,
-    private val featureId: FeatureId
+    private val featureId: FeatureId,
+    private val isFirstInstance: Boolean
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
@@ -249,7 +251,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.session.exists", profileName), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = sourceOfEntry.name,
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -272,7 +274,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, it, title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = sourceOfEntry.name,
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -315,7 +317,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.profile.exists", profileName), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = sourceOfEntry.name,
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -342,7 +344,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.profile.invalid_credentials"), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = sourceOfEntry.name,
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,

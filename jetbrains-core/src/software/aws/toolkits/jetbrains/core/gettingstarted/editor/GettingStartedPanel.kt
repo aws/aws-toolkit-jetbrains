@@ -54,6 +54,7 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindo
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
+import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -76,12 +77,13 @@ import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Dimension
 import javax.swing.JComponent
 
-class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), Disposable {
+class GettingStartedPanel(private val project: Project, private val isFirstInstance: Boolean = false) : BorderLayoutPanel(), Disposable {
     private val infoBanner = ConnectionInfoBanner()
     private val featureSetPanel = FeatureColumns()
     private val alarm = Alarm()
     private val oldConnectionCount = getConnectionCount()
     private val initialEnabledConnection = getEnabledConnections(project)
+
     init {
         background = WelcomeScreenUIManager.getMainAssociatedComponentBackground()
 
@@ -115,11 +117,11 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 browserLink(message("aws.onboarding.getstarted.panel.comment_link_doc"), url = AwsToolkit.AWS_DOCS_URL)
                                     .actionListener { event, component ->
-                                        UiTelemetry.click(project, "GettingStartedDocumentation")
+                                        UiTelemetry.click(project, "auth_GettingStartedDocumentation")
                                     }
                                 browserLink(message("aws.onboarding.getstarted.panel.comment_link_github"), url = AwsToolkit.GITHUB_URL)
                                     .actionListener { event, component ->
-                                        UiTelemetry.click(project, "GettingStartedConnectOnGithub")
+                                        UiTelemetry.click(project, "auth_GettingStartedConnectOnGithub")
                                     }
                                 text(message("aws.onboarding.getstarted.panel.share_feedback")) { hyperlinkEvent ->
                                     val actionEvent = AnActionEvent.createFromInputEvent(
@@ -298,7 +300,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                         row {
                             browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl()).actionListener { event, component ->
-                                UiTelemetry.click(project, "CodecatalystDocumentation")
+                                UiTelemetry.click(project, "auth_CodecatalystDocumentation")
                             }
                         }
                         panelNotConnected = panel {
@@ -324,7 +326,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                         AuthTelemetry.addConnection(
                                             project,
-                                            "CodeCatalyst",
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance),
                                             FeatureId.Codecatalyst,
                                             CredentialSourceId.AwsId,
                                             isAggregated = true,
@@ -332,7 +334,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         )
                                         AuthTelemetry.addedConnections(
                                             project,
-                                            "CodeCatalyst",
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance),
                                             oldConnectionCount,
                                             getConnectionCount() - oldConnectionCount,
                                             enabledAuthConnections = initialEnabledConnection,
@@ -345,7 +347,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                         AuthTelemetry.addConnection(
                                             project,
-                                            "CodeCatalyst",
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance),
                                             FeatureId.Codecatalyst,
                                             CredentialSourceId.AwsId,
                                             isAggregated = false,
@@ -354,7 +356,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                         )
                                         AuthTelemetry.addedConnections(
                                             project,
-                                            "CodeCatalyst",
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance),
                                             oldConnectionCount,
                                             getConnectionCount() - oldConnectionCount,
                                             enabledAuthConnections = initialEnabledConnection,
@@ -525,14 +527,14 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 message("codewhisperer.gettingstarted.panel.learn_more"),
                                 url = PanelConstants.RESOURCE_EXPLORER_LEARN_MORE
                             ).actionListener { event, component ->
-                                UiTelemetry.click(project, "ResourceExplorerDocumentation")
+                                UiTelemetry.click(project, "auth_ResourceExplorerDocumentation")
                             }
                         }
                         panelNotConnected = panel {
                             row {
                                 button(message("aws.onboarding.getstarted.panel.button_iam_login")) {
                                     controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
-                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection)
+                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance)
                                     handleLogin(loginSuccess)
 
                                     if (loginSuccess) {
@@ -591,7 +593,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
                             row {
                                 link(message("general.add.another")) {
-                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection)
+                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance)
                                 }
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ValidIam)
@@ -599,7 +601,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 button(message("general.auth.reauthenticate")) {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
-                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection)
+                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance)
                                     handleLogin(loginSuccess)
 
                                     if (loginSuccess) {
@@ -635,7 +637,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                             row {
                                 link(message("general.add.another")) {
-                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection)
+                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance)
                                 }
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ExpiredIam)
@@ -678,7 +680,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                         row {
                             browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), url = CODEWHISPERER_LEARN_MORE_URI).actionListener { event, component ->
-                                UiTelemetry.click(project, "CodeWhispererDocumentation")
+                                UiTelemetry.click(project, "auth_CodeWhispererDocumentation")
                             }
                         }
                         panelNotConnected = panel {
@@ -686,7 +688,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 button(message("codewhisperer.gettingstarted.panel.login_button")) {
                                     controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelNotConnected
                                     )
                                 }.applyToComponent {
@@ -702,7 +704,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelNotConnected
                                     )
                                 }
@@ -721,7 +723,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                             row {
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelNotConnected
                                     )
                                 }
@@ -755,7 +757,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
 
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelNotConnected
                                     )
                                 }
@@ -766,7 +768,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelConnected
                                     )
                                 }
@@ -780,7 +782,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 button(message("general.auth.reauthenticate")) {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelReauthenticationRequired
                                     )
                                 }.applyToComponent {
@@ -809,7 +811,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     }
                                 }
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
-                                    handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false), panelNotConnected)
+                                    handleCodeWhispererLogin(requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, isFirstInstance = isFirstInstance), panelNotConnected)
                                 }
                             }.visible(
                                 checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER).connectionType == ActiveConnectionType.BUILDER_ID
@@ -818,7 +820,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection),
+                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = true, oldConnectionCount, initialEnabledConnection, isFirstInstance),
                                         panelConnected
                                     )
                                 }
@@ -1011,10 +1013,10 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
     }
 
     companion object {
-        fun openPanel(project: Project) = FileEditorManager.getInstance(project).openTextEditor(
+        fun openPanel(project: Project, firstInstance: Boolean = false) = FileEditorManager.getInstance(project).openTextEditor(
             OpenFileDescriptor(
                 project,
-                GettingStartedVirtualFile()
+                GettingStartedVirtualFile(firstInstance)
             ),
             true
         )
