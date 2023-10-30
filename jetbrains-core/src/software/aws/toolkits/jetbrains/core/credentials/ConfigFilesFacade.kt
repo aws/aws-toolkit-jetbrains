@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
@@ -15,6 +16,8 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.writeText
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ssoSessions
 import java.nio.file.Path
 
@@ -35,6 +38,8 @@ interface ConfigFilesFacade {
     fun appendProfileToCredentials(profile: Profile)
     fun appendSectionToConfig(sectionName: String, profile: Profile)
     fun updateSectionInConfig(sectionName: String, profile: Profile)
+
+    fun deleteSsoConnectionFromConfig(sessionName: String)
 }
 
 class DefaultConfigFilesFacade(
@@ -188,6 +193,26 @@ class DefaultConfigFilesFacade(
         }
     }
 
+    override fun deleteSsoConnectionFromConfig(sessionName: String) {
+        val filePath = configPath
+        val lines = filePath.inputStreamIfExists()?.reader()?.readLines().orEmpty()
+        val ssoHeaderLine = lines.indexOfFirst { it.startsWith("[${SsoSessionConstants.SSO_SESSION_SECTION_NAME} ${sessionName}]") }
+        if(ssoHeaderLine == -1) return
+        val nextHeaderLine = lines.subList(ssoHeaderLine + 1, lines.size).indexOfFirst { it.startsWith("[") }
+        val endIndex = if(nextHeaderLine == -1) lines.size else ssoHeaderLine+nextHeaderLine+1
+        val updatedArray = lines.subList(0, ssoHeaderLine) + lines.subList(endIndex, lines.size)
+        val profileHeaderLine = updatedArray.indexOfFirst { it.startsWith("[profile ${sessionName}-") }
+        if(profileHeaderLine == -1) {
+            filePath.writeText(updatedArray.joinToString("\n"))
+        } else {
+            val nextHeaderLine2 = updatedArray.subList(profileHeaderLine + 1, updatedArray.size).indexOfFirst { it.startsWith("[") }
+            val endIndex2 = if(nextHeaderLine2 == -1) updatedArray.size else profileHeaderLine+nextHeaderLine2+1
+            filePath.writeText((updatedArray.subList(0, profileHeaderLine) + updatedArray.subList(endIndex2, updatedArray.size)).joinToString("\n"))
+        }
+        FileDocumentManager.getInstance().saveAllDocuments()
+        ProfileWatcher.getInstance().forceRefresh()
+    }
+
     private fun appendSection(path: Path, sectionName: String, profile: Profile) {
         val isConfigFile = path.fileName.toString() != "credentials"
         if (sectionName == "sso-session" && !isConfigFile) {
@@ -217,4 +242,6 @@ class DefaultConfigFilesFacade(
             appendText(body)
         }
     }
+
+
 }

@@ -175,31 +175,14 @@ fun deleteSsoConnectionCW(connection: AwsBearerTokenConnection) {
 fun deleteSsoConnectionExplorer(connection: CredentialIdentifier) {
     deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
 }
-fun deleteSsoConnection(sessionName: String) {
-    val configFilesFacade = DefaultConfigFilesFacade()
-    val filePath = configFilesFacade.configPath
-    val lines = filePath.inputStreamIfExists()?.reader()?.readLines().orEmpty()
-    val ssoHeaderLine = lines.indexOfFirst { it.startsWith("[${SsoSessionConstants.SSO_SESSION_SECTION_NAME} $sessionName]") }
-    if (ssoHeaderLine == -1) return
-    val nextHeaderLine = lines.subList(ssoHeaderLine + 1, lines.size).indexOfFirst { it.startsWith("[") }
-    val endIndex = if (nextHeaderLine == -1) lines.size else ssoHeaderLine + nextHeaderLine + 1
-    val updatedArray = lines.subList(0, ssoHeaderLine) + lines.subList(endIndex, lines.size)
-    val profileHeaderLine = updatedArray.indexOfFirst { it.startsWith("[profile $sessionName-") }
-    if (profileHeaderLine == -1) {
-        filePath.writeText(updatedArray.joinToString("\n"))
-    } else {
-        val nextHeaderLine2 = updatedArray.subList(profileHeaderLine + 1, updatedArray.size).indexOfFirst { it.startsWith("[") }
-        val endIndex2 = if (nextHeaderLine2 == -1) updatedArray.size else profileHeaderLine + nextHeaderLine2 + 1
-        filePath.writeText((updatedArray.subList(0, profileHeaderLine) + updatedArray.subList(endIndex2, updatedArray.size)).joinToString("\n"))
-    }
-    FileDocumentManager.getInstance().saveAllDocuments()
-    ProfileWatcher.getInstance().forceRefresh()
-}
+
+fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
+
 
 fun getSsoSessionProfileNameFromBearer(connection: AwsBearerTokenConnection): String =
     connection.id.substringAfter("${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:")
 
 fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
     connection as ProfileCredentialsIdentifierSso
-    return connection.sessionIdentifier.substringAfter("sso-session:")
+    return  connection.ssoSessionName
 }
