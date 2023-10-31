@@ -108,7 +108,8 @@ enum class SourceOfEntry {
     CODECATALYST,
     CODEWHISPERER,
     EXPLORER,
-    FIRST_STARTUP
+    FIRST_STARTUP,
+    UNKNOWN
 }
 
 class SetupAuthenticationDialog(
@@ -120,7 +121,7 @@ class SetupAuthenticationDialog(
     private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
     private val sourceOfEntry: SourceOfEntry,
     private val featureId: FeatureId,
-    private val isFirstInstance: Boolean,
+    private val isFirstInstance: Boolean = false,
     private val connectionInitiatedFromExplorer: Boolean = false
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
