@@ -10,12 +10,12 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredenti
 
 fun getConnectionCount(): Int {
     val bearerTokenCount = ToolkitAuthManager.getInstance().listConnections().size
-    val iamCredentialCount = CredentialManager.getInstance().getCredentialIdentifiers().filter { it !is ProfileCredentialsIdentifierSso }.size
+    val iamCredentialCount = CredentialManager.getInstance().getCredentialIdentifiers().count { it !is ProfileCredentialsIdentifierSso }
     return bearerTokenCount + iamCredentialCount
 }
 
 fun getEnabledConnectionsForTelemetry(project: Project): Set<AuthFormId> {
-    var enabledConnections = mutableSetOf<AuthFormId>()
+    val enabledConnections = mutableSetOf<AuthFormId>()
     val explorerConnection = checkIamConnectionValidity(project)
     if (explorerConnection !is ActiveConnection.NotConnected) {
         if (explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
