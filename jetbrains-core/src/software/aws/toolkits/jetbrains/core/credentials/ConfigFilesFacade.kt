@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
@@ -209,8 +210,11 @@ class DefaultConfigFilesFacade(
             val endIndex2 = if (nextHeaderLine2 == -1) updatedArray.size else profileHeaderLine + nextHeaderLine2 + 1
             filePath.writeText((updatedArray.subList(0, profileHeaderLine) + updatedArray.subList(endIndex2, updatedArray.size)).joinToString("\n"))
         }
-        FileDocumentManager.getInstance().saveAllDocuments()
-        ProfileWatcher.getInstance().forceRefresh()
+        val applicationManager = ApplicationManager.getApplication()
+        if (applicationManager != null && !applicationManager.isUnitTestMode) {
+            FileDocumentManager.getInstance().saveAllDocuments()
+            ProfileWatcher.getInstance().forceRefresh()
+        }
     }
 
     private fun appendSection(path: Path, sectionName: String, profile: Profile) {
