@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.testFramework.LightVirtualFile
 import software.aws.toolkits.resources.message
 
-class GettingStartedVirtualFile(val firstInstance: Boolean, val connectionInitiatedFromExplorer: Boolean = false) : LightVirtualFile(
+class GettingStartedVirtualFile(val firstInstance: Boolean = false, val connectionInitiatedFromExplorer: Boolean = false) : LightVirtualFile(
     message("gettingstarted.editor.title")
 ) {
     override fun toString() = "GettingStartedVirtualFile[${getName()}]"
