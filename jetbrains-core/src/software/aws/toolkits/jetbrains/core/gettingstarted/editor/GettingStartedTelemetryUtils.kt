@@ -38,13 +38,8 @@ fun getEnabledConnectionsForTelemetry(project: Project): Set<AuthFormId> {
     return enabledConnections
 }
 
-fun getEnabledConnections(project: Project): String {
-    var enabledConnection = ""
-    getEnabledConnectionsForTelemetry(project).forEach {
-        enabledConnection += it.toString() + ","
-    }
-    return enabledConnection.dropLast(1) // removes extra comma
-}
+fun getEnabledConnections(project: Project): String =
+    getEnabledConnectionsForTelemetry(project).joinToString(",")
 
 enum class AuthFormId {
     IAMCREDENTIALS_EXPLORER,

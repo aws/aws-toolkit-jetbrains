@@ -16,7 +16,7 @@ class GettingStartedEditorProvider : FileEditorProvider, DumbAware {
     override fun createEditor(project: Project, file: VirtualFile): FileEditor {
         file as GettingStartedVirtualFile
         val firstInstance = file.firstInstance
-        return GettingStartedEditor(project, file, firstInstance)
+        return GettingStartedEditor(project, file, firstInstance, file.connectionInitiatedFromExplorer)
     }
 
     override fun getEditorTypeId() = EDITOR_TYPE

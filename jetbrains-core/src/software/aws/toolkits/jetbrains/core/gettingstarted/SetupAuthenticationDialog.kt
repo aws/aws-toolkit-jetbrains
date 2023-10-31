@@ -120,7 +120,8 @@ class SetupAuthenticationDialog(
     private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
     private val sourceOfEntry: SourceOfEntry,
     private val featureId: FeatureId,
-    private val isFirstInstance: Boolean
+    private val isFirstInstance: Boolean,
+    private val connectionInitiatedFromExplorer : Boolean = false
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
@@ -251,7 +252,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.session.exists", profileName), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -274,7 +275,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, it, title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -317,7 +318,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.profile.exists", profileName), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
@@ -344,7 +345,7 @@ class SetupAuthenticationDialog(
                     Messages.showErrorDialog(project, message("gettingstarted.setup.iam.profile.invalid_credentials"), title)
                     AuthTelemetry.addConnection(
                         project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance),
+                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
                         featureId = featureId,
                         credentialSourceId = CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,

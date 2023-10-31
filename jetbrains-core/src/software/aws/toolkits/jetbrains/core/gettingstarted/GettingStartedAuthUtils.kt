@@ -35,11 +35,16 @@ import java.io.IOException
 
 private val LOG = LoggerFactory.getLogger("GettingStartedAuthUtils")
 
-fun rolePopupFromConnection(project: Project, connection: AwsBearerTokenConnection, configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(), isFirstInstance: Boolean = false) {
+fun rolePopupFromConnection(
+    project: Project,
+    connection: AwsBearerTokenConnection,
+    configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
+    isFirstInstance: Boolean = false
+) {
     runInEdt {
         if (!connection.id.startsWith(SsoSessionConstants.SSO_SESSION_SECTION_NAME) || connection !is BearerSsoConnection) {
             // require reauth if it's not a profile-based sso connection
-            requestCredentialsForExplorer(project, isFirstInstance = isFirstInstance)
+            requestCredentialsForExplorer(project, isFirstInstance = isFirstInstance, connectionInitiatedFromExplorer = true)
         } else {
             val session = connection.id.substringAfter("${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:")
 
@@ -72,7 +77,8 @@ fun requestCredentialsForCodeWhisperer(
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
-    isFirstInstance: Boolean = false
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer : Boolean = false
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -111,13 +117,14 @@ fun requestCredentialsForCodeWhisperer(
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.CODEWHISPERER,
         featureId = FeatureId.Codewhisperer,
-        isFirstInstance = isFirstInstance
+        isFirstInstance = isFirstInstance,
+        connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
     )
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = true,
@@ -126,7 +133,7 @@ fun requestCredentialsForCodeWhisperer(
         )
         AuthTelemetry.addedConnections(
             project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             authConnectionsCount = initialConnectionCount,
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
@@ -137,7 +144,7 @@ fun requestCredentialsForCodeWhisperer(
     } else {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = false,
@@ -154,7 +161,8 @@ fun requestCredentialsForExplorer(
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
-    isFirstInstance: Boolean = false
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer : Boolean = false
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -171,13 +179,14 @@ fun requestCredentialsForExplorer(
         promptForIdcPermissionSet = true,
         sourceOfEntry = SourceOfEntry.RESOURCE_EXPLORER,
         featureId = FeatureId.AwsExplorer,
-        isFirstInstance = isFirstInstance
+        isFirstInstance = isFirstInstance,
+        connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
     )
     val isAuthSuccessful = authenticationDialog.showAndGet()
     if (isAuthSuccessful) {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = true,
@@ -186,7 +195,7 @@ fun requestCredentialsForExplorer(
         )
         AuthTelemetry.addedConnections(
             project,
-            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             authConnectionsCount = initialConnectionCount,
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
@@ -197,7 +206,7 @@ fun requestCredentialsForExplorer(
     } else {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = false,
