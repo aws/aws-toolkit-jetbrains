@@ -12,10 +12,12 @@ import com.intellij.ui.components.JBScrollPane
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
-class GettingStartedEditor(private val project: Project,
-                           private val file: VirtualFile,
-                           private val isFirstInstance: Boolean,
-                           private val connectionInitiatedFromExplorer : Boolean = false) :
+class GettingStartedEditor(
+    private val project: Project,
+    private val file: VirtualFile,
+    private val isFirstInstance: Boolean,
+    private val connectionInitiatedFromExplorer: Boolean = false
+) :
     UserDataHolderBase(), FileEditor {
     override fun dispose() {
     }

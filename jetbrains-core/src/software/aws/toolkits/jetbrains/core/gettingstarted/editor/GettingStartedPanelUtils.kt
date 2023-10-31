@@ -119,8 +119,8 @@ fun isCredentialSso(providerId: String): ActiveConnectionType {
     return if (profileName in ssoSessionIds) ActiveConnectionType.IAM_IDC else ActiveConnectionType.IAM
 }
 
-fun getSourceOfEntry(sourceOfEntry: SourceOfEntry, isStartup: Boolean = false, connectionInitiatedFromExplorer : Boolean = false): String {
-    val src = if(connectionInitiatedFromExplorer) SourceOfEntry.EXPLORER.name else sourceOfEntry.name
+fun getSourceOfEntry(sourceOfEntry: SourceOfEntry, isStartup: Boolean = false, connectionInitiatedFromExplorer: Boolean = false): String {
+    val src = if (connectionInitiatedFromExplorer) SourceOfEntry.EXPLORER.name else sourceOfEntry.name
     val source = if (isStartup) SourceOfEntry.FIRST_STARTUP.name else src
     return if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) != null) "REMOTE_$source" else source
 }

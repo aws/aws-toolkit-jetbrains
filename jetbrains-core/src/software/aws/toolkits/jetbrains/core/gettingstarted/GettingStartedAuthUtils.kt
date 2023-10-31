@@ -78,7 +78,7 @@ fun requestCredentialsForCodeWhisperer(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer : Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -162,7 +162,7 @@ fun requestCredentialsForExplorer(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer : Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,

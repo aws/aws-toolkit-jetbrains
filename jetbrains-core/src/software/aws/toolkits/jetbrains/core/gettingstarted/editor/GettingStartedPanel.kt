@@ -77,9 +77,11 @@ import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Dimension
 import javax.swing.JComponent
 
-class GettingStartedPanel(private val project: Project,
-                          private val isFirstInstance: Boolean = false,
-                          private val connectionInitiatedFromExplorer : Boolean = false) : BorderLayoutPanel(), Disposable {
+class GettingStartedPanel(
+    private val project: Project,
+    private val isFirstInstance: Boolean = false,
+    private val connectionInitiatedFromExplorer: Boolean = false
+) : BorderLayoutPanel(), Disposable {
     private val infoBanner = ConnectionInfoBanner()
     private val featureSetPanel = FeatureColumns()
     private val alarm = Alarm()
@@ -536,7 +538,13 @@ class GettingStartedPanel(private val project: Project,
                             row {
                                 button(message("aws.onboarding.getstarted.panel.button_iam_login")) {
                                     controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
-                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance, connectionInitiatedFromExplorer)
+                                    val loginSuccess = requestCredentialsForExplorer(
+                                        project,
+                                        oldConnectionCount,
+                                        initialEnabledConnection,
+                                        isFirstInstance,
+                                        connectionInitiatedFromExplorer
+                                    )
                                     handleLogin(loginSuccess)
 
                                     if (loginSuccess) {
@@ -595,7 +603,13 @@ class GettingStartedPanel(private val project: Project,
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
                             row {
                                 link(message("general.add.another")) {
-                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance, connectionInitiatedFromExplorer)
+                                    requestCredentialsForExplorer(
+                                        project,
+                                        oldConnectionCount,
+                                        initialEnabledConnection,
+                                        isFirstInstance,
+                                        connectionInitiatedFromExplorer
+                                    )
                                 }
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ValidIam)
@@ -603,7 +617,13 @@ class GettingStartedPanel(private val project: Project,
                             row {
                                 button(message("general.auth.reauthenticate")) {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
-                                    val loginSuccess = requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance, connectionInitiatedFromExplorer)
+                                    val loginSuccess = requestCredentialsForExplorer(
+                                        project,
+                                        oldConnectionCount,
+                                        initialEnabledConnection,
+                                        isFirstInstance,
+                                        connectionInitiatedFromExplorer
+                                    )
                                     handleLogin(loginSuccess)
 
                                     if (loginSuccess) {
@@ -639,7 +659,13 @@ class GettingStartedPanel(private val project: Project,
 
                             row {
                                 link(message("general.add.another")) {
-                                    requestCredentialsForExplorer(project, oldConnectionCount, initialEnabledConnection, isFirstInstance, connectionInitiatedFromExplorer)
+                                    requestCredentialsForExplorer(
+                                        project,
+                                        oldConnectionCount,
+                                        initialEnabledConnection,
+                                        isFirstInstance,
+                                        connectionInitiatedFromExplorer
+                                    )
                                 }
                             }
                         }.visible(checkIamConnectionValidity(project) is ActiveConnection.ExpiredIam)
@@ -857,7 +883,12 @@ class GettingStartedPanel(private val project: Project,
                                 }
                                 text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
                                     handleCodeWhispererLogin(
-                                        requestCredentialsForCodeWhisperer(project, popupBuilderIdTab = false, isFirstInstance = isFirstInstance, connectionInitiatedFromExplorer = connectionInitiatedFromExplorer),
+                                        requestCredentialsForCodeWhisperer(
+                                            project,
+                                            popupBuilderIdTab = false,
+                                            isFirstInstance = isFirstInstance,
+                                            connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
+                                        ),
                                         panelNotConnected
                                     )
                                 }
@@ -1068,7 +1099,9 @@ class GettingStartedPanel(private val project: Project,
     }
 
     companion object {
-        fun openPanel(project: Project, firstInstance: Boolean = false, connectionInitiatedFromExplorer : Boolean = false) = FileEditorManager.getInstance(project).openTextEditor(
+        fun openPanel(project: Project, firstInstance: Boolean = false, connectionInitiatedFromExplorer: Boolean = false) = FileEditorManager.getInstance(
+            project
+        ).openTextEditor(
             OpenFileDescriptor(
                 project,
                 GettingStartedVirtualFile(firstInstance, connectionInitiatedFromExplorer)

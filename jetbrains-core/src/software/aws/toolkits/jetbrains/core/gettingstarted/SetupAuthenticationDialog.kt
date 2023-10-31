@@ -121,7 +121,7 @@ class SetupAuthenticationDialog(
     private val sourceOfEntry: SourceOfEntry,
     private val featureId: FeatureId,
     private val isFirstInstance: Boolean,
-    private val connectionInitiatedFromExplorer : Boolean = false
+    private val connectionInitiatedFromExplorer: Boolean = false
 ) : DialogWrapper(project) {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
