@@ -25,9 +25,11 @@ import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.BottomGap
+import com.intellij.ui.dsl.builder.IntelliJSpacingConfiguration
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.gridLayout.Gaps
 import com.intellij.util.Alarm
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
@@ -69,7 +71,10 @@ import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import java.awt.Dimension
+import java.awt.Image
+import javax.swing.ImageIcon
 import javax.swing.JComponent
+import javax.swing.JLabel
 
 class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), Disposable {
     private val infoBanner = ConnectionInfoBanner()
@@ -271,13 +276,7 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                 }
                         }
 
-                        row {
-                            panel {
-                                row {
-                                    text("image/ gif")
-                                }
-                            }
-                        }
+                        image(AwsToolkit.pluginPath().resolve("assets").resolve("codecatalyst.png").toString())
 
                         row {
                             text(message("caws.getstarted.panel.description"))
@@ -455,13 +454,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     font = PANEL_TITLE_FONT
                                 }
                         }
-                        row {
-                            panel {
-                                row {
-                                    text("image/ gif")
-                                }
-                            }
-                        }
+
+                        image(AwsToolkit.pluginPath().resolve("assets").resolve("explorer.png").toString())
 
                         row {
                             text(message("aws.getstarted.resource.panel_description"))
@@ -642,13 +636,8 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
                                     font = PANEL_TITLE_FONT
                                 }
                         }
-                        row {
-                            panel {
-                                row {
-                                    text("image/ gif")
-                                }
-                            }
-                        }
+
+                        image(AwsToolkit.pluginPath().resolve("assets").resolve("codewhisperer.png").toString())
 
                         row {
                             text(message("codewhisperer.gettingstarted.panel.comment"))
@@ -874,6 +863,19 @@ class GettingStartedPanel(private val project: Project) : BorderLayoutPanel(), D
             }
 
             isOpaque = false
+        }
+
+        private val indentSize = IntelliJSpacingConfiguration().horizontalIndent
+
+        protected fun Panel.image(path: String) {
+            row {
+                val image = ImageIcon(path).image
+                    // need to account for margin introduced by indent
+                    // Image.SCALE_DEFAULT is the only valid parameter for gifs
+                    .getScaledInstance(PANEL_WIDTH - (indentSize * 2), -1, if (path.endsWith("gif")) Image.SCALE_DEFAULT else Image.SCALE_SMOOTH)
+                cell(JLabel(ImageIcon(image)))
+                    .customize(Gaps.EMPTY)
+            }
         }
     }
 
