@@ -55,9 +55,9 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindo
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
+import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
-import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
