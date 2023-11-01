@@ -104,12 +104,12 @@ data class SetupAuthenticationNotice(
 }
 
 enum class SourceOfEntry {
-    RESOURCE_EXPLORER,
-    CODECATALYST,
-    CODEWHISPERER,
-    EXPLORER,
-    FIRST_STARTUP,
-    UNKNOWN
+    resourceExplorer,
+    codecatalyst,
+    codewhisperer,
+    explorer,
+    firstStartup,
+    unknown
 }
 
 class SetupAuthenticationDialog(
