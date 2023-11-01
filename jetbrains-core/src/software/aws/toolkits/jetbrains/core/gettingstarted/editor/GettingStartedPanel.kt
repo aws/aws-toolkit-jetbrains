@@ -330,7 +330,7 @@ class GettingStartedPanel(
                                         showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
                                         AuthTelemetry.addConnection(
                                             project,
-                                            getSourceOfEntry(SourceOfEntry.codecatalyst, isFirstInstance, connectionInitiatedFromExplorer),
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
                                             FeatureId.Codecatalyst,
                                             CredentialSourceId.AwsId,
                                             isAggregated = true,
@@ -338,7 +338,7 @@ class GettingStartedPanel(
                                         )
                                         AuthTelemetry.addedConnections(
                                             project,
-                                            getSourceOfEntry(SourceOfEntry.codecatalyst, isFirstInstance, connectionInitiatedFromExplorer),
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
                                             oldConnectionCount,
                                             getConnectionCount() - oldConnectionCount,
                                             enabledAuthConnections = initialEnabledConnection,
@@ -350,7 +350,7 @@ class GettingStartedPanel(
                                         controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
                                         AuthTelemetry.addConnection(
                                             project,
-                                            getSourceOfEntry(SourceOfEntry.codecatalyst, isFirstInstance, connectionInitiatedFromExplorer),
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
                                             FeatureId.Codecatalyst,
                                             CredentialSourceId.AwsId,
                                             isAggregated = false,
@@ -359,7 +359,7 @@ class GettingStartedPanel(
                                         )
                                         AuthTelemetry.addedConnections(
                                             project,
-                                            getSourceOfEntry(SourceOfEntry.codecatalyst, isFirstInstance, connectionInitiatedFromExplorer),
+                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
                                             oldConnectionCount,
                                             getConnectionCount() - oldConnectionCount,
                                             enabledAuthConnections = initialEnabledConnection,

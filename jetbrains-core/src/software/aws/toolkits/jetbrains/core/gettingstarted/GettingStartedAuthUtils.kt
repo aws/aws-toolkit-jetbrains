@@ -115,7 +115,7 @@ fun requestCredentialsForCodeWhisperer(
         ),
         scopes = CODEWHISPERER_SCOPES,
         promptForIdcPermissionSet = false,
-        sourceOfEntry = SourceOfEntry.codewhisperer,
+        sourceOfEntry = SourceOfEntry.CODEWHISPERER,
         featureId = FeatureId.Codewhisperer,
         isFirstInstance = isFirstInstance,
         connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
@@ -124,7 +124,7 @@ fun requestCredentialsForCodeWhisperer(
     if (isAuthenticationSuccessful) {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.codewhisperer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = true,
@@ -133,7 +133,7 @@ fun requestCredentialsForCodeWhisperer(
         )
         AuthTelemetry.addedConnections(
             project,
-            source = getSourceOfEntry(SourceOfEntry.codewhisperer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             authConnectionsCount = initialConnectionCount,
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
@@ -144,7 +144,7 @@ fun requestCredentialsForCodeWhisperer(
     } else {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.codewhisperer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = false,
@@ -177,7 +177,7 @@ fun requestCredentialsForExplorer(
             )
         ),
         promptForIdcPermissionSet = true,
-        sourceOfEntry = SourceOfEntry.resourceExplorer,
+        sourceOfEntry = SourceOfEntry.RESOURCE_EXPLORER,
         featureId = FeatureId.AwsExplorer,
         isFirstInstance = isFirstInstance,
         connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
@@ -186,7 +186,7 @@ fun requestCredentialsForExplorer(
     if (isAuthSuccessful) {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.resourceExplorer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = true,
@@ -195,7 +195,7 @@ fun requestCredentialsForExplorer(
         )
         AuthTelemetry.addedConnections(
             project,
-            source = getSourceOfEntry(SourceOfEntry.resourceExplorer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             authConnectionsCount = initialConnectionCount,
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
@@ -206,7 +206,7 @@ fun requestCredentialsForExplorer(
     } else {
         AuthTelemetry.addConnection(
             project,
-            source = getSourceOfEntry(SourceOfEntry.resourceExplorer, isFirstInstance, connectionInitiatedFromExplorer),
+            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
             credentialSourceId = CredentialSourceId.IamIdentityCenter,
             isAggregated = false,

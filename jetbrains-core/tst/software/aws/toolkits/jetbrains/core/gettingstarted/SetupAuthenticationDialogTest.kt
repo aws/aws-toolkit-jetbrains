@@ -85,7 +85,7 @@ class SetupAuthenticationDialogTest {
                 scopes = scopes,
                 state = state,
                 configFilesFacade = configFacade,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).apply {
                 try {
@@ -133,7 +133,7 @@ class SetupAuthenticationDialogTest {
                 state = state,
                 promptForIdcPermissionSet = true,
                 configFilesFacade = configFacade,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).apply {
                 try {
@@ -167,7 +167,7 @@ class SetupAuthenticationDialogTest {
             SetupAuthenticationDialog(
                 projectExtension.project,
                 state = state,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).apply {
                 try {
@@ -193,7 +193,7 @@ class SetupAuthenticationDialogTest {
             val validation = SetupAuthenticationDialog(
                 projectExtension.project,
                 state = state,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).run {
                 try {
@@ -222,7 +222,7 @@ class SetupAuthenticationDialogTest {
             val validation = SetupAuthenticationDialog(
                 projectExtension.project,
                 state = state,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).run {
                 try {
@@ -247,7 +247,7 @@ class SetupAuthenticationDialogTest {
             val validation = SetupAuthenticationDialog(
                 projectExtension.project,
                 state = state,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             ).run {
                 try {
@@ -285,7 +285,7 @@ class SetupAuthenticationDialogTest {
             val sut = SetupAuthenticationDialog(
                 projectExtension.project,
                 state = state,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             )
             val exception = assertThrows<Exception> { sut.doOKAction() }
@@ -314,7 +314,7 @@ class SetupAuthenticationDialogTest {
                 projectExtension.project,
                 state = state,
                 configFilesFacade = configFacade,
-                sourceOfEntry = SourceOfEntry.unknown,
+                sourceOfEntry = SourceOfEntry.UNKNOWN,
                 featureId = FeatureId.Unknown
             )
                 .doOKAction()
