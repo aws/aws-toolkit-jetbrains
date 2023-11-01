@@ -15,7 +15,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.caws.DevEnvStatusWatcher
+import software.aws.toolkits.jetbrains.remoteDev.caws.DevEnvStatusWatcher
 
 class DevEnvStatusWatcherTest {
     @JvmField
