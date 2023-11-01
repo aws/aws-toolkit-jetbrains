@@ -18,12 +18,12 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererActivationChangedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
@@ -74,7 +74,9 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
     }
 
     override fun onChange(providerId: String) {
-        if (CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() || isCodeWhispererExpired(project)) {
+        val isConnExpired = CodeWhispererExplorerActionManager.getInstance()
+            .checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
+        if (CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() || isConnExpired) {
             return
         }
         LearnCodeWhispererEditorProvider.openEditor(project)

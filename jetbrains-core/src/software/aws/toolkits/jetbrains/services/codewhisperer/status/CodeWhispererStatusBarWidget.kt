@@ -16,9 +16,10 @@ import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
@@ -77,7 +78,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 
     override fun getPopupStep(): ListPopup? =
-        if (isCodeWhispererExpired(project)) {
+        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired) {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else {
             null
@@ -92,7 +93,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isCodeWhispererExpired(project)) {
+        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired) {
             AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
             AnimatedIcon.Default()

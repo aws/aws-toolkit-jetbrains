@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLoginLearnMoreAction
@@ -31,7 +30,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWit
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -196,18 +194,6 @@ object CodeWhispererUtil {
         listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError(), DoNotShowAgainActionError())
     )
 
-    fun isAccessTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
-        val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NEEDS_REFRESH
-    }
-
-    fun isRefreshTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
-        val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NOT_AUTHENTICATED
-    }
-
     // This will be called only when there's a CW connection, but it has expired(either accessToken or refreshToken)
     // 1. If connection is expired, try to refresh
     // 2. If not able to refresh, requesting re-login by showing a notification
@@ -217,7 +203,6 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
