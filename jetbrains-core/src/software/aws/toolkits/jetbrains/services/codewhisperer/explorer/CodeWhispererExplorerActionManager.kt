@@ -13,14 +13,16 @@ import com.intellij.util.xmlb.annotations.Property
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.time.LocalDateTime
@@ -120,22 +122,27 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         return actionState.token
     }
 
-    fun checkActiveCodeWhispererConnectionType(project: Project) = when {
-        actionState.token != null -> CodeWhispererLoginType.Accountless
-        isConnectionExpired(project) -> CodeWhispererLoginType.Expired
-        else -> {
-            val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-            if (conn != null) {
-                if (conn.isSono()) {
-                    CodeWhispererLoginType.Sono
-                } else {
-                    CodeWhispererLoginType.SSO
+    fun checkActiveCodeWhispererConnectionType(project: Project) =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let { conn ->
+            val connState = conn.state()
+            when (connState) {
+                BearerTokenAuthState.AUTHORIZED -> {
+                    if (conn.isSono()) {
+                        CodeWhispererLoginType.Sono
+                    } else {
+                        CodeWhispererLoginType.SSO
+                    }
                 }
-            } else {
-                CodeWhispererLoginType.Logout
+
+                BearerTokenAuthState.NEEDS_REFRESH -> {
+                    CodeWhispererLoginType.Expired
+                }
+
+                BearerTokenAuthState.NOT_AUTHENTICATED -> {
+                    CodeWhispererLoginType.Logout
+                }
             }
-        }
-    }
+        } ?: CodeWhispererLoginType.Logout
 
     fun nullifyAccountlessCredentialIfNeeded() {
         if (actionState.token != null) {
@@ -157,12 +164,6 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value.putAll(state.value)
         actionState.accountlessWarnTimestamp = state.accountlessWarnTimestamp
         actionState.accountlessErrorTimestamp = state.accountlessErrorTimestamp
-    }
-
-    private fun isConnectionExpired(project: Project): Boolean {
-        val tokenProvider = CodeWhispererUtil.tokenProvider(project) ?: return true
-        val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NEEDS_REFRESH || state == BearerTokenAuthState.NOT_AUTHENTICATED
     }
 
     companion object {
@@ -205,10 +206,17 @@ interface CodeWhispererActivationChangedListener {
     fun activationChanged(value: Boolean) {}
 }
 
+private fun ToolkitConnection.state(): BearerTokenAuthState =
+    ((this as? AwsBearerTokenConnection)?.getConnectionSettings()?.tokenProvider?.delegate as? BearerTokenProvider)?.state()
+        ?: BearerTokenAuthState.NOT_AUTHENTICATED
+
 fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
     checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
 }
 
 fun isCodeWhispererExpired(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
-    checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
+    if (checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Logout) {
+        return@with null
+    }
+    return@with checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
 }

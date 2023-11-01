@@ -204,7 +204,7 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (!isCodeWhispererExpired(project)) return false
+        if (isCodeWhispererExpired(project) == false) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
@@ -246,7 +246,7 @@ object CodeWhispererUtil {
         return connection.startUrl
     }
 
-    fun tokenProvider(project: Project) = (
+    private fun tokenProvider(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
             .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection

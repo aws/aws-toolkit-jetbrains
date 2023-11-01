@@ -74,7 +74,7 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
     }
 
     override fun onChange(providerId: String) {
-        if (CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() || isCodeWhispererExpired(project)) {
+        if (CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() || isCodeWhispererExpired(project) != false) {
             return
         }
         LearnCodeWhispererEditorProvider.openEditor(project)

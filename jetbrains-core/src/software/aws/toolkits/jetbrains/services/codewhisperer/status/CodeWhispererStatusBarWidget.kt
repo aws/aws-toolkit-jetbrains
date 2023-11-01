@@ -77,7 +77,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 
     override fun getPopupStep(): ListPopup? =
-        if (isCodeWhispererExpired(project)) {
+        if (isCodeWhispererExpired(project) == true) {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else {
             null
@@ -92,7 +92,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isCodeWhispererExpired(project)) {
+        if (isCodeWhispererExpired(project) == true) {
             AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
             AnimatedIcon.Default()

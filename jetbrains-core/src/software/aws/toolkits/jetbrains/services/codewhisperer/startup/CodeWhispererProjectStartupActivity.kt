@@ -52,7 +52,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         // show notification to accountless users
         showAccountlessNotificationIfNeeded(project)
 
-        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() && !isCodeWhispererExpired(project)) {
+        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() && isCodeWhispererExpired(project) == false) {
             showOnboardingPage(project)
         }
         runOnce = true
