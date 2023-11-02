@@ -113,9 +113,15 @@ enum class SourceOfEntry {
     UNKNOWN;
     override fun toString(): String {
         val value = this.name.lowercase()
-        return if(value.contains("_")){
-            //convert to camelCase
-            (value.substringBefore("_") + value.substringAfter("_").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+        // If the string in lowercase contains an _ eg RESOURCE_EXPLORER, this function returns camelCase of the string i.e resourceExplorer
+        return if (value.contains("_")) {
+            // convert to camelCase
+            (
+                value.substringBefore("_") +
+                    value.substringAfter("_").replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                    }
+                )
         } else {
             value
         }
