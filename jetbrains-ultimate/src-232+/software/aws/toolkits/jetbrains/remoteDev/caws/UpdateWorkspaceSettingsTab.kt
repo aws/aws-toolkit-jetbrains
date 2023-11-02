@@ -29,7 +29,7 @@ import com.jetbrains.rd.ui.bedsl.dsl.withColor
 import com.jetbrains.rd.ui.bedsl.dsl.withMargin
 import com.jetbrains.rd.ui.bedsl.link
 import com.jetbrains.rd.util.lifetime.Lifetime
-import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.tab.GatewayControlCenterTabProvider
+import com.jetbrains.rdserver.unattendedHost.customization.controlCenter.GatewayControlCenterTabProvider
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger

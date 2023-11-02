@@ -79,6 +79,10 @@ with what features/services are supported.
         <xi:fallback/>
     </xi:include>
 
+    <xi:include href="/META-INF/remoteDev.xml">
+        <xi:fallback/>
+    </xi:include>
+
     <!-- global optional dependencies here, otherwise in their respective optional includes -->
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <depends optional="true">org.jetbrains.plugins.gradle</depends>
