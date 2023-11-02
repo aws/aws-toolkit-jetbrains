@@ -202,7 +202,7 @@ class DefaultConfigFilesFacade(
         val nextHeaderLine = lines.subList(ssoHeaderLine + 1, lines.size).indexOfFirst { it.startsWith("[") }
         val endIndex = if (nextHeaderLine == -1) lines.size else ssoHeaderLine + nextHeaderLine + 1
         val updatedArray = lines.subList(0, ssoHeaderLine) + lines.subList(endIndex, lines.size)
-        val profileHeaderLine = updatedArray.indexOfFirst { it.startsWith("[profile $sessionName-") }
+        val profileHeaderLine = getCorrespondingSsoSessionProfilePosition(updatedArray, sessionName)
         if (profileHeaderLine == -1) {
             filePath.writeText(updatedArray.joinToString("\n"))
         } else {
@@ -217,6 +217,26 @@ class DefaultConfigFilesFacade(
         }
     }
 
+    private fun getCorrespondingSsoSessionProfilePosition(updatedArray: List<String>, sessionName: String): Int {
+        var content = updatedArray
+        var lineCnt = 0
+        while (content.size > 0) {
+            val pos = content.indexOfFirst { it.startsWith("[profile $sessionName-") }
+            // if no matching profile section found
+            if (pos == -1) return -1
+
+            // if matching profile section found which is an sso-profile
+            if (isProfileSso(content.subList(pos + 1, content.size))) return lineCnt + pos
+
+            content = content.subList(pos + 1, content.size)
+            lineCnt += pos + 1
+        }
+        return -1
+    }
+    private fun isProfileSso(configContent: List<String>): Boolean {
+        val nextNonCommentedLine = configContent.indexOfFirst { !it.startsWith("#") }
+        return if (configContent[nextNonCommentedLine].startsWith("sso_")) true else false
+    }
     private fun appendSection(path: Path, sectionName: String, profile: Profile) {
         val isConfigFile = path.fileName.toString() != "credentials"
         if (sectionName == "sso-session" && !isConfigFile) {
