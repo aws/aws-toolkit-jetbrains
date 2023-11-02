@@ -330,7 +330,7 @@ class DefaultConfigFilesFacadeTest {
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig1("abc")
+        sut.deleteSsoConnectionFromConfig("abc")
         assertThat(config).hasContent(
             """
             [sso-session precedingabc]
@@ -367,7 +367,7 @@ class DefaultConfigFilesFacadeTest {
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig1("abc")
+        sut.deleteSsoConnectionFromConfig("abc")
         assertThat(config).hasContent(
             """
             [sso-session precedingabc]
@@ -408,7 +408,7 @@ class DefaultConfigFilesFacadeTest {
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig1("abc")
+        sut.deleteSsoConnectionFromConfig("abc")
         assertThat(config).hasContent(
             """
             [sso-session precedingabc]
