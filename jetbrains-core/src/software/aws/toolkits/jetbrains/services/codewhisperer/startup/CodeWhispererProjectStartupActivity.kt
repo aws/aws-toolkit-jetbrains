@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
@@ -51,10 +52,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         // show notification to accountless users
         showAccountlessNotificationIfNeeded(project)
 
-        val isConnectionValid = CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project).let {
-            it == CodeWhispererLoginType.SSO || it == CodeWhispererLoginType.Sono
-        }
-        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() && isConnectionValid) {
+        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() && !isCodeWhispererExpired(project)) {
             showOnboardingPage(project)
         }
         runOnce = true

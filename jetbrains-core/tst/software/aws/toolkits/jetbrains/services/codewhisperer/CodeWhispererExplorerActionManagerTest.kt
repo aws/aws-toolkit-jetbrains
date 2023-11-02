@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -95,6 +96,8 @@ class CodeWhispererExplorerActionManagerTest {
 
         val actual = mockManager.checkActiveCodeWhispererConnectionType(project)
         assertThat(actual).isEqualTo(CodeWhispererLoginType.Logout)
+        assertThat(isCodeWhispererEnabled(project)).isFalse
+        assertThat(isCodeWhispererExpired(project)).isFalse
     }
 
     /**
@@ -111,6 +114,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.AUTHORIZED,
             expectedLoginType = CodeWhispererLoginType.Sono,
             expectedIsCwEnabled = true,
+            expectedIsCwExpired = false
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
 
@@ -121,6 +125,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.NEEDS_REFRESH,
             expectedLoginType = CodeWhispererLoginType.Expired,
             expectedIsCwEnabled = true,
+            expectedIsCwExpired = true
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
 
@@ -131,6 +136,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.NOT_AUTHENTICATED,
             expectedLoginType = CodeWhispererLoginType.Logout,
             expectedIsCwEnabled = false,
+            expectedIsCwExpired = false
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
 
@@ -141,6 +147,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.AUTHORIZED,
             expectedLoginType = CodeWhispererLoginType.SSO,
             expectedIsCwEnabled = true,
+            expectedIsCwExpired = false
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
 
@@ -151,6 +158,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.NEEDS_REFRESH,
             expectedLoginType = CodeWhispererLoginType.Expired,
             expectedIsCwEnabled = true,
+            expectedIsCwExpired = true
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
 
@@ -161,6 +169,7 @@ class CodeWhispererExplorerActionManagerTest {
             expectedState = BearerTokenAuthState.NOT_AUTHENTICATED,
             expectedLoginType = CodeWhispererLoginType.Logout,
             expectedIsCwEnabled = false,
+            expectedIsCwExpired = false
         )
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
     }
@@ -172,6 +181,7 @@ class CodeWhispererExplorerActionManagerTest {
         expectedState: BearerTokenAuthState,
         expectedLoginType: CodeWhispererLoginType,
         expectedIsCwEnabled: Boolean,
+        expectedIsCwExpired: Boolean
     ) {
         testDiskCache.saveAccessToken(
             AccessTokenCacheKey(
@@ -203,5 +213,6 @@ class CodeWhispererExplorerActionManagerTest {
         assertThat(myTokenProvider.state()).isEqualTo(expectedState)
         assertThat(CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)).isEqualTo(expectedLoginType)
         assertThat(isCodeWhispererEnabled(project)).isEqualTo(expectedIsCwEnabled)
+        assertThat(isCodeWhispererExpired(project)).isEqualTo(expectedIsCwExpired)
     }
 }

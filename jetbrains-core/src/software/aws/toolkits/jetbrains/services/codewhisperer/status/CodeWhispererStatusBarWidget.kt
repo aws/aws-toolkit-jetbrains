@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
@@ -78,7 +79,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 
     override fun getPopupStep(): ListPopup? =
-        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired) {
+        if (isCodeWhispererExpired(project)) {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else {
             null
@@ -93,7 +94,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired) {
+        if (isCodeWhispererExpired(project)) {
             AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
             AnimatedIcon.Default()

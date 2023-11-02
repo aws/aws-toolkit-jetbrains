@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWit
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionError
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -203,6 +204,7 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
+        if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {

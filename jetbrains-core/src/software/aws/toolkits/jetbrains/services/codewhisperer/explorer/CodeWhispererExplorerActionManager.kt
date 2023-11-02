@@ -110,10 +110,10 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     @Deprecated("Accountless credential will be removed soon")
     @ScheduledForRemoval
     // Will keep it for existing accountless users
-    /**
-     * Will be called from CodeWhispererService.showRecommendationInPopup()
-     * Caller (e.x. CodeWhispererService) should take care if null value returned, popup a notification/hint window or dialog etc.
-     */
+        /**
+         * Will be called from CodeWhispererService.showRecommendationInPopup()
+         * Caller (e.x. CodeWhispererService) should take care if null value returned, popup a notification/hint window or dialog etc.
+         */
     fun resolveAccessToken(): String? {
         if (actionState.token == null) {
             LOG.warn { "Logical Error: Try to get access token before token initialization" }
@@ -206,4 +206,13 @@ interface CodeWhispererActivationChangedListener {
 
 fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
     checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
+}
+
+/**
+ * Note: please use this util with extra caution, it will return "false" for a "logout" scenario,
+ *  the reasoning is we need handling specifically for a "Expired" condition thus excluding logout from here
+ *  If callers rather need a predicate "isInvalidConnection", please use the combination of the two (!isCodeWhispererEnabled() || isCodeWhispererExpired())
+ */
+fun isCodeWhispererExpired(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
+    checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Expired
 }
