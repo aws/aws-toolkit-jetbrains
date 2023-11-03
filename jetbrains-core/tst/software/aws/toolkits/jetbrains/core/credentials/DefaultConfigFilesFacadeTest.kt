@@ -360,7 +360,7 @@ class DefaultConfigFilesFacadeTest {
             key1=value1
             key2=value2
             [profile abc-1-a]
-            sso_session=value1
+            sso_session=abc
             key2=value2
             [sso-session ac]
             """.trimIndent()
@@ -401,7 +401,101 @@ class DefaultConfigFilesFacadeTest {
             key1=value1
             key2=value2
             [profile abc-1-a]
-            sso_session=value1
+            sso_session=abc
+            key2=value2
+            [sso-session ac]
+            """.trimIndent()
+        )
+        val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
+        val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
+        sut.deleteSsoConnectionFromConfig("abc")
+        assertThat(config).hasContent(
+            """
+            [sso-session precedingabc]
+            key1=value1
+            key2=value2
+            [profile precedingabc-1-a]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            key1=value1
+            key2=value2
+            [sso-session ac]
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `delete session from config on sign out - multiple profiles in the same session`() {
+        val baseFolder = folderRule.newFolder()
+        val config = Paths.get(baseFolder.absolutePath, ".aws", "config")
+        config.createParentDirectories()
+        config.writeText(
+            """
+            [sso-session precedingabc]
+            key1=value1
+            key2=value2
+            [profile precedingabc-1-a]
+            key1=value1
+            key2=value2
+            [sso-session abc]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            sso_session=abc
+            key2=value2
+            [profile abc-2-a]
+            sso_session=abc
+            key2=value2
+            [sso-session ac]
+            """.trimIndent()
+        )
+        val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
+        val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
+        sut.deleteSsoConnectionFromConfig("abc")
+        assertThat(config).hasContent(
+            """
+            [sso-session precedingabc]
+            key1=value1
+            key2=value2
+            [profile precedingabc-1-a]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            key1=value1
+            key2=value2
+            [sso-session ac]
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `delete session from config on sign out - multiple profiles in the same session with profile before sso-session`() {
+        val baseFolder = folderRule.newFolder()
+        val config = Paths.get(baseFolder.absolutePath, ".aws", "config")
+        config.createParentDirectories()
+        config.writeText(
+            """
+            [sso-session precedingabc]
+            key1=value1
+            key2=value2
+            [profile precedingabc-1-a]
+            key1=value1
+            key2=value2
+            [profile abc-2-a]
+            sso_session=abc
+            key2=value2
+            [sso-session abc]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            key1=value1
+            key2=value2
+            [profile abc-1-a]
+            sso_session=abc
             key2=value2
             [sso-session ac]
             """.trimIndent()
