@@ -28,7 +28,7 @@ class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
         val project = e.project ?: return
         val feature = feature(e) ?: return
         ConnectionPinningManager.getInstance().setPinnedConnection(feature, null)
-        
+
         DevToolsToolWindow.getInstance(project).redrawContent()
     }
 
