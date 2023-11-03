@@ -98,7 +98,7 @@ fun runGoModTidy(goModFile: VirtualFile) {
 }
 
 @Suppress("FunctionOnlyReturningConstant")
-fun compatibleGoForIde() = "1.21.0"
+fun compatibleGoForIde() = "1.19.12"
 
 fun CodeInsightTestFixture.ensureCorrectGoVersion(disposable: Disposable) {
     val versionCmd = GeneralCommandLine("goenv").withParameters("version")

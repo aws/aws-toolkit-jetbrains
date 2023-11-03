@@ -9,11 +9,13 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
@@ -525,11 +527,13 @@ class JavaLambdaHandlerResolverTest {
         assertThat(sut.handlerDisplayName("LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
     }
 
-    private fun runInDumbMode(block: () -> Unit) {
+    private inline fun runInDumbMode(crossinline block: () -> Unit) {
         val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
         runBlocking {
-            dumbServiceImpl.runInDumbMode {
-                block()
+            withContext(getCoroutineUiContext()) {
+                dumbServiceImpl.runInDumbMode {
+                    block()
+                }
             }
         }
     }
