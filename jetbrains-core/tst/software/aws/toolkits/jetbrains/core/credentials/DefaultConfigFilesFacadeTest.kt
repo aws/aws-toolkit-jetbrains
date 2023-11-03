@@ -317,28 +317,35 @@ class DefaultConfigFilesFacadeTest {
         config.createParentDirectories()
         config.writeText(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session abc]
-            key1=value1
-            key2=value2
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session2]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [sso-session session3]
             """.trimIndent()
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig("abc")
+        sut.deleteSsoConnectionFromConfig("session2")
         assertThat(config).hasContent(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
     }
@@ -350,33 +357,39 @@ class DefaultConfigFilesFacadeTest {
         config.createParentDirectories()
         config.writeText(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session abc]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            sso_session=abc
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session2]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session2-123-admin]
+            sso_session=session2
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig("abc")
+        sut.deleteSsoConnectionFromConfig("session2")
         assertThat(config).hasContent(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
     }
@@ -388,39 +401,45 @@ class DefaultConfigFilesFacadeTest {
         config.createParentDirectories()
         config.writeText(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session abc]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            sso_session=abc
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session2]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [profile session2-123-admin]
+            sso_session=session2
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig("abc")
+        sut.deleteSsoConnectionFromConfig("session2")
         assertThat(config).hasContent(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [sso-session session3]
             """.trimIndent()
         )
     }
@@ -432,42 +451,49 @@ class DefaultConfigFilesFacadeTest {
         config.createParentDirectories()
         config.writeText(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session abc]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            sso_session=abc
-            key2=value2
-            [profile abc-2-a]
-            sso_session=abc
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session2]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [profile session2-123-admin]
+            sso_session=session2
+            sso_account_id=123
+            sso_role_name= admin
+            [profile session2-345-admin]
+            sso_session=session2
+            sso_account_id=345
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig("abc")
+        sut.deleteSsoConnectionFromConfig("session2")
         assertThat(config).hasContent(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [sso-session session3]
             """.trimIndent()
         )
     }
@@ -479,42 +505,49 @@ class DefaultConfigFilesFacadeTest {
         config.createParentDirectories()
         config.writeText(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-2-a]
-            sso_session=abc
-            key2=value2
-            [sso-session abc]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            sso_session=abc
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [profile session2-345-admin]
+            sso_session=session2
+            sso_account_id=345
+            sso_role_name= admin
+            [sso-session session2]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [profile session2-123-admin]
+            sso_session=session2
+            sso_account_id=123
+            sso_role_name= admin
+            [sso-session session3]
             """.trimIndent()
         )
         val creds = Paths.get(baseFolder.absolutePath, ".aws", "credentials")
         val sut = DefaultConfigFilesFacade(configPath = config, credentialsPath = creds)
-        sut.deleteSsoConnectionFromConfig("abc")
+        sut.deleteSsoConnectionFromConfig("session2")
         assertThat(config).hasContent(
             """
-            [sso-session precedingabc]
-            key1=value1
-            key2=value2
-            [profile precedingabc-1-a]
-            key1=value1
-            key2=value2
-            [profile abc-1-a]
-            key1=value1
-            key2=value2
-            [sso-session ac]
+            [sso-session session1]
+            sso_start_url=https://start
+            sso_region=us-west-2
+            sso_registration_scopes=scope1, scope2
+            [profile session1-123-admin]
+            sso_session=session1
+            sso_account_id=123
+            sso_role_name= admin
+            [profile session2-123-admin]
+            aws_access_key=abjcbd
+            aws_secret_access_key=123
+            [sso-session session3]
             """.trimIndent()
         )
     }
