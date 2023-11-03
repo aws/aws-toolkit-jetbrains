@@ -6,16 +6,13 @@ package software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.UpdateInBackground
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
-import com.intellij.util.messages.Topic
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindowDataKeys
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.PinnedConnectionNode
 import software.aws.toolkits.resources.message
-import java.util.EventListener
 
 class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
     override fun update(e: AnActionEvent) {
@@ -31,6 +28,7 @@ class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
         val project = e.project ?: return
         val feature = feature(e) ?: return
         ConnectionPinningManager.getInstance().setPinnedConnection(feature, null)
+        
         DevToolsToolWindow.getInstance(project).redrawContent()
     }
 
@@ -44,4 +42,3 @@ class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
         return node.feature()
     }
 }
-

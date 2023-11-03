@@ -121,7 +121,6 @@ class GettingStartedPanel(
                 override fun pinnedConnectionChanged(feature: FeatureWithPinnedConnection, newConnection: ToolkitConnection?) {
                     connectionUpdated()
                 }
-
             }
         )
 
