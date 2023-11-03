@@ -48,6 +48,8 @@ import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -56,7 +58,6 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindo
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
-import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.UnpinConnectionListener
 import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
@@ -115,11 +116,12 @@ class GettingStartedPanel(
         )
 
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
-            UnpinConnectionListener.TOPIC,
-            object : UnpinConnectionListener {
-                override fun onChange() {
+            ConnectionPinningManagerListener.TOPIC,
+            object : ConnectionPinningManagerListener {
+                override fun pinnedConnectionChanged(feature: FeatureWithPinnedConnection, newConnection: ToolkitConnection?) {
                     connectionUpdated()
                 }
+
             }
         )
 

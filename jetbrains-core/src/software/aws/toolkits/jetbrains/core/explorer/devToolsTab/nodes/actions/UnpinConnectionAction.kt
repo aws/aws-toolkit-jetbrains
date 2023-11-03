@@ -31,7 +31,6 @@ class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
         val project = e.project ?: return
         val feature = feature(e) ?: return
         ConnectionPinningManager.getInstance().setPinnedConnection(feature, null)
-        ApplicationManager.getApplication().messageBus.syncPublisher(UnpinConnectionListener.TOPIC).onChange()
         DevToolsToolWindow.getInstance(project).redrawContent()
     }
 
@@ -46,11 +45,3 @@ class UnpinConnectionAction : AnAction(), DumbAware, UpdateInBackground {
     }
 }
 
-interface UnpinConnectionListener : EventListener {
-    fun onChange() {}
-
-    companion object {
-        @Topic.AppLevel
-        val TOPIC = Topic.create("Connection unpinned from panel", UnpinConnectionListener::class.java)
-    }
-}
