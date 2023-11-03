@@ -56,6 +56,7 @@ import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindo
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CodeWhispererExplorerRootNode
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.UnpinConnectionListener
 import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
@@ -112,6 +113,16 @@ class GettingStartedPanel(
                 }
             }
         )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            UnpinConnectionListener.TOPIC,
+            object : UnpinConnectionListener {
+                override fun onChange() {
+                    connectionUpdated()
+                }
+            }
+        )
+
         addToCenter(
             panel {
                 indent {
