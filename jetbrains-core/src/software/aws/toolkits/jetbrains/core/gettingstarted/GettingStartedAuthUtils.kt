@@ -269,13 +269,11 @@ internal fun authAndUpdateConfig(
     return connection
 }
 
-fun deleteSsoConnectionCW(connection: AwsBearerTokenConnection) {
+fun deleteSsoConnectionCW(connection: AwsBearerTokenConnection) =
     deleteSsoConnection(getSsoSessionProfileNameFromBearer(connection))
-}
 
-fun deleteSsoConnectionExplorer(connection: CredentialIdentifier) {
+fun deleteSsoConnectionExplorer(connection: CredentialIdentifier) =
     deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
-}
 
 fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
 
