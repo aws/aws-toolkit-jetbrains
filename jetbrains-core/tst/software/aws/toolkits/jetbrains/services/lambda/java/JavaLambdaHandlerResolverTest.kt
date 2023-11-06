@@ -15,7 +15,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
@@ -530,7 +530,8 @@ class JavaLambdaHandlerResolverTest {
     private inline fun runInDumbMode(crossinline block: () -> Unit) {
         val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
         runBlocking {
-            withContext(getCoroutineUiContext()) {
+            // automatically on correct thread in 233+
+            withContext(EDT) {
                 dumbServiceImpl.runInDumbMode {
                     block()
                 }
