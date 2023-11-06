@@ -218,7 +218,7 @@ class DefaultConfigFilesFacade(
     }
 
     private fun checkIfProfileIsPartOfSession(content: List<String>, sessionName: String): ProfileLimitsInConfig? {
-        val pos = content.indexOfFirst { it.startsWith("[profile $sessionName-") }
+        val pos = content.indexOfFirst { it.startsWith("[profile") }
         // if no matching profile section found
         if (pos == -1) return null
 

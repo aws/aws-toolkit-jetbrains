@@ -15,6 +15,8 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.resources.message
@@ -248,6 +250,9 @@ class ConnectionSettingsMenuBuilder private constructor() {
                 object : DumbAwareAction(message("credentials.individual_identity.signout")) {
                     override fun actionPerformed(e: AnActionEvent) {
                         val settings = identitySelectionSettings as? ActionsIdentitySelectionSettings
+                        if (value.startUrl != SONO_URL) {
+                            deleteSsoConnectionCW(value)
+                        }
                         logoutFromSsoConnection(settings?.project, value)
                     }
                 }
