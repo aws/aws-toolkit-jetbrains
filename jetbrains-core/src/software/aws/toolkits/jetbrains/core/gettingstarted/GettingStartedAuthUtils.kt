@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROL
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -82,6 +83,10 @@ fun requestCredentialsForCodeWhisperer(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean {
+    if (isRunningOnRemoteBackend()) {
+        Messages.showInfoMessage(message("gettingstarted.codewhisperer.remote"), message("gettingstarted.explorer.new.setup"))
+        return false
+    }
     val authenticationDialog = SetupAuthenticationDialog(
         project,
         state = SetupAuthenticationDialogState().also {
