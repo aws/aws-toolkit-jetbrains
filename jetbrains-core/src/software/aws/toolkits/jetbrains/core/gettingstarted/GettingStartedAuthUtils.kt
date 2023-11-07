@@ -85,6 +85,15 @@ fun requestCredentialsForCodeWhisperer(
 ): Boolean {
     if (isRunningOnRemoteBackend()) {
         Messages.showInfoMessage(message("gettingstarted.codewhisperer.remote"), message("gettingstarted.explorer.new.setup"))
+        AuthTelemetry.addConnection(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
+            featureId = FeatureId.Codewhisperer,
+            credentialSourceId = CredentialSourceId.Unknown,
+            isAggregated = true,
+            attempts = 1,
+            result = Result.Cancelled
+        )
         return false
     }
     val authenticationDialog = SetupAuthenticationDialog(
@@ -133,7 +142,7 @@ fun requestCredentialsForCodeWhisperer(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
-            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
@@ -153,7 +162,7 @@ fun requestCredentialsForCodeWhisperer(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
-            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
@@ -195,7 +204,7 @@ fun requestCredentialsForExplorer(
             project,
             source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
-            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
@@ -215,7 +224,7 @@ fun requestCredentialsForExplorer(
             project,
             source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
-            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
