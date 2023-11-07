@@ -175,7 +175,12 @@ class GettingStartedPanel(
                                     setTitleFont(JBFont.h1().asBold())
                                 }.align(AlignX.FILL)
                             }
+                            row {
+                                label("Note: " + (message("gettingstarted.codewhisperer.remote"))).applyToComponent {
 
+                                    font = JBFont.h4().asBold()
+                                }
+                            }.bottomGap(BottomGap.SMALL).visible(isRunningOnRemoteBackend())
                             featureSetPanel.setFeatureContent()
                             row {
                                 cell(featureSetPanel)
