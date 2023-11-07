@@ -28,10 +28,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROL
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
-import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
 import java.io.IOException
@@ -83,19 +81,6 @@ fun requestCredentialsForCodeWhisperer(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean {
-    if (isRunningOnRemoteBackend()) {
-        Messages.showInfoMessage(message("gettingstarted.codewhisperer.remote"), message("gettingstarted.explorer.new.setup"))
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.Codewhisperer,
-            credentialSourceId = CredentialSourceId.Unknown,
-            isAggregated = true,
-            attempts = 1,
-            result = Result.Cancelled
-        )
-        return false
-    }
     val authenticationDialog = SetupAuthenticationDialog(
         project,
         state = SetupAuthenticationDialogState().also {
