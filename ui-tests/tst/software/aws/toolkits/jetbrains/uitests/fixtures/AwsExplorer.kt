@@ -21,12 +21,18 @@ fun IdeaFrame.awsExplorer(
     step("AWS toolkit tool window") {
         repeat(5) {
             try {
-                find<ComponentFixture>(locator)
+                if (it == 0) {
+                    find<ComponentFixture>(locator)
+                } else {
+                    // longer timeout on subsequent tries
+                    find<ComponentFixture>(locator, timeout)
+                }
+
                 return@repeat
             } catch (e: Exception) {
                 step("Open tool window") {
                     // Click the tool window stripe
-                    find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Toolkit' and @class='StripeButton' and @text='AWS Toolkit']")).click()
+                    find<ComponentFixture>(byXpath("//div[@accessiblename='AWS Toolkit' and @class='StripeButton' and @text='AWS Toolkit']")).click()
                 }
             }
         }
