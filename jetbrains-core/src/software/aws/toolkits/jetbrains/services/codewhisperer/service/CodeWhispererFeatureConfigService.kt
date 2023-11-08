@@ -19,7 +19,7 @@ class CodeWhispererFeatureConfigService {
     fun fetchFeatureConfigs(project: Project) {
         if (isCodeWhispererExpired(project)) return
 
-        LOG.debug("Fetching feature configs")
+        LOG.debug { "Fetching feature configs" }
         try {
             val response = CodeWhispererClientAdaptor.getInstance(project).listFeatureEvaluations()
 
