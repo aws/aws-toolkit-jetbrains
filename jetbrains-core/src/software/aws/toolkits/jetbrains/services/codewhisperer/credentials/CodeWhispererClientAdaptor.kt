@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
@@ -21,8 +22,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
-import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
 import software.aws.toolkits.core.utils.debug
@@ -41,10 +44,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
-import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -110,6 +113,8 @@ interface CodeWhispererClientAdaptor : Disposable {
         language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?
     ): SendTelemetryEventResponse
+
+    fun listFeatureEvaluations(): ListFeatureEvaluationsResponse
 
     companion object {
         fun getInstance(project: Project): CodeWhispererClientAdaptor = project.service()
@@ -243,7 +248,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.generatedLine(lineCount)
                 }
             }
-            requestBuilder.optOutPreference(getTelemetryOptoutPreference())
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         }
     }
 
@@ -262,7 +267,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.timestamp(Instant.now())
             }
         }
-        requestBuilder.optOutPreference(getTelemetryOptoutPreference())
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
     }
 
     override fun sendUserModificationTelemetry(
@@ -284,7 +289,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.timestamp(Instant.now())
             }
         }
-        requestBuilder.optOutPreference(getTelemetryOptoutPreference())
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
     }
 
     override fun sendCodeScanTelemetry(
@@ -300,14 +305,24 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.timestamp(Instant.now())
             }
         }
-        requestBuilder.optOutPreference(getTelemetryOptoutPreference())
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
     }
 
-    private fun getTelemetryOptoutPreference() =
-        if (AwsSettings.getInstance().isTelemetryEnabled) {
-            OptOutPreference.OPTIN
-        } else {
-            OptOutPreference.OPTOUT
+    override fun listFeatureEvaluations(): ListFeatureEvaluationsResponse = bearerClient().listFeatureEvaluations {
+        it.userContext { userContextBuilder ->
+            userContextBuilder
+                .ideCategory(IdeCategory.JETBRAINS)
+                .operatingSystem(getOperatingSystem())
+                .product(FEATURE_EVALUATION_PRODUCT_NAME)
+        }
+    }
+
+    private fun getOperatingSystem(): OperatingSystem =
+        when {
+            SystemInfo.isWindows -> OperatingSystem.WINDOWS
+            SystemInfo.isMac -> OperatingSystem.MAC
+            // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc)
+            else -> OperatingSystem.LINUX
         }
 
     override fun dispose() {

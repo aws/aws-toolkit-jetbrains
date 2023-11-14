@@ -8,6 +8,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -16,8 +20,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorAccountless
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyWarnAccountless
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
@@ -44,15 +50,19 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
 
         // Reconnect CodeWhisperer on startup
         promptReAuth(project, isPluginStarting = true)
+        if (isCodeWhispererExpired(project)) return
 
-        // install intellsense autotrigger listener, this only need to be executed 1 time
+        // Init featureConfig job
+        initFeatureConfigPollingJob(project)
+
+        // install intellsense autotrigger listener, this only need to be executed once
         project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntelliSenseAutoTriggerListener)
         project.messageBus.connect().subscribe(CODEWHISPERER_USER_ACTION_PERFORMED, CodeWhispererImportAdderListener)
 
         // show notification to accountless users
         showAccountlessNotificationIfNeeded(project)
 
-        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage() && !isCodeWhispererExpired(project)) {
+        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage()) {
             showOnboardingPage(project)
         }
         runOnce = true
@@ -112,6 +122,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             val parsedLastShown = LocalDateTime.parse(lastShown, CodeWhispererConstants.TIMESTAMP_FORMATTER)
             parsedLastShown.plusDays(7) <= LocalDateTime.now()
         } ?: true
+    }
+
+    // Start a job that runs every 30 mins
+    private fun initFeatureConfigPollingJob(project: Project) {
+        projectCoroutineScope(project).launch {
+            while (isActive) {
+                CodeWhispererFeatureConfigService.getInstance().fetchFeatureConfigs(project)
+                delay(FEATURE_CONFIG_POLL_INTERVAL_IN_MS)
+            }
+        }
     }
 }
 
