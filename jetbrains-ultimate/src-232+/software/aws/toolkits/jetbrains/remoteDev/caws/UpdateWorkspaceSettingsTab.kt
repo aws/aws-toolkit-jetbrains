@@ -34,7 +34,7 @@ import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
@@ -73,7 +73,7 @@ class UpdateWorkspaceSettingsTab : GatewayControlCenterTabProvider {
     }.also {
         lifetime.launchIOBackground {
             try {
-                val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
+                val connection = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()
                     ?: error("Failed to fetch connection settings from Dev Environment")
                 val envId = System.getenv(CawsConstants.CAWS_ENV_ID_VAR) ?: error("envId env var null")
                 val org = System.getenv(CawsConstants.CAWS_ENV_ORG_NAME_VAR) ?: error("space env var null")

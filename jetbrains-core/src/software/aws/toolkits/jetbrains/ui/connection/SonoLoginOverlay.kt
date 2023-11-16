@@ -18,7 +18,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBFont
 import icons.AwsIcons
 import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.resources.message
@@ -53,7 +53,7 @@ open class SonoLoginOverlay(
             row {
                 button(message("caws.login")) {
                     ApplicationManager.getApplication().executeOnPooledThread {
-                        SonoCredentialManager.loginSono(project)
+                        CodeCatalystCredentialManager.login(project)
                     }
                 }.apply {
                     applyToComponent {
@@ -89,7 +89,7 @@ open class SonoLoginOverlay(
             }
         }
 
-        val connectionSettings = SonoCredentialManager.getInstance().getConnectionSettings()
+        val connectionSettings = CodeCatalystCredentialManager.getInstance().getConnectionSettings()
 
         // specify 'any' because if we're currently in a modal dialog, we noop until the dialog is closed
         runInEdt(ModalityState.any()) {

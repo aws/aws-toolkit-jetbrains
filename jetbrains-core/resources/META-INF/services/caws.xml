@@ -5,8 +5,8 @@
     <depends optional="true" config-file="services/caws-ext-git.xml">Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.CawsSpaceTracker"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.caws.projectstate.CawsProjectSettings"/>

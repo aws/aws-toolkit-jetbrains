@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProf
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
@@ -147,6 +148,91 @@ fun requestCredentialsForCodeWhisperer(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
+            credentialSourceId = authenticationDialog.authType,
+            isAggregated = false,
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Cancelled,
+        )
+    }
+    return isAuthenticationSuccessful
+}
+
+fun requestCredentialsForCodeCatalyst(
+    project: Project,
+    popupBuilderIdTab: Boolean = true,
+    initialConnectionCount: Int = getConnectionCount(),
+    initialAuthConnections: String = getEnabledConnections(
+        project
+    ),
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer: Boolean = false
+): Boolean {
+    val authenticationDialog = SetupAuthenticationDialog(
+        project,
+        state = SetupAuthenticationDialogState().also {
+            if (popupBuilderIdTab) {
+                it.selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
+            }
+        },
+        tabSettings = mapOf(
+            SetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
+                disabled = false,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.WARNING,
+                    message("gettingstarted.setup.codecatalyst.use_builder_id"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            ),
+            SetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
+                disabled = false,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.WARNING,
+                    message("gettingstarted.setup.codecatalyst.use_identity_center"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            ),
+            SetupAuthenticationTabs.IAM_LONG_LIVED to AuthenticationTabSettings(
+                disabled = true,
+                notice = SetupAuthenticationNotice(
+                    SetupAuthenticationNotice.NoticeType.ERROR,
+                    message("gettingstarted.setup.codecatalyst.no_iam"),
+                    "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+                )
+            )
+        ),
+        scopes = CODECATALYST_SCOPES,
+        promptForIdcPermissionSet = false,
+        sourceOfEntry = SourceOfEntry.CODECATALYST,
+        featureId = FeatureId.Codecatalyst,
+        isFirstInstance = isFirstInstance,
+        connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
+    )
+    val isAuthenticationSuccessful = authenticationDialog.showAndGet()
+    if (isAuthenticationSuccessful) {
+        AuthTelemetry.addConnection(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            featureId = FeatureId.Codecatalyst,
+            credentialSourceId = authenticationDialog.authType,
+            isAggregated = true,
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Succeeded
+        )
+        AuthTelemetry.addedConnections(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            authConnectionsCount = initialConnectionCount,
+            newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
+            enabledAuthConnections = initialAuthConnections,
+            newEnabledAuthConnections = getEnabledConnections(project),
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Succeeded
+        )
+    } else {
+        AuthTelemetry.addConnection(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            featureId = FeatureId.Codecatalyst,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
