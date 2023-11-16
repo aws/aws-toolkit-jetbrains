@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sono
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 
 class SonoLogoutAction : DumbAwareAction() {
@@ -19,5 +20,9 @@ class SonoLogoutAction : DumbAwareAction() {
         ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(provider.id)
     }
 
-    private fun provider(e: AnActionEvent) = SonoCredentialManager.getInstance(e.project).provider()
+    private fun provider(e: AnActionEvent): BearerTokenProvider? {
+        val scm = CodeCatalystCredentialManager.getInstance(e.project)
+        val connection = scm.connection() ?: return null
+        return scm.provider(connection)
+    }
 }

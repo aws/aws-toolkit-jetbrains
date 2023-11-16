@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
@@ -38,7 +38,7 @@ class DevEnvStatusWatcher : StartupActivity {
         if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
             return
         }
-        val connection = SonoCredentialManager.getInstance(project).getConnectionSettings()
+        val connection = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()
             ?: error("Failed to fetch connection settings from Dev Environment")
         val envId = System.getenv(CawsConstants.CAWS_ENV_ID_VAR) ?: error("envId env var null")
         val org = System.getenv(CawsConstants.CAWS_ENV_ORG_NAME_VAR) ?: error("space env var null")

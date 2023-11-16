@@ -47,7 +47,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
@@ -99,7 +99,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         }
 
         val connectionSettings = try {
-            SonoCredentialManager.getInstance().getSettingsAndPromptAuth()
+            CodeCatalystCredentialManager.getInstance().getSettingsAndPromptAuth()
         } catch (e: ProcessCanceledException) {
             return null
         }

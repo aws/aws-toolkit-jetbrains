@@ -10,7 +10,7 @@ import com.jetbrains.gateway.api.GatewayConnectorView
 import com.jetbrains.gateway.api.GatewayRecentConnections
 import com.jetbrains.rd.util.lifetime.Lifetime
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.ExistingWorkspaces
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
@@ -41,7 +41,7 @@ class CawsConnector : GatewayConnector {
             get() {
                 if (!isSignedIn()) {
                     runUnderProgressIfNeeded(null, message("credentials.sono.login.pending"), true) {
-                        SonoCredentialManager.loginSono(null)
+                        CodeCatalystCredentialManager.login(null)
                     }
                 }
 
@@ -63,7 +63,7 @@ class CawsConnector : GatewayConnector {
         override fun updateRecentView() {}
     }
 
-    private fun isSignedIn() = SonoCredentialManager
+    private fun isSignedIn() = CodeCatalystCredentialManager
         .getInstance()
         .hasPreviouslyConnected()
 
