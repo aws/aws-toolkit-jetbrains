@@ -28,10 +28,6 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
         clientOverrideConfiguration: ClientOverrideConfiguration.Builder
     ) {
         if (builder is CodeCatalystClientBuilder) {
-            builder.region(Region.US_WEST_2)
-            builder.endpointOverride(
-                URI.create(CawsEndpoints.CAWS_PROD_API)
-            )
             clientOverrideConfiguration.addExecutionInterceptor(object : ExecutionInterceptor {
                 override fun onExecutionFailure(context: Context.FailedExecution, executionAttributes: ExecutionAttributes) {
                     val exception = context.exception()
