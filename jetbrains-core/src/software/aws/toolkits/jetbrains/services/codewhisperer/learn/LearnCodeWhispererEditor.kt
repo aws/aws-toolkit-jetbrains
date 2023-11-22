@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.JBColor
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.BottomGap
@@ -20,8 +19,6 @@ import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.Gaps
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider.Companion.NEW_ONBOARDING_UX_KEY
-import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererUIComponents.bannerPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererUIComponents.examplesDescriptionPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererUIComponents.tryExamplePanel
 import software.aws.toolkits.resources.message
@@ -62,23 +59,7 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
             }
         }
     }
-    private val banner = panel {
-        panel {
-            customize(Gaps(10, 20, 10, 10))
-            row {
-                cell(bannerPanel()).resizableColumn().align(Align.FILL)
-            }
-        }
-    }.apply {
-        background = JBColor.BLUE.darker().darker()
-    }
     private val rootPanel = panel {
-        val hasUserSeenNewUX = virtualFile.getUserData(NEW_ONBOARDING_UX_KEY) ?: false
-        if (!hasUserSeenNewUX) {
-            row {
-                cell(banner).resizableColumn().align(Align.FILL)
-            }
-        }
         row {
             scrollCell(contentPanel).align(Align.FILL)
         }.resizableRow()

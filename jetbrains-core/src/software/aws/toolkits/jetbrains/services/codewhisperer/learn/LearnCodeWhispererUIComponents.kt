@@ -95,7 +95,7 @@ object LearnCodeWhispererUIComponents {
                     val fileContent = fileContext.first
                     val caretOffset = fileContext.second
                     CodeWhispererTelemetryService.getInstance().sendOnboardingClickEvent(currentLanguage, taskType)
-                    val fileExtension = LearnCodeWhispererManager.getInstance(project).getFileExtension()
+                    val fileExtension = LearnCodeWhispererManager.getInstance(project).fileExtension
                     val fullFilename = "${tryExampleRowContext.filename}$fileExtension"
                     val (editor, fileExists) = createOrOpenFileInEditor(project, fullFilename, fileContent)
                     if (editor == null) return@addActionListener

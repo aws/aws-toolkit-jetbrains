@@ -9,11 +9,7 @@ import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat

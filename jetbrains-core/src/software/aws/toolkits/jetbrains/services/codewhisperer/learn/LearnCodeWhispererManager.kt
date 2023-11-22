@@ -13,10 +13,9 @@ import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 class LearnCodeWhispererManager(private val project: Project) {
     // Only supporting Java at the moment
     val language: CodeWhispererProgrammingLanguage = CodeWhispererJava.INSTANCE
+    val fileExtension = ".java"
 
     fun getEditor(file: VirtualFile) = LearnCodeWhispererEditor(project, file)
-
-    fun getFileExtension() = ".java"
 
     companion object {
         fun getInstance(project: Project) = project.service<LearnCodeWhispererManager>()
