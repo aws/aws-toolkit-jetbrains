@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class CawsEnvironmentClient(
-    private val endpoint: String = "http://127.0.0.1:1339",
+    private val endpoint: String = System.getenv(CawsConstants.CAWS_ENV_AUTH_TOKEN_VAR) ?: CawsConstants.DEFAULT_CAWS_ENV_API_ENDPOINT,
     private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
 ) : Disposable {
     private val objectMapper = jacksonObjectMapper().also {
