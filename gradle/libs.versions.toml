@@ -14,9 +14,9 @@ junit4 = "4.13.2"
 junit5 = "5.10.1"
 # https://plugins.jetbrains.com/docs/intellij/kotlin.html#adding-kotlin-support
 # https://kotlinlang.org/docs/releases.html#release-details
-kotlin = "1.8.10"
-# potentially overridden in <root>/settings.gradle.kts
-kotlinCoroutines = "1.6.4"
+kotlin = "1.9.21"
+# set in <root>/settings.gradle.kts
+kotlinCoroutines = "!!notdefined!!"
 mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
 mockk = "1.13.8"
