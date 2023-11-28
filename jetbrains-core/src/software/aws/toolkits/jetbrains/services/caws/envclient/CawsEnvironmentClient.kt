@@ -8,6 +8,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.util.text.nullize
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
@@ -30,7 +31,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 
 class CawsEnvironmentClient(
-    private val endpoint: String = System.getenv(CawsConstants.CAWS_ENV_AUTH_TOKEN_VAR) ?: CawsConstants.DEFAULT_CAWS_ENV_API_ENDPOINT,
+    private val endpoint: String = System.getenv(CawsConstants.CAWS_ENV_AUTH_TOKEN_VAR).nullize(true) ?: CawsConstants.DEFAULT_CAWS_ENV_API_ENDPOINT,
     private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
 ) : Disposable {
     private val objectMapper = jacksonObjectMapper().also {
