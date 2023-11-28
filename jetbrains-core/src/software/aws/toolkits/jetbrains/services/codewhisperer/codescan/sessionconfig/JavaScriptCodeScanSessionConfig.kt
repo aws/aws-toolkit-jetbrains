@@ -20,7 +20,7 @@ internal class JavaScriptCodeScanSessionConfig(
 
     private val importRegex = Regex("^import.*(?:[\"'](.+)[\"']);?\$")
     private val requireRegex = Regex("^.+require\\(['\"](.+)['\"]\\)[ \\t]*;?")
-    override val sourceExt = ".js"
+    override val sourceExt: List<String> = listOf(".js")
 
     override fun overallJobTimeoutInSeconds(): Long = JS_CODE_SCAN_TIMEOUT_IN_SECONDS
 
@@ -44,10 +44,10 @@ internal class JavaScriptCodeScanSessionConfig(
                         }
                     }.trim()
                     if (moduleName.isNotEmpty()) {
-                        when (moduleName.endsWith(sourceExt)) {
+                        when (moduleName.endsWith(sourceExt[0])) {
                             true -> imports.add(moduleName)
                             false -> {
-                                imports.add(moduleName + sourceExt)
+                                imports.add(moduleName + sourceExt[0])
                             }
                         }
                     }
