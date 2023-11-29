@@ -108,18 +108,18 @@ object IdeVersions {
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2023.2.2",
+                sdkVersion = "2023.2.5",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
-                    "PythonCore:232.8660.185",
-                    "Docker:232.8660.185"
+                    "PythonCore:232.10203.2",
+                    "Docker:232.10227.13"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2023.2.2",
+                sdkVersion = "2023.2.5",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -128,8 +128,8 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
-                    "Pythonid:232.8660.185",
-                    "org.jetbrains.plugins.go:232.8660.142",
+                    "Pythonid:232.10227.8",
+                    "org.jetbrains.plugins.go:232.10203.2",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
                     "org.intellij.intelliLang"
                 )
