@@ -131,7 +131,7 @@ enum class SourceOfEntry {
 }
 
 class SetupAuthenticationDialog(
-    private val project: Project,
+    private val project: Project?,
     private val scopes: List<String> = emptyList(),
     private val state: SetupAuthenticationDialogState = SetupAuthenticationDialogState(),
     private val tabSettings: Map<SetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
@@ -314,6 +314,9 @@ class SetupAuthenticationDialog(
                 }
 
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+                if (project == null) error("Not allowed")
+
                 val rolePopup = IdcRolePopup(
                     project,
                     state.idcTabState.region.id,

@@ -17,7 +17,7 @@ val CODEWHISPERER_SCOPES = listOf(
 )
 
 val CODECATALYST_SCOPES = listOf(
-    "codecatalyst:read_write"
+    "codeaws:read_write"
 )
 
 fun ToolkitConnection?.isSono() = if (this == null) {

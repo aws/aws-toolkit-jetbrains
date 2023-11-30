@@ -65,18 +65,18 @@ class CodeCatalystCredentialManager {
     }
 
     fun getSettingsAndPromptAuth(): TokenConnectionSettings {
-        val p = promptAuth()
+        promptAuth()
         val connection = connection() ?: throw RuntimeException("Expected connection not to be null")
         return connection.getConnectionSettings()
     }
 
-    internal fun promptAuth(): BearerTokenProvider {
+    fun promptAuth(): BearerTokenProvider {
         connection()?.let {
             return reauthProviderIfNeeded(project, provider(it), isBuilderId = true)
         }
 
         return runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            if (requestCredentialsForCodeCatalyst(project as Project)) {
+            if (requestCredentialsForCodeCatalyst(project)) {
                 connection()?.let {
                     return@runUnderProgressIfNeeded provider(it)
                 }
