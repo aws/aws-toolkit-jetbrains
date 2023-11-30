@@ -40,7 +40,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             arrayOf(LambdaRuntime.JAVA8),
             arrayOf(LambdaRuntime.JAVA8_AL2),
             arrayOf(LambdaRuntime.JAVA11),
-            arrayOf(LambdaRuntime.JAVA17)
+            arrayOf(LambdaRuntime.JAVA17),
+            arrayOf(LambdaRuntime.JAVA21),
         )
     }
 
