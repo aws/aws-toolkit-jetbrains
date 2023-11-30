@@ -11,15 +11,16 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.loginSso
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
+import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 
@@ -66,23 +67,30 @@ class CodeCatalystCredentialManager {
 
     fun getSettingsAndPromptAuth(): TokenConnectionSettings {
         promptAuth()
-        val connection = connection() ?: throw RuntimeException("Expected connection not to be null")
+        val connection = connection() ?: error("Expected connection not to be null")
         return connection.getConnectionSettings()
     }
 
     fun promptAuth(): BearerTokenProvider {
         connection()?.let {
-            return reauthProviderIfNeeded(project, provider(it), isBuilderId = true)
+            return reauthProviderIfNeeded(project, provider(it))
         }
 
         return runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            if (requestCredentialsForCodeCatalyst(project)) {
+            val closed = computeOnEdt {
+                requestCredentialsForCodeCatalyst(project)
+            }
+            if (closed) {
                 connection()?.let {
                     return@runUnderProgressIfNeeded provider(it)
                 }
             }
-            throw RuntimeException("Unable to request credentials for CodeCatalyst")
+            error("Unable to request credentials for CodeCatalyst")
         }
+    }
+
+    fun closeConnection() {
+        connection()?.let { logoutFromSsoConnection(project, it) }
     }
 
     fun hasPreviouslyConnected(): Boolean = connection()?.let { provider(it).state() != BearerTokenAuthState.NOT_AUTHENTICATED } ?: false

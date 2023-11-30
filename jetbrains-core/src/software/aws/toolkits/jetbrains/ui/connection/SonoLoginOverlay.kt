@@ -89,14 +89,16 @@ open class SonoLoginOverlay(
             }
         }
 
-        val connectionSettings = CodeCatalystCredentialManager.getInstance().getConnectionSettings()
+        val isloggedin = CodeCatalystCredentialManager.getInstance(project).hasPreviouslyConnected()
 
         // specify 'any' because if we're currently in a modal dialog, we noop until the dialog is closed
         runInEdt(ModalityState.any()) {
             initBorders()
-            if (connectionSettings != null) {
+            if (isloggedin) {
                 AppIcon.getInstance().requestAttention(null, false)
-                contentWrapper.setContent(drawPostLoginContent(connectionSettings))
+                CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()?.let {
+                    contentWrapper.setContent(drawPostLoginContent(it))
+                }
             } else {
                 contentWrapper.setContent(loginSubpanel)
             }

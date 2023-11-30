@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.runInEdt
 import com.jetbrains.gateway.api.GatewayConnector
 import com.jetbrains.gateway.api.GatewayConnectorDocumentation
 import com.jetbrains.gateway.api.GatewayConnectorView
@@ -40,9 +41,7 @@ class CawsConnector : GatewayConnector {
         override val component: JComponent
             get() {
                 if (!isSignedIn()) {
-                    runUnderProgressIfNeeded(null, message("credentials.sono.login.pending"), true) {
-                        CodeCatalystCredentialManager.login(null)
-                    }
+                    CodeCatalystCredentialManager.getInstance().promptAuth()
                 }
 
                 return cawsWizard(lifetime)
