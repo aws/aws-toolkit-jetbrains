@@ -16,7 +16,7 @@ junit5 = "5.10.1"
 # https://kotlinlang.org/docs/releases.html#release-details
 kotlin = "1.8.10"
 # potentially overridden in <root>/settings.gradle.kts
-kotlinCoroutines = "1.6.4"
+kotlinCoroutines = "1.7.3"
 mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
 mockk = "1.13.8"
