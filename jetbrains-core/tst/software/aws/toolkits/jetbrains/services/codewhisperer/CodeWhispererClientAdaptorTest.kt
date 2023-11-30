@@ -252,7 +252,7 @@ class CodeWhispererClientAdaptorTest {
             projectRule.fixture.editor,
             projectRule.project,
             file,
-            LatencyContext()
+            LatencyContext(paginationFirstCompletionTime = 10.0)
         )
 
         sut.sendUserTriggerDecisionTelemetry(
@@ -261,7 +261,8 @@ class CodeWhispererClientAdaptorTest {
             CodewhispererCompletionType.Line,
             CodewhispererSuggestionState.Accept,
             3,
-            1
+            1,
+            2
         )
 
         argumentCaptor<SendTelemetryEventRequest>().apply {
@@ -272,6 +273,8 @@ class CodeWhispererClientAdaptorTest {
                 assertThat(it.suggestionState()).isEqualTo(SuggestionState.ACCEPT)
                 assertThat(it.suggestionReferenceCount()).isEqualTo(3)
                 assertThat(it.generatedLine()).isEqualTo(1)
+                assertThat(it.recommendationLatencyMilliseconds()).isEqualTo(10.0)
+                assertThat(it.numberOfRecommendations()).isEqualTo(2)
             }
         }
     }
@@ -376,7 +379,8 @@ class CodeWhispererClientAdaptorTest {
                 aCompletionType(),
                 aSuggestionState(),
                 0,
-                1
+                1,
+                2
             )
         }
     }

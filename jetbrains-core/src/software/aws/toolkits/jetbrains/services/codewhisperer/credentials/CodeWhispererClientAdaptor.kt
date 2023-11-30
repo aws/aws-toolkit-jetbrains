@@ -48,10 +48,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
+import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 import kotlin.reflect.KProperty0
 import kotlin.reflect.jvm.isAccessible
 
@@ -92,7 +92,8 @@ interface CodeWhispererClientAdaptor : Disposable {
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
-        lineCount: Int
+        lineCount: Int,
+        numberOfRecommendations: Int
     ): SendTelemetryEventResponse
 
     fun sendCodePercentageTelemetry(
@@ -224,19 +225,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
-        lineCount: Int
+        lineCount: Int,
+        numberOfRecommendations: Int
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
-        var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
-
-        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
-        // suggestion to be now.
-        if (e2eLatency < 0) {
-            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - requestContext.latencyContext.codewhispererEndToEndStart
-            ).toDouble()
-        }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -244,12 +237,13 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.completionType(completionType.toCodeWhispererSdkType())
                     it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
                     it.sessionId(responseContext.sessionId)
-                    it.recommendationLatencyMilliseconds(e2eLatency)
+                    it.recommendationLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
                     it.customizationArn(requestContext.customizationArn)
+                    it.numberOfRecommendations(numberOfRecommendations)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
@@ -318,6 +312,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 .ideCategory(IdeCategory.JETBRAINS)
                 .operatingSystem(getOperatingSystem())
                 .product(FEATURE_EVALUATION_PRODUCT_NAME)
+                .clientId(AwsSettings.getInstance().clientId.toString())
         }
     }
 

@@ -226,7 +226,8 @@ class CodeWhispererTelemetryService {
                             completionType,
                             suggestionState,
                             suggestionReferenceCount,
-                            generatedLineCount
+                            generatedLineCount,
+                            recommendationContext.details.size
                         )
                     LOG.debug {
                         "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
