@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.IOException
-import java.lang.IndexOutOfBoundsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -36,7 +35,7 @@ internal class JavaCodeScanSessionConfig(
     private val packageRegex = Regex("package\\s+([\\w.]+)\\s*;")
     private val importRegex = Regex("import\\s+([\\w.]+[*]?)\\s*;")
     private val buildExt = ".class"
-    override val sourceExt = ".java"
+    override val sourceExt: List<String> = listOf(".java")
 
     data class JavaImportsInfo(val imports: List<String>, val packagePath: String)
 
@@ -146,7 +145,7 @@ internal class JavaCodeScanSessionConfig(
         sourceRoots.forEach { vFile ->
             files.addAll(
                 VfsUtil.collectChildrenRecursively(vFile).filter {
-                    it.path.endsWith(sourceExt) && it != selectedFile
+                    it.path.endsWith(sourceExt[0]) && it != selectedFile
                 }
             )
         }
@@ -207,7 +206,7 @@ internal class JavaCodeScanSessionConfig(
         val resolvedImportPath = if (importPath.contains('*')) {
             importPath.substring(0, importPath.indexOfFirst { it == '*' } - 1)
         } else {
-            importPath + sourceExt
+            importPath + sourceExt[0]
         }
 
         // First try searching the module containing the current file
@@ -232,12 +231,12 @@ internal class JavaCodeScanSessionConfig(
     /**
      * Get source files for import statement. If the import is a star import, include all the files in the package directory.
      */
-    private fun getSourceFilesForImport(currentFile: VirtualFile, importPath: String): List<VirtualFile> {
+    fun getSourceFilesForImport(currentFile: VirtualFile, importPath: String): List<VirtualFile> {
         val importedFile = getImportedFile(currentFile, importPath) ?: return listOf()
         if (!importedFile.isDirectory) {
             return listOf(importedFile)
         }
-        return VfsUtil.collectChildrenRecursively(importedFile).filter { it.name.endsWith(sourceExt) }
+        return VfsUtil.collectChildrenRecursively(importedFile).filter { it.name.endsWith(sourceExt[0]) }
     }
 
     companion object {

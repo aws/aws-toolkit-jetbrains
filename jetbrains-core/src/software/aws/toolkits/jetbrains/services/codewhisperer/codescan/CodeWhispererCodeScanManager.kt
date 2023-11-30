@@ -53,7 +53,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
+import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
@@ -386,7 +386,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun beforeCodeScan() {
         // Refresh CodeWhisperer Explorer tree node to reflect scan in progress.
-        project.refreshDevToolTree()
+        project.refreshCwQTree()
         addCodeScanUI(setSelected = true)
         // Show in progress indicator
         codeScanResultsPanel.showInProgressIndicator()
@@ -396,7 +396,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun afterCodeScan() {
         isCodeScanInProgress.set(false)
-        project.refreshDevToolTree()
+        project.refreshCwQTree()
     }
 
     private fun sendCodeScanTelemetryToServiceAPI(
@@ -491,6 +491,13 @@ data class CodeWhispererCodeScanIssue(
     val endCol: Int,
     val title: @InspectionMessage String,
     val description: Description,
+    val detectorId: String,
+    val detectorName: String,
+    val findingId: String,
+    val relatedVulnerabilities: List<String>,
+    val severity: String,
+    val recommendation: Recommendation,
+    val suggestedFixes: List<SuggestedFix>,
     val issueSeverity: HighlightDisplayLevel = HighlightDisplayLevel.WARNING,
     val isInvalid: Boolean = false,
     var rangeHighlighter: RangeHighlighterEx? = null

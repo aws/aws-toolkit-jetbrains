@@ -12,13 +12,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
+import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager
@@ -62,14 +61,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         // show notification to accountless users
         showAccountlessNotificationIfNeeded(project)
 
-        if (!CodeWhispererExplorerActionManager.getInstance().hasShownNewOnboardingPage()) {
-            showOnboardingPage(project)
-        }
         runOnce = true
-    }
-
-    private fun showOnboardingPage(project: Project) {
-        LearnCodeWhispererEditorProvider.openEditor(project)
     }
 
     private fun showAccountlessNotificationIfNeeded(project: Project) {
@@ -105,7 +97,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         // show an error and deactivate CW when user login with Accountless, and it already expired
         notifyErrorAccountless()
         CodeWhispererExplorerActionManager.getInstance().nullifyAccountlessCredentialIfNeeded()
-        invokeLater { project.refreshDevToolTree() }
+        invokeLater { project.refreshCwQTree() }
     }
 
     private fun timeToShowAccessTokenWarn(): Boolean {

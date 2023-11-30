@@ -121,6 +121,7 @@ dependencies {
     api(libs.aws.cloudcontrol)
     api(libs.aws.cloudformation)
     api(libs.aws.cloudwatchlogs)
+    api(libs.aws.codecatalyst)
     api(libs.aws.dynamodb)
     api(libs.aws.ec2)
     api(libs.aws.ecr)
@@ -134,7 +135,10 @@ dependencies {
     api(libs.aws.secretsmanager)
     api(libs.aws.sns)
     api(libs.aws.sqs)
+    api(libs.aws.services)
 
+    implementation(project(":mynah-ui"))
+    implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)

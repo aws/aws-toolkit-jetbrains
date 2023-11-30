@@ -3,12 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.DisposableRule
-import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
+import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -39,6 +40,7 @@ import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsR
 import software.amazon.awssdk.services.codewhisperer.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.CompletionType
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Customization
@@ -58,6 +60,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryE
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
@@ -78,11 +81,21 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import software.aws.toolkits.telemetry.CodewhispererSuggestionState
+import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
 class CodeWhispererClientAdaptorTest {
-    val projectRule = ProjectRule()
+    val projectRule = JavaCodeInsightTestFixtureRule()
     val disposableRule = DisposableRule()
     val mockClientManagerRule = MockClientManagerRule()
     val mockCredentialRule = MockCredentialManagerRule()
@@ -220,6 +233,46 @@ class CodeWhispererClientAdaptorTest {
             assertThat(this.firstValue.nextToken()).isEqualTo("")
             assertThat(this.secondValue.nextToken()).isEqualTo("first")
             assertThat(this.thirdValue.nextToken()).isEqualTo("second")
+        }
+    }
+
+    @Test
+    fun sendUserTriggerDecisionTelemetry() {
+        val mockModelConfiguraotr = mock<CodeWhispererModelConfigurator> {
+            on { activeCustomization(any()) } doReturn CodeWhispererCustomization("fake-arn", "fake-name")
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockModelConfiguraotr, disposableRule.disposable)
+
+        val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
+        runInEdtAndWait {
+            projectRule.fixture.openFileInEditor(file.virtualFile)
+        }
+        val requestContext = CodeWhispererService.getInstance().getRequestContext(
+            TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
+            projectRule.fixture.editor,
+            projectRule.project,
+            file,
+            LatencyContext()
+        )
+
+        sut.sendUserTriggerDecisionTelemetry(
+            requestContext,
+            ResponseContext("fake-session-id"),
+            CodewhispererCompletionType.Line,
+            CodewhispererSuggestionState.Accept,
+            3,
+            1
+        )
+
+        argumentCaptor<SendTelemetryEventRequest>().apply {
+            verify(bearerClient).sendTelemetryEvent(capture())
+            firstValue.telemetryEvent().userTriggerDecisionEvent().let {
+                assertThat(it.completionType()).isEqualTo(CompletionType.LINE)
+                assertThat(it.customizationArn()).isEqualTo("fake-arn")
+                assertThat(it.suggestionState()).isEqualTo(SuggestionState.ACCEPT)
+                assertThat(it.suggestionReferenceCount()).isEqualTo(3)
+                assertThat(it.generatedLine()).isEqualTo(1)
+            }
         }
     }
 
