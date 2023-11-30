@@ -22,8 +22,10 @@ dependencies {
     api(libs.bundles.jackson)
 
     testImplementation(libs.junit4)
+    testImplementation(libs.junit5.jupiterApi)
 
     testRuntimeOnly(libs.junit5.jupiterVintage)
+    testRuntimeOnly(libs.junit5.jupiterEngine)
 }
 
 tasks.test {
