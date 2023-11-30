@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.runInEdt
 import com.jetbrains.gateway.api.GatewayConnector
 import com.jetbrains.gateway.api.GatewayConnectorDocumentation
 import com.jetbrains.gateway.api.GatewayConnectorView
@@ -13,7 +14,6 @@ import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.ExistingWorkspaces
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
-import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import java.awt.Component
 import javax.swing.Icon
@@ -40,9 +40,7 @@ class CawsConnector : GatewayConnector {
         override val component: JComponent
             get() {
                 if (!isSignedIn()) {
-                    runUnderProgressIfNeeded(null, message("credentials.sono.login.pending"), true) {
-                        CodeCatalystCredentialManager.login(null)
-                    }
+                    CodeCatalystCredentialManager.getInstance().promptAuth()
                 }
 
                 return cawsWizard(lifetime)
@@ -65,7 +63,7 @@ class CawsConnector : GatewayConnector {
 
     private fun isSignedIn() = CodeCatalystCredentialManager
         .getInstance()
-        .hasPreviouslyConnected()
+        .isConnected()
 
     companion object {
         const val CONNECTOR_ID = "aws.codecatalyst.connector"
