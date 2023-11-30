@@ -14,6 +14,8 @@ env:
 phases:
   install:
     commands:
+      - sed -i 's/latest\/download/download\/v1.103.0/g' /usr/local/bin/installSam.sh
+      - installSam.sh --update
       - startDocker.sh
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
