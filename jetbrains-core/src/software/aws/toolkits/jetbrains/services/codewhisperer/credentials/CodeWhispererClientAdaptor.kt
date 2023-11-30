@@ -338,15 +338,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     metricBuilder.timestamp(Instant.now())
                     metricBuilder.dimensions(metadata.filter { it.value != null }.map { Dimension.builder().name(it.key).value(it.value.toString()).build() })
                 }
-                requestBuilder.optOutPreference(getTelemetryOptoutPreference())
+                requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             }
-        }
-
-    private fun getTelemetryOptoutPreference() =
-        if (AwsSettings.getInstance().isTelemetryEnabled) {
-            OptOutPreference.OPTIN
-        } else {
-            OptOutPreference.OPTOUT
         }
 
     override fun dispose() {
