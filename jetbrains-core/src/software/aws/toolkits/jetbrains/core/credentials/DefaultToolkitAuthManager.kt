@@ -130,11 +130,15 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
     }
 
     private fun deleteConnection(predicate: (ToolkitConnection) -> Boolean) {
+        val deleted = mutableListOf<ToolkitConnection>()
         connections.removeAll { connection ->
             predicate(connection).also {
-                if (it && connection is Disposable) {
-                    disposeAndNotify(connection)
-                }
+                deleted.add(connection)
+            }
+        }
+        for (connection in deleted) {
+            if (connection is Disposable) {
+                disposeAndNotify(connection)
             }
         }
     }

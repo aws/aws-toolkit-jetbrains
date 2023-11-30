@@ -19,11 +19,15 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
+import software.aws.toolkits.jetbrains.core.gettingstarted.getSsoSessionProfileNameFromBearer
+import software.aws.toolkits.jetbrains.core.gettingstarted.getSsoSessionProfileNameFromCredentials
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
@@ -206,9 +210,11 @@ internal fun reauthConnection(project: Project?, connection: ToolkitConnection):
 
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
-        ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(connection.id)
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
-        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(null) }
+        if (!connection.isSono()) {
+            // TODO: Connection handling in GettingStartedAuthUtils needs to be refactored
+            deleteSsoConnectionCW(connection)
+        }
     } finally {
         callback()
     }
@@ -238,19 +244,12 @@ fun AwsBearerTokenConnection.lazyIsUnauthedBearerConnection(): Boolean {
 
 fun reauthConnectionIfNeeded(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
-
-    return reauthProviderIfNeeded(project, tokenProvider, connection.isSono())
+    return reauthProviderIfNeeded(project, tokenProvider)
 }
 
-fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider, isBuilderId: Boolean): BearerTokenProvider {
-    maybeReauthProviderIfNeeded(project, tokenProvider, isBuilderId) {
-        val title = if (isBuilderId) {
-            message("credentials.sono.login.pending")
-        } else {
-            message("credentials.sso.login.pending")
-        }
-
-        runUnderProgressIfNeeded(project, title, true) {
+fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider): BearerTokenProvider {
+    maybeReauthProviderIfNeeded(project, tokenProvider) {
+        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
             tokenProvider.reauthenticate()
         }
     }
@@ -262,7 +261,6 @@ fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider
 fun maybeReauthProviderIfNeeded(
     project: Project?,
     tokenProvider: BearerTokenProvider,
-    isBuilderId: Boolean,
     onReauthRequired: (SsoOidcException?) -> Any
 ): Boolean {
     val state = tokenProvider.state()
@@ -275,13 +273,7 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
-                val title = if (isBuilderId) {
-                    message("credentials.sono.login.refreshing")
-                } else {
-                    message("credentials.sso.login.refreshing")
-                }
-
-                return runUnderProgressIfNeeded(project, title, true) {
+                return runUnderProgressIfNeeded(project, message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
                     return@runUnderProgressIfNeeded false

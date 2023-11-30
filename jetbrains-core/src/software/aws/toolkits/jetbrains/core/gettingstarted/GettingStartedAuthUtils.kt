@@ -276,7 +276,7 @@ fun requestCredentialsForQ(
 }
 
 fun requestCredentialsForCodeCatalyst(
-    project: Project,
+    project: Project?,
     popupBuilderIdTab: Boolean = true,
     initialConnectionCount: Int = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
@@ -447,7 +447,7 @@ internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
 }
 
 internal fun authAndUpdateConfig(
-    project: Project,
+    project: Project?,
     profile: UserConfigSsoSessionProfile,
     configFilesFacade: ConfigFilesFacade,
     onError: (String) -> Unit

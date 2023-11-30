@@ -14,8 +14,11 @@ fun getConnectionCount(): Int {
     return bearerTokenCount + iamCredentialCount
 }
 
-fun getEnabledConnectionsForTelemetry(project: Project): Set<AuthFormId> {
+fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
     val enabledConnections = mutableSetOf<AuthFormId>()
+
+    if (project == null) return enabledConnections
+
     val explorerConnection = checkIamConnectionValidity(project)
     if (explorerConnection !is ActiveConnection.NotConnected) {
         if (explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
@@ -38,7 +41,7 @@ fun getEnabledConnectionsForTelemetry(project: Project): Set<AuthFormId> {
     return enabledConnections
 }
 
-fun getEnabledConnections(project: Project): String =
+fun getEnabledConnections(project: Project?): String =
     getEnabledConnectionsForTelemetry(project).joinToString(",")
 
 enum class AuthFormId {

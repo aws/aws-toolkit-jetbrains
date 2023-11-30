@@ -40,8 +40,6 @@ import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
@@ -137,7 +135,7 @@ enum class SourceOfEntry {
 }
 
 class SetupAuthenticationDialog(
-    private val project: Project,
+    private val project: Project?,
     private val scopes: List<String> = emptyList(),
     private val state: SetupAuthenticationDialogState = SetupAuthenticationDialogState(),
     private val tabSettings: Map<SetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
@@ -312,6 +310,9 @@ class SetupAuthenticationDialog(
                 }
 
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+                if (project == null) error("Not allowed")
+
                 val rolePopup = IdcRolePopup(
                     project,
                     state.idcTabState.region.id,
