@@ -1,6 +1,3 @@
-# _1.90_ (2023-12-01)
-- **(Bug Fix)** Amazon Q Transform: Fix an issue where the IntelliJ may freeze after clicking "Transform"
-
 # _1.89_ (2023-11-26)
 - **(Feature)** CodeWhisperer: Uses Generative AI and automated reasoning to rewrite lines of code flagged for security vulnerabilities during a security scan.
 - **(Feature)** CodeWhisperer now supports new IaC languages: JSON, YAML and Terraform.
