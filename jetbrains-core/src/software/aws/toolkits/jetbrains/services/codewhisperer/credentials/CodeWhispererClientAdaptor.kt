@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
@@ -23,10 +22,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
 import software.aws.toolkits.core.utils.debug
@@ -45,9 +42,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
+import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -92,7 +89,8 @@ interface CodeWhispererClientAdaptor : Disposable {
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
-        lineCount: Int
+        lineCount: Int,
+        numberOfRecommendations: Int
     ): SendTelemetryEventResponse
 
     fun sendCodePercentageTelemetry(
@@ -224,7 +222,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
-        lineCount: Int
+        lineCount: Int,
+        numberOfRecommendations: Int
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
@@ -250,9 +249,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
                     it.customizationArn(requestContext.customizationArn)
+                    it.numberOfRecommendations(numberOfRecommendations)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
         }
     }
 
@@ -272,6 +273,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
     }
 
     override fun sendUserModificationTelemetry(
@@ -294,6 +296,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
     }
 
     override fun sendCodeScanTelemetry(
@@ -310,24 +313,12 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
     }
 
     override fun listFeatureEvaluations(): ListFeatureEvaluationsResponse = bearerClient().listFeatureEvaluations {
-        it.userContext { userContextBuilder ->
-            userContextBuilder
-                .ideCategory(IdeCategory.JETBRAINS)
-                .operatingSystem(getOperatingSystem())
-                .product(FEATURE_EVALUATION_PRODUCT_NAME)
-        }
+        it.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
     }
-
-    private fun getOperatingSystem(): OperatingSystem =
-        when {
-            SystemInfo.isWindows -> OperatingSystem.WINDOWS
-            SystemInfo.isMac -> OperatingSystem.MAC
-            // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc)
-            else -> OperatingSystem.LINUX
-        }
 
     override fun sendMetricDataTelemetry(eventName: String, metadata: Map<String, Any?>): SendTelemetryEventResponse =
         bearerClient().sendTelemetryEvent { requestBuilder ->
@@ -338,8 +329,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     metricBuilder.timestamp(Instant.now())
                     metricBuilder.dimensions(metadata.filter { it.value != null }.map { Dimension.builder().name(it.key).value(it.value.toString()).build() })
                 }
-                requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(ClientMetadata.DEFAULT_METADATA.codeWhispererUserContext)
         }
 
     override fun dispose() {
