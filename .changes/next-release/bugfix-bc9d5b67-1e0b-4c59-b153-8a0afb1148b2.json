@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix JetBrains Gateway specific notifications from being shown in non-Gateway IDEs"
+}
