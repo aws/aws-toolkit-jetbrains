@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Amazon Q Transform: Fix an issue where the IntelliJ may freeze after clicking \"Transform\""
-}
