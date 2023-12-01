@@ -252,7 +252,7 @@ class CodeWhispererClientAdaptorTest {
             projectRule.fixture.editor,
             projectRule.project,
             file,
-            LatencyContext(codewhispererEndToEndStart = 0, codewhispererEndToEndEnd = 20)
+            LatencyContext(codewhispererEndToEndStart = 0, codewhispererEndToEndEnd = 20000000)
         )
 
         sut.sendUserTriggerDecisionTelemetry(
