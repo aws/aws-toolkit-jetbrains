@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import com.adarshr.gradle.testlogger.theme.ThemeType
 import software.aws.toolkits.gradle.ciOnly
 
 plugins {
@@ -59,6 +60,7 @@ tasks.withType<Test>().all {
     }
 
     testlogger {
+        theme = ThemeType.STANDARD_PARALLEL
         showFullStackTraces = true
         showStandardStreams = true
         showPassedStandardStreams = false
