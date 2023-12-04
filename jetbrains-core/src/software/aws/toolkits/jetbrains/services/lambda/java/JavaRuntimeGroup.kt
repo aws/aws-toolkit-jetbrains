@@ -24,7 +24,8 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
         LambdaRuntime.JAVA8,
         LambdaRuntime.JAVA8_AL2,
         LambdaRuntime.JAVA11,
-        LambdaRuntime.JAVA17
+        LambdaRuntime.JAVA17,
+        LambdaRuntime.JAVA21,
     )
 
     override fun runtimeForSdk(sdk: Sdk): LambdaRuntime? {
@@ -40,6 +41,7 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
         sdk <= JavaSdkVersion.JDK_1_8 -> LambdaRuntime.JAVA8_AL2
         sdk <= JavaSdkVersion.JDK_11 -> LambdaRuntime.JAVA11
         sdk <= JavaSdkVersion.JDK_17 -> LambdaRuntime.JAVA17
+        sdk <= JavaSdkVersion.JDK_21 -> LambdaRuntime.JAVA21
         else -> null
     }
 

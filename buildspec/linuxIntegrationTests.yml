@@ -14,6 +14,8 @@ env:
 phases:
   install:
     commands:
+      - pyenv install 3.12
+      - pyenv global $(pyenv versions --skip-aliases --bare | tr '\n' ' ')
       - sed -i 's/latest\/download/download\/v1.103.0/g' /usr/local/bin/installSam.sh
       - installSam.sh --update
       - startDocker.sh
