@@ -156,6 +156,12 @@ data class CodeModernizerSessionContext(
             val output = runCommand("./mvnw")
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
+                val error = "The exitCode should be 0 while it was ${output.exitCode}"
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                    reason = error
+                )
                 return null
             } else {
                 LOG.warn { "mvnw executed successfully" }
@@ -188,6 +194,12 @@ data class CodeModernizerSessionContext(
                 val output = runCommand("mvn")
                 if (output.exitCode != 0) {
                     LOG.error { "Maven command output:\n$output" }
+                    val error = "The exitCode should be 0 while it was ${output.exitCode}"
+                    CodetransformTelemetry.mvnBuildFailed(
+                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                        reason = error
+                    )
                     return null
                 } else {
                     LOG.warn { "Maven executed successfully" }
