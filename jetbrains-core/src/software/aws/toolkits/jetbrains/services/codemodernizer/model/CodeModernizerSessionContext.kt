@@ -133,7 +133,8 @@ data class CodeModernizerSessionContext(
                 "dependency:copy-dependencies",
                 "-DoutputDirectory=$destinationDir",
                 "-Dmdep.useRepositoryLayout=true",
-                "-Dmdep.copyPom=true"
+                "-Dmdep.copyPom=true",
+                "-Dmdep.addParentPoms=true"
             )
                 .withWorkDirectory(sourceFolder)
                 .withRedirectErrorStream(true)
