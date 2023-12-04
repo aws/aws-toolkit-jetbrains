@@ -65,6 +65,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
+import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -114,6 +115,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
+                CodeTransformPreValidationError.`Project running on backend`
             )
         }
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
@@ -121,6 +123,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
+                CodeTransformPreValidationError.`Non SSO login`
             )
         }
 
@@ -128,6 +131,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
+                CodeTransformPreValidationError.`Empty project`
             )
         }
         val supportedModules = getSupportedModulesInProject().toSet()
@@ -136,7 +140,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
-                InvalidTelemetryReason("JDK", project.tryGetJdk().toString()),
+//                InvalidTelemetryReason("JDK", project.tryGetJdk().toString()),
+                CodeTransformPreValidationError.`Project selected is not Java 8 or Java 11`
             )
         }
         val valid = getSupportedBuildFilesInProject().isNotEmpty()
@@ -149,7 +154,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
-                if (isGradleProject(project)) InvalidTelemetryReason("Gradle") else InvalidTelemetryReason(),
+                if (isGradleProject(project)) CodeTransformPreValidationError.`No Maven found` else CodeTransformPreValidationError.Unknown,
             )
         }
     }
@@ -215,10 +220,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return
         }
         CodetransformTelemetry.isDoubleClickedToTriggerInvalidProject(
-            codeTransformProjectValidationError = validationResult.invalidTelemetryReason.additonalInfo,
+            codeTransformPreValidationError = validationResult.invalidTelemetryReason ?: CodeTransformPreValidationError.Unknown,
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             result = Result.Failed,
-            reason = validationResult.invalidTelemetryReason.category
+            reason = validationResult.invalidTelemetryReason.toString()
         )
     }
 
