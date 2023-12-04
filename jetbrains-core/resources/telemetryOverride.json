@@ -355,7 +355,7 @@
                 "No Java project found",
                 "Mixed Java project and another language found",
                 "Project selected is not Java 8 or Java 11",
-                "No Maven found",
+                "Only Maven projects supported",
                 "Empty project",
                 "Non SSO login",
                 "Project running on backend"
