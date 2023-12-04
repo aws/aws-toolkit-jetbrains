@@ -18,6 +18,9 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
+import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitOption
@@ -75,6 +78,11 @@ data class CodeModernizerSessionContext(
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val depDirectory = runMavenCommand(sourceFolder)
+        if (depDirectory != null) {
+            CodetransformTelemetry.dependenciesCopied(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            )
+        }
         return runReadAction {
             try {
                 val directoriesToExclude = findDirectoriesToExclude(sourceFolder)
@@ -154,8 +162,19 @@ data class CodeModernizerSessionContext(
                 shouldTryMvnCommand = false
             }
         } catch (e: ProcessNotCreatedException) {
-            LOG.warn { "./mvnw failed to execute as its likely not a unix machine" }
+            val error = "./mvnw failed to execute as its likely not a unix machine"
+            CodetransformTelemetry.mvnBuildFailed(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                reason = error
+            )
+            LOG.warn { error }
         } catch (e: Exception) {
+            CodetransformTelemetry.mvnBuildFailed(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                reason = e.message
+            )
             when {
                 e.message?.contains("Cannot run program \"./mvnw\"") == true -> {} // noop
                 else -> throw e
@@ -174,9 +193,20 @@ data class CodeModernizerSessionContext(
                     LOG.warn { "Maven executed successfully" }
                 }
             } catch (e: ProcessNotCreatedException) {
-                LOG.warn { "Maven failed to execute as its likely not installed to the PATH" }
+                val error = "Maven failed to execute as its likely not installed to the PATH"
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                    reason = error
+                )
+                LOG.warn { error }
                 return null
             } catch (e: Exception) {
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                    reason = e.message
+                )
                 LOG.error(e) { e.message.toString() }
                 throw e
             }
@@ -198,12 +228,14 @@ data class CodeModernizerSessionContext(
                     }
                     return FileVisitResult.CONTINUE
                 }
+
                 override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult =
                     FileVisitResult.CONTINUE
             }
         )
         return dependencyfiles
     }
+
     companion object {
         private val LOG = getLogger<CodeModernizerSessionContext>()
     }

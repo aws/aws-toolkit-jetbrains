@@ -350,6 +350,15 @@
                 "CreateUploadUrl",
                 "ExportResultArchive"
             ]
+        },
+        {
+            "name": "codeTransform_MavenBuildCommand",
+            "type": "string",
+            "description": "Type of maven command",
+            "allowedValues": [
+                "mvn",
+                "mvnw"
+            ]
         }
     ],
     "metrics": [
@@ -1059,6 +1068,34 @@
                 },
                 {
                     "type": "codeTransform_JobId",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "codeTransform_dependenciesCopied",
+            "description": "It copies over at least 1 dependency",
+            "metadata": [
+                {
+                    "type": "codeTransform_SessionId",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "codeTransform_mvnBuildFailed",
+            "description": "The maven command build failed",
+            "metadata": [
+                {
+                    "type": "codeTransform_SessionId",
+                    "required": true
+                },
+                {
+                    "type": "codeTransform_MavenBuildCommand",
+                    "required": true
+                },
+                {
+                    "type": "reason",
                     "required": false
                 }
             ]
