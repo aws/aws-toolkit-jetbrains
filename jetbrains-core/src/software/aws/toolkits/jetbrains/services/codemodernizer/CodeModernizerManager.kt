@@ -154,9 +154,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
         val valid = getSupportedBuildFilesInProject().isNotEmpty()
         return if (valid) {
-            CodetransformTelemetry.isVisibleToUser(
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId()
-            )
             ValidationResult(true)
         } else {
             ValidationResult(
