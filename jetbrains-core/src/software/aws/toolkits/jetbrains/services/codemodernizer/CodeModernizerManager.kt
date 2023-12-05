@@ -254,7 +254,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
-            codeTransformConfigurationFilePath = customerSelection.configurationFile.name,
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId()
         )
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(customerSelection.configurationFile))
