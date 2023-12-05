@@ -59,34 +59,28 @@ internal class RubyCodeScanSessionConfig(
         val loadKeyword = CodeWhispererConstants.LOAD
 
         var keyword: String? = null
-        var indexOfKeyword: Int? = null
 
         when {
             importStr.startsWith(requireRelativeKeyword) -> {
                 keyword = requireRelativeKeyword
-                indexOfKeyword = importStr.indexOf(requireRelativeKeyword)
             }
             importStr.startsWith(requireKeyword) -> {
                 keyword = requireKeyword
-                indexOfKeyword = importStr.indexOf(requireKeyword)
             }
             importStr.startsWith(includeKeyword) -> {
                 keyword = includeKeyword
-                indexOfKeyword = importStr.indexOf(includeKeyword)
             }
             importStr.startsWith(extendKeyword) -> {
                 keyword = extendKeyword
-                indexOfKeyword = importStr.indexOf(extendKeyword)
             }
             importStr.startsWith(loadKeyword) -> {
                 keyword = loadKeyword
-                indexOfKeyword = importStr.indexOf(loadKeyword)
             }
         }
 
-        if (keyword != null && indexOfKeyword != null && indexOfKeyword != -1) {
+        if (keyword != null) {
             val modulePathStr = importStr
-                .substring(indexOfKeyword + keyword.length)
+                .substring(keyword.length)
                 .trim()
                 .replace(Regex("\\s+"), "")
             modulePaths.addAll(getModulePath(modulePathStr))
@@ -128,7 +122,7 @@ internal class RubyCodeScanSessionConfig(
             }
         }
 
-        val validSourceFiles = importedFilePaths.filter { !includedSourceFiles.contains(it) }
+        val validSourceFiles = importedFilePaths.filter { it !in includedSourceFiles }
         validSourceFiles.forEach { validFile ->
             importedFiles.add(validFile)
         }
