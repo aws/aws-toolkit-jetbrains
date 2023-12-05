@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.caws
 
+import com.intellij.openapi.util.registry.Registry
+import com.intellij.util.text.nullize
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
@@ -16,6 +18,7 @@ import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import java.net.URI
 
 class CawsClientCustomizer : ToolkitClientCustomizer {
     override fun customize(
@@ -25,6 +28,13 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
         builder: AwsClientBuilder<*, *>,
         clientOverrideConfiguration: ClientOverrideConfiguration.Builder
     ) {
+        val endpointOverride = Registry.get("aws.codecatalyst.endpoint").asString().nullize(true)
+        if (endpointOverride != null) {
+            builder.endpointOverride(
+                URI.create(endpointOverride)
+            )
+        }
+
         if (builder is CodeCatalystClientBuilder) {
             clientOverrideConfiguration.addExecutionInterceptor(object : ExecutionInterceptor {
                 override fun onExecutionFailure(context: Context.FailedExecution, executionAttributes: ExecutionAttributes) {
