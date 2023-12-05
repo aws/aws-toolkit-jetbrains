@@ -87,10 +87,8 @@ internal class GoCodeScanSessionConfig(
         return files
     }
 
-    private fun listGoFilesInDir(path: Path): List<Path> {
-        return path.listDirectoryEntries().filter {
-            !it.isDirectory() && it.fileName.toString().endsWith(sourceExt[0])
-        }
+    private fun listGoFilesInDir(path: Path): List<Path> = path.listDirectoryEntries().filter {
+        !it.isDirectory() && it.fileName.toString().endsWith(sourceExt[0])
     }
 
     override fun getImportedFiles(file: VirtualFile, includedSourceFiles: Set<String>): List<String> {
