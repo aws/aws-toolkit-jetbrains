@@ -116,7 +116,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
                 InvalidTelemetryReason(
-                    CodeTransformPreValidationError.`Project running on backend`
+                    CodeTransformPreValidationError.ProjectRunningOnBackend
                 )
             )
         }
@@ -126,7 +126,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
                 InvalidTelemetryReason(
-                    CodeTransformPreValidationError.`Non SSO login`
+                    CodeTransformPreValidationError.NonSSOLogin
                 )
             )
         }
@@ -136,7 +136,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
                 InvalidTelemetryReason(
-                    CodeTransformPreValidationError.`Empty project`
+                    CodeTransformPreValidationError.EmptyProject
                 )
             )
         }
@@ -147,7 +147,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
                 InvalidTelemetryReason(
-                    CodeTransformPreValidationError.`Project selected is not Java 8 or Java 11`,
+                    CodeTransformPreValidationError.ProjectSelectedIsNotJava8OrJava11,
                     project.tryGetJdk().toString()
                 )
             )
@@ -160,7 +160,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
                 InvalidTelemetryReason(
-                    CodeTransformPreValidationError.`Project selected is not Java 8 or Java 11`,
+                    CodeTransformPreValidationError.ProjectSelectedIsNotJava8OrJava11,
                     if (isGradleProject(project)) "Gradle build" else "other build"
                 )
             )
