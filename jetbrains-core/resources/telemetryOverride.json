@@ -360,6 +360,15 @@
                 "Non SSO login",
                 "Project running on backend"
             ]
+        },
+        {
+            "name": "codeTransformMavenBuildCommand",
+            "type": "string",
+            "description": "Type of maven command",
+            "allowedValues": [
+                "mvn",
+                "mvnw"
+            ]
         }
     ],
     "metrics": [
@@ -736,10 +745,6 @@
                     "type": "codeTransformSessionId",
                     "required": true
                 },
-                {
-                    "type": "codeTransformJava",
-                    "required": true
-                },
                 { "type": "result", "required": true },
                 { "type": "reason", "required": true }
             ]
@@ -1073,6 +1078,34 @@
                 },
                 {
                     "type": "codeTransformJobId",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "codeTransform_dependenciesCopied",
+            "description": "It copies over at least 1 dependency",
+            "metadata": [
+                {
+                    "type": "codeTransformSessionId",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "codeTransform_mvnBuildFailed",
+            "description": "The maven command build failed",
+            "metadata": [
+                {
+                    "type": "codeTransformSessionId",
+                    "required": true
+                },
+                {
+                    "type": "codeTransformMavenBuildCommand",
+                    "required": true
+                },
+                {
+                    "type": "reason",
                     "required": false
                 }
             ]
