@@ -92,6 +92,8 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val migrationStep = MigrationStep("Test migration step")
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
     internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
+    internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
+    internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val validZipPatchDirPath = "patch/"
     internal val validZipArtifactsPath = "artifacts/"
     internal val validZipSummaryPath = "summary/"

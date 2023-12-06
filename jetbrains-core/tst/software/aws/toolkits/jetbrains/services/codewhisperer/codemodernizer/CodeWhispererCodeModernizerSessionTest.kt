@@ -7,6 +7,7 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
+import org.apache.commons.codec.digest.DigestUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
@@ -29,8 +30,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreation
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.io.File
+import java.io.FileInputStream
+import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
@@ -278,5 +282,12 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, testSessionContextSpy.targetJavaVersion), result)
         verify(clientAdaptorSpy, times(4)).getCodeModernizationJob(any())
         verify(clientAdaptorSpy, atLeastOnce()).getCodeModernizationPlan(any())
+    }
+
+    @Test
+    fun `overwritten files would have different checksum from expected files`() {
+        val expectedSha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(expectedFilePath.toAbsolutePath().toString())))
+        val fakeSha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(overwrittenFilePath.toAbsolutePath().toString())))
+        assertNotEquals(expectedSha256checksum, fakeSha256checksum)
     }
 }
