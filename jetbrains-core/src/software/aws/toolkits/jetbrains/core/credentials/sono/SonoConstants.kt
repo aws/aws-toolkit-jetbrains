@@ -26,7 +26,7 @@ val Q_SCOPES_UNAVAILABLE_BUILDER_ID = listOf(
 )
 
 val CODECATALYST_SCOPES = listOf(
-    "codeaws:read_write"
+    "codecatalyst:read_write"
 )
 
 fun ToolkitConnection?.isSono() = if (this == null) {
