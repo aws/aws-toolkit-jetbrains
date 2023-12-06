@@ -848,7 +848,6 @@ class GettingStartedPanel(
                                                 deleteSsoConnectionCW(connection)
                                             }
                                         }
-
                                     }
                                     if (connection != null) {
                                         logoutFromSsoConnection(project, connection) {
