@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "This change is needed because the pom.xml build file of the parent must be included in the zipped code (children can inherit dependencies from parent in multi-module Maven projects) so that our backend is able to get all necessary dependencies and build the project successfully. This new line which adds a flag to the mvn command was needed from the beginning but was accidentally left out; it has always been included in the corresponding VS Code implementation."
+}
