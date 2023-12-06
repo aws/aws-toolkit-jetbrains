@@ -109,8 +109,12 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                 FeatureWithPinnedConnection.EP_NAME.forEachExtensionSafe {
                     if (!pinningManager.isFeaturePinned(it) &&
                         (
-                            (oldConnection == null && it.supportsConnectionType(newConnection)) ||
-                                (oldConnection != null && it.supportsConnectionType(oldConnection) != it.supportsConnectionType(newConnection))
+                            (
+                                oldConnection == null && it.supportsConnectionType(newConnection)
+                                ) ||
+                                (
+                                    oldConnection != null && it.supportsConnectionType(oldConnection) != it.supportsConnectionType(newConnection)
+                                    )
                             )
                     ) {
                         featuresToPin.add(it)
@@ -119,7 +123,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
                 if (featuresToPin.isNotEmpty()) {
                     application.executeOnPooledThread {
-                        pinningManager.maybePinFeatures(oldConnection, newConnection, featuresToPin)
+                        pinningManager.pinFeatures(oldConnection, newConnection, featuresToPin)
                         application.messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC).activeConnectionChanged(newConnection)
                     }
                 }

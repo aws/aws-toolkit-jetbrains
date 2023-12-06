@@ -16,14 +16,12 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindBuildArtifacts
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.IOException
-import java.lang.IndexOutOfBoundsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -36,7 +34,7 @@ internal class JavaCodeScanSessionConfig(
     private val packageRegex = Regex("package\\s+([\\w.]+)\\s*;")
     private val importRegex = Regex("import\\s+([\\w.]+[*]?)\\s*;")
     private val buildExt = ".class"
-    override val sourceExt = ".java"
+    override val sourceExt: List<String> = listOf(".java")
 
     data class JavaImportsInfo(val imports: List<String>, val packagePath: String)
 
@@ -57,7 +55,6 @@ internal class JavaCodeScanSessionConfig(
         // Include all the dependencies using BFS
         val (sourceFiles, srcPayloadSize, totalLines, buildPaths) = includeDependencies()
 
-        var noClassFilesFound = true
         val outputPaths = CompilerPaths.getOutputPaths(ModuleManager.getInstance(project).modules)
         var totalBuildPayloadSize = 0L
         val buildFiles = buildPaths.mapNotNull { relativePath ->
@@ -65,13 +62,11 @@ internal class JavaCodeScanSessionConfig(
             if (classFile == null) {
                 LOG.debug { "Cannot find class file for $relativePath" }
             } else {
-                noClassFilesFound = false
                 totalBuildPayloadSize += classFile.toFile().length()
             }
             classFile
         }
         LOG.debug { "Total build files sent in payload: ${buildFiles.size}" }
-        if (noClassFilesFound) cannotFindBuildArtifacts()
 
         // Copy all the included source and build files to the source zip
         val srcZip = zipFiles(sourceFiles.mapNotNull { getPath(it) } + buildFiles)
@@ -146,7 +141,7 @@ internal class JavaCodeScanSessionConfig(
         sourceRoots.forEach { vFile ->
             files.addAll(
                 VfsUtil.collectChildrenRecursively(vFile).filter {
-                    it.path.endsWith(sourceExt) && it != selectedFile
+                    it.path.endsWith(sourceExt[0]) && it != selectedFile
                 }
             )
         }
@@ -207,7 +202,7 @@ internal class JavaCodeScanSessionConfig(
         val resolvedImportPath = if (importPath.contains('*')) {
             importPath.substring(0, importPath.indexOfFirst { it == '*' } - 1)
         } else {
-            importPath + sourceExt
+            importPath + sourceExt[0]
         }
 
         // First try searching the module containing the current file
@@ -232,12 +227,12 @@ internal class JavaCodeScanSessionConfig(
     /**
      * Get source files for import statement. If the import is a star import, include all the files in the package directory.
      */
-    private fun getSourceFilesForImport(currentFile: VirtualFile, importPath: String): List<VirtualFile> {
+    fun getSourceFilesForImport(currentFile: VirtualFile, importPath: String): List<VirtualFile> {
         val importedFile = getImportedFile(currentFile, importPath) ?: return listOf()
         if (!importedFile.isDirectory) {
             return listOf(importedFile)
         }
-        return VfsUtil.collectChildrenRecursively(importedFile).filter { it.name.endsWith(sourceExt) }
+        return VfsUtil.collectChildrenRecursively(importedFile).filter { it.name.endsWith(sourceExt[0]) }
     }
 
     companion object {

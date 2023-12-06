@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.help.HelpIds
@@ -41,7 +42,12 @@ import software.aws.toolkits.telemetry.FeedbackTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.net.URLEncoder
 
-class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentiment.POSITIVE, initialComment: String = "") : DialogWrapper(project) {
+class FeedbackDialog(
+    val project: Project,
+    initialSentiment: Sentiment = Sentiment.POSITIVE,
+    initialComment: String = "",
+    val productName: String = "Toolkit"
+) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private var sentiment = initialSentiment
     private val smileIcon = IconUtil.scale(AwsIcons.Misc.SMILE, null, 3f)
@@ -51,8 +57,10 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
     private var lengthLimitLabel = JBLabel(message("feedback.comment.textbox.initial.length")).also { it.foreground = UIUtil.getLabelInfoForeground() }
 
     private val dialogPanel = panel {
-        row {
-            text(message("feedback.initial.help.text"))
+        if (isToolkit()) {
+            row {
+                text(message("feedback.initial.help.text"))
+            }
         }
         group(message("feedback.connect.with.github.title")) {
             row {
@@ -89,7 +97,11 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
                 }
             }.bind({ sentiment }, { sentiment = it })
 
-            row(message("feedback.comment.textbox.title")) {}
+            if (isAmazonQ()) {
+                row(message("feedback.comment.textbox.title.amazonq")) {}
+            } else {
+                row(message("feedback.comment.textbox.title", productName)) {}
+            }
             row { comment(message("feedback.customer.alert.info")) }
             row {
                 comment = textArea().rows(6).columns(52).bindText(::commentText).applyToComponent {
@@ -107,6 +119,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
             }
         }
     }
+
     override fun createCenterPanel() = dialogPanel
 
     override fun doCancelAction() {
@@ -125,11 +138,32 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
             coroutineScope.launch {
                 val edtContext = getCoroutineUiContext()
                 try {
-                    TelemetryService.getInstance().sendFeedback(sentiment, commentText)
+                    if (isCodeWhisperer()) {
+                        TelemetryService.getInstance().sendFeedback(
+                            sentiment,
+                            "CodeWhisperer onboarding: $commentText",
+                            mapOf(FEEDBACK_SOURCE to "CodeWhisperer onboarding")
+                        )
+                    } else if (isAmazonQ()) {
+                        TelemetryService.getInstance().sendFeedback(
+                            sentiment,
+                            "Amazon Q onboarding: $commentText",
+                            mapOf(FEEDBACK_SOURCE to "Amazon Q onboarding")
+                        )
+                    } else {
+                        TelemetryService.getInstance().sendFeedback(sentiment, commentText)
+                    }
                     withContext(edtContext) {
                         close(OK_EXIT_CODE)
                     }
-                    notifyInfo(message("aws.notification.title"), message("feedback.submit_success"), project)
+                    val notificationTitle = if (isCodeWhisperer()) {
+                        message("aws.notification.title.codewhisperer")
+                    } else if (isAmazonQ()) {
+                        message("aws.notification.title.amazonq")
+                    } else {
+                        message("aws.notification.title")
+                    }
+                    notifyInfo(notificationTitle, message("feedback.submit_success"), project)
                 } catch (e: Exception) {
                     withContext(edtContext) {
                         Messages.showMessageDialog(message("feedback.submit_failed", e), message("feedback.submit_failed_title"), null)
@@ -168,19 +202,33 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
 
     init {
         super.init()
-        title = message("feedback.title")
+        if (isAmazonQ()) {
+            title = message("feedback.title.amazonq")
+        } else {
+            title = message("feedback.title", productName)
+        }
         setOKButtonText(message("feedback.submit_button"))
     }
 
-    override fun getHelpId(): String? = HelpIds.AWS_TOOLKIT_GETTING_STARTED.id
+    override fun getHelpId(): String? = if (isToolkit()) {
+        HelpIds.AWS_TOOLKIT_GETTING_STARTED.id
+    } else if (isCodeWhisperer()) {
+        HelpIds.CODEWHISPERER_TOKEN.id
+    } else {
+        null
+    }
+
+    private fun isCodeWhisperer(): Boolean = (productName == "CodeWhisperer")
+    private fun isAmazonQ(): Boolean = (productName == "Amazon Q")
+    private fun isToolkit(): Boolean = (productName == "Toolkit")
 
     @TestOnly
     fun getFeedbackDialog() = dialogPanel
 
     companion object {
         const val MAX_LENGTH = 2000 // backend restriction
-        private const val GITHUB_LINK_BASE = "https://github.com/aws/aws-toolkit-jetbrains/issues/new?body="
-        private const val TOOLKIT_REPOSITORY_LINK = "https://github.com/aws/aws-toolkit-jetbrains"
+        private const val TOOLKIT_REPOSITORY_LINK = AwsToolkit.GITHUB_URL
+        private const val GITHUB_LINK_BASE = "$TOOLKIT_REPOSITORY_LINK/issues/new?body="
         private val toolkitMetadata = ClientMetadata.DEFAULT_METADATA.let {
             """
                 ---
@@ -192,7 +240,7 @@ class FeedbackDialog(val project: Project, initialSentiment: Sentiment = Sentime
     }
 }
 
-class ShowFeedbackDialogAction : DumbAwareAction(message("feedback.title"), message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
+class ShowFeedbackDialogAction : DumbAwareAction(message("feedback.title", "Toolkit"), message("feedback.description"), AwsIcons.Misc.SMILE_GREY) {
     override fun actionPerformed(e: AnActionEvent) {
         runInEdt {
             FeedbackDialog(e.getRequiredData(LangDataKeys.PROJECT)).show()

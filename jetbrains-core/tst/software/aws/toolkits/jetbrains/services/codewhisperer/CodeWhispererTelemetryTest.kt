@@ -10,6 +10,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -52,6 +53,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Pause
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.PauseCodeWhispererNode
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.ResumeCodeWhispererNode
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
@@ -126,7 +129,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test accepting recommendation will send user modification events with 1 accepted other unseen`() {
-        val trackerSpy = spy(CodeWhispererUserModificationTracker(projectRule.project))
+        val trackerSpy = spy(CodeWhispererUserModificationTracker.getInstance(projectRule.project))
         val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         projectRule.project.replaceService(CodeWhispererUserModificationTracker::class.java, trackerSpy, disposableRule.disposable)
 
@@ -470,7 +473,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreManagerMock, disposableRule.disposable)
         val project = projectRule.project
         val fixture = projectRule.fixture
-        val tracker = CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE)
+        val tracker = CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE)
         assertThat(tracker.isTrackerActive()).isFalse
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
@@ -527,10 +530,10 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             }
         }
 
-        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = pythonResponse.completions()[0].content().length - deletedTokenByUser
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length - deletedTokenByUser
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -574,11 +577,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
             }
             // use dispose() to force tracker to emit telemetry
-            CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
+            CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
         }
 
         val acceptedTokensSize = pythonResponse.completions()[0].content().length
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length + anotherCodeSnippet.length - 1
+        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length + anotherCodeSnippet.length
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -622,7 +625,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
 
         // use dispose() to force tracker to emit telemetry
-        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -669,7 +672,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         withCodeWhispererServiceInvokedAndWait {
             popupManagerSpy.popupComponents.acceptButton.doClick()
         }
-        CodeWhispererCodeCoverageTracker.getInstance(CodeWhispererPython.INSTANCE).dispose()
+        CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = "x, y):\n    return x + y".length
         val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
@@ -762,7 +765,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry`() {
+    fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry (explorer)`() {
         val metricCaptor = argumentCaptor<MetricEvent>()
         doNothing().`when`(batcher).enqueue(metricCaptor.capture())
 
@@ -776,6 +779,35 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         )
 
         ResumeCodeWhispererNode(projectRule.project).onDoubleClick(mock())
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            awsModifySetting,
+            1,
+            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
+            "settingState" to CodeWhispererConstants.AutoSuggestion.ACTIVATED
+        )
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            awsModifySetting,
+            2,
+        )
+    }
+
+    @Test
+    fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry (popup)`() {
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        doNothing().`when`(batcher).enqueue(metricCaptor.capture())
+
+        Pause().actionPerformed(TestActionEvent { projectRule.project })
+        assertEventsContainsFieldsAndCount(
+            metricCaptor.allValues,
+            awsModifySetting,
+            1,
+            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
+            "settingState" to CodeWhispererConstants.AutoSuggestion.DEACTIVATED
+        )
+
+        Resume().actionPerformed(TestActionEvent { projectRule.project })
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             awsModifySetting,
@@ -819,7 +851,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 metricCaptor.allValues,
                 userDecision,
                 numOfEmptyRecommendations,
-                "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString()
+                "codewhispererSuggestionState" to CodewhispererSuggestionState.Empty.toString(),
+                "codewhispererCompletionType" to CodewhispererCompletionType.Line.toString()
             )
         }
     }
