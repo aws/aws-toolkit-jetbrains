@@ -91,6 +91,10 @@ artifacts {
     add(gatewayResources.name, gatewayResourcesDir)
 }
 
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
 tasks.withType<PrepareSandboxTask>().all {
     from(gatewayResourcesDir) {
         into("aws-toolkit-jetbrains/gateway-resources")

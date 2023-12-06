@@ -42,35 +42,7 @@ when (providers.gradleProperty("ideProfileName").get()) {
     }
 }
 
-dependencyResolutionManagement {
-    versionCatalogs {
-        create("libs") {
-            // pull value from IJ library list: https://github.com/JetBrains/intellij-community/blob/<mv>/.idea/libraries/kotlinx_coroutines_jdk8.xml
-            //                              or: https://github.com/JetBrains/intellij-community/blob/<mv>/.idea/libraries/kotlinx_coroutines_core.xml
-            val version = when (providers.gradleProperty("ideProfileName").get()) {
-                "2022.3" -> {
-                    // binary compat issue in tests
-                    version("kotlin", "1.7.21")
-                    "1.6.4"
-                }
-                "2023.1" -> {
-                    "1.6.4"
-                }
-
-                "2023.2" -> {
-                    "1.7.1"
-                }
-
-                "2023.3" -> {
-                    "1.7.3"
-                }
-                else -> { error("not set") }
-            }
-
-            version("kotlinxCoroutines", version)
-        }
-    }
-}
+apply(from = "kotlinResolution.settings.gradle.kts")
 
 include("jetbrains-ultimate")
 include("jetbrains-rider")
