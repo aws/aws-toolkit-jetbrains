@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import java.net.URI
 
@@ -30,9 +31,16 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
     ) {
         val endpointOverride = Registry.get("aws.codecatalyst.endpoint").asString().nullize(true)
         if (endpointOverride != null) {
-            builder.endpointOverride(
-                URI.create(endpointOverride)
-            )
+            tryOrNull {
+                val uri = URI.create(endpointOverride)
+                if (uri.scheme == null || uri.authority == null) {
+                    null
+                } else {
+                    uri
+                }
+            }?.let {
+                builder.endpointOverride(it)
+            }
         }
 
         if (builder is CodeCatalystClientBuilder) {
