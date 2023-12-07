@@ -80,11 +80,8 @@ internal class GoCodeScanSessionConfig(
         return importedPackages
     }
 
-    private fun getSiblingFiles(file: VirtualFile): List<Path> {
-        val files = listGoFilesInDir(file.parent.toNioPath()).filter {
-            it.fileName.toString() != file.name
-        }
-        return files
+    private fun getSiblingFiles(file: VirtualFile): List<Path> = listGoFilesInDir(file.parent.toNioPath()).filter {
+        it.fileName.toString() != file.name
     }
 
     private fun listGoFilesInDir(path: Path): List<Path> = path.listDirectoryEntries().filter {
