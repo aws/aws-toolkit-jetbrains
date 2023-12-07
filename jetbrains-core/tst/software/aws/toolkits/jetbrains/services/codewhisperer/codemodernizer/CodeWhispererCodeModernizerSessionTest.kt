@@ -13,6 +13,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.digest.DigestUtils
+import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -49,7 +50,6 @@ import java.io.FileInputStream
 import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
@@ -73,7 +73,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             .uploadId("1234")
             .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
             .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)))
-            .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build())
+            .sdkHttpResponse(
+                SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build()
+            )
             .build() as CreateUploadUrlResponse
     }
 
@@ -315,9 +317,13 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
     @Test
     fun `overwritten files would have different checksum from expected files`() {
-        val expectedSha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(expectedFilePath.toAbsolutePath().toString())))
-        val fakeSha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(overwrittenFilePath.toAbsolutePath().toString())))
-        assertNotEquals(expectedSha256checksum, fakeSha256checksum)
+        val expectedSha256checksum: String = Base64.getEncoder().encodeToString(
+            DigestUtils.sha256(FileInputStream(expectedFilePath.toAbsolutePath().toString()))
+        )
+        val fakeSha256checksum: String = Base64.getEncoder().encodeToString(
+            DigestUtils.sha256(FileInputStream(overwrittenFilePath.toAbsolutePath().toString()))
+        )
+        assertThat(expectedSha256checksum).isNotEqualTo(fakeSha256checksum)
     }
 
     @Test
@@ -339,5 +345,4 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             eq(gumbyUploadUrlResponse.kmsKeyArn())
         )
     }
-
- }
+}

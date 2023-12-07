@@ -3,109 +3,174 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codemodernizer
 
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.github.tomakehurst.wiremock.junit.WireMockRule
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.ApplicationRule
-import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
+import kotlinx.coroutines.launch
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.ArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.http.SdkHttpClient
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
+import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
-import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.MockClientManager
+import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveRequest
+import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
+import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer
+import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import java.util.concurrent.CompletableFuture
 
-class CodeWhispererCodeModernizerGumbyClientTest {
-    val applicationRule = ApplicationRule()
-    val mockCredentialManager = MockCredentialManagerRule()
+class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTestBase() {
     val mockClientManagerRule = MockClientManagerRule()
+    val mockCredentialRule = MockCredentialManagerRule()
+    val authManagerRule = MockToolkitAuthManagerRule()
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(applicationRule, mockClientManagerRule, mockCredentialManager)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
 
-    @Rule
-    @JvmField
-    val wireMock = WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort())
+    private lateinit var bearerClient: CodeWhispererRuntimeClient
+    private lateinit var streamingBearerClient: CodeWhispererStreamingAsyncClient
+    private lateinit var ssoClient: SsoOidcClient
 
-    @Rule
-    @JvmField
-    val disposable = DisposableRule()
-
-    private lateinit var httpClient: SdkHttpClient
-    private lateinit var mockExplorerActionManager: CodeWhispererExplorerActionManager
-    private lateinit var codeWhispererRuntimeClient: CodeWhispererRuntimeClient
-    private lateinit var codeWhispererStreamingAsyncClient: CodeWhispererStreamingAsyncClient
-
+    private lateinit var gumbyClient: GumbyClient
+    private lateinit var connectionManager: ToolkitConnectionManager
+    private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
-    fun setUp() {
-        MockClientManager.useRealImplementations(disposable.disposable)
+    override fun setup() {
+        super.setup()
+        gumbyClient = GumbyClient.getInstance(projectRule.project)
+        ssoClient = mockClientManagerRule.create()
 
-        codeWhispererRuntimeClient = AwsClientManager.getInstance().createUnmanagedClient(
-            mockCredentialManager.createCredentialProvider(),
-            Region.US_EAST_1,
-            "http://127.0.0.1:${wireMock.port()}"
-        )
+        bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { createUploadUrl(any<CreateUploadUrlRequest>()) } doReturn exampleCreateUploadUrlResponse
+            on { getTransformation(any<GetTransformationRequest>()) } doReturn exampleGetCodeMigrationResponse
+            on { startTransformation(any<StartTransformationRequest>()) } doReturn exampleStartCodeMigrationResponse
+            on { getTransformationPlan(any<GetTransformationPlanRequest>()) } doReturn exampleGetCodeMigrationPlanResponse
+            on { stopTransformation(any<StopTransformationRequest>()) } doReturn exampleStopTransformationResponse
+        }
 
-        codeWhispererStreamingAsyncClient = AwsClientManager.getInstance().createUnmanagedClient(
-            mockCredentialManager.createCredentialProvider(),
-            Region.US_EAST_1,
-            "http://127.0.0.1:${wireMock.port()}"
-        )
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on { exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>()) } doReturn CompletableFuture()
+        }
 
-        wireMock.stubFor(
-            WireMock.post("/")
-                .willReturn(
-                    WireMock.aResponse().withStatus(200)
-                )
-        )
+        val mockConnection = mock<BearerSsoConnection>()
+        whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
 
-        mockExplorerActionManager = mock()
-        whenever(mockExplorerActionManager.resolveAccessToken()).thenReturn(CodeWhispererTestUtil.testValidAccessToken)
-        ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, mockExplorerActionManager, disposable.disposable)
+        connectionManager = mock {
+            on {
+                activeConnectionForFeature(any())
+            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList())) as AwsBearerTokenConnection
+        }
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+
+        isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
 
     @After
     fun tearDown() {
-        tryOrNull { httpClient.close() }
+        AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
     }
 
     @Test
-    fun `check createUploadUrl request header`() {
-        codeWhispererRuntimeClient.createUploadUrl {}
-        WireMock.verify(
-            WireMock.postRequestedFor(WireMock.urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, WireMock.matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME, WireMock.matching("false"))
-        )
+    fun `check createUploadUrl`() {
+        val actual = gumbyClient.createGumbyUploadUrl("test")
+        argumentCaptor<CreateUploadUrlRequest>().apply {
+            verify(bearerClient).createUploadUrl(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("uploadUrl", "uploadId", "kmsKeyArn")
+                .isEqualTo(exampleCreateUploadUrlResponse)
+        }
     }
 
     @Test
-    fun `check getTransformation request header`() {
-        codeWhispererRuntimeClient.getTransformation {}
-        WireMock.verify(
-            WireMock.postRequestedFor(WireMock.urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, WireMock.matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME, WireMock.matching("false"))
-        )
+    fun `check getCodeModernizationJob`() {
+        val actual = gumbyClient.getCodeModernizationJob("jobId")
+        argumentCaptor<GetTransformationRequest>().apply {
+            verify(bearerClient).getTransformation(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(GetTransformationResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("jobId", "status", "transformationType", "source")
+                .isEqualTo(exampleGetCodeMigrationResponse)
+        }
     }
 
+    @Test
+    fun `check startCodeModernization`() {
+        val actual = gumbyClient.startCodeModernization("jobId", TransformationLanguage.JAVA_8, TransformationLanguage.JAVA_17)
+        argumentCaptor<StartTransformationRequest>().apply {
+            verify(bearerClient).startTransformation(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(StartTransformationResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("transformationJobId").isEqualTo(exampleStartCodeMigrationResponse)
+        }
+    }
+
+    @Test
+    fun `check getCodeModernizationPlan`() {
+        val actual = gumbyClient.getCodeModernizationPlan(JobId("JobId"))
+        argumentCaptor<GetTransformationPlanRequest>().apply {
+            verify(bearerClient).getTransformationPlan(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(GetTransformationPlanResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("transformationSteps").isEqualTo(exampleGetCodeMigrationPlanResponse)
+        }
+    }
+
+    @Test
+    fun `check stopTransformation`() {
+        val actual = gumbyClient.stopTransformation("JobId")
+        argumentCaptor<StopTransformationRequest>().apply {
+            verify(bearerClient).stopTransformation(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(StopTransformationResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("transformationStatus").isEqualTo(exampleStopTransformationResponse)
+        }
+    }
+
+    @Test
+    fun `check downloadExportResultArchive`() {
+        val requestCaptor = ArgumentCaptor.forClass(ExportResultArchiveRequest::class.java)
+        val handlerCaptor = ArgumentCaptor.forClass(ExportResultArchiveResponseHandler::class.java)
+        projectCoroutineScope(project).launch {
+            gumbyClient.downloadExportResultArchive(JobId("JobId"))
+            argumentCaptor<ExportResultArchiveRequest, ExportResultArchiveResponseHandler>().apply {
+                verify(streamingBearerClient).exportResultArchive(requestCaptor.capture(), handlerCaptor.capture())
+                verifyNoInteractions(bearerClient)
+            }
+        }
+    }
 }

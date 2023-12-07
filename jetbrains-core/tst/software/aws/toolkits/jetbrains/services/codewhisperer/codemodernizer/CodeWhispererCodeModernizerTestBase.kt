@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
@@ -156,6 +157,9 @@ open class CodeWhispererCodeModernizerTestBase(
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)))
         .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build())
         .build() as GetTransformationPlanResponse
+
+    internal val exampleStopTransformationResponse = StopTransformationResponse.builder()
+        .transformationStatus(TransformationStatus.STOPPED).build() as StopTransformationResponse
 
     internal val exampleGetCodeMigrationResponse = GetTransformationResponse.builder()
         .transformationJob(
