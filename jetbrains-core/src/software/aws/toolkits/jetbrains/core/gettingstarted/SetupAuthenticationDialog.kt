@@ -134,6 +134,11 @@ enum class SourceOfEntry {
     }
 }
 
+interface AuthenticationDialog {
+    fun attempts(): Int
+    fun authType(): CredentialSourceId
+}
+
 class SetupAuthenticationDialog(
     private val project: Project?,
     private val scopes: List<String> = emptyList(),
@@ -146,14 +151,14 @@ class SetupAuthenticationDialog(
     private val isFirstInstance: Boolean = false,
     private val connectionInitiatedFromExplorer: Boolean = false,
     private val connectionInitiatedFromQChatPanel: Boolean = false
-) : DialogWrapper(project) {
+) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = idcTab()
     private val builderIdTab = builderIdTab()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    var attempts = 0
-    var authType = CredentialSourceId.IamIdentityCenter
+    private var attempts = 0
+    private var authType = CredentialSourceId.IamIdentityCenter
 
     init {
         title = message("gettingstarted.setup.title")
@@ -508,5 +513,13 @@ class SetupAuthenticationDialog(
 
     companion object {
         private val LOG = getLogger<SetupAuthenticationDialog>()
+    }
+
+    override fun attempts(): Int {
+        return attempts
+    }
+
+    override fun authType(): CredentialSourceId {
+        return authType
     }
 }
