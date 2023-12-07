@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationConte
 import software.aws.toolkits.jetbrains.services.cwc.messages.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 
-class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
+class ChatPromptHandler private constructor(private val telemetryHelper: TelemetryHelper) {
 
     // The text content sent back to the user is built up over multiple events streamed back from the API
     private val responseText = StringBuilder()
@@ -31,6 +31,11 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
+
+    companion object {
+        fun create(telemetryHelper: TelemetryHelper) = ChatPromptHandler(telemetryHelper)
+
+    }
 
     fun handle(
         tabId: String,
