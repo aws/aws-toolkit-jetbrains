@@ -166,7 +166,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
         val requestCaptor = ArgumentCaptor.forClass(ExportResultArchiveRequest::class.java)
         val handlerCaptor = ArgumentCaptor.forClass(ExportResultArchiveResponseHandler::class.java)
         projectCoroutineScope(project).launch {
-            gumbyClient.downloadExportResultArchive(JobId("JobId"))
+            gumbyClient.downloadExportResultArchive(jobId)
             argumentCaptor<ExportResultArchiveRequest, ExportResultArchiveResponseHandler>().apply {
                 verify(streamingBearerClient).exportResultArchive(requestCaptor.capture(), handlerCaptor.capture())
                 verifyNoInteractions(bearerClient)
