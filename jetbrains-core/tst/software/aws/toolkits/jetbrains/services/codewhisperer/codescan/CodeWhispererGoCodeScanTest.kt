@@ -43,6 +43,10 @@ class CodeWhispererGoCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
             onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
         }
     }
+    @Test
+    fun `test getTotalProjectSizeInBytes()`() {
+        getTotalProjectSizeInBytes(sessionConfigSpy, this.totalSize)
+    }
 
     @Test
     fun `test createPayload`() {
@@ -70,7 +74,7 @@ class CodeWhispererGoCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        assertThat(sessionConfigSpy.getSourceFilesUnderProjectRoot(mainGo).size).isEqualTo(3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, mainGo, 3)
     }
 
     @Test
@@ -96,23 +100,12 @@ class CodeWhispererGoCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
 
     @Test
     fun `test includeDependencies()`() {
-        val payloadMetadata = sessionConfigSpy.includeDependencies()
-        assertNotNull(payloadMetadata)
-        assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        assertThat(payloadMetadata.sourceFiles.size).isEqualTo(3)
-        assertThat(payloadMetadata.payloadSize).isEqualTo(totalSize)
-        assertThat(payloadMetadata.linesScanned).isEqualTo(totalLines)
-        assertThat(payloadMetadata.buildPaths).hasSize(0)
+        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 0)
     }
 
     @Test
     fun `selected file larger than payload limit throws exception`() {
-        sessionConfigSpy.stub {
-            onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
-        }
-        assertThrows<CodeWhispererCodeScanException> {
-            sessionConfigSpy.createPayload()
-        }
+        selectedFileLargerThanPayloadSizeThrowsException(sessionConfigSpy)
     }
 
     @Test
