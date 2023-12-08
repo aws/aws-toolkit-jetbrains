@@ -157,7 +157,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     }
 
     @Test
-    fun `e2e happy path integration test`() {
+    fun `test e2e with session run() function`() {
         assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 4, totalSize, 2)
     }
 
