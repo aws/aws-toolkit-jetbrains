@@ -26,9 +26,10 @@ internal class RubyCodeScanSessionConfig(
 
     private fun generateModulePaths(inputPath: String): MutableSet<String> {
         val positionOfExt = inputPath.indexOf(sourceExt[0])
-        var inputPathString = inputPath
-        if (positionOfExt != -1) {
-            inputPathString = inputPath.substring(0, positionOfExt).trim()
+        val inputPathString = if (positionOfExt != -1) {
+            inputPath.substring(0, positionOfExt).trim()
+        } else {
+            inputPath
         }
         val inputPaths = inputPathString.split('/')
         val outputPaths = mutableSetOf<String>()
@@ -41,10 +42,10 @@ internal class RubyCodeScanSessionConfig(
 
     private fun getModulePath(modulePathStr: String): MutableSet<String> {
         val pos = modulePathStr.indexOf(" ${CodeWhispererConstants.AS} ")
-        var modifiedModulePathStr = modulePathStr
-
-        if (pos != -1) {
-            modifiedModulePathStr = modulePathStr.substring(0, pos)
+        val modifiedModulePathStr = if (pos != -1) {
+            modulePathStr.substring(0, pos)
+        } else {
+            modulePathStr
         }
 
         return generateModulePaths(modifiedModulePathStr.replace(Regex("[\",'\\s()]"), "").trim())
