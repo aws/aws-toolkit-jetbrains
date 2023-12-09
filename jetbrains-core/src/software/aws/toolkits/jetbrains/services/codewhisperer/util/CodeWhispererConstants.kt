@@ -36,16 +36,6 @@ object CodeWhispererConstants {
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
 
-    const val USING: String = "using"
-    const val GLOBAL_USING: String = "global using"
-    const val STATIC: String = "static"
-    const val REQUIRE: String = "require"
-    const val REQUIRE_RELATIVE: String = "require_relative"
-    const val LOAD: String = "load"
-    const val INCLUDE: String = "include"
-    const val EXTEND: String = "extend"
-    const val AS: String = " as "
-
     // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
     // avoid ThrottlingException as much as possible.
     const val INVOCATION_INTERVAL: Long = 2050
@@ -89,6 +79,15 @@ object CodeWhispererConstants {
     const val TOTAL_SECONDS_IN_MINUTE: Long = 60L
     const val ACCOUNTLESS_START_URL = "accountless"
     const val FEATURE_CONFIG_POLL_INTERVAL_IN_MS: Long = 30 * 60 * 1000L // 30 mins
+    const val USING: String = "using"
+    const val GLOBAL_USING: String = "global using"
+    const val STATIC: String = "static"
+    const val REQUIRE: String = "require"
+    const val REQUIRE_RELATIVE: String = "require_relative"
+    const val LOAD: String = "load"
+    const val INCLUDE: String = "include"
+    const val EXTEND: String = "extend"
+    const val AS: String = " as "
 
     // Date when Accountless is not supported
     val EXPIRE_DATE = SimpleDateFormat("yyyy-MM-dd").parse("2023-01-31")
