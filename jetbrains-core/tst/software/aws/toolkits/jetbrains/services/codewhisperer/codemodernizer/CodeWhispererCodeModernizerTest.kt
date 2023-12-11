@@ -116,13 +116,13 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `able to filter roots correctly`() {
         val tests = listOf(
-            listOf<String>() to listOf(),
-            listOf("foo/bar") to listOf("foo/bar"),
-            listOf("foo/bar", "foo/baz", "foo/bar/qux") to listOf("foo/bar", "foo/baz"),
-            listOf("foos", "foo/bar", "foo/baz", "foo/bar/qux") to listOf("foos", "foo/bar", "foo/baz"),
-            listOf("foo", "foo/bar", "foo/baz", "foo/bar/qux") to listOf("foo"),
+            setOf<String>() to listOf(),
+            setOf("foo/bar") to listOf("foo/bar"),
+            setOf("foo/bar", "foo/baz", "foo/bar/qux") to listOf("foo/bar", "foo/baz"),
+            setOf("foos", "foo/bar", "foo/baz", "foo/bar/qux") to listOf("foos", "foo/bar", "foo/baz"),
+            setOf("foo", "foo/bar", "foo/baz", "foo/bar/qux") to listOf("foo"),
         ).map { (input, expected) -> input.map { "$it/pom.xml" } to expected.map { "$it/pom.xml" } }
-        tests.map { (input, expected) -> Pair(input.map { LightVirtualFile(it) }, expected) }
+        tests.map { (input, expected) -> Pair(input.map { LightVirtualFile(it) }.toSet(), expected) }
             .forEach { (input, expected) ->
                 assertEquals(expected, filterOnlyParentFiles(input).map { it.name })
             }
@@ -131,10 +131,10 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `able to filter roots correctly when multiple on same level`() {
         val tests = listOf(
-            listOf("foo/tmp0.txt", "foo/bar/tmp.txt", "foo/bar/tmp2.txt", "foo/bar/qux/tmp3.txt") to listOf("foo/tmp0.txt"),
-            listOf("foo/bar/tmp.txt", "foo/bar/tmp2.txt", "foo/bar/qux/tmp3.txt") to listOf("foo/bar/tmp.txt", "foo/bar/tmp2.txt"),
+            setOf("foo/tmp0.txt", "foo/bar/tmp.txt", "foo/bar/tmp2.txt", "foo/bar/qux/tmp3.txt") to listOf("foo/tmp0.txt"),
+            setOf("foo/bar/tmp.txt", "foo/bar/tmp2.txt", "foo/bar/qux/tmp3.txt") to listOf("foo/bar/tmp.txt", "foo/bar/tmp2.txt"),
         )
-        tests.map { (input, expected) -> Pair(input.map { LightVirtualFile(it) }, expected) }
+        tests.map { (input, expected) -> Pair(input.map { LightVirtualFile(it) }.toSet(), expected) }
             .forEach { (input, expected) ->
                 assertEquals(expected, filterOnlyParentFiles(input).map { it.name })
             }
