@@ -11,7 +11,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
+import software.amazon.awssdk.services.codecatalyst.CodeCatalystClientBuilder
 import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
 import java.net.URI
 
@@ -27,7 +27,7 @@ class CawsClientCustomizerTest {
     fun `empty registry does not override`() {
         registryExtension.setValue(registryKey, "")
 
-        val mock = mock<AwsClientBuilder<*, *>>()
+        val mock = mock<CodeCatalystClientBuilder>()
         CawsClientCustomizer().customize(
             null,
             null,
@@ -43,7 +43,7 @@ class CawsClientCustomizerTest {
     fun `spaces in registry does not override`() {
         registryExtension.setValue(registryKey, "              ")
 
-        val mock = mock<AwsClientBuilder<*, *>>()
+        val mock = mock<CodeCatalystClientBuilder>()
         CawsClientCustomizer().customize(
             null,
             null,
@@ -59,7 +59,7 @@ class CawsClientCustomizerTest {
     fun `can override through registry`() {
         registryExtension.setValue(registryKey, "https://example.com")
 
-        val mock = mock<AwsClientBuilder<*, *>>()
+        val mock = mock<CodeCatalystClientBuilder>()
         CawsClientCustomizer().customize(
             null,
             null,
@@ -75,7 +75,7 @@ class CawsClientCustomizerTest {
     fun `ignores URI without scheme`() {
         registryExtension.setValue(registryKey, "kjdfajkl;afdsjklfads.csd")
 
-        val mock = mock<AwsClientBuilder<*, *>>()
+        val mock = mock<CodeCatalystClientBuilder>()
         CawsClientCustomizer().customize(
             null,
             null,
@@ -91,7 +91,7 @@ class CawsClientCustomizerTest {
     fun `ignores URI without authority`() {
         registryExtension.setValue(registryKey, "https://")
 
-        val mock = mock<AwsClientBuilder<*, *>>()
+        val mock = mock<CodeCatalystClientBuilder>()
         CawsClientCustomizer().customize(
             null,
             null,
