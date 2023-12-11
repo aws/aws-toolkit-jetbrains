@@ -29,21 +29,21 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
         builder: AwsClientBuilder<*, *>,
         clientOverrideConfiguration: ClientOverrideConfiguration.Builder
     ) {
-        val endpointOverride = Registry.get("aws.codecatalyst.endpoint").asString().nullize(true)
-        if (endpointOverride != null) {
-            tryOrNull {
-                val uri = URI.create(endpointOverride)
-                if (uri.scheme == null || uri.authority == null) {
-                    null
-                } else {
-                    uri
-                }
-            }?.let {
-                builder.endpointOverride(it)
-            }
-        }
-
         if (builder is CodeCatalystClientBuilder) {
+            val endpointOverride = Registry.get("aws.codecatalyst.endpoint").asString().nullize(true)
+            if (endpointOverride != null) {
+                tryOrNull {
+                    val uri = URI.create(endpointOverride)
+                    if (uri.scheme == null || uri.authority == null) {
+                        null
+                    } else {
+                        uri
+                    }
+                }?.let {
+                    builder.endpointOverride(it)
+                }
+            }
+
             clientOverrideConfiguration.addExecutionInterceptor(object : ExecutionInterceptor {
                 override fun onExecutionFailure(context: Context.FailedExecution, executionAttributes: ExecutionAttributes) {
                     val exception = context.exception()
