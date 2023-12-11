@@ -69,9 +69,6 @@ internal class JavaScriptCodeScanSessionConfig(
 
     override fun getImportedFiles(file: VirtualFile, includedSourceFiles: Set<String>): List<String> {
         val importedFiles = mutableListOf<String>()
-//        if (this.selectedFile.programmingLanguage().toTelemetryType() === CodewhispererLanguage.Javascript){
-//            val imports = parseImports(file)
-//        }
         val imports = parseImports(file)
         val importedFilePaths = mutableListOf<String>()
         imports.forEach { importPath ->
