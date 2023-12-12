@@ -44,6 +44,7 @@ const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     val configurationFile: VirtualFile,
@@ -166,7 +167,7 @@ data class CodeModernizerSessionContext(
         commandlist.add(repolay)
         commandlist.add(pomcp)
         commandlist.add(parentpom)
-        val params  = MavenRunnerParameters(
+        val params = MavenRunnerParameters(
             false,
             project.basePath.toString(),
             null,
@@ -176,29 +177,33 @@ data class CodeModernizerSessionContext(
         )
         // Create MavenRunnerParametersMavenRunnerParameters
 
-        val mvnrunner= MavenRunner.getInstance(project)
+        val mvnrunner = MavenRunner.getInstance(project)
+        val transfromMvnRunner = TransformMavenRunner(mvnrunner, project)
         val mvnsettings = mvnrunner.settings
 //        val latch = CountDownLatch(1)
-        var createdDependencies= false
+        var createdDependencies = TransformRunnable()
         var passedCommand = false
         var timer = 0
         try {
-            runInEdt{
-                val ues = mvnrunner.run(params, mvnsettings, {createdDependencies = true})
+            runInEdt {
+                val ues = transfromMvnRunner.run(params, mvnsettings, createdDependencies)
                 passedCommand = true
             }
-            while (createdDependencies == false) {
+            LOG.warn { "the createdDependencies isComplete number: ${createdDependencies.isComplete()}" }
+
+            while (createdDependencies.isComplete() == null) {
                 delay( 50)
-                println(" this is the list of files that are moved into destinationDir : " + destinationDir.toFile().listFiles().toString())
-                if (timer > 60000) {
-                    throw error("we were unable to zip you up! :((/////////////")
-                }
-                timer += 50
+//                println(" this is the list of files that are moved into destinationDir : " + destinationDir.toFile().listFiles().toString())
+//                if (timer > 60000) {
+//                    throw error("we were unable to zip you up! :((/////////////")
+//                }
+//                timer += 50
+                LOG.warn { "xishen createdDependencies.isComplete is ${createdDependencies.isComplete}" }
 
             }
 
         } catch (e: Exception) {
-            LOG.warn{ "the mvn command failed" }
+            LOG.warn { "the mvn command failed" }
             throw error(e)
         }
 
@@ -276,12 +281,14 @@ data class CodeModernizerSessionContext(
                     }
                     return FileVisitResult.CONTINUE
                 }
+
                 override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult =
                     FileVisitResult.CONTINUE
             }
         )
         return dependencyfiles
     }
+
     companion object {
         private val LOG = getLogger<CodeModernizerSessionContext>()
     }
