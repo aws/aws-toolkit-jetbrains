@@ -74,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInteractionMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.CwsprChatCommandType
@@ -130,7 +131,7 @@ class ChatController internal constructor(
         )
         messagePublisher.publish(reply)
         ApplicationManager.getApplication().invokeLater {
-            runInEdt {
+            EdtUtility.runInEdt {
                 if (!isActive) {
                     manager.validateAndStart()
                 } else {
@@ -194,8 +195,7 @@ class ChatController internal constructor(
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
-        runInEdt {
-        // withContext(EDT) {
+        EdtUtility.runInEdt {
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@runInEdt
 
             val caret: Caret = editor.caretModel.primaryCaret
@@ -252,10 +252,10 @@ class ChatController internal constructor(
     override suspend fun processAuthFollowUpClick(message: IncomingCwcMessage.AuthFollowUpWasClicked) {
         authController.handleAuth(context.project, message.authType)
     }
+    override suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction, testTriggerId: String?) {
+        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
 
-    override suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction) {
         val context = contextExtractor.extractContextForTrigger(ExtractionTriggerType.OnboardingPageInteraction)
-        val triggerId = UUID.randomUUID().toString()
 
         val prompt = when (message.type) {
             OnboardingPageInteractionType.CwcButtonClick -> StaticPrompt.OnboardingHelp.message
@@ -476,7 +476,7 @@ class ChatController internal constructor(
         private val logger = getLogger<ChatController>()
 
         // This is a special tabID we can receive to indicate that there is no tab available for handling the context menu action
-        private const val NO_TAB_AVAILABLE = "no-available-tabs"
+        internal const val NO_TAB_AVAILABLE = "no-available-tabs"
 
         val objectMapper: ObjectMapper = jacksonObjectMapper()
             .registerModule(JavaTimeModule())

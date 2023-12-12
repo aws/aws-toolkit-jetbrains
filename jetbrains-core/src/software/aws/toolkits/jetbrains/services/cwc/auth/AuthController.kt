@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerCon
 import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithQ
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
+import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -60,13 +61,13 @@ class AuthController {
     fun handleAuth(project: Project, type: AuthFollowUpType) {
         when (type) {
             AuthFollowUpType.MissingScopes,
-            AuthFollowUpType.FullAuth -> runInEdt {
+            AuthFollowUpType.FullAuth -> EdtUtility.runInEdt {
                 UiTelemetry.click(project, "amazonq_chatAuthenticate")
                 requestCredentialsForQ(project, connectionInitiatedFromQChatPanel = true)
             }
 
             AuthFollowUpType.ReAuth,
-            -> runInEdt {
+            -> EdtUtility.runInEdt {
                 reauthenticateWithQ(project)
             }
         }
