@@ -48,12 +48,13 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
     @Test
     fun `test runModernize handles user cancelled dialog`() {
-        doReturn(null).whenever(codeModernizerManagerSpy).getCustomerSelection()
+        doReturn(null).whenever(codeModernizerManagerSpy).getCustomerSelection(any())
         runInEdtAndWait {
-            val job = codeModernizerManagerSpy.runModernize()
+            val buildFiles = listOf(emptyPomFile)
+            val job = codeModernizerManagerSpy.runModernize(buildFiles)
             assertNull(job)
-            verify(codeModernizerManagerSpy, times(1)).runModernize()
-            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection()
+            verify(codeModernizerManagerSpy, times(1)).runModernize(buildFiles)
+            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection(buildFiles)
             // verify execution stopped after user cancelled
             verify(codeModernizerManagerSpy, times(0)).createCodeModernizerSession(any(), any())
             verify(codeModernizerManagerSpy, times(0)).launchModernizationJob(any())
@@ -68,14 +69,15 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         `when`(mockFile.name).thenReturn("pomx.xml")
         `when`(mockFile.path).thenReturn("/mocked/path/pom.xml")
         val selection = CustomerSelection(mockFile, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
-        doReturn(selection).whenever(codeModernizerManagerSpy).getCustomerSelection()
+        doReturn(selection).whenever(codeModernizerManagerSpy).getCustomerSelection(any())
         doNothing().whenever(codeModernizerManagerSpy).postModernizationJob(any())
         doReturn(CodeModernizerStartJobResult.Started(jobId)).whenever(testSessionSpy).createModernizationJob()
         runInEdtAndWait {
-            val job = codeModernizerManagerSpy.runModernize()
+            val buildFiles = listOf(emptyPomFile)
+            val job = codeModernizerManagerSpy.runModernize(buildFiles)
             assertNotNull(job)
-            verify(codeModernizerManagerSpy, times(1)).runModernize()
-            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection()
+            verify(codeModernizerManagerSpy, times(1)).runModernize(buildFiles)
+            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection(buildFiles)
             verify(codeModernizerManagerSpy, times(1)).createCodeModernizerSession(any(), any())
             verify(codeModernizerManagerSpy, times(1)).launchModernizationJob(any())
         }

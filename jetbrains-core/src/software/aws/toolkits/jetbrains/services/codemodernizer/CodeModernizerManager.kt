@@ -153,9 +153,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             )
         }
-        val valid = getSupportedBuildFilesInProject().isNotEmpty()
-        return if (valid) {
-            ValidationResult(true)
+        val validatedBuildFiles = getSupportedBuildFilesInProject()
+        return if (validatedBuildFiles.isNotEmpty()) {
+            ValidationResult(true, validatedBuildFiles = validatedBuildFiles)
         } else {
             ValidationResult(
                 false,
@@ -209,7 +209,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val validationResult = validate(project)
             runInEdt {
                 if (validationResult.valid) {
-                    runModernize()
+                    runModernize(validationResult.validatedBuildFiles) ?: isModernizationInProgress.set(false)
                 } else {
                     warnUnsupportedProject(validationResult.invalidReason)
                     isModernizationInProgress.set(false)
@@ -246,9 +246,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun runModernize(): Job? {
+    fun runModernize(validatedBuildFiles: List<VirtualFile>): Job? {
         initStopParameters()
-        val customerSelection = getCustomerSelection() ?: return null
+        val customerSelection = getCustomerSelection(validatedBuildFiles) ?: return null
         CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
@@ -268,9 +268,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).currentJobStopTime = Instant.MIN
     }
 
-    fun getCustomerSelection(): CustomerSelection? = PreCodeTransformUserDialog(
+    fun getCustomerSelection(validatedBuildFiles: List<VirtualFile>): CustomerSelection? = PreCodeTransformUserDialog(
         project,
-        getSupportedBuildFilesInProject(),
+        validatedBuildFiles,
         supportedJavaMappings,
     ).create()
 
