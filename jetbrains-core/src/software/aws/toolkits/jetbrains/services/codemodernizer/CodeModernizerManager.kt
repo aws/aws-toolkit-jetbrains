@@ -88,7 +88,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             Disposer.register(contentManager, it)
         }
     }
-    private val supportedBuildFileNames = listOf("pom.xml")
+    private val supportedBuildFileNames = listOf("pom.xml", "build.gradle")
     private val supportedJavaMappings = mapOf(
         JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
         JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),

@@ -66,7 +66,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(): CodeModernizerStartJobResult {
+    suspend fun createModernizationJob(): CodeModernizerStartJobResult {
         LOG.warn { "In Create Modernization Job" }
         val payload: File?
 
