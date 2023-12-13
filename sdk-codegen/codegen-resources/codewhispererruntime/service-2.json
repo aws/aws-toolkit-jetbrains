@@ -1473,7 +1473,7 @@
                 "operatingSystem":{"shape":"OperatingSystem"},
                 "product":{"shape":"UserContextProductString"},
                 "clientId":{"shape":"UUID"},
-                "ideVersion": { "shape": "String" }
+                "ideVersion": {"shape":"String"}
             }
         },
         "UserContextProductString":{
