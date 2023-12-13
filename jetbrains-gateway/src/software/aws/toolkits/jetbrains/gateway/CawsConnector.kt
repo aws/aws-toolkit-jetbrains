@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.application.runInEdt
 import com.jetbrains.gateway.api.GatewayConnector
 import com.jetbrains.gateway.api.GatewayConnectorDocumentation
 import com.jetbrains.gateway.api.GatewayConnectorView

@@ -12,8 +12,8 @@ import com.intellij.ui.SimpleTextAttributes
 import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.OpenWorkspaceInGateway
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
@@ -50,7 +50,6 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
             }
             presentation.addText(message(msgId), SimpleTextAttributes.GRAY_ATTRIBUTES)
         }
-
     }
 
     override fun feature() = CodeCatalystConnection.getInstance()

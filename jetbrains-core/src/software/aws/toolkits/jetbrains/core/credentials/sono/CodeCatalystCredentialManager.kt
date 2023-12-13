@@ -10,7 +10,6 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -33,9 +32,10 @@ class CodeCatalystCredentialManager {
         this.project = null
     }
 
-    internal fun connection() = (ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
-        as? AwsBearerTokenConnection
-    )
+    internal fun connection() = (
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
+            as? AwsBearerTokenConnection
+        )
 
     internal fun provider(conn: AwsBearerTokenConnection) = conn.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider
 

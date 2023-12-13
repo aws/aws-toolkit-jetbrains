@@ -4,12 +4,8 @@
 package software.aws.toolkits.jetbrains.core.credentials.sono
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 
 class SonoLogoutAction : DumbAwareAction() {
     override fun update(e: AnActionEvent) {
