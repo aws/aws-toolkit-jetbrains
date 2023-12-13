@@ -12,7 +12,7 @@ public class TransformRunnable implements Runnable {
 
         @Override
         public void run() {
-            isComplete = 1;
+            this.run();
         }
 
         public Integer isComplete() {

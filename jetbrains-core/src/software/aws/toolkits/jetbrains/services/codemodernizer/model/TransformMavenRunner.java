@@ -35,19 +35,8 @@ public class TransformMavenRunner {
             handler.addProcessListener(new ProcessAdapter() {
                 @Override
                 public void processTerminated(@NotNull ProcessEvent event) {
-//                    if (event.getExitCode() == 0 && onComplete != null) {
-//                        System.out.println("xishen in runner: " + onComplete.isComplete());
-//                        onComplete.run();
-//                    } else if (onComplete != null){
-//                        System.out.println("xishen in runner: " + onComplete.isComplete());
-//                        onComplete.stop();
-//                        System.out.println("xishen in runner: " + onComplete.isComplete());
-//
-//                    }
                     if (onComplete != null) {
-                        System.out.println("xishen in runner number: " + onComplete.isComplete());
                         onComplete.exitCode(event.getExitCode());
-                        System.out.println("xishen in runner number after: " + onComplete.isComplete());
                     }
                 }
             });

@@ -14,36 +14,34 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.jetbrains.python.sdk.isNotEmptyDirectory
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
-import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
-import org.jetbrains.plugins.gradle.settings.GradleExtensionsSettings.GradleProject
-import org.jetbrains.plugins.gradle.settings.GradleSettings
-import software.aws.toolkits.core.utils.*
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.core.utils.createTemporaryZipFile
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
-import java.nio.file.*
+import java.nio.file.FileVisitOption
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.CountDownLatch
 import kotlin.io.NoSuchFileException
 import kotlin.io.byteInputStream
 import kotlin.io.deleteRecursively
 import kotlin.io.inputStream
 import kotlin.io.path.Path
-import kotlin.io.path.listDirectoryEntries
 import kotlin.io.relativeTo
 import kotlin.io.resolve
 import kotlin.io.resolveSibling
 import kotlin.io.walkTopDown
-
 
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
@@ -275,6 +273,7 @@ data class CodeModernizerSessionContext(
                     // waiting mavenrunner building
                     delay(50)
                 }
+
                 if (createdDependencies.isComplete() == 0) {
                     LOG.warn { "IntelliJ bundled Maven executed successfully" }
                 } else {
@@ -326,4 +325,3 @@ data class CodeModernizerSessionContext(
         private val LOG = getLogger<CodeModernizerSessionContext>()
     }
 }
-
