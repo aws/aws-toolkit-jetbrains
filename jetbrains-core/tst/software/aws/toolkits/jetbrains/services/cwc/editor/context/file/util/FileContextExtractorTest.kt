@@ -1,42 +1,82 @@
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.mockk.clearMocks
+import io.mockk.mockk
+import io.mockk.every
+import io.mockk.coVerify
+import io.mockk.coEvery
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.MatchPolicyExtractor
+import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 
-class FileContextExtractorTest : BasePlatformTestCase() {
-    private lateinit var fqnWebviewAdapter: FqnWebviewAdapter
-    private lateinit var project: Project
-    private lateinit var languageExtractor: LanguageExtractor
+class FileContextExtractorTest {
+
+    // Constructor parameters
+    private val mockFqnWebviewAdapter: FqnWebviewAdapter = mockk<FqnWebviewAdapter>(relaxed = true)
+    private val mockProject: Project = mockk<Project>(relaxed = true)
+    private val mockLanguageExtractor: LanguageExtractor = mockk<LanguageExtractor>(relaxed = true)
+    
+    private val mockEditor: Editor = mockk<Editor>(relaxed = true)
+
+    /*
     private lateinit var fileEditorManager: FileEditorManager
     private lateinit var psiDocumentManager: PsiDocumentManager
+     */
+
+    private lateinit var fileContextExtractor : FileContextExtractor
 
     @Before
-    override fun setUp() {
-        super.setUp()
-        fqnWebviewAdapter = Mockito.mock(FqnWebviewAdapter::class.java)
-        project = myFixture.project
-        languageExtractor = LanguageExtractor()
-        fileEditorManager = Mockito.mock(FileEditorManager::class.java)
-        psiDocumentManager = Mockito.mock(PsiDocumentManager::class.java)
+    fun setUp() {
+        fileContextExtractor = FileContextExtractor(mockFqnWebviewAdapter, mockProject, mockLanguageExtractor)
+
+        // Editor
+        mockkStatic(FileEditorManager::class)
+        every { FileEditorManager.getInstance(any()).selectedTextEditor } returns mockEditor
+
+        // computeInEdt
+        mockkObject(EdtUtility)
+        every { EdtUtility.runInEdt(any()) } answers {
+            firstArg<() -> Unit>().invoke()
+        }
+        every { EdtUtility.runReadAction<String> (any()) } answers {
+            firstArg<() -> String>().invoke()
+        }
+
+    }
+
+    @After
+    fun tearDown() {
+        clearMocks(
+            mockFqnWebviewAdapter,
+            mockProject,
+            mockLanguageExtractor,
+        )
     }
 
     @Test
     fun `extract returns null when editor is null`() {
+
+        // Override return null editor
+        every { FileEditorManager.getInstance(any()).selectedTextEditor } returns null
+
         runBlocking {
-            Mockito.`when`(fileEditorManager.selectedTextEditor).thenReturn(null)
-            val fileContextExtractor = FileContextExtractor(fqnWebviewAdapter, project, languageExtractor)
+
+            val fileContextExtractor = FileContextExtractor(mockFqnWebviewAdapter, mockProject, mockLanguageExtractor)
 
             val result = fileContextExtractor.extract()
 
@@ -44,39 +84,48 @@ class FileContextExtractorTest : BasePlatformTestCase() {
         }
     }
 
-    // This is not working, we have to mock a lot of complex calls to the underlying system.
-    // But it's failing with a generic test not found error ...
     @Test
     fun `extract returns FileContext when editor is not null`() {
-        runBlocking {
-            val editor = Mockito.mock(Editor::class.java)
-            Mockito.`when`(fileEditorManager.selectedTextEditor).thenReturn(editor)
-            Mockito.`when`(editor.document.text).thenReturn("public class Test {}")
-            val importsString = "[\"java.util.List\", \"java.util.ArrayList\"]"
-            Mockito.`when`(fqnWebviewAdapter.readImports(any())).thenReturn(importsString)
-            val fileContextExtractor = FileContextExtractor(fqnWebviewAdapter, project, languageExtractor)
 
-            var fakeFilePath = "/path/to/file"
-            val doc = Mockito.mock(Document::class.java)
-            val psiFile = Mockito.mock(PsiFile::class.java)
-            val virtualFile = Mockito.mock(VirtualFile::class.java)
-            Mockito.`when`(editor.document).thenReturn(doc)
-            Mockito.`when`(psiDocumentManager.getPsiFile(doc)).thenReturn(psiFile)
-            Mockito.`when`(psiFile.virtualFile).thenReturn(virtualFile)
-            Mockito.`when`(virtualFile.path).thenReturn(fakeFilePath)
+            val testFileLanguage = "java"
+            every { mockLanguageExtractor.extractLanguageNameFromCurrentFile(any(), any()) } returns testFileLanguage
 
-            // Act
-            val result = fileContextExtractor.extract()
+            val testFileText = "public class Test {}"
+            every { mockEditor.document.text } returns testFileText
+
+            mockkStatic(PsiDocumentManager::class)
+            val mockPsiFile = mockk<PsiFile>(relaxed = true)
+            every { PsiDocumentManager.getInstance(any()).getPsiFile(any()) } returns mockPsiFile;
+            val testFilePath = "/path/to/file"
+            every { mockPsiFile.virtualFile.path } returns testFilePath
+
+            mockkObject(MatchPolicyExtractor)
+            coEvery { MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(any(), any(), any(), any()) } returns null
+
+        // Act
+        val result = runBlocking {
+            fileContextExtractor.extract()
+        }
 
             // Assert
             assertNotNull(result)
-            assertEquals("java", result?.fileLanguage)
-            assertEquals(fakeFilePath, result?.filePath)
-            assertNotNull(result?.matchPolicy)
-        }
+            assertEquals(testFileLanguage, result?.fileLanguage)
+            assertEquals(testFilePath, result?.filePath)
+
+        coVerify { MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(
+            false,
+            testFileLanguage,
+            testFileText,
+            mockFqnWebviewAdapter
+        )}
+
+        unmockkStatic(PsiDocumentManager::class)
     }
+
+    /*
 
     override fun getTestDataPath(): String {
         return "path/to/your/test/data"
     }
+     */
 }
