@@ -4,39 +4,29 @@
 package software.aws.toolkits.jetbrains.services.cwc.auth
 
 import com.intellij.openapi.project.Project
-import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
-import io.mockk.coVerify
-import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers.anyString
-import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithQ
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
-import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.MatchPolicy
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.telemetry.CwsprChatCommandType
-import software.aws.toolkits.telemetry.UiTelemetry
-import java.time.Instant
 
 class AuthControllerTest {
 
-    private val mockProject : Project = mockk<Project>(relaxed = true)
+    private val mockProject: Project = mockk<Project>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -64,7 +54,7 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `NotConnected with connected CodeWhisperer returns MissingScope`(){
+    fun `NotConnected with connected CodeWhisperer returns MissingScope`() {
         // Arrange
         every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns ActiveConnection.NotConnected
         every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns mockk<ActiveConnection.ValidBearer>(relaxed = true)
@@ -171,7 +161,7 @@ class AuthControllerTest {
     fun `handleAuth with ReAuth calls reauthenticateWithQ`() {
         // Arrange
         mockkStatic("software.aws.toolkits.jetbrains.core.gettingstarted.GettingStartedAuthUtilsKt")
-        every {  reauthenticateWithQ(any())  } returns Unit
+        every { reauthenticateWithQ(any()) } returns Unit
 
         mockkObject(TelemetryHelper)
         every { TelemetryHelper.recordTelemetryChatRunCommand(any(), any()) } returns Unit
@@ -192,5 +182,4 @@ class AuthControllerTest {
 
         verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Auth, testAuthFollowupType.name) }
     }
-
 }

@@ -13,15 +13,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.psi.PsiDocumentManager
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
@@ -31,12 +28,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
-import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
@@ -485,18 +480,18 @@ class ChatController internal constructor(
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
 
-            fun create(context: AmazonQAppInitContext): ChatController {
-                val chatSessionStorage = ChatSessionStorage(ChatSessionFactoryV1())
-                val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
+        fun create(context: AmazonQAppInitContext): ChatController {
+            val chatSessionStorage = ChatSessionStorage(ChatSessionFactoryV1())
+            val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
 
-                return ChatController(
-                    context = context,
-                    chatSessionStorage = chatSessionStorage,
-                    contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
-                    intentRecognizer = UserIntentRecognizer(),
-                    authController = AuthController(),
-                    telemetryHelper = telemetryHelper
-                )
-            }
+            return ChatController(
+                context = context,
+                chatSessionStorage = chatSessionStorage,
+                contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
+                intentRecognizer = UserIntentRecognizer(),
+                authController = AuthController(),
+                telemetryHelper = telemetryHelper
+            )
         }
+    }
 }

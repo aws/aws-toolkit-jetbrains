@@ -1,3 +1,6 @@
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.services.cwc.controller
 
 import com.intellij.ide.BrowserUtil
@@ -12,17 +15,16 @@ import com.intellij.psi.PsiDocumentManager
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.verify
-import io.mockk.coVerify
-import io.mockk.just
 import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.flowOf
@@ -94,7 +96,6 @@ class ChatControllerTest {
 
     @Before
     fun setup() {
-
         context = AmazonQAppInitContext(
             project = project,
             messagesFromAppToUi = messagePublisher,
@@ -112,7 +113,6 @@ class ChatControllerTest {
             authController = authController,
             telemetryHelper = telemetryHelper,
         )
-
     }
 
     @After
@@ -129,7 +129,6 @@ class ChatControllerTest {
 
     @Test
     fun `processClearQuickAction calls deleteSession and telemetry`() {
-
         // Arrange
         mockkObject(TelemetryHelper.Companion) {
             every { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Clear, any()) } returns Unit
@@ -148,12 +147,10 @@ class ChatControllerTest {
             verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Clear, any()) }
             coVerify { chatSessionStorage.deleteSession("tabId") }
         }
-
     }
 
     @Test
     fun `processHelpQuickAction publishes messages and calls telemetry`() {
-
         // Arrange
         mockkObject(TelemetryHelper.Companion) {
             every { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Help, any()) } returns Unit
@@ -201,12 +198,10 @@ class ChatControllerTest {
 
             verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Help, any()) }
         }
-
     }
 
     @Test
     fun `processTransformQuickAction publishes messages and calls telemetry`() {
-
         val managerMock = mockk<CodeModernizerManager>(relaxed = true)
         every { managerMock.isModernizationJobActive() } returns false
 
@@ -262,15 +257,12 @@ class ChatControllerTest {
                 verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Transform) }
 
                 unmockkStatic(ApplicationManager::class)
-
             }
         }
-
     }
 
     @Test
     fun `processPromptChatMessage handles chat message`() {
-
         // Arrange
         mockkObject(ChatPromptHandler.Companion)
         val handlerMock = mockk<ChatPromptHandler>(relaxed = true)
@@ -297,8 +289,7 @@ class ChatControllerTest {
         val mockChatSessionInfo = mockk<ChatSessionInfo>(relaxed = true)
         val testHistory = mutableListOf<ChatRequestData>()
         every { mockChatSessionInfo.history } returns testHistory
-        val testScope = CoroutineScope(Dispatchers.Default)
-        every { mockChatSessionInfo.scope } returns testScope
+        every { mockChatSessionInfo.scope } returns CoroutineScope(Job())
         every { chatSessionStorage.getSession(any(), any()) } returns mockChatSessionInfo
 
         val testUserIntent = UserIntent.EXPLAIN_CODE_SELECTION
@@ -333,10 +324,7 @@ class ChatControllerTest {
                 match { it == mockChatSessionInfo }
             )
         }
-
-
     }
-
 
     @Test
     fun `processTabWasRemoved handles tab removed`() {
@@ -348,7 +336,6 @@ class ChatControllerTest {
             coVerify { chatSessionStorage.deleteSession(testTabId) }
         }
     }
-
 
     @Test
     fun `processTabChanged handles tab changed`() {
@@ -363,10 +350,8 @@ class ChatControllerTest {
         }
     }
 
-
     @Test
     fun `processFollowUpClick handles follow-up click`() {
-
         // Arrange
         mockkObject(ChatPromptHandler.Companion)
         val handlerMock = mockk<ChatPromptHandler>(relaxed = true)
@@ -402,8 +387,7 @@ class ChatControllerTest {
         val mockChatSessionInfo = mockk<ChatSessionInfo>(relaxed = true)
         val testHistory = mutableListOf<ChatRequestData>()
         every { mockChatSessionInfo.history } returns testHistory
-        val testScope = CoroutineScope(Dispatchers.Default)
-        every { mockChatSessionInfo.scope } returns testScope
+        every { mockChatSessionInfo.scope } returns CoroutineScope(Job())
         every { chatSessionStorage.getSession(any(), any()) } returns mockChatSessionInfo
 
         val testUserIntent = UserIntent.EXPLAIN_CODE_SELECTION
@@ -440,13 +424,10 @@ class ChatControllerTest {
         }
 
         coVerify { telemetryHelper.recordInteractWithMessage(match { it == testMessage }) }
-
     }
-
 
     @Test
     fun `processCodeWasCopiedToClipboard handles code copy`() {
-
         // Arrange
         val testMessage = IncomingCwcMessage.CopyCodeToClipboard(
             tabId = "testTabId",
@@ -467,7 +448,6 @@ class ChatControllerTest {
 
     @Test
     fun `processInsertCodeAtCursorPosition handles code insertion`() {
-
         // Arrange
         // Convert all inputs to variables
         val testTabId = "testTabId"
@@ -497,11 +477,11 @@ class ChatControllerTest {
         // Mock Caret
         val mockCaret = mockk<Caret>(relaxed = true)
         every { mockEditor.caretModel.primaryCaret } returns mockCaret
-        val testOffset = 5;
+        val testOffset = 5
         every { mockCaret.offset } returns testOffset
         every { mockCaret.hasSelection() } returns true
-        val testSelectionStart = 0;
-        val testSelectionEnd = 100;
+        val testSelectionStart = 0
+        val testSelectionEnd = 100
         every { mockCaret.selectionStart } returns testSelectionStart
         every { mockCaret.selectionEnd } returns testSelectionEnd
 
@@ -544,17 +524,14 @@ class ChatControllerTest {
             firstArg<() -> Unit>().invoke()
         }
 
-
         // Act
         runBlocking {
             chatController.processInsertCodeAtCursorPosition(testMessage)
         }
 
-
         // Assert
         verify { applicationMock.runWriteAction(any()) }
         verify { WriteCommandAction.runWriteCommandAction(any(), any()) }
-
 
         verify { mockEditor.document.deleteString(testSelectionStart, testSelectionEnd) }
 
@@ -563,15 +540,16 @@ class ChatControllerTest {
         verify { ReferenceLogController.addReferenceLog(testCode, testCodeReference, mockEditor, project) }
 
         verify {
-            mockTracker.enqueue(match {
-                it is InsertedCodeModificationEntry &&
-                    it.messageId == testMessageId &&
-                    it.originalString == testCode
-            })
+            mockTracker.enqueue(
+                match {
+                    it is InsertedCodeModificationEntry &&
+                        it.messageId == testMessageId &&
+                        it.originalString == testCode
+                }
+            )
         }
 
         verify { mockEditor.document.createRangeMarker(testSelectionStart, testSelectionEnd, true) }
-
 
         coVerify { telemetryHelper.recordInteractWithMessage(match { it == testMessage }) }
 
@@ -592,7 +570,7 @@ class ChatControllerTest {
             tabId = testTabId,
         )
 
-        val mockChatSessionInfo = mockk<ChatSessionInfo>(relaxed = true);
+        val mockChatSessionInfo = mockk<ChatSessionInfo>(relaxed = true)
 
         every { chatSessionStorage.getSession(any(), any()) } returns mockChatSessionInfo
 
@@ -670,7 +648,6 @@ class ChatControllerTest {
 
     @Test
     fun `processOnboardingPageInteraction handled`() {
-
         // Arrange
         val testTriggerId = "testTriggerId"
 
@@ -704,7 +681,8 @@ class ChatControllerTest {
                         it.message == StaticPrompt.OnboardingHelp.message &&
                         it.interactionType == OnboardingPageInteractionType.CwcButtonClick &&
                         it.triggerId == testTriggerId
-                })
+                }
+            )
         }
 
         // Check call to sendStaticTextResponse
@@ -718,12 +696,12 @@ class ChatControllerTest {
                         msg.messageId == "static_message_$testTriggerId" &&
                         msg.message == StaticTextResponse.OnboardingHelp.message &&
                         msg.followUps == StaticTextResponse.OnboardingHelp.followUps.map {
-                        FollowUp(
-                            type = FollowUpType.Generated,
-                            pillText = it,
-                            prompt = it,
-                        )
-                    } &&
+                            FollowUp(
+                                type = FollowUpType.Generated,
+                                pillText = it,
+                                prompt = it,
+                            )
+                        } &&
                         msg.followUpsHeader == StaticTextResponse.OnboardingHelp.followUpsHeader
                 }
             )
@@ -752,41 +730,42 @@ class ChatControllerTest {
             command = testCommand
         )
 
-
         // Act
         runBlocking {
             chatController.processContextMenuCommand(testMessage, testTriggerId)
         }
-
 
         // Assert
 
         val formattedCodeSelection = "\n```\n${testCodeSelection}\n```\n"
 
         coEvery {
-            messagePublisher.publish(match {
-                it is EditorContextCommandMessage &&
-                    it.message == formattedCodeSelection &&
-                    it.command == testMessage.command.actionId &&
-                    it.triggerId == testTriggerId
-            })
+            messagePublisher.publish(
+                match {
+                    it is EditorContextCommandMessage &&
+                        it.message == formattedCodeSelection &&
+                        it.command == testMessage.command.actionId &&
+                        it.triggerId == testTriggerId
+                }
+            )
         }
 
         val prompt = "${testMessage.command} the following part of my code for me: $formattedCodeSelection"
 
         coEvery {
-            messagePublisher.publish(match {
-                it is EditorContextCommandMessage &&
-                    it.message == prompt &&
-                    it.command == testMessage.command.actionId &&
-                    it.triggerId == testTriggerId
-            })
+            messagePublisher.publish(
+                match {
+                    it is EditorContextCommandMessage &&
+                        it.message == prompt &&
+                        it.command == testMessage.command.actionId &&
+                        it.triggerId == testTriggerId
+                }
+            )
         }
     }
 
     @Test
     fun `processLinkClick opens browser`() {
-
         // Arrange
         val testUrl = "testUrl"
         val testMessage = IncomingCwcMessage.ClickedLink(
@@ -811,6 +790,5 @@ class ChatControllerTest {
 
         // Cleanup
         unmockkStatic(BrowserUtil::class)
-
     }
 }

@@ -1,13 +1,16 @@
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import io.mockk.clearMocks
-import io.mockk.mockk
-import io.mockk.every
-import io.mockk.coVerify
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
@@ -30,7 +33,7 @@ class FileContextExtractorTest {
     private val mockFqnWebviewAdapter: FqnWebviewAdapter = mockk<FqnWebviewAdapter>(relaxed = true)
     private val mockProject: Project = mockk<Project>(relaxed = true)
     private val mockLanguageExtractor: LanguageExtractor = mockk<LanguageExtractor>(relaxed = true)
-    
+
     private val mockEditor: Editor = mockk<Editor>(relaxed = true)
 
     /*
@@ -38,7 +41,7 @@ class FileContextExtractorTest {
     private lateinit var psiDocumentManager: PsiDocumentManager
      */
 
-    private lateinit var fileContextExtractor : FileContextExtractor
+    private lateinit var fileContextExtractor: FileContextExtractor
 
     @Before
     fun setUp() {
@@ -56,7 +59,6 @@ class FileContextExtractorTest {
         every { EdtUtility.runReadAction<String> (any()) } answers {
             firstArg<() -> String>().invoke()
         }
-
     }
 
     @After
@@ -70,12 +72,10 @@ class FileContextExtractorTest {
 
     @Test
     fun `extract returns null when editor is null`() {
-
         // Override return null editor
         every { FileEditorManager.getInstance(any()).selectedTextEditor } returns null
 
         runBlocking {
-
             val fileContextExtractor = FileContextExtractor(mockFqnWebviewAdapter, mockProject, mockLanguageExtractor)
 
             val result = fileContextExtractor.extract()
@@ -86,38 +86,39 @@ class FileContextExtractorTest {
 
     @Test
     fun `extract returns FileContext when editor is not null`() {
+        val testFileLanguage = "java"
+        every { mockLanguageExtractor.extractLanguageNameFromCurrentFile(any(), any()) } returns testFileLanguage
 
-            val testFileLanguage = "java"
-            every { mockLanguageExtractor.extractLanguageNameFromCurrentFile(any(), any()) } returns testFileLanguage
+        val testFileText = "public class Test {}"
+        every { mockEditor.document.text } returns testFileText
 
-            val testFileText = "public class Test {}"
-            every { mockEditor.document.text } returns testFileText
+        mockkStatic(PsiDocumentManager::class)
+        val mockPsiFile = mockk<PsiFile>(relaxed = true)
+        every { PsiDocumentManager.getInstance(any()).getPsiFile(any()) } returns mockPsiFile
+        val testFilePath = "/path/to/file"
+        every { mockPsiFile.virtualFile.path } returns testFilePath
 
-            mockkStatic(PsiDocumentManager::class)
-            val mockPsiFile = mockk<PsiFile>(relaxed = true)
-            every { PsiDocumentManager.getInstance(any()).getPsiFile(any()) } returns mockPsiFile;
-            val testFilePath = "/path/to/file"
-            every { mockPsiFile.virtualFile.path } returns testFilePath
-
-            mockkObject(MatchPolicyExtractor)
-            coEvery { MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(any(), any(), any(), any()) } returns null
+        mockkObject(MatchPolicyExtractor)
+        coEvery { MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(any(), any(), any(), any()) } returns null
 
         // Act
         val result = runBlocking {
             fileContextExtractor.extract()
         }
 
-            // Assert
-            assertNotNull(result)
-            assertEquals(testFileLanguage, result?.fileLanguage)
-            assertEquals(testFilePath, result?.filePath)
+        // Assert
+        assertNotNull(result)
+        assertEquals(testFileLanguage, result?.fileLanguage)
+        assertEquals(testFilePath, result?.filePath)
 
-        coVerify { MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(
-            false,
-            testFileLanguage,
-            testFileText,
-            mockFqnWebviewAdapter
-        )}
+        coVerify {
+            MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(
+                false,
+                testFileLanguage,
+                testFileText,
+                mockFqnWebviewAdapter
+            )
+        }
 
         unmockkStatic(PsiDocumentManager::class)
     }

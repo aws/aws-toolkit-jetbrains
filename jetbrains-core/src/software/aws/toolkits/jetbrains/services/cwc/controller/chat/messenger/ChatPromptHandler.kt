@@ -34,7 +34,6 @@ class ChatPromptHandler private constructor(private val telemetryHelper: Telemet
 
     companion object {
         fun create(telemetryHelper: TelemetryHelper) = ChatPromptHandler(telemetryHelper)
-
     }
 
     fun handle(
