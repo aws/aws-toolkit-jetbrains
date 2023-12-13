@@ -4,6 +4,10 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessNotCreatedException
+import com.intellij.execution.process.ProcessOutput
+import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -21,6 +25,9 @@ import org.jetbrains.plugins.gradle.settings.GradleSettings
 import software.aws.toolkits.core.utils.*
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
+import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
 import java.nio.file.*
@@ -44,7 +51,6 @@ const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
-
 data class CodeModernizerSessionContext(
     val project: Project,
     val configurationFile: VirtualFile,
@@ -86,6 +92,11 @@ data class CodeModernizerSessionContext(
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val depDirectory = runMavenCommand(sourceFolder)
+        if (depDirectory != null) {
+            CodetransformTelemetry.dependenciesCopied(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            )
+        }
         return runReadAction {
             try {
                 val directoriesToExclude = findDirectoriesToExclude(sourceFolder)
@@ -138,132 +149,154 @@ data class CodeModernizerSessionContext(
     suspend fun runMavenCommand(sourceFolder: File): File? {
         val currentTimestamp = System.currentTimeMillis()
         val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
-//        val newMavenProjectManger = MavenProjectsManager.getInstance(project)
-//        val mavenProjects = newMavenProjectManger.projects
-//        for (mavenproject in mavenProjects) {
-//            val bundleddependencies = mavenproject.dependencyTree
-//            println("this is the list of dependencies in this project>>>>>>>>>>>>>>>>>>>>>>>>.")
-//            println(bundleddependencies)
-//            for (dependency in bundleddependencies) {
-//                dependency.artifact.path
-//                println("Bundled Dependency: ${dependency.dependencies}")
-//
-//            }
-//        }
-        //val commandlinestring = "install"
-        //val commandlinestring = "dependency:copy-dependencies -DoutputDirectory=$destinationDir -Dmdep.useRepositoryLayout=true -Dmdep.copyPom=true -Dmdep.addParentPoms=true"
-
-        val goalcp = "dependency:copy-dependencies"
-        val outputDirectory = "-DoutputDirectory=$destinationDir"
-        val repolay = "-Dmdep.useRepositoryLayout=true"
-        val pomcp = "-Dmdep.copyPom=true"
-        val parentpom = "-Dmdep.addParentPoms=true"
-        val commandlist = mutableListOf<String>()
-        val explicitenabled = mutableListOf<String>()
-        val gradleproj = GradleSettings.getInstance(project)
-        //explicitenabled.add("-DoutputDirectory=$destinationDir")
-        commandlist.add(goalcp)
-        commandlist.add(outputDirectory)
-        commandlist.add(repolay)
-        commandlist.add(pomcp)
-        commandlist.add(parentpom)
-        val params = MavenRunnerParameters(
-            false,
-            project.basePath.toString(),
-            null,
-            commandlist,
-            explicitenabled,
-            null
-        )
-        // Create MavenRunnerParametersMavenRunnerParameters
-
-        val mvnrunner = MavenRunner.getInstance(project)
-        val transfromMvnRunner = TransformMavenRunner(mvnrunner, project)
-        val mvnsettings = mvnrunner.settings
-//        val latch = CountDownLatch(1)
-        var createdDependencies = TransformRunnable()
-        var passedCommand = false
-        var timer = 0
-        try {
-            runInEdt {
-                val ues = transfromMvnRunner.run(params, mvnsettings, createdDependencies)
-                passedCommand = true
-            }
-            LOG.warn { "the createdDependencies isComplete number: ${createdDependencies.isComplete()}" }
-
-            while (createdDependencies.isComplete() == null) {
-                delay( 50)
-//                println(" this is the list of files that are moved into destinationDir : " + destinationDir.toFile().listFiles().toString())
-//                if (timer > 60000) {
-//                    throw error("we were unable to zip you up! :((/////////////")
-//                }
-//                timer += 50
-                LOG.warn { "xishen createdDependencies.isComplete is ${createdDependencies.isComplete}" }
-
-            }
-
-        } catch (e: Exception) {
-            LOG.warn { "the mvn command failed" }
-            throw error(e)
+        fun runCommand(mavenCommand: String): ProcessOutput {
+            val commandLine = GeneralCommandLine(
+                mavenCommand,
+                "dependency:copy-dependencies",
+                "-DoutputDirectory=$destinationDir",
+                "-Dmdep.useRepositoryLayout=true",
+                "-Dmdep.copyPom=true",
+                "-Dmdep.addParentPoms=true"
+            )
+                .withWorkDirectory(sourceFolder)
+                .withRedirectErrorStream(true)
+            val output = ExecUtil.execAndGetOutput(commandLine)
+            return output
         }
 
-//        waitUntil { runInEdt { mvnrunner.run(params, mvnsettings, null) } }
-        println("we passed maybe")
-//        fun runCommand(mavenCommand: String): ProcessOutput {
-//            val commandLine = GeneralCommandLine(
-//                mavenCommand,
-//                "dependency:copy-dependencies",
-//                "-DoutputDirectory=$destinationDir",
-//                "-Dmdep.useRepositoryLayout=true",
-//                "-Dmdep.copyPom=true",
-//                "-Dmdep.addParentPoms=true"
-//            )
-//                .withWorkDirectory(sourceFolder)
-//                .withRedirectErrorStream(true)
-//            val output = ExecUtil.execAndGetOutput(commandLine)
-//            return output
-//        }
-//
-//        // 1. Try to execute Maven Wrapper Command
-//        LOG.warn { "Executing ./mvnw" }
-//        var shouldTryMvnCommand = true
-//        try {
-//            val output = runCommand("./mvnw")
-//            if (output.exitCode != 0) {
-//                LOG.error { "mvnw command output:\n$output" }
-//                return null
-//            } else {
-//                LOG.warn { "mvnw executed successfully" }
-//                shouldTryMvnCommand = false
-//            }
-//        } catch (e: ProcessNotCreatedException) {
-//            LOG.warn { "./mvnw failed to execute as its likely not a unix machine" }
-//        } catch (e: Exception) {
-//            when {
-//                e.message?.contains("Cannot run program \"./mvnw\"") == true -> {} // noop
-//                else -> throw e
-//            }
-//        }
-//
-//        // 2. maybe execute maven wrapper command
-//        if (shouldTryMvnCommand) {
-//            LOG.warn { "Executing mvn" }
-//            try {
-//                val output = runCommand("mvn")
-//                if (output.exitCode != 0) {
-//                    LOG.error { "Maven command output:\n$output" }
-//                    return null
-//                } else {
-//                    LOG.warn { "Maven executed successfully" }
-//                }
-//            } catch (e: ProcessNotCreatedException) {
-//                LOG.warn { "Maven failed to execute as its likely not installed to the PATH" }
-//                return null
-//            } catch (e: Exception) {
-//                LOG.error(e) { e.message.toString() }
-//                throw e
-//            }
-//        }
+        // 1. Try to execute Maven Wrapper Command
+        LOG.warn { "Executing ./mvnw" }
+        var shouldTryMvnCommand = true
+        try {
+            val output = runCommand("./mvnw")
+            if (output.exitCode != 0) {
+                LOG.error { "mvnw command output:\n$output" }
+                val error = "The exitCode should be 0 while it was ${output.exitCode}"
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                    reason = error
+                )
+                return null
+            } else {
+                LOG.warn { "mvnw executed successfully" }
+                shouldTryMvnCommand = false
+            }
+        } catch (e: ProcessNotCreatedException) {
+            val error = "./mvnw failed to execute as its likely not a unix machine"
+            CodetransformTelemetry.mvnBuildFailed(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                reason = error
+            )
+            LOG.warn { error }
+        } catch (e: Exception) {
+            CodetransformTelemetry.mvnBuildFailed(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
+                reason = e.message
+            )
+            when {
+                e.message?.contains("Cannot run program \"./mvnw\"") == true -> {} // noop
+                else -> throw e
+            }
+        }
+
+        // 2. maybe execute maven wrapper command
+        if (shouldTryMvnCommand) {
+            LOG.warn { "Executing mvn" }
+            try {
+                val output = runCommand("mvn")
+                if (output.exitCode != 0) {
+                    LOG.error { "Maven command output:\n$output" }
+                    val error = "The exitCode should be 0 while it was ${output.exitCode}"
+                    CodetransformTelemetry.mvnBuildFailed(
+                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                        reason = error
+                    )
+                    return null
+                } else {
+                    shouldTryMvnCommand = false
+                    LOG.warn { "Maven executed successfully" }
+                }
+            } catch (e: ProcessNotCreatedException) {
+                val error = "Maven failed to execute as its likely not installed to the PATH"
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                    reason = error
+                )
+                LOG.warn { error }
+            } catch (e: Exception) {
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
+                    reason = e.message
+                )
+                LOG.error(e) { e.message.toString() }
+            }
+        }
+
+        // 3. intellij-bundled maven runner
+        if (shouldTryMvnCommand) {
+            LOG.warn { "Executing IntelliJ bundled Maven" }
+            val goalcp = "dependency:copy-dependencies"
+            val outputDirectory = "-DoutputDirectory=$destinationDir"
+            val repolay = "-Dmdep.useRepositoryLayout=true"
+            val pomcp = "-Dmdep.copyPom=true"
+            val parentpom = "-Dmdep.addParentPoms=true"
+            val commandlist = mutableListOf<String>()
+            val explicitenabled = mutableListOf<String>()
+            commandlist.add(goalcp)
+            commandlist.add(outputDirectory)
+            commandlist.add(repolay)
+            commandlist.add(pomcp)
+            commandlist.add(parentpom)
+            val params = MavenRunnerParameters(
+                false,
+                project.basePath.toString(),
+                null,
+                commandlist,
+                explicitenabled,
+                null
+            )
+
+            // Create MavenRunnerParametersMavenRunnerParameters
+            val mvnrunner = MavenRunner.getInstance(project)
+            val transfromMvnRunner = TransformMavenRunner(mvnrunner, project)
+            val mvnsettings = mvnrunner.settings
+            var createdDependencies = TransformRunnable()
+            try {
+                runInEdt {
+                    transfromMvnRunner.run(params, mvnsettings, createdDependencies)
+                }
+                while (createdDependencies.isComplete() == null) {
+                    // waiting mavenrunner building
+                    delay(50)
+                }
+                if (createdDependencies.isComplete() == 0) {
+                    LOG.warn { "IntelliJ bundled Maven executed successfully" }
+                } else {
+                    val error = "The exitCode should be 0 while it was ${createdDependencies.isComplete()}"
+                    LOG.error { error }
+//                    CodetransformTelemetry.mvnBuildFailed(
+//                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+//                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Intellij_bundled_maven,
+//                        reason = error
+//                    )
+                    return null
+                }
+            } catch (e: Exception) {
+                LOG.error(e) { e.message.toString() }
+//                CodetransformTelemetry.mvnBuildFailed(
+//                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+//                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Intellij_bundled_maven,
+//                    reason = e.message
+//                )
+                throw e
+            }
+        }
 
         return destinationDir.toFile()
     }
