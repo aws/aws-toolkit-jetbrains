@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.delay
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
@@ -22,7 +23,10 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
@@ -49,6 +53,7 @@ const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     val configurationFile: VirtualFile,
@@ -281,7 +286,7 @@ data class CodeModernizerSessionContext(
                     LOG.error { error }
 //                    CodetransformTelemetry.mvnBuildFailed(
 //                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-//                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Intellij_bundled_maven,
+//                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
 //                        reason = error
 //                    )
                     return null
@@ -290,11 +295,14 @@ data class CodeModernizerSessionContext(
                 LOG.error(e) { e.message.toString() }
 //                CodetransformTelemetry.mvnBuildFailed(
 //                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-//                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Intellij_bundled_maven,
+//                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
 //                    reason = e.message
 //                )
                 throw e
             }
+            // after the ide bundled maven building finished
+            // change the bottom window to transformation hub
+            showTransformationHub()
         }
 
         return destinationDir.toFile()
@@ -320,6 +328,14 @@ data class CodeModernizerSessionContext(
         )
         return dependencyfiles
     }
+
+    private fun showTransformationHub() = runInEdt {
+        val appModernizerBottomWindow = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
+            ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
+        appModernizerBottomWindow.show()
+        CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
+    }
+
 
     companion object {
         private val LOG = getLogger<CodeModernizerSessionContext>()
