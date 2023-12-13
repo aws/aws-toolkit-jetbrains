@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.gettingstarted.SetupAuthenticationNotice.NoticeType
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.jetbrains.utils.ui.selected
@@ -94,7 +95,7 @@ class GatewaySetupAuthenticationDialog(
             }
         }
 
-        tabSettings.forEach { tab, settings ->
+        tabSettings.forEach { (tab, settings) ->
             val notice = settings.notice
 
             wrappers[tab]?.addToTop(
@@ -103,13 +104,13 @@ class GatewaySetupAuthenticationDialog(
                     add(BrowserLink(message("gettingstarted.setup.learnmore"), notice.learnMore), BorderLayout.EAST)
 
                     background = when (notice.type) {
-                        SetupAuthenticationNotice.NoticeType.WARNING -> JBUI.CurrentTheme.NotificationWarning.backgroundColor()
-                        SetupAuthenticationNotice.NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.backgroundColor()
+                        NoticeType.WARNING -> JBUI.CurrentTheme.NotificationWarning.backgroundColor()
+                        NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.backgroundColor()
                     }
 
                     val borderColor = when (notice.type) {
-                        SetupAuthenticationNotice.NoticeType.WARNING -> JBUI.CurrentTheme.NotificationWarning.borderColor()
-                        SetupAuthenticationNotice.NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.borderColor()
+                        NoticeType.WARNING -> JBUI.CurrentTheme.NotificationWarning.borderColor()
+                        NoticeType.ERROR -> JBUI.CurrentTheme.NotificationError.borderColor()
                     }
 
                     border = editorNotificationCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor))
