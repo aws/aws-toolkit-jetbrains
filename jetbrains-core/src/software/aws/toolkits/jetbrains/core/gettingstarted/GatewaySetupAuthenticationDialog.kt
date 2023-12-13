@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 import java.awt.BorderLayout
+import java.util.Optional
 import javax.swing.Action
 import javax.swing.BorderFactory
 import javax.swing.JComponent
@@ -64,8 +65,8 @@ class GatewaySetupAuthenticationDialog(
     private val promptForIdcPermissionSet: Boolean = false,
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
-    private val idcTab = idcTab()
-    private val builderIdTab = builderIdTab()
+    private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
+    private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val wrappers = GatewaySetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
     private var attempts = 0
     private var authType = CredentialSourceId.IamIdentityCenter
@@ -188,42 +189,6 @@ class GatewaySetupAuthenticationDialog(
 
     private fun selectedTab() = wrappers.entries.firstOrNull { (_, wrapper) -> wrapper == rootTabPane.selectedComponent }?.key
         ?: error("Could not determine selected tab")
-
-    private fun idcTab() = panel {
-        row(message("gettingstarted.setup.idc.startUrl")) {
-            textField()
-                .comment(message("gettingstarted.setup.idc.startUrl.comment"))
-                .align(AlignX.FILL)
-                .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
-                .errorOnApply(message("gettingstarted.setup.idc.no_builder_id")) { it.text == SONO_URL }
-                .bindText(state.idcTabState::startUrl)
-        }
-
-        row(message("gettingstarted.setup.idc.region")) {
-            comboBox(
-                AwsRegionProvider.getInstance().allRegionsForService("sso").values,
-                SimpleListCellRenderer.create("null") { it.displayName }
-            ).bindItem(state.idcTabState::region.toNullableProperty())
-                .errorOnApply(message("gettingstarted.setup.error.not_selected")) { it.selected() == null }
-        }
-    }
-
-    private fun builderIdTab() = panel {
-        row {
-            text(message("gettingstarted.setup.builderid.notice"))
-        }
-
-        indent {
-            message("gettingstarted.setup.builderid.bullets").split("\n").forEach {
-                row {
-                    text("<icon src='AllIcons.General.InspectionsOK'/>&nbsp;$it")
-                }
-            }
-        }
-    }
-
-    // https://docs.aws.amazon.com/STS/latest/APIReference/API_Credentials.html
-    private val accessKeyRegex = "\\w{16,128}".toRegex()
 
     override fun attempts(): Int {
         return attempts
