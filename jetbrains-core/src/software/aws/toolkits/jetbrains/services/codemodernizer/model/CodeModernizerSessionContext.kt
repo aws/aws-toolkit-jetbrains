@@ -284,21 +284,21 @@ data class CodeModernizerSessionContext(
                 } else {
                     val error = "The exitCode should be 0 while it was ${createdDependencies.isComplete()}"
                     LOG.error { error }
-//                    CodetransformTelemetry.mvnBuildFailed(
-//                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-//                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-//                        reason = error
-//                    )
+                    CodetransformTelemetry.mvnBuildFailed(
+                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                        reason = error
+                    )
                     return null
                 }
             } catch (e: Exception) {
                 LOG.error { e.message.toString() }
-//                CodetransformTelemetry.mvnBuildFailed(
-//                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-//                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-//                    reason = e.message
-//                )
-                throw e
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                    reason = e.message
+                )
+                return null
             } finally {
                 // after the ide bundled maven building finished
                 // change the bottom window to transformation hub
