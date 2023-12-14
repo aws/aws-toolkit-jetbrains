@@ -3,51 +3,56 @@
 
 package software.aws.toolkits.jetbrains.remoteDev.caws
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiTreeChangeAdapter
 import com.intellij.psi.PsiTreeChangeEvent
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
+import software.aws.toolkits.jetbrains.services.caws.envclient.models.GetStatusResponse
 
-class DevfileWatcher : StartupActivity.DumbAware {
-
+@Service
+class DevfileWatcher : Disposable {
     private var fileChanged = false
+    private val job = disposableCoroutineScope(this).launch {
+        while (true) {
+            val response = try {
+                CawsEnvironmentClient.getInstance().getStatus()
+            } catch (e: Exception) {
+                LOG.error(e) { "Failed to get devfile change status. Terminating watcher" }
+                null
+            }
 
-    override fun runActivity(project: Project) {
-        PsiManager.getInstance(project).addPsiTreeChangeListener(
-            object : PsiTreeChangeAdapter() {
-                private fun onEvent(event: PsiTreeChangeEvent) {
-                    val file = event.file?.virtualFile ?: return
-                    if (file.name != DEVFILE_PATTERN) return
-                    getInstance().updatedDevfile(hasFileChanged = true)
-                }
+            if (response == null) {
+                fileChanged = true
+                return@launch
+            }
 
-                override fun childAdded(event: PsiTreeChangeEvent) {
-                    onEvent(event)
-                }
+            LOG.info { "$fileChanged, $response; ${(response.status == GetStatusResponse.Status.CHANGED)}" }
+            fileChanged = (response.status == GetStatusResponse.Status.CHANGED)
 
-                override fun childRemoved(event: PsiTreeChangeEvent) {
-                    onEvent(event)
-                }
-
-                override fun childrenChanged(event: PsiTreeChangeEvent) {
-                    onEvent(event)
-                }
-            },
-            project
-        )
+            delay(2000)
+        }
     }
 
-    // TODO: return false if file is reverted to original state
     fun hasDevfileChanged(): Boolean = fileChanged
 
-    fun updatedDevfile(hasFileChanged: Boolean) {
-        fileChanged = hasFileChanged
+    override fun dispose() {
     }
 
     companion object {
         fun getInstance() = service<DevfileWatcher>()
+
         const val DEVFILE_PATTERN = "devfile.yaml"
+        private val LOG = getLogger<DevfileWatcher>()
     }
 }

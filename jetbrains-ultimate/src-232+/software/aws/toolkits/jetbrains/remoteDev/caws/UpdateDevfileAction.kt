@@ -78,10 +78,6 @@ class UpdateDevfileAction : AnAction() {
                         }
                     }
 
-                    override fun onSuccess() {
-                        DevfileWatcher.getInstance().updatedDevfile(hasFileChanged = false)
-                    }
-
                     override fun onThrowable(error: Throwable) {
                         throw IllegalStateException(error.message)
                     }

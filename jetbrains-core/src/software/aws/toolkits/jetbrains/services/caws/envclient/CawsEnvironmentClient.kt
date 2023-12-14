@@ -10,6 +10,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.util.text.nullize
+import org.apache.http.NoHttpResponseException
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
@@ -19,6 +20,7 @@ import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -58,8 +60,10 @@ class CawsEnvironmentClient(
         val httpRequest = HttpPost("$endpoint/devfile/create").also {
             it.entity = StringEntity(body, ContentType.APPLICATION_JSON)
         }
-        val response = execute(httpRequest)
-        return objectMapper.readValue(response.entity.content)
+
+        return execute(httpRequest).use { response ->
+            objectMapper.readValue(response.entity.content)
+        }
     }
 
     /**
@@ -95,18 +99,21 @@ class CawsEnvironmentClient(
      */
     fun getStatus(): GetStatusResponse {
         val request = HttpGet("$endpoint/status")
-        val response = execute(request)
-        return objectMapper.readValue(response.entity.content)
+        return execute(request).use { response ->
+            objectMapper.readValue(response.entity.content)
+        }
     }
 
     fun getActivity(): GetActivityResponse? = try {
         val request = HttpGet("$endpoint/activity")
-        val response = execute(request)
-        if (response.statusLine.statusCode == 400) {
-            LOG.error { "Inactivity tracking may not enabled" }
-            null
-        } else {
-            objectMapper.readValue<GetActivityResponse>(response.entity.content)
+
+        execute(request).use { response ->
+            if (response.statusLine.statusCode == 400) {
+                LOG.error { "Inactivity tracking may not enabled" }
+                null
+            } else {
+                objectMapper.readValue<GetActivityResponse>(response.entity.content)
+            }
         }
     } catch (e: Exception) {
         LOG.error(e) { "Couldn't parse response from /activity API" }
@@ -119,9 +126,21 @@ class CawsEnvironmentClient(
             val httpRequest = HttpPut("$endpoint/activity").also {
                 it.entity = StringEntity(body, ContentType.APPLICATION_JSON)
             }
-            val response = execute(httpRequest).use {}
+
+            execute(httpRequest).use {
+                // defensive in case they decide to actually start returning 200s
+                if (it.statusLine.statusCode != 200) {
+                    val response = objectMapper.readValue<Error>(it.entity.content)
+                    LOG.debug { "Wrote '$request' to /activity with error response: $response" }
+                } else {
+                    LOG.debug { "Wrote '$request' to /activity with response: ${it.entity.content.readAllBytes().decodeToString()}" }
+                }
+            }
+        } catch (e: NoHttpResponseException) {
+            // on success, env API closes connection with no response: org.apache.http.NoHttpResponseException: localhost:1339 failed to respond
+            LOG.debug { "Wrote '$request' to /activity with no response (likely success?)" }
         } catch (e: Exception) {
-            LOG.error(e) { "Couldn't execute  /activity API" }
+            LOG.error(e) { "Couldn't execute /activity API" }
         }
     }
 
