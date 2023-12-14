@@ -204,6 +204,7 @@ internal fun reauthConnection(project: Project?, connection: ToolkitConnection):
     return provider
 }
 
+@Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)

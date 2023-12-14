@@ -292,9 +292,7 @@ fun requestCredentialsForCodeCatalyst(
             GatewaySetupAuthenticationDialog(
                 project,
                 state = GatewaySetupAuthenticationDialogState().also {
-                    if (popupBuilderIdTab) {
-                        it.selectedTab.set(GatewaySetupAuthenticationTabs.BUILDER_ID)
-                    }
+                    it.selectedTab.set(GatewaySetupAuthenticationTabs.BUILDER_ID)
                 },
                 tabSettings = mapOf(
                     GatewaySetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(

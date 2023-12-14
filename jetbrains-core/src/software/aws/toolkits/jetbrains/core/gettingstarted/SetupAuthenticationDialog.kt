@@ -155,12 +155,18 @@ class SetupAuthenticationDialog(
     private val connectionInitiatedFromQChatPanel: Boolean = false
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
-    private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region, profileName = Optional.of(state.idcTabState::profileName)).build()
+    private val idcTab = IdcTabPanelBuilder(
+        startUrl = state.idcTabState::startUrl,
+        region = state.idcTabState::region,
+        profileName = Optional.of(state.idcTabState::profileName)
+    ).build()
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    private var attempts = 0
-    private var authType = CredentialSourceId.IamIdentityCenter
+    var attempts = 0
+        private set
+    var authType = CredentialSourceId.IamIdentityCenter
+        private set
 
     init {
         title = message("gettingstarted.setup.title")
@@ -477,13 +483,9 @@ class SetupAuthenticationDialog(
         private val LOG = getLogger<SetupAuthenticationDialog>()
     }
 
-    override fun attempts(): Int {
-        return attempts
-    }
+    override fun attempts() = attempts
 
-    override fun authType(): CredentialSourceId {
-        return authType
-    }
+    override fun authType() = authType
 }
 
 class BuilderIdTabPanelBuilder {

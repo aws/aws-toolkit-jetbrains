@@ -7,14 +7,8 @@ import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.BrowserLink
 import com.intellij.ui.components.JBTabbedPane
-import com.intellij.ui.dsl.builder.AlignX
-import com.intellij.ui.dsl.builder.bindItem
-import com.intellij.ui.dsl.builder.bindText
-import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
 import org.jetbrains.annotations.VisibleForTesting
@@ -26,11 +20,9 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.gettingstarted.SetupAuthenticationNotice.NoticeType
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
-import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 import java.awt.BorderLayout
-import java.util.Optional
 import javax.swing.Action
 import javax.swing.BorderFactory
 import javax.swing.JComponent
@@ -68,8 +60,10 @@ class GatewaySetupAuthenticationDialog(
     private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val wrappers = GatewaySetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    private var attempts = 0
-    private var authType = CredentialSourceId.IamIdentityCenter
+    var attempts = 0
+        private set
+    var authType = CredentialSourceId.IamIdentityCenter
+        private set
 
     init {
         title = message("gettingstarted.setup.title")
@@ -190,11 +184,7 @@ class GatewaySetupAuthenticationDialog(
     private fun selectedTab() = wrappers.entries.firstOrNull { (_, wrapper) -> wrapper == rootTabPane.selectedComponent }?.key
         ?: error("Could not determine selected tab")
 
-    override fun attempts(): Int {
-        return attempts
-    }
+    override fun attempts() = attempts
 
-    override fun authType(): CredentialSourceId {
-        return authType
-    }
+    override fun authType() = authType
 }

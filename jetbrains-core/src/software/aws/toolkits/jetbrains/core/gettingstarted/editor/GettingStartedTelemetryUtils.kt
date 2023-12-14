@@ -15,9 +15,8 @@ fun getConnectionCount(): Int {
 }
 
 fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
+    project ?: return emptySet()
     val enabledConnections = mutableSetOf<AuthFormId>()
-
-    if (project == null) return enabledConnections
 
     val explorerConnection = checkIamConnectionValidity(project)
     if (explorerConnection !is ActiveConnection.NotConnected) {
