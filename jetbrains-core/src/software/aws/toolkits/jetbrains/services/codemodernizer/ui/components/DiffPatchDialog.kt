@@ -17,8 +17,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransfo
 import software.aws.toolkits.telemetry.CodeTransformPatchViewerCancelSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 
-
-class DiffPatchDialog(project: Project,
+class DiffPatchDialog(
+    project: Project,
     callback: ApplyPatchExecutor<*>,
     executors: List<ApplyPatchExecutor<*>>,
     applyPatchMode: ApplyPatchMode,
@@ -30,7 +30,8 @@ class DiffPatchDialog(project: Project,
     externalCommitMessage: String? = null,
     useProjectRootAsPredefinedBase: Boolean,
     private val jobId: JobId,
-) : ApplyPatchDifferentiatedDialog(project,
+) : ApplyPatchDifferentiatedDialog(
+    project,
     callback,
     executors,
     applyPatchMode,
@@ -40,8 +41,8 @@ class DiffPatchDialog(project: Project,
     binaryShelvedPatches,
     preselectedChanges,
     externalCommitMessage,
-    useProjectRootAsPredefinedBase)
-{
+    useProjectRootAsPredefinedBase
+) {
     override fun doCancelAction() {
         super.doCancelAction()
         CodetransformTelemetry.vcsViewerCanceled(
