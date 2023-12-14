@@ -292,17 +292,18 @@ data class CodeModernizerSessionContext(
                     return null
                 }
             } catch (e: Exception) {
-                LOG.error(e) { e.message.toString() }
+                LOG.error { e.message.toString() }
 //                CodetransformTelemetry.mvnBuildFailed(
 //                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
 //                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
 //                    reason = e.message
 //                )
                 throw e
+            } finally {
+                // after the ide bundled maven building finished
+                // change the bottom window to transformation hub
+                showTransformationHub()
             }
-            // after the ide bundled maven building finished
-            // change the bottom window to transformation hub
-            showTransformationHub()
         }
 
         return destinationDir.toFile()
