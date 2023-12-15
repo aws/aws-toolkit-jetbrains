@@ -267,13 +267,13 @@ data class CodeModernizerSessionContext(
 
             // Create MavenRunnerParametersMavenRunnerParameters
             val mvnrunner = MavenRunner.getInstance(project)
-            val transfromMvnRunner = TransformMavenRunner(mvnrunner, project)
+            val transformMvnRunner = TransformMavenRunner(project)
             val mvnsettings = mvnrunner.settings
             var createdDependencies = TransformRunnable()
             try {
                 runInEdt {
                     try {
-                        transfromMvnRunner.run(params, mvnsettings, createdDependencies)
+                        transformMvnRunner.run(params, mvnsettings, createdDependencies)
                     } catch (e: Exception) {
                         createdDependencies.exitCode(-1)
                         LOG.error { e.message.toString() }

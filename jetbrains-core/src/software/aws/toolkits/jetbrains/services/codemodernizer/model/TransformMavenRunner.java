@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.maven.execution.MavenRunConfigurationType;
-import org.jetbrains.idea.maven.execution.MavenRunner;
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
 
