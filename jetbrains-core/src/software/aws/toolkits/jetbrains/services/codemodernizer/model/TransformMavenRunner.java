@@ -17,11 +17,9 @@ import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
 
 public class TransformMavenRunner {
 
-    private final MavenRunner mavenRunner;
     private final Project project;
 
-    public TransformMavenRunner(MavenRunner mavenRunner, final Project project) {
-        this.mavenRunner = mavenRunner;
+    public TransformMavenRunner(final Project project) {
         this.project = project;
     }
 

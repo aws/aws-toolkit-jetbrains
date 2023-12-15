@@ -15,7 +15,6 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
-import kotlinx.coroutines.delay
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import software.aws.toolkits.core.utils.createTemporaryZipFile
@@ -31,6 +30,7 @@ import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
+import java.lang.Thread.sleep
 import java.nio.file.FileVisitOption
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
@@ -91,7 +91,7 @@ data class CodeModernizerSessionContext(
         return excluded
     }
 
-    suspend fun createZipWithModuleFiles(): ZipCreationResult {
+    fun createZipWithModuleFiles(): ZipCreationResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val depDirectory = runMavenCommand(sourceFolder)
@@ -149,7 +149,7 @@ data class CodeModernizerSessionContext(
      * @description
      * this command is used to run the maven commmand which copies all the dependencies to a temp file which we will use to zip our own files to
      */
-    suspend fun runMavenCommand(sourceFolder: File): File? {
+    fun runMavenCommand(sourceFolder: File): File? {
         val currentTimestamp = System.currentTimeMillis()
         val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
         fun runCommand(mavenCommand: String): ProcessOutput {
@@ -272,11 +272,16 @@ data class CodeModernizerSessionContext(
             var createdDependencies = TransformRunnable()
             try {
                 runInEdt {
-                    transfromMvnRunner.run(params, mvnsettings, createdDependencies)
+                    try {
+                        transfromMvnRunner.run(params, mvnsettings, createdDependencies)
+                    } catch (e: Exception) {
+                        createdDependencies.exitCode(-1)
+                        LOG.error { e.message.toString() }
+                    }
                 }
                 while (createdDependencies.isComplete() == null) {
                     // waiting mavenrunner building
-                    delay(50)
+                    sleep(50)
                 }
 
                 if (createdDependencies.isComplete() == 0) {
