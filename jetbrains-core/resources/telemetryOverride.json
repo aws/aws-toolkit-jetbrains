@@ -45,6 +45,11 @@
             "description": "The id of the detector which produced the code scan issue"
         },
         {
+            "name": "ruleId",
+            "type": "string",
+            "description": "The id of the rule which produced the code scan issue"
+        },
+        {
             "name": "cwsprChatTriggerInteraction",
             "type": "string",
             "allowedValues": ["hotkeys", "click", "contextMenu"],
@@ -292,7 +297,8 @@
             "description": "Called when a code scan issue is hovered over",
             "metadata": [
                 { "type":  "findingId" },
-                { "type":  "detectorId" }
+                { "type":  "detectorId" },
+                { "type":  "ruleId", "required": false }
             ]
         },
         {
@@ -301,6 +307,7 @@
             "metadata": [
                 { "type":  "findingId" },
                 { "type":  "detectorId" },
+                { "type":  "ruleId", "required": false },
                 { "type":  "component" },
                 { "type":  "result" },
                 { "type":  "reason", "required": false }
