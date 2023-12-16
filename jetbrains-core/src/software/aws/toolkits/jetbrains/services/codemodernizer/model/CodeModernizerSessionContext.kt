@@ -274,13 +274,13 @@ data class CodeModernizerSessionContext(
                 runInEdt {
                     try {
                         transformMvnRunner.run(params, mvnsettings, createdDependencies)
-                    } catch (e: Exception) {
-                        createdDependencies.exitCode(Integer.MIN_VALUE) // to exit the while loop
-                        LOG.error { e.message.toString() }
+                    } catch (t: Throwable) {
+                        createdDependencies.exitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
+                        LOG.error { t.message.toString() }
                         CodetransformTelemetry.mvnBuildFailed(
                             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                             codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-                            reason = e.message
+                            reason = t.message
                         )
                     }
                 }
@@ -288,7 +288,6 @@ data class CodeModernizerSessionContext(
                     // waiting mavenrunner building
                     sleep(50)
                 }
-
                 if (createdDependencies.isComplete() == 0) {
                     LOG.warn { "IntelliJ bundled Maven executed successfully" }
                 } else if (createdDependencies.isComplete() != Integer.MIN_VALUE) {
@@ -299,6 +298,10 @@ data class CodeModernizerSessionContext(
                         codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
                         reason = error
                     )
+                    return null
+                } else {
+                    // when exit code is MIN_VALUE
+                    // return null
                     return null
                 }
             } catch (e: Exception) {
