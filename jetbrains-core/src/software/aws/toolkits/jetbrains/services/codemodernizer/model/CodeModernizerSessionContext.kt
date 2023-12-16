@@ -258,7 +258,7 @@ data class CodeModernizerSessionContext(
             commandlist.add(parentpom)
             val params = MavenRunnerParameters(
                 false,
-                project.basePath.toString(),
+                sourceFolder.absolutePath,
                 null,
                 commandlist,
                 explicitenabled,
@@ -269,14 +269,19 @@ data class CodeModernizerSessionContext(
             val mvnrunner = MavenRunner.getInstance(project)
             val transformMvnRunner = TransformMavenRunner(project)
             val mvnsettings = mvnrunner.settings
-            var createdDependencies = TransformRunnable()
+            val createdDependencies = TransformRunnable()
             try {
                 runInEdt {
                     try {
                         transformMvnRunner.run(params, mvnsettings, createdDependencies)
                     } catch (e: Exception) {
-                        createdDependencies.exitCode(-1)
+                        createdDependencies.exitCode(Integer.MIN_VALUE) // to exit the while loop
                         LOG.error { e.message.toString() }
+                        CodetransformTelemetry.mvnBuildFailed(
+                            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                            codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                            reason = e.message
+                        )
                     }
                 }
                 while (createdDependencies.isComplete() == null) {
@@ -286,7 +291,7 @@ data class CodeModernizerSessionContext(
 
                 if (createdDependencies.isComplete() == 0) {
                     LOG.warn { "IntelliJ bundled Maven executed successfully" }
-                } else {
+                } else if (createdDependencies.isComplete() != Integer.MIN_VALUE) {
                     val error = "The exitCode should be 0 while it was ${createdDependencies.isComplete()}"
                     LOG.error { error }
                     CodetransformTelemetry.mvnBuildFailed(
