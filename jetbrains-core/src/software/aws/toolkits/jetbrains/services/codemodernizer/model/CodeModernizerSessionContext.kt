@@ -343,7 +343,7 @@ data class CodeModernizerSessionContext(
         return dependencyfiles
     }
 
-    private fun showTransformationHub() = runInEdt {
+    fun showTransformationHub() = runInEdt {
         val appModernizerBottomWindow = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
             ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
         appModernizerBottomWindow.show()

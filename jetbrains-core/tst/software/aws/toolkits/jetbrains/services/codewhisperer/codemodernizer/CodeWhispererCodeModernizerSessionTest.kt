@@ -80,6 +80,22 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
+    fun `CodeModernizerSessionContext shows the transformation hub once ide maven finishes`() {
+        val module = projectRule.module
+        val fileText = "Morning"
+        projectRule.fixture.addFileToModule(module, "src/tmp.txt", fileText)
+
+        // get project.projectFile because project.projectFile can not be null
+        val roots = ModuleRootManager.getInstance(module).contentRoots
+        val root = roots[0]
+        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        runInEdtAndWait {
+            context.createZipWithModuleFiles().payload
+            verify(context, times(1)).showTransformationHub()
+        }
+    }
+
+    @Test
     fun `CodeModernizerSession can create zip with module files`() {
         val module = projectRule.module
         val fileText = "Morning"
