@@ -342,7 +342,6 @@ data class CodeModernizerSessionContext(
         CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
     }
 
-
     companion object {
         private val LOG = getLogger<CodeModernizerSessionContext>()
     }
