@@ -345,8 +345,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         private val logger = getLogger<TelemetryHelper>()
 
         fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null) {
-            //
-            print("why the fuck is this runnign still after being mocked")
             AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name)
         }
 

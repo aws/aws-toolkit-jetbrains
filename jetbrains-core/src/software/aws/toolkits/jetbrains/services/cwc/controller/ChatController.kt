@@ -92,8 +92,8 @@ class ChatController internal constructor(
         TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Clear)
     }
 
-    override suspend fun processHelpQuickAction(message: IncomingCwcMessage.Help, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processHelpQuickAction(message: IncomingCwcMessage.Help) {
+        val triggerId = UUID.randomUUID().toString()
 
         sendQuickActionMessage(triggerId, StaticPrompt.Help)
 
@@ -107,8 +107,8 @@ class ChatController internal constructor(
         TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Help)
     }
 
-    override suspend fun processTransformQuickAction(message: IncomingCwcMessage.Transform, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processTransformQuickAction(message: IncomingCwcMessage.Transform) {
+        val triggerId = UUID.randomUUID().toString()
         sendQuickActionMessage(triggerId, StaticPrompt.Transform)
         val manager = CodeModernizerManager.getInstance(context.project)
         val isActive = manager.isModernizationJobActive()
@@ -140,8 +140,8 @@ class ChatController internal constructor(
         TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Transform)
     }
 
-    override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
+        val triggerId = UUID.randomUUID().toString()
 
         handleChat(
             tabId = message.tabId,
@@ -164,8 +164,8 @@ class ChatController internal constructor(
         telemetryHelper.recordEnterFocusConversation(message.tabId)
     }
 
-    override suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked){
+        val triggerId = UUID.randomUUID().toString()
 
         val sessionInfo = getSessionInfo(message.tabId)
         val lastRequest = sessionInfo.history.lastOrNull()
@@ -247,8 +247,8 @@ class ChatController internal constructor(
     override suspend fun processAuthFollowUpClick(message: IncomingCwcMessage.AuthFollowUpWasClicked) {
         authController.handleAuth(context.project, message.authType)
     }
-    override suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction) {
+        val triggerId = UUID.randomUUID().toString()
 
         val context = contextExtractor.extractContextForTrigger(ExtractionTriggerType.OnboardingPageInteraction)
 
@@ -279,8 +279,8 @@ class ChatController internal constructor(
     }
 
     // JB specific (not in vscode)
-    override suspend fun processContextMenuCommand(message: ContextMenuActionMessage, testTriggerId: String?) {
-        val triggerId = testTriggerId ?: UUID.randomUUID().toString()
+    override suspend fun processContextMenuCommand(message: ContextMenuActionMessage) {
+        val triggerId = UUID.randomUUID().toString()
 
         // Extract context
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)

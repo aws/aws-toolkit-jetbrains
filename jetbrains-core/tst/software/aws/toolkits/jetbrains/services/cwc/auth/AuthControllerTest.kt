@@ -26,11 +26,14 @@ import software.aws.toolkits.telemetry.CwsprChatCommandType
 
 class AuthControllerTest {
 
-    private val mockProject: Project = mockk<Project>(relaxed = true)
+    private val mockProject = mockk<Project>(relaxed = true)
 
     @Before
     fun setUp() {
         mockkStatic("software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanelUtilsKt")
+
+        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns ActiveConnection.NotConnected
+        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns ActiveConnection.NotConnected
     }
 
     @After
@@ -41,8 +44,7 @@ class AuthControllerTest {
     @Test
     fun `NotConnected returns AuthNeededState`() {
         // Arrange
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns ActiveConnection.NotConnected
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns ActiveConnection.NotConnected
+        mockConnectionValidity()
 
         // Act
         val authController = AuthController()
@@ -56,8 +58,7 @@ class AuthControllerTest {
     @Test
     fun `NotConnected with connected CodeWhisperer returns MissingScope`() {
         // Arrange
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns ActiveConnection.NotConnected
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns mockk<ActiveConnection.ValidBearer>(relaxed = true)
+        mockConnectionValidity(cwConnection = mockk<ActiveConnection.ValidBearer>(relaxed=true))
 
         // Act
         val authController = AuthController()
@@ -71,8 +72,9 @@ class AuthControllerTest {
     @Test
     fun `ValidBearer returns null`() {
         // Arrange
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns mockk<ActiveConnection.ValidBearer>(relaxed = true)
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns ActiveConnection.NotConnected
+        mockConnectionValidity(
+            qConnection = mockk<ActiveConnection.ValidBearer>(relaxed=true),
+        )
 
         // Act
         val authController = AuthController()
@@ -85,8 +87,9 @@ class AuthControllerTest {
     @Test
     fun `ExpiredBearer returns AuthNeededState`() {
         // Arrange
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns mockk<ActiveConnection.ExpiredBearer>(relaxed = true)
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns ActiveConnection.NotConnected
+        mockConnectionValidity(
+            qConnection = mockk<ActiveConnection.ExpiredBearer>(relaxed=true),
+        )
 
         // Act
         val authController = AuthController()
@@ -100,8 +103,7 @@ class AuthControllerTest {
     @Test
     fun `ExpiredIam returns AuthNeededState`() {
         // Arrange
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns mockk<ActiveConnection.ExpiredIam>(relaxed = true)
-        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns ActiveConnection.NotConnected
+        mockConnectionValidity()
 
         // Act
         val authController = AuthController()
@@ -181,5 +183,13 @@ class AuthControllerTest {
         coVerify { runBlocking { reauthenticateWithQ(mockProject) } }
 
         verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Auth, testAuthFollowupType.name) }
+    }
+
+    private fun mockConnectionValidity(
+        qConnection: ActiveConnection = ActiveConnection.NotConnected,
+        cwConnection: ActiveConnection = ActiveConnection.NotConnected
+    ) {
+        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.Q) } returns qConnection
+        every { checkBearerConnectionValidity(any(), BearerTokenFeatureSet.CODEWHISPERER) } returns cwConnection
     }
 }

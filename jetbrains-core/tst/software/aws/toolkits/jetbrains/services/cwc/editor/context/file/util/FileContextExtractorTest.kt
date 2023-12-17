@@ -6,18 +6,16 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
-import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import io.mockk.unmockkStatic
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
-import junit.framework.TestCase.assertNull
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -30,23 +28,16 @@ import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 class FileContextExtractorTest {
 
     // Constructor parameters
-    private val mockFqnWebviewAdapter: FqnWebviewAdapter = mockk<FqnWebviewAdapter>(relaxed = true)
-    private val mockProject: Project = mockk<Project>(relaxed = true)
-    private val mockLanguageExtractor: LanguageExtractor = mockk<LanguageExtractor>(relaxed = true)
+    private val mockFqnWebviewAdapter = mockk<FqnWebviewAdapter>(relaxed = true)
+    private val mockProject = mockk<Project>(relaxed = true)
+    private val mockLanguageExtractor = mockk<LanguageExtractor>(relaxed = true)
 
-    private val mockEditor: Editor = mockk<Editor>(relaxed = true)
+    private val mockEditor = mockk<Editor>(relaxed = true)
 
-    /*
-    private lateinit var fileEditorManager: FileEditorManager
-    private lateinit var psiDocumentManager: PsiDocumentManager
-     */
-
-    private lateinit var fileContextExtractor: FileContextExtractor
+    private val fileContextExtractor = FileContextExtractor(mockFqnWebviewAdapter, mockProject, mockLanguageExtractor)
 
     @Before
     fun setUp() {
-        fileContextExtractor = FileContextExtractor(mockFqnWebviewAdapter, mockProject, mockLanguageExtractor)
-
         // Editor
         mockkStatic(FileEditorManager::class)
         every { FileEditorManager.getInstance(any()).selectedTextEditor } returns mockEditor
@@ -63,11 +54,7 @@ class FileContextExtractorTest {
 
     @After
     fun tearDown() {
-        clearMocks(
-            mockFqnWebviewAdapter,
-            mockProject,
-            mockLanguageExtractor,
-        )
+        unmockkAll()
     }
 
     @Test
@@ -80,7 +67,7 @@ class FileContextExtractorTest {
 
             val result = fileContextExtractor.extract()
 
-            assertNull(result)
+            assertThat(result).isNull()
         }
     }
 
@@ -107,9 +94,8 @@ class FileContextExtractorTest {
         }
 
         // Assert
-        assertNotNull(result)
-        assertEquals(testFileLanguage, result?.fileLanguage)
-        assertEquals(testFilePath, result?.filePath)
+        assertThat(result?.fileLanguage).isEqualTo(testFileLanguage)
+        assertThat(result?.filePath).isEqualTo(testFilePath)
 
         coVerify {
             MatchPolicyExtractor.extractMatchPolicyFromCurrentFile(
@@ -122,11 +108,4 @@ class FileContextExtractorTest {
 
         unmockkStatic(PsiDocumentManager::class)
     }
-
-    /*
-
-    override fun getTestDataPath(): String {
-        return "path/to/your/test/data"
-    }
-     */
 }

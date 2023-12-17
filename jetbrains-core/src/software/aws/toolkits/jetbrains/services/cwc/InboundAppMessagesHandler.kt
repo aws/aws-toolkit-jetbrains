@@ -12,10 +12,10 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
     processTriggerTabIDReceived
  */
 interface InboundAppMessagesHandler {
-    suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt, testTriggerId: String? = null)
+    suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt)
     suspend fun processTabWasRemoved(message: IncomingCwcMessage.TabRemoved)
     suspend fun processTabChanged(message: IncomingCwcMessage.TabChanged)
-    suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked, testTriggerId: String? = null)
+    suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked)
     suspend fun processCodeWasCopiedToClipboard(message: IncomingCwcMessage.CopyCodeToClipboard)
     suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition)
     suspend fun processStopResponseMessage(message: IncomingCwcMessage.StopResponse)
@@ -23,13 +23,13 @@ interface InboundAppMessagesHandler {
     suspend fun processChatItemFeedback(message: IncomingCwcMessage.ChatItemFeedback)
     suspend fun processUIFocus(message: IncomingCwcMessage.UIFocus)
     suspend fun processAuthFollowUpClick(message: IncomingCwcMessage.AuthFollowUpWasClicked)
-    suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction, testTriggerId: String? = null)
+    suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction)
 
     // JB specific (not in vscode)
     suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat)
-    suspend fun processHelpQuickAction(message: IncomingCwcMessage.Help, testTriggerId: String? = null)
-    suspend fun processTransformQuickAction(message: IncomingCwcMessage.Transform, testTriggerId: String? = null)
-    suspend fun processContextMenuCommand(message: ContextMenuActionMessage, testTriggerId: String? = null)
+    suspend fun processHelpQuickAction(message: IncomingCwcMessage.Help)
+    suspend fun processTransformQuickAction(message: IncomingCwcMessage.Transform)
+    suspend fun processContextMenuCommand(message: ContextMenuActionMessage)
 
     suspend fun processLinkClick(message: IncomingCwcMessage.ClickedLink)
 }

@@ -21,6 +21,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
@@ -73,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 import software.aws.toolkits.telemetry.CwsprChatCommandType
+import java.util.UUID
 
 class ChatControllerTest {
 
@@ -94,6 +96,8 @@ class ChatControllerTest {
 
     private lateinit var chatController: ChatController
 
+    private val testTriggerId = "testTriggerId"
+
     @Before
     fun setup() {
         context = AmazonQAppInitContext(
@@ -113,18 +117,14 @@ class ChatControllerTest {
             authController = authController,
             telemetryHelper = telemetryHelper,
         )
+
+        mockkStatic(UUID::class)
+        every { UUID.randomUUID().toString() } returns testTriggerId
     }
 
     @After
     fun tearDown() {
-        clearMocks(
-            project,
-            messagePublisher,
-            messagesFromUiToApp,
-            messageTypeRegistry,
-            fqnWebviewAdapter,
-            chatSessionStorage
-        )
+        unmockkAll()
     }
 
     @Test
@@ -155,8 +155,6 @@ class ChatControllerTest {
         mockkObject(TelemetryHelper.Companion) {
             every { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Help, any()) } returns Unit
 
-            val testTriggerId = "testTriggerId"
-
             // waitForTabId
             every { messagesFromUiToApp.flow } returns flowOf(
                 IncomingCwcMessage.TriggerTabIdReceived(testTriggerId, "expectedTabId")
@@ -166,7 +164,7 @@ class ChatControllerTest {
 
             // Act
             runBlocking {
-                chatController.processHelpQuickAction(message, testTriggerId)
+                chatController.processHelpQuickAction(message)
             }
 
             // Assert
@@ -212,7 +210,6 @@ class ChatControllerTest {
             mockkObject(TelemetryHelper.Companion) {
                 every { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Transform, any()) } returns Unit
 
-                val testTriggerId = "testTriggerId"
                 val testTabId = "testTabId"
                 val message = IncomingCwcMessage.Transform(testTabId)
 
@@ -226,7 +223,7 @@ class ChatControllerTest {
 
                 // Act
                 runBlocking {
-                    chatController.processTransformQuickAction(message, testTriggerId)
+                    chatController.processTransformQuickAction(message)
                 }
 
                 // Verify
@@ -255,8 +252,6 @@ class ChatControllerTest {
                 }
 
                 verify { TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Transform) }
-
-                unmockkStatic(ApplicationManager::class)
             }
         }
     }
@@ -268,7 +263,6 @@ class ChatControllerTest {
         val handlerMock = mockk<ChatPromptHandler>(relaxed = true)
         every { ChatPromptHandler.create(any()) } returns handlerMock
 
-        val testTriggerId = "testTriggerId"
         val testChatMessage = "testChatMessage"
         val testCommand = "testCommand"
         val testTabId = "testTabId"
@@ -297,7 +291,7 @@ class ChatControllerTest {
 
         runBlocking {
             // Act
-            chatController.processPromptChatMessage(testMessage, testTriggerId)
+            chatController.processPromptChatMessage(testMessage)
         }
 
         // Assert
@@ -357,8 +351,6 @@ class ChatControllerTest {
         val handlerMock = mockk<ChatPromptHandler>(relaxed = true)
         every { ChatPromptHandler.create(any()) } returns handlerMock
 
-        val testTriggerId = "testTriggerId"
-
         val testType = FollowUpType.ExplainInDetail
         val testPillText = "testPillText"
         val testPrompt = "testPrompt"
@@ -395,7 +387,7 @@ class ChatControllerTest {
 
         // Act
         runBlocking {
-            chatController.processFollowUpClick(testMessage, testTriggerId)
+            chatController.processFollowUpClick(testMessage)
         }
 
         // Assert
@@ -552,14 +544,6 @@ class ChatControllerTest {
         verify { mockEditor.document.createRangeMarker(testSelectionStart, testSelectionEnd, true) }
 
         coVerify { telemetryHelper.recordInteractWithMessage(match { it == testMessage }) }
-
-        // Cleanup
-        unmockkStatic(PsiDocumentManager::class)
-        unmockkStatic(ApplicationManager::class)
-        unmockkStatic(FileEditorManager::class)
-        unmockkStatic(ApplicationManager::class)
-        unmockkStatic(WriteCommandAction::class)
-        unmockkObject(TelemetryHelper.Companion)
     }
 
     @Test
@@ -649,7 +633,6 @@ class ChatControllerTest {
     @Test
     fun `processOnboardingPageInteraction handled`() {
         // Arrange
-        val testTriggerId = "testTriggerId"
 
         // mock context extractor
         val mockContextExtractor = mockk<ActiveFileContextExtractor>(relaxed = true)
@@ -668,7 +651,7 @@ class ChatControllerTest {
 
         runBlocking {
             // Act
-            chatController.processOnboardingPageInteraction(testMessage, testTriggerId)
+            chatController.processOnboardingPageInteraction(testMessage)
         }
 
         // Assert
@@ -709,8 +692,7 @@ class ChatControllerTest {
     }
 
     @Test
-    fun `processContextMenuCommand handles context menu command`() {
-        val testTriggerId = "testTriggerId"
+    fun `processContextMenuCommand sentToPrompt handles context menu command`() {
 
         // File context mock
         val mockFileContext = mockk<ActiveFileContext>(relaxed = true)
@@ -732,14 +714,14 @@ class ChatControllerTest {
 
         // Act
         runBlocking {
-            chatController.processContextMenuCommand(testMessage, testTriggerId)
+            chatController.processContextMenuCommand(testMessage)
         }
 
         // Assert
 
         val formattedCodeSelection = "\n```\n${testCodeSelection}\n```\n"
 
-        coEvery {
+        coVerify {
             messagePublisher.publish(
                 match {
                     it is EditorContextCommandMessage &&
@@ -749,10 +731,41 @@ class ChatControllerTest {
                 }
             )
         }
+    }
+
+    @Test
+    fun `processContextMenuCommand explain handles context menu command`() {
+
+        // File context mock
+        val mockFileContext = mockk<ActiveFileContext>(relaxed = true)
+        val testCodeSelection = "testCodeSelection"
+        every { mockFileContext.focusAreaContext?.codeSelection } returns testCodeSelection
+        coEvery { contextExtractor.extractContextForTrigger(any()) } returns mockFileContext
+
+        // waitForTabId
+        val testTabId = ChatController.NO_TAB_AVAILABLE
+        every { messagesFromUiToApp.flow } returns flowOf(
+            IncomingCwcMessage.TriggerTabIdReceived(testTriggerId, testTabId)
+        )
+
+        // Message
+        val testCommand = EditorContextCommand.Explain
+        val testMessage = ContextMenuActionMessage(
+            command = testCommand
+        )
+
+        // Act
+        runBlocking {
+            chatController.processContextMenuCommand(testMessage)
+        }
+
+        // Assert
+
+        val formattedCodeSelection = "\n```\n${testCodeSelection}\n```\n"
 
         val prompt = "${testMessage.command} the following part of my code for me: $formattedCodeSelection"
 
-        coEvery {
+        coVerify {
             messagePublisher.publish(
                 match {
                     it is EditorContextCommandMessage &&
@@ -786,9 +799,6 @@ class ChatControllerTest {
 
         // Assert
         verify { BrowserUtil.browse(testUrl) }
-        coVerify { telemetryHelper.recordInteractWithMessage(match { it == testMessage }) }
-
-        // Cleanup
-        unmockkStatic(BrowserUtil::class)
+        coVerify { telemetryHelper.recordInteractWithMessage(testMessage) }
     }
 }
