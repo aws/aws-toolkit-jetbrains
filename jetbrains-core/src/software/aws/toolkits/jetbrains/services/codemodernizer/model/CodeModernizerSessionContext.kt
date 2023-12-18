@@ -22,6 +22,8 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformRunnable
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -257,21 +259,21 @@ data class CodeModernizerSessionContext(
             commandlist.add(repolay)
             commandlist.add(pomcp)
             commandlist.add(parentpom)
-            val params = MavenRunnerParameters(
-                false,
-                sourceFolder.absolutePath,
-                null,
-                commandlist,
-                explicitenabled,
-                null
-            )
-
-            // Create MavenRunnerParametersMavenRunnerParameters
-            val mvnrunner = MavenRunner.getInstance(project)
-            val transformMvnRunner = TransformMavenRunner(project)
-            val mvnsettings = mvnrunner.settings
-            val createdDependencies = TransformRunnable()
             try {
+                val params = MavenRunnerParameters(
+                    false,
+                    sourceFolder.absolutePath,
+                    null,
+                    commandlist,
+                    explicitenabled,
+                    null
+                )
+
+                // Create MavenRunnerParametersMavenRunnerParameters
+                val mvnrunner = MavenRunner.getInstance(project)
+                val transformMvnRunner = TransformMavenRunner(project)
+                val mvnsettings = mvnrunner.settings
+                val createdDependencies = TransformRunnable()
                 runInEdt {
                     try {
                         transformMvnRunner.run(params, mvnsettings, createdDependencies)
@@ -305,12 +307,12 @@ data class CodeModernizerSessionContext(
                     // return null
                     return null
                 }
-            } catch (e: Exception) {
-                LOG.error { e.message.toString() }
+            } catch (t: Throwable) {
+                LOG.error { t.message.toString() }
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-                    reason = e.message
+                    reason = t.message
                 )
                 return null
             } finally {
