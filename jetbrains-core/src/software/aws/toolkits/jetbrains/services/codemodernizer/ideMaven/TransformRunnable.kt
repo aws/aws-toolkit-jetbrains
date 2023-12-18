@@ -11,10 +11,8 @@ class TransformRunnable : Runnable {
     }
 
     override fun run() {
-        //do nothing
+        // do nothing
     }
 
-    fun isComplete(): Int? {
-        return isComplete
-    }
+    fun isComplete(): Int? = isComplete
 }
