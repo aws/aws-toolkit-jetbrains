@@ -15,7 +15,7 @@ import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 
 class TransformMavenRunner(val project: Project?) {
 
-    fun run(parameters: MavenRunnerParameters?, settings: MavenRunnerSettings?, onComplete: TransformRunnable?) {
+    fun run(parameters: MavenRunnerParameters, settings: MavenRunnerSettings?, onComplete: TransformRunnable?) {
         FileDocumentManager.getInstance().saveAllDocuments()
         val callback = ProgramRunner.Callback { descriptor: RunContentDescriptor ->
             val handler = descriptor.processHandler ?: return@Callback
@@ -25,6 +25,6 @@ class TransformMavenRunner(val project: Project?) {
                 }
             })
         }
-        MavenRunConfigurationType.runConfiguration(project, parameters!!, null, settings, callback, false)
+        MavenRunConfigurationType.runConfiguration(project, parameters, null, settings, callback, false)
     }
 }
