@@ -155,7 +155,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
             false,
             message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
             InvalidTelemetryReason(
-                CodeTransformPreValidationError.NonSSOLogin
+                CodeTransformPreValidationError.NonSsoLogin
             )
         )
         assertEquals(expectedResult, result)
