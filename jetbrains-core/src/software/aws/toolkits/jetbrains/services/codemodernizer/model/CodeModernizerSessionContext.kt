@@ -238,6 +238,7 @@ data class CodeModernizerSessionContext(
                     reason = e.message
                 )
                 LOG.error(e) { e.message.toString() }
+                throw e
             }
         }
 
