@@ -32,8 +32,8 @@ data class SuggestedFollowUp(
 )
 
 data class Suggestion(
-    val url: String,
     val title: String,
+    val url: String,
     val body: String,
     val context: List<String>,
     val metadata: SuggestionMetadata?,
