@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDefaultExecutor
+import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.VirtualFile
@@ -22,11 +23,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.summary.CodeModernizerSummaryEditorProvider
-import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.DiffPatchDialog
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformApiNames
+import software.aws.toolkits.telemetry.CodeTransformPatchViewerCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.nio.file.Files
@@ -147,7 +148,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
      */
     internal fun displayDiffUsingPatch(patchFile: VirtualFile, jobId: JobId) {
         runInEdt {
-            val dialog = DiffPatchDialog(
+            val dialog = ApplyPatchDifferentiatedDialog(
                 project,
                 ApplyPatchDefaultExecutor(project),
                 listOf(ImportToShelfExecutor(project)),
@@ -160,10 +161,26 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 null,
                 null,
                 false,
-                jobId
             )
             dialog.isModal = true
-            dialog.showAndGet()
+
+            CodetransformTelemetry.vcsDiffViewerVisible(
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformJobId = jobId.id
+            )
+
+            if (dialog.showAndGet()) {
+                CodetransformTelemetry.vcsViewerSubmitted(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformJobId = jobId.id
+                )
+            } else {
+                CodetransformTelemetry.vcsViewerCanceled(
+                    codeTransformPatchViewerCancelSrcComponents = CodeTransformPatchViewerCancelSrcComponents.CancelButton,
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformJobId = jobId.id
+                )
+            }
         }
     }
 
