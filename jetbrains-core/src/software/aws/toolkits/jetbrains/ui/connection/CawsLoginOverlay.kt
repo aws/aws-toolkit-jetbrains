@@ -57,10 +57,8 @@ open class CawsLoginOverlay(
                     ApplicationManager.getApplication().executeOnPooledThread {
                         CodeCatalystCredentialManager.getInstance(project).promptAuth()
                     }
-                }.apply {
-                    applyToComponent {
-                        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-                    }
+                }.applyToComponent {
+                    putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                 }
             }
         }.andTransparent()
