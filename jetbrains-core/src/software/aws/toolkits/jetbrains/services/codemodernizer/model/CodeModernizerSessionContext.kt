@@ -154,15 +154,19 @@ data class CodeModernizerSessionContext(
     fun runMavenCommand(sourceFolder: File): File? {
         val currentTimestamp = System.currentTimeMillis()
         val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
+        val commandList = listOf(
+            "dependency:copy-dependencies",
+            "-DoutputDirectory=$destinationDir",
+            "-Dmdep.useRepositoryLayout=true",
+            "-Dmdep.copyPom=true",
+            "-Dmdep.addParentPoms=true"
+        )
         fun runCommand(mavenCommand: String): ProcessOutput {
-            val commandLine = GeneralCommandLine(
-                mavenCommand,
-                "dependency:copy-dependencies",
-                "-DoutputDirectory=$destinationDir",
-                "-Dmdep.useRepositoryLayout=true",
-                "-Dmdep.copyPom=true",
-                "-Dmdep.addParentPoms=true"
-            )
+            val command = buildList {
+                add(mavenCommand)
+                addAll(commandList)
+            }
+            val commandLine = GeneralCommandLine(command)
                 .withWorkDirectory(sourceFolder)
                 .withRedirectErrorStream(true)
             val output = ExecUtil.execAndGetOutput(commandLine)
@@ -248,19 +252,12 @@ data class CodeModernizerSessionContext(
         if (shouldTryMvnCommand) {
             LOG.warn { "Executing IntelliJ bundled Maven" }
             val explicitenabled = emptyList<String>()
-            val commandlist = buildList {
-                add("dependency:copy-dependencies")
-                add("-DoutputDirectory=$destinationDir")
-                add("-Dmdep.useRepositoryLayout=true")
-                add("-Dmdep.copyPom=true")
-                add("-Dmdep.addParentPoms=true")
-            }
             try {
                 val params = MavenRunnerParameters(
                     false,
                     sourceFolder.absolutePath,
                     null,
-                    commandlist,
+                    commandList,
                     explicitenabled,
                     null
                 )
