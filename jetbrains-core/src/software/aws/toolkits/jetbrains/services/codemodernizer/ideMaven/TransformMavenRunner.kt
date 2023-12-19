@@ -26,7 +26,7 @@ class TransformMavenRunner(val project: Project) {
             }
             handler.addProcessListener(object : ProcessAdapter() {
                 override fun processTerminated(event: ProcessEvent) {
-                    onComplete?.exitCode(event.exitCode)
+                    onComplete.exitCode(event.exitCode)
                 }
             })
         }
