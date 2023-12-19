@@ -247,18 +247,14 @@ data class CodeModernizerSessionContext(
         // 3. intellij-bundled maven runner
         if (shouldTryMvnCommand) {
             LOG.warn { "Executing IntelliJ bundled Maven" }
-            val goalcp = "dependency:copy-dependencies"
-            val outputDirectory = "-DoutputDirectory=$destinationDir"
-            val repolay = "-Dmdep.useRepositoryLayout=true"
-            val pomcp = "-Dmdep.copyPom=true"
-            val parentpom = "-Dmdep.addParentPoms=true"
-            val commandlist = mutableListOf<String>()
-            val explicitenabled = mutableListOf<String>()
-            commandlist.add(goalcp)
-            commandlist.add(outputDirectory)
-            commandlist.add(repolay)
-            commandlist.add(pomcp)
-            commandlist.add(parentpom)
+            val explicitenabled = emptyList<String>()
+            val commandlist = buildList {
+                add("dependency:copy-dependencies")
+                add("-DoutputDirectory=$destinationDir")
+                add("-Dmdep.useRepositoryLayout=true")
+                add("-Dmdep.copyPom=true")
+                add("-Dmdep.addParentPoms=true")
+            }
             try {
                 val params = MavenRunnerParameters(
                     false,
