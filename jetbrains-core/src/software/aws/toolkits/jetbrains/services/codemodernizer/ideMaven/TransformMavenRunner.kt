@@ -13,7 +13,7 @@ import org.jetbrains.idea.maven.execution.MavenRunConfigurationType
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 
-class TransformMavenRunner(val project: Project?) {
+class TransformMavenRunner(val project: Project) {
 
     fun run(parameters: MavenRunnerParameters, settings: MavenRunnerSettings?, onComplete: TransformRunnable?) {
         FileDocumentManager.getInstance().saveAllDocuments()
