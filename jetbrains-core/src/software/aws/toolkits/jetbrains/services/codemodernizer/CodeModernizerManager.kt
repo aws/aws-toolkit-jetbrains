@@ -18,7 +18,6 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.Job
@@ -44,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -65,9 +65,11 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
+import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.io.File
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
@@ -87,7 +89,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             Disposer.register(contentManager, it)
         }
     }
-    private val supportedBuildFileNames = listOf("pom.xml")
+    private val supportedBuildFileNames = listOf(MAVEN_CONFIGURATION_FILE_NAME)
     private val supportedJavaMappings = mapOf(
         JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
         JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
@@ -114,6 +116,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.RemoteRunProject
+                )
             )
         }
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
@@ -121,6 +126,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.NonSsoLogin
+                )
             )
         }
 
@@ -128,6 +136,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.NoPom
+                )
             )
         }
         val supportedModules = getSupportedModulesInProject().toSet()
@@ -136,20 +147,23 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
-                InvalidTelemetryReason("JDK", project.tryGetJdk().toString()),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.UnsupportedJavaVersion,
+                    project.tryGetJdk().toString()
+                )
             )
         }
-        val valid = getSupportedBuildFilesInProject().isNotEmpty()
-        return if (valid) {
-            CodetransformTelemetry.isVisibleToUser(
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId()
-            )
-            ValidationResult(true)
+        val validatedBuildFiles = getSupportedBuildFilesInProject()
+        return if (validatedBuildFiles.isNotEmpty()) {
+            ValidationResult(true, validatedBuildFiles = validatedBuildFiles)
         } else {
             ValidationResult(
                 false,
                 message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
-                if (isGradleProject(project)) InvalidTelemetryReason("Gradle") else InvalidTelemetryReason(),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.NonMavenProject,
+                    if (isGradleProject(project)) "Gradle build" else "other build"
+                )
             )
         }
     }
@@ -195,7 +209,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val validationResult = validate(project)
             runInEdt {
                 if (validationResult.valid) {
-                    runModernize()
+                    runModernize(validationResult.validatedBuildFiles) ?: isModernizationInProgress.set(false)
                 } else {
                     warnUnsupportedProject(validationResult.invalidReason)
                     isModernizationInProgress.set(false)
@@ -215,10 +229,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return
         }
         CodetransformTelemetry.isDoubleClickedToTriggerInvalidProject(
-            codeTransformProjectValidationError = validationResult.invalidTelemetryReason.additonalInfo,
+            codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             result = Result.Failed,
-            reason = validationResult.invalidTelemetryReason.category
+            reason = validationResult.invalidTelemetryReason.additonalInfo
         )
     }
 
@@ -232,13 +246,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun runModernize(): Job? {
+    fun runModernize(validatedBuildFiles: List<VirtualFile>): Job? {
         initStopParameters()
-        val customerSelection = getCustomerSelection() ?: return null
+        val customerSelection = getCustomerSelection(validatedBuildFiles) ?: return null
         CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
-            codeTransformConfigurationFilePath = customerSelection.configurationFile.name,
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId()
         )
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(customerSelection.configurationFile))
@@ -255,9 +268,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).currentJobStopTime = Instant.MIN
     }
 
-    fun getCustomerSelection(): CustomerSelection? = PreCodeTransformUserDialog(
+    fun getCustomerSelection(validatedBuildFiles: List<VirtualFile>): CustomerSelection? = PreCodeTransformUserDialog(
         project,
-        getSupportedBuildFilesInProject(),
+        validatedBuildFiles,
         supportedJavaMappings,
     ).create()
 
@@ -626,6 +639,29 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         managerState.flags.putAll(state.flags)
     }
 
+    private fun findBuildFiles(sourceFolder: File): List<File> {
+        /**
+         * For every dir, check if any supported build files (pom.xml etc) exists.
+         * If found store it and stop further recursion.
+         */
+        val buildFiles = mutableListOf<File>()
+        sourceFolder.walkTopDown()
+            .maxDepth(5)
+            .onEnter { currentDir ->
+                supportedBuildFileNames.forEach {
+                    val maybeSupportedFile = currentDir.resolve(MAVEN_CONFIGURATION_FILE_NAME)
+                    if (maybeSupportedFile.exists()) {
+                        buildFiles.add(maybeSupportedFile)
+                        return@onEnter false
+                    }
+                }
+                return@onEnter true
+            }.forEach {
+                // noop, collects the sequence
+            }
+        return buildFiles
+    }
+
     private fun getSupportedBuildFilesInProject(): List<VirtualFile> {
         /**
          * Strategy:
@@ -636,15 +672,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val probableProjectRoot = project.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
         val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
         probableContentRoots.add(probableProjectRoot) // dedupe
-        val detectedBuildFiles = probableContentRoots.filterNotNull().flatMap { root ->
-            VfsUtil.collectChildrenRecursively(root).filter { it.name in supportedBuildFileNames }
+        val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
+        val detectedBuildFiles = topLevelRoots.flatMap { root ->
+            findBuildFiles(root.toNioPath().toFile()).mapNotNull { it.path.toVirtualFile() }
         }
-
-        val topLevelBuildFiles = filterOnlyParentFiles(detectedBuildFiles)
 
         val supportedModules = getSupportedModulesInProject().toSet()
         val validProjectJdk = project.getSupportedJavaMappingsForProject(supportedJavaMappings).isNotEmpty()
-        return topLevelBuildFiles.filter {
+        return detectedBuildFiles.filter {
             val moduleOfFile = runReadAction { projectRootManager.fileIndex.getModuleForFile(it) }
             return@filter (moduleOfFile in supportedModules) || (moduleOfFile == null && validProjectJdk)
         }
