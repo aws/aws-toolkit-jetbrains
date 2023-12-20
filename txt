@@ -2,3 +2,4 @@ plugins {
     id("toolkit-git-secrets")
 }
 // AKIAXXXXXXXXXXXXXXXX
+// wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
