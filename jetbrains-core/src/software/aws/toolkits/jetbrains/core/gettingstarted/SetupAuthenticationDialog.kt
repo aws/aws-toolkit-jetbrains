@@ -137,8 +137,8 @@ enum class SourceOfEntry {
 }
 
 interface AuthenticationDialog {
-    fun attempts(): Int
-    fun authType(): CredentialSourceId
+    val attempts: Int
+    val authType: CredentialSourceId
 }
 
 class SetupAuthenticationDialog(
@@ -163,9 +163,9 @@ class SetupAuthenticationDialog(
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    var attempts = 0
+    override var attempts = 0
         private set
-    var authType = CredentialSourceId.IamIdentityCenter
+    override var authType = CredentialSourceId.IamIdentityCenter
         private set
 
     init {
@@ -482,10 +482,6 @@ class SetupAuthenticationDialog(
     companion object {
         private val LOG = getLogger<SetupAuthenticationDialog>()
     }
-
-    override fun attempts() = attempts
-
-    override fun authType() = authType
 }
 
 class BuilderIdTabPanelBuilder {

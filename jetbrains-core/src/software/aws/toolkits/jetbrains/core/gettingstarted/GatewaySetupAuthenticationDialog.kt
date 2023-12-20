@@ -15,6 +15,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.gettingstarted.SetupAuthenticationNotice.NoticeType
@@ -22,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.FeatureId
 import java.awt.BorderLayout
 import javax.swing.Action
 import javax.swing.BorderFactory
@@ -55,14 +57,15 @@ class GatewaySetupAuthenticationDialog(
     private val state: GatewaySetupAuthenticationDialogState = GatewaySetupAuthenticationDialogState(),
     private val tabSettings: Map<GatewaySetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
     private val promptForIdcPermissionSet: Boolean = false,
+    private val featureId: FeatureId,
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val wrappers = GatewaySetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    var attempts = 0
+    override var attempts = 0
         private set
-    var authType = CredentialSourceId.IamIdentityCenter
+    override var authType = CredentialSourceId.IamIdentityCenter
         private set
 
     init {
@@ -173,7 +176,7 @@ class GatewaySetupAuthenticationDialog(
             }
 
             GatewaySetupAuthenticationTabs.BUILDER_ID -> {
-                authType = CredentialSourceId.IamIdentityCenter
+                authType = CredentialSourceId.AwsId
                 loginSso(project, SONO_URL, SONO_REGION, scopes)
             }
         }
@@ -183,8 +186,4 @@ class GatewaySetupAuthenticationDialog(
 
     private fun selectedTab() = wrappers.entries.firstOrNull { (_, wrapper) -> wrapper == rootTabPane.selectedComponent }?.key
         ?: error("Could not determine selected tab")
-
-    override fun attempts() = attempts
-
-    override fun authType() = authType
 }
