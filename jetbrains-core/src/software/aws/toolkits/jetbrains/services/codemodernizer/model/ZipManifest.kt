@@ -9,5 +9,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.ZIP_SOURCES_PATH
 data class ZipManifest(
     val sourcesRoot: String = ZIP_SOURCES_PATH,
     val dependenciesRoot: String? = null,
-    val version: String = UPLOAD_ZIP_MANIFEST_VERSION.toString()
+    val version: String = UPLOAD_ZIP_MANIFEST_VERSION.toString(),
+    val supportPatching: Boolean = true
 )
