@@ -1,7 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import org.eclipse.jgit.api.Git
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
 import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
@@ -15,7 +14,6 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.isCi
-import java.io.IOException
 
 val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
@@ -59,6 +57,11 @@ configurations {
         exclude(group = "org.jetbrains.kotlinx")
 
         // Exclude dependencies we don't use to make plugin smaller
+        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
+    }
+
+    testRuntimeClasspath {
+        // Conflicts with CRT in test classpath
         exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
 
@@ -122,7 +125,7 @@ tasks.withType<PatchPluginXmlTask>().all {
 if (!project.isCi()){
     val buildMetadata = buildMetadata()
     tasks.withType<PatchPluginXmlTask>().all {
-        version.set(intellij.version.map { "$it+$buildMetadata" })
+        version.set("${project.version}+$buildMetadata")
     }
 
     tasks.buildPlugin {
@@ -155,6 +158,7 @@ tasks.withType<Test>().all {
     // FIX_WHEN_MIN_IS_221: log4j 1.2 removed in 221
     systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
+    systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
 
     jvmArgs(openedPackages)
 
@@ -169,6 +173,7 @@ tasks.runIde {
     systemProperty("aws.toolkit.developerMode", true)
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
     systemProperty("memory.snapshots.path", project.rootDir)
+    systemProperty("idea.auto.reload.plugins", false)
 
     val alternativeIde = providers.environmentVariable("ALTERNATIVE_IDE")
     if (alternativeIde.isPresent) {

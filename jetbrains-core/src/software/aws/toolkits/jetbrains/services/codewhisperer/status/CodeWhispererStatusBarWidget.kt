@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.status
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.DataManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -13,7 +14,12 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.impl.status.EditorBasedWidget
 import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererNodeActionGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
@@ -44,6 +50,24 @@ class CodeWhispererStatusBarWidget(project: Project) :
                 }
             }
         )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            CodeWhispererCustomizationListener.TOPIC,
+            object : CodeWhispererCustomizationListener {
+                override fun refreshUi() {
+                    statusBar.updateWidget(ID)
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            ToolkitConnectionManagerListener.TOPIC,
+            object : ToolkitConnectionManagerListener {
+                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    statusBar.updateWidget(ID)
+                }
+            }
+        )
     }
 
     override fun ID(): String = ID
@@ -58,10 +82,22 @@ class CodeWhispererStatusBarWidget(project: Project) :
         if (isCodeWhispererExpired(project)) {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else {
-            null
+            JBPopupFactory.getInstance().createActionGroupPopup(
+                "CodeWhisperer",
+                CodeWhispererNodeActionGroup(),
+                DataManager.getInstance().getDataContext(myStatusBar?.component),
+                JBPopupFactory.ActionSelectionAid.MNEMONICS,
+                false
+            )
         }
 
-    override fun getSelectedValue(): String = message("codewhisperer.statusbar.display_name")
+    override fun getSelectedValue(): String = CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
+        if (it == null) {
+            message("codewhisperer.statusbar.display_name")
+        } else {
+            "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+        }
+    }
 
     override fun getIcon(): Icon =
         if (isCodeWhispererExpired(project)) {
@@ -69,7 +105,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
             AnimatedIcon.Default()
         } else {
-            AllIcons.Actions.Commit
+            AllIcons.General.InspectionsOK
         }
 
     companion object {

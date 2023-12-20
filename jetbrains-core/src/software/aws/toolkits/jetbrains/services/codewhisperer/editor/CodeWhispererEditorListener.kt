@@ -24,10 +24,12 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                 // If language is supported, install document listener for CodeWhisperer service
                 editor.document.addDocumentListener(
                     object : BulkAwareDocumentListener {
+                        // TODO: Track only deletion changes within the current 5-min interval which will give
+                        // the most accurate code percentage data.
                         override fun documentChanged(event: DocumentEvent) {
                             if (!isCodeWhispererEnabled(project)) return
                             CodeWhispererInvocationStatus.getInstance().documentChanged()
-                            CodeWhispererCodeCoverageTracker.getInstance(language).apply {
+                            CodeWhispererCodeCoverageTracker.getInstance(project, language).apply {
                                 activateTrackerIfNotActive()
                                 documentChanged(event)
                             }

@@ -15,6 +15,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.resources.message
@@ -241,16 +242,13 @@ class ConnectionSettingsMenuBuilder private constructor() {
             addAll(
                 object : DumbAwareAction(message("credentials.individual_identity.reconnect")) {
                     override fun actionPerformed(e: AnActionEvent) {
-                        reauthProviderIfNeeded(e.project, value)
+                        reauthConnectionIfNeeded(e.project, value)
+
+                        ToolkitConnectionManager.getInstance(e.project).switchConnection(value)
                     }
                 },
 
-                object : DumbAwareAction(message("credentials.individual_identity.signout")) {
-                    override fun actionPerformed(e: AnActionEvent) {
-                        val settings = identitySelectionSettings as? ActionsIdentitySelectionSettings
-                        logoutFromSsoConnection(settings?.project, value)
-                    }
-                }
+                SsoLogoutAction(value)
             )
         }
     }

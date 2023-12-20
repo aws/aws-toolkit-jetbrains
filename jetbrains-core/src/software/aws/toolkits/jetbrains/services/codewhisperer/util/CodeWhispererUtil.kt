@@ -6,20 +6,24 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.yield
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
+import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLoginLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererSsoLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.ConnectWithAwsToContinueActionError
@@ -28,13 +32,42 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowA
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.DoNotShowAgainActionWarn
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
+import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
+import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
+
+fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        calculateIfIamIdentityCenterConnection(it, calculationTask)
+    }
+
+fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
+    if (connection.isSono()) {
+        null
+    } else {
+        calculationTask(connection)
+    }
+
+// Controls the condition to send telemetry event to CodeWhisperer service, currently:
+// 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
+// 2. It will be sent for IdC users, regardless of telemetry optout status.
+fun runIfIdcConnectionOrTelemetryEnabled(project: Project, callback: (connection: ToolkitConnection) -> Unit) =
+    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
+        runIfIdcConnectionOrTelemetryEnabled(it, callback)
+    }
+
+fun runIfIdcConnectionOrTelemetryEnabled(connection: ToolkitConnection, callback: (connection: ToolkitConnection) -> Unit) {
+    if (connection.isSono() && !isTelemetryEnabled()) return
+    callback(connection)
+}
 
 fun VirtualFile.content(): String = VfsUtil.loadText(this)
 
@@ -114,7 +147,7 @@ object CodeWhispererUtil {
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
 
         return when {
-            content.isEmpty() -> CodewhispererCompletionType.Unknown
+            content.isEmpty() -> CodewhispererCompletionType.Line
             nonBlankLines > 1 -> CodewhispererCompletionType.Block
             else -> CodewhispererCompletionType.Line
         }
@@ -164,18 +197,6 @@ object CodeWhispererUtil {
         listOf(CodeWhispererSsoLearnMoreAction(), ConnectWithAwsToContinueActionError(), DoNotShowAgainActionError())
     )
 
-    fun isAccessTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
-        val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NEEDS_REFRESH
-    }
-
-    fun isRefreshTokenExpired(project: Project): Boolean {
-        val tokenProvider = tokenProvider(project) ?: return false
-        val state = tokenProvider.state()
-        return state == BearerTokenAuthState.NOT_AUTHENTICATED
-    }
-
     // This will be called only when there's a CW connection, but it has expired(either accessToken or refreshToken)
     // 1. If connection is expired, try to refresh
     // 2. If not able to refresh, requesting re-login by showing a notification
@@ -185,12 +206,14 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (CodeWhispererService.hasReAuthPromptBeenShown()) return false
         if (!isCodeWhispererExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
-        return maybeReauthProviderIfNeeded(project, tokenProvider) {
+        return maybeReauthProviderIfNeeded(project, tokenProvider, isBuilderId = tokenConnection(project).isSono()) {
             runInEdt {
-                notifyConnectionExpiredRequestReauth(project)
+                project.refreshCwQTree()
+                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                    notifyConnectionExpiredRequestReauth(project)
+                }
                 if (!isPluginStarting) {
                     CodeWhispererService.markReAuthPromptShown()
                 }
@@ -225,22 +248,41 @@ object CodeWhispererUtil {
         return connection.startUrl
     }
 
-    private fun tokenProvider(project: Project) = (
+    private fun tokenConnection(project: Project) = (
         ToolkitConnectionManager
             .getInstance(project)
             .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
         )
-        ?.getConnectionSettings()
-        ?.tokenProvider
-        ?.delegate as? BearerTokenProvider
+
+    private fun tokenProvider(project: Project) =
+        tokenConnection(project)
+            ?.getConnectionSettings()
+            ?.tokenProvider
+            ?.delegate as? BearerTokenProvider
 
     fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         ApplicationManager.getApplication().executeOnPooledThread {
-            loginSso(project, connection.startUrl, connection.region, connection.scopes)
+            reauthConnectionIfNeeded(project, connection)
         }
     }
+
+    // We want to know if a specific trigger happens in the Getting Started page examples files.
+    // We use the current file name to know this info. If file name doesn't match any of the below, we will assume
+    // that it's coming from a normal file and return null.
+    fun getGettingStartedTaskType(editor: Editor): CodewhispererGettingStartedTask? {
+        if (ApplicationManager.getApplication().isUnitTestMode) return null
+        val filename = (editor as EditorImpl).virtualFile?.name ?: return null
+        return taskTypeToFilename.filter { filename.startsWith(it.value) }.keys.firstOrNull()
+    }
+
+    fun getTelemetryOptOutPreference() =
+        if (AwsSettings.getInstance().isTelemetryEnabled) {
+            OptOutPreference.OPTIN
+        } else {
+            OptOutPreference.OPTOUT
+        }
 }
 
 enum class CaretMovement {

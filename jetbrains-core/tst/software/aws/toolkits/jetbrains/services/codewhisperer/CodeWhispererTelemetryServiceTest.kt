@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.editor.VisualPosition
-import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
@@ -18,47 +16,38 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
-import software.amazon.awssdk.services.codewhispererruntime.model.Import
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
+import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
+import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupStates
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
-import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.time.Duration
 import kotlin.random.Random
 
@@ -84,6 +73,7 @@ class CodeWhispererTelemetryServiceTest {
     private lateinit var sut: CodeWhispererTelemetryService
     private lateinit var telemetryServiceSpy: TelemetryService
     private lateinit var batcher: TelemetryBatcher
+    private lateinit var mockClient: CodeWhispererClientAdaptor
 
     @Before
     fun setup() {
@@ -105,6 +95,16 @@ class CodeWhispererTelemetryServiceTest {
             )
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, groupSettings, disposableRule.disposable)
+
+        mockClient = spy(CodeWhispererClientAdaptor.getInstance(projectRule.project))
+        mockClient.stub {
+            onGeneric {
+                sendUserTriggerDecisionTelemetry(any(), any(), any(), any(), any(), any(), any())
+            }.doAnswer {
+                mock<SendTelemetryEventResponse>()
+            }
+        }
+        projectRule.project.replaceService(CodeWhispererClientAdaptor::class.java, mockClient, disposableRule.disposable)
     }
 
     @After
@@ -237,12 +237,24 @@ class CodeWhispererTelemetryServiceTest {
         val recommendationContext = aRecommendationContext()
         val popupShownDuration = Duration.ofSeconds(Random.nextLong(0, 30))
         val suggestionState = CodewhispererSuggestionState.Reject
+        val suggestionReferenceCount = Random.nextInt(2)
+        val lineCount = Random.nextInt(0, 100)
+        val charCount = Random.nextInt(0, 100)
 
         val expectedTotalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
             grandTotal + detail.recommendation.mostRelevantMissingImports().size
         }
 
-        sut.sendUserTriggerDecisionEvent(requestContext, responseContext, recommendationContext, suggestionState, popupShownDuration)
+        sut.sendUserTriggerDecisionEvent(
+            requestContext,
+            responseContext,
+            recommendationContext,
+            suggestionState,
+            popupShownDuration,
+            suggestionReferenceCount,
+            lineCount,
+            charCount
+        )
 
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeastOnce()).enqueue(capture())
@@ -252,7 +264,7 @@ class CodeWhispererTelemetryServiceTest {
                 1,
                 "codewhispererSessionId" to responseContext.sessionId,
                 "codewhispererFirstRequestId" to requestContext.latencyContext.firstRequestId,
-                "codewhispererCompletionType" to CodewhispererCompletionType.Line,
+                "codewhispererCompletionType" to recommendationContext.details[0].completionType,
                 "codewhispererLanguage" to requestContext.fileContextInfo.programmingLanguage.toTelemetryType(),
                 "codewhispererTriggerType" to requestContext.triggerTypeInfo.triggerType,
                 "codewhispererAutomatedTriggerType" to requestContext.triggerTypeInfo.automatedTriggerType.telemetryType,
@@ -273,14 +285,15 @@ class CodeWhispererTelemetryServiceTest {
                 "codewhispererUserGroup" to "Control",
                 "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                 "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
-                "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength
+                "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
+                "codewhispererCharactersAccepted" to charCount
             )
         }
     }
 
     @Test
     fun `sendUserDecisionEventForAll will send userDecision event for all suggestions`() {
-        doNothing().whenever(sut).sendUserTriggerDecisionEvent(any(), any(), any(), any(), any())
+        doNothing().whenever(sut).sendUserTriggerDecisionEvent(any(), any(), any(), any(), any(), any(), any(), any())
         val eventCount = mutableMapOf<CodewhispererSuggestionState, Int>()
         var totalEventCount = 0
         val requestContext = aRequestContext(projectRule.project)
@@ -425,182 +438,78 @@ class CodeWhispererTelemetryServiceTest {
         )
         assertThat(decisionQueue).hasSize(3)
     }
-}
 
-// TODO: move these to testUtil
-fun aRequestContext(project: Project, myFileContextInfo: FileContextInfo? = null, mySupplementalContextInfo: SupplementalContextInfo? = null): RequestContext {
-    val triggerType = listOf(CodewhispererTriggerType.AutoTrigger, CodewhispererTriggerType.OnDemand).random()
-    val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {
-        listOf(
-            CodeWhispererAutomatedTriggerType.IdleTime(),
-            CodeWhispererAutomatedTriggerType.Enter(),
-            CodeWhispererAutomatedTriggerType.SpecialChar('a'),
-            CodeWhispererAutomatedTriggerType.IntelliSense()
-        ).random()
-    } else {
-        CodeWhispererAutomatedTriggerType.Unknown()
-    }
-
-    return RequestContext(
-        project,
-        mock(),
-        TriggerTypeInfo(triggerType, automatedTriggerType),
-        CaretPosition(Random.nextInt(), Random.nextInt()),
-        fileContextInfo = myFileContextInfo ?: aFileContextInfo(),
-        supplementalContext = mySupplementalContextInfo ?: aSupplementalContextInfo(),
-        null,
-        LatencyContext(
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextDouble(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            aString()
+    private fun testSendTelemetryEventWithDifferentConfigsHelper(isProTier: Boolean, isTelemetryEnabled: Boolean) {
+        val mockStatesManager = mock<CodeWhispererExplorerActionManager>()
+        ApplicationManager.getApplication().replaceService(
+            CodeWhispererExplorerActionManager::class.java,
+            mockStatesManager,
+            disposableRule.disposable
         )
-    )
-}
 
-fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? = null, myLatency: Long? = null): SupplementalContextInfo {
-    val contents = mutableListOf<Chunk>()
-    val numberOfContent = Random.nextInt(1, 4)
-    repeat(numberOfContent) {
-        contents.add(
-            Chunk(
-                content = aString(),
-                path = aString(),
+        val mockSsoConnection = mock<LegacyManagedBearerSsoConnection> {
+            on { this.startUrl } doReturn if (isProTier) "fake sso url" else SONO_URL
+        }
+
+        projectRule.project.replaceService(
+            ToolkitConnectionManager::class.java,
+            mock { on { activeConnectionForFeature(eq(CodeWhispererConnection.getInstance())) } doReturn mockSsoConnection },
+            disposableRule.disposable
+        )
+        AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabled
+
+        val expectedRequestContext = aRequestContext(projectRule.project)
+        val expectedResponseContext = aResponseContext()
+        val expectedRecommendationContext = aRecommendationContext()
+        val expectedSuggestionState = aSuggestionState()
+        val expectedDuration = Duration.ofSeconds(1)
+        val expectedSuggestionReferenceCount = 1
+        val expectedGeneratedLineCount = 50
+        val expectedCharCount = 100
+        val expectedCompletionType = expectedRecommendationContext.details[0].completionType
+        sut.sendUserTriggerDecisionEvent(
+            expectedRequestContext,
+            expectedResponseContext,
+            expectedRecommendationContext,
+            expectedSuggestionState,
+            expectedDuration,
+            expectedSuggestionReferenceCount,
+            expectedGeneratedLineCount,
+            expectedCharCount
+        )
+
+        if (isProTier || isTelemetryEnabled) {
+            verify(mockClient).sendUserTriggerDecisionTelemetry(
+                eq(expectedRequestContext),
+                eq(expectedResponseContext),
+                eq(expectedCompletionType),
+                eq(expectedSuggestionState),
+                eq(expectedSuggestionReferenceCount),
+                eq(expectedGeneratedLineCount),
+                eq(expectedRecommendationContext.details.size),
             )
-        )
-    }
-
-    val isUtg = Random.nextBoolean()
-    val latency = Random.nextLong(from = 0L, until = 100L)
-
-    return SupplementalContextInfo(
-        isUtg = myIsUtg ?: isUtg,
-        latency = myLatency ?: latency,
-        contents = myContents ?: contents,
-        targetFileName = aString()
-    )
-}
-
-fun aRecommendationContext(): RecommendationContext {
-    val details = mutableListOf<DetailContext>()
-    val size = Random.nextInt(1, 5)
-    for (i in 1..size) {
-        details.add(
-            DetailContext(
-                aString(),
-                aCompletion(),
-                aCompletion(),
-                listOf(true, false).random(),
-                listOf(true, false).random(),
-                aString(),
-                CodewhispererCompletionType.Line
-            )
-        )
-    }
-
-    return RecommendationContext(
-        details,
-        aString(),
-        aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
-    )
-}
-
-/**
- * util to generate a RecommendationContext and a SessionContext given expected decisions
- */
-fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggestionState>): Pair<RecommendationContext, SessionContext> {
-    val table = CodewhispererSuggestionState.values().associateWith { 0 }.toMutableMap()
-    decisions.forEach {
-        table[it]?.let { curCount -> table[it] = 1 + curCount }
-    }
-
-    val details = mutableListOf<DetailContext>()
-    decisions.forEach { decision ->
-        val toAdd = if (decision == CodewhispererSuggestionState.Empty) {
-            val completion = aCompletion("", true, 0, 0)
-            DetailContext(aString(), completion, completion, Random.nextBoolean(), Random.nextBoolean(), aString(), CodewhispererCompletionType.Unknown)
-        } else if (decision == CodewhispererSuggestionState.Discard) {
-            val completion = aCompletion()
-            DetailContext(aString(), completion, completion, true, Random.nextBoolean(), aString(), CodewhispererCompletionType.Unknown)
         } else {
-            val completion = aCompletion()
-            DetailContext(aString(), completion, completion, false, Random.nextBoolean(), aString(), CodewhispererCompletionType.Unknown)
-        }
-
-        details.add(toAdd)
-    }
-
-    val recommendationContext = RecommendationContext(
-        details,
-        aString(),
-        aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
-    )
-
-    val selectedIndex = decisions.indexOfFirst { it == CodewhispererSuggestionState.Accept }.let {
-        if (it != -1) {
-            it
-        } else {
-            0
+            verifyNoInteractions(mockClient)
         }
     }
 
-    val seen = mutableSetOf<Int>()
-    decisions.forEachIndexed { index, decision ->
-        if (decision != CodewhispererSuggestionState.Unseen) {
-            seen.add(index)
-        }
+    @Test
+    fun `should invoke sendTelemetryEvent if opt out telemetry, for SSO users`() {
+        testSendTelemetryEventWithDifferentConfigsHelper(isProTier = true, isTelemetryEnabled = false)
     }
 
-    val sessionContext = SessionContext(
-        selectedIndex = selectedIndex,
-        seen = seen
-    )
-    return recommendationContext to sessionContext
-}
-
-fun aCompletion(content: String? = null, isEmpty: Boolean = false, referenceCount: Int? = null, importCount: Int? = null): Completion {
-    val myReferenceCount = referenceCount ?: Random.nextInt(0, 4)
-    val myImportCount = importCount ?: Random.nextInt(0, 4)
-
-    val references = List(myReferenceCount) {
-        Reference.builder()
-            .licenseName(aString())
-            .build()
+    @Test
+    fun `should not invoke sendTelemetryEvent if opt out telemetry, for Builder ID users`() {
+        testSendTelemetryEventWithDifferentConfigsHelper(isProTier = false, isTelemetryEnabled = false)
     }
 
-    val imports = List(myImportCount) {
-        Import.builder()
-            .statement(aString())
-            .build()
+    @Test
+    fun `should invoke sendTelemetryEvent if opt in telemetry, for SSO users`() {
+        testSendTelemetryEventWithDifferentConfigsHelper(isProTier = true, isTelemetryEnabled = true)
     }
 
-    return Completion.builder()
-        .content(content ?: if (!isEmpty) aString() else "")
-        .references(references)
-        .mostRelevantMissingImports(imports)
-        .build()
-}
-
-fun aResponseContext(): ResponseContext = ResponseContext(aString())
-
-fun aFileContextInfo(language: CodeWhispererProgrammingLanguage? = null): FileContextInfo {
-    val caretContextInfo = CaretContext(aString(), aString(), aString())
-    val fileName = aString()
-
-    val programmingLanguage = language ?: listOf(
-        CodeWhispererPython.INSTANCE,
-        CodeWhispererJava.INSTANCE
-    ).random()
-
-    return FileContextInfo(caretContextInfo, fileName, programmingLanguage)
+    @Test
+    fun `should invoke sendTelemetryEvent if opt in telemetry, for Builder ID users`() {
+        testSendTelemetryEventWithDifferentConfigsHelper(isProTier = false, isTelemetryEnabled = true)
+    }
 }

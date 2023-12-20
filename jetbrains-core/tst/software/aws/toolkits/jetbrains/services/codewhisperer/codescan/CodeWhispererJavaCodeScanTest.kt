@@ -17,17 +17,17 @@ import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.core.compileProjectAndWait
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.JavaCodeScanSessionConfig
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
@@ -85,7 +85,7 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase(HeavyJavaCod
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        assertThat(sessionConfigSpy.getSourceFilesUnderProjectRoot(utilsJava).size).isEqualTo(3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, utilsJava, 3)
     }
 
     @Test
@@ -99,31 +99,17 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase(HeavyJavaCod
 
     @Test
     fun `test includeDependencies()`() {
-        val payloadMetadata = sessionConfigSpy.includeDependencies()
-        assertNotNull(payloadMetadata)
-        assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        val (includedSourceFiles, srcPayloadSize, totalLines, buildPaths) = payloadMetadata
-        assertThat(includedSourceFiles).hasSize(3)
-        assertThat(srcPayloadSize).isEqualTo(totalSize)
-        assertThat(totalLines).isEqualTo(this.totalLines)
-        assertThat(buildPaths).hasSize(3)
+        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 3)
     }
 
     @Test
     fun `test getTotalProjectSizeInBytes()`() {
-        runBlocking {
-            assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
-        }
+        getTotalProjectSizeInBytes(sessionConfigSpy, this.totalSize)
     }
 
     @Test
     fun `selected file larger than payload limit throws exception`() {
-        sessionConfigSpy.stub {
-            onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
-        }
-        assertThrows<CodeWhispererCodeScanException> {
-            sessionConfigSpy.createPayload()
-        }
+        selectedFileLargerThanPayloadSizeThrowsException(sessionConfigSpy)
     }
 
     @Test
@@ -151,6 +137,17 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase(HeavyJavaCod
             filesInZip += 1
         }
         assertThat(filesInZip).isEqualTo(4)
+    }
+
+    @Test
+    fun `create payload with no build files does not throw exception`() {
+        sessionConfigSpy.stub {
+            onGeneric { includeDependencies() }.thenReturn(PayloadMetadata(emptySet(), 0, 0, emptySet()))
+        }
+        assertDoesNotThrow {
+            val payload = sessionConfigSpy.createPayload()
+            assertThat(payload.context.buildPayloadSize).isEqualTo(0)
+        }
     }
 
     @Test

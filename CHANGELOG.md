@@ -1,3 +1,67 @@
+# _2.1_ (2023-12-04)
+- **(Feature)** CodeWhisperer: Simplify Learn More page
+- **(Bug Fix)** CodeWhisperer: Security scans for Java no longer require build artifacts
+- **(Bug Fix)** Amazon Q Transform: Fix an issue where the IDE may freeze after clicking "Transform"
+- **(Bug Fix)** Fix JetBrains Gateway specific notifications being shown in non-Gateway IDEs
+
+# _2.0_ (2023-11-28)
+- **(Feature)** Support for Amazon Q, your generative AI–powered assistant designed for work that can be tailored to your business, code, data, and operations.
+
+# _1.89_ (2023-11-26)
+- **(Feature)** CodeWhisperer: Uses Generative AI and automated reasoning to rewrite lines of code flagged for security vulnerabilities during a security scan.
+- **(Feature)** CodeWhisperer now supports new IaC languages: JSON, YAML and Terraform.
+- **(Feature)** CodeWhisperer security scans support typescript, csharp, json, yaml, tf and hcl files.
+
+# _1.88_ (2023-11-17)
+- **(Bug Fix)** Fix issue where the toolkit calls the wrong CodeCatalyst service endpoint
+
+# _1.87_ (2023-11-10)
+- **(Bug Fix)** Fix issue where images in 'Authenticate' panel do not show up
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2023.2 and for for IDEs based on the 2022.3 platform
+
+# _1.86_ (2023-11-08)
+- **(Feature)** Added the 'Setup Authentication for AWS Toolkit' page
+- **(Feature)** Added 2023.3 support
+- **(Feature)** auth: support `sso_session` for profiles in AWS shared ini files
+- **(Bug Fix)** CodeWhisperer: Fix an issue where an IndexOutOfBoundException could be thrown when using CodeWhisperer
+
+# _1.85_ (2023-10-27)
+- **(Feature)** CodeWhisperer: reduce auto-suggestions when there is immediate right context
+
+# _1.84_ (2023-10-17)
+- **(Feature)** Public preview for CodeWhisperer Enterprise: Enterprise customers can now customize CodeWhisperer to adopt and suggest code based on organization specific codebases.
+
+# _1.83_ (2023-10-13)
+- **(Feature)** CodeWhisperer: improve auto-suggestions for additional languages
+
+# _1.82_ (2023-10-06)
+- **(Bug Fix)** CodeWhisperer: Fixed an issue where the "Learn CodeWhisperer" page is shown for Gateway host
+
+# _1.80_ (2023-09-29)
+- **(Feature)** Authentication: When signing in to AWS Builder Id or IAM Identity Center (SSO), verify the device code matches instead of copy-pasting it
+- **(Feature)** CodeWhisperer: Improve the onboarding experience by showing a new onboarding tutorial to first-time users.
+- **(Bug Fix)** Fix issue displaying SSO code on new UI in Windows
+
+# _1.81_ (2023-09-29)
+
+# _1.79_ (2023-09-15)
+
+# _1.78_ (2023-09-08)
+- **(Bug Fix)** Fix 'not recognzied as an ... command' when connecting to CodeCatalyst Dev Environments on Windows
+
+# _1.77_ (2023-08-29)
+- **(Removal)** Removed support for 2022.2.x IDEs
+- **(Removal)** Removed support for Gateway 2023.1
+
+# _1.76_ (2023-08-15)
+- **(Feature)** CodeWhisperer: Improve file context fetching for Python Typescript Javascript source files
+- **(Feature)** CodeWhisperer: Improve file context fetching for Java test files
+
+# _1.75_ (2023-08-03)
+- **(Feature)** Add support for Lambda runtime Python 3.11
+- **(Bug Fix)** codewhisperer: file context fetching not considering file extension correctly
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2023.1 and for for IDEs based on the 2022.2 platform
+
 # _1.74_ (2023-07-25)
 - **(Feature)** Explorer is automatically refreshed with new credentials when they are added to credential file.
 - **(Feature)** Added 2023.2 support

@@ -7,25 +7,65 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.ProfileSdkTokenProviderWrapper
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
-class ManagedBearerSsoConnection(
-    val startUrl: String,
-    val region: String,
+/**
+ * An SSO bearer connection created through a `sso-session` declaration in a user's ~/.aws/config
+ */
+class ProfileSsoManagedBearerSsoConnection(
+    id: String,
+    val configSessionName: String,
+    startUrl: String,
+    region: String,
+    scopes: List<String>,
+    cache: DiskCache = diskCache,
+) : ManagedBearerSsoConnection(
+    startUrl,
+    region,
+    scopes,
+    cache,
+    id,
+    ToolkitBearerTokenProvider.diskSessionDisplayName(configSessionName)
+)
+
+/**
+ * An SSO bearer connection created through [loginSso]
+ */
+class LegacyManagedBearerSsoConnection(
+    startUrl: String,
+    region: String,
+    scopes: List<String>,
+    cache: DiskCache = diskCache,
+) : ManagedBearerSsoConnection(
+    startUrl,
+    region,
+    scopes,
+    cache,
+    ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region),
+    ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
+)
+
+sealed class ManagedBearerSsoConnection(
+    override val startUrl: String,
+    override val region: String,
     override val scopes: List<String>,
+    cache: DiskCache = diskCache,
+    override val id: String,
+    override val label: String
 ) : BearerSsoConnection, Disposable {
-    override val id: String = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
-    override val label: String = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
     private val provider =
         tokenConnection(
             InteractiveBearerTokenProvider(
                 startUrl,
                 region,
-                scopes
+                scopes,
+                id,
+                cache
             ),
             region
         )
@@ -37,9 +77,10 @@ class ManagedBearerSsoConnection(
     }
 }
 
-class DiskSsoSessionConnection(
+class DetectedDiskSsoSessionConnection(
     val sessionProfileName: String,
-    val region: String,
+    override val startUrl: String,
+    override val region: String,
     displayNameOverride: String? = null
 ) : AwsBearerTokenConnection, Disposable {
     override val id = ToolkitBearerTokenProvider.diskSessionIdentifier(sessionProfileName)

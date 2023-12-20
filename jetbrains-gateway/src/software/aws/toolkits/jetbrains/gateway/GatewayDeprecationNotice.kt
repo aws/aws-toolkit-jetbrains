@@ -13,6 +13,7 @@ import software.aws.toolkits.resources.message
 class GatewayDeprecationNotice : AppLifecycleListener {
     override fun welcomeScreenDisplayed() {
         super.welcomeScreenDisplayed()
+        if (ApplicationInfo.getInstance().build.productCode != "GW") return
         if (ApplicationInfo.getInstance().build.baselineVersion >= MIN_VERSION) {
             return
         }
@@ -29,7 +30,7 @@ class GatewayDeprecationNotice : AppLifecycleListener {
     }
 
     companion object {
-        const val MIN_VERSION = 232
-        const val MIN_VERSION_HUMAN = "2023.2"
+        const val MIN_VERSION = 233
+        const val MIN_VERSION_HUMAN = "2023.3"
     }
 }
