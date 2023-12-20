@@ -142,9 +142,9 @@ fun requestCredentialsForCodeWhisperer(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
         AuthTelemetry.addedConnections(
@@ -154,7 +154,7 @@ fun requestCredentialsForCodeWhisperer(
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
             newEnabledAuthConnections = getEnabledConnections(project),
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
     } else {
@@ -162,9 +162,9 @@ fun requestCredentialsForCodeWhisperer(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codewhisperer,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
         )
     }
@@ -248,9 +248,9 @@ fun requestCredentialsForQ(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
             featureId = FeatureId.Q,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
         AuthTelemetry.addedConnections(
@@ -260,7 +260,7 @@ fun requestCredentialsForQ(
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
             newEnabledAuthConnections = getEnabledConnections(project),
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
     } else {
@@ -268,9 +268,9 @@ fun requestCredentialsForQ(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
             featureId = FeatureId.Q,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
         )
     }
@@ -314,6 +314,7 @@ fun requestCredentialsForCodeCatalyst(
                 ),
                 scopes = CODECATALYST_SCOPES,
                 promptForIdcPermissionSet = false,
+                featureId = FeatureId.Codecatalyst
             )
         }
         else -> {
@@ -366,9 +367,9 @@ fun requestCredentialsForCodeCatalyst(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codecatalyst,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
         AuthTelemetry.addedConnections(
@@ -378,7 +379,7 @@ fun requestCredentialsForCodeCatalyst(
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
             newEnabledAuthConnections = getEnabledConnections(project),
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
     } else {
@@ -386,9 +387,9 @@ fun requestCredentialsForCodeCatalyst(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.Codecatalyst,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
         )
     }
@@ -436,9 +437,9 @@ fun requestCredentialsForExplorer(
             project,
             source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
         AuthTelemetry.addedConnections(
@@ -448,7 +449,7 @@ fun requestCredentialsForExplorer(
             newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
             enabledAuthConnections = initialAuthConnections,
             newEnabledAuthConnections = getEnabledConnections(project),
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
     } else {
@@ -456,9 +457,9 @@ fun requestCredentialsForExplorer(
             project,
             source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
             featureId = FeatureId.AwsExplorer,
-            credentialSourceId = authenticationDialog.authType(),
+            credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
-            attempts = authenticationDialog.attempts() + 1,
+            attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
         )
     }
