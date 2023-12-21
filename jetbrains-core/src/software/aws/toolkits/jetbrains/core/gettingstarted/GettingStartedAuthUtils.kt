@@ -313,8 +313,7 @@ fun requestCredentialsForCodeCatalyst(
                     )
                 ),
                 scopes = CODECATALYST_SCOPES,
-                promptForIdcPermissionSet = false,
-                featureId = FeatureId.Codecatalyst
+                promptForIdcPermissionSet = false
             )
         }
         else -> {

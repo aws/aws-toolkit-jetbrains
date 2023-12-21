@@ -56,8 +56,7 @@ class GatewaySetupAuthenticationDialog(
     private val scopes: List<String> = emptyList(),
     private val state: GatewaySetupAuthenticationDialogState = GatewaySetupAuthenticationDialogState(),
     private val tabSettings: Map<GatewaySetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
-    private val promptForIdcPermissionSet: Boolean = false,
-    private val featureId: FeatureId,
+    private val promptForIdcPermissionSet: Boolean = false
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
