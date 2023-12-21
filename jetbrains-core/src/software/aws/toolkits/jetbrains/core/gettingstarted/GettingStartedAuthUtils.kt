@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -32,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
@@ -39,6 +41,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionC
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -274,6 +277,124 @@ fun requestCredentialsForQ(
     return isAuthenticationSuccessful
 }
 
+fun requestCredentialsForCodeCatalyst(
+    project: Project?,
+    popupBuilderIdTab: Boolean = true,
+    initialConnectionCount: Int = getConnectionCount(),
+    initialAuthConnections: String = getEnabledConnections(
+        project
+    ),
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer: Boolean = false
+): Boolean {
+    val authenticationDialog = when (ApplicationInfo.getInstance().build.productCode) {
+        "GW" -> {
+            GatewaySetupAuthenticationDialog(
+                project,
+                state = GatewaySetupAuthenticationDialogState().also {
+                    it.selectedTab.set(GatewaySetupAuthenticationTabs.BUILDER_ID)
+                },
+                tabSettings = mapOf(
+                    GatewaySetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
+                        disabled = false,
+                        notice = SetupAuthenticationNotice(
+                            SetupAuthenticationNotice.NoticeType.WARNING,
+                            message("gettingstarted.setup.codecatalyst.use_builder_id"),
+                            CAWS_DOCS
+                        )
+                    ),
+                    GatewaySetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
+                        disabled = false,
+                        notice = SetupAuthenticationNotice(
+                            SetupAuthenticationNotice.NoticeType.WARNING,
+                            message("gettingstarted.setup.codecatalyst.use_identity_center"),
+                            CAWS_DOCS
+                        )
+                    )
+                ),
+                scopes = CODECATALYST_SCOPES,
+                promptForIdcPermissionSet = false
+            )
+        }
+        else -> {
+            SetupAuthenticationDialog(
+                project,
+                state = SetupAuthenticationDialogState().also {
+                    if (popupBuilderIdTab) {
+                        it.selectedTab.set(SetupAuthenticationTabs.BUILDER_ID)
+                    }
+                },
+                tabSettings = mapOf(
+                    SetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
+                        disabled = false,
+                        notice = SetupAuthenticationNotice(
+                            SetupAuthenticationNotice.NoticeType.WARNING,
+                            message("gettingstarted.setup.codecatalyst.use_builder_id"),
+                            CAWS_DOCS
+                        )
+                    ),
+                    SetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
+                        disabled = false,
+                        notice = SetupAuthenticationNotice(
+                            SetupAuthenticationNotice.NoticeType.WARNING,
+                            message("gettingstarted.setup.codecatalyst.use_identity_center"),
+                            CAWS_DOCS
+                        )
+                    ),
+                    SetupAuthenticationTabs.IAM_LONG_LIVED to AuthenticationTabSettings(
+                        disabled = true,
+                        notice = SetupAuthenticationNotice(
+                            SetupAuthenticationNotice.NoticeType.ERROR,
+                            message("gettingstarted.setup.codecatalyst.no_iam"),
+                            CAWS_DOCS
+                        )
+                    )
+                ),
+                scopes = CODECATALYST_SCOPES,
+                promptForIdcPermissionSet = false,
+                sourceOfEntry = SourceOfEntry.CODECATALYST,
+                featureId = FeatureId.Codecatalyst,
+                isFirstInstance = isFirstInstance,
+                connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
+            )
+        }
+    }
+
+    val isAuthenticationSuccessful = authenticationDialog.showAndGet()
+    if (isAuthenticationSuccessful) {
+        AuthTelemetry.addConnection(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            featureId = FeatureId.Codecatalyst,
+            credentialSourceId = authenticationDialog.authType,
+            isAggregated = true,
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Succeeded
+        )
+        AuthTelemetry.addedConnections(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            authConnectionsCount = initialConnectionCount,
+            newAuthConnectionsCount = getConnectionCount() - initialConnectionCount,
+            enabledAuthConnections = initialAuthConnections,
+            newEnabledAuthConnections = getEnabledConnections(project),
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Succeeded
+        )
+    } else {
+        AuthTelemetry.addConnection(
+            project,
+            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
+            featureId = FeatureId.Codecatalyst,
+            credentialSourceId = authenticationDialog.authType,
+            isAggregated = false,
+            attempts = authenticationDialog.attempts + 1,
+            result = Result.Cancelled,
+        )
+    }
+    return isAuthenticationSuccessful
+}
+
 fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
@@ -361,7 +482,7 @@ internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
 }
 
 internal fun authAndUpdateConfig(
-    project: Project,
+    project: Project?,
     profile: UserConfigSsoSessionProfile,
     configFilesFacade: ConfigFilesFacade,
     onError: (String) -> Unit
