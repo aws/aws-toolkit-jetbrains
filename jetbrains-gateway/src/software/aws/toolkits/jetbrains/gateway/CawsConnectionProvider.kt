@@ -580,8 +580,6 @@ data class SsoSettings(
     val region: String
 ) {
     companion object {
-        fun fromUrlParameters(startUrl: String, region: String): SsoSettings {
-            return SsoSettings(URLDecoder.decode(startUrl, "UTF-8"), region)
-        }
+        fun fromUrlParameters(startUrl: String, region: String) = SsoSettings(URLDecoder.decode(startUrl, "UTF-8"), region)
     }
 }
