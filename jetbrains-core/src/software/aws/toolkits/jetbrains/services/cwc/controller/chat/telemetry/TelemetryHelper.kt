@@ -121,7 +121,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             "cwsprChatFullResponseLatency" to (responseStreamTotalTime[response.tabId] ?: 0),
             "cwsprChatRequestLength" to data.message.length,
             "cwsprChatResponseLength" to responseLength,
-            "cwsprChatConversationType" to CwsprChatConversationType.Chat
+            "cwsprChatConversationType" to CwsprChatConversationType.Chat,
         )
         sendMetricData("amazonq_addMessage", metadata)
     }
@@ -161,7 +161,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                         "upvote" -> CwsprChatInteractionType.Upvote
                         "downvote" -> CwsprChatInteractionType.Downvote
                         else -> CwsprChatInteractionType.Unknown
-                    }
+                    },
                 )
             }
 
@@ -341,7 +341,12 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     }
 
     companion object {
+
         private val logger = getLogger<TelemetryHelper>()
+
+        fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null) {
+            AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name)
+        }
 
         fun recordOpenChat() {
             AmazonqTelemetry.openChat(passive = true)
@@ -349,10 +354,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
         fun recordCloseChat() {
             AmazonqTelemetry.closeChat(passive = true)
-        }
-
-        fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null) {
-            AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name)
         }
     }
 }

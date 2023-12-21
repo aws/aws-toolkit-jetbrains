@@ -24,7 +24,7 @@ class App : AmazonQApp {
     override fun init(context: AmazonQAppInitContext) {
         // Create CWC chat controller
         val inboundAppMessagesHandler: InboundAppMessagesHandler =
-            ChatController(context)
+            ChatController.create(context)
 
         context.messageTypeRegistry.register(
             "clear" to IncomingCwcMessage.ClearChat::class,

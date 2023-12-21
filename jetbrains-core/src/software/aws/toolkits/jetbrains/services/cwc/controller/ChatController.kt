@@ -28,12 +28,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
-import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
@@ -71,32 +69,23 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInteractionMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.cwc.utility.EdtUtility
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
 
-class ChatController private constructor(
+class ChatController internal constructor(
     private val context: AmazonQAppInitContext,
     private val chatSessionStorage: ChatSessionStorage,
     private val contextExtractor: ActiveFileContextExtractor,
     private val intentRecognizer: UserIntentRecognizer,
     private val authController: AuthController,
+    private val telemetryHelper: TelemetryHelper,
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
-    private val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
-
-    constructor(
-        context: AmazonQAppInitContext,
-    ) : this(
-        context = context,
-        chatSessionStorage = ChatSessionStorage(ChatSessionFactoryV1()),
-        contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
-        intentRecognizer = UserIntentRecognizer(),
-        authController = AuthController(),
-    )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
         chatSessionStorage.deleteSession(message.tabId)
@@ -135,9 +124,9 @@ class ChatController private constructor(
             messageType = ChatMessageType.Answer,
             message = replyContent,
         )
-        context.messagesFromAppToUi.publish(reply)
+        messagePublisher.publish(reply)
         ApplicationManager.getApplication().invokeLater {
-            runInEdt {
+            EdtUtility.runInEdt {
                 if (!isActive) {
                     manager.validateAndStart()
                 } else {
@@ -152,9 +141,11 @@ class ChatController private constructor(
     }
 
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
+        val triggerId = UUID.randomUUID().toString()
+
         handleChat(
             tabId = message.tabId,
-            triggerId = UUID.randomUUID().toString(),
+            triggerId = triggerId,
             message = message.chatMessage,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
@@ -173,7 +164,9 @@ class ChatController private constructor(
         telemetryHelper.recordEnterFocusConversation(message.tabId)
     }
 
-    override suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked) {
+    override suspend fun processFollowUpClick(message: IncomingCwcMessage.FollowupClicked){
+        val triggerId = UUID.randomUUID().toString()
+
         val sessionInfo = getSessionInfo(message.tabId)
         val lastRequest = sessionInfo.history.lastOrNull()
 
@@ -182,7 +175,7 @@ class ChatController private constructor(
         // Re-use the editor context when making the follow-up request
         handleChat(
             tabId = message.tabId,
-            triggerId = UUID.randomUUID().toString(),
+            triggerId = triggerId,
             message = message.followUp.prompt,
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromFollowupType(message.followUp.type),
@@ -197,8 +190,8 @@ class ChatController private constructor(
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
-        withContext(EDT) {
-            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
+        EdtUtility.runInEdt {
+            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@runInEdt
 
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset
@@ -254,10 +247,10 @@ class ChatController private constructor(
     override suspend fun processAuthFollowUpClick(message: IncomingCwcMessage.AuthFollowUpWasClicked) {
         authController.handleAuth(context.project, message.authType)
     }
-
     override suspend fun processOnboardingPageInteraction(message: OnboardingPageInteraction) {
-        val context = contextExtractor.extractContextForTrigger(ExtractionTriggerType.OnboardingPageInteraction)
         val triggerId = UUID.randomUUID().toString()
+
+        val context = contextExtractor.extractContextForTrigger(ExtractionTriggerType.OnboardingPageInteraction)
 
         val prompt = when (message.type) {
             OnboardingPageInteractionType.CwcButtonClick -> StaticPrompt.OnboardingHelp.message
@@ -287,9 +280,10 @@ class ChatController private constructor(
 
     // JB specific (not in vscode)
     override suspend fun processContextMenuCommand(message: ContextMenuActionMessage) {
+        val triggerId = UUID.randomUUID().toString()
+
         // Extract context
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
-        val triggerId = UUID.randomUUID().toString()
         val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
 
         if (message.command == EditorContextCommand.SendToPrompt) {
@@ -375,7 +369,7 @@ class ChatController private constructor(
 
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
-        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo)
+        ChatPromptHandler.create(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo)
             .catch { handleError(tabId, it) }
             .onEach { context.messagesFromAppToUi.publish(it) }
             .launchIn(sessionInfo.scope)
@@ -477,7 +471,7 @@ class ChatController private constructor(
         private val logger = getLogger<ChatController>()
 
         // This is a special tabID we can receive to indicate that there is no tab available for handling the context menu action
-        private const val NO_TAB_AVAILABLE = "no-available-tabs"
+        internal const val NO_TAB_AVAILABLE = "no-available-tabs"
 
         val objectMapper: ObjectMapper = jacksonObjectMapper()
             .registerModule(JavaTimeModule())
@@ -485,5 +479,19 @@ class ChatController private constructor(
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+        fun create(context: AmazonQAppInitContext): ChatController {
+            val chatSessionStorage = ChatSessionStorage(ChatSessionFactoryV1())
+            val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
+
+            return ChatController(
+                context = context,
+                chatSessionStorage = chatSessionStorage,
+                contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
+                intentRecognizer = UserIntentRecognizer(),
+                authController = AuthController(),
+                telemetryHelper = telemetryHelper
+            )
+        }
     }
 }
