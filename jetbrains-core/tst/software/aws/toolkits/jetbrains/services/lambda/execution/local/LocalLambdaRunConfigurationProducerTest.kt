@@ -18,18 +18,22 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.yaml.psi.YAMLFile
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.sam.findByLocation
-import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addModule
+import software.aws.toolkits.jetbrains.utils.rules.addTestClass
 import software.aws.toolkits.jetbrains.utils.rules.openClass
+import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationProducerTest {
     @Rule
     @JvmField
-    val projectRule = JavaCodeInsightTestFixtureRule()
+    val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
     @Test
     fun validRunConfigurationIsCreated() {
+        projectRule.fixture.addModule("main")
         val psiClass = projectRule.fixture.openClass(
             """
             package com.example;
@@ -48,9 +52,32 @@ class LocalLambdaRunConfigurationProducerTest {
             assertThat(runConfiguration).isNotNull
             val configuration = runConfiguration?.configuration as LocalLambdaRunConfiguration
             assertThat(configuration.isUsingTemplate()).isFalse()
-            assertThat(configuration.runtime()).isEqualTo(Runtime.JAVA8)
+            assertThat(configuration.runtime()).isEqualTo(LambdaRuntime.JAVA8_AL2)
             assertThat(configuration.handler()).isEqualTo("com.example.LambdaHandler::handleRequest")
             assertThat(configuration.name).isEqualTo("[Local] LambdaHandler.handleRequest")
+        }
+    }
+
+    @Test
+    fun `does not create run configuration for test class`() {
+        val newModule = projectRule.fixture.addModule("newModule")
+        val psiClass = projectRule.fixture.addTestClass(
+            newModule,
+            """
+            package com.example;
+
+            public class LambdaHandler {
+                public String handleRequest(String request) {
+                    return request.toUpperCase();
+                }
+            }
+            """
+        )
+
+        val lambdaMethod = psiClass.findMethodsByName("handleRequest", false).first()
+        runInEdtAndWait {
+            val runConfiguration = createRunConfiguration(lambdaMethod)
+            assertThat(runConfiguration).isNull()
         }
     }
 
@@ -58,14 +85,15 @@ class LocalLambdaRunConfigurationProducerTest {
     fun validRunConfigurationIsCreatedFromTemplate() {
         runInEdtAndWait {
             val psiFile = projectRule.fixture.configureByText(
-                "template.yaml", """
+                "template.yaml",
+                """
 Resources:
     MyFunction:
         Type: AWS::Serverless::Function
         Properties:
             Handler: helloworld.App::handleRequest
             Runtime: java8
-        """.trimIndent()
+                """.trimIndent()
             ) as YAMLFile
             val psiElement = psiFile.findByLocation("Resources.MyFunction")?.key ?: throw RuntimeException("Can't find function")
             val runConfiguration = createRunConfiguration(psiElement)
@@ -82,14 +110,15 @@ Resources:
     fun canRoundTripTemplateBasedConfiguration() {
         runInEdtAndWait {
             val psiFile = projectRule.fixture.configureByText(
-                "template.yaml", """
+                "template.yaml",
+                """
 Resources:
     MyFunction:
         Type: AWS::Serverless::Function
         Properties:
             Handler: helloworld.App::handleRequest
             Runtime: java8
-        """.trimIndent()
+                """.trimIndent()
             ) as YAMLFile
             val psiElement = psiFile.findByLocation("Resources.MyFunction")?.key ?: throw RuntimeException("Can't find function")
             val runConfiguration = createRunConfiguration(psiElement)
@@ -107,6 +136,7 @@ Resources:
 
     @Test
     fun invalidLambdaIsNotCreated() {
+        projectRule.fixture.addModule("main")
         val psiClass = projectRule.fixture.openClass(
             """
             package com.example;
@@ -122,6 +152,56 @@ Resources:
         runInEdtAndWait {
             val runConfiguration = createRunConfiguration(lambdaMethod)
             assertThat(runConfiguration).isNull()
+        }
+    }
+
+    @Test
+    fun `Valid image run configuration is created from template`() {
+        runInEdtAndWait {
+            val psiFile = projectRule.fixture.configureByText(
+                "template.yaml",
+                """
+Resources:
+    MyFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+            PackageType: Image
+                """.trimIndent()
+            ) as YAMLFile
+            val psiElement = psiFile.findByLocation("Resources.MyFunction")?.key ?: throw RuntimeException("Can't find function")
+            val runConfiguration = createRunConfiguration(psiElement)
+            assertNotNull(runConfiguration)
+            val configuration = runConfiguration.configuration as LocalLambdaRunConfiguration
+            assertThat(configuration.templateFile()).isEqualTo(psiFile.containingFile.virtualFile.path)
+            assertThat(configuration.logicalId()).isEqualTo("MyFunction")
+            assertThat(configuration.name).isEqualTo("[Local] MyFunction")
+        }
+    }
+
+    @Test
+    fun `Can round trip image template based configuration`() {
+        runInEdtAndWait {
+            val psiFile = projectRule.fixture.configureByText(
+                "template.yaml",
+                """
+Resources:
+    MyFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+            PackageType: Image
+                """.trimIndent()
+            ) as YAMLFile
+            val psiElement = psiFile.findByLocation("Resources.MyFunction")?.key ?: throw RuntimeException("Can't find function")
+            val runConfiguration = createRunConfiguration(psiElement)
+
+            val sut = RunConfigurationProducer.getInstance(LocalLambdaRunConfigurationProducer::class.java)
+
+            assertThat(
+                sut.isConfigurationFromContext(
+                    runConfiguration?.configuration as LocalLambdaRunConfiguration,
+                    createContext(psiElement, MapDataContext())
+                )
+            ).isTrue()
         }
     }
 

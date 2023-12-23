@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
-import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
@@ -14,11 +13,14 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent
 import software.amazon.awssdk.services.cloudwatchlogs.paginators.GetLogEventsIterable
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamDateColumn
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamMessageColumn
 import software.aws.toolkits.jetbrains.utils.BaseCoroutineTest
 import software.aws.toolkits.jetbrains.utils.waitForModelToBeAtLeast
 import software.aws.toolkits.jetbrains.utils.waitForTrue
@@ -30,12 +32,15 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogStreamEntry>
     private lateinit var table: TableView<LogStreamEntry>
-    private lateinit var actor: LogActor<LogStreamEntry>
+    private lateinit var actor: CloudWatchLogsActor<LogStreamEntry>
 
     @Before
     fun loadVariables() {
         client = mockClientManagerRule.create()
-        tableModel = ListTableModel<LogStreamEntry>()
+        tableModel = ListTableModel(
+            arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
+            mutableListOf<LogStreamEntry>()
+        )
         table = TableView(tableModel)
         actor = LogStreamListActor(projectRule.project, client, table, "abc", "def")
     }
@@ -45,7 +50,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>()))
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             tableModel.waitForModelToBeAtLeast(1)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
         }
@@ -56,16 +61,18 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     @Test
     fun modelIsPopulatedRange() {
         whenever(client.getLogEventsPaginator(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(object : GetLogEventsIterable(client, null) {
-                override fun iterator() = mutableListOf(
-                    GetLogEventsResponse.builder().events(
-                        OutputLogEvent.builder().message("message").build()
-                    ).build()
-                ).iterator()
-            })
+            .thenReturn(
+                object : GetLogEventsIterable(client, null) {
+                    override fun iterator() = mutableListOf(
+                        GetLogEventsResponse.builder().events(
+                            OutputLogEvent.builder().message("message").build()
+                        ).build()
+                    ).iterator()
+                }
+            )
 
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             tableModel.waitForModelToBeAtLeast(1)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.no_events") }
         }
@@ -79,7 +86,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     fun emptyTableOnExceptionThrown() {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             waitForTrue {
                 println(table.emptyText.text)
                 table.emptyText.text == message("cloudwatch.logs.failed_to_load_stream", "def")
@@ -92,7 +99,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
     fun emptyTableOnExceptionThrownRange() {
         whenever(client.getLogEvents(Mockito.any<GetLogEventsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitialRange(LogStreamEntry("@@@", 0), Duration.ofMillis(0)))
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_stream", "def") }
         }
         assertThat(tableModel.items).isEmpty()
@@ -105,14 +112,14 @@ class LogStreamListActorTest : BaseCoroutineTest() {
             .thenReturn(GetLogEventsResponse.builder().nextForwardToken("3").build())
             .thenReturn(GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").build()).nextForwardToken("4").build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadForward)
-            actor.channel.send(LogActor.Message.LoadForward)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadForward)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
@@ -128,14 +135,14 @@ class LogStreamListActorTest : BaseCoroutineTest() {
                 GetLogEventsResponse.builder().events(OutputLogEvent.builder().message("message2").timestamp(3).build()).nextBackwardToken("2").build()
             )
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
         assertThat(tableModel.items.first().message).isEqualTo("message")
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadBackward)
-            actor.channel.send(LogActor.Message.LoadBackward)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadBackward)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadBackward)
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
@@ -151,7 +158,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
         actor.dispose()
         assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LoadBackward)
+                channel.send(CloudWatchLogsActor.Message.LoadBackward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }
@@ -163,7 +170,7 @@ class LogStreamListActorTest : BaseCoroutineTest() {
         val table = TableView(tableModel)
         val actor = LogStreamListActor(projectRule.project, client, table, "abc", "def")
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitialFilter("abc"))
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitialFilter("abc"))
             waitForTrue { actor.channel.isClosedForSend }
         }
     }

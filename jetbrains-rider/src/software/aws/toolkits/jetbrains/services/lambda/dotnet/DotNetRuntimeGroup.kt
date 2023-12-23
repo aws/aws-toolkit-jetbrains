@@ -5,27 +5,27 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
-import com.jetbrains.rider.ideaInterop.fileTypes.csharp.CSharpLanguage
 import com.jetbrains.rider.ideaInterop.fileTypes.vb.VbLanguage
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroupInformation
+import com.jetbrains.rider.languages.fileTypes.csharp.CSharpLanguage
+import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 
-class DotNetRuntimeGroup : SdkBasedRuntimeGroupInformation() {
+class DotNetRuntimeGroup : SdkBasedRuntimeGroup() {
+    override val id: String = BuiltInRuntimeGroups.Dotnet
+    override val supportsPathMappings: Boolean = false
 
-    override val runtimes: Set<Runtime>
-        get() = setOf(
-                Runtime.DOTNETCORE2_1,
-                Runtime.DOTNETCORE3_1
-        )
+    override val languageIds: Set<String> = setOf(
+        CSharpLanguage.id,
+        VbLanguage.id
+    )
+    override val supportedRuntimes = listOf(
+        LambdaRuntime.DOTNET5_0,
+        LambdaRuntime.DOTNET6_0
+    )
 
-    override val languageIds: Set<String>
-        get() = setOf(CSharpLanguage.id, VbLanguage.id)
+    override fun runtimeForSdk(sdk: Sdk): LambdaRuntime? = null
 
-    override fun runtimeForSdk(sdk: Sdk): Runtime? = null
-
-    override fun supportsSamBuild(): Boolean = true
-
-    override fun determineRuntime(project: Project): Runtime? =
-        DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
+    override fun determineRuntime(project: Project): LambdaRuntime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
 }

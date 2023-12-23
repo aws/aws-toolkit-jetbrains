@@ -4,14 +4,14 @@
 package software.aws.toolkits.jetbrains.services.cloudformation
 
 import com.intellij.testFramework.ProjectRule
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
@@ -31,7 +31,7 @@ class DeleteWaiterTest {
 
     @JvmField
     @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
+    val mockClientManagerRule = MockClientManagerRule()
 
     private val mockClient by lazy { mockClientManagerRule.create<CloudFormationClient>() }
 
@@ -94,27 +94,30 @@ class DeleteWaiterTest {
         mockClient.stackReturn(stackName, times, failureStatus)
         val describeStacksRequest = argumentCaptor<DescribeStacksRequest>()
         assertThatThrownBy { mockClient.waitForStackDeletionComplete(stackName, delay = DEFAULT_DELAY) }
-                .isInstanceOf(WaiterUnrecoverableException::class.java)
-                .hasMessageContaining(failureStatus.toString())
+            .isInstanceOf(WaiterUnrecoverableException::class.java)
+            .hasMessageContaining(failureStatus.toString())
         verify(mockClient, times(times + 1)).describeStacks(describeStacksRequest.capture())
         assertThat(describeStacksRequest.allValues).allSatisfy { assertThat(it.stackName()).isEqualTo(stackName) }
     }
 
     private fun CloudFormationClient.stackReturn(stackName: String, times: Int, status: StackStatus) {
-
         val responses = mutableListOf<DescribeStacksResponse>()
         val inProgressResponseBuilder = DescribeStacksResponse.builder()
-                .stacks(Stack.builder()
-                        .stackName(stackName)
-                        .stackStatus(StackStatus.DELETE_IN_PROGRESS)
-                        .build())
+            .stacks(
+                Stack.builder()
+                    .stackName(stackName)
+                    .stackStatus(StackStatus.DELETE_IN_PROGRESS)
+                    .build()
+            )
 
         val finalResponse = DescribeStacksResponse.builder()
-                .stacks(Stack.builder()
-                        .stackName(stackName)
-                        .stackStatus(status)
-                        .build())
-                .build()
+            .stacks(
+                Stack.builder()
+                    .stackName(stackName)
+                    .stackStatus(status)
+                    .build()
+            )
+            .build()
 
         val firstResponse = if (times <= 0) finalResponse else inProgressResponseBuilder.build()
 
@@ -125,39 +128,55 @@ class DeleteWaiterTest {
             responses.add(finalResponse)
         }
 
-        whenever(describeStacks(DescribeStacksRequest.builder()
-                .stackName(stackName)
-                .build()))
-                .thenReturn(firstResponse, *responses.toTypedArray())
+        whenever(
+            describeStacks(
+                DescribeStacksRequest.builder()
+                    .stackName(stackName)
+                    .build()
+            )
+        )
+            .thenReturn(firstResponse, *responses.toTypedArray())
     }
 
     private fun CloudFormationClient.stackThrowValidationError(stackName: String, times: Int) {
         val responses = mutableListOf<DescribeStacksResponse>()
         val inProgressResponseBuilder = DescribeStacksResponse.builder()
-                .stacks(Stack.builder()
-                        .stackName(stackName)
-                        .stackStatus(StackStatus.DELETE_IN_PROGRESS)
-                        .build())
+            .stacks(
+                Stack.builder()
+                    .stackName(stackName)
+                    .stackStatus(StackStatus.DELETE_IN_PROGRESS)
+                    .build()
+            )
         val finalResponse = CloudFormationException.builder()
-                .awsErrorDetails(AwsErrorDetails.builder()
-                        .errorCode("ValidationError")
-                        .build())
-                .build()
+            .awsErrorDetails(
+                AwsErrorDetails.builder()
+                    .errorCode("ValidationError")
+                    .build()
+            )
+            .build()
 
         if (times <= 0) {
-            whenever(describeStacks(DescribeStacksRequest.builder()
-                    .stackName(stackName)
-                    .build()))
-                    .thenThrow(finalResponse)
+            whenever(
+                describeStacks(
+                    DescribeStacksRequest.builder()
+                        .stackName(stackName)
+                        .build()
+                )
+            )
+                .thenThrow(finalResponse)
         } else {
             repeat(times - 1) {
                 responses.add(inProgressResponseBuilder.build())
             }
-            whenever(describeStacks(DescribeStacksRequest.builder()
-                    .stackName(stackName)
-                    .build()))
-                    .thenReturn(inProgressResponseBuilder.build(), *responses.toTypedArray())
-                    .thenThrow(finalResponse)
+            whenever(
+                describeStacks(
+                    DescribeStacksRequest.builder()
+                        .stackName(stackName)
+                        .build()
+                )
+            )
+                .thenReturn(inProgressResponseBuilder.build(), *responses.toTypedArray())
+                .thenThrow(finalResponse)
         }
     }
 

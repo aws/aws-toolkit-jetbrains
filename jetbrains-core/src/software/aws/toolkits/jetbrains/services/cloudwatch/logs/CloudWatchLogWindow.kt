@@ -3,51 +3,45 @@
 
 package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.DateFormatUtil
-import icons.AwsIcons
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
+import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogGroup
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.CloudWatchLogStream
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.DetailedLogRecord
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryDetails
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryResultPanel
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.toolwindow.CloudWatchLogsToolWindowFactory
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudWatchResourceType
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 
-class CloudWatchLogWindow(private val project: Project) : CoroutineScope by ApplicationThreadPoolScope("openLogGroup") {
-    private val toolWindow = ToolkitToolWindowManager.getInstance(project, CW_LOGS_TOOL_WINDOW)
-    private val edtContext = getCoroutineUiContext()
+class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
+    override val toolWindowId = CloudWatchLogsToolWindowFactory.TOOLWINDOW_ID
 
-    fun showLogGroup(logGroup: String) = launch {
+    fun showLogGroup(logGroup: String) {
         var result = Result.Succeeded
-        try {
-            val existingWindow = toolWindow.find(logGroup)
-            if (existingWindow != null) {
-                withContext(edtContext) {
-                    existingWindow.show()
+        runInEdt {
+            try {
+                if (!showExistingContent(logGroup)) {
+                    val group = CloudWatchLogGroup(project, logGroup)
+                    val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
+                    addTab(title, group.content, activate = true, id = logGroup, additionalDisposable = group)
                 }
-                return@launch
+            } catch (e: Exception) {
+                LOG.error(e) { "Exception thrown while trying to show log group '$logGroup'" }
+                result = Result.Failed
+                throw e
+            } finally {
+                CloudwatchlogsTelemetry.open(project, result, CloudWatchResourceType.LogGroup, source = "logGroup")
             }
-            val group = CloudWatchLogGroup(project, logGroup)
-            val title = message("cloudwatch.logs.log_group_title", logGroup.split("/").last())
-            withContext(edtContext) {
-                toolWindow.addTab(title, group.content, activate = true, id = logGroup, disposable = group)
-            }
-        } catch (e: Exception) {
-            LOG.error(e) { "Exception thrown while trying to show log group '$logGroup'" }
-            result = Result.Failed
-            throw e
-        } finally {
-            CloudwatchlogsTelemetry.openGroup(project, result)
         }
     }
 
@@ -55,56 +49,69 @@ class CloudWatchLogWindow(private val project: Project) : CoroutineScope by Appl
         logGroup: String,
         logStream: String,
         previousEvent: LogStreamEntry? = null,
-        duration: Duration? = null
-    ) = launch {
+        duration: Duration? = null,
+        streamLogs: Boolean = false
+    ) {
         var result = Result.Succeeded
         try {
             val id = "$logGroup/$logStream/${previousEvent?.timestamp}/${previousEvent?.message}/$duration"
-            val existingWindow = toolWindow.find(id)
-            if (existingWindow != null) {
-                withContext(edtContext) {
-                    existingWindow.show()
-                }
-                return@launch
+            if (showExistingContent(id)) {
+                return
             }
             val title = if (previousEvent != null && duration != null) {
                 message(
-                    "cloudwatch.logs.filtered_log_stream_title", logStream,
+                    "cloudwatch.logs.filtered_log_stream_title",
+                    logStream,
                     DateFormatUtil.getDateTimeFormat().format(previousEvent.timestamp - duration.toMillis()),
                     DateFormatUtil.getDateTimeFormat().format(previousEvent.timestamp + duration.toMillis())
                 )
             } else {
                 message("cloudwatch.logs.log_stream_title", logStream)
             }
-            val stream = CloudWatchLogStream(project, logGroup, logStream, previousEvent, duration)
-            withContext(edtContext) {
-                toolWindow.addTab(title, stream.content, activate = true, id = id, disposable = stream)
+            val stream = CloudWatchLogStream(project, logGroup, logStream, previousEvent, duration, streamLogs)
+            runInEdt {
+                addTab(title, stream.content, activate = true, id = id, additionalDisposable = stream)
             }
         } catch (e: Exception) {
             LOG.error(e) { "Exception thrown while trying to show log group '$logGroup' stream '$logStream'" }
             result = Result.Failed
             throw e
         } finally {
-            CloudwatchlogsTelemetry.openStream(project, result)
+            CloudwatchlogsTelemetry.open(project, result, CloudWatchResourceType.LogStream, source = "logStream")
         }
     }
 
-    fun closeLogGroup(logGroup: String) = launch {
-        toolWindow.findPrefix(logGroup).forEach {
-            withContext(edtContext) {
-                it.dispose()
-            }
+    fun showQueryResults(queryDetails: QueryDetails, queryId: String, fields: List<String>) {
+        if (showExistingContent(queryId)) {
+            return
+        }
+
+        val panel = QueryResultPanel(project, fields, queryId, queryDetails)
+        val title = message("cloudwatch.logs.query_tab_title", queryId)
+        runInEdt {
+            addTab(title, panel, activate = true, id = queryId)
+        }
+    }
+
+    fun showDetailedEvent(client: CloudWatchLogsClient, identifier: String) {
+        if (showExistingContent(identifier)) {
+            return
+        }
+
+        val detailedLogEvent = DetailedLogRecord(project, client, identifier)
+        runInEdt {
+            addTab(detailedLogEvent.title, detailedLogEvent.getComponent(), activate = true, id = identifier, additionalDisposable = detailedLogEvent)
+        }
+    }
+
+    fun closeLogGroup(logGroup: String) {
+        findPrefix(logGroup).forEach {
+            removeContent(it)
         }
     }
 
     companion object {
-        internal val CW_LOGS_TOOL_WINDOW = ToolkitToolWindowType(
-            "AWS.CloudWatchLog",
-            message("cloudwatch.logs.toolwindow"),
-            AwsIcons.Resources.CloudWatch.LOGS_TOOL_WINDOW
-        )
-
-        fun getInstance(project: Project) = ServiceManager.getService(project, CloudWatchLogWindow::class.java)
         private val LOG = getLogger<CloudWatchLogWindow>()
+        fun getInstance(project: Project) = project.service<CloudWatchLogWindow>()
     }
 }

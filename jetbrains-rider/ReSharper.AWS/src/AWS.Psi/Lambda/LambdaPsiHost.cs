@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using AWS.Toolkit.Rider.Model;
 using JetBrains.Application;
 using JetBrains.Application.Progress;
 using JetBrains.Application.Threading;
@@ -8,15 +8,19 @@ using JetBrains.Diagnostics;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
 using JetBrains.Rd.Tasks;
-using JetBrains.ReSharper.Host.Features;
-using JetBrains.ReSharper.Host.Features.ProjectModel.View;
-using JetBrains.ReSharper.Host.Platform.Icons;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.Caches;
 using JetBrains.ReSharper.Psi.Modules;
 using JetBrains.ReSharper.Resources.Shell;
-using JetBrains.Rider.Model;
 using JetBrains.Util;
+using JetBrains.RdBackend.Common.Features.ProjectModel.View;
+using JetBrains.Rider.Backend.Platform.Icons;
+
+#if (PROFILE_2022_2 || PROFILE_2022_3 || PROFILE_2023_1) // FIX_WHEN_MIN_IS_232
+using JetBrains.RdBackend.Common.Features;
+#else
+using JetBrains.ReSharper.Feature.Services.Protocol;
+#endif
 
 namespace AWS.Psi.Lambda
 {
@@ -64,7 +68,9 @@ namespace AWS.Psi.Lambda
 
         private bool IsHandlerExists(Lifetime lifetime, int projectId, string className, string methodName)
         {
-            using (TryReadLockCookie.Create(NullProgressIndicator.Create(), _locks,
+            var indicator = NullProgressIndicator.CreateCancellable(lifetime);
+
+            using (TryReadLockCookie.Create(indicator, _locks,
                 () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteLockRequested))
             {
                 var project = _projectModelViewHost.GetItemById<IProject>(projectId);
@@ -81,7 +87,7 @@ namespace AWS.Psi.Lambda
                         var typeElements = scope.GetElementsByQualifiedName(className).OfType<IClass>();
                         foreach (var typeElement in typeElements)
                         {
-                            InterruptableActivityCookie.CheckAndThrow();
+                            InterruptableActivityCookie.CheckAndThrow(indicator);
                             foreach (var method in typeElement.Methods)
                             {
                                 if (method.ShortName != methodName) continue;

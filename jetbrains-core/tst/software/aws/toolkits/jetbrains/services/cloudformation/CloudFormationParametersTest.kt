@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class CloudFormationParametersTest {
 
@@ -19,7 +19,7 @@ class CloudFormationParametersTest {
     @Test
     fun mergeParameters_emptyRemote() {
         val mergedParameters = listOf(fooParameter, bazParameter)
-                .mergeRemoteParameters(listOf())
+            .mergeRemoteParameters(listOf())
         assertThat(mergedParameters).hasSize(2)
         assertThat(mergedParameters).anySatisfy {
             it.logicalName == "Foo" && it.defaultValue() == "foo"
@@ -32,14 +32,14 @@ class CloudFormationParametersTest {
     @Test
     fun mergeParameters_emptyTemplate() {
         val mergedParameters = listOf<Parameter>()
-                .mergeRemoteParameters(listOf(remoteFooParameter, remoteBarParameter))
+            .mergeRemoteParameters(listOf(remoteFooParameter, remoteBarParameter))
         assertThat(mergedParameters).isEmpty()
     }
 
     @Test
     fun mergeParameters_withOverlap() {
         val mergedParameters = listOf(fooParameter, bazParameter)
-                .mergeRemoteParameters(listOf(remoteFooParameter, remoteBarParameter))
+            .mergeRemoteParameters(listOf(remoteFooParameter, remoteBarParameter))
         assertThat(mergedParameters).hasSize(2)
         assertThat(mergedParameters).anySatisfy {
             it.logicalName == "Foo" && it.defaultValue() == "fooValue"

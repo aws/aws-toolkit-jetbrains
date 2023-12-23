@@ -3,18 +3,28 @@
 
 package software.aws.toolkits.jetbrains.services.cloudformation
 
+import software.amazon.awssdk.services.lambda.model.PackageType
+import software.aws.toolkits.jetbrains.services.cloudformation.yaml.YamlCloudFormationTemplate.Companion.getTextValues
 import software.aws.toolkits.resources.message
 
 interface Function : Resource {
     fun codeLocation(): String
     fun setCodeLocation(location: String)
+    fun packageType(): PackageType {
+        val key = "PackageType"
+        val type = getOptionalScalarProperty(key) ?: return PackageType.ZIP
+        return PackageType.values().firstOrNull { it.toString() == type } ?: throw IllegalStateException(message("cloudformation.invalid_property", key, type))
+    }
+
     fun runtime(): String = getScalarProperty("Runtime")
     fun handler(): String = getScalarProperty("Handler")
+    fun architectures(): List<String>? = getOptionalSequenceProperty("Architectures")?.getTextValues()
     fun timeout(): Int? = getOptionalScalarProperty("Timeout")?.toInt()
     fun memorySize(): Int? = getOptionalScalarProperty("MemorySize")?.toInt()
 }
 
 const val LAMBDA_FUNCTION_TYPE = "AWS::Lambda::Function"
+
 class LambdaFunction(private val delegate: Resource) : Resource by delegate, Function {
     override fun setCodeLocation(location: String) {
         setScalarProperty("Code", location)
@@ -26,6 +36,7 @@ class LambdaFunction(private val delegate: Resource) : Resource by delegate, Fun
 }
 
 const val SERVERLESS_FUNCTION_TYPE = "AWS::Serverless::Function"
+
 class SamFunction(private val delegate: Resource) : Resource by delegate, Function {
     private val globals = cloudFormationTemplate.globals()
 
@@ -39,7 +50,13 @@ class SamFunction(private val delegate: Resource) : Resource by delegate, Functi
         setScalarProperty("CodeUri", location)
     }
 
-    override fun codeLocation(): String = getScalarProperty("CodeUri")
+    override fun codeLocation(): String = when (packageType()) {
+        PackageType.ZIP -> getScalarProperty("CodeUri")
+        PackageType.IMAGE -> getScalarMetadata("DockerContext")
+        else -> throw IllegalStateException("Bad packageType somehow returned to code location: ${packageType()}")
+    }
+
+    fun dockerFile(): String? = getOptionalScalarMetadata("Dockerfile")
 
     override fun toString(): String = logicalName
 }

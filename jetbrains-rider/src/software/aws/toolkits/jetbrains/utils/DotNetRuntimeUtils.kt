@@ -3,30 +3,29 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.lambda.validOrNull
 import java.io.IOException
 
 object DotNetRuntimeUtils {
 
     private val logger = getLogger<DotNetRuntimeUtils>()
 
-    val DEFAULT_DOTNET_CORE_RUNTIME: Runtime = Runtime.DOTNETCORE2_1
+    private val defaultDotNetCoreRuntime = LambdaRuntime.DOTNET6_0
 
     /**
      * Get information about current .NET runtime
      *
-     * @return the [software.amazon.awssdk.services.lambda.model.Runtime] instance of current available runtime or
-     *         [DEFAULT_DOTNET_CORE_RUNTIME] value if not defined.
+     * @return the [software.aws.toolkits.core.lambda.LambdaRuntime] instance of current available runtime or
+     *         defaultDotnetCoreRuntime value if not defined.
      */
-    fun getCurrentDotNetCoreRuntime(): Runtime {
+    fun getCurrentDotNetCoreRuntime(): LambdaRuntime {
         val runtimeList = try {
             java.lang.Runtime.getRuntime().exec("dotnet --list-runtimes").inputStream.bufferedReader().readLines()
         } catch (e: IOException) {
             logger.warn { "Error getting current runtime version: $e" }
-            return DEFAULT_DOTNET_CORE_RUNTIME
+            return defaultDotNetCoreRuntime
         }
 
         val versionRegex = Regex("(\\d+.\\d+.\\d+)")
@@ -38,13 +37,15 @@ object DotNetRuntimeUtils {
             }
             .filterNotNull()
 
-        val version = versions.maxBy { it } ?: return DEFAULT_DOTNET_CORE_RUNTIME
+        val version = versions.maxByOrNull { it } ?: return defaultDotNetCoreRuntime
+        // Take the first 2 numbers so `5.0.2` would be `5.0`
+        val versionString = version.split('.').take(2).joinToString(".")
 
-        return Runtime.fromValue("dotnetcore${version.split('.').take(2).joinToString(".")}").validOrNull
-            ?: DEFAULT_DOTNET_CORE_RUNTIME
+        return LambdaRuntime.fromValue("dotnetcore$versionString") ?: LambdaRuntime.fromValue("dotnet$versionString") ?: defaultDotNetCoreRuntime
     }
 
-    const val RUNTIME_CONFIG_JSON_21 = """{
+    const val RUNTIME_CONFIG_JSON_21 =
+        """{
   "runtimeOptions": {
     "tfm": "netcoreapp2.1",
     "framework": {

@@ -3,13 +3,13 @@
 
 package software.aws.toolkits.core.lambda
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import software.aws.toolkits.core.utils.RemoteResourceResolver
 import java.util.concurrent.CompletableFuture
 
@@ -37,20 +37,22 @@ class LambdaSampleEventProviderTest {
                     <filename>second.json</filename>
                 </request>
             </requests>
-        """.trimIndent()
+            """.trimIndent()
         )
 
-        val firstContent = """
+        val firstContent =
+            """
             {
                 "hello": "world"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         firstFile.writeText(firstContent)
 
-        val secondContent = """
+        val secondContent =
+            """
             ["hello"]
-        """.trimIndent()
+            """.trimIndent()
 
         secondFile.writeText(secondContent)
 
@@ -86,7 +88,7 @@ class LambdaSampleEventProviderTest {
                     <filename>first.json</filename>
                 </request>
             </requests>
-        """.trimIndent()
+            """.trimIndent()
         )
 
         val resourceResolver = mock<RemoteResourceResolver> {

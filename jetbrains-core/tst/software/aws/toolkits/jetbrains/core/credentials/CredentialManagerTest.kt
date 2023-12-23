@@ -3,27 +3,36 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
+import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
-import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
+import software.aws.toolkits.core.credentials.CredentialSourceId
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
-import software.aws.toolkits.core.credentials.CredentialIdentifierBase
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.core.region.anAwsRegion
+import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
+import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class CredentialManagerTest {
     @Rule
@@ -34,24 +43,22 @@ class CredentialManagerTest {
     @JvmField
     val application = ApplicationRule()
 
+    @Rule
+    @JvmField
+    val regionProvider = MockRegionProviderRule()
+
     @Test
     fun testCredentialsCanLoadFromExtensions() {
-        val region = MockRegionProvider.getInstance().defaultRegion()
+        val region = getDefaultRegion()
 
         addFactories(
             createTestCredentialFactory(
                 "testFactory1",
-                mapOf(
-                    "testFoo1" to region to createCredentials("testFoo1"),
-                    "testBar1" to region to createCredentials("testBar1")
-                )
+                listOf("testFoo1", "testBar1")
             ),
             createTestCredentialFactory(
                 "testFactory2",
-                mapOf(
-                    "testFoo2" to region to createCredentials("testFoo2"),
-                    "testBar2" to region to createCredentials("testBar2")
-                )
+                listOf("testFoo2", "testBar2")
             )
         )
 
@@ -64,56 +71,36 @@ class CredentialManagerTest {
 
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
 
-        assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("testFoo2Access")
-            assertThat(it.secretAccessKey()).isEqualTo("testFoo2Secret")
-        }
+        assertThat(credentialProvider.resolveCredentials()).isInstanceOf<AwsCredentials>()
     }
 
     @Test
     fun testCredentialsAreScopedToPartition() {
-        val partition1 = AwsRegion("test-1", "Test-1", "aws-test-1")
-        val partition2 = AwsRegion("test-1", "Test-1", "aws-test-2")
+        val partition1 = anAwsRegion(partitionId = "part1")
+        val partition1Region2 = anAwsRegion(partitionId = "part1")
+        val partition2 = anAwsRegion(partitionId = "part2")
 
-        addFactories(
-            createTestCredentialFactory(
-                "testFactory1",
-                mapOf(
-                    "testFoo1" to partition1 to createCredentials(partition1.partitionId),
-                    "testFoo1" to partition2 to createCredentials(partition2.partitionId)
-                )
-            )
-        )
+        addFactories(createTestCredentialFactory("testFactory1", listOf("testFoo1")))
 
         val credentialManager = DefaultCredentialManager()
 
         val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
         assertNotNull(credentialsIdentifier)
 
-        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition1)
+        val partition1Credentials = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition1).resolveCredentials()
+        val partition1Region2Credentials = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition1Region2).resolveCredentials()
+        val partition2Credentials = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition2).resolveCredentials()
 
-        assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("aws-test-1Access")
-            assertThat(it.secretAccessKey()).isEqualTo("aws-test-1Secret")
-        }
-
-        val credentialProvider2 = credentialManager.getAwsCredentialProvider(credentialsIdentifier, partition2)
-
-        assertThat(credentialProvider2.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("aws-test-2Access")
-            assertThat(it.secretAccessKey()).isEqualTo("aws-test-2Secret")
-        }
+        assertThat(partition1Credentials).isEqualTo(partition1Region2Credentials).isNotEqualTo(partition2Credentials)
     }
 
     @Test
     fun testCredentialUpdatingDoesNotBreakExisting() {
-        val region = MockRegionProvider.getInstance().defaultRegion()
-        val credentialFactory = createTestCredentialFactory(
-            "testFactory1",
-            mapOf(
-                "testFoo1" to region to createCredentials("testFoo1")
-            )
-        )
+        val region = getDefaultRegion()
+        val originalCredentials = randomCredentialProvider()
+        val credentialFactory = createTestCredentialFactory("testFactory1").apply {
+            addCredentialProvider("testFoo1", originalCredentials)
+        }
 
         addFactories(credentialFactory)
 
@@ -124,23 +111,13 @@ class CredentialManagerTest {
 
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
 
-        assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("testFoo1Access")
-            assertThat(it.secretAccessKey()).isEqualTo("testFoo1Secret")
-        }
+        assertThat(credentialProvider.resolveCredentials()).isEqualTo(originalCredentials.resolveCredentials())
 
-        credentialFactory.updateCredentials(
-            "testFoo1",
-            mapOf(
-                region to createCredentials("testFoo1Updated")
-            )
-        )
+        val updatedCredentials = randomCredentialProvider()
+        credentialFactory.updateCredentials("testFoo1", region, updatedCredentials)
 
         // Existing references are good
-        assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("testFoo1UpdatedAccess")
-            assertThat(it.secretAccessKey()).isEqualTo("testFoo1UpdatedSecret")
-        }
+        assertThat(credentialProvider.resolveCredentials()).isEqualTo(updatedCredentials.resolveCredentials())
 
         // New ones are good too
         assertThat(
@@ -148,21 +125,13 @@ class CredentialManagerTest {
                 credentialsIdentifier,
                 region
             ).resolveCredentials()
-        ).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("testFoo1UpdatedAccess")
-            assertThat(it.secretAccessKey()).isEqualTo("testFoo1UpdatedSecret")
-        }
+        ).isEqualTo(updatedCredentials.resolveCredentials())
     }
 
     @Test
     fun testRemovedCredentialsCeaseWorkingAfter() {
-        val region = MockRegionProvider.getInstance().defaultRegion()
-        val credentialFactory = createTestCredentialFactory(
-            "testFactory1",
-            mapOf(
-                "testFoo1" to region to createCredentials("testFoo1")
-            )
-        )
+        val region = getDefaultRegion()
+        val credentialFactory = createTestCredentialFactory("testFactory1", listOf("testFoo1"))
 
         addFactories(credentialFactory)
 
@@ -172,11 +141,7 @@ class CredentialManagerTest {
         assertNotNull(credentialsIdentifier)
 
         val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, region)
-
-        assertThat(credentialProvider.resolveCredentials()).isInstanceOfSatisfying(AwsBasicCredentials::class.java) {
-            assertThat(it.accessKeyId()).isEqualTo("testFoo1Access")
-            assertThat(it.secretAccessKey()).isEqualTo("testFoo1Secret")
-        }
+        assertThat(credentialProvider.resolveCredentials()).isInstanceOf<AwsCredentials>()
 
         credentialFactory.removeCredentials("testFoo1")
 
@@ -189,80 +154,163 @@ class CredentialManagerTest {
                 credentialsIdentifier,
                 region
             ).resolveCredentials()
-        }.isInstanceOf(CredentialProviderNotFoundException::class.java)
+        }.isInstanceOf<CredentialProviderNotFoundException>()
 
-        assertNull(credentialManager.getCredentialIdentifierById("testFoo1"))
+        assertThat(credentialManager.getCredentialIdentifierById("testFoo1")).isNull()
+    }
+
+    @Test
+    fun testUpdatedCredentialIdentifierIsApplied() {
+        val region = getDefaultRegion()
+        val credentialFactory = createTestCredentialFactory("testFactory1", listOf("testFoo1"))
+
+        addFactories(credentialFactory)
+
+        val credentialManager = DefaultCredentialManager()
+
+        assertThat(credentialManager.getCredentialIdentifierById("testFoo1")?.defaultRegionId).isEqualTo(region.id)
+
+        val newRegion = regionProvider.addRegion(AwsRegion("test", "test", "test"))
+        credentialFactory.updateCredentials("testFoo1", newRegion)
+
+        assertThat(credentialManager.getCredentialIdentifierById("testFoo1")?.defaultRegionId).isEqualTo(newRegion.id)
+    }
+
+    @Test
+    fun resolvingCredentialsRunsInBackground() {
+        val credentialFactory = createTestCredentialFactory("testFactory1").apply {
+            addCredentialProvider("testFoo1") {
+                assertIsNonDispatchThread()
+                computeOnEdt {
+                    ApplicationManager.getApplication().assertIsDispatchThread()
+
+                    AwsBasicCredentials.create(aString(), aString())
+                }
+            }
+        }
+
+        addFactories(credentialFactory)
+
+        val credentialManager = DefaultCredentialManager()
+        val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
+        assertNotNull(credentialsIdentifier)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, getDefaultRegion())
+
+        runInEdtAndWait {
+            credentialProvider.resolveCredentials()
+        }
+    }
+
+    @Test
+    fun processCancellationBubblesOut() {
+        val credentialFactory = createTestCredentialFactory("testFactory1").apply {
+            addCredentialProvider("testFoo1") {
+                throw ProcessCanceledException()
+            }
+        }
+
+        addFactories(credentialFactory)
+
+        val credentialManager = DefaultCredentialManager()
+        val credentialsIdentifier = credentialManager.getCredentialIdentifierById("testFoo1")
+        assertNotNull(credentialsIdentifier)
+        val credentialProvider = credentialManager.getAwsCredentialProvider(credentialsIdentifier, getDefaultRegion())
+
+        assertThatThrownBy {
+            credentialProvider.resolveCredentials()
+        }.isInstanceOf<ProcessCanceledException>()
     }
 
     private fun addFactories(vararg factories: CredentialProviderFactory) {
         ExtensionTestUtil.maskExtensions(DefaultCredentialManager.EP_NAME, factories.toList(), disposableRule.disposable)
     }
 
-    private fun createCredentials(id: String) = StaticCredentialsProvider.create(AwsBasicCredentials.create("${id}Access", "${id}Secret"))
+    private fun createTestCredentialFactory(id: String, initialProviderIds: List<String> = emptyList()) = TestCredentialProviderFactory(id).apply {
+        initialProviderIds.forEach(this::addCredentialProvider)
+    }
 
-    private fun createTestCredentialFactory(
-        id: String,
-        initialCredentials: Map<Pair<String, AwsRegion>, AwsCredentialsProvider>
-    ): TestCredentialProviderFactory = TestCredentialProviderFactory(id, initialCredentials)
-
-    private class TestCredentialProviderFactory(
-        override val id: String,
-        private val initialCredentials: Map<Pair<String, AwsRegion>, AwsCredentialsProvider>
-    ) : CredentialProviderFactory {
-        private val credentialsMapping = mutableMapOf<String, MutableMap<AwsRegion, AwsCredentialsProvider>>()
+    private class TestCredentialProviderFactory(override val id: String) : CredentialProviderFactory {
+        private val initialProviders = mutableMapOf<String, TestCredentialProviderIdentifier>()
+        private val credentialsMapping = mutableMapOf<String, TestCredentialProviderIdentifier>()
         private lateinit var callback: CredentialsChangeListener
+
+        override val credentialSourceId = CredentialSourceId.SharedCredentials
 
         override fun setUp(credentialLoadCallback: CredentialsChangeListener) {
             callback = credentialLoadCallback
 
-            val credentialsAdded = initialCredentials
-                .onEach {
-                    val providerIdCredentials = credentialsMapping.computeIfAbsent(it.key.first) { mutableMapOf() }
-                    providerIdCredentials[it.key.second] = it.value
-                }
-                .map { createCredentialIdentifier(it.key.first) }
+            credentialsMapping.putAll(initialProviders)
 
             callback(
                 CredentialsChangeEvent(
-                    credentialsAdded,
+                    initialProviders.values.toList(),
+                    emptyList(),
+                    emptyList()
+                )
+            )
+
+            initialProviders.clear()
+        }
+
+        fun addCredentialProvider(
+            credentialId: String,
+            awsCredentialsProvider: AwsCredentialsProvider? = null
+        ) {
+            val identifier = TestCredentialProviderIdentifier(credentialId, id, getDefaultRegion().id, awsCredentialsProvider)
+            if (!::callback.isInitialized) {
+                initialProviders[credentialId] = identifier
+                return
+            }
+
+            credentialsMapping[credentialId] = identifier
+
+            callback(
+                CredentialsChangeEvent(
+                    listOf(identifier),
                     emptyList(),
                     emptyList()
                 )
             )
         }
 
-        override fun createAwsCredentialProvider(
-            providerId: CredentialIdentifier,
-            region: AwsRegion,
-            sdkHttpClientSupplier: () -> SdkHttpClient
-        ): AwsCredentialsProvider = credentialsMapping.getValue(providerId.id).getValue(region)
+        override fun createAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): AwsCredentialsProvider =
+            (providerId as TestCredentialProviderIdentifier).provider ?: StaticCredentialsProvider.create(AwsBasicCredentials.create(aString(), aString()))
 
-        private fun createCredentialIdentifier(providerId: String): TestCredentialProviderIdentifier = TestCredentialProviderIdentifier(providerId, id)
+        fun updateCredentials(providerId: String, region: AwsRegion, awsCredentialsProvider: AwsCredentialsProvider = randomCredentialProvider()) {
+            val identifier = TestCredentialProviderIdentifier(providerId, id, region.id, awsCredentialsProvider)
 
-        fun updateCredentials(providerId: String, credentials: Map<AwsRegion, AwsCredentialsProvider>) {
-            credentialsMapping[providerId] = credentials.toMutableMap()
+            credentialsMapping[providerId] = identifier
+
             callback(
                 CredentialsChangeEvent(
                     emptyList(),
-                    listOf(createCredentialIdentifier(providerId)),
+                    listOf(identifier),
                     emptyList()
                 )
             )
         }
 
         fun removeCredentials(providerId: String) {
-            credentialsMapping.remove(providerId)
             callback(
                 CredentialsChangeEvent(
                     emptyList(),
                     emptyList(),
-                    listOf(createCredentialIdentifier(providerId))
+                    listOf(credentialsMapping.remove(providerId)!!)
                 )
             )
         }
     }
 
-    private class TestCredentialProviderIdentifier(override val id: String, override val factoryId: String) : CredentialIdentifierBase() {
+    private class TestCredentialProviderIdentifier(
+        override val id: String,
+        override val factoryId: String,
+        override val defaultRegionId: String,
+        val provider: AwsCredentialsProvider?
+    ) : CredentialIdentifierBase(null) {
         override val displayName: String = "$factoryId:$id"
+    }
+
+    private companion object {
+        private fun randomCredentialProvider() = StaticCredentialsProvider.create(AwsBasicCredentials.create(aString(), aString()))
     }
 }

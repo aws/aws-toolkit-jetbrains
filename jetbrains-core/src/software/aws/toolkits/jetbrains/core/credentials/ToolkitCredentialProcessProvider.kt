@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.execution.configurations.CommandLineTokenizer
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
@@ -19,15 +20,20 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
+import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.RefreshResult
 import software.aws.toolkits.resources.message
 import java.time.Instant
+import java.util.Enumeration
 
+/**
+ * Similar to the SDKs ProcessCredentialsProvider, but ties in the env var system of the IDE such as getting $PATH
+ */
 class ToolkitCredentialProcessProvider internal constructor(
     private val command: String,
     private val parser: CredentialProcessOutputParser
-) : AwsCredentialsProvider {
+) : AwsCredentialsProvider, SdkAutoCloseable {
     constructor(command: String) : this(command, DefaultCredentialProcessOutputParser)
 
     private val entrypoint by lazy {
@@ -35,7 +41,8 @@ class ToolkitCredentialProcessProvider internal constructor(
     }
     private val cmd by lazy {
         if (SystemInfo.isWindows) {
-            GeneralCommandLine("cmd", "/C", command)
+            @Suppress("UNCHECKED_CAST")
+            GeneralCommandLine("cmd", "/C", *(CommandLineTokenizer(command) as Enumeration<String>).toList().toTypedArray())
         } else {
             GeneralCommandLine("sh", "-c", command)
         }
@@ -74,7 +81,11 @@ class ToolkitCredentialProcessProvider internal constructor(
         throw RuntimeException(msg)
     }
 
-    internal companion object {
+    override fun close() {
+        processCredentialCache.close()
+    }
+
+    private companion object {
         private const val DEFAULT_TIMEOUT = 30000
     }
 }

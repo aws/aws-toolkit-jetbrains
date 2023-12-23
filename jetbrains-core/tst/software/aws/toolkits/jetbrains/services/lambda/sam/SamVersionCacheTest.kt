@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
-import org.jetbrains.concurrency.Promise
-import org.jetbrains.concurrency.all
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -42,7 +40,7 @@ class SamVersionCacheTest {
     fun samCliMinVersion() {
         val samPath = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
         val samVersion = SamVersionCache.evaluateBlocking(samPath).result
-        assertEquals("Mismatch SAM executable version", samVersion, SamExecutable().samMinVersion)
+        assertEquals("Mismatch SAM executable version", samVersion, SamExecutable.minVersion)
     }
 
     @Test
@@ -87,10 +85,5 @@ class SamVersionCacheTest {
 
         val samPath = SamCommonTestUtils.makeATestSam(message).toString()
         SamVersionCache.evaluateBlocking(samPath)
-    }
-
-    private fun waitAll(promises: Collection<Promise<*>>) {
-        val all = promises.all(null, ignoreErrors = true)
-        all.blockingGet(3000)
     }
 }

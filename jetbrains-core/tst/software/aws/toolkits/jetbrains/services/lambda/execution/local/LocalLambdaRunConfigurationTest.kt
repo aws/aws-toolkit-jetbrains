@@ -3,11 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.local
 
-import com.intellij.execution.ExecutorRegistry
 import com.intellij.execution.configurations.RuntimeConfigurationError
-import com.intellij.execution.executors.DefaultDebugExecutor
-import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
@@ -23,18 +19,23 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaArchitecture
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.utils.getState
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
-import software.aws.toolkits.jetbrains.utils.toElement
+import software.aws.toolkits.jetbrains.utils.value
+import software.aws.toolkits.jetbrains.utils.xmlElement
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
-import kotlin.test.assertNotNull
 
 class LocalLambdaRunConfigurationTest {
     @Rule
@@ -49,6 +50,10 @@ class LocalLambdaRunConfigurationTest {
     @JvmField
     val tempDir = TemporaryFolder()
 
+    @Rule
+    @JvmField
+    val credentialManager = MockCredentialManagerRule()
+
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val runtime = Runtime.JAVA8
@@ -58,9 +63,9 @@ class LocalLambdaRunConfigurationTest {
     fun setUp() {
         val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
         preWarmSamVersionCache(validSam.toString())
-        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam).value
 
-        MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+        credentialManager.addCredentials(mockId, mockCreds)
 
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
@@ -80,7 +85,6 @@ class LocalLambdaRunConfigurationTest {
 
     @After
     fun tearDown() {
-        MockCredentialsManager.getInstance().reset()
         ExecutableManager.getInstance().removeExecutable(SamExecutable())
     }
 
@@ -101,6 +105,94 @@ class LocalLambdaRunConfigurationTest {
     }
 
     @Test
+    fun `Valid image configuration`() {
+        setupMinSamImage()
+        val project = projectRule.project
+        preWarmLambdaHandlerValidation(project)
+
+        val template = createImageTemplate()
+        tempDir.newFolder("hello-world")
+        tempDir.newFile("hello-world/Dockerfile3")
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                isImage = true,
+                credentialsProviderId = mockId,
+                templateFile = template,
+                runtime = LambdaRuntime.JAVA11,
+                logicalId = "SomeFunction"
+            )
+
+            assertThat(runConfiguration).isNotNull
+            runConfiguration.checkConfiguration()
+        }
+    }
+
+    @Test
+    fun `Invalid image-based configuration, no runtime set`() {
+        setupMinSamImage()
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                isImage = true,
+                credentialsProviderId = mockId,
+                templateFile = createImageTemplate(),
+                logicalId = "SomeFunction",
+                runtime = null
+            )
+
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.image.missing_debugger", "null"))
+        }
+    }
+
+    @Test
+    fun `Invalid image-based configuration, unsupported runtime set`() {
+        setupMinSamImage()
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                isImage = true,
+                credentialsProviderId = mockId,
+                templateFile = createImageTemplate(),
+                logicalId = "SomeFunction",
+                runtime = null
+            )
+
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                // "null" comes from runtime UNKNOWN_TO_SDK_VERSION we use since we know it will never be supported
+                .hasMessage(message("lambda.image.missing_debugger", "null"))
+        }
+    }
+
+    @Test
+    fun `Invalid configuration, sam version too low for images`() {
+        val invalidSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getVersionAsJson("1.0.0"))
+        preWarmSamVersionCache(invalidSam.toString())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), invalidSam).value
+
+        runInEdtAndWait {
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                isImage = true,
+                input = "TestInput",
+                inputIsFile = false,
+                templateFile = createImageTemplate(),
+                logicalId = "SomeFunction",
+                credentialsProviderId = mockId
+            )
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.image.sam_version_too_low", "1.0.0", SamCommon.minImageVersion))
+        }
+    }
+
+    @Test
     fun samIsNotSet() {
         val fakeSamPath = "NotValid"
         ExecutableManager.getInstance().removeExecutable(SamExecutable())
@@ -116,7 +208,7 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration).isNotNull
             assertThatThrownBy { runConfiguration.checkConfiguration() }
                 .isInstanceOf(RuntimeConfigurationError::class.java)
-                .hasMessage(message("executableCommon.missing_executable", "sam"))
+                .hasMessage(message("executableCommon.missing_executable", "sam", message("executableCommon.not_installed")))
         }
     }
 
@@ -230,7 +322,7 @@ class LocalLambdaRunConfigurationTest {
                       CodeUri: /some/dummy/code/location
                       Runtime: java8
                       Timeout: 900
-                """.trimIndent()
+                    """.trimIndent()
                 )
             }.canonicalPath
             val logicalName = "NotSomeFunction"
@@ -261,7 +353,7 @@ class LocalLambdaRunConfigurationTest {
                       Handler: com.example.LambdaHandler::handleRequest
                       CodeUri: /some/dummy/code/location
                       Timeout: 900
-                """.trimIndent()
+                    """.trimIndent()
                 )
             }.canonicalPath
             val logicalName = "SomeFunction"
@@ -293,7 +385,7 @@ class LocalLambdaRunConfigurationTest {
                       CodeUri: /some/dummy/code/location
                       Runtime: FAKE
                       Timeout: 900
-                """.trimIndent()
+                    """.trimIndent()
                 )
             }.canonicalPath
             val logicalName = "SomeFunction"
@@ -312,6 +404,40 @@ class LocalLambdaRunConfigurationTest {
     }
 
     @Test
+    fun unsupportedArchitecture() {
+        runInEdtAndWait {
+            val template = tempDir.newFile("template.yaml").also {
+                it.writeText(
+                    """
+                Resources:
+                  SomeFunction:
+                    Type: AWS::Serverless::Function
+                    Properties:
+                      Handler: com.example.LambdaHandler::handleRequest
+                      CodeUri: /some/dummy/code/location
+                      Runtime: java8
+                      Architectures:
+                        - FAKE
+                      Timeout: 900
+                    """.trimIndent()
+                )
+            }.canonicalPath
+            val logicalName = "SomeFunction"
+
+            val runConfiguration = createTemplateRunConfiguration(
+                project = projectRule.project,
+                templateFile = template,
+                logicalId = logicalName,
+                credentialsProviderId = mockId
+            )
+            assertThat(runConfiguration).isNotNull
+            assertThatThrownBy { runConfiguration.checkConfiguration() }
+                .isInstanceOf(RuntimeConfigurationError::class.java)
+                .hasMessage(message("lambda.run_configuration.unsupported_architecture", "FAKE"))
+        }
+    }
+
+    @Test
     fun handlerNotSetInTemplate() {
         runInEdtAndWait {
             val template = tempDir.newFile("template.yaml").also {
@@ -324,7 +450,7 @@ class LocalLambdaRunConfigurationTest {
                       Runtime: java8
                       CodeUri: /some/dummy/code/location
                       Timeout: 900
-                """.trimIndent()
+                    """.trimIndent()
                 )
             }.canonicalPath
             val logicalName = "SomeFunction"
@@ -468,7 +594,7 @@ class LocalLambdaRunConfigurationTest {
                 credentialsProviderId = mockId
             )
             assertThat(runConfiguration).isNotNull
-            assertThat(getState(runConfiguration).settings.input).isEqualTo("TestInput")
+            assertThat(getRunConfigState(runConfiguration).settings.input).isEqualTo("TestInput")
         }
     }
 
@@ -484,7 +610,7 @@ class LocalLambdaRunConfigurationTest {
                 credentialsProviderId = mockId
             )
             assertThat(runConfiguration).isNotNull
-            assertThat(getState(runConfiguration).settings.input).isEqualTo("TestInputFile")
+            assertThat(getRunConfigState(runConfiguration).settings.input).isEqualTo("TestInputFile")
         }
     }
 
@@ -506,16 +632,18 @@ class LocalLambdaRunConfigurationTest {
                 credentialsProviderId = mockId
             )
             assertThat(runConfiguration).isNotNull
-            assertThat(getState(runConfiguration).settings.input).isEqualTo("UpdatedTestInputFile")
+            assertThat(getRunConfigState(runConfiguration).settings.input).isEqualTo("UpdatedTestInputFile")
         }
     }
 
     @Test
     fun readExternalHandlerBasedDoesNotThrowException() {
         // This tests for backwards compatibility, data should not be changed except in backwards compatible ways
-        val element = """
+        val element = xmlElement(
+            """
             <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
               <option name="credentialProviderId" value="profile:default" />
+              <option name="architecture" value="arm64" />
               <option name="environmentVariables">
                 <map>
                   <entry key="Foo" value="Bar" />
@@ -526,12 +654,13 @@ class LocalLambdaRunConfigurationTest {
               <option name="inputIsFile" value="false" />
               <option name="logicalFunctionName" />
               <option name="regionId" value="us-west-2" />
-              <option name="runtime" value="python3.6" />
+              <option name="runtime" value="python3.11" />
               <option name="templateFile" />
               <option name="useTemplate" value="false" />
               <method v="2" />
             </configuration>
-        """.toElement()
+        """
+        )
 
         runInEdtAndWait {
             val runConfiguration = samRunConfiguration(projectRule.project)
@@ -542,7 +671,8 @@ class LocalLambdaRunConfigurationTest {
             assertThat(runConfiguration.templateFile()).isNull()
             assertThat(runConfiguration.logicalId()).isNull()
             assertThat(runConfiguration.handler()).isEqualTo("helloworld.App::handleRequest")
-            assertThat(runConfiguration.runtime()).isEqualTo(Runtime.PYTHON3_6)
+            assertThat(runConfiguration.architecture()).isEqualTo(LambdaArchitecture.ARM64.toString())
+            assertThat(runConfiguration.runtime()).isEqualTo(LambdaRuntime.PYTHON3_11)
             assertThat(runConfiguration.environmentVariables()).containsAllEntriesOf(mapOf("Foo" to "Bar"))
             assertThat(runConfiguration.regionId()).isEqualTo("us-west-2")
             assertThat(runConfiguration.credentialProviderId()).isEqualTo("profile:default")
@@ -552,7 +682,8 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun readExternalTemplateBasedDoesNotThrowException() {
         // This tests for backwards compatibility, data should not be changed except in backwards compatible ways
-        val element = """
+        val element = xmlElement(
+            """
                 <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
                   <option name="credentialProviderId" value="profile:default" />
                   <option name="environmentVariables">
@@ -570,7 +701,8 @@ class LocalLambdaRunConfigurationTest {
                   <option name="useTemplate" value="true" />
                   <method v="2" />
                 </configuration>
-        """.toElement()
+        """
+        )
 
         runInEdtAndWait {
             val runConfiguration = samRunConfiguration(projectRule.project)
@@ -591,7 +723,8 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun readInputFileBasedDoesNotThrowException() {
         // This tests for backwards compatibility, data should not be changed except in backwards compatible ways
-        val element = """
+        val element = xmlElement(
+            """
                 <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
                   <option name="credentialProviderId" value="profile:default" />
                   <option name="environmentVariables">
@@ -609,7 +742,8 @@ class LocalLambdaRunConfigurationTest {
                   <option name="useTemplate" value="true" />
                   <method v="2" />
                 </configuration>
-        """.toElement()
+        """
+        )
 
         runInEdtAndWait {
             val runConfiguration = samRunConfiguration(projectRule.project)
@@ -624,7 +758,8 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun readInputTextBasedDoesNotThrowException() {
         // This tests for backwards compatibility, data should not be changed except in backwards compatible ways
-        val element = """
+        val element = xmlElement(
+            """
                 <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
                   <option name="credentialProviderId" value="profile:default" />
                   <option name="environmentVariables">
@@ -642,7 +777,8 @@ class LocalLambdaRunConfigurationTest {
                   <option name="useTemplate" value="true" />
                   <method v="2" />
                 </configuration>
-        """.toElement()
+        """
+        )
 
         runInEdtAndWait {
             val runConfiguration = samRunConfiguration(projectRule.project)
@@ -657,7 +793,8 @@ class LocalLambdaRunConfigurationTest {
     @Test
     fun readSamSettings() {
         // This tests for backwards compatibility, data should not be changed except in backwards compatible ways
-        val element = """
+        val element = xmlElement(
+            """
                 <configuration name="HelloWorldFunction" type="aws.lambda" factoryName="Local" temporary="true" nameIsGenerated="true">
                   <option name="credentialProviderId" value="profile:default" />
                   <option name="environmentVariables">
@@ -682,18 +819,19 @@ class LocalLambdaRunConfigurationTest {
                   </sam>
                   <method v="2" />
                 </configuration>
-        """.toElement()
+        """
+        )
 
         runInEdtAndWait {
             val runConfiguration = samRunConfiguration(projectRule.project)
 
             runConfiguration.readExternal(element)
 
-            assertThat(runConfiguration.skipPullImage()).isTrue()
-            assertThat(runConfiguration.buildInContainer()).isTrue()
-            assertThat(runConfiguration.dockerNetwork()).isEqualTo("aws-lambda")
-            assertThat(runConfiguration.additionalBuildArgs()).isEqualTo("--debug")
-            assertThat(runConfiguration.additionalLocalArgs()).isEqualTo("--skip-pull-image")
+            assertThat(runConfiguration.skipPullImage).isTrue()
+            assertThat(runConfiguration.buildInContainer).isTrue()
+            assertThat(runConfiguration.dockerNetwork).isEqualTo("aws-lambda")
+            assertThat(runConfiguration.additionalBuildArgs).isEqualTo("--debug")
+            assertThat(runConfiguration.additionalLocalArgs).isEqualTo("--skip-pull-image")
         }
     }
 
@@ -718,15 +856,29 @@ class LocalLambdaRunConfigurationTest {
     private fun preWarmLambdaHandlerValidation(project: Project, handler: String = defaultHandler) =
         preWarmLambdaHandlerValidation(project, runtime, handler)
 
-    private fun getState(runConfiguration: LocalLambdaRunConfiguration): SamRunningState {
-        val executor = ExecutorRegistry.getInstance().getExecutorById(DefaultRunExecutor.EXECUTOR_ID)
-        assertNotNull(executor)
+    private fun getRunConfigState(runConfiguration: LocalLambdaRunConfiguration) = getState(runConfiguration) as SamRunningState
 
-        val environment = ExecutionEnvironmentBuilder.create(
-            DefaultDebugExecutor.getDebugExecutorInstance(),
-            runConfiguration
-        ).build()
+    private fun createImageTemplate(): String = tempDir.newFile("template.yaml").also {
+        it.writeText(
+            """
+                Resources:
+                  SomeFunction:
+                    Type: AWS::Serverless::Function
+                    Properties:
+                      Handler: com.example.LambdaHandler::handleRequest
+                      PackageType: Image
+                      Timeout: 900
+                    Metadata:
+                      DockerTag: v1
+                      DockerContext: ./hello-world
+                      Dockerfile: Dockerfile3
+            """.trimIndent()
+        )
+    }.canonicalPath
 
-        return runConfiguration.getState(executor, environment)
+    private fun setupMinSamImage() {
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getVersionAsJson(SamCommon.minImageVersion.toString()))
+        preWarmSamVersionCache(validSam.toString())
+        ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam).value
     }
 }

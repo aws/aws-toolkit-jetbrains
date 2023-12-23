@@ -3,20 +3,33 @@
 
 package software.aws.toolkits.jetbrains.core.help
 
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+
 enum class HelpIds(shortId: String, val url: String) {
+    // App Runner
+    APPRUNNER_PAUSE_RESUME(
+        "appRunnerPauseResume",
+        "https://docs.aws.amazon.com/console/apprunner/manage-pause"
+    ),
+    APPRUNNER_CODE_CONFIG(
+        "appRunnerCodeConfig",
+        "https://docs.aws.amazon.com/console/apprunner/config-file"
+    ),
+    APPRUNNER_CONNECTIONS(
+        "appRunnnerServiceConnections",
+        "https://docs.aws.amazon.com/console/apprunner/manage-connections"
+    ),
+
+    // Explorer
     EXPLORER_WINDOW(
         "explorerWindow",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/aws-explorer"
     ),
-    // Cloud Debugging
-    CLOUD_DEBUG_ENABLE(
-        "enableCloudDebugging",
-        "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/cloud-debug"
+    EXPLORER_CREDS_HELP(
+        "explorerCredsHelp",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
-    CLOUD_DEBUG_RUN_CONFIGURATION(
-        "cloudDebugRunConfiguration",
-        "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/run-debug-config-dialog-cloud-debug"
-    ),
+
     // Lambda
     CREATE_FUNCTION_DIALOG(
         "createFunctionDialog",
@@ -30,6 +43,7 @@ enum class HelpIds(shortId: String, val url: String) {
         "updateFunctionCodeDialog",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/update-code-dialog"
     ),
+
     // Serverless
     NEW_SERVERLESS_PROJECT_DIALOG(
         "newServerlessProjectDialog",
@@ -39,16 +53,19 @@ enum class HelpIds(shortId: String, val url: String) {
         "deployServerlessApplicationDialog",
         "https://docs.aws.amazon.com/console/toolkit-for-jetbrains/deploy-serverless-application-dialog"
     ),
+
     // Schema code download
     DOWNLOAD_CODE_FOR_SCHEMA_DIALOG(
         "downloadCodeForSchemaDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/eventbridge-schemas.html"
     ),
+
     // Schema search
     SCHEMA_SEARCH_DIALOG(
         "schemaSearchDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/eventbridge-schemas.html"
     ),
+
     // Others
     RUN_DEBUG_CONFIGURATIONS_DIALOG(
         "runDebugConfigurationsDialog",
@@ -64,13 +81,56 @@ enum class HelpIds(shortId: String, val url: String) {
     ),
     CFN_LINT(
         "cloudformation.linter",
-        "https://github.com/aws-cloudformation/cfn-python-lint/blob/master/README.md"
+        "https://github.com/aws-cloudformation/cfn-lint/blob/main/README.md"
     ),
     // RDS
     RDS_SETUP_IAM_AUTH(
         "rdsIamAuth",
         "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html"
-    );
+    ),
+
+    // AWS CLI
+    AWS_CLI_INSTALL(
+        "awsCli.install",
+        "https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html"
+    ),
+
+    // Ecs Exec
+    ECS_EXEC_PERMISSIONS_REQUIRED(
+        "ecsExecPermissions",
+        "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html#ecs-exec-enabling-and-using"
+    ),
+
+    // What is AWS Toolkit?
+    AWS_TOOLKIT_GETTING_STARTED(
+        "awsToolkitGettingStarted",
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html"
+    ),
+
+    // CodeWhisperer
+    CODEWHISPERER_TOKEN(
+        "CodeWhispererToken",
+        CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
+    ),
+
+    // TODO: update this
+    CODEWHISPERER_LOGIN_YES_NO(
+        "CodeWhispererLoginYesNoDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+    ),
+
+    // TODO: update this
+    CODEWHISPERER_LOGIN_DIALOG(
+        "CodeWhispererLoginDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+    ),
+
+    // TODO: update this
+    TOOLKIT_ADD_CONNECTIONS_DIALOG(
+        "ToolkitAddConnectionsDialog",
+        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+    )
+    ;
 
     val id = "aws.toolkit.$shortId"
 }

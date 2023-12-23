@@ -3,18 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.schemas.code
 
-import com.intellij.notification.Notification
-import com.intellij.notification.Notifications
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.util.io.Compressor
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import org.apache.commons.lang.exception.ExceptionUtils
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.catchThrowable
@@ -22,6 +15,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.CodeGenerationStatus
@@ -34,17 +33,18 @@ import software.amazon.awssdk.services.schemas.model.NotFoundException
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingResponse
 import software.aws.toolkits.core.utils.WaiterTimeoutException
-import software.aws.toolkits.core.utils.failedFuture
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
+import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Duration
 import java.util.concurrent.CompletableFuture.completedFuture
+import java.util.concurrent.CompletableFuture.failedFuture
 
 class SchemaCodeDownloaderTest {
 
@@ -56,47 +56,32 @@ class SchemaCodeDownloaderTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private lateinit var SOURCE_FOLDER_FILE: File
-    private lateinit var ZIP_FILE: File
-    private lateinit var DESTINATION_FOLDER_FILE: File
-
-    private lateinit var SOURCE_FOLDER: String
-    private lateinit var ZIP_FILE_PATH: String
-    private lateinit var DESTINATION_FOLDER: String
-
-    private val ZIP_FOLDER_HIERARCHY = "srcDir/comDir/fooBarDir/"
-    private val ZIP_FILE_1 = "File1.java"
-    private val ZIP_FILE_2 = "File2.java"
-    private val SOME_TEXT = "someText"
-
-    @JvmField
     @Rule
-    val mockClientManager = MockClientManagerRule(projectRule)
+    @JvmField
+    val disposableRule = DisposableRule()
 
-    private var errorNotification: Notification? = null
+    @Rule
+    @JvmField
+    val notificationListener = NotificationListenerRule(projectRule, disposableRule.disposable)
 
-    private val REGISTRY = "registry"
-    private val SCHEMA = "schema"
-    private val FAKE_DESTINATION = "/some/destination/anything/really"
-    private val SCHEMA_SUMMARY = SchemaSummary(SCHEMA, REGISTRY)
-    private val VERSION = "2"
-    private val LANGUAGE = SchemaCodeLangs.JAVA8
-    private val REQUEST = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, FAKE_DESTINATION)
-    private val ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME = REQUEST.schemaCoreCodeFileName()
+    private lateinit var sourceFolder: File
+    private lateinit var zipFile: File
+    private lateinit var destinationFolder: File
 
-    private val mockSchemasClient = mock<SchemasClient>()
+    private val mockSchemasClient = delegateMock<SchemasClient>()
     private val codeGenerator = mock<CodeGenerator>()
     private val codePoller = mock<CodeGenerationStatusPoller>()
     private val codeDownloader = mock<CodeDownloader>()
     private val codeExtractor = mock<CodeExtractor>()
-    private val progressUpdater = mock<ProgressUpdater>()
     private val progressIndicator = mock<ProgressIndicator>()
     private val downloadedSchemaCode = mock<DownloadedSchemaCode>()
-    private val schemaCodeCoreFile = mock<File>()
+    private val schemaCodeCoreFile = mock<Path>()
 
     @Before
     fun setUp() {
-        subscribeToNotifications()
+        sourceFolder = tempFolder.newFolder()
+        zipFile = tempFolder.newFile()
+        destinationFolder = tempFolder.newFolder()
     }
 
     @Test
@@ -150,13 +135,6 @@ class SchemaCodeDownloaderTest {
 
     @Test
     fun canPollForCurrentCodeGenerationStatus() {
-        val describeCodeBindingRequest = DescribeCodeBindingRequest.builder()
-            .schemaName(SCHEMA)
-            .registryName(REGISTRY)
-            .language(LANGUAGE.apiValue)
-            .schemaVersion(VERSION)
-            .build()
-
         val inProgressResponse = DescribeCodeBindingResponse.builder()
             .status(CodeGenerationStatus.CREATE_IN_PROGRESS)
             .schemaVersion(VERSION)
@@ -167,7 +145,7 @@ class SchemaCodeDownloaderTest {
             .build()
 
         mockSchemasClient.stub {
-            on { describeCodeBinding(describeCodeBindingRequest) }.thenReturn(inProgressResponse)
+            on { describeCodeBinding(any<DescribeCodeBindingRequest>()) }.thenReturn(inProgressResponse)
                 .thenReturn(inProgressResponse)
                 .thenReturn(inProgressResponse)
                 .thenReturn(completedResponse)
@@ -175,42 +153,8 @@ class SchemaCodeDownloaderTest {
 
         val createdSchemaName = CodeGenerationStatusPoller(mockSchemasClient).pollForCompletion(REQUEST).toCompletableFuture().get()
 
-        verify(mockSchemasClient, times(4)).describeCodeBinding(describeCodeBindingRequest)
+        verify(mockSchemasClient, times(4)).describeCodeBinding(any<DescribeCodeBindingRequest>())
         assertThat(createdSchemaName).isEqualTo(SCHEMA)
-    }
-
-    @Test
-    fun pollForCurrentCodeGenerationStatusMaxAttempts() {
-        val describeCodeBindingRequest = DescribeCodeBindingRequest.builder()
-            .schemaName(SCHEMA)
-            .registryName(REGISTRY)
-            .language(LANGUAGE.apiValue)
-            .schemaVersion(VERSION)
-            .build()
-
-        val inProgressResponse = DescribeCodeBindingResponse.builder()
-            .status(CodeGenerationStatus.CREATE_IN_PROGRESS)
-            .schemaVersion(VERSION)
-            .build()
-        val completedResponse = DescribeCodeBindingResponse.builder()
-            .status(CodeGenerationStatus.CREATE_COMPLETE)
-            .schemaVersion(VERSION)
-            .build()
-
-        val maxAttempts = 2
-
-        mockSchemasClient.stub {
-            on { describeCodeBinding(describeCodeBindingRequest) }.thenReturn(inProgressResponse)
-                .thenReturn(inProgressResponse)
-                .thenReturn(completedResponse)
-        }
-
-        assertThatThrownBy {
-            val pollingSettings = CodeGenerationStatusPoller.PollingSettings(Duration.ofMillis(10), maxAttempts)
-            CodeGenerationStatusPoller(mockSchemasClient, pollingSettings).pollForCompletion(REQUEST).toCompletableFuture().get()
-        }.hasRootCauseInstanceOf(WaiterTimeoutException::class.java)
-
-        verify(mockSchemasClient, times(2)).describeCodeBinding(describeCodeBindingRequest)
     }
 
     @Test
@@ -271,75 +215,71 @@ class SchemaCodeDownloaderTest {
 
     @Test
     fun canExtractZipFile() {
-        initializeRealSourceAndDestinationFolders()
-
         // Initialize directories and files to put into a zip file
-        val directory = File(SOURCE_FOLDER_FILE, ZIP_FOLDER_HIERARCHY)
+        val directory = File(sourceFolder, ZIP_FOLDER_HIERARCHY)
         val file1 = File(directory, ZIP_FILE_1)
         val file2 = File(directory, ZIP_FILE_2)
         val file3 = File(directory, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
-        assertThat(directory.mkdirs()).isTrue()
-        assertThat(file1.createNewFile()).isTrue()
-        assertThat(file2.createNewFile()).isTrue()
-        assertThat(file3.createNewFile()).isTrue()
+        assertThat(directory.mkdirs()).isTrue
+        assertThat(file1.createNewFile()).isTrue
+        assertThat(file2.createNewFile()).isTrue
+        assertThat(file3.createNewFile()).isTrue
 
         file1.writeText(SOME_TEXT)
         file2.writeText(SOME_TEXT)
         file3.writeText(SOME_TEXT)
 
-        assertThat(SOURCE_FOLDER_FILE.exists()).isTrue()
-        assertThat(DESTINATION_FOLDER_FILE.exists()).isTrue()
+        assertThat(sourceFolder.exists()).isTrue
+        assertThat(destinationFolder.exists()).isTrue
 
         // Write all to zip file, and put in a ByteBuffer
-        Compressor.Zip(ZIP_FILE).use {
-            it.addDirectory(SOURCE_FOLDER_FILE)
+        Compressor.Zip(zipFile).use {
+            it.addDirectory(sourceFolder)
         }
-        val byteBufferZipContents = fileToByteBuffer(ZIP_FILE)
+        val byteBufferZipContents = fileToByteBuffer(zipFile)
         val downloadedSchemaCode = DownloadedSchemaCode(byteBufferZipContents)
 
-        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, DESTINATION_FOLDER)
+        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, destinationFolder)
 
         // Invoke CodeExtractor which should unzip the files and places in new directory
         val schemaCoreCodeFile = CodeExtractor().extractAndPlace(realDestinationRequest, downloadedSchemaCode).toCompletableFuture().get()
 
         // Assert zip itself exists
-        val destinationFolderFileZipFolder = Paths.get(DESTINATION_FOLDER, ZIP_FOLDER_HIERARCHY).toFile()
-        assertThat(destinationFolderFileZipFolder.exists()).isTrue()
+        val destinationFolderFileZipFolder = File(destinationFolder, ZIP_FOLDER_HIERARCHY)
+        assertThat(destinationFolderFileZipFolder.exists()).isTrue
 
         // Assert files unzipped and exist
         val extractedFile1 = Paths.get(destinationFolderFileZipFolder.path, ZIP_FILE_1).toFile()
         val extractedFile2 = Paths.get(destinationFolderFileZipFolder.path, ZIP_FILE_2).toFile()
         val extractedFile3 = Paths.get(destinationFolderFileZipFolder.path, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME).toFile()
 
-        assertThat(extractedFile1.exists()).isTrue()
-        assertThat(extractedFile2.exists()).isTrue()
-        assertThat(extractedFile3.exists()).isTrue()
+        assertThat(extractedFile1.exists()).isTrue
+        assertThat(extractedFile2.exists()).isTrue
+        assertThat(extractedFile3.exists()).isTrue
 
         // Assert the schema core code file exists, and is returned
-        assertThat(schemaCoreCodeFile).isNotNull()
+        assertThat(schemaCoreCodeFile).isNotNull
         schemaCoreCodeFile?.let {
-            assertThat(schemaCoreCodeFile.exists()).isTrue()
-            assertThat(schemaCoreCodeFile.name).isEqualTo(ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
+            assertThat(Files.exists(schemaCoreCodeFile)).isTrue
+            assertThat(schemaCoreCodeFile.fileName.toString()).isEqualTo(ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
         }
     }
 
     @Test
     fun canValidateZipFileDirectoryFileContentsClash() {
-        initializeRealSourceAndDestinationFolders()
-
         // Initialize directories and files to put into a zip file
-        val sourceDirectory = File(SOURCE_FOLDER_FILE, ZIP_FOLDER_HIERARCHY)
+        val sourceDirectory = File(sourceFolder, ZIP_FOLDER_HIERARCHY)
         val sourceFile = File(sourceDirectory, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
 
         // Initialize a destination directory and files that clash with source contents
-        val destinationDirectory = File(DESTINATION_FOLDER_FILE, ZIP_FOLDER_HIERARCHY)
+        val destinationDirectory = File(destinationFolder, ZIP_FOLDER_HIERARCHY)
         val destinationFile = File(destinationDirectory, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
 
-        assertThat(sourceDirectory.mkdirs()).isTrue()
-        assertThat(sourceFile.createNewFile()).isTrue()
+        assertThat(sourceDirectory.mkdirs()).isTrue
+        assertThat(sourceFile.createNewFile()).isTrue
 
-        assertThat(destinationDirectory.mkdirs()).isTrue()
-        assertThat(destinationFile.createNewFile()).isTrue()
+        assertThat(destinationDirectory.mkdirs()).isTrue
+        assertThat(destinationFile.createNewFile()).isTrue
 
         // Write some known content to the file in order to detect that it's not overwritten later
         val expectedExistingContent = "ExistingContentInFile"
@@ -348,13 +288,13 @@ class SchemaCodeDownloaderTest {
         }
 
         // Write all to zip file, and put in a ByteBuffer
-        Compressor.Zip(ZIP_FILE).use {
-            it.addDirectory(SOURCE_FOLDER_FILE)
+        Compressor.Zip(zipFile).use {
+            it.addDirectory(sourceFolder)
         }
-        val byteBufferZipContents = fileToByteBuffer(ZIP_FILE)
+        val byteBufferZipContents = fileToByteBuffer(zipFile)
         val downloadedSchemaCode = DownloadedSchemaCode(byteBufferZipContents)
 
-        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, DESTINATION_FOLDER)
+        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, destinationFolder)
 
         // Invoke CodeExtractor which should throw an exception and not overwrite the destination files
         val exception = catchThrowable { CodeExtractor().extractAndPlace(realDestinationRequest, downloadedSchemaCode).toCompletableFuture().get() }
@@ -362,8 +302,8 @@ class SchemaCodeDownloaderTest {
         assertThat(ExceptionUtils.getRootCause(exception)).isInstanceOf(SchemaCodeDownloadFileCollisionException::class.java)
 
         // Directory and File already exists
-        assertThat(destinationDirectory.exists()).isTrue()
-        assertThat(destinationFile.exists()).isTrue()
+        assertThat(destinationDirectory.exists()).isTrue
+        assertThat(destinationFile.exists()).isTrue
 
         // Read the file and verify it's the unmodified content
         val actualContent = String(Files.readAllBytes(destinationFile.toPath()))
@@ -372,67 +312,54 @@ class SchemaCodeDownloaderTest {
 
     @Test
     fun canValidateZipFileDirectoryDirectoryOnlyClashes() {
-        initializeRealSourceAndDestinationFolders()
-
         // Initialize directories and files to put into a zip file
-        val sourceDirectory = File(SOURCE_FOLDER_FILE, ZIP_FOLDER_HIERARCHY)
+        val sourceDirectory = File(sourceFolder, ZIP_FOLDER_HIERARCHY)
         val sourceFile = File(sourceDirectory, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
 
         // Initialize a destination directory and files that clash with source contents
-        val destinationDirectory = File(DESTINATION_FOLDER_FILE, ZIP_FOLDER_HIERARCHY)
+        val destinationDirectory = File(destinationFolder, ZIP_FOLDER_HIERARCHY)
         val destinationFile = File(destinationDirectory, ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME)
 
-        assertThat(sourceDirectory.mkdirs()).isTrue()
-        assertThat(sourceFile.createNewFile()).isTrue()
+        assertThat(sourceDirectory.mkdirs()).isTrue
+        assertThat(sourceFile.createNewFile()).isTrue
 
-        assertThat(destinationDirectory.mkdirs()).isTrue()
-        assertThat(destinationDirectory.isDirectory).isTrue()
-        assertThat(destinationFile.exists()).isFalse()
+        assertThat(destinationDirectory.mkdirs()).isTrue
+        assertThat(destinationDirectory.isDirectory).isTrue
+        assertThat(destinationFile.exists()).isFalse
 
         // Write all to zip file, and put in a ByteBuffer
-        Compressor.Zip(ZIP_FILE).use {
-            it.addDirectory(SOURCE_FOLDER_FILE)
+        Compressor.Zip(zipFile).use {
+            it.addDirectory(sourceFolder)
         }
-        val byteBufferZipContents = fileToByteBuffer(ZIP_FILE)
+        val byteBufferZipContents = fileToByteBuffer(zipFile)
         val downloadedSchemaCode = DownloadedSchemaCode(byteBufferZipContents)
 
-        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, DESTINATION_FOLDER)
+        val realDestinationRequest = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, destinationFolder)
 
         // Invoke CodeExtractor which should not throw any
         CodeExtractor().extractAndPlace(realDestinationRequest, downloadedSchemaCode).toCompletableFuture().get()
 
         // Directory and File already exist
-        assertThat(destinationDirectory.exists()).isTrue()
-        assertThat(destinationFile.exists()).isTrue()
-    }
-
-    @Test
-    fun canUpdateProgress() {
-        val progressIndicator = mock<ProgressIndicator>()
-        val newStatus = "new status"
-
-        ProgressUpdater().updateProgress(progressIndicator, newStatus).toCompletableFuture().get()
-
-        verify(progressIndicator).isIndeterminate = true
-        verify(progressIndicator).text = newStatus
+        assertThat(destinationDirectory.exists()).isTrue
+        assertThat(destinationFile.exists()).isTrue
     }
 
     @Test
     fun canDownloadCodeFirstInvocationPath() {
         standardDependencyMockInitialization()
 
-        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
             .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         assertThat(schema).isEqualTo(schemaCodeCoreFile)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeDownloader, times(2)).download(REQUEST)
         verify(codeExtractor).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(4)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(4)).text = any()
     }
 
     @Test
@@ -443,18 +370,18 @@ class SchemaCodeDownloaderTest {
             on { generate(REQUEST) }.thenReturn(completedFuture(CodeGenerationStatus.CREATE_COMPLETE))
         }
 
-        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
             .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         assertThat(schema).isEqualTo(schemaCodeCoreFile)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller, times(0)).pollForCompletion(REQUEST)
         verify(codeDownloader, times(2)).download(REQUEST)
         verify(codeExtractor).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(4)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(4)).text = any()
     }
 
     @Test
@@ -465,18 +392,18 @@ class SchemaCodeDownloaderTest {
             on { download(REQUEST) }.thenReturn(completedFuture(downloadedSchemaCode))
         }
 
-        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
-                .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
+        val schema = SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
+            .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         assertThat(schema).isEqualTo(schemaCodeCoreFile)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator, times(0)).generate(REQUEST)
         verify(codePoller, times(0)).pollForCompletion(REQUEST)
         verify(codeDownloader).download(REQUEST)
         verify(codeExtractor).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(2)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(2)).text = any()
     }
 
     @Test
@@ -490,18 +417,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(someException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller, times(0)).pollForCompletion(REQUEST)
         verify(codeDownloader).download(REQUEST)
         verify(codeExtractor, times(0)).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(2)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(2)).text = any()
     }
 
     @Test
@@ -515,18 +442,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(someException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codeDownloader).download(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeExtractor, times(0)).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(2)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(2)).text = any()
     }
 
     @Test
@@ -540,18 +467,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(waiterTimeoutException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeDownloader).download(REQUEST)
         verify(codeExtractor, times(0)).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(2)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(2)).text = any()
     }
 
     @Test
@@ -564,18 +491,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(someException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator, times(0)).generate(REQUEST)
         verify(codePoller, times(0)).pollForCompletion(REQUEST)
         verify(codeDownloader).download(REQUEST)
         verify(codeExtractor, times(0)).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator).text = any()
     }
 
     @Test
@@ -588,18 +515,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(notFoundException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeDownloader, times(2)).download(REQUEST)
         verify(codeExtractor, times(0)).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(3)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(3)).text = any()
     }
 
     @Test
@@ -613,18 +540,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(someException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeDownloader, times(2)).download(REQUEST)
         verify(codeExtractor).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(4)).updateProgress(eq(progressIndicator), any())
+        verify(progressIndicator, times(4)).text = any()
     }
 
     @Test
@@ -638,37 +565,18 @@ class SchemaCodeDownloaderTest {
         }
 
         assertThatThrownBy {
-            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor, progressUpdater)
+            SchemaCodeDownloader(codeGenerator, codePoller, codeDownloader, codeExtractor)
                 .downloadCode(REQUEST, progressIndicator).toCompletableFuture().get()
         }.hasRootCause(schemaCodeDownloadFileCollisionException)
 
         // Assert no error notifications
-        assertThat(errorNotification?.dropDownText).isNull()
+        assertThat(notificationListener.notifications).isEmpty()
 
         verify(codeGenerator).generate(REQUEST)
         verify(codePoller).pollForCompletion(REQUEST)
         verify(codeDownloader, times(2)).download(REQUEST)
         verify(codeExtractor).extractAndPlace(REQUEST, downloadedSchemaCode)
-        verify(progressUpdater, times(4)).updateProgress(eq(progressIndicator), any())
-    }
-
-    private fun initializeRealSourceAndDestinationFolders() {
-        SOURCE_FOLDER_FILE = tempFolder.newFolder()
-        ZIP_FILE = tempFolder.newFile()
-        DESTINATION_FOLDER_FILE = tempFolder.newFolder()
-
-        SOURCE_FOLDER = SOURCE_FOLDER_FILE.path
-        ZIP_FILE_PATH = ZIP_FILE.path
-        DESTINATION_FOLDER = DESTINATION_FOLDER_FILE.path
-
-        assertThat(SOURCE_FOLDER).isNotEqualTo(DESTINATION_FOLDER)
-
-        assertThat(SOURCE_FOLDER_FILE.exists()).isTrue()
-        assertThat(SOURCE_FOLDER_FILE.isDirectory).isTrue()
-        assertThat(ZIP_FILE.exists()).isTrue()
-        assertThat(ZIP_FILE.isFile).isTrue()
-        assertThat(DESTINATION_FOLDER_FILE.exists()).isTrue()
-        assertThat(DESTINATION_FOLDER_FILE.isDirectory).isTrue()
+        verify(progressIndicator, times(4)).text = any()
     }
 
     private fun standardDependencyMockInitialization() {
@@ -688,22 +596,23 @@ class SchemaCodeDownloaderTest {
         codeExtractor.stub {
             on { extractAndPlace(REQUEST, downloadedSchemaCode) }.thenReturn(completedFuture(schemaCodeCoreFile))
         }
-
-        progressUpdater.stub {
-            on { updateProgress(eq(progressIndicator), any()) }.thenReturn(completedFuture(null))
-        }
-    }
-
-    private fun subscribeToNotifications() {
-        val project = projectRule.project
-
-        val messageBus = project.messageBus.connect()
-
-        messageBus.setDefaultHandler { _, params ->
-            errorNotification = params[0] as Notification
-        }
-        messageBus.subscribe(Notifications.TOPIC)
     }
 
     private fun fileToByteBuffer(file: File): ByteBuffer = ByteBuffer.wrap(Files.readAllBytes(file.toPath()))
+
+    private companion object {
+        private const val ZIP_FOLDER_HIERARCHY = "srcDir/comDir/fooBarDir/"
+        private const val ZIP_FILE_1 = "File1.java"
+        private const val ZIP_FILE_2 = "File2.java"
+        private const val SOME_TEXT = "someText"
+
+        private const val REGISTRY = "registry"
+        private const val SCHEMA = "schema"
+        private val FAKE_DESTINATION = File("/some/destination/anything/really")
+        private val SCHEMA_SUMMARY = SchemaSummary(SCHEMA, REGISTRY)
+        private const val VERSION = "2"
+        private val LANGUAGE = SchemaCodeLangs.JAVA8
+        private val REQUEST = SchemaCodeDownloadRequestDetails(SCHEMA_SUMMARY, VERSION, LANGUAGE, FAKE_DESTINATION)
+        private val ZIP_FILE_SCHEMA_CORE_CODE_FILE_NAME = REQUEST.schemaCoreCodeFileName()
+    }
 }

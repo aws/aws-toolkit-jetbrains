@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.region
 
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import org.slf4j.event.Level
 import software.amazon.awssdk.regions.providers.AwsProfileRegionProvider
 import software.amazon.awssdk.regions.providers.AwsRegionProviderChain
@@ -18,15 +18,18 @@ import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.logWhenNull
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkits.resources.BundledResources
 
-class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResourceResolverProvider) : ToolkitRegionProvider() {
+class AwsRegionProvider : ToolkitRegionProvider() {
     private val regionChain by lazy {
         // Querying the instance metadata is expensive due to high timeouts and retries
         AwsRegionProviderChain(SystemSettingsRegionProvider(), AwsProfileRegionProvider())
     }
     private val partitions: Map<String, PartitionData> by lazy {
-        val inputStream = remoteResourceResolverProvider.get().resolve(ServiceEndpointResource).toCompletableFuture().get()?.inputStream()
-        val partitions = inputStream?.use { PartitionParser.parse(it) }?.partitions ?: return@lazy emptyMap<String, PartitionData>()
+        val inputStream = RemoteResourceResolverProvider.getInstance().get().resolve(ServiceEndpointResource).toCompletableFuture().get()?.inputStream()
+        val partitions = inputStream?.use { PartitionParser.parse(it) }?.partitions
+            ?: BundledResources.ENDPOINTS_FILE.use { PartitionParser.parse(BundledResources.ENDPOINTS_FILE) }?.partitions
+            ?: throw Exception("Failed to retrieve partitions.")
 
         partitions.asSequence().associateBy { it.partition }.mapValues {
             PartitionData(
@@ -63,6 +66,6 @@ class AwsRegionProvider constructor(remoteResourceResolverProvider: RemoteResour
         private val LOG = getLogger<AwsRegionProvider>()
 
         @JvmStatic
-        fun getInstance(): ToolkitRegionProvider = ServiceManager.getService(ToolkitRegionProvider::class.java)
+        fun getInstance(): ToolkitRegionProvider = service()
     }
 }

@@ -6,11 +6,9 @@ package software.aws.toolkits.jetbrains.settings
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ProjectRule
-import org.junit.Assume
-import org.junit.Before
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import java.nio.file.Path
 
@@ -20,30 +18,17 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
     @Rule
     val projectRule = ProjectRule()
 
-    @JvmField
-    @Rule
-    val expectedException: ExpectedException = ExpectedException.none()
-
-    @Before
-    override fun setUp() {
-        // TODO: Make the tests work on Windows
-        Assume.assumeFalse(SystemInfo.isWindows)
-
-        super.setUp()
-    }
-
     @Test
     fun validate_ok_noOp() {
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.apply()
     }
 
     @Test
     fun validate_ok_changedTelemetry() {
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         // explicit call to suppress compiling error
         settings.samExecutablePath.setText(null)
-        settings.cloudDebugExecutablePath.setText(null)
         settings.enableTelemetry.isSelected = true
         settings.apply()
         settings.enableTelemetry.isSelected = false
@@ -52,14 +37,14 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
 
     @Test
     fun validate_ok_setSamEmpty() {
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.samExecutablePath.setText("")
         settings.apply()
     }
 
     @Test(expected = ConfigurationException::class)
     fun validate_fail_setBadSam() {
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.samExecutablePath.text = "not_a_valid_path"
         settings.apply()
     }
@@ -68,7 +53,7 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
     fun validate_ok_setValidSam() {
         val samPath = makeASam(SamCommonTestUtils.getMinVersionAsJson())
 
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.samExecutablePath.text = samPath.toString()
         settings.apply()
     }
@@ -78,28 +63,27 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
         // allow users to save if their autodetected sam executable is bad
         makeASam(SamCommonTestUtils.getMaxVersionAsJson())
 
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.apply()
     }
 
     @Test
     fun validate_fail_autodetectBadSam_andManuallySetToBadSam() {
         val sam = makeASam(SamCommonTestUtils.getMaxVersionAsJson())
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.apply()
 
-        // use a rule instead of the annotation to ensure that test passes
-        // only if exception is thrown on the second invocation of `apply`
         settings.samExecutablePath.text = sam.toAbsolutePath().toString()
-        expectedException.expect(ConfigurationException::class.java)
-        settings.apply()
+        assertThatThrownBy {
+            settings.apply()
+        }.isInstanceOf(ConfigurationException::class.java)
     }
 
     @Test
     fun validate_ok_autodetectValidSam() {
         makeASam(SamCommonTestUtils.getMinVersionAsJson())
 
-        val settings = AwsSettingsConfigurable(projectRule.project)
+        val settings = AwsSettingsConfigurable()
         settings.apply()
     }
 

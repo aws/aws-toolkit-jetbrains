@@ -2,51 +2,61 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
+import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.actionSystem.ToggleAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.content.Content
 import com.intellij.uiDesigner.core.GridConstraints
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.ui.JBUI
-import icons.AwsIcons
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeAction
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowManager
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowTab
-import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindowType
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
+import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudformationTelemetry
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.BoxLayout
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
-private const val UPDATE_STACK_STATUS_INTERVAL = 5000
+private val UPDATE_STACK_STATUS_INTERVAL = Duration.ofSeconds(5)
+private val UPDATE_STACK_STATUS_INTERVAL_ON_FINAL_STATE = Duration.ofSeconds(60)
 private const val REDRAW_ANIMATED_ICON_INTERVAL = 70
 private const val TREE_TABLE_INITIAL_PROPORTION = 0.25f
-internal val STACK_TOOL_WINDOW =
-    ToolkitToolWindowType("AWS.CloudFormation", message("cloudformation.toolwindow.label"), icon = AwsIcons.Logos.CLOUD_FORMATION_TOOL)
 
 class StackWindowManager(private val project: Project) {
-    private val toolWindow = ToolkitToolWindowManager.getInstance(project, STACK_TOOL_WINDOW)
+    private val toolWindow = CloudFormationToolWindow.getInstance(project)
 
     fun openStack(stackName: String, stackId: String) {
         assert(SwingUtilities.isEventDispatchThread())
-        toolWindow.find(stackId)?.run { show() } ?: StackUI(project, stackName, stackId, toolWindow).start()
-        CloudformationTelemetry.open(project)
+        if (!toolWindow.showExistingContent(stackId)) {
+            StackUI(project, stackName, stackId, toolWindow).start()
+        }
+        CloudformationTelemetry.open(project, success = true)
     }
 
     companion object {
-        fun getInstance(project: Project): StackWindowManager = ServiceManager.getService(project, StackWindowManager::class.java)
+        fun getInstance(project: Project): StackWindowManager = project.service()
     }
 }
 
@@ -56,9 +66,14 @@ class OpenStackUiAction : SingleResourceNodeAction<CloudFormationStackNode>(mess
     }
 }
 
-private class StackUI(private val project: Project, private val stackName: String, stackId: String, toolWindow: ToolkitToolWindow) : UpdateListener {
+private class StackUI(
+    private val project: Project,
+    private val stackName: String,
+    stackId: String,
+    private val toolWindow: ToolkitToolWindow
+) : UpdateListener, Disposable {
 
-    internal val toolWindowTab: ToolkitToolWindowTab
+    val toolWindowTab: Content
     private val animator: IconAnimator
     private val updater: Updater
     private val notificationGroup: NotificationGroup
@@ -66,6 +81,7 @@ private class StackUI(private val project: Project, private val stackName: Strin
 
     private val eventsTable: EventsTableImpl
     private val outputsTable = OutputsTableView()
+    private val resourcesTable = ResourceTableView()
 
     init {
         val tree = TreeViewImpl(project, stackName)
@@ -73,73 +89,95 @@ private class StackUI(private val project: Project, private val stackName: Strin
         eventsTable = EventsTableImpl()
         pageButtons = PageButtons(this::onPageButtonClick)
 
-        notificationGroup = NotificationGroup.findRegisteredGroup(STACK_TOOL_WINDOW.id)
-            ?: NotificationGroup.toolWindowGroup(STACK_TOOL_WINDOW.id, STACK_TOOL_WINDOW.id)
+        val notificationId = CloudFormationToolWindow.getInstance(project).toolWindowId
+        notificationGroup = NotificationGroup.findRegisteredGroup(notificationId)
+            ?: NotificationGroup.toolWindowGroup(notificationId, notificationId)
 
+        val window = SimpleToolWindowPanel(false, true)
         val mainPanel = OnePixelSplitter(false, TREE_TABLE_INITIAL_PROPORTION).apply {
             firstComponent = tree.component
             secondComponent = JBTabbedPane().apply {
-                this.add(message("cloudformation.stack.tab_labels.events"), JPanel(GridLayoutManager(2, 1)).apply {
-                    add(
-                        eventsTable.component,
-                        GridConstraints(
-                            0,
-                            0,
-                            1,
-                            1,
-                            0,
-                            GridConstraints.FILL_BOTH,
-                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
-                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
-                            null,
-                            null,
-                            null
+                this.add(
+                    message("cloudformation.stack.tab_labels.events"),
+                    JPanel(GridLayoutManager(2, 1)).apply {
+                        add(
+                            eventsTable.component,
+                            GridConstraints(
+                                0,
+                                0,
+                                1,
+                                1,
+                                0,
+                                GridConstraints.FILL_BOTH,
+                                GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                                GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                                null,
+                                null,
+                                null
+                            )
                         )
-                    )
-                    add(
-                        pageButtons.component,
-                        GridConstraints(
-                            1,
-                            0,
-                            1,
-                            1,
-                            0,
-                            GridConstraints.FILL_HORIZONTAL,
-                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
-                            GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
-                            null,
-                            null,
-                            null
+                        add(
+                            pageButtons.component,
+                            GridConstraints(
+                                1,
+                                0,
+                                1,
+                                1,
+                                0,
+                                GridConstraints.FILL_HORIZONTAL,
+                                GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_WANT_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                                GridConstraints.SIZEPOLICY_CAN_GROW or GridConstraints.SIZEPOLICY_CAN_SHRINK,
+                                null,
+                                null,
+                                null
+                            )
                         )
-                    )
-                    tabComponentInsets = JBUI.emptyInsets()
-                    border = JBUI.Borders.empty()
-                })
+                        tabComponentInsets = JBUI.emptyInsets()
+                        border = JBUI.Borders.empty()
+                    }
+                )
 
-                this.add(message("cloudformation.stack.tab_labels.outputs"), JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(outputsTable.component)
-                })
+                this.add(
+                    message("cloudformation.stack.tab_labels.resources"),
+                    JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                        add(resourcesTable.component)
+                    }
+                )
+
+                this.add(
+                    message("cloudformation.stack.tab_labels.outputs"),
+                    JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                        add(add(outputsTable.component))
+                    }
+                )
             }
         }
-
         updater = Updater(
             tree,
             eventsTable = eventsTable,
             outputsTable = outputsTable,
-            stackName = stackName,
-            updateEveryMs = UPDATE_STACK_STATUS_INTERVAL,
+            resourceListener = resourcesTable,
+            updateInterval = UPDATE_STACK_STATUS_INTERVAL,
+            updateIntervalOnFinalState = UPDATE_STACK_STATUS_INTERVAL_ON_FINAL_STATE,
             listener = this,
-            client = AwsClientManager.getInstance(project).getClient(),
-            setPagesAvailable = pageButtons::setPagesAvailable
+            client = project.awsClient(),
+            setPagesAvailable = pageButtons::setPagesAvailable,
+            stackId = stackId
         )
 
-        toolWindowTab = toolWindow.addTab(stackName, mainPanel, id = stackId)
-        listOf(tree, updater, animator, eventsTable, outputsTable, pageButtons).forEach { Disposer.register(toolWindowTab, it) }
+        window.setContent(mainPanel)
+        window.toolbar = createToolbar()
+
+        toolWindowTab = toolWindow.addTab(stackName, window, id = stackId)
+        // dispose self when toolwindowtab closes
+        Disposer.register(toolWindowTab, this)
+        listOf(tree, updater, animator, eventsTable, outputsTable, resourcesTable, pageButtons).forEach { Disposer.register(this, it) }
     }
 
     fun start() {
-        toolWindowTab.show()
+        toolWindow.show(toolWindowTab)
         animator.start()
         updater.start()
     }
@@ -162,10 +200,46 @@ private class StackUI(private val project: Project, private val stackName: Strin
         notificationGroup.createNotification("$stackName: $message", notificationType).notify(project)
     }
 
+    private fun createToolbar(): JComponent {
+        val actionGroup = DefaultActionGroup()
+        actionGroup.addAction(object : DumbAwareAction(message("general.refresh"), null, AllIcons.Actions.Refresh) {
+            override fun actionPerformed(e: AnActionEvent) {
+                updater.start()
+            }
+
+            override fun update(e: AnActionEvent) {
+                e.presentation.isEnabled = !updater.running
+            }
+        })
+
+        actionGroup.addAction(createFilterAction())
+
+        return ActionManager.getInstance().createActionToolbar("", actionGroup, false).component
+    }
+
+    private fun createFilterAction() =
+        object : ToggleAction(message("cloudformation.stack.filter.show_completed"), null, AllIcons.RunConfigurations.ShowPassed), DumbAware {
+            private val state = AtomicBoolean(true)
+            override fun isSelected(e: AnActionEvent): Boolean = state.get()
+
+            override fun setSelected(e: AnActionEvent, newState: Boolean) {
+                if (state.getAndSet(newState) != newState) {
+                    ApplicationManager.getApplication().executeOnPooledThread {
+                        updater.applyFilter {
+                            newState || it.resourceStatus().type != StatusType.COMPLETED
+                        }
+                    }
+                }
+            }
+        }
+
     fun onPageButtonClick(page: Page) {
         eventsTable.showBusyIcon()
         // To prevent double click, we disable buttons. They will be enabled by Updater when data fetched
         pageButtons.setPagesAvailable(emptySet())
         updater.switchPage(page)
+    }
+
+    override fun dispose() {
     }
 }

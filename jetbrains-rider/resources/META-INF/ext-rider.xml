@@ -10,42 +10,39 @@
         <component>
             <implementation-class>software.aws.toolkits.jetbrains.services.lambda.LambdaPsiHost</implementation-class>
         </component>
-        <component>
-            <implementation-class>software.aws.toolkits.jetbrains.settings.LambdaGutterMarkSettings</implementation-class>
-        </component>
-        <component>
-            <implementation-class>software.aws.toolkits.jetbrains.services.toolwindow.BuildToolWindowRegistrar</implementation-class>
-        </component>
     </project-components>
 
+    <projectListeners>
+        <listener class="software.aws.toolkits.jetbrains.settings.LambdaGutterMarkSettings"
+                  topic="software.aws.toolkits.jetbrains.settings.LambdaSettingsChangeListener"/>
+    </projectListeners>
+
     <extensions defaultExtensionNs="com.intellij">
-        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.ui.wizard.DotNetSamProjectProvider" order="last"/>
+        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcherRegistrar"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.settings.RiderSyncSettings"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit.lambda">
-        <runtimeGroup runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeGroup"/>
-        <builder runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaBuilder"/>
-        <handlerResolver runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver"/>
-        <handlerCompletion runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.completion.DotNetHandlerCompletion"/>
-        <sam.debugSupport runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamDebugSupport"/>
-        <sam.projectWizard runtimeGroup="DOTNET" implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectWizard"/>
+        <runtimeGroup implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeGroup"/>
+        <builder id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaBuilder"/>
+        <handlerResolver id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver"/>
+        <handlerCompletion id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.completion.DotNetHandlerCompletion"/>
+        <sam.runtimeDebugSupport id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet50ImageDebug"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet60ImageDebug"/>
+        <sam.projectWizard id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectWizard"/>
     </extensions>
 
-    <extensions defaultExtensionNs="aws.toolkit.clouddebug">
-        <debuggerSupport implementation="software.aws.toolkits.jetbrains.services.clouddebug.DotNetDebuggerSupport"/>
+    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp"/>
     </extensions>
 
     <actions>
-        <unregister id="serverless.application.deploy"/>
         <group id="aws.toolkit.serverless.template.rider">
             <add-to-group group-id="SolutionExplorerPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
-
-            <separator/>
-            <action id="serverless.application.deploy.rider" class="software.aws.toolkits.jetbrains.services.lambda.actions.DeployServerlessApplicationAction"/>
-            <separator/>
         </group>
     </actions>
 

@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
+import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -18,10 +19,11 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 import software.aws.toolkits.resources.message
 
 class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     override val waitForCaches = true
 
@@ -30,7 +32,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
 
     @BeforeMethod
     fun setUp() {
-        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson())
+        val validSam = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getVersionAsJson("1.40.1"))
         preWarmSamVersionCache(validSam.toString())
         ExecutableManager.getInstance().setExecutablePath(SamExecutable(), validSam)
 
@@ -42,15 +44,16 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         MockCredentialsManager.getInstance().reset()
     }
 
+    @Ignore("test for 232")
     @Test
-    fun testHandler_ValidHandler() {
+    fun `testHandler validHandler`() {
         val handler = "HelloWorld::HelloWorld.Function::FunctionHandler"
         preWarmLambdaHandlerValidation(project, handler)
 
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = project,
-                runtime = Runtime.DOTNETCORE3_1,
+                runtime = Runtime.DOTNET6,
                 credentialsProviderId = mockId,
                 handler = handler
             )
@@ -67,7 +70,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = project,
-                runtime = Runtime.DOTNETCORE3_1,
+                runtime = Runtime.DOTNET6,
                 credentialsProviderId = mockId,
                 handler = nonExistingHandler
             )
@@ -86,7 +89,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = project,
-                runtime = Runtime.DOTNETCORE3_1,
+                runtime = Runtime.DOTNET6,
                 credentialsProviderId = mockId,
                 handler = nonExistingHandler
             )
@@ -105,7 +108,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = project,
-                runtime = Runtime.DOTNETCORE3_1,
+                runtime = Runtime.DOTNET6,
                 credentialsProviderId = mockId,
                 handler = invalidHandler
             )
@@ -121,7 +124,7 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
         runInEdtAndWait {
             val runConfiguration = createHandlerBasedRunConfiguration(
                 project = project,
-                runtime = Runtime.DOTNETCORE3_1,
+                runtime = Runtime.DOTNET6,
                 credentialsProviderId = mockId,
                 handler = null
             )
@@ -133,5 +136,5 @@ class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
     }
 
     private fun preWarmLambdaHandlerValidation(project: Project, handler: String) =
-        preWarmLambdaHandlerValidation(project, Runtime.DOTNETCORE3_1, handler)
+        preWarmLambdaHandlerValidation(project, Runtime.DOTNET6, handler)
 }

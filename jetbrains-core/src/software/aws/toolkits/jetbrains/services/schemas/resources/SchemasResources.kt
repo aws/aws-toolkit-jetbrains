@@ -10,15 +10,12 @@ import software.amazon.awssdk.services.schemas.model.SchemaSummary
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
 import software.aws.toolkits.jetbrains.core.Resource
-import software.aws.toolkits.jetbrains.ui.wizard.SchemaSelectionItem
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SchemaSelectionItem
 import java.time.Duration
-import kotlin.streams.toList
 
 object SchemasResources {
-    @JvmField
-    val AWS_EVENTS_REGISTRY = "aws.events"
+    const val AWS_EVENTS_REGISTRY = "aws.events"
 
-    @JvmField
     val LIST_REGISTRIES: Resource.Cached<List<RegistrySummary>> =
         ClientBackedCachedResource(SchemasClient::class, "schemas.list_registries") {
             listRegistriesPaginator { it.build() }
@@ -27,7 +24,6 @@ object SchemasResources {
                 .toList()
         }
 
-    @JvmField
     val LIST_REGISTRIES_AND_SCHEMAS: Resource.Cached<List<SchemaSelectionItem>> =
         ClientBackedCachedResource(SchemasClient::class, "schemas.list_registries_and_schemas") {
             listRegistriesPaginator { it.build() }
@@ -42,7 +38,7 @@ object SchemasResources {
 
                     val schemaSelectionItems = ArrayList<SchemaSelectionItem>()
                     schemaSelectionItems.add(SchemaSelectionItem.RegistryItem(registryName))
-                    schemas.forEach() { schemaSelectionItems.add(SchemaSelectionItem.SchemaItem(it.schemaName(), registryName)) }
+                    schemas.forEach { schemaSelectionItems.add(SchemaSelectionItem.SchemaItem(it.schemaName(), registryName)) }
 
                     schemaSelectionItems
                 }

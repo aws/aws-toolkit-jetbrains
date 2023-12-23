@@ -7,34 +7,49 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.ecs.model.ContainerDefinition
 import software.amazon.awssdk.services.ecs.model.LogDriver
 import software.amazon.awssdk.services.ecs.model.Service
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.withAwsConnection
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
 import software.aws.toolkits.jetbrains.core.explorer.actions.SingleExplorerNodeActionGroup
-import software.aws.toolkits.jetbrains.services.clouddebug.actions.StartRemoteShellAction
+import software.aws.toolkits.jetbrains.core.getResource
+import software.aws.toolkits.jetbrains.core.getResourceNow
+import software.aws.toolkits.jetbrains.core.plugins.pluginIsInstalledAndEnabled
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogWindow
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.checkIfLogStreamExists
+import software.aws.toolkits.jetbrains.services.ecs.exec.EcsExecUtils
+import software.aws.toolkits.jetbrains.services.ecs.exec.OpenShellInContainerDialog
+import software.aws.toolkits.jetbrains.services.ecs.exec.RunCommandDialog
 import software.aws.toolkits.jetbrains.services.ecs.resources.EcsResources
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 
 class ContainerActions(
     private val project: Project,
     private val container: ContainerDetails
 ) : ActionGroup(container.containerDefinition.name(), null, null) {
+
     init {
         isPopup = true
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> = arrayOf(
-        StartRemoteShellAction(project, container),
-        ContainerLogsAction(project, container)
+        ContainerLogsAction(project, container),
+        Separator.getInstance(),
+        ExecuteCommandAction(project, container),
+        ExecuteCommandInShellAction(project, container)
     )
 }
 
@@ -43,13 +58,18 @@ data class ContainerDetails(val service: Service, val containerDefinition: Conta
 class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("Containers") {
     override fun getChildren(selected: EcsServiceNode, e: AnActionEvent): List<AnAction> {
         val containers = try {
-            AwsResourceCache.getInstance(selected.nodeProject).getResourceNow(EcsResources.listContainers(selected.value.taskDefinition()))
+            selected.nodeProject.getResourceNow(EcsResources.listContainers(selected.value.taskDefinition()))
         } catch (e: Exception) {
-            e.notifyError(message("cloud_debug.ecs.run_config.container.loading.error", e.localizedMessage), selected.nodeProject)
+            e.notifyError(message("ecs.run_config.container.loading.error", e.localizedMessage), selected.nodeProject)
             return emptyList()
         }
 
-        val containerActions = containers.map { ContainerActions(selected.nodeProject, ContainerDetails(selected.value, it)) }
+        val containerActions = containers.map {
+            ContainerActions(
+                selected.nodeProject,
+                ContainerDetails(selected.value, it)
+            )
+        }
 
         if (containerActions.isEmpty()) {
             return emptyList()
@@ -63,7 +83,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 class ContainerLogsAction(
     private val project: Project,
     private val container: ContainerDetails
-) : AnAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
+) : DumbAwareAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
         container.containerDefinition.logConfiguration().takeIf { it.logDriver() == LogDriver.AWSLOGS }?.options()?.let {
@@ -84,18 +104,19 @@ class ContainerLogsAction(
 
         val window = CloudWatchLogWindow.getInstance(project)
 
-        AwsResourceCache.getInstance(project)
-            .getResource(EcsResources.listTaskIds(container.service.clusterArn(), container.service.serviceArn()))
+        project.getResource(EcsResources.listTaskIds(container.service.clusterArn(), container.service.serviceArn()))
             .thenAccept { tasks ->
-                when {
-                    tasks.isEmpty() -> notifyInfo(message("ecs.service.logs.no_running_tasks"))
-                    tasks.size == 1 && showSingleStream(
-                        window,
-                        logGroup,
-                        "$logPrefix/${container.containerDefinition.name()}/${tasks.first()}"
-                    ) -> return@thenAccept
+                runBlocking {
+                    when {
+                        tasks.isEmpty() -> notifyInfo(message("ecs.service.logs.no_running_tasks"))
+                        tasks.size == 1 && showSingleStream(
+                            window,
+                            logGroup,
+                            "$logPrefix/${container.containerDefinition.name()}/${tasks.first()}"
+                        ) -> return@runBlocking
+                    }
+                    window.showLogGroup(logGroup)
                 }
-                window.showLogGroup(logGroup)
             }
     }
 
@@ -104,7 +125,63 @@ class ContainerLogsAction(
             notifyInfo(message("ecs.service.logs.no_log_stream"))
             return false
         }
-        window.showLogStream(logGroup, logStream)
+        runInEdt {
+            window.showLogStream(logGroup, logStream)
+        }
         return true
+    }
+}
+
+class ExecuteCommandAction(
+    private val project: Project,
+    private val container: ContainerDetails
+) : DumbAwareAction(message("ecs.execute_command_run"), null, null) {
+    private val coroutineScope = projectCoroutineScope(project)
+    override fun actionPerformed(e: AnActionEvent) {
+        coroutineScope.launch {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                runInEdt {
+                    project.withAwsConnection {
+                        RunCommandDialog(project, container, it).show()
+                    }
+                }
+            } else {
+                notifyWarn(message("ecs.execute_command_run"), message("ecs.execute_command_disable_in_progress", container.service.serviceName()), project)
+            }
+        }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isVisible = container.service.enableExecuteCommand() &&
+            EcsExecExperiment.isEnabled()
+    }
+}
+
+class ExecuteCommandInShellAction(
+    private val project: Project,
+    private val container: ContainerDetails
+) : DumbAwareAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
+    private val coroutineScope = projectCoroutineScope(project)
+    override fun actionPerformed(e: AnActionEvent) {
+        coroutineScope.launch {
+            if (EcsExecUtils.ensureServiceIsInStableState(project, container.service)) {
+                runInEdt {
+                    project.withAwsConnection {
+                        OpenShellInContainerDialog(project, container, it).show()
+                    }
+                }
+            } else {
+                notifyWarn(
+                    message("ecs.execute_command_run_command_in_shell"),
+                    message("ecs.execute_command_disable_in_progress", container.service.serviceName()),
+                    project
+                )
+            }
+        }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isVisible = container.service.enableExecuteCommand() &&
+            pluginIsInstalledAndEnabled("org.jetbrains.plugins.terminal") && EcsExecExperiment.isEnabled()
     }
 }

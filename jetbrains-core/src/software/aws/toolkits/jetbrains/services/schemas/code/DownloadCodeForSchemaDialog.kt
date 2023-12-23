@@ -16,10 +16,9 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
-import org.apache.commons.lang.exception.ExceptionUtils
+import org.apache.commons.lang3.exception.ExceptionUtils
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.getResourceNow
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.schemas.Schema
@@ -34,7 +33,7 @@ import software.aws.toolkits.telemetry.SchemaLanguage
 import software.aws.toolkits.telemetry.SchemasTelemetry
 import java.awt.event.ActionEvent
 import java.io.File
-import java.util.ArrayList
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import javax.swing.Action
@@ -46,8 +45,8 @@ class DownloadCodeForSchemaDialog(
     private val project: Project,
     private val schemaName: String = "",
     private val registryName: String = "",
-    private val version: String? = null,
-    private val language: SchemaCodeLangs? = null,
+    version: String? = null,
+    language: SchemaCodeLangs? = null,
     private val onClose: (() -> Unit)? = null
 ) : DialogWrapper(project) {
 
@@ -61,8 +60,8 @@ class DownloadCodeForSchemaDialog(
     val schemaVersions: List<String>
     val latestVersion: String
 
-    val view = DownloadCodeForSchemaPanel(project, this)
-    val validator = DownloadCodeForSchemaValidator()
+    val view = DownloadCodeForSchemaPanel(project)
+    private val validator = DownloadCodeForSchemaValidator()
 
     private val action: OkAction = DownloadCodeForSchemaOkAction()
 
@@ -90,29 +89,28 @@ class DownloadCodeForSchemaDialog(
     private fun getContentRootOfCurrentFile(): String? {
         // Get the currently open files (plural in case they are split)
         val selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles()
-        if (!selectedFiles.isEmpty()) {
+        if (selectedFiles.isNotEmpty()) {
             // return the content root of the first selected file
             return ProjectFileIndex.getInstance(project).getContentRootForFile(selectedFiles.first())?.path
         }
         // Otherwise, find the first content root of the project, and return that
         val contentRoots = ProjectRootManager.getInstance(project).contentRoots
-        if (!contentRoots.isEmpty()) {
-            return contentRoots.first()?.path
+        if (contentRoots.isNotEmpty()) {
+            return contentRoots.first().path
         }
 
         return null
     }
 
-    private fun loadSchemaVersions(): List<String> =
-        AwsResourceCache.getInstance(project)
-            .getResourceNow(SchemasResources.getSchemaVersions(registryName, schemaName))
-            .map(SchemaVersionSummary::schemaVersion)
-            .sortedByDescending { s -> s.toIntOrNull() }
+    private fun loadSchemaVersions(): List<String> = project
+        .getResourceNow(SchemasResources.getSchemaVersions(registryName, schemaName))
+        .map(SchemaVersionSummary::schemaVersion)
+        .sortedByDescending { s -> s.toIntOrNull() }
 
     private fun getLanguageForCurrentRuntime(): SchemaCodeLangs? {
         val currentRuntimeGroup = RuntimeGroup.determineRuntimeGroup(project) ?: return null
 
-        return SchemaCodeLangs.values().firstOrNull { it.runtimeGroup.equals(currentRuntimeGroup) }
+        return SchemaCodeLangs.values().firstOrNull { it.runtimeGroupId == currentRuntimeGroup.id }
     }
 
     override fun createCenterPanel(): JComponent? = view.content
@@ -136,31 +134,37 @@ class DownloadCodeForSchemaDialog(
         val schemaCodeDownloadDetails = viewToSchemaCodeDownloadDetails()
 
         // Telemetry for download code language
-        SchemasTelemetry.download(project, success = true, schemalanguage = SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue))
+        SchemasTelemetry.download(
+            project = project,
+            success = true,
+            schemaLanguage = SchemaLanguage.from(schemaCodeDownloadDetails.language.apiValue)
+        )
 
         val schemaName = schemaCodeDownloadDetails.schema.name
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, message("schemas.schema.download_code_bindings.title", schemaName), false) {
-            override fun run(indicator: ProgressIndicator) {
-                notifyInfo(
-                    title = NOTIFICATION_TITLE,
-                    content = message("schemas.schema.download_code_bindings.notification.start", schemaName),
-                    project = project
-                )
+        ProgressManager.getInstance().run(
+            object : Task.Backgroundable(project, message("schemas.schema.download_code_bindings.title", schemaName), false) {
+                override fun run(indicator: ProgressIndicator) {
+                    notifyInfo(
+                        title = NOTIFICATION_TITLE,
+                        content = message("schemas.schema.download_code_bindings.notification.start", schemaName),
+                        project = project
+                    )
 
-                schemaCodeDownloader.downloadCode(schemaCodeDownloadDetails, indicator)
-                    .thenCompose { schemaCoreCodeFile ->
-                        refreshDownloadCodeDirectory(schemaCodeDownloadDetails)
-                        openSchemaCoreCodeFileInEditor(schemaCoreCodeFile, project)
-                    }
-                    .thenApply {
-                        showDownloadCompletionNotification(schemaName, project)
-                    }
-                    .exceptionally { error ->
-                        showDownloadCompletionErrorNotification(error, project)
-                    }
-                    .toCompletableFuture().get()
+                    schemaCodeDownloader.downloadCode(schemaCodeDownloadDetails, indicator)
+                        .thenCompose { schemaCoreCodeFile ->
+                            refreshDownloadCodeDirectory(schemaCodeDownloadDetails)
+                            openSchemaCoreCodeFileInEditor(schemaCoreCodeFile, project)
+                        }
+                        .thenApply {
+                            showDownloadCompletionNotification(schemaName, project)
+                        }
+                        .exceptionally { error ->
+                            showDownloadCompletionErrorNotification(error, project)
+                        }
+                        .toCompletableFuture().get()
+                }
             }
-        })
+        )
 
         onClose?.let { it() }
 
@@ -168,11 +172,9 @@ class DownloadCodeForSchemaDialog(
     }
 
     private fun refreshDownloadCodeDirectory(schemaCodeDownloadDetails: SchemaCodeDownloadRequestDetails) {
-        val file = File(schemaCodeDownloadDetails.destinationDirectory)
-
-        // Don't replace this with LocalFileSystem.getInstance().refreshIoFiles(listOf(file)) - it doesn't work.
-        val vFile = LocalFileSystem.getInstance().findFileByIoFile(file)
-        VfsUtil.markDirtyAndRefresh(false, true, true, vFile)
+        LocalFileSystem.getInstance().findFileByIoFile(schemaCodeDownloadDetails.destinationDirectory)?.let {
+            VfsUtil.markDirtyAndRefresh(false, true, true, it)
+        }
     }
 
     private fun showDownloadCompletionNotification(
@@ -188,8 +190,7 @@ class DownloadCodeForSchemaDialog(
         error: Throwable?,
         project: Project
     ) {
-        val rootError = ExceptionUtils.getRootCause(error)
-        when (rootError) {
+        when (val rootError = ExceptionUtils.getRootCause(error)) {
             is SchemaCodeDownloadFileCollisionException -> notifyError(title = NOTIFICATION_TITLE, content = rootError.message ?: "", project = project)
             is Exception -> rootError.notifyError(title = NOTIFICATION_TITLE, project = project)
         }
@@ -197,14 +198,14 @@ class DownloadCodeForSchemaDialog(
     }
 
     private fun openSchemaCoreCodeFileInEditor(
-        schemaCoreCodeFile: File?,
+        schemaCoreCodeFile: Path?,
         project: Project
     ): CompletionStage<Void> {
         val future = CompletableFuture<Void>()
         ApplicationManager.getApplication().invokeLater {
             try {
                 schemaCoreCodeFile?.let {
-                    val vSchemaCoreCodeFileName = LocalFileSystem.getInstance().findFileByIoFile(schemaCoreCodeFile)
+                    val vSchemaCoreCodeFileName = LocalFileSystem.getInstance().findFileByNioFile(schemaCoreCodeFile)
                     vSchemaCoreCodeFileName?.let {
                         val fileEditorManager = FileEditorManager.getInstance(project)
                         fileEditorManager.openTextEditor(OpenFileDescriptor(project, it), true)
@@ -224,7 +225,7 @@ class DownloadCodeForSchemaDialog(
         schema = SchemaSummary(this.schemaName, this.registryName),
         version = getSelectedVersion(),
         language = view.language.selected()!!,
-        destinationDirectory = view.location.text
+        destinationDirectory = File(view.location.text)
     )
 
     private fun getSelectedVersion(): String {
@@ -244,7 +245,7 @@ class DownloadCodeForSchemaDialog(
             super.doAction(e)
             if (doValidateAll().isNotEmpty()) return
 
-            downloadSchemaCode(SchemaCodeDownloader.create(AwsClientManager.getInstance(project)))
+            downloadSchemaCode(SchemaCodeDownloader.create(project))
         }
     }
 
@@ -263,12 +264,13 @@ class DownloadCodeForSchemaValidator {
             return ValidationInfo(message("schemas.schema.download_code_bindings.validation.language_required"), view.language)
         }
 
-        val locationText = view.location.getText()
-        if (locationText.isNullOrEmpty()) {
+        val locationText = view.location.text
+        if (locationText.isEmpty()) {
             return ValidationInfo(message("schemas.schema.download_code_bindings.validation.fileLocation_required"), view.location)
         }
+
         val file = File(locationText)
-        if (!file.exists() || !file.isDirectory()) {
+        if (!file.exists() || !file.isDirectory) {
             return ValidationInfo(message("schemas.schema.download_code_bindings.validation.fileLocation_invalid"), view.location)
         }
 

@@ -10,19 +10,20 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.PlatformTestUtil
+import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.writeChild
-import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import org.mockito.Mockito
 import software.aws.toolkits.core.utils.getLogger
@@ -36,9 +37,8 @@ import java.nio.file.Paths
  * If you wish to have just a [Project], you may use Intellij's [com.intellij.testFramework.ProjectRule]
  */
 open class CodeInsightTestFixtureRule(protected val testDescription: LightProjectDescriptor = LightProjectDescriptor.EMPTY_PROJECT_DESCRIPTOR) :
-    TestWatcher() {
+    ApplicationRule() {
     private lateinit var description: Description
-    private val appRule = ApplicationRule()
     protected val lazyFixture = ClearableLazy {
         invokeAndWait {
             createTestFixture()
@@ -46,7 +46,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     }
 
     protected open fun createTestFixture(): CodeInsightTestFixture {
-        val fixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription)
+        val fixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription, testName)
         val newFixture = IdeaTestFixtureFactory.getFixtureFactory()
             .createCodeInsightFixture(fixtureBuilder.fixture, LightTempDirTestFixtureImpl(true))
         newFixture.setUp()
@@ -54,19 +54,15 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
         return newFixture
     }
 
-    override fun starting(description: Description) {
-        // TODO: Make this extend AppRule and remove reflection FIX_WHEN_MIN_IS_202
-        val beforeMethod = appRule.javaClass.declaredMethods.first { it.name == "before" }
-        beforeMethod.trySetAccessible()
-        if (beforeMethod.parameterCount == 1) {
-            beforeMethod.invoke(appRule, description)
-        } else {
-            beforeMethod.invoke(appRule)
-        }
+    override fun before(description: Description) {
+        super.before(description)
         this.description = description
+        // This timer is cancelled but it still continues running when the test is over since it cancels lazily. This is fine, so suppress the leak
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Debugger Worker launch timer")
     }
 
-    override fun finished(description: Description?) {
+    override fun after() {
+        super.after()
         // Hack: Runs often enough that we keep our leaks down. https://github.com/mockito/mockito/pull/1619
         // TODO: Investigate Mockk and remove this
         Mockito.framework().clearInlineMocks()
@@ -162,7 +158,7 @@ fun CodeInsightTestFixture.addFileToModule(
     val file = try {
         val contentRoot = ModuleRootManager.getInstance(module).contentRoots[0]
         runWriteAction {
-            contentRoot.writeChild(relativePath, fileText)
+            contentRoot.writeChild(FileUtil.toSystemIndependentName(relativePath), fileText)
         }
     } finally {
         PsiManager.getInstance(project).dropPsiCaches()

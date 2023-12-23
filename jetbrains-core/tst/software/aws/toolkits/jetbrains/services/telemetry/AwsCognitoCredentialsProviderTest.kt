@@ -4,15 +4,15 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.testFramework.ApplicationRule
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.amazon.awssdk.services.cognitoidentity.model.Credentials
@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.cognitoidentity.model.GetCredentialsForId
 import software.amazon.awssdk.services.cognitoidentity.model.GetIdRequest
 import software.amazon.awssdk.services.cognitoidentity.model.GetIdResponse
 import software.aws.toolkits.core.telemetry.CachedIdentityStorage
-import software.aws.toolkits.core.utils.DelegateSdkConsumers
+import software.aws.toolkits.core.utils.delegateMock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -30,7 +30,7 @@ class AwsCognitoCredentialsProviderTest {
     @JvmField
     val application = ApplicationRule()
 
-    private val cognitoClient = mock<CognitoIdentityClient>(defaultAnswer = DelegateSdkConsumers())
+    private val cognitoClient = delegateMock<CognitoIdentityClient>()
     private val storage = mock<CachedIdentityStorage>()
     private val getCredentialsRequestCaptor = argumentCaptor<GetCredentialsForIdentityRequest>()
     private val getIdRequestCaptor = argumentCaptor<GetIdRequest>()
@@ -46,7 +46,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
+        val provider = AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
         val awsCredentials = provider.resolveCredentials() as AwsSessionCredentials
 
         assertThat(getIdRequestCaptor.firstValue.identityPoolId()).isEqualTo(IDENTITY_POOL_ID)
@@ -75,7 +75,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
+        val provider = AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
 
         provider.resolveCredentials()
         provider.resolveCredentials() // Try to get them again to check for a refresh
@@ -101,12 +101,12 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
+        val provider = AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient)
 
         provider.resolveCredentials()
         provider.resolveCredentials()
 
-        verify(cognitoClient, times(2)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
+        verify(cognitoClient, times(1)).getCredentialsForIdentity(getCredentialsRequestCaptor.capture())
     }
 
     @Test
@@ -123,7 +123,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient, storage)
+        val provider = AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient, storage)
 
         val awsCredentials = provider.resolveCredentials() as AwsSessionCredentials
 
@@ -153,7 +153,7 @@ class AwsCognitoCredentialsProviderTest {
             on { getCredentialsForIdentity(getCredentialsRequestCaptor.capture()) }.thenReturn(getCredentialsResult)
         }
 
-        val provider = AWSCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient, storage)
+        val provider = AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient, storage)
         val awsCredentials = provider.resolveCredentials() as AwsSessionCredentials
 
         verify(storage).loadIdentity(IDENTITY_POOL_ID)
@@ -164,6 +164,13 @@ class AwsCognitoCredentialsProviderTest {
         assertThat(awsCredentials.accessKeyId()).isEqualTo(ACCESS_KEY)
         assertThat(awsCredentials.secretAccessKey()).isEqualTo(SECRET_KEY)
         assertThat(awsCredentials.sessionToken()).isEqualTo(SESSION_TOKEN)
+    }
+
+    @Test
+    fun closeShutsDownTheClient() {
+        AwsCognitoCredentialsProvider(IDENTITY_POOL_ID, cognitoClient, storage).close()
+
+        verify(cognitoClient).close()
     }
 
     companion object {

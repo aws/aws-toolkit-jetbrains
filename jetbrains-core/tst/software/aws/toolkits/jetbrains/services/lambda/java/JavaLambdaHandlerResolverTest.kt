@@ -8,11 +8,15 @@ import com.intellij.openapi.project.DumbServiceImpl
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.Lambda
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
@@ -83,7 +87,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler"
             )
             assertThat(elements).hasSize(1)
@@ -115,7 +119,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::handleRequest"
             )
             assertThat(elements).hasSize(1)
@@ -147,7 +151,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::handleRequest"
             )
             assertThat(elements).hasSize(1)
@@ -165,7 +169,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler"
             )
             assertThat(elements).isEmpty()
@@ -193,7 +197,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::someMethod"
             )
             assertThat(elements).isEmpty()
@@ -236,7 +240,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.ConcreteHandler::handleRequest"
             )
             assertThat(elements).hasSize(1)
@@ -244,6 +248,104 @@ class JavaLambdaHandlerResolverTest {
                 assertThat(it.containingClass?.qualifiedName).isEqualTo("com.example.AbstractHandler")
                 assertThat(it.name).isEqualTo("handleRequest")
             }
+        }
+    }
+
+    @Test
+    fun `resolves handlers with 2 parameters`() {
+        val fixture = projectRule.fixture
+
+        fixture.openClass(
+            """
+            package com.example;
+
+            import com.amazonaws.services.lambda.runtime.Context;
+            import java.io.InputStream;
+            import java.io.OutputStream;
+
+            public class LambdaHandler {
+                public static void streamsOnly(InputStream input, OutputStream output) { }
+
+                public static void contextAndAnything(Object input, Context context) { }
+
+                public static void doesNotResolve(Object input, OutputStream outputStream) { }
+
+                public static void doesNotResolve2(InputStream input, Object outputStream) { }
+            }
+            """
+        )
+
+        runInEdtAndWait {
+            val isHandlerValid: (String) -> Boolean = { handler -> Lambda.isHandlerValid(fixture.project, Runtime.JAVA17, handler) }
+
+            assertThat(isHandlerValid("com.example.LambdaHandler::streamsOnly")).isTrue
+            assertThat(isHandlerValid("com.example.LambdaHandler::contextAndAnything")).isTrue
+            assertThat(isHandlerValid("com.example.LambdaHandler::doesNotResolve")).isFalse
+            assertThat(isHandlerValid("com.example.LambdaHandler::doesNotResolve2")).isFalse
+        }
+    }
+
+    @Test
+    fun `resolves handlers with 1 parameter`() {
+        val fixture = projectRule.fixture
+
+        fixture.openClass(
+            """
+            package com.example;
+
+            import com.amazonaws.services.lambda.runtime.Context;
+            import java.io.InputStream;
+
+            public class LambdaHandler {
+                public static void works(InputStream input) { }
+
+                public static void alsoWorks(Object input) { }
+
+                public static void alsoAlsoWorks(Context context) { }
+            }
+            """
+        )
+
+        runInEdtAndWait {
+            val isHandlerValid: (String) -> Boolean = { handler -> Lambda.isHandlerValid(fixture.project, Runtime.JAVA17, handler) }
+
+            assertThat(isHandlerValid("com.example.LambdaHandler::works")).isTrue
+            assertThat(isHandlerValid("com.example.LambdaHandler::alsoWorks")).isTrue
+            assertThat(isHandlerValid("com.example.LambdaHandler::alsoAlsoWorks")).isTrue
+        }
+    }
+
+    @Test
+    fun `resolves handlers with 3 parameters`() {
+        val fixture = projectRule.fixture
+
+        fixture.openClass(
+            """
+            package com.example;
+
+            import com.amazonaws.services.lambda.runtime.Context;
+            import java.io.InputStream;
+            import java.io.OutputStream;
+
+            public class LambdaHandler {
+                public static void works(InputStream input, OutputStream output, Context context) { }
+
+                public static void doesntWork(Object input, OutputStream output, Context context) { }
+
+                public static void doesntWork2(InputStream input, Object output, Context context) { }
+
+                public static void doesntWork3(InputStream input, OutputStream output, Object context) { }
+            }
+            """
+        )
+
+        runInEdtAndWait {
+            val isHandlerValid: (String) -> Boolean = { handler -> Lambda.isHandlerValid(fixture.project, Runtime.JAVA17, handler) }
+
+            assertThat(isHandlerValid("com.example.LambdaHandler::works")).isTrue
+            assertThat(isHandlerValid("com.example.LambdaHandler::doesntWork")).isFalse
+            assertThat(isHandlerValid("com.example.LambdaHandler::doesntWork2")).isFalse
+            assertThat(isHandlerValid("com.example.LambdaHandler::doesntWork3")).isFalse
         }
     }
 
@@ -269,7 +371,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::handleRequest"
             )
             assertThat(elements[0]).isInstanceOfSatisfying(PsiMethod::class.java) {
@@ -302,7 +404,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::handleRequest"
             )
             assertThat(elements[0]).isInstanceOfSatisfying(PsiMethod::class.java) {
@@ -335,7 +437,7 @@ class JavaLambdaHandlerResolverTest {
         runInEdtAndWait {
             val elements = Lambda.findPsiElementsForHandler(
                 fixture.project,
-                Runtime.JAVA8,
+                Runtime.JAVA17,
                 "com.example.LambdaHandler::handleRequest"
             )
             assertThat(elements).isEmpty()
@@ -363,7 +465,7 @@ class JavaLambdaHandlerResolverTest {
             runInEdtAndWait {
                 val elements = Lambda.findPsiElementsForHandler(
                     projectRule.project,
-                    Runtime.JAVA8,
+                    Runtime.JAVA17,
                     "com.example.LambdaHandler::handleRequest"
                 )
                 assertThat(elements).isEmpty()
@@ -418,20 +520,22 @@ class JavaLambdaHandlerResolverTest {
 
     @Test
     fun handlerDisplayNames() {
-        val sut = LambdaHandlerResolver.getInstanceOrThrow(RuntimeGroup.JAVA)
+        val sut = LambdaHandlerResolver.getInstance(RuntimeGroup.getById(BuiltInRuntimeGroups.Java))
 
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
         assertThat(sut.handlerDisplayName("com.example.LambdaHandler")).isEqualTo("LambdaHandler")
         assertThat(sut.handlerDisplayName("LambdaHandler::handleRequest")).isEqualTo("LambdaHandler.handleRequest")
     }
 
-    private fun runInDumbMode(block: () -> Unit) {
+    private inline fun runInDumbMode(crossinline block: () -> Unit) {
         val dumbServiceImpl = DumbService.getInstance(projectRule.project) as DumbServiceImpl
-        try {
-            runInEdtAndWait { dumbServiceImpl.isDumb = true }
-            block()
-        } finally {
-            runInEdtAndWait { dumbServiceImpl.isDumb = false }
+        runBlocking {
+            // automatically on correct thread in 233+
+            withContext(EDT) {
+                dumbServiceImpl.runInDumbMode {
+                    block()
+                }
+            }
         }
     }
 }

@@ -4,16 +4,20 @@
 package software.aws.toolkits.jetbrains.services.lambda.completion
 
 import base.allowCustomDotnetRoots
-import com.intellij.openapi.util.IconLoader
-import com.jetbrains.rdclient.icons.toIdeaIcon
-import com.jetbrains.rider.model.IconModel
+import base.backendStartTimeout
+import com.jetbrains.rd.ide.model.IconModel
+import com.jetbrains.rd.ui.icons.toIdeaIcon
 import com.jetbrains.rider.test.annotations.TestEnvironment
 import com.jetbrains.rider.test.base.BaseTestWithSolution
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
+import software.aws.toolkits.jetbrains.services.lambda.compat.CachedImageIcon
+import java.time.Duration
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
+    override val backendLoadedTimeout: Duration = backendStartTimeout
+    override val backendShellLoadTimeout: Duration = backendStartTimeout
 
     override fun getSolutionDirectoryName(): String = ""
 
@@ -25,7 +29,7 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
         allowCustomDotnetRoots()
     }
 
-    @Test(description = "Check a single handler is show in lookup when one is defined in a project.")
+    @Test(description = "Check a single handler is shown in lookup when one is defined in a project.")
     @TestEnvironment(solution = "SamHelloWorldApp")
     fun testDetermineHandlers_SingleHandler() {
         val handlers = DotNetHandlerCompletion().getHandlersFromBackend(project)
@@ -57,8 +61,8 @@ class DotNetHandlerCompletionTest : BaseTestWithSolution() {
     @Suppress("SameParameterValue")
     private fun assertIconPath(iconModel: IconModel?, expectedPath: String) {
         assertThat(iconModel).isNotNull
-        val ideaIconSecond = iconModel?.toIdeaIcon(project) as? IconLoader.CachedImageIcon
+        val ideaIconSecond = iconModel?.let { iconModel.toIdeaIcon(project) as? CachedImageIcon }
         assertThat(ideaIconSecond).isNotNull
-        assertThat(ideaIconSecond?.originalPath).isEqualTo(expectedPath)
+        assertThat(ideaIconSecond?.url?.path).endsWith(expectedPath.trimStart('/'))
     }
 }

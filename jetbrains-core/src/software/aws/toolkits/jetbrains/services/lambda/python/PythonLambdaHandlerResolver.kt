@@ -3,11 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.TestSourcesFilter
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiDirectory
@@ -21,8 +19,6 @@ import com.jetbrains.python.psi.stubs.PyModuleNameIndex
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class PythonLambdaHandlerResolver : LambdaHandlerResolver {
-    override fun version(): Int = 1
-
     override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> =
         determineHandler(element)?.let { setOf(it) }.orEmpty()
 
@@ -45,10 +41,7 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
         // Find the module by the name
         PyModuleNameIndex.find(moduleFile, project, false).forEach { pyModule ->
             val lambdaFunctionCandidate = pyModule.findTopLevelFunction(functionName) ?: return@forEach
-
-            val module = ModuleUtilCore.findModuleForFile(lambdaFunctionCandidate.containingFile)
-
-            if (validateHandlerPath(module, pyModule, moduleFolders, parentFolders)) {
+            if (validateHandlerPath(pyModule, moduleFolders, parentFolders)) {
                 return arrayOf(lambdaFunctionCandidate)
             }
         }
@@ -57,19 +50,25 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
     }
 
     private fun validateHandlerPath(
-        module: Module?,
         pyModule: PyFile,
         parentModuleFolders: List<String>,
         parentFolders: List<String>
     ): Boolean {
         // Start matching to see if the parent folders align
         var directory = pyModule.containingDirectory
+        val hasRequirementsTxt = { directory.virtualFile.findChild("requirements.txt") != null }
 
-        // Go from deepest back up
+        // Go from the deepest back up until we find a requirements.txt
+        // SAM CLI will strictly use requirements.txt in the directory defined by CodeUri, but we don't have that data here
         parentModuleFolders.reversed().forEach { parentModule ->
             if (parentModule != directory?.name || !directoryHasInitPy(directory)) {
                 return false
             }
+
+            if (hasRequirementsTxt()) {
+                return true
+            }
+
             directory = directory.parentDirectory
         }
 
@@ -77,26 +76,19 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
             if (folder != directory?.name) {
                 return false
             }
+
+            if (hasRequirementsTxt()) {
+                return true
+            }
+
             directory = directory.parentDirectory
         }
 
-        val rootVirtualFile = directory.virtualFile
-        module?.let {
-            val rootManager = ModuleRootManager.getInstance(module)
-            if (rootManager.contentRoots.contains(rootVirtualFile)) {
-                return true
-            }
-
-            if (rootManager.getSourceRoots(false).contains(rootVirtualFile)) {
-                return true
-            }
-
-            if (rootVirtualFile.findChild("requirements.txt") != null) {
-                return true
-            }
+        if (hasRequirementsTxt()) {
+            return true
+        } else {
+            throw IllegalStateException("Failed to locate requirements.txt")
         }
-
-        return false
     }
 
     private fun directoryHasInitPy(psiDirectory: PsiDirectory) = psiDirectory.findFile("__init__.py") != null
@@ -117,7 +109,13 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
             // https://pytest.readthedocs.io/en/reorganize-docs/new-docs/user/naming_conventions.html#id1
             function.name?.startsWith("test_") != true
         ) {
-            return function.qualifiedName
+            val requirementsFileDir = runCatching { PythonLambdaBuilder.locateRequirementsTxt(virtualFile).parent }.getOrNull() ?: return null
+            val filePath = if (virtualFile.parent != requirementsFileDir) {
+                VfsUtil.getRelativePath(virtualFile.parent, requirementsFileDir)?.let { "$it/" } ?: return null
+            } else {
+                ""
+            }
+            return "$filePath${virtualFile.nameWithoutExtension}.${function.name}"
         }
         return null
     }

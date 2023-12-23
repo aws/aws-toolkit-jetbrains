@@ -17,14 +17,14 @@ import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.SmartPointerManager
 import com.jetbrains.rdclient.util.idea.LifetimedProjectComponent
-import com.jetbrains.rider.model.lambdaDaemonModel
 import com.jetbrains.rider.projectView.solution
+import software.aws.toolkits.jetbrains.protocol.lambdaDaemonModel
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.LocalLambdaRunConfigurationProducer
-import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunction
+import software.aws.toolkits.jetbrains.services.lambda.upload.CreateLambdaFunctionAction
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
 
 /**
@@ -69,19 +69,20 @@ class LambdaDaemonHost(project: Project) : LifetimedProjectComponent(project) {
             val psiElement = RiderLambdaHandlerFakePsiElement(project, handler, fieldId).navigationElement
             val smartPsiElementPointer = SmartPointerManager.createPointer(psiElement)
 
-            val action = CreateLambdaFunction(
+            val action = CreateLambdaFunctionAction(
                 handlerName = handler,
                 elementPointer = smartPsiElementPointer,
                 lambdaHandlerResolver = handlerResolver
             )
 
-            val contextMap = mapOf(
-                LangDataKeys.LANGUAGE.name to LanguageUtil.getRootLanguage(psiElement)
-            )
+            val context = SimpleDataContext.builder()
+                .add(LangDataKeys.LANGUAGE, LanguageUtil.getRootLanguage(psiElement))
+                .setParent(SimpleDataContext.getProjectContext(project))
+                .build()
 
             ActionUtil.invokeAction(
                 action,
-                SimpleDataContext.getSimpleContext(contextMap, SimpleDataContext.getProjectContext(project)),
+                context,
                 ActionPlaces.EDITOR_GUTTER_POPUP,
                 null,
                 null
@@ -110,7 +111,7 @@ class LambdaDaemonHost(project: Project) : LifetimedProjectComponent(project) {
             val runtime = DotNetRuntimeUtils.getCurrentDotNetCoreRuntime()
 
             LocalLambdaRunConfigurationProducer.setAccountOptions(configuration)
-            configuration.useHandler(runtime, handler)
+            configuration.useHandler(runtime.toSdkRuntime(), handler)
 
             val configurationToAdd = factory.createConfiguration("[Local] $methodName", configuration)
             settings = runManager.createConfiguration(configurationToAdd, factory)

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs
 
 import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ListTableModel
-import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
@@ -14,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsResponse
@@ -28,7 +28,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogStream>
     private lateinit var table: TableView<LogStream>
-    private lateinit var actor: LogActor<LogStream>
+    private lateinit var actor: CloudWatchLogsActor<LogStream>
 
     @Before
     fun loadVariables() {
@@ -43,7 +43,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>()))
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             tableModel.waitForModelToBeAtLeast(1)
         }
         assertThat(tableModel.items.size).isOne()
@@ -54,7 +54,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
     fun emptyTableOnExceptionThrown() {
         whenever(client.describeLogStreams(Mockito.any<DescribeLogStreamsRequest>())).then { throw IllegalStateException("network broke") }
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
             waitForTrue { table.emptyText.text == message("cloudwatch.logs.failed_to_load_streams", "abc") }
         }
         assertThat(tableModel.items).isEmpty()
@@ -66,8 +66,8 @@ class LogGroupActorTest : BaseCoroutineTest() {
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name").build()).nextToken("1").build())
             .thenReturn(DescribeLogStreamsResponse.builder().logStreams(LogStream.builder().logStreamName("name2").build()).build())
         runBlocking {
-            actor.channel.send(LogActor.Message.LoadInitial)
-            actor.channel.send(LogActor.Message.LoadForward)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadInitial)
+            actor.channel.send(CloudWatchLogsActor.Message.LoadForward)
             tableModel.waitForModelToBeAtLeast(2)
         }
         assertThat(tableModel.items.size).isEqualTo(2)
@@ -81,7 +81,7 @@ class LogGroupActorTest : BaseCoroutineTest() {
         actor.dispose()
         assertThatThrownBy {
             runBlocking {
-                channel.send(LogActor.Message.LoadForward)
+                channel.send(CloudWatchLogsActor.Message.LoadForward)
             }
         }.isInstanceOf(ClosedSendChannelException::class.java)
     }

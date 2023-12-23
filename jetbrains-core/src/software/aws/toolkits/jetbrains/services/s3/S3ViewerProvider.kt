@@ -16,7 +16,6 @@ import com.intellij.openapi.project.PossiblyDumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import software.amazon.awssdk.services.s3.model.Bucket
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.s3.editor.S3ViewerPanel
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
@@ -43,8 +42,10 @@ class S3ViewerEditorProvider : FileEditorProvider, PossiblyDumbAware {
     }
 }
 
-class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolderBase(), FileEditor {
+class S3ViewerEditor(project: Project, private val bucket: S3VirtualBucket) : UserDataHolderBase(), FileEditor {
     private val s3Panel: S3ViewerPanel = S3ViewerPanel(this, project, bucket)
+
+    override fun getFile(): VirtualFile = bucket
 
     override fun getComponent(): JComponent = s3Panel.component
 
@@ -75,11 +76,11 @@ class S3ViewerEditor(project: Project, bucket: S3VirtualBucket) : UserDataHolder
     override fun setState(state: FileEditorState) {}
 }
 
-fun openEditor(project: Project, bucket: Bucket): Editor? = try {
+fun openEditor(project: Project, bucketName: String, prefix: String = ""): Editor? = try {
     FileEditorManager.getInstance(project).openTextEditor(
         OpenFileDescriptor(
             project,
-            S3VirtualBucket(bucket, project.awsClient())
+            S3VirtualBucket(bucketName, prefix, project.awsClient(), project)
         ),
         true
     ).also {

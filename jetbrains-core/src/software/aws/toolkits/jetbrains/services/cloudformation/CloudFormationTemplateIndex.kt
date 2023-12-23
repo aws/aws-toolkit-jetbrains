@@ -54,13 +54,12 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
     override fun getIndexer(): DataIndexer<String, MutableList<IndexedResource>, FileContent> = DataIndexer { fileContent ->
         val indexedResources = mutableMapOf<String, MutableList<IndexedResource>>()
 
-        fileContent.psiFile.acceptNode(object : PsiElementVisitor() {
-            override fun visitElement(element: PsiElement) {
-                super.visitElement(element)
-                // element is nullable in versions prior to 2020.1 FIX_WHEN_MIN_IS_201
-                element?.run {
+        fileContent.psiFile.acceptNode(
+            object : PsiElementVisitor() {
+                override fun visitElement(element: PsiElement) {
+                    super.visitElement(element)
                     val parent = element.parent as? YAMLKeyValue ?: return
-                    if (parent.value != this) return
+                    if (parent.value != element) return
 
                     val resource = YamlCloudFormationTemplate.convertPsiToResource(parent) ?: return
                     val resourceType = resource.type() ?: return
@@ -69,14 +68,14 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
                     }
                 }
             }
-        })
+        )
 
         indexedResources
     }
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE
 
-    override fun getVersion(): Int = 2
+    override fun getVersion(): Int = 3
 
     override fun getInputFilter(): FileBasedIndex.InputFilter = fileFilter
 

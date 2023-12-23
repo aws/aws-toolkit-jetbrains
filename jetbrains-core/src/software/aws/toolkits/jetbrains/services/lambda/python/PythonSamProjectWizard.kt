@@ -4,41 +4,34 @@
 package software.aws.toolkits.jetbrains.services.lambda.python
 
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.PlatformUtils
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
-import software.aws.toolkits.jetbrains.services.lambda.SamNewProjectSettings
-import software.aws.toolkits.jetbrains.services.lambda.SamProjectTemplate
-import software.aws.toolkits.jetbrains.services.lambda.SamProjectWizard
-import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters
-import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters.AppBasedTemplate
-import software.aws.toolkits.jetbrains.services.lambda.TemplateParameters.LocationBasedTemplate
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamSchemaDownloadPostCreationAction
-import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
-import software.aws.toolkits.jetbrains.ui.wizard.IntelliJSdkSelectionPanel
-import software.aws.toolkits.jetbrains.ui.wizard.PyCharmSdkSelectionPanel
-import software.aws.toolkits.jetbrains.ui.wizard.SamProjectGenerator
-import software.aws.toolkits.jetbrains.ui.wizard.SchemaResourceSelectorSelectionPanel
-import software.aws.toolkits.jetbrains.ui.wizard.SchemaSelectionPanel
-import software.aws.toolkits.jetbrains.ui.wizard.SdkSelectionPanel
+import software.amazon.awssdk.services.lambda.model.PackageType
+import software.aws.toolkits.core.lambda.LambdaArchitecture
+import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.wizard.IntelliJSdkSelectionPanel
+import software.aws.toolkits.jetbrains.services.lambda.wizard.LocationBasedTemplate
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamAppTemplateBased
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
+import software.aws.toolkits.jetbrains.services.lambda.wizard.TemplateParameters
 import software.aws.toolkits.resources.message
-import java.nio.file.Paths
+
+private val pythonTemplateRuntimes =
+    setOf(LambdaRuntime.PYTHON3_7, LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11)
+private val eventBridgeTemplateRuntimes =
+    setOf(LambdaRuntime.PYTHON3_7, LambdaRuntime.PYTHON3_8, LambdaRuntime.PYTHON3_9, LambdaRuntime.PYTHON3_10, LambdaRuntime.PYTHON3_11)
 
 class PythonSamProjectWizard : SamProjectWizard {
-    override fun createSchemaSelectionPanel(
-        generator: SamProjectGenerator
-    ): SchemaSelectionPanel =
-        SchemaResourceSelectorSelectionPanel(generator.builder, RuntimeGroup.PYTHON, generator.defaultSourceCreatingProject)
-
-    override fun createSdkSelectionPanel(generator: SamProjectGenerator): SdkSelectionPanel =
-        when {
-            PlatformUtils.isPyCharm() -> PyCharmSdkSelectionPanel(generator.step)
-            else -> IntelliJSdkSelectionPanel(generator.builder, RuntimeGroup.PYTHON)
-        }
+    override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector = when {
+        PlatformUtils.isIntelliJ() -> IntelliJSdkSelectionPanel(BuiltInRuntimeGroups.Python)
+        else -> PyCharmSdkSelectionPanel(projectLocation)
+    }
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
         SamHelloWorldPython(),
@@ -48,81 +41,79 @@ class PythonSamProjectWizard : SamProjectWizard {
     )
 }
 
-abstract class PythonSamProjectTemplate : SamProjectTemplate() {
-    override fun supportedRuntimes() = setOf(Runtime.PYTHON2_7, Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
+abstract class PythonSamProjectTemplate : SamAppTemplateBased() {
+    override fun supportedZipRuntimes() = pythonTemplateRuntimes
+    override fun supportedImageRuntimes() = pythonTemplateRuntimes
+
+    override val dependencyManager: String = "pip"
 
     override fun postCreationAction(
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        sourceCreatingProject: Project,
         indicator: ProgressIndicator
     ) {
-        super.postCreationAction(settings, contentRoot, rootModel, sourceCreatingProject, indicator)
-        SamCommon.setSourceRoots(contentRoot, rootModel.project, rootModel)
+        super.postCreationAction(settings, contentRoot, rootModel, indicator)
+        addSourceRoots(rootModel.project, rootModel, contentRoot)
     }
 }
 
 class SamHelloWorldPython : PythonSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.hello_world.name")
+    override fun displayName() = message("sam.init.template.hello_world.name")
 
-    override fun getDescription() = message("sam.init.template.hello_world.description")
+    override fun description() = message("sam.init.template.hello_world.description")
 
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("hello-world", "pip")
+    override val appTemplateName: String = "hello-world"
 }
 
-class SamDynamoDBCookieCutter : PythonSamProjectTemplate() {
-    override fun getName() = message("sam.init.template.dynamodb_cookiecutter.name")
+class SamDynamoDBCookieCutter : SamProjectTemplate() {
+    override fun displayName() = message("sam.init.template.dynamodb_cookiecutter.name")
 
-    override fun getDescription() = message("sam.init.template.dynamodb_cookiecutter.description")
+    override fun description() = message("sam.init.template.dynamodb_cookiecutter.description")
 
-    override fun templateParameters(): TemplateParameters = LocationBasedTemplate("gh:aws-samples/cookiecutter-aws-sam-dynamodb-python")
-}
-
-class SamEventBridgeHelloWorld : PythonSamProjectTemplate() {
-    override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
-
-    override fun getName() = message("sam.init.template.eventBridge_helloWorld.name")
-
-    override fun getDescription() = message("sam.init.template.eventBridge_helloWorld.description")
-
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-hello-world", "pip")
-}
-
-class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
-    override fun supportedRuntimes() = setOf(Runtime.PYTHON3_6, Runtime.PYTHON3_7, Runtime.PYTHON3_8)
-
-    override fun getName() = message("sam.init.template.eventBridge_starterApp.name")
-
-    override fun getDescription() = message("sam.init.template.eventBridge_starterApp.description")
-
-    override fun templateParameters(): TemplateParameters = AppBasedTemplate("eventBridge-schema-app", "pip")
-
-    override fun functionName(): String = "hello_world_function"
-
-    override fun supportsDynamicSchemas(): Boolean = true
+    override fun supportedZipRuntimes() = pythonTemplateRuntimes
+    override fun supportedImageRuntimes() = emptySet<LambdaRuntime>()
 
     override fun postCreationAction(
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        sourceCreatingProject: Project,
         indicator: ProgressIndicator
     ) {
-        settings.schemaParameters?.let {
-            val functionRoot = Paths.get(contentRoot.path, functionName())
-
-            SamSchemaDownloadPostCreationAction().downloadCodeIntoWorkspace(
-                it,
-                contentRoot,
-                functionRoot,
-                SchemaCodeLangs.PYTHON3_6,
-                sourceCreatingProject,
-                rootModel.project,
-                indicator
-            )
-        }
-
-        super.postCreationAction(settings, contentRoot, rootModel, sourceCreatingProject, indicator)
+        super.postCreationAction(settings, contentRoot, rootModel, indicator)
+        addSourceRoots(rootModel.project, rootModel, contentRoot)
     }
+
+    override fun templateParameters(
+        projectName: String,
+        runtime: LambdaRuntime,
+        architecture: LambdaArchitecture,
+        packagingType: PackageType
+    ): TemplateParameters = LocationBasedTemplate(
+        "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
+    )
+}
+
+class SamEventBridgeHelloWorld : PythonSamProjectTemplate() {
+    override fun supportedZipRuntimes() = eventBridgeTemplateRuntimes
+    override fun supportedImageRuntimes() = emptySet<LambdaRuntime>()
+
+    override fun displayName() = message("sam.init.template.event_bridge_hello_world.name")
+
+    override fun description() = message("sam.init.template.event_bridge_hello_world.description")
+
+    override val appTemplateName: String = "eventBridge-hello-world"
+}
+
+class SamEventBridgeStarterApp : PythonSamProjectTemplate() {
+    override fun supportedZipRuntimes() = eventBridgeTemplateRuntimes
+    override fun supportedImageRuntimes() = emptySet<LambdaRuntime>()
+
+    override fun displayName() = message("sam.init.template.event_bridge_starter_app.name")
+
+    override fun description() = message("sam.init.template.event_bridge_starter_app.description")
+
+    override val appTemplateName: String = "eventBridge-schema-app"
+
+    override fun supportsDynamicSchemas(): Boolean = true
 }

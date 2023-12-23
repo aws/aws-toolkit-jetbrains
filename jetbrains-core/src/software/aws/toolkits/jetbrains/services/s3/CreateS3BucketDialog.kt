@@ -46,15 +46,18 @@ class CreateS3BucketDialog(
 
     override fun doOKAction() {
         if (okAction.isEnabled) {
-            setOKButtonText(message("s3.create.bucket.in_progress"))
+            setOKButtonText(message("general.create_in_progress"))
             isOKActionEnabled = false
 
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     createBucket()
-                    ApplicationManager.getApplication().invokeLater({
-                        close(OK_EXIT_CODE)
-                    }, ModalityState.stateForComponent(view.component))
+                    ApplicationManager.getApplication().invokeLater(
+                        {
+                            close(OK_EXIT_CODE)
+                        },
+                        ModalityState.stateForComponent(view.component)
+                    )
                     project.refreshAwsTree(S3Resources.LIST_BUCKETS)
                     S3Telemetry.createBucket(project, Result.Succeeded)
                 } catch (e: Exception) {

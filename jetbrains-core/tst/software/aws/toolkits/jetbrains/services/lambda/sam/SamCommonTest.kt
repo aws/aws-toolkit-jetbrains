@@ -8,12 +8,12 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.util.io.exists
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -64,7 +64,7 @@ class SamCommonTest {
         runReadAction {
             val dir = file.containingDirectory.virtualFile
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
-            assertNotNull(templateFile)
+            assertThat(templateFile).isNotNull
         }
     }
 
@@ -92,7 +92,7 @@ Resources:
             Handler: helloworld.App::handleRequest
             Runtime: java8
             CodeUri: target/out.jar
-        """.trimIndent()
+            """.trimIndent()
         )
         runInEdtAndWait {
             projectRule.fixture.addFileToProject("target/out.jar", "")
@@ -118,7 +118,7 @@ Resources:
             CodeUri: hello_world/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent()
+            """.trimIndent()
         )
         createChildren("hello_world")
         runInEdtAndWait {
@@ -162,7 +162,7 @@ Resources:
             ProvisionedThroughput:
                 ReadCapacityUnits: 1
                 WriteCapacityUnits: 1
-        """.trimIndent()
+            """.trimIndent()
         )
         createChildren("hello_world")
         runReadAction {
@@ -199,7 +199,7 @@ Resources:
             CodeUri: hello_world_42/
             Handler: app.handle_request
             Runtime: java8
-        """.trimIndent()
+            """.trimIndent()
         )
         createChildren("hello_world")
         createChildren("hello_world_42")

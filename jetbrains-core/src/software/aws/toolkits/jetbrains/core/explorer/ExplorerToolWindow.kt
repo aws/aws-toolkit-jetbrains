@@ -1,7 +1,6 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-@file:Suppress("DEPRECATION") // TODO: Investigate AsyncTreeModel FIX_WHEN_MIN_IS_201
 package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.execution.Location
@@ -10,18 +9,19 @@ import com.intellij.ide.util.treeView.AbstractTreeNode
 import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionToolbar.WRAP_LAYOUT_POLICY
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.ui.DoubleClickListener
@@ -32,15 +32,26 @@ import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.panels.NonOpaquePanel
+import com.intellij.ui.tree.AsyncTreeModel
+import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.Tree
+import com.intellij.util.concurrency.Invoker
 import com.intellij.util.ui.GridBag
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import com.intellij.util.ui.tree.TreeUtil
+import org.jetbrains.concurrency.CancellablePromise
+import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ChangeAccountSettingsMode
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
-import software.aws.toolkits.jetbrains.core.credentials.SettingsSelectorComboBoxAction
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -51,8 +62,12 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
-import software.aws.toolkits.jetbrains.ui.tree.AsyncTreeModel
-import software.aws.toolkits.jetbrains.ui.tree.StructureTreeModel
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
+import software.aws.toolkits.jetbrains.core.gettingstarted.rolePopupFromConnection
+import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceResourceTypeNode
+import software.aws.toolkits.jetbrains.ui.CenteredInfoPanel
+import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -65,31 +80,32 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
+import kotlin.reflect.KClass
 
-class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), ConnectionSettingsStateChangeNotifier {
+class ExplorerToolWindow(private val project: Project) :
+    SimpleToolWindowPanel(true, true),
+    ConnectionSettingsStateChangeNotifier,
+    ToolkitConnectionManagerListener,
+    Disposable {
     private val actionManager = ActionManagerEx.getInstanceEx()
     private val treePanelWrapper = NonOpaquePanel()
     private val awsTreeModel = AwsExplorerTreeStructure(project)
-    private val structureTreeModel = StructureTreeModel(awsTreeModel, project)
-    private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, project))
+
+    // The 4 max threads is arbitrary, but we want > 1 so that we can load more than one node at a time
+    private val structureTreeModel = StructureTreeModel(awsTreeModel, null, Invoker.forBackgroundPoolWithReadAction(this), this)
+    private val awsTree = createTree(AsyncTreeModel(structureTreeModel, true, this))
     private val awsTreePanel = ScrollPaneFactory.createScrollPane(awsTree)
     private val accountSettingsManager = AwsConnectionManager.getInstance(project)
+    private val connectionManager = ToolkitConnectionManager.getInstance(project)
 
     init {
-        val group = DefaultActionGroup(
-            SettingsSelectorComboBoxAction(project, ChangeAccountSettingsMode.CREDENTIALS),
-            SettingsSelectorComboBoxAction(project, ChangeAccountSettingsMode.REGIONS)
-        )
-
-        toolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-            layoutPolicy = WRAP_LAYOUT_POLICY
-        }.component
-
         background = UIUtil.getTreeBackground()
         setContent(treePanelWrapper)
 
-        project.messageBus.connect().subscribe(AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
-        settingsStateChanged(accountSettingsManager.connectionState)
+        project.messageBus.connect(this).subscribe(AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(ToolkitConnectionManagerListener.TOPIC, this)
+
+        connectionChanged(connectionManager.activeConnection())
     }
 
     private fun createInfoPanel(state: ConnectionState): JComponent {
@@ -97,7 +113,8 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
 
         val gridBag = GridBag()
         gridBag.defaultAnchor = GridBagConstraints.CENTER
-        gridBag.defaultInsets = JBUI.insetsBottom(JBUI.scale(6))
+        gridBag.defaultWeightX = 1.0
+        gridBag.defaultInsets = JBUI.insets(0, JBUI.scale(30), JBUI.scale(6), JBUI.scale(30))
 
         val textPane = JTextPane().apply {
             val textColor = if (state is ConnectionState.InvalidConnection) {
@@ -119,7 +136,7 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
             background = UIUtil.getTreeBackground()
         }
 
-        panel.add(textPane, gridBag.nextLine().next())
+        panel.add(textPane, gridBag.nextLine().next().fillCell())
 
         state.actions.forEach {
             panel.add(createActionLabel(it), gridBag.nextLine().next())
@@ -130,27 +147,94 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
 
     private fun createActionLabel(action: AnAction): HyperlinkLabel {
         val label = HyperlinkLabel(action.templateText ?: "BUG: $action lacks a text description")
-        label.addHyperlinkListener(object : HyperlinkAdapter() {
-            override fun hyperlinkActivated(e: HyperlinkEvent) {
-                val event = AnActionEvent.createFromAnAction(action, e.inputEvent, ActionPlaces.UNKNOWN, DataManager.getInstance().getDataContext(label))
-                action.actionPerformed(event)
+        label.addHyperlinkListener(
+            object : HyperlinkAdapter() {
+                override fun hyperlinkActivated(e: HyperlinkEvent) {
+                    val event = AnActionEvent.createFromAnAction(action, e.inputEvent, ActionPlaces.UNKNOWN, DataManager.getInstance().getDataContext(label))
+                    action.actionPerformed(event)
+                }
             }
-        })
+        )
 
         return label
     }
 
+    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+        // weird race condition where message bus fires before active connection has reflected in the connection manager
+        connectionChanged(newConnection)
+    }
+
     override fun settingsStateChanged(newState: ConnectionState) {
-        runInEdt {
-            treePanelWrapper.setContent(
-                when (newState) {
-                    is ConnectionState.ValidConnection -> {
-                        invalidateTree()
-                        awsTreePanel
+        // we use the active connection to ignore changes to AwsConnectionManager when it's not the active connection
+        connectionChanged(connectionManager.activeConnection())
+    }
+
+    private fun connectionChanged(newConnection: ToolkitConnection?) {
+        val connectionState = accountSettingsManager.connectionState
+
+        fun drawConnectionManagerPanel() {
+            runInEdt {
+                treePanelWrapper.setContent(
+                    when (connectionState) {
+                        is ConnectionState.ValidConnection -> {
+                            invalidateTree()
+                            awsTreePanel
+                        }
+                        else -> createInfoPanel(connectionState)
                     }
-                    else -> createInfoPanel(newState)
+                )
+            }
+        }
+
+        when (newConnection) {
+            is AwsConnectionManagerConnection -> {
+                drawConnectionManagerPanel()
+            }
+
+            null -> {
+                // double check that we don't already have iam creds because the ToolkitConnectionListener can fire last, leading to weird state
+                // where we show "setup" button instead of explorer tree
+                if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                    drawConnectionManagerPanel()
+                    UiTelemetry.click(project, "ExplorerToolWindow_raceConditionHit")
+                } else {
+                    runInEdt {
+                        treePanelWrapper.setContent(
+                            CenteredInfoPanel().apply {
+                                addLine(message("gettingstarted.explorer.new.setup.info"))
+                                addDefaultActionButton(message("gettingstarted.explorer.new.setup")) {
+                                    GettingStartedPanel.openPanel(project)
+                                }
+                            }
+                        )
+                    }
                 }
-            )
+            }
+
+            is AwsBearerTokenConnection -> {
+                runInEdt {
+                    treePanelWrapper.setContent(
+                        CenteredInfoPanel().apply {
+                            if (!newConnection.isSono() || CredentialManager.getInstance().getCredentialIdentifiers().isEmpty()) {
+                                // if no iam credentials or we're connected to identity center...
+                                addLine(message("gettingstarted.explorer.iam.add.info"))
+                                addDefaultActionButton(message("gettingstarted.explorer.iam.add")) {
+                                    // if builder id, popup identity center add connection
+                                    // else if already identity center, popup just the role selector
+                                    rolePopupFromConnection(project, newConnection)
+                                }
+                            } else {
+                                // else if iam credentials available
+                                addLine(message("gettingstarted.explorer.iam.switch"))
+                            }
+                        }
+                    )
+                }
+            }
+
+            else -> {
+                // tree doesn't support other connection types yet
+            }
         }
     }
 
@@ -171,9 +255,25 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
         }
     }
 
+    fun <T : AbstractTreeNode<*>> findNode(nodeType: KClass<T>): CancellablePromise<AbstractTreeNode<*>?> =
+        runReadAction {
+            structureTreeModel.invoker.computeLater {
+                structureTreeModel.root.children().asSequence()
+                    .filterIsInstance<DefaultMutableTreeNode>()
+                    .firstOrNull { nodeType.isInstance(it.userObject) }
+                    ?.userObject as AbstractTreeNode<*>?
+            }
+        }
+
     // Save the state and reapply it after we invalidate (which is the point where the state is wiped).
     // Items are expanded again if their user object is unchanged (.equals()).
     private fun withSavedState(tree: Tree, block: () -> Unit) {
+        // TODO: do we actually need this? re-evaluate limits at later time
+        // never re-expand dynamic resource nodes because api throttles aggressively
+        TreeUtil.collectExpandedPaths(tree).filter { TreeUtil.getLastUserObject(it) is DynamicResourceResourceTypeNode }.forEach {
+            tree.collapsePath(it)
+        }
+
         val state = TreeState.createOn(tree)
         block()
         state.applyTo(tree)
@@ -194,34 +294,36 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
             }
         }.installOn(awsTree)
 
-        awsTree.addMouseListener(object : PopupHandler() {
-            override fun invokePopup(comp: Component?, x: Int, y: Int) {
-                // Build a right click menu based on the selected first node
-                // All nodes must be the same type (e.g. all S3 buckets, or a service node)
-                val explorerNode = getSelectedNodesSameType<AwsExplorerNode<*>>()?.get(0) ?: return
-                val actionGroupName = (explorerNode as? ResourceActionNode)?.actionGroupName()
+        awsTree.addMouseListener(
+            object : PopupHandler() {
+                override fun invokePopup(comp: Component?, x: Int, y: Int) {
+                    // Build a right click menu based on the selected first node
+                    // All nodes must be the same type (e.g. all S3 buckets, or a service node)
+                    val explorerNode = getSelectedNodesSameType<AwsExplorerNode<*>>()?.get(0) ?: return
+                    val actionGroupName = (explorerNode as? ResourceActionNode)?.actionGroupName()
 
-                val totalActions = mutableListOf<AnAction>()
+                    val totalActions = mutableListOf<AnAction>()
 
-                (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
+                    (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
 
-                if (explorerNode is AwsExplorerResourceNode<*>) {
-                    totalActions.add(CopyArnAction())
-                }
+                    if (explorerNode is AwsExplorerResourceNode<*>) {
+                        totalActions.add(CopyArnAction())
+                    }
 
-                totalActions.find { it is DeleteResourceAction<*> }?.let {
-                    totalActions.remove(it)
-                    totalActions.add(Separator.create())
-                    totalActions.add(it)
-                }
+                    totalActions.find { it is DeleteResourceAction<*> }?.let {
+                        totalActions.remove(it)
+                        totalActions.add(Separator.create())
+                        totalActions.add(it)
+                    }
 
-                val actionGroup = DefaultActionGroup(totalActions)
-                if (actionGroup.childrenCount > 0) {
-                    val popupMenu = actionManager.createActionPopupMenu("ExplorerToolWindow", actionGroup)
-                    popupMenu.component.show(comp, x, y)
+                    val actionGroup = DefaultActionGroup(totalActions)
+                    if (actionGroup.childrenCount > 0) {
+                        val popupMenu = actionManager.createActionPopupMenu(ToolkitPlaces.EXPLORER_TOOL_WINDOW, actionGroup)
+                        popupMenu.component.show(comp, x, y)
+                    }
                 }
             }
-        })
+        )
 
         return awsTree
     }
@@ -291,8 +393,11 @@ class ExplorerToolWindow(project: Project) : SimpleToolWindowPanel(true, true), 
         }
     }
 
+    override fun dispose() {
+    }
+
     companion object {
-        fun getInstance(project: Project): ExplorerToolWindow = ServiceManager.getService(project, ExplorerToolWindow::class.java)
+        fun getInstance(project: Project): ExplorerToolWindow = project.service()
     }
 }
 

@@ -22,8 +22,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class JavaLambdaHandlerResolver : LambdaHandlerResolver {
-    override fun version(): Int = 1
-
     override fun findPsiElements(
         project: Project,
         handler: String,
@@ -41,9 +39,20 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
                     classes.filterIsInstance<NavigatablePsiElement>().toTypedArray()
                 } else {
                     val handlerMethod = classes.asSequence()
-                        .map { it.findMethodsByName(methodName, true) }
+                        .map { psiClass ->
+                            psiClass.findMethodsByName(methodName, true)
+                                .filter { it.body != null } // Filter out interfaces
+                                .filter {
+                                    val file = it.containingFile.virtualFile
+
+                                    return@filter if (psiClass.implementsLambdaHandlerInterface(file)) {
+                                        true
+                                    } else {
+                                        it.isValidHandler(psiClass, file)
+                                    }
+                                }
+                        }
                         .flatMap { it.asSequence() }
-                        .filter { it.body != null } // Filter out interfaces
                         .pickMostSpecificHandler()
                     handlerMethod?.let {
                         arrayOf(it)
@@ -54,7 +63,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
     }
 
     override fun determineHandler(element: PsiElement): String? =
-        DumbService.getInstance(element.project).computeWithAlternativeResolveEnabled<String, Exception> {
+        DumbService.getInstance(element.project).computeWithAlternativeResolveEnabled<String?, Exception> {
             when (element) {
                 is PsiClass -> findByClass(element)
                 is PsiMethod -> findByMethod(element)
@@ -131,7 +140,8 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
     private fun findByClass(clz: PsiClass): String? =
         if (clz.canBeInstantiatedByLambda() &&
             clz.containingFile.virtualFile != null &&
-            clz.implementsLambdaHandlerInterface(clz.containingFile.virtualFile)) {
+            clz.implementsLambdaHandlerInterface(clz.containingFile.virtualFile)
+        ) {
             clz.qualifiedName
         } else {
             null
@@ -147,11 +157,13 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
             clz.qualifiedName?.let { handlers.add(it) }
         }
 
-        handlers.addAll(clz.allMethods
-            .asSequence()
-            .filter { it.isValidHandler(clz, file) }
-            .map { "${clz.qualifiedName}::${it.name}" }
-            .toSet())
+        handlers.addAll(
+            clz.allMethods
+                .asSequence()
+                .filter { it.isValidHandler(clz, file) }
+                .map { "${clz.qualifiedName}::${it.name}" }
+                .toSet()
+        )
 
         return handlers
     }
@@ -187,15 +199,16 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         !(parentClass.implementsLambdaHandlerInterface(file) && this.name == HANDLER_NAME)
 
     private fun PsiMethod.hasRequiredParameters(): Boolean = when (this.parameters.size) {
-            1 -> true
-            2 -> (this.parameterList.parameters[0].isInputStreamParameter() &&
-                    this.parameterList.parameters[1].isOutputStreamParameter()) ||
-                    this.parameterList.parameters[1].isContextParameter()
-            3 -> this.parameterList.parameters[0].isInputStreamParameter() &&
-                    this.parameterList.parameters[1].isOutputStreamParameter() &&
-                    this.parameterList.parameters[2].isContextParameter()
-            else -> false
-        }
+        1 -> true
+        2 ->
+            (this.parameterList.parameters[0].isInputStreamParameter() && this.parameterList.parameters[1].isOutputStreamParameter()) ||
+                this.parameterList.parameters[1].isContextParameter()
+        3 ->
+            this.parameterList.parameters[0].isInputStreamParameter() &&
+                this.parameterList.parameters[1].isOutputStreamParameter() &&
+                this.parameterList.parameters[2].isContextParameter()
+        else -> false
+    }
 
     private fun PsiParameter.isContextParameter(): Boolean = isClass(LAMBDA_CONTEXT)
     private fun PsiParameter.isInputStreamParameter(): Boolean = isClass(INPUT_STREAM)
@@ -205,7 +218,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
         PsiType.getTypeByName(
             classFullName,
             project,
-            GlobalSearchScope.projectScope(project)
+            GlobalSearchScope.allScope(project)
         ).isAssignableFrom(this.type)
 
     private companion object {

@@ -10,8 +10,6 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestActionEvent
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ListTableModel
-import com.nhaarman.mockitokotlin2.whenever
-import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -19,6 +17,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsResponse
@@ -37,11 +36,12 @@ class OpenLogStreamInEditorActionTest {
 
     @JvmField
     @Rule
-    val mockClientManagerRule = MockClientManagerRule(projectRule)
+    val mockClientManagerRule = MockClientManagerRule()
 
-    @JvmField
-    @Rule
-    val timeout = CoroutinesTimeout.seconds(15)
+    // TODO: figure out why this doesn't work on 223 Windows
+//    @JvmField
+//    @Rule
+//    val timeout = CoroutinesTimeout.seconds(15)
 
     @After
     fun after() {
@@ -55,16 +55,18 @@ class OpenLogStreamInEditorActionTest {
     fun testOpeningFileFromGroup() {
         val client = mockClientManagerRule.create<CloudWatchLogsClient>()
         whenever(client.getLogEventsPaginator(Mockito.any<GetLogEventsRequest>()))
-            .thenReturn(object : GetLogEventsIterable(client, null) {
-                override fun iterator() = mutableListOf(
-                    GetLogEventsResponse.builder().events(
-                        OutputLogEvent.builder().message("abc").build(),
-                        OutputLogEvent.builder().message("def").build()
-                    ).build()
-                ).iterator()
-            })
+            .thenReturn(
+                object : GetLogEventsIterable(client, null) {
+                    override fun iterator() = mutableListOf(
+                        GetLogEventsResponse.builder().events(
+                            OutputLogEvent.builder().message("abc").build(),
+                            OutputLogEvent.builder().message("def").build()
+                        ).build()
+                    ).iterator()
+                }
+            )
 
-        val tableModel = ListTableModel<LogStream>(LogStreamsStreamColumn())
+        val tableModel = ListTableModel<LogStream>(LogStreamsStreamColumn(sortable = false))
         val table = JBTable(tableModel)
         tableModel.addRow(LogStream.builder().logStreamName("54321").build())
         // select the first row

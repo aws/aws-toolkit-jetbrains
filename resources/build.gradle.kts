@@ -2,13 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import de.undercouch.gradle.tasks.download.Download
+import software.aws.toolkits.gradle.resources.ValidateMessages
 
 plugins {
-    id("de.undercouch.download")
+    id("toolkit-kotlin-conventions")
+    id("toolkit-testing")
+    id("de.undercouch.download") version "5.2.1"
 }
 
 sourceSets {
-    main.get().resources.srcDir("$buildDir/downloaded-resources")
+    main {
+        resources.srcDir("$buildDir/downloaded-resources")
+    }
+}
+
+dependencies {
+    testImplementation(libs.junit4)
+    testRuntimeOnly(libs.junit5.jupiterVintage)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 val download = tasks.register<Download>("downloadResources") {
@@ -21,4 +35,14 @@ val download = tasks.register<Download>("downloadResources") {
     }
 }
 
-tasks["processResources"].dependsOn(download)
+tasks.processResources {
+    dependsOn(download)
+}
+
+val validateLocalizedMessages = tasks.register<ValidateMessages>("validateLocalizedMessages") {
+    paths.from("resources/software/aws/toolkits/resources/MessagesBundle.properties")
+}
+
+tasks.check {
+    dependsOn(validateLocalizedMessages)
+}

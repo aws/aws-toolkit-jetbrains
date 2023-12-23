@@ -42,6 +42,20 @@ fun CloudFormationClient.describeStack(stackName: String, callback: (Stack?) -> 
     }
 }
 
+fun CloudFormationClient.describeStackForSync(stackName: String, enableParamsAndTags: (Boolean) -> Unit, callback: (Stack?) -> Unit) {
+    ApplicationManager.getApplication().executeOnPooledThread {
+        try {
+            enableParamsAndTags(false)
+            val stack = this.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()
+            callback(stack)
+        } catch (e: Exception) {
+            /* no-op */
+        } finally {
+            enableParamsAndTags(true)
+        }
+    }
+}
+
 private val CFN_CREATE_FAILURE_TERMINAL_STATES = setOf(
     StackStatus.CREATE_FAILED,
     StackStatus.DELETE_COMPLETE,
@@ -130,7 +144,9 @@ fun CloudFormationClient.waitForStackDeletionComplete(
         fail = { stack ->
             if (stack.stackStatus() in CFN_DELETE_FAILURE_TERMINAL_STATES) {
                 message("cloudformation.delete_stack.failed", stack.stackName(), stack.stackStatus())
-            } else null
+            } else {
+                null
+            }
         },
         successByException = { e -> e is CloudFormationException && e.awsErrorDetails().errorCode() == "ValidationError" },
         timeoutErrorMessage = message("cloudformation.delete_stack.timeout", stackName, maxAttempts * delay.seconds),

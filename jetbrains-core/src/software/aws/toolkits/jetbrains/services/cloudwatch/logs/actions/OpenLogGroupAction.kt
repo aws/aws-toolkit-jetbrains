@@ -12,6 +12,6 @@ import software.aws.toolkits.resources.message
 
 class OpenLogGroupAction : SingleResourceNodeAction<CloudWatchLogsNode>(message("cloudwatch.logs.open")), DumbAware {
     override fun actionPerformed(selected: CloudWatchLogsNode, e: AnActionEvent) {
-        CloudWatchLogWindow.getInstance(selected.nodeProject)?.showLogGroup(selected.logGroupName)
+        CloudWatchLogWindow.getInstance(selected.nodeProject).showLogGroup(selected.logGroupName)
     }
 }

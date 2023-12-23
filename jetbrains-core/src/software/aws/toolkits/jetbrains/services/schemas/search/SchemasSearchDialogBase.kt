@@ -16,6 +16,9 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
+import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.activeCredentialProvider
+import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.schemas.SchemaViewer
 import software.aws.toolkits.jetbrains.services.schemas.code.DownloadCodeForSchemaDialog
@@ -51,20 +54,15 @@ abstract class SchemasSearchDialogBase(
     private val headerText: String,
     private val onCancelCallback: (SchemaSearchDialogState) -> Unit
 ) : SchemaSearchDialog, DialogWrapper(project) {
-
-    private val DEFAULT_PADDING = 10
-    private val SEARCH_DELAY_MS = 300L
-    private val HIGHLIGHT_COLOR = Color.YELLOW
-
     val searchTextField = JTextField()
     private val searchTextAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this.disposable)
 
     val resultsModel = DefaultListModel<SchemaSearchResultWithRegistry>()
-    val resultsList = JBList<SchemaSearchResultWithRegistry>(resultsModel)
+    val resultsList = JBList(resultsModel)
     private val resultsLock = ReentrantLock()
 
     val versionsModel: DefaultComboBoxModel<String> = DefaultComboBoxModel()
-    val versionsCombo = ComboBox<String>(versionsModel)
+    val versionsCombo = ComboBox(versionsModel)
 
     val previewText = JTextArea()
 
@@ -118,39 +116,44 @@ abstract class SchemasSearchDialogBase(
             }
         }
 
-        searchTextField.document.addDocumentListener(object : DocumentListener {
-            override fun changedUpdate(e: DocumentEvent?) = search()
-            override fun insertUpdate(e: DocumentEvent?) = search()
-            override fun removeUpdate(e: DocumentEvent?) = search()
+        searchTextField.document.addDocumentListener(
+            object : DocumentListener {
+                override fun changedUpdate(e: DocumentEvent?) = search()
+                override fun insertUpdate(e: DocumentEvent?) = search()
+                override fun removeUpdate(e: DocumentEvent?) = search()
 
-            private fun search() {
-                if (searchTextAlarm.isDisposed) return
+                private fun search() {
+                    if (searchTextAlarm.isDisposed) return
 
-                searchTextAlarm.cancelAllRequests()
+                    searchTextAlarm.cancelAllRequests()
 
-                searchTextAlarm.addRequest({
-                    val searchText = searchTextField.text
+                    searchTextAlarm.addRequest(
+                        {
+                            val searchText = searchTextField.text
 
-                    if (searchText.isNullOrEmpty()) {
-                        clearState()
-                        return@addRequest
-                    }
+                            if (searchText.isNullOrEmpty()) {
+                                clearState()
+                                return@addRequest
+                            }
 
-                    clearState()
-                    resultsList.setEmptyText(message("schemas.search.searching"))
-                    searchSchemas(searchText, { onSearchResultsReturned(it) }, { onErrorSearchingRegistry(it) })
-                }, SEARCH_DELAY_MS)
+                            clearState()
+                            resultsList.setEmptyText(message("schemas.search.searching"))
+                            searchSchemas(searchText, { onSearchResultsReturned(it) }, { onErrorSearchingRegistry(it) })
+                        },
+                        SEARCH_DELAY_MS
+                    )
+                }
+
+                private fun clearState() {
+                    previewText.text = ""
+                    resultsList.setEmptyText(message("schemas.search.no_results"))
+                    getDownloadButton()?.isEnabled = false
+                    resultsModel.removeAllElements()
+                    versionsModel.removeAllElements()
+                    currentSearchErrors.clear()
+                }
             }
-
-            private fun clearState() {
-                previewText.text = ""
-                resultsList.setEmptyText(message("schemas.search.no_results"))
-                getDownloadButton()?.isEnabled = false
-                resultsModel.removeAllElements()
-                versionsModel.removeAllElements()
-                currentSearchErrors.clear()
-            }
-        })
+        )
     }
 
     private fun onSearchResultsReturned(searchResults: List<SchemaSearchResultWithRegistry>) {
@@ -312,7 +315,7 @@ abstract class SchemasSearchDialogBase(
     abstract fun createResultRenderer(): (SchemaSearchResultWithRegistry) -> JComponent
 
     private fun downloadSchemaContent(schema: SchemaSearchResultWithRegistry, version: String): CompletionStage<String> =
-        schemaViewer.downloadPrettySchema(schema.name, schema.registry, version, contentPanel)
+        schemaViewer.downloadPrettySchema(schema.name, schema.registry, version, ConnectionSettings(project.activeCredentialProvider(), project.activeRegion()))
 
     abstract fun searchSchemas(
         searchText: String,
@@ -366,5 +369,11 @@ abstract class SchemasSearchDialogBase(
         override fun doAction(e: ActionEvent) {
             doCancelAction()
         }
+    }
+
+    private companion object {
+        private const val DEFAULT_PADDING = 10
+        private const val SEARCH_DELAY_MS = 300L
+        private val HIGHLIGHT_COLOR = Color.YELLOW
     }
 }

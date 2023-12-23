@@ -3,32 +3,20 @@
 
 package software.aws.toolkits.jetbrains.services.lambda
 
-import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.configurations.RuntimeConfigurationError
-import com.intellij.execution.process.CapturingProcessRunner
-import com.intellij.execution.process.ColoredProcessHandler
-import com.intellij.execution.process.ProcessHandler
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleUtil
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
-import com.intellij.util.io.Compressor
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.core.utils.exists
-import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
-import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
-import software.aws.toolkits.jetbrains.core.executables.getExecutable
+import com.intellij.psi.PsiFile
+import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.PathMapping
-import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_MEMORY_SIZE
-import software.aws.toolkits.jetbrains.services.lambda.LambdaLimits.DEFAULT_TIMEOUT
-import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.execution.sam.HandlerRunSettings
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils
+import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambdaRequest
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -37,199 +25,81 @@ abstract class LambdaBuilder {
 
     /**
      * Returns the base directory of the Lambda handler
+     *
+     * @throws IllegalStateException if we cant determine a valid base directory for the handler element
      */
-    abstract fun baseDirectory(module: Module, handlerElement: PsiElement): String
+    abstract fun handlerBaseDirectory(module: Module, handlerElement: PsiElement): Path
 
-    /**
-     * Creates a package for the given lambda including source files archived in the correct format.
-     */
-    fun buildLambda(
-        module: Module,
-        handlerElement: PsiElement,
-        handler: String,
-        runtime: Runtime,
-        timeout: Int,
-        memorySize: Int,
-        envVars: Map<String, String>,
-        samOptions: SamOptions,
-        onStart: (ProcessHandler) -> Unit = {}
-    ): BuiltLambda {
-        val baseDir = baseDirectory(module, handlerElement)
+    open fun handlerForDummyTemplate(settings: HandlerRunSettings, handlerElement: PsiElement): String = settings.handler
 
-        val customTemplate = getBuildDirectory(module).resolve("template.yaml")
+    open fun buildFromHandler(project: Project, settings: HandlerRunSettings): BuildLambdaRequest {
+        val dummyLogicalId = "Function"
+        val samOptions = settings.samOptions
+        val runtime = settings.runtime
+        val handler = settings.handler
 
-        val logicalId = "Function"
-        SamTemplateUtils.writeDummySamTemplate(customTemplate, logicalId, runtime, baseDir, handler, timeout, memorySize, envVars)
+        val element = Lambda.findPsiElementsForHandler(project, runtime, handler).first()
+        val module = getModule(element.containingFile)
 
-        return buildLambdaFromTemplate(module, customTemplate, logicalId, samOptions, onStart)
-    }
+        val buildDirectory = getBuildDirectory(module)
+        val dummyTemplate = buildDirectory.parent.resolve("temp-template.yaml")
 
-    suspend fun constructSamBuildCommand(
-        module: Module,
-        templateLocation: Path,
-        logicalId: String,
-        samOptions: SamOptions,
-        buildDir: Path
-    ): GeneralCommandLine {
-        val executable = ExecutableManager.getInstance().getExecutable<SamExecutable>().await()
-        val samExecutable = when (executable) {
-            is ExecutableInstance.Executable -> executable
-            else -> {
-                throw RuntimeException((executable as? ExecutableInstance.BadExecutable)?.validationError ?: "")
-            }
-        }
-
-        val commandLine = samExecutable.getCommandLine()
-            .withParameters("build")
-            .withParameters(logicalId)
-            .withParameters("--template")
-            .withParameters(templateLocation.toString())
-            .withParameters("--build-dir")
-            .withParameters(buildDir.toString())
-
-        if (samOptions.buildInContainer) {
-            commandLine.withParameters("--use-container")
-        }
-
-        if (samOptions.skipImagePull) {
-            commandLine.withParameters("--skip-pull-image")
-        }
-
-        samOptions.dockerNetwork?.let { network ->
-            val sanitizedNetwork = network.trim()
-            if (sanitizedNetwork.isNotBlank()) {
-                commandLine.withParameters("--docker-network").withParameters(sanitizedNetwork)
-            }
-        }
-
-        samOptions.additionalBuildArgs?.let { buildArgs ->
-            if (buildArgs.isNotBlank()) {
-                commandLine.withParameters(*buildArgs.split(" ").toTypedArray())
-            }
-        }
-
-        commandLine.withEnvironment(additionalEnvironmentVariables(module, samOptions))
-
-        return commandLine
-    }
-
-    fun buildLambdaFromTemplate(
-        module: Module,
-        templateLocation: Path,
-        logicalId: String,
-        samOptions: SamOptions,
-        onStart: (ProcessHandler) -> Unit = {}
-    ): BuiltLambda {
-        val functions = SamTemplateUtils.findFunctionsFromTemplate(
-            module.project,
-            templateLocation.toFile()
+        SamTemplateUtils.writeDummySamTemplate(
+            tempFile = dummyTemplate,
+            logicalId = dummyLogicalId,
+            runtime = runtime.toSdkRuntime() ?: throw IllegalStateException("Cannot map runtime $runtime to SDK runtime."),
+            architecture = settings.architecture.toSdkArchitecture(),
+            handler = handlerForDummyTemplate(settings, element),
+            timeout = settings.timeout,
+            memorySize = settings.memorySize,
+            codeUri = handlerBaseDirectory(module, element).toAbsolutePath().toString(),
+            envVars = settings.environmentVariables
         )
 
-        val codeLocation = ReadAction.compute<String, Throwable> {
-            functions.find { it.logicalName == logicalId }
-                ?.codeLocation()
-                ?: throw RuntimeConfigurationError(
-                    message(
-                        "lambda.run_configuration.sam.no_such_function",
-                        logicalId,
-                        templateLocation
-                    )
-                )
-        }
-
-        val buildDir = getBuildDirectory(module)
-
-        return runBlocking(Dispatchers.IO) {
-            val commandLine = constructSamBuildCommand(module, templateLocation, logicalId, samOptions, buildDir)
-
-            val pathMappings = listOf(
-                PathMapping(templateLocation.parent.resolve(codeLocation).toString(), "/"),
-                PathMapping(buildDir.resolve(logicalId).toString(), "/")
-            )
-
-            val processHandler = ColoredProcessHandler(commandLine)
-
-            onStart.invoke(processHandler)
-
-            val processOutput = CapturingProcessRunner(processHandler).runProcess()
-            if (processOutput.exitCode != 0) {
-                throw IllegalStateException(message("sam.build.failed"))
-            }
-
-            val builtTemplate = buildDir.resolve("template.yaml")
-            if (!builtTemplate.exists()) {
-                throw IllegalStateException("Failed to locate built template, $builtTemplate does not exist")
-            }
-
-            return@runBlocking BuiltLambda(builtTemplate, buildDir.resolve(logicalId), pathMappings)
-        }
-    }
-
-    fun packageLambda(
-        module: Module,
-        handlerElement: PsiElement,
-        handler: String,
-        runtime: Runtime,
-        samOptions: SamOptions,
-        onStart: (ProcessHandler) -> Unit = {}
-    ): Path {
-        val builtLambda = buildLambda(module, handlerElement, handler, runtime, DEFAULT_TIMEOUT, DEFAULT_MEMORY_SIZE, emptyMap(), samOptions, onStart)
-        val zipLocation = FileUtil.createTempFile("builtLambda", "zip", true)
-        Compressor.Zip(zipLocation).use {
-            it.addDirectory(builtLambda.codeLocation.toFile())
-        }
-        return zipLocation.toPath()
+        return BuildLambdaRequest(
+            dummyTemplate,
+            dummyLogicalId,
+            buildDirectory,
+            additionalBuildEnvironmentVariables(project, module, samOptions),
+            samOptions
+        )
     }
 
     /**
      * Returns the build directory of the project. Create this if it doesn't exist yet.
      */
-    protected open fun getBuildDirectory(module: Module): Path {
+    open fun getBuildDirectory(module: Module): Path {
         val contentRoot = module.rootManager.contentRoots.firstOrNull()
             ?: throw IllegalStateException(message("lambda.build.module_with_no_content_root", module.name))
-        return Paths.get(contentRoot.path, ".aws-sam", "build")
+        return Paths.get(contentRoot.path, SamCommon.SAM_BUILD_DIR, "build")
     }
 
-    protected open fun additionalEnvironmentVariables(module: Module, samOptions: SamOptions): Map<String, String> = emptyMap()
+    /**
+     * Returns a set of default path mappings for the specified built function
+     *
+     * @param sourceTemplate The original template file
+     * @param logicalId The logical ID of the function
+     * @param buildDir The root directory where SAM built the function into
+     */
+    open fun defaultPathMappings(sourceTemplate: Path, logicalId: String, buildDir: Path): List<PathMapping> = buildList {
+        val codeLocation = SamTemplateUtils.getCodeLocation(sourceTemplate, logicalId)
+        // First one wins, so code needs to go before build
+        add(PathMapping(sourceTemplate.resolveSibling(codeLocation).normalize().toString(), TASK_PATH))
+        add(PathMapping(buildDir.resolve(logicalId).normalize().toString(), TASK_PATH))
+    }
 
-    companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(ExtensionPointName("aws.toolkit.lambda.builder"))
+    /**
+     * Returns a set of additional environment variables that should be passed to SAM build
+     */
+    open fun additionalBuildEnvironmentVariables(project: Project, module: Module?, samOptions: SamOptions): Map<String, String> = emptyMap()
+
+    companion object : RuntimeGroupExtensionPointObject<LambdaBuilder>(ExtensionPointName("aws.toolkit.lambda.builder")) {
+        /*
+         * The default path to the task. The default is consistent across both Zip and Image based functions.
+         */
+        const val TASK_PATH = "/var/task"
+
+        fun getModule(psiFile: PsiFile): Module = ModuleUtil.findModuleForFile(psiFile)
+            ?: throw IllegalStateException("Failed to locate module for ${psiFile.virtualFile}")
+    }
 }
-
-/**
- * Represents the result of building a Lambda
- *
- * @param templateLocation The path to the build generated template
- * @param codeLocation The path to the built lambda directory
- * @param mappings Source mappings from original codeLocation to the path inside of the archive
- */
-data class BuiltLambda(
-    val templateLocation: Path,
-    val codeLocation: Path,
-    val mappings: List<PathMapping> = emptyList()
-)
-
-// TODO Use these in this class
-sealed class BuildLambdaRequest
-
-data class BuildLambdaFromTemplate(
-    val templateLocation: Path,
-    val logicalId: String,
-    val samOptions: SamOptions
-) : BuildLambdaRequest()
-
-data class BuildLambdaFromHandler(
-    val handlerElement: PsiElement,
-    val handler: String,
-    val runtime: Runtime,
-    val timeout: Int,
-    val memorySize: Int,
-    val envVars: Map<String, String>,
-    val samOptions: SamOptions
-) : BuildLambdaRequest()
-
-data class PackageLambdaFromHandler(
-    val handlerElement: PsiElement,
-    val handler: String,
-    val runtime: Runtime,
-    val samOptions: SamOptions
-)

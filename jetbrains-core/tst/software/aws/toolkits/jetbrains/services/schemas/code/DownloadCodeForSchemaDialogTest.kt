@@ -3,41 +3,40 @@
 
 package software.aws.toolkits.jetbrains.services.schemas.code
 
-import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.schemas.model.SchemaVersionSummary
-import software.aws.toolkits.core.utils.failedFuture
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.MockResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.services.schemas.Schema
 import software.aws.toolkits.jetbrains.services.schemas.SchemaCodeLangs
 import software.aws.toolkits.jetbrains.services.schemas.SchemaSummary
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.util.concurrent.CompletableFuture.completedFuture
+import java.util.concurrent.CompletableFuture.failedFuture
+import java.util.function.Function
 
 class DownloadCodeForSchemaDialogTest {
 
@@ -47,38 +46,33 @@ class DownloadCodeForSchemaDialogTest {
 
     @JvmField
     @Rule
-    val mockClientManager = MockClientManagerRule(projectRule)
+    val mockClientManager = MockClientManagerRule()
 
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()
 
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule()
+
+    @Rule
+    @JvmField
+    val disposableRule = DisposableRule()
+
+    @Rule
+    @JvmField
+    val notificationListener = NotificationListenerRule(projectRule, disposableRule.disposable)
+
     private lateinit var fileEditorManager: FileEditorManager
-    private lateinit var mockSettingsManager: MockAwsConnectionManager
-
-    private var infoNotification: Notification? = null
-    private var errorNotification: Notification? = null
-
-    private val REGISTRY = "registry"
-    private val SCHEMA_NAME = "schema"
-    private val SCHEMA = Schema(SCHEMA_NAME, REGISTRY, null)
-    private val VERSION = "4"
-    private val LATEST = "5"
-    private val VERSIONS = listOf("3", VERSION, LATEST)
-    private val LANGUAGE = SchemaCodeLangs.JAVA8
 
     private val schemaCodeDownloader = mock<SchemaCodeDownloader>()
 
     @Before
     fun setup() {
         fileEditorManager = FileEditorManager.getInstance(projectRule.project)
-        mockSettingsManager = AwsConnectionManager.getInstance(projectRule.project) as MockAwsConnectionManager
 
-        resourceCache().mockSchemaVersions(
-            REGISTRY, SCHEMA_NAME, VERSIONS
-        )
-
-        subscribeToNotifications()
+        mockSchemaVersions()
     }
 
     @After
@@ -98,8 +92,13 @@ class DownloadCodeForSchemaDialogTest {
             assertThat(dialog.view.version.selectedItem).isEqualTo(DownloadCodeForSchemaDialog.LATEST_VERSION)
         }
 
-        assertThat(errorNotification?.content).isNull()
-        assertThat(infoNotification?.content).isNull()
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.ERROR }
+            .isEmpty()
+
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.INFORMATION }
+            .isEmpty()
     }
 
     @Test
@@ -112,8 +111,13 @@ class DownloadCodeForSchemaDialogTest {
             assertThat(dialog.view.language.selectedItem).isEqualTo(SchemaCodeLangs.JAVA8)
         }
 
-        assertThat(errorNotification?.content).isNull()
-        assertThat(infoNotification?.content).isNull()
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.ERROR }
+            .isEmpty()
+
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.INFORMATION }
+            .isEmpty()
     }
 
     @Test
@@ -126,8 +130,13 @@ class DownloadCodeForSchemaDialogTest {
             assertThat(dialog.view.language.selectedItem).isEqualTo(SchemaCodeLangs.PYTHON3_6)
         }
 
-        assertThat(errorNotification?.content).isNull()
-        assertThat(infoNotification?.content).isNull()
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.ERROR }
+            .isEmpty()
+
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.INFORMATION }
+            .isEmpty()
     }
 
     @Test
@@ -135,30 +144,37 @@ class DownloadCodeForSchemaDialogTest {
         initJavaSdk()
 
         val newFolder = tempFolder.newFolder()
-        val testFile = File(newFolder.path + File.separator + "test123")
+        val testFile = File(newFolder, "test123")
         testFile.createNewFile()
         testFile.writeText("test123")
         val fileName = testFile.name
 
-        val path = newFolder.absolutePath
-
         schemaCodeDownloader.stub {
-            on { downloadCode(any(), any()) }.thenReturn(completedFuture(testFile))
+            on { downloadCode(any(), any()) }.thenReturn(completedFuture(testFile.toPath()))
         }
 
         runInEdtAndWait {
             val dialog = DownloadCodeForSchemaDialog(projectRule.project, SCHEMA)
-            selectDialogDefaults(dialog, path)
+            selectDialogDefaults(dialog, newFolder.absolutePath)
 
             dialog.downloadSchemaCode(schemaCodeDownloader)
         }
 
-        val request = SchemaCodeDownloadRequestDetails(SchemaSummary(SCHEMA_NAME, REGISTRY), VERSION, LANGUAGE, path)
+        val request = SchemaCodeDownloadRequestDetails(SchemaSummary(SCHEMA_NAME, REGISTRY), VERSION, LANGUAGE, newFolder)
         verify(schemaCodeDownloader).downloadCode(eq(request), any())
         assertThat(fileEditorManager.openFiles).hasOnlyOneElementSatisfying { assertThat(it.name).isEqualTo(fileName) }
 
-        assertThat(errorNotification?.content).isNull()
-        assertThat(infoNotification?.content).isEqualTo(message("schemas.schema.download_code_bindings.notification.finished", SCHEMA_NAME))
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.ERROR }
+            .isEmpty()
+
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.INFORMATION }
+            .extracting(Function { t -> t.content })
+            .containsOnly(
+                message("schemas.schema.download_code_bindings.notification.start", SCHEMA_NAME),
+                message("schemas.schema.download_code_bindings.notification.finished", SCHEMA_NAME)
+            )
     }
 
     @Test
@@ -182,8 +198,15 @@ class DownloadCodeForSchemaDialogTest {
 
         assertThat(fileEditorManager.openFiles.size).isEqualTo(0)
 
-        assertThat(errorNotification?.content).isEqualTo(exception.message)
-        assertThat(infoNotification?.content).isEqualTo(message("schemas.schema.download_code_bindings.notification.start", SCHEMA_NAME))
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.ERROR }
+            .extracting(Function { t -> t.content })
+            .containsOnly(exception.message)
+
+        assertThat(notificationListener.notifications)
+            .filteredOn { it.type == NotificationType.INFORMATION }
+            .extracting(Function { t -> t.content })
+            .containsOnly(message("schemas.schema.download_code_bindings.notification.start", SCHEMA_NAME))
     }
 
     private fun selectDialogDefaults(
@@ -215,33 +238,28 @@ class DownloadCodeForSchemaDialogTest {
         }
     }
 
-    private fun subscribeToNotifications() {
-        val project = projectRule.project
-
-        val messageBus = project.messageBus.connect()
-
-        messageBus.setDefaultHandler { _, params ->
-            val notification = params[0] as Notification
-            if (notification.type == NotificationType.INFORMATION) {
-                infoNotification = notification
-            } else {
-                errorNotification = notification
-            }
-        }
-        messageBus.subscribe(Notifications.TOPIC)
+    private fun mockSchemaVersions() {
+        resourceCache.addEntry(
+            projectRule.project,
+            SchemasResources.getSchemaVersions(REGISTRY, SCHEMA_NAME),
+            completedFuture(
+                VERSIONS.map { v ->
+                    SchemaVersionSummary.builder()
+                        .schemaName(SCHEMA_NAME)
+                        .schemaVersion(v)
+                        .build()
+                }
+            )
+        )
     }
 
-    private fun resourceCache() = MockResourceCache.getInstance(projectRule.project)
-
-    private fun MockResourceCache.mockSchemaVersions(registryName: String, schemaName: String, schemaVersions: List<String>) {
-        this.addEntry(
-            SchemasResources.getSchemaVersions(registryName, schemaName),
-            completedFuture(schemaVersions.map { v ->
-                SchemaVersionSummary.builder()
-                    .schemaName(schemaName)
-                    .schemaVersion(v)
-                    .build()
-            })
-        )
+    private companion object {
+        private const val REGISTRY = "registry"
+        private const val SCHEMA_NAME = "schema"
+        private val SCHEMA = Schema(SCHEMA_NAME, REGISTRY, null)
+        private const val VERSION = "4"
+        private const val LATEST = "5"
+        private val VERSIONS = listOf("3", VERSION, LATEST)
+        private val LANGUAGE = SchemaCodeLangs.JAVA8
     }
 }

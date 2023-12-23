@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.execution;
 
 import static com.intellij.openapi.application.ActionsKt.runInEdt;
-import static com.intellij.openapi.ui.Messages.CANCEL_BUTTON;
-import static com.intellij.openapi.ui.Messages.OK_BUTTON;
 import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.addQuickSelect;
 import static software.aws.toolkits.jetbrains.utils.ui.UiUtils.formatAndSet;
 import static software.aws.toolkits.resources.Localization.message;
@@ -18,8 +16,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.ComponentWithBrowseButton;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -33,6 +31,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import software.aws.toolkits.core.lambda.LambdaSampleEvent;
 import software.aws.toolkits.core.lambda.LambdaSampleEventProvider;
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider;
-import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListener;
+import software.aws.toolkits.jetbrains.ui.ProjectFileBrowseListenerKt;
 
 public class LambdaInputPanel {
     private static final Logger LOG = Logger.getInstance(LambdaInputPanel.class);
@@ -57,6 +56,8 @@ public class LambdaInputPanel {
     EditorTextField inputText;
     JPanel panel;
 
+    private final int setWidthSize = 20;
+
     public LambdaInputPanel(Project project) {
         this.project = project;
 
@@ -70,8 +71,8 @@ public class LambdaInputPanel {
                     int result = Messages.showOkCancelDialog(project,
                                                              message("lambda.run_configuration.input.samples.confirm"),
                                                              message("lambda.run_configuration.input.samples.confirm.title"),
-                                                             OK_BUTTON,
-                                                             CANCEL_BUTTON,
+                                                             Messages.getOkButton(),
+                                                             Messages.getCancelButton(),
                                                              AllIcons.General.WarningDialog);
                     if (result == Messages.CANCEL) {
                         eventComboBoxModel.setSelectedItem(selected);
@@ -99,12 +100,11 @@ public class LambdaInputPanel {
         addQuickSelect(inputTemplates.getButton(), useInputText, this::updateComponents);
         addQuickSelect(inputText.getComponent(), useInputText, this::updateComponents);
 
-        inputFile.addActionListener(new ProjectFileBrowseListener<>(
+        ProjectFileBrowseListenerKt.installTextFieldProjectFileBrowseListener(
             project,
             inputFile,
-            FileChooserDescriptorFactory.createSingleFileDescriptor(JsonFileType.INSTANCE),
-            TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
-        ));
+            FileChooserDescriptorFactory.createSingleFileDescriptor(JsonFileType.INSTANCE)
+        );
 
         LambdaSampleEventProvider eventProvider = new LambdaSampleEventProvider(RemoteResourceResolverProvider.Companion.getInstance().get());
 
@@ -114,11 +114,10 @@ public class LambdaInputPanel {
             return null;
         }));
 
-        inputTemplates.addActionListener(new ProjectFileBrowseListener<>(
+        ProjectFileBrowseListenerKt.installComboBoxProjectFileBrowseListener(
             project,
             inputTemplates,
             FileChooserDescriptorFactory.createSingleFileDescriptor(JsonFileType.INSTANCE),
-            TextComponentAccessor.STRING_COMBOBOX_WHOLE_TEXT,
             chosenFile -> {
                 try {
                     String contents = VfsUtil.loadText(chosenFile);
@@ -132,14 +131,14 @@ public class LambdaInputPanel {
 
                 return null; // Required since lambda is defined in Kotlin
             }
-        ));
-
+        );
 
         updateComponents();
     }
 
     private void createUIComponents() {
         inputText = EditorTextFieldProvider.getInstance().getEditorField(JsonLanguage.INSTANCE, project, Collections.emptyList());
+        inputText.setPreferredWidth(setWidthSize);
 
         eventComboBoxModel = new SortedComboBoxModel<>(Comparator.comparing(LambdaSampleEvent::getName));
 
@@ -191,7 +190,7 @@ public class LambdaInputPanel {
         return StringUtil.nullize(inputText.getText().trim(), true);
     }
 
-    private class LocalLambdaSampleEvent extends LambdaSampleEvent {
+    private static class LocalLambdaSampleEvent extends LambdaSampleEvent {
         LocalLambdaSampleEvent(@NotNull String name, @NotNull String content) {
             super(name, () -> CompletableFuture.completedFuture(content));
         }

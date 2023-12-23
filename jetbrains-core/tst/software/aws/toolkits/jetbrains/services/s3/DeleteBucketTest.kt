@@ -2,20 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.s3
 
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.FileTypes
-import com.intellij.openapi.fileTypes.ex.FileTypeManagerEx
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Bucket
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest
@@ -28,6 +27,7 @@ import software.aws.toolkits.core.s3.deleteBucketAndContents
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.s3.bucketActions.DeleteBucketAction
 import software.aws.toolkits.jetbrains.services.s3.editor.S3VirtualBucket
+import software.aws.toolkits.jetbrains.utils.associateFilePattern
 import java.util.function.Consumer
 
 class DeleteBucketTest {
@@ -38,7 +38,11 @@ class DeleteBucketTest {
 
     @JvmField
     @Rule
-    val mockClientManager = MockClientManagerRule(projectRule)
+    val disposableRule = DisposableRule()
+
+    @JvmField
+    @Rule
+    val mockClientManager = MockClientManagerRule()
 
     private val bucket = Bucket.builder().name("foo").build()
 
@@ -96,7 +100,7 @@ class DeleteBucketTest {
         }
 
         s3Mock.deleteBucketAndContents("")
-        verifyZeroInteractions(s3Mock.deleteBucket(any<Consumer<DeleteBucketRequest.Builder>>()))
+        verifyNoMoreInteractions(s3Mock.deleteBucket(any<Consumer<DeleteBucketRequest.Builder>>()))
     }
 
     @Test
@@ -116,17 +120,12 @@ class DeleteBucketTest {
 
         runInEdtAndWait {
             // Silly hack because test file editor impl has a bunch of asserts about the document/psi that don't exist in the real impl
-            runWriteAction {
-                FileTypeManagerEx.getInstanceEx().associatePattern(
-                    FileTypes.PLAIN_TEXT,
-                    bucket.name()
-                )
-            }
+            associateFilePattern(FileTypes.PLAIN_TEXT, bucket.name(), disposableRule.disposable)
 
-            assertThat(openEditor(projectRule.project, bucket)).isNotNull
+            assertThat(openEditor(projectRule.project, bucket.name())).isNotNull
         }
 
-        val s3VirtualBucket = S3VirtualBucket(bucket, s3Mock)
+        val s3VirtualBucket = S3VirtualBucket(bucket.name(), "", s3Mock, projectRule.project)
         val fileEditorManager = FileEditorManager.getInstance(projectRule.project)
 
         assertThat(fileEditorManager.openFiles).contains(s3VirtualBucket)

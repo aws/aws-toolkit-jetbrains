@@ -1,12 +1,17 @@
 ﻿using AWS.Daemon.Settings;
+using AWS.Toolkit.Rider.Model;
 using JetBrains.Annotations;
 using JetBrains.Application.Settings;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
 using JetBrains.ProjectModel.DataContext;
 using JetBrains.ReSharper.Daemon.Impl;
-using JetBrains.ReSharper.Host.Features;
-using JetBrains.Rider.Model;
+
+#if (PROFILE_2022_2 || PROFILE_2022_3 || PROFILE_2023_1) // FIX_WHEN_MIN_IS_232
+using JetBrains.RdBackend.Common.Features;
+#else
+using JetBrains.ReSharper.Feature.Services.Protocol;
+#endif
 
 namespace AWS.Settings
 {

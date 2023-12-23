@@ -24,7 +24,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.text.SemVer
 import com.intellij.xdebugger.XDebuggerUtil
-import software.amazon.awssdk.services.lambda.model.Runtime
+import org.intellij.lang.annotations.Language
 
 /**
  * JUnit test Rule that will create a Light [Project] and [CodeInsightTestFixture] with NodeJs support. Projects are
@@ -32,13 +32,9 @@ import software.amazon.awssdk.services.lambda.model.Runtime
  *
  * If you wish to have just a [Project], you may use Intellij's [com.intellij.testFramework.ProjectRule]
  */
-class NodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
+class NodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule(NodeJsLightProjectDescriptor()) {
     override fun createTestFixture(): CodeInsightTestFixture {
-        val fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory()
-        val projectFixture = fixtureFactory.createLightFixtureBuilder(NodeJsLightProjectDescriptor())
-        val codeInsightFixture = fixtureFactory.createCodeInsightFixture(projectFixture.fixture)
-        codeInsightFixture.setUp()
-        codeInsightFixture.testDataPath = testDataPath
+        val codeInsightFixture = super.createTestFixture()
         PsiTestUtil.addContentRoot(codeInsightFixture.module, codeInsightFixture.tempDirFixture.getFile(".")!!)
         codeInsightFixture.project.setNodeJsInterpreterVersion(SemVer("v8.10.10", 8, 10, 10))
         codeInsightFixture.project.setJsLanguageLevel(JSLanguageLevel.ES6)
@@ -73,7 +69,10 @@ class MockNodeJsInterpreter(private var version: SemVer) : NodeJsLocalInterprete
             NodeJsLocalInterpreterManager.getInstance().interpreters + listOf(this)
     }
 
-    override fun getCachedVersion(): Ref<SemVer>? = Ref(version)
+    // could differ on windows causing interpreter lookup failure during tests
+    override fun getPresentableName(): String = referenceName
+
+    override fun getCachedVersion(): Ref<SemVer> = Ref(version)
 }
 
 class HeavyNodeJsCodeInsightTestFixtureRule : CodeInsightTestFixtureRule() {
@@ -117,7 +116,8 @@ fun CodeInsightTestFixture.addLambdaHandler(
     subPath: String = ".",
     fileName: String = "app",
     handlerName: String = "lambdaHandler",
-    fileContent: String = """
+    @Language("JS") fileContent: String =
+        """
         exports.$handlerName = function (event, context, callback) {
             return 'HelloWorld'
         };
@@ -130,31 +130,45 @@ fun CodeInsightTestFixture.addLambdaHandler(
     }
 }
 
+fun CodeInsightTestFixture.addTypeScriptLambdaHandler(
+    subPath: String = ".",
+    fileName: String = "app",
+    handlerName: String = "lambdaHandler",
+    @Language("TS") fileContent: String =
+        """
+        export const $handlerName = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): APIGatewayProxyResult => {
+            return { statusCode: 200 }
+        }
+        """.trimIndent()
+): PsiElement {
+    val psiFile = this.addFileToProject("$subPath/$fileName.ts", fileContent) as JSFile
+
+    return runInEdtAndGet {
+        psiFile.findElementAt(fileContent.indexOf(handlerName))!!
+    }
+}
+
 fun CodeInsightTestFixture.addPackageJsonFile(
     subPath: String = ".",
-    content: String = """
+    @Language("JSON") content: String =
+        """
         {
             "name": "hello-world",
             "version": "1.0.0"
         }
-    """.trimIndent()
+        """.trimIndent()
 ): PsiFile = this.addFileToProject("$subPath/package.json", content)
 
-fun CodeInsightTestFixture.addSamTemplate(
-    logicalName: String = "Function",
-    codeUri: String,
-    handler: String,
-    runtime: Runtime
-): PsiFile = this.addFileToProject(
-    "template.yaml",
-    """
-        Resources:
-          $logicalName:
-            Type: AWS::Serverless::Function
-            Properties:
-              CodeUri: $codeUri
-              Handler: $handler
-              Runtime: $runtime
-              Timeout: 900
+fun CodeInsightTestFixture.addTypeScriptPackageJsonFile(
+    subPath: String = ".",
+    @Language("JSON") content: String =
+        """
+        {
+            "name": "hello-world",
+            "version": "1.0.0",
+            "devDependencies": {
+              "typescript": "*"
+            }
+        }
         """.trimIndent()
-)
+): PsiFile = this.addPackageJsonFile(subPath, content)

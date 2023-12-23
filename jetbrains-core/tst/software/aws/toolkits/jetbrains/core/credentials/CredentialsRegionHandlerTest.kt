@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.notification.Notification
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.TestDataProvider
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -13,11 +13,11 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.credentials.aCredentialsIdentifier
 import software.aws.toolkits.core.region.anAwsRegion
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider.RegionProviderRule
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
 import software.aws.toolkits.jetbrains.settings.UseAwsCredentialRegion
-import software.aws.toolkits.jetbrains.utils.NotificationListenerRule
+import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
 import software.aws.toolkits.resources.message
 
 class CredentialsRegionHandlerTest {
@@ -28,11 +28,15 @@ class CredentialsRegionHandlerTest {
 
     @Rule
     @JvmField
-    val regionProviderRule = RegionProviderRule()
+    val regionProviderRule = MockRegionProviderRule()
 
     @Rule
     @JvmField
-    val notificationListener = NotificationListenerRule(projectRule)
+    val disposableRule = DisposableRule()
+
+    @Rule
+    @JvmField
+    val notificationListener = NotificationListenerRule(projectRule, disposableRule.disposable)
 
     private lateinit var sut: DefaultCredentialsRegionHandler
 
@@ -150,7 +154,7 @@ class CredentialsRegionHandlerTest {
         val notification = getOnlyNotification()
 
         runInEdtAndWait {
-            Notification.fire(notification, notification.actions.first { it.templateText == "Never" })
+            Notification.fire(notification, notification.actions.first { it.templateText == "Never" }, null)
         }
 
         assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Never)
@@ -169,7 +173,7 @@ class CredentialsRegionHandlerTest {
         val notification = getOnlyNotification()
 
         runInEdtAndWait {
-            Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, TestDataProvider(projectRule.project))
+            Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, null)
         }
 
         assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)

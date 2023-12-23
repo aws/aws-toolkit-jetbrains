@@ -4,10 +4,12 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NA
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
 import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
@@ -15,37 +17,76 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
+import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
+import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
 import java.util.concurrent.atomic.AtomicBoolean
 
-abstract class TelemetryService(private val publisher: TelemetryPublisher, private val batcher: TelemetryBatcher) : Disposable {
-    data class MetricEventMetadata(
-        val awsAccount: String = METADATA_NA,
-        val awsRegion: String = METADATA_NA
-    )
+data class MetricEventMetadata(
+    val awsAccount: String = METADATA_NA,
+    val awsRegion: String = METADATA_NA
+)
 
+interface TelemetryListener {
+    fun onTelemetryEvent(event: MetricEvent)
+}
+
+abstract class TelemetryService(private val publisher: TelemetryPublisher, private val batcher: TelemetryBatcher) : Disposable {
     private val isDisposing = AtomicBoolean(false)
+    private val listeners = mutableSetOf<TelemetryListener>()
 
     init {
         setTelemetryEnabled(AwsSettings.getInstance().isTelemetryEnabled)
     }
 
-    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit = {}) {
-        val metricEventMetadata = if (project == null) MetricEventMetadata() else MetricEventMetadata(
-            awsAccount = project.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
-            awsRegion = project.activeRegion().id
-        )
+    fun record(connectionSettings: ConnectionSettings?, buildEvent: MetricEvent.Builder.() -> Unit) {
+        val metricEventMetadata = when (connectionSettings) {
+            is ConnectionSettings -> MetricEventMetadata(
+                awsAccount = connectionSettings.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+                awsRegion = connectionSettings.region.id
+            )
+            else -> MetricEventMetadata()
+        }
         record(metricEventMetadata, buildEvent)
     }
 
-    private fun Project.activeAwsAccountIfKnown(): String? = tryOrNull { AwsResourceCache.getInstance(this).getResourceIfPresent(StsResources.ACCOUNT) }
+    fun record(project: Project?, buildEvent: MetricEvent.Builder.() -> Unit) {
+        // It is possible that a race can happen if we record telemetry but project has been closed, i.e. async actions
+        val metricEventMetadata = if (project != null) {
+            if (project.isDisposed) {
+                MetricEventMetadata(
+                    awsAccount = METADATA_INVALID,
+                    awsRegion = METADATA_INVALID
+                )
+            } else {
+                MetricEventMetadata(
+                    awsAccount = project.getConnectionSettings()?.activeAwsAccountIfKnown() ?: METADATA_NOT_SET,
+                    awsRegion = project.activeRegion().id
+                )
+            }
+        } else {
+            MetricEventMetadata()
+        }
+        record(metricEventMetadata, buildEvent)
+    }
+
+    private fun ConnectionSettings.activeAwsAccountIfKnown(): String? = tryOrNull { this.getResourceIfPresent(StsResources.ACCOUNT) }
 
     @Synchronized
     fun setTelemetryEnabled(isEnabled: Boolean) {
         batcher.onTelemetryEnabledChanged(isEnabled and TELEMETRY_ENABLED)
+    }
+
+    fun addListener(listener: TelemetryListener) {
+        listeners.add(listener)
+    }
+
+    fun removeListener(listener: TelemetryListener) {
+        listeners.remove(listener)
     }
 
     override fun dispose() {
@@ -53,7 +94,10 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
             return
         }
 
+        listeners.clear()
+
         batcher.shutdown()
+        publisher.close()
     }
 
     fun record(metricEventMetadata: MetricEventMetadata, buildEvent: MetricEvent.Builder.() -> Unit) {
@@ -63,23 +107,33 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
 
         buildEvent(builder)
 
-        batcher.enqueue(builder.build())
+        val event = builder.build()
+
+        runCatching {
+            listeners.forEach { it.onTelemetryEvent(event) }
+        }
+
+        batcher.enqueue(event)
     }
 
-    suspend fun sendFeedback(sentiment: Sentiment, comment: String) {
-        publisher.sendFeedback(sentiment, comment)
+    suspend fun sendFeedback(sentiment: Sentiment, comment: String, metadata: Map<String, String> = emptyMap()) {
+        val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }
+        publisher.sendFeedback(sentiment, comment, metadata + (ENABLED_EXPERIMENTS to experiments))
     }
 
     companion object {
         private const val TELEMETRY_KEY = "aws.toolkits.enableTelemetry"
         private val TELEMETRY_ENABLED = System.getProperty(TELEMETRY_KEY)?.toBoolean() ?: true
 
-        fun getInstance(): TelemetryService = ServiceManager.getService(TelemetryService::class.java)
+        fun getInstance(): TelemetryService = service()
     }
 }
 
-class DefaultTelemetryService : TelemetryService(PUBLISHER, DefaultTelemetryBatcher(PUBLISHER)) {
+class DefaultTelemetryService : TelemetryService {
+    constructor() : super(publisher, batcher)
+
     private companion object {
-        val PUBLISHER = DefaultTelemetryPublisher()
+        private val publisher: TelemetryPublisher by lazy { DefaultTelemetryPublisher() }
+        private val batcher: TelemetryBatcher by lazy { DefaultTelemetryBatcher(publisher) }
     }
 }

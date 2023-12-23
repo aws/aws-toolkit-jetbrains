@@ -1,18 +1,19 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("LazyLog")
 package software.aws.toolkits.core.utils
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyZeroInteractions
-import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.slf4j.Logger
 import org.slf4j.event.Level
 
@@ -45,7 +46,7 @@ class LogUtilsTest {
 
     @Test
     fun nullableIsNotOkInTryOrThrow() {
-        val exception = catch { log.tryOrThrow("message") { mightBeNull(shouldBeNull = true) } }
+        val exception = catch { log.tryOrThrow<String?>("message") { mightBeNull(shouldBeNull = true) } }
         verify(log).error(any(), eq(exception))
     }
 
@@ -59,13 +60,13 @@ class LogUtilsTest {
     @Test
     fun nullableIsOkInTryOrThrowNullable() {
         log.tryOrThrowNullable("message") { null }
-        verifyZeroInteractions(log)
+        verifyNoMoreInteractions(log)
     }
 
     @Test
     fun nullIsOkInTryOrNull() {
         log.tryOrNull("message") { null }
-        verifyZeroInteractions(log)
+        verifyNoMoreInteractions(log)
     }
 
     @Test
@@ -174,5 +175,6 @@ class LogUtilsTest {
         "hello"
     }
 
+    @Suppress("FunctionOnlyReturningConstant")
     private fun willNeverBeNull(): String = "hello"
 }

@@ -11,14 +11,23 @@ import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkType
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroupInformation
+import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
+import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 
-class JavaRuntimeGroup : SdkBasedRuntimeGroupInformation() {
-    override val runtimes = setOf(Runtime.JAVA8, Runtime.JAVA11)
+class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
+    override val id: String = BuiltInRuntimeGroups.Java
     override val languageIds = setOf(JavaLanguage.INSTANCE.id)
+    override val supportsPathMappings: Boolean = false
 
-    override fun runtimeForSdk(sdk: Sdk): Runtime? {
+    override val supportedRuntimes: List<LambdaRuntime> = listOf(
+        LambdaRuntime.JAVA8,
+        LambdaRuntime.JAVA8_AL2,
+        LambdaRuntime.JAVA11,
+        LambdaRuntime.JAVA17
+    )
+
+    override fun runtimeForSdk(sdk: Sdk): LambdaRuntime? {
         if (sdk.sdkType is JavaSdkType) {
             val javaSdkVersion = JavaSdk.getInstance().getVersion(sdk) ?: return null
             return determineRuntimeForSdk(javaSdkVersion)
@@ -27,14 +36,14 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroupInformation() {
     }
 
     private fun determineRuntimeForSdk(sdk: JavaSdkVersion) = when {
-        sdk <= JavaSdkVersion.JDK_1_8 -> Runtime.JAVA8
-        sdk <= JavaSdkVersion.JDK_11 -> Runtime.JAVA11
+        // TODO: is this actually the right logic?
+        sdk <= JavaSdkVersion.JDK_1_8 -> LambdaRuntime.JAVA8_AL2
+        sdk <= JavaSdkVersion.JDK_11 -> LambdaRuntime.JAVA11
+        sdk <= JavaSdkVersion.JDK_17 -> LambdaRuntime.JAVA17
         else -> null
     }
 
     override fun getModuleType(): ModuleType<*> = JavaModuleType.getModuleType()
 
     override fun getIdeSdkType(): SdkType = JavaSdk.getInstance()
-
-    override fun supportsSamBuild(): Boolean = true
 }

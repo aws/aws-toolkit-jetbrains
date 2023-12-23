@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TestActionEvent
-import com.intellij.testFramework.TestDataProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -13,33 +13,44 @@ import software.aws.toolkits.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.AwsResourceCacheTest.Companion.dummyResource
-import software.aws.toolkits.jetbrains.core.MockResourceCache
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
-internal class RefreshConnectionActionTest {
-
+class RefreshConnectionActionTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule()
 
     private val sut = RefreshConnectionAction()
 
     @Test
     fun refreshActionClearsCacheAndUpdatesConnectionState() {
-        val mockResourceCache = MockResourceCache.getInstance(projectRule.project)
-        mockResourceCache.addEntry(dummyResource(), aString())
+        resourceCache.addEntry(projectRule.project, dummyResource(), aString())
 
+        val latch = CountDownLatch(1)
         val states = ConcurrentHashMap.newKeySet<ConnectionState>()
         projectRule.project.messageBus.connect()
-            .subscribe(AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED, object : ConnectionSettingsStateChangeNotifier {
-                override fun settingsStateChanged(newState: ConnectionState) {
-                    states.add(newState)
+            .subscribe(
+                AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
+                object : ConnectionSettingsStateChangeNotifier {
+                    override fun settingsStateChanged(newState: ConnectionState) {
+                        states.add(newState)
+                        latch.countDown()
+                    }
                 }
-            })
+            )
 
         sut.actionPerformed(testAction())
 
-        assertThat(mockResourceCache.entryCount()).isZero()
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue
+
+        assertThat(resourceCache.size()).isZero()
         assertThat(states).hasAtLeastOneElementOfType(ConnectionState.ValidatingConnection::class.java)
     }
 
@@ -74,5 +85,5 @@ internal class RefreshConnectionActionTest {
         assertThat(actionEvent.presentation.isEnabled).isEqualTo(shouldBeEnabled)
     }
 
-    private fun testAction() = TestActionEvent(TestDataProvider(projectRule.project))
+    private fun testAction() = TestActionEvent(DataContext { projectRule.project })
 }

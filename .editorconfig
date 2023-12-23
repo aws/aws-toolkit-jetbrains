@@ -38,11 +38,32 @@ ij_java_use_single_class_imports = true
 ij_java_while_brace_force = always
 
 [{*.kts,*.kt}]
-# Temporary disabled this rule through .editorconfig due to https://youtrack.jetbrains.com/issue/KT-10974 and https://github.com/pinterest/ktlint/issues/527
-disabled_rules = import-ordering
 ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
 ij_kotlin_name_count_to_use_star_import = 2147483647
 ij_kotlin_name_count_to_use_star_import_for_members = 2147483647
+ij_kotlin_packages_to_use_import_on_demand = unset
+
+[{*.markdown,*.md}]
+ij_markdown_force_one_space_after_blockquote_symbol = true
+ij_markdown_force_one_space_after_header_symbol = true
+ij_markdown_force_one_space_after_list_bullet = true
+ij_markdown_force_one_space_between_words = true
+ij_markdown_keep_indents_on_empty_lines = false
+ij_markdown_max_lines_around_block_elements = 1
+ij_markdown_max_lines_around_header = 1
+ij_markdown_max_lines_between_paragraphs = 1
+ij_markdown_min_lines_around_block_elements = 1
+ij_markdown_min_lines_around_header = 1
+ij_markdown_min_lines_between_paragraphs = 1
+
+[*.properties]
+ij_properties_align_group_field_declarations = false
+ij_properties_keep_blank_lines = false
+ij_properties_key_value_delimiter = equals
+ij_properties_spaces_around_key_value_delimiter = false
 
 [{*.yml,*.yaml}]
 indent_size = 2
+
+[*.gold]
+insert_final_newline = false

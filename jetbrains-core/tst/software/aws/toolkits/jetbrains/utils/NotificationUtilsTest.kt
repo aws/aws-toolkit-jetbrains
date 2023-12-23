@@ -3,46 +3,36 @@
 
 package software.aws.toolkits.jetbrains.utils
 
-import com.intellij.notification.Notification
-import com.intellij.notification.Notifications
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import org.assertj.core.api.Assertions.STRING
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExternalResource
+import software.aws.toolkits.jetbrains.utils.rules.NotificationListenerRule
+import java.util.function.Function
 
 class NotificationUtilsTest {
-
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
     @Rule
     @JvmField
-    val notificationListener = NotificationListenerRule(projectRule)
+    val disposableRule = DisposableRule()
+
+    @Rule
+    @JvmField
+    val notificationListener = NotificationListenerRule(projectRule, disposableRule.disposable)
 
     @Test
     fun `Notifications show stack traces for exceptions`() {
         NullPointerException().notifyError("ooops", project = projectRule.project)
 
-        assertThat(notificationListener.notifications).hasOnlyOneElementSatisfying {
-            assertThat(it.content)
-                .startsWith("java.lang.NullPointerException")
-                .contains("NotificationUtilsTest.kt")
-        }
-    }
-}
-
-class NotificationListenerRule(private val projectRule: ProjectRule) : ExternalResource() {
-    val notifications = mutableListOf<Notification>()
-
-    override fun before() {
-        with(projectRule.project.messageBus.connect()) {
-            setDefaultHandler { _, params ->
-                notifications.add(params[0] as Notification)
-            }
-            subscribe(Notifications.TOPIC)
-        }
-        notifications.clear()
+        assertThat(notificationListener.notifications)
+            .extracting(Function { t -> t.content })
+            .singleElement(STRING)
+            .startsWith("java.lang.NullPointerException")
+            .contains("NotificationUtilsTest.kt")
     }
 }

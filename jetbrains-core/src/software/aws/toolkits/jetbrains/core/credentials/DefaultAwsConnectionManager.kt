@@ -7,10 +7,9 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.profiles.DEFAULT_PROFILE_ID
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 
@@ -22,8 +21,11 @@ data class ConnectionSettingsState(
 )
 
 @State(name = "accountSettings", storages = [Storage("aws.xml")])
-class DefaultAwsConnectionManager(private val project: Project) : AwsConnectionManager(project),
+class DefaultAwsConnectionManager(project: Project) :
+    AwsConnectionManager(project),
     PersistentStateComponent<ConnectionSettingsState> {
+    private val coroutineScope = disposableCoroutineScope(this)
+
     override fun getState(): ConnectionSettingsState = ConnectionSettingsState(
         activeProfile = selectedCredentialIdentifier?.id,
         activeRegion = selectedRegion?.id,
@@ -46,8 +48,8 @@ class DefaultAwsConnectionManager(private val project: Project) : AwsConnectionM
         state.recentlyUsedProfiles.reversed()
             .forEach { recentlyUsedProfiles.add(it) }
 
-        // Load all the initial state on BG thread, so e don't block the UI or loading of other components
-        GlobalScope.launch(Dispatchers.Default) {
+        // Load all the initial state on BG thread, so we don't block the UI or loading of other components
+        coroutineScope.launch {
             val credentialId = state.activeProfile ?: DEFAULT_PROFILE_ID
             val credentials = tryOrNull {
                 CredentialManager.getInstance().getCredentialIdentifierById(credentialId)

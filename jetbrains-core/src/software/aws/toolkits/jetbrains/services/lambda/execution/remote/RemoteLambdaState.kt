@@ -41,17 +41,21 @@ class RemoteLambdaState(
         consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project, searchScope)
     }
 
-    override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult? {
+    override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult {
         val lambdaProcess = LambdaProcess()
         val console = consoleBuilder.console
         console.attachToProcess(lambdaProcess)
-
-        ApplicationManager.getApplication().executeOnPooledThread { invokeLambda(lambdaProcess) }
 
         return DefaultExecutionResult(console, lambdaProcess)
     }
 
     private inner class LambdaProcess : ProcessHandler() {
+        override fun startNotify() {
+            super.startNotify()
+
+            ApplicationManager.getApplication().executeOnPooledThread { invokeLambda(this) }
+        }
+
         override fun getProcessInput(): OutputStream? = null
 
         override fun detachIsDefault(): Boolean = true
@@ -66,7 +70,7 @@ class RemoteLambdaState(
     }
 
     private fun invokeLambda(lambdaProcess: ProcessHandler) {
-        val client = AwsClientManager.getInstance(environment.project)
+        val client = AwsClientManager.getInstance()
             .getClient<LambdaClient>(settings.credentialProvider, settings.region)
         var result = Result.Succeeded
 

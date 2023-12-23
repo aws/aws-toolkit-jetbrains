@@ -3,11 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
@@ -19,26 +18,42 @@ class PythonRuntimeGroupTest {
     private val sut = PythonRuntimeGroup()
 
     @Test
-    fun testRuntimeDetection2x() {
-        val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("2.7.0"))
-
-        assertThat(sut.determineRuntime(module)).isEqualTo(Runtime.PYTHON2_7)
-    }
-
-    @Test
-    fun testRuntimeDetection36() {
-        val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.6.0"))
-
-        assertThat(sut.determineRuntime(module)).isEqualTo(Runtime.PYTHON3_6)
-    }
-
-    @Test
     fun testRuntimeDetection37() {
         val module = projectRule.module
-        ModuleRootModificationUtil.setModuleSdk(module, PyTestSdk("3.7.0"))
+        projectRule.setModuleSdk(module, PyTestSdk("3.7.0"))
 
-        assertThat(sut.determineRuntime(module)).isEqualTo(Runtime.PYTHON3_7)
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_7)
+    }
+
+    @Test
+    fun testRuntimeDetection38() {
+        val module = projectRule.module
+        projectRule.setModuleSdk(module, PyTestSdk("3.8.0"))
+
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_8)
+    }
+
+    @Test
+    fun testRuntimeDetection39() {
+        val module = projectRule.module
+        projectRule.setModuleSdk(module, PyTestSdk("3.9.0"))
+
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_9)
+    }
+
+    @Test
+    fun testRuntimeDetection310() {
+        val module = projectRule.module
+        projectRule.setModuleSdk(module, PyTestSdk("3.10.0"))
+
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_10)
+    }
+
+    @Test
+    fun testRuntimeDetection311() {
+        val module = projectRule.module
+        projectRule.setModuleSdk(module, PyTestSdk("3.11.0"))
+
+        assertThat(sut.determineRuntime(module)).isEqualTo(LambdaRuntime.PYTHON3_11)
     }
 }

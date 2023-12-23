@@ -50,7 +50,7 @@ class AwsSdkClientTest {
 
         val awsSdkClient = AwsSdkClient()
         val response = try {
-            awsSdkClient.sdkHttpClient.prepareRequest(
+            awsSdkClient.sharedSdkClient().prepareRequest(
                 HttpExecuteRequest.builder().request(request).build()
             ).call()
         } finally {
@@ -78,6 +78,7 @@ class AwsSdkClientTest {
                 .dynamicHttpsPort()
                 .keystorePath(selfSignedJks.toString())
                 .keystorePassword("changeit")
+                .keyManagerPassword("changeit")
                 .keystoreType("jks")
         )
     }

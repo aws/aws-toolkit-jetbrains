@@ -20,12 +20,16 @@ class YamlWriter internal constructor() {
         appendIndent().append("$key: $value\n")
     }
 
+    fun listValue(value: String) {
+        appendIndent().append("- $value\n")
+    }
+
     private fun appendIndent() = stringBuilder.append("  ".repeat(indentLevel))
 
     override fun toString() = stringBuilder.toString().trimEnd()
 }
 
-fun yamlWriter(init: YamlWriter.() -> Unit): String {
+fun yaml(init: YamlWriter.() -> Unit): String {
     val yaml = YamlWriter()
     yaml.init()
     return yaml.toString()

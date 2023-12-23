@@ -6,17 +6,19 @@ package software.aws.toolkits.jetbrains.core.executables
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.util.io.exists
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.lastModified
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.resources.message
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -45,7 +47,7 @@ interface ExecutableManager {
 
     companion object {
         @JvmStatic
-        fun getInstance(): ExecutableManager = ServiceManager.getService(ExecutableManager::class.java)
+        fun getInstance(): ExecutableManager = service()
     }
 }
 
@@ -92,7 +94,9 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
                 LOG.warn(it) { "Error thrown while updating executable cache" }
                 null
             }
-            return ExecutableInstance.UnresolvedExecutable(message("executableCommon.missing_executable", type.displayName))
+            return ExecutableInstance.UnresolvedExecutable(
+                message("executableCommon.missing_executable", type.displayName, message("executableCommon.not_installed"))
+            )
         }
 
         // Check if the set executable was modified. If it was, start an update in the background. Overlapping
@@ -177,7 +181,9 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
 
     private fun resolve(type: ExecutableType<*>): ExecutableInstance = try {
         (type as? AutoResolvable)?.resolve()?.let { validateAndSave(type, it, autoResolved = true) }
-            ?: ExecutableInstance.UnresolvedExecutable(message("executableCommon.missing_executable", type.displayName))
+            ?: ExecutableInstance.UnresolvedExecutable(
+                message("executableCommon.missing_executable", type.displayName, message("executableCommon.not_installed"))
+            )
     } catch (e: Exception) {
         ExecutableInstance.UnresolvedExecutable(message("aws.settings.executables.resolution_exception", type.displayName, e.asString))
     }
@@ -186,6 +192,18 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
         try {
             (type as? Validatable)?.validate(path)
             determineVersion(type, path, autoResolved)
+        } catch (e: IllegalStateException) {
+            val errorMessage = if (SystemInfo.isWindows && type is SamExecutable) {
+                message("sam.cli.version.upgrade.required.windows") + "\n" + e.asString
+            } else {
+                message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
+            }
+            ExecutableInstance.InvalidExecutable(
+                path,
+                null,
+                autoResolved,
+                errorMessage
+            )
         } catch (e: Exception) {
             val message = message("aws.settings.executables.executable_invalid", type.displayName, e.asString)
             LOG.warn(e) { message }
@@ -218,7 +236,7 @@ class DefaultExecutableManager : PersistentStateComponent<ExecutableStateList>, 
     }
 
     private fun determineVersion(type: ExecutableType<*>, path: Path, autoResolved: Boolean): ExecutableInstance = try {
-        ExecutableInstance.Executable(path, type.version(path).toString(), autoResolved)
+        ExecutableInstance.Executable(path, type.version(path).toString(), autoResolved, type)
     } catch (e: Exception) {
         ExecutableInstance.InvalidExecutable(
             path,
@@ -255,11 +273,12 @@ sealed class ExecutableInstance {
     class Executable(
         override val executablePath: Path,
         override val version: String,
-        override val autoResolved: Boolean
+        override val autoResolved: Boolean,
+        private val executableType: ExecutableType<*>
     ) : ExecutableInstance(), ExecutableWithPath {
         // TODO get executable name as part of this
         fun getCommandLine(): GeneralCommandLine =
-            ExecutableCommon.getCommandLine(executablePath.toAbsolutePath().toString(), executablePath.fileName.toString())
+            ExecutableCommon.getCommandLine(executablePath.toAbsolutePath().toString(), executablePath.fileName.toString(), executableType)
     }
 
     class InvalidExecutable(

@@ -31,6 +31,7 @@ interface MetricEvent {
         val name: String
         val value: Double
         val unit: MetricUnit
+        val passive: Boolean
         val metadata: Map<String, String>
 
         interface Builder {
@@ -39,6 +40,8 @@ interface MetricEvent {
             fun value(value: Double): Builder
 
             fun unit(unit: MetricUnit): Builder
+
+            fun passive(value: Boolean): Builder
 
             fun metadata(key: String, value: String): Builder
 
@@ -61,7 +64,7 @@ interface MetricEvent {
 
 fun String.replaceIllegal(replacement: String = "") = this.replace(illegalCharsRegex, replacement)
 
-class DefaultMetricEvent internal constructor(
+data class DefaultMetricEvent internal constructor(
     override val createTime: Instant,
     override val awsAccount: String,
     override val awsRegion: String,
@@ -72,7 +75,7 @@ class DefaultMetricEvent internal constructor(
         private var createTime: Instant = Instant.now()
         private var awsAccount: String = METADATA_NA
         private var awsRegion: String = METADATA_NA
-        private var data: MutableCollection<MetricEvent.Datum> = mutableListOf()
+        private val data: MutableCollection<MetricEvent.Datum> = mutableListOf()
 
         override fun createTime(createTime: Instant): MetricEvent.Builder {
             this.createTime = createTime
@@ -105,19 +108,19 @@ class DefaultMetricEvent internal constructor(
         const val METADATA_NA = "n/a"
         const val METADATA_NOT_SET = "not-set"
         const val METADATA_INVALID = "invalid"
-
-        private val LOG = getLogger<DefaultDatum>()
     }
 
-    class DefaultDatum(
+    data class DefaultDatum(
         override val name: String,
         override val value: Double,
         override val unit: MetricUnit,
+        override val passive: Boolean,
         override val metadata: Map<String, String>
     ) : MetricEvent.Datum {
         class BuilderImpl(private var name: String) : MetricEvent.Datum.Builder {
             private var value: Double = 0.0
             private var unit: MetricUnit = MetricUnit.NONE
+            private var passive: Boolean = false
             private val metadata: MutableMap<String, String> = HashMap()
 
             override fun name(name: String): MetricEvent.Datum.Builder {
@@ -135,14 +138,14 @@ class DefaultMetricEvent internal constructor(
                 return this
             }
 
+            override fun passive(value: Boolean): MetricEvent.Datum.Builder {
+                this.passive = value
+                return this
+            }
+
             override fun metadata(key: String, value: String): MetricEvent.Datum.Builder {
                 if (metadata.containsKey(key)) {
                     LOG.warn { "Attempted to add multiple pieces of metadata with the same key" }
-                    return this
-                }
-
-                if (metadata.size > MAX_METADATA_ENTRIES) {
-                    LOG.warn { "Each metric datum may contain a maximum of $MAX_METADATA_ENTRIES metadata entries" }
                     return this
                 }
 
@@ -154,6 +157,7 @@ class DefaultMetricEvent internal constructor(
                 name.replaceIllegal(),
                 this.value,
                 this.unit,
+                this.passive,
                 this.metadata
             )
         }
@@ -162,8 +166,6 @@ class DefaultMetricEvent internal constructor(
             private val LOG = getLogger<DefaultDatum>()
 
             fun builder(name: String): MetricEvent.Datum.Builder = BuilderImpl(name)
-
-            const val MAX_METADATA_ENTRIES: Int = 10
         }
     }
 }

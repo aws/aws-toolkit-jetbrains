@@ -7,19 +7,27 @@ package software.aws.toolkits.jetbrains.utils.ui
 import com.intellij.lang.Language
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.GraphicsConfig
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.CellRendererPanel
 import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
+import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.dsl.builder.Cell
+import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.ui.speedSearch.SpeedSearchSupply
+import com.intellij.util.text.DateFormatUtil
+import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.GraphicsUtil
+import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.utils.formatText
 import java.awt.AlphaComposite
 import java.awt.Color
@@ -29,15 +37,17 @@ import java.awt.Graphics2D
 import java.awt.Shape
 import java.awt.event.MouseEvent
 import java.awt.geom.RoundRectangle2D
+import java.text.SimpleDateFormat
 import javax.swing.AbstractButton
+import javax.swing.BorderFactory
 import javax.swing.JComboBox
 import javax.swing.JComponent
-import javax.swing.JLabel
 import javax.swing.JTable
 import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.ListModel
-import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.border.Border
+import javax.swing.table.TableCellRenderer
 import javax.swing.text.Highlighter
 import javax.swing.text.JTextComponent
 
@@ -169,31 +179,107 @@ private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JCompo
     }
 }
 
-class WrappingCellRenderer(private val wrapOnSelection: Boolean, private val toggleableWrap: Boolean) : DefaultTableCellRenderer() {
+class WrappingCellRenderer(
+    private val wrapOnSelection: Boolean = false,
+    private val wrapOnToggle: Boolean = false,
+    private val truncateAfterChars: Int? = null
+) : CellRendererPanel(), TableCellRenderer {
     var wrap: Boolean = false
 
-    // JBTextArea has a different font from JBLabel (the default in a table) so harvest the font off of it
-    private val jLabelFont = JBLabel().font
+    private val textArea = JBTextArea()
+
+    init {
+        textArea.font = UIUtil.getLabelFont()
+        textArea.wrapStyleWord = true
+
+        add(textArea)
+    }
 
     override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
-        val defaultComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
-        table ?: return defaultComponent
-        val component = JBTextArea()
-
-        component.border = (defaultComponent as? JLabel)?.border ?: JBUI.Borders.empty(2, 2)
-        component.wrapStyleWord = (wrapOnSelection && isSelected) || (toggleableWrap && wrap)
-        component.lineWrap = (wrapOnSelection && isSelected) || (toggleableWrap && wrap)
-        component.font = jLabelFont
-        component.text = (value as? String)?.trim()
-        component.setSelectionHighlighting(table, isSelected)
-
-        component.setSize(table.columnModel.getColumn(column).width, component.preferredSize.height)
-        if (table.getRowHeight(row) != component.preferredSize.height) {
-            table.setRowHeight(row, component.preferredSize.height)
+        if (table == null) {
+            return this
         }
 
-        component.speedSearchHighlighter(table)
+        textArea.lineWrap = (wrapOnSelection && isSelected) || (wrapOnToggle && wrap)
+        val text = (value as? String) ?: ""
+        textArea.text = if (truncateAfterChars != null) {
+            text.take(truncateAfterChars)
+        } else {
+            text
+        }
+        textArea.setSelectionHighlighting(table, isSelected)
 
-        return component
+        setSize(table.columnModel.getColumn(column).width, preferredSize.height)
+        if (table.getRowHeight(row) != preferredSize.height) {
+            table.setRowHeight(row, preferredSize.height)
+        }
+
+        textArea.speedSearchHighlighter(table)
+
+        return this
     }
 }
+
+// TODO: figure out why this has weird hysteresis during rendering causing no text
+class ResizingDateColumnRenderer(showSeconds: Boolean) : ResizingColumnRenderer() {
+    private val formatter: SyncDateFormat = if (showSeconds) {
+        SyncDateFormat(SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"))
+    } else {
+        DateFormatUtil.getDateTimeFormat()
+    }
+
+    override fun getText(value: Any?): String? = (value as? String)?.toLongOrNull()?.let { formatter.format(it) }
+}
+
+class ResizingTextColumnRenderer : ResizingColumnRenderer() {
+    override fun getText(value: Any?): String? = (value as? String)?.trim()
+}
+
+/**
+ * When a panel is made of more than one panel, apply and the validation callbacks do not work as expected for
+ * the child panels. This function makes it so the validation callbacks and apply are actually called.
+ * @param applies An additional function that allows control based on visibility of other components or other factors
+ */
+
+fun Cell<DialogPanel>.installOnParent(applies: () -> Boolean = { true }): Cell<DialogPanel> {
+    validationOnApply {
+        validate(applies, it)
+    }
+    return this
+}
+
+private inline fun validate(applies: () -> Boolean, component: DialogPanel): ValidationInfo? =
+    if (!applies()) {
+        null
+    } else {
+        val errors = component.validateCallbacks.mapNotNull { it() }
+        if (errors.isEmpty()) {
+            component.apply()
+        }
+        errors.firstOrNull()
+    }
+
+/**
+ * Add a contextual help icon component
+ */
+
+fun Cell<KeyValueTextField>.withBinding(binding: MutableProperty<Map<String, String>>) =
+    this.bind(
+        componentGet = { component -> component.envVars },
+        componentSet = { component, value -> component.envVars = value },
+        binding
+    )
+
+fun editorNotificationCompoundBorder(outsideBorder: Border) = BorderFactory.createCompoundBorder(
+    // outside border
+    outsideBorder,
+    // inside border
+    // helper util not available in JBUI until 232
+    // https://github.com/JetBrains/intellij-community/blob/222/platform/platform-api/src/com/intellij/ui/EditorNotificationPanel.java#L135-L136
+    JBUI.Borders.empty(
+        JBUI.insets(
+            "Editor.Notification.borderInsets",
+            if (ExperimentalUI.isNewUI()) JBInsets.create(9, 16) else JBInsets.create(5, 10)
+        )
+    )
+)

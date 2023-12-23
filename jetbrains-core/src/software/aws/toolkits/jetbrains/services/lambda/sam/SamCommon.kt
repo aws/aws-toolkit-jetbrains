@@ -4,12 +4,12 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.text.SemVer
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.getExecutableIfPresent
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
@@ -18,71 +18,47 @@ import software.aws.toolkits.resources.message
 import java.io.FileFilter
 import java.nio.file.Paths
 
-class SamCommon {
-    companion object {
-        val mapper = jacksonObjectMapper()
-        const val SAM_BUILD_DIR = ".aws-sam"
-        const val SAM_INFO_VERSION_KEY = "version"
-        const val SAM_INVALID_OPTION_SUBSTRING = "no such option"
-        const val SAM_NAME = "SAM CLI"
+object SamCommon {
+    val mapper = jacksonObjectMapper()
+    const val SAM_BUILD_DIR = ".aws-sam"
+    const val SAM_INFO_VERSION_KEY = "version"
+    const val SAM_INVALID_OPTION_SUBSTRING = "no such option"
+    const val SAM_NAME = "SAM CLI"
 
-        /**
-         * @return The string representation of the SAM version else "UNKNOWN"
-         */
-        fun getVersionString(): String = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().version ?: "UNKNOWN"
+    // The minimum SAM CLI version required for images. TODO remove when sam min > 1.13.0
+    val minImageVersion = SemVer("1.13.0", 1, 13, 0)
 
-        fun getTemplateFromDirectory(projectRoot: VirtualFile): VirtualFile? {
-            // Use Java File so we don't need to do a full VFS refresh
-            val projectRootFile = VfsUtil.virtualToIoFile(projectRoot)
-            val yamlFiles = projectRootFile.listFiles(FileFilter {
+    /**
+     * @return The string representation of the SAM version else "UNKNOWN"
+     */
+    fun getVersionString(): String = ExecutableManager.getInstance().getExecutableIfPresent<SamExecutable>().version ?: "UNKNOWN"
+
+    fun getTemplateFromDirectory(projectRoot: VirtualFile): VirtualFile? {
+        // Use Java File so we don't need to do a full VFS refresh
+        val projectRootFile = VfsUtil.virtualToIoFile(projectRoot)
+        val yamlFiles = projectRootFile.listFiles(
+            FileFilter {
                 it.isFile && it.name.endsWith("yaml") || it.name.endsWith("yml")
-            })?.toList() ?: emptyList()
-            assert(yamlFiles.size == 1) { message("cloudformation.yaml.too_many_files", yamlFiles.size) }
-            return LocalFileSystem.getInstance().refreshAndFindFileByIoFile(yamlFiles.first())
-        }
+            }
+        )?.toList() ?: emptyList()
+        assert(yamlFiles.size == 1) { message("cloudformation.yaml.too_many_files", yamlFiles.size) }
+        return LocalFileSystem.getInstance().refreshAndFindFileByIoFile(yamlFiles.first())
+    }
 
-        fun getCodeUrisFromTemplate(project: Project, template: VirtualFile): List<VirtualFile> {
+    fun getCodeUrisFromTemplate(project: Project, template: VirtualFile): List<VirtualFile> {
+        val templatePath = Paths.get(template.parent.path)
+
+        val codeDirs = runReadAction {
             val cfTemplate = CloudFormationTemplate.parse(project, template)
 
-            val codeUris = mutableListOf<VirtualFile>()
-            val templatePath = Paths.get(template.parent.path)
-            val localFileSystem = LocalFileSystem.getInstance()
-
-            cfTemplate.resources().filter { it.isType(SERVERLESS_FUNCTION_TYPE) }.forEach { resource ->
-                val codeUriValue = resource.getScalarProperty("CodeUri")
-                val codeUriPath = templatePath.resolve(codeUriValue)
-                localFileSystem.refreshAndFindFileByIoFile(codeUriPath.toFile())
-                    ?.takeIf { it.isDirectory }
-                    ?.let { codeUri ->
-                        codeUris.add(codeUri)
-                    }
-            }
-            return codeUris
+            cfTemplate.resources()
+                .filter { it.isType(SERVERLESS_FUNCTION_TYPE) }
+                .map { templatePath.resolve(it.getScalarProperty("CodeUri")) }
+                .toList()
         }
 
-        fun setSourceRoots(projectRoot: VirtualFile, project: Project, modifiableModel: ModifiableRootModel) {
-            val template = getTemplateFromDirectory(projectRoot) ?: return
-            val codeUris = getCodeUrisFromTemplate(project, template)
-            modifiableModel.contentEntries.forEach { contentEntry ->
-                if (contentEntry.file == projectRoot) {
-                    codeUris.forEach { contentEntry.addSourceFolder(it, false) }
-                }
-            }
-        }
-
-        fun excludeSamDirectory(projectRoot: VirtualFile, modifiableModel: ModifiableRootModel) {
-            modifiableModel.contentEntries.forEach { contentEntry ->
-                if (contentEntry.file == projectRoot) {
-                    contentEntry.addExcludeFolder(
-                        VfsUtilCore.pathToUrl(
-                            Paths.get(
-                                projectRoot.path,
-                                SAM_BUILD_DIR
-                            ).toString()
-                        )
-                    )
-                }
-            }
-        }
+        val localFileSystem = LocalFileSystem.getInstance()
+        return codeDirs.mapNotNull { localFileSystem.refreshAndFindFileByIoFile(it.toFile()) }
+            .filter { it.isDirectory }
     }
 }

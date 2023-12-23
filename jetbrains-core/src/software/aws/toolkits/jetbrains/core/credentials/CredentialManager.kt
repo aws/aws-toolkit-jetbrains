@@ -3,38 +3,48 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.Topic
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.CredentialProviderFactory
 import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
+import software.aws.toolkits.core.credentials.SsoSessionBackedCredentialIdentifier
+import software.aws.toolkits.core.credentials.SsoSessionIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
+import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class CredentialManager : SimpleModificationTracker() {
     private val providerIds = ConcurrentHashMap<String, CredentialIdentifier>()
-    private val awsCredentialProviderCache = ConcurrentHashMap<CredentialIdentifier, ConcurrentHashMap<String, AwsCredentialsProvider>>()
+    private val ssoSessionIds = ConcurrentHashMap<String, SsoSessionIdentifier>()
+    private val awsCredentialProviderCache = ConcurrentHashMap<String, ConcurrentHashMap<String, AwsCredentialsProvider>>()
 
     protected abstract fun factoryMapping(): Map<String, CredentialProviderFactory>
 
     @Throws(CredentialProviderNotFoundException::class)
     fun getAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): ToolkitCredentialsProvider =
-        ToolkitCredentialsProvider(providerId, AwsCredentialProviderProxy(providerId, region))
+        ToolkitCredentialsProvider(providerId, AwsCredentialProviderProxy(providerId.id, region))
 
     fun getCredentialIdentifiers(): List<CredentialIdentifier> = providerIds.values
         .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.displayName })
+
+    fun getSsoSessionIdentifiers(): List<SsoSessionIdentifier> = ssoSessionIds.values
+        .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.id })
 
     fun getCredentialIdentifierById(id: String): CredentialIdentifier? = providerIds[id]
 
@@ -47,18 +57,48 @@ abstract class CredentialManager : SimpleModificationTracker() {
     }
 
     protected fun modifyProvider(identifier: CredentialIdentifier) {
-        awsCredentialProviderCache.remove(identifier)
+        awsCredentialProviderCache.remove(identifier.id)
+        providerIds[identifier.id] = identifier
 
         incModificationCount()
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerModified(identifier)
     }
 
+    protected fun modifyDependentProviders(providerId: String) {
+        providerIds.values.forEach {
+            if (it is SsoSessionBackedCredentialIdentifier && it.sessionIdentifier == providerId) {
+                modifyProvider(it)
+            }
+        }
+    }
+
     protected fun removeProvider(identifier: CredentialIdentifier) {
         providerIds.remove(identifier.id)
-        awsCredentialProviderCache.remove(identifier)
+        awsCredentialProviderCache.remove(identifier.id)
 
         incModificationCount()
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerRemoved(identifier)
+    }
+
+    protected fun addSsoSession(identifier: SsoSessionIdentifier) {
+        ssoSessionIds[identifier.id] = identifier
+
+        incModificationCount()
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).ssoSessionAdded(identifier)
+    }
+
+    protected fun modifySsoSession(identifier: SsoSessionIdentifier) {
+        ssoSessionIds[identifier.id] = identifier
+
+        incModificationCount()
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).ssoSessionModified(identifier)
+    }
+
+    protected fun removeSsoSession(identifier: SsoSessionIdentifier) {
+        ssoSessionIds.remove(identifier.id)
+
+        incModificationCount()
+        ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).ssoSessionRemoved(identifier)
     }
 
     /**
@@ -66,20 +106,25 @@ abstract class CredentialManager : SimpleModificationTracker() {
      * ToolkitCredentialsProvider (like ones passed to existing SDK clients), to keep operating even if the credentials they represent have been updated such
      * as loading from disk when new values.
      */
-    private inner class AwsCredentialProviderProxy(private val providerId: CredentialIdentifier, private val region: AwsRegion) :
-        AwsCredentialsProvider {
-        override fun resolveCredentials(): AwsCredentials = getOrCreateAwsCredentialsProvider(providerId, region).resolveCredentials()
+    private inner class AwsCredentialProviderProxy(private val providerId: String, private val region: AwsRegion) : AwsCredentialsProvider {
+        override fun resolveCredentials(): AwsCredentials = runUnderProgressIfNeeded(null, message("credentials.retrieving"), cancelable = true) {
+            getOrCreateAwsCredentialsProvider(providerId, region).resolveCredentials()
+        }
 
-        private fun getOrCreateAwsCredentialsProvider(providerId: CredentialIdentifier, region: AwsRegion): AwsCredentialsProvider {
+        private fun getOrCreateAwsCredentialsProvider(providerId: String, region: AwsRegion): AwsCredentialsProvider {
+            // Validate that the provider ID is still valid and get the latest copy
+            val identifier = providerIds[providerId]
+                ?: throw CredentialProviderNotFoundException("Provider ID $providerId was removed, can't resolve credentials")
+
             val partitionCache = awsCredentialProviderCache.computeIfAbsent(providerId) { ConcurrentHashMap() }
 
-            // If we already resolved creds for this partition and provider ID, just return it
+            // If we already resolved creds for this partition and provider ID, just return it, else compute new one
             return partitionCache.computeIfAbsent(region.partitionId) {
-                val providerFactory = factoryMapping()[providerId.factoryId]
-                    ?: throw CredentialProviderNotFoundException("No provider found with ID ${providerId.id}")
+                val providerFactory = factoryMapping()[identifier.factoryId]
+                    ?: throw CredentialProviderNotFoundException("No provider factory found with ID ${identifier.factoryId}")
 
                 try {
-                    providerFactory.createAwsCredentialProvider(providerId, region) { AwsSdkClient.getInstance().sdkHttpClient }
+                    providerFactory.createAwsCredentialProvider(identifier, region)
                 } catch (e: Exception) {
                     throw CredentialProviderNotFoundException("Failed to create underlying AwsCredentialProvider", e)
                 }
@@ -89,7 +134,7 @@ abstract class CredentialManager : SimpleModificationTracker() {
 
     companion object {
         @JvmStatic
-        fun getInstance(): CredentialManager = ServiceManager.getService(CredentialManager::class.java)
+        fun getInstance(): CredentialManager = service()
 
         /***
          * [MessageBus] topic for when credential providers get added/changed/deleted
@@ -101,19 +146,20 @@ abstract class CredentialManager : SimpleModificationTracker() {
     }
 }
 
-class DefaultCredentialManager : CredentialManager() {
-    private val extensionMap: Map<String, CredentialProviderFactory> by lazy {
-        EP_NAME.extensionList.associateBy {
-                it.id
-            }
-    }
+class DefaultCredentialManager : CredentialManager(), Disposable {
+    private val extensionMap: Map<String, CredentialProviderFactory>
+        get() = EP_NAME.extensionList.associateBy {
+            it.id
+        }
 
     init {
         extensionMap.values.forEach { providerFactory ->
+            val count = AtomicInteger(0)
             LOG.tryOrNull("Failed to set up $providerFactory") {
                 providerFactory.setUp { change ->
                     change.added.forEach {
                         addProvider(it)
+                        count.incrementAndGet()
                     }
 
                     change.modified.forEach {
@@ -122,11 +168,45 @@ class DefaultCredentialManager : CredentialManager() {
 
                     change.removed.forEach {
                         removeProvider(it)
+                        count.decrementAndGet()
                     }
+
+                    change.ssoAdded.forEach {
+                        addSsoSession(it)
+                    }
+
+                    change.ssoModified.forEach {
+                        modifySsoSession(it)
+                    }
+
+                    change.ssoRemoved.forEach {
+                        removeSsoSession(it)
+                    }
+
+                    AwsTelemetry.loadCredentials(
+                        credentialSourceId = providerFactory.credentialSourceId.toTelemetryCredentialSourceId(),
+                        value = count.get().toDouble()
+                    )
                 }
             }
         }
+
+        // sync bearer changes back to any profiles with a dependency
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String) {
+                    modifyDependentProviders(providerId)
+                }
+
+                override fun invalidate(providerId: String) {
+                    modifyDependentProviders(providerId)
+                }
+            }
+        )
     }
+
+    override fun dispose() {}
 
     override fun factoryMapping(): Map<String, CredentialProviderFactory> = extensionMap
 
@@ -134,19 +214,4 @@ class DefaultCredentialManager : CredentialManager() {
         val EP_NAME = ExtensionPointName.create<CredentialProviderFactory>("aws.toolkit.credentialProviderFactory")
         private val LOG = getLogger<DefaultCredentialManager>()
     }
-}
-
-fun AwsCredentials.toEnvironmentVariables(): Map<String, String> {
-    val map = mutableMapOf<String, String>()
-    map["AWS_ACCESS_KEY"] = this.accessKeyId()
-    map["AWS_ACCESS_KEY_ID"] = this.accessKeyId()
-    map["AWS_SECRET_KEY"] = this.secretAccessKey()
-    map["AWS_SECRET_ACCESS_KEY"] = this.secretAccessKey()
-
-    if (this is AwsSessionCredentials) {
-        map["AWS_SESSION_TOKEN"] = this.sessionToken()
-        map["AWS_SECURITY_TOKEN"] = this.sessionToken()
-    }
-
-    return map
 }

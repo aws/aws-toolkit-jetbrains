@@ -7,15 +7,16 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.testFramework.runInEdtAndWait
 import com.jetbrains.python.PythonLanguage
-import com.nhaarman.mockitokotlin2.mock
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.mock
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
+import software.aws.toolkits.core.lambda.validOrNull
 import software.aws.toolkits.jetbrains.utils.rules.PyTestSdk
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
@@ -27,25 +28,27 @@ class RuntimeGroupTest {
 
     @Test
     fun canDetermineRuntimeFromAnActionEventUsingModule() {
-        ModuleRootModificationUtil.setModuleSdk(projectRule.module, PyTestSdk("2.7.0"))
+        val sdk = PyTestSdk("3.9.0")
+        projectRule.setModuleSdk(projectRule.module, sdk)
+
         val event: AnActionEvent = mock {
             on { getData(LangDataKeys.LANGUAGE) }.thenReturn(PythonLanguage.INSTANCE)
             on { getData(LangDataKeys.MODULE) }.thenReturn(projectRule.module)
         }
 
-        assertThat(event.runtime()).isEqualTo(Runtime.PYTHON2_7)
+        assertThat(event.runtime()).isEqualTo(LambdaRuntime.PYTHON3_9)
     }
 
     @Test
     fun canDetermineRuntimeFromAnActionEventUsingProject() {
-        val sdk = PyTestSdk("3.6.0")
+        val sdk = PyTestSdk("3.9.0")
 
         val project = projectRule.project
 
         runInEdtAndWait {
             runWriteAction {
                 ProjectJdkTable.getInstance().addJdk(sdk, projectRule.fixture.projectDisposable)
-                ProjectRootManager.getInstance(project).projectSdk = PyTestSdk("3.6.0")
+                ProjectRootManager.getInstance(project).projectSdk = sdk
             }
 
             val event: AnActionEvent = mock {
@@ -54,7 +57,7 @@ class RuntimeGroupTest {
                 on { getData(LangDataKeys.PROJECT) }.thenReturn(projectRule.project)
             }
 
-            assertThat(event.runtime()).isEqualTo(Runtime.PYTHON3_6)
+            assertThat(event.runtime()).isEqualTo(LambdaRuntime.PYTHON3_9)
         }
     }
 

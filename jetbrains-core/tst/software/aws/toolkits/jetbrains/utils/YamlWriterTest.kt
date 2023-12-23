@@ -9,7 +9,7 @@ import org.junit.Test
 class YamlWriterTest {
     @Test
     fun testYamlWriter() {
-        val text = yamlWriter {
+        val text = yaml {
             mapping("Foo") {
                 mapping("Bar") {
                     keyValue("Hello", "World")
@@ -19,10 +19,15 @@ class YamlWriterTest {
                     mapping("EvenSome") {
                         keyValue("More2", "Keys2")
                     }
+                    mapping("SomeList") {
+                        listValue("Foo")
+                        listValue("Bar")
+                    }
                 }
             }
         }
-        assertThat(text).isEqualTo("""
+        assertThat(text).isEqualTo(
+            """
             Foo:
               Bar:
                 Hello: World
@@ -30,6 +35,10 @@ class YamlWriterTest {
                   More: Keys
                 EvenSome:
                   More2: Keys2
-        """.trimIndent())
+                SomeList:
+                  - Foo
+                  - Bar
+            """.trimIndent()
+        )
     }
 }

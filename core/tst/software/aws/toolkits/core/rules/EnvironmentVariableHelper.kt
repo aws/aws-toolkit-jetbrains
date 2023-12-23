@@ -14,6 +14,7 @@ import java.security.PrivilegedAction
 class EnvironmentVariableHelper : ExternalResource() {
     private val originalEnvironmentVariables = System.getenv().toMap()
     private val modifiableMap = getProcessEnvMap() ?: getEnvMap()
+
     @Volatile
     private var mutated = false
 
@@ -36,9 +37,11 @@ class EnvironmentVariableHelper : ExternalResource() {
 
     private fun getField(processEnvironment: Class<*>, obj: Any?, fieldName: String): MutableMap<String, String>? = try {
         val declaredField = processEnvironment.getDeclaredField(fieldName)
-        AccessController.doPrivileged(PrivilegedAction<Unit> {
-            declaredField.isAccessible = true
-        })
+        AccessController.doPrivileged(
+            PrivilegedAction<Unit> {
+                declaredField.isAccessible = true
+            }
+        )
         @Suppress("UNCHECKED_CAST")
         declaredField.get(obj) as MutableMap<String, String>
     } catch (_: NoSuchFieldException) {

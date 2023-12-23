@@ -6,32 +6,37 @@ package software.aws.toolkits.jetbrains.utils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Keeps checking the condition until the max duration as been reached. Checks every 100ms
  */
-fun spinUntil(duration: Duration, condition: () -> Boolean) {
+fun spinUntil(duration: Duration, interval: Duration = Duration.ofMillis(100), condition: () -> Boolean) {
     val start = System.nanoTime()
     runBlocking {
         while (!condition()) {
-            if (System.nanoTime() - start > duration.toNanos())
-                throw IllegalStateException("Condition not reached within $duration")
-            delay(100)
+            if (System.nanoTime() - start > duration.toNanos()) {
+                throw TimeoutException("Condition not reached within $duration")
+            }
+            delay(interval.toMillis())
         }
     }
 }
 
 /**
- * Keeps running the function until it returns a non-null value. Checks every 100ms
+ * Keeps checking the block until the max duration as been reached or a non-null value has been returned. Checks every 100ms
  */
-suspend fun <T> spinUntilResult(duration: Duration, func: () -> T?): T {
-    val start = System.nanoTime()
-    while (System.nanoTime() - start <= duration.toNanos()) {
-        func()?.let {
-            return it
+fun <T> spinUntilValue(duration: Duration, interval: Duration = Duration.ofMillis(100), block: () -> T?): T {
+    val ref = AtomicReference<T>()
+    spinUntil(duration, interval) {
+        val value = block()
+        if (value == null) {
+            return@spinUntil false
+        } else {
+            ref.set(value)
+            return@spinUntil true
         }
-
-        delay(100)
     }
-    throw IllegalStateException("Function did not return value within $duration")
+    return ref.get()
 }

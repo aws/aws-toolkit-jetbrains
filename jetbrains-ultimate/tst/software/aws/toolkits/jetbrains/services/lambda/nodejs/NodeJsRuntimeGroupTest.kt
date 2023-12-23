@@ -7,7 +7,7 @@ import com.intellij.util.text.SemVer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.setNodeJsInterpreterVersion
 
@@ -20,51 +20,30 @@ class NodeJsRuntimeGroupTest {
     private val sut = NodeJsRuntimeGroup()
 
     @Test
-    fun testRuntime4_3() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v4.3.0", 4, 3, 0))
+    fun testRuntime14() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v14.0.0", 14, 0, 0))
         val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS10_X)
+        assertThat(runtime).isEqualTo(LambdaRuntime.NODEJS14_X)
     }
 
     @Test
-    fun testRuntime6_10() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v6.10.3", 6, 10, 3))
+    fun testRuntime150() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v15.16.0", 15, 16, 0))
         val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS10_X)
+        assertThat(runtime).isEqualTo(LambdaRuntime.NODEJS16_X)
     }
 
     @Test
-    fun testRuntime8_10() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v8.10.0", 8, 10, 0))
+    fun testRuntime16() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v16.0.0", 16, 0, 0))
         val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS10_X)
+        assertThat(runtime).isEqualTo(LambdaRuntime.NODEJS16_X)
     }
 
     @Test
-    fun testRuntime10_10() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v10.10.0", 10, 10, 0))
+    fun testRuntime18() {
+        projectRule.project.setNodeJsInterpreterVersion(SemVer("v18.0.0", 18, 0, 0))
         val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS10_X)
-    }
-
-    @Test
-    fun testRuntime11_12() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v11.12.0", 11, 12, 0))
-        val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS12_X)
-    }
-
-    @Test
-    fun testRuntime12_13() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v12.13.1", 12, 13, 1))
-        val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isEqualTo(Runtime.NODEJS12_X)
-    }
-
-    @Test
-    fun testRuntime13_0() {
-        projectRule.project.setNodeJsInterpreterVersion(SemVer("v13.0.0", 13, 0, 0))
-        val runtime = sut.determineRuntime(projectRule.project)
-        assertThat(runtime).isNull()
+        assertThat(runtime).isEqualTo(LambdaRuntime.NODEJS18_X)
     }
 }

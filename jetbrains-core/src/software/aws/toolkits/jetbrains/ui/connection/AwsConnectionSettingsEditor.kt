@@ -19,11 +19,22 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
+/**
+ * AWS settings for run configurations. Settings will be serialized with the rest of the run configuration.
+ * @param project The active project
+ * @param serviceName The ID of the service (accessed through <AWS client>.SERVICE_NAME in the JAVA SDK v2)
+ * used to filter out regions based on what regions a service is available in.
+ * @param settingsChangedListener A callback for when settings are changed
+ */
 class AwsConnectionSettingsEditor<T : AwsConnectionsRunConfigurationBase<*>>(
     project: Project,
-    private val settingsChangedListener: (AwsRegion?, String?) -> Unit = { _, _ -> }
+    serviceName: String? = null,
+    settingsChangedListener: (AwsRegion?, String?) -> Unit = { _, _ -> }
 ) : SettingsEditor<T>() {
-    private val awsConnectionSelector = AwsConnectionSettingsSelector(project, settingsChangedListener)
+    private val awsConnectionSelector = AwsConnectionSettingsSelector(project, serviceName) {
+        // TODO: Undo this unwrapping
+        settingsChangedListener.invoke(it?.region, it?.credentials?.id)
+    }
 
     override fun createEditor(): JComponent = awsConnectionSelector.selectorPanel()
 

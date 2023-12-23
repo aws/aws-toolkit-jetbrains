@@ -5,21 +5,24 @@ package software.aws.toolkits.core
 
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.auth.token.signer.aws.BearerTokenSigner
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.awscore.client.builder.AwsDefaultClientBuilder
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.core.client.builder.SdkSyncClientBuilder
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
+import software.amazon.awssdk.core.retry.RetryMode
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.s3.S3ClientBuilder
-import software.amazon.awssdk.services.s3.internal.handlers.CreateBucketInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.DecodeUrlEncodedResponseInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.DisableDoubleUrlEncodingInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.EnableChunkedEncodingInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.EndpointAddressInterceptor
-import software.amazon.awssdk.services.s3.internal.handlers.PutObjectInterceptor
+import software.amazon.awssdk.utils.SdkAutoCloseable
+import software.aws.toolkits.core.clients.nullDefaultProfileFile
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import java.lang.reflect.Modifier
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
@@ -30,136 +33,182 @@ import kotlin.reflect.KClass
  */
 abstract class ToolkitClientManager {
     data class AwsClientKey(
-        val credentialProviderId: String,
+        val providerId: String,
         val region: AwsRegion,
         val serviceClass: KClass<out SdkClient>
     )
 
     private val cachedClients = ConcurrentHashMap<AwsClientKey, SdkClient>()
 
-    protected abstract val sdkHttpClient: SdkHttpClient
     protected abstract val userAgent: String
 
-    inline fun <reified T : SdkClient> getClient(
-        credentialsProviderOverride: ToolkitCredentialsProvider? = null,
-        regionOverride: AwsRegion? = null
-    ): T = this.getClient(T::class, credentialsProviderOverride, regionOverride)
+    protected abstract fun sdkHttpClient(): SdkHttpClient
 
-    @Suppress("UNCHECKED_CAST")
-    open fun <T : SdkClient> getClient(
-        clz: KClass<T>,
-        credentialsProviderOverride: ToolkitCredentialsProvider? = null,
-        regionOverride: AwsRegion? = null
-    ): T {
-        val credProvider = credentialsProviderOverride ?: getCredentialsProvider()
-        val region = regionOverride ?: getRegion()
+    inline fun <reified T : SdkClient> getClient(credProvider: ToolkitCredentialsProvider, region: AwsRegion): T =
+        this.getClient(T::class, ConnectionSettings(credProvider, region))
 
+    inline fun <reified T : SdkClient> getClient(connection: ClientConnectionSettings<*>): T = this.getClient(T::class, connection)
+
+    fun <T : SdkClient> getClient(sdkClass: KClass<T>, connection: ClientConnectionSettings<*>): T {
         val key = AwsClientKey(
-            credentialProviderId = credProvider.id,
-            region = region,
-            serviceClass = clz
+            providerId = connection.providerId,
+            region = connection.region,
+            serviceClass = sdkClass
         )
 
-        val serviceId = key.serviceClass.java.getField("SERVICE_NAME").get(null) as String
-        if (serviceId !in GLOBAL_SERVICE_BLACKLIST && getRegionProvider().isServiceGlobal(region, serviceId)) {
-            val globalRegion = getRegionProvider().getGlobalRegionForService(region, serviceId)
-            return cachedClients.computeIfAbsent(key.copy(region = globalRegion)) { createNewClient(it, globalRegion, credProvider) } as T
+        val serviceId = key.serviceClass.java.getField("SERVICE_METADATA_ID").get(null) as String
+        if (serviceId !in GLOBAL_SERVICE_DENY_LIST && getRegionProvider().isServiceGlobal(connection.region, serviceId)) {
+            val globalRegion = getRegionProvider().getGlobalRegionForService(connection.region, serviceId)
+            @Suppress("UNCHECKED_CAST")
+            return cachedClients.computeIfAbsent(key.copy(region = globalRegion)) {
+                createNewClient(sdkClass, connection.withRegion(region = globalRegion))
+            } as T
         }
 
-        return cachedClients.computeIfAbsent(key) { createNewClient(it, region, credProvider) } as T
+        @Suppress("UNCHECKED_CAST")
+        return cachedClients.computeIfAbsent(key) { createNewClient(sdkClass, connection) } as T
+    }
+
+    private fun <T : SdkClient> createNewClient(sdkClass: KClass<T>, connection: ClientConnectionSettings<*>): T = when (connection) {
+        is ConnectionSettings -> constructAwsClient(
+            sdkClass = sdkClass,
+            credProvider = connection.credentials,
+            region = Region.of(connection.region.id),
+        )
+
+        is TokenConnectionSettings -> constructAwsClient(
+            sdkClass = sdkClass,
+            tokenProvider = connection.tokenProvider,
+            region = Region.of(connection.region.id),
+        )
     }
 
     /**
-     * Get the current active credential provider for the toolkit
+     * Constructs a new low-level AWS client whose lifecycle is **NOT** managed centrally. Caller is responsible for shutting down the client
      */
-    protected abstract fun getCredentialsProvider(): ToolkitCredentialsProvider
+    inline fun <reified T : SdkClient> createUnmanagedClient(
+        credProvider: AwsCredentialsProvider,
+        region: Region,
+        endpointOverride: String? = null,
+        clientCustomizer: ToolkitClientCustomizer? = null
+    ): T = createUnmanagedClient(T::class, credProvider, region, endpointOverride, clientCustomizer)
+
+    /**
+     * Constructs a new low-level AWS client whose lifecycle is **NOT** managed centrally. Caller is responsible for shutting down the client
+     */
+    fun <T : SdkClient> createUnmanagedClient(
+        sdkClass: KClass<T>,
+        credProvider: AwsCredentialsProvider,
+        region: Region,
+        endpointOverride: String?,
+        clientCustomizer: ToolkitClientCustomizer? = null
+    ): T = constructAwsClient(sdkClass, credProvider = credProvider, region = region, endpointOverride = endpointOverride, clientCustomizer = clientCustomizer)
 
     protected abstract fun getRegionProvider(): ToolkitRegionProvider
 
     /**
-     * Get the current active region for the toolkit
+     * Allow implementations to apply customizations to clients before they are built
      */
-    protected abstract fun getRegion(): AwsRegion
+    protected open fun globalClientCustomizer(
+        credentialProvider: AwsCredentialsProvider?,
+        tokenProvider: SdkTokenProvider?,
+        regionId: String,
+        builder: AwsClientBuilder<*, *>,
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+    ) {}
 
     /**
-     * Calls [AutoCloseable.close] if client implements [AutoCloseable] and clears the cache
+     * Calls [SdkAutoCloseable.close] on all managed clients and clears the cache
      */
     protected fun shutdown() {
-        cachedClients.values.mapNotNull { it as? AutoCloseable }.forEach { it.close() }
+        cachedClients.values.forEach { it.close() }
+        cachedClients.clear()
     }
 
     protected fun invalidateSdks(providerId: String) {
-        cachedClients.keys.removeIf { it.credentialProviderId == providerId }
+        val invalidClients = cachedClients.entries.filter { it.key.providerId == providerId }.toSet()
+        cachedClients.entries.removeAll(invalidClients)
+        invalidClients.forEach { it.value.close() }
     }
 
-    /**
-     * Used by [software.aws.toolkits.jetbrains.core.MockClientManager]
-     */
-    @TestOnly
-    protected fun clear() = cachedClients.clear()
+    protected open fun <T : SdkClient> constructAwsClient(
+        sdkClass: KClass<T>,
+        credProvider: AwsCredentialsProvider? = null,
+        tokenProvider: SdkTokenProvider? = null,
+        region: Region,
+        endpointOverride: String? = null,
+        clientCustomizer: ToolkitClientCustomizer? = null
+    ): T {
+        checkNotNull(credProvider ?: tokenProvider) { "Either a credential provider or a bearer token provider must be provided" }
+
+        val builderMethod = sdkClass.java.methods.find {
+            it.name == "builder" && Modifier.isStatic(it.modifiers) && Modifier.isPublic(it.modifiers)
+        } ?: throw IllegalArgumentException("Expected service interface to have a public static `builder()` method.")
+
+        val builder = builderMethod.invoke(null) as AwsDefaultClientBuilder<*, *>
+
+        @Suppress("UNCHECKED_CAST")
+        return builder
+            .region(region)
+            .apply {
+                if (this is SdkSyncClientBuilder<*, *>) {
+                    // async clients use CRT, and keeps trying to shut down our apache client even though it doesn't respect our client settings
+                    // so only set this for sync clients
+                    httpClient(sdkHttpClient())
+                }
+
+                val clientOverrideConfig = ClientOverrideConfiguration.builder()
+
+                if (credProvider != null) {
+                    credentialsProvider(credProvider)
+                }
+
+                if (tokenProvider != null) {
+                    val tokenMethod = builderMethod.returnType.methods.find {
+                        it.name == "tokenProvider" &&
+                            it.parameterCount == 1 &&
+                            it.parameters[0].type.name == "software.amazon.awssdk.auth.token.credentials.SdkTokenProvider"
+                    }
+
+                    if (tokenMethod == null) {
+                        LOG.warn { "Ignoring bearer provider parameter for ${sdkClass.qualifiedName} since it's not a supported client attribute" }
+                    } else {
+                        tokenMethod.invoke(this, tokenProvider)
+                        clientOverrideConfig.nullDefaultProfileFile()
+                        // TODO: why do we need this?
+                        clientOverrideConfig.putAdvancedOption(SdkAdvancedClientOption.SIGNER, BearerTokenSigner())
+                    }
+                }
+
+                clientOverrideConfig.let { configuration ->
+                    configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent)
+                    configuration.retryPolicy(RetryMode.STANDARD)
+                }
+
+                endpointOverride?.let {
+                    endpointOverride(URI.create(it))
+                }
+
+                globalClientCustomizer(credProvider, tokenProvider, region.id(), this, clientOverrideConfig)
+
+                clientCustomizer?.let {
+                    it.customize(credProvider, tokenProvider, region.id(), this, clientOverrideConfig)
+                }
+
+                // TODO: ban overrideConfiguration outside of here
+                overrideConfiguration(clientOverrideConfig.build())
+            }
+            .build() as T
+    }
 
     @TestOnly
     fun cachedClients() = cachedClients
 
-    /**
-     * Creates a new client for the requested [AwsClientKey]
-     */
-    @Suppress("UNCHECKED_CAST")
-    protected open fun <T : SdkClient> createNewClient(
-        key: AwsClientKey,
-        region: AwsRegion = key.region,
-        credProvider: ToolkitCredentialsProvider = getCredentialsProvider()
-    ): T {
-        val sdkClass = key.serviceClass as KClass<T>
-        return createNewClient(sdkClass, sdkHttpClient, Region.of(region.id), credProvider, userAgent)
-    }
-
     companion object {
-        private val GLOBAL_SERVICE_BLACKLIST = setOf(
+        private val LOG = getLogger<ToolkitClientManager>()
+        private val GLOBAL_SERVICE_DENY_LIST = setOf(
             // sts is regionalized but does not identify as such in metadata
             "sts"
         )
-
-        fun <T : SdkClient> createNewClient(
-            sdkClass: KClass<T>,
-            httpClient: SdkHttpClient,
-            region: Region,
-            credProvider: AwsCredentialsProvider,
-            userAgent: String,
-            endpointOverride: String? = null
-        ): T {
-            val builderMethod = sdkClass.java.methods.find {
-                it.name == "builder" && Modifier.isStatic(it.modifiers) && Modifier.isPublic(it.modifiers)
-            } ?: throw IllegalArgumentException("Expected service interface to have a public static `builder()` method.")
-
-            val builder = builderMethod.invoke(null) as AwsDefaultClientBuilder<*, *>
-
-            @Suppress("UNCHECKED_CAST")
-            return builder
-                .httpClient(httpClient)
-                .credentialsProvider(credProvider)
-                .region(region)
-                .overrideConfiguration {
-                    it.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent)
-                    if (builder is S3ClientBuilder) {
-                        // TODO: Remove after SDK code-gens these instead of uses class loader
-                        it.addExecutionInterceptor(EndpointAddressInterceptor())
-                        it.addExecutionInterceptor(CreateBucketInterceptor())
-                        it.addExecutionInterceptor(PutObjectInterceptor())
-                        it.addExecutionInterceptor(EnableChunkedEncodingInterceptor())
-                        it.addExecutionInterceptor(DisableDoubleUrlEncodingInterceptor())
-                        it.addExecutionInterceptor(DecodeUrlEncodedResponseInterceptor())
-                    }
-                }
-                .also { _ ->
-                    endpointOverride?.let {
-                        builder.endpointOverride(URI.create(it))
-                    }
-                    if (builder is S3ClientBuilder) {
-                        builder.serviceConfiguration { it.pathStyleAccessEnabled(true) }
-                    }
-                }
-                .build() as T
-        }
     }
 }

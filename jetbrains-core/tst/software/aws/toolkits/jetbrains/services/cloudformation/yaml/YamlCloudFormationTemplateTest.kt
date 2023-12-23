@@ -18,14 +18,13 @@ import org.jetbrains.annotations.NotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import software.aws.toolkits.core.utils.test.notNull
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplate
 import software.aws.toolkits.jetbrains.services.cloudformation.LambdaFunction
 import software.aws.toolkits.jetbrains.services.cloudformation.SamFunction
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.io.File
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class YamlCloudFormationTemplateTest {
     @Rule
@@ -54,9 +53,11 @@ class YamlCloudFormationTemplateTest {
 
     @Test
     fun noResourcesReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
-        """.trimIndent())
+            """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -64,12 +65,14 @@ Description: "Some description"
 
     @Test
     fun emptyResourcesReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
 
 
-        """.trimIndent())
+            """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -77,11 +80,13 @@ Resources:
 
     @Test
     fun partialResourceIsIgnored() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Resources:
     Foo:
-        """.trimIndent())
+            """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.resources().toList()).isEmpty()
         }
@@ -97,9 +102,11 @@ Resources:
 
     @Test
     fun noParametersReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
-        """.trimIndent())
+            """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.parameters().toList()).isEmpty()
         }
@@ -107,12 +114,14 @@ Description: "Some description"
 
     @Test
     fun emptyParametersReturnsEmpty() {
-        val template = yamlTemplate("""
+        val template = yamlTemplate(
+            """
 Description: "Some description"
 Parameters:
 
 
-        """.trimIndent())
+            """.trimIndent()
+        )
         runInEdtAndWait {
             assertThat(template.parameters().toList()).isEmpty()
         }
@@ -124,10 +133,11 @@ Parameters:
         runInEdtAndWait {
             assertThat(template.parameters().toList()).hasSize(2)
             val tableTag = template.parameters().firstOrNull { it.logicalName == "TableTag" }
-            assertNotNull(tableTag)
-            assertNull(tableTag.defaultValue())
-            assertNotNull(tableTag.description())
-            assertNull(tableTag.constraintDescription())
+            assertThat(tableTag).notNull.satisfies { tag ->
+                assertThat(tag.defaultValue()).isNull()
+                assertThat(tag.description()).isNotNull()
+                assertThat(tag.constraintDescription()).isNull()
+            }
         }
     }
 
@@ -173,7 +183,7 @@ Resources:
             ProvisionedThroughput:
                 ReadCapacityUnits: 1
                 WriteCapacityUnits: 1
-                """.trimIndent()
+            """.trimIndent()
         )
     }
 
@@ -208,8 +218,18 @@ Resources:
         Type: AWS::Lambda::Function
         Properties:
             Handler: helloworld.App::handleRequest
-                """.trimIndent()
+            """.trimIndent()
         )
+    }
+
+    @Test
+    fun canParseSequenceProperties() {
+        val template = yamlTemplate()
+        runInEdtAndWait {
+            val resource = template.getResourceByName("MyDynamoTable")
+            val attributeDefinitions = resource!!.getSequenceProperty("AttributeDefinitions")
+            assertThat(attributeDefinitions.items).hasSize(2)
+        }
     }
 
     @Test
@@ -245,12 +265,15 @@ Resources:
                 FileTypeManagerEx.getInstance().associate(fakeFileType, matchYml)
             }
 
-            Disposer.register(projectRule.fixture.testRootDisposable, Disposable {
-                runWriteAction {
-                    FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYml)
-                    FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYaml)
+            Disposer.register(
+                projectRule.fixture.testRootDisposable,
+                Disposable {
+                    runWriteAction {
+                        FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYml)
+                        FileTypeManagerEx.getInstance().removeAssociation(fakeFileType, matchYaml)
+                    }
                 }
-            })
+            )
 
             setOf("template.canParseByExtension.yaml", "template.canParseByExtension.yml").forEach {
                 val yamlFile = projectRule.fixture.addFileToProject(it, TEST_TEMPLATE)
@@ -310,6 +333,28 @@ Resources:
             assertThat(template.resources().toList()).isEmpty()
             assertThat(template.parameters().toList()).isEmpty()
             assertThat(template.globals().toList()).isEmpty()
+        }
+    }
+
+    @Test
+    fun serverlessImageFunction() {
+        val template = yamlTemplate(template = makeImageTemplate("DockerFile2"))
+
+        runInEdtAndWait {
+            val samFunction = template.getResourceByName("MyFunction") as SamFunction
+            assertThat(samFunction.codeLocation()).isEqualTo("./hello-world")
+            assertThat(samFunction.dockerFile()).isEqualTo("DockerFile2")
+        }
+    }
+
+    @Test
+    fun serverlessImageFunctionDefaultDockerfile() {
+        val template = yamlTemplate(template = makeImageTemplate(null))
+
+        runInEdtAndWait {
+            val samFunction = template.getResourceByName("MyFunction") as SamFunction
+            assertThat(samFunction.codeLocation()).isEqualTo("./hello-world")
+            assertThat(samFunction.dockerFile()).isNull()
         }
     }
 
@@ -375,6 +420,20 @@ Resources:
         Type: AWS::Lambda::Function
         Properties:
             Handler: helloworld.App::handleRequest
+            """.trimIndent()
+
+        fun makeImageTemplate(dockerFile: String? = "DockerFile") =
+            """
+Description: "Some description"
+Resources:
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+    Metadata:
+      DockerTag: v1
+      DockerContext: ./hello-world
+      ${if (dockerFile == null) "" else "Dockerfile: $dockerFile"}
             """.trimIndent()
     }
 }

@@ -15,12 +15,14 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.services.cloudformation.resources.CloudFormationResources
 import software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager
 import software.aws.toolkits.jetbrains.utils.toHumanReadable
+import software.aws.toolkits.resources.message
 
 class CloudFormationServiceNode(project: Project, service: AwsExplorerServiceNode) : CacheBackedAwsExplorerServiceRootNode<StackSummary>(
     project,
     service,
     CloudFormationResources.ACTIVE_STACKS
 ) {
+    override fun displayName(): String = message("explorer.node.cloudformation")
     override fun toNode(child: StackSummary): AwsExplorerNode<*> = CloudFormationStackNode(nodeProject, child.stackName(), child.stackStatus(), child.stackId())
 }
 
@@ -30,10 +32,10 @@ class CloudFormationStackNode(
     private val stackStatus: StackStatus,
     val stackId: String
 ) : AwsExplorerResourceNode<String>(
-        project,
-        CloudFormationClient.SERVICE_NAME,
-        stackName,
-        AwsIcons.Resources.CLOUDFORMATION_STACK
+    project,
+    CloudFormationClient.SERVICE_NAME,
+    stackName,
+    AwsIcons.Resources.CLOUDFORMATION_STACK
 ) {
     override fun resourceType() = "stack"
 
@@ -41,7 +43,7 @@ class CloudFormationStackNode(
 
     override fun displayName() = stackName
 
-    override fun statusText(): String? = stackStatus.toString().toHumanReadable()
+    override fun statusText(): String = stackStatus.toString().toHumanReadable()
 
     override fun onDoubleClick() {
         StackWindowManager.getInstance(nodeProject).openStack(stackName, stackId)

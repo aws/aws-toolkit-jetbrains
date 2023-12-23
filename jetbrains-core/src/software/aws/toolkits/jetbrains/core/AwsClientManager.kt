@@ -7,85 +7,109 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.ex.ApplicationInfoEx
-import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.components.service
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.http.SdkHttpClient
+import software.aws.toolkits.core.ClientConnectionSettings
+import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.ToolkitClientManager
 import software.aws.toolkits.core.credentials.CredentialIdentifier
-import software.aws.toolkits.core.credentials.CredentialProviderNotFoundException
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
-import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
-import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.ToolkitRegionProvider
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettings
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.settings.AwsSettings
 
-open class AwsClientManager(project: Project) : ToolkitClientManager(), Disposable {
-
-    private val accountSettingsManager = AwsConnectionManager.getInstance(project)
-    private val regionProvider = AwsRegionProvider.getInstance()
-
+open class AwsClientManager : ToolkitClientManager(), Disposable {
     init {
-        Disposer.register(project, Disposable { this.dispose() })
+        val busConnection = ApplicationManager.getApplication().messageBus.connect(this)
+        busConnection.subscribe(
+            CredentialManager.CREDENTIALS_CHANGED,
+            object : ToolkitCredentialsChangeListener {
+                override fun providerRemoved(identifier: CredentialIdentifier) {
+                    invalidateSdks(identifier.id)
+                }
 
-        val busConnection = ApplicationManager.getApplication().messageBus.connect(project)
-        busConnection.subscribe(CredentialManager.CREDENTIALS_CHANGED, object : ToolkitCredentialsChangeListener {
-            override fun providerRemoved(identifier: CredentialIdentifier) {
-                invalidateSdks(identifier.id)
+                override fun providerRemoved(providerId: String) {
+                    invalidateSdks(providerId)
+                }
             }
-        })
+        )
+
+        busConnection.subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String) {
+                    // otherwise we potentially cache the provider with the wrong token
+                    invalidateSdks(providerId)
+                }
+
+                override fun invalidate(providerId: String) {
+                    invalidateSdks(providerId)
+                }
+            }
+        )
     }
+
+    override val userAgent = AwsClientManager.userAgent
 
     override fun dispose() {
         shutdown()
     }
 
-    override val sdkHttpClient: SdkHttpClient
-        get() = AwsSdkClient.getInstance().sdkHttpClient
+    override fun sdkHttpClient(): SdkHttpClient = AwsSdkClient.getInstance().sharedSdkClient()
 
-    override val userAgent = AwsClientManager.userAgent
+    override fun getRegionProvider(): ToolkitRegionProvider = AwsRegionProvider.getInstance()
 
-    override fun getCredentialsProvider(): ToolkitCredentialsProvider {
-        try {
-            return accountSettingsManager.activeCredentialProvider
-        } catch (e: CredentialProviderNotFoundException) {
-            // TODO: Notify user
-
-            // Throw canceled exception to stop any task relying on this call
-            throw ProcessCanceledException(e)
-        }
+    override fun globalClientCustomizer(
+        credentialProvider: AwsCredentialsProvider?,
+        tokenProvider: SdkTokenProvider?,
+        regionId: String,
+        builder: AwsClientBuilder<*, *>,
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+    ) {
+        CUSTOMIZER_EP.extensionList.forEach { it.customize(credentialProvider, tokenProvider, regionId, builder, clientOverrideConfiguration) }
     }
-
-    override fun getRegion(): AwsRegion = accountSettingsManager.activeRegion
-
-    override fun getRegionProvider(): ToolkitRegionProvider = regionProvider
 
     companion object {
         @JvmStatic
-        fun getInstance(project: Project): ToolkitClientManager = ServiceManager.getService(project, ToolkitClientManager::class.java)
+        fun getInstance(): ToolkitClientManager = service()
 
         val userAgent: String by lazy {
             val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }
             val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
-            "AWS-Toolkit-For-JetBrains/${AwsToolkit.PLUGIN_VERSION} $platformName/$platformVersion"
+            "AWS-Toolkit-For-JetBrains/${AwsToolkit.PLUGIN_VERSION} $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
         }
+
+        internal val CUSTOMIZER_EP = ExtensionPointName<ToolkitClientCustomizer>("aws.toolkit.sdk.clientCustomizer")
     }
 }
 
-inline fun <reified T : SdkClient> Project.awsClient(
-    credentialsProviderOverride: ToolkitCredentialsProvider? = null,
-    regionOverride: AwsRegion? = null
-): T = AwsClientManager
-    .getInstance(this)
-    .getClient(credentialsProviderOverride = credentialsProviderOverride, regionOverride = regionOverride)
+inline fun <reified T : SdkClient> Project.awsClient(): T {
+    val accountSettingsManager = AwsConnectionManager.getInstance(this)
 
-inline fun <reified T : SdkClient> Project.awsClient(connectionSettings: ConnectionSettings): T = AwsClientManager
-    .getInstance(this)
-    .getClient(connectionSettings.credentials, connectionSettings.region)
+    return AwsClientManager
+        .getInstance()
+        .getClient(accountSettingsManager.activeCredentialProvider, accountSettingsManager.activeRegion)
+}
+
+inline fun <reified T : SdkClient> ConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(credentials, region)
+
+inline fun <reified T : SdkClient> TokenConnectionSettings.awsClient(): T = AwsClientManager.getInstance().getClient(this)
+
+inline fun <reified T : SdkClient> ClientConnectionSettings<*>.awsClient(): T = when (this) {
+    is ConnectionSettings -> awsClient<T>()
+    is TokenConnectionSettings -> awsClient<T>()
+}

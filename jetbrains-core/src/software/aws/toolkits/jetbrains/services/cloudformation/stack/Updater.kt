@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.cloudformation.model.Output
 import software.amazon.awssdk.services.cloudformation.model.StackEvent
 import software.amazon.awssdk.services.cloudformation.model.StackResource
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.SwingUtilities
 
 /**
@@ -31,16 +33,23 @@ class Updater(
     private val treeView: TreeView,
     private val eventsTable: EventsTable,
     private val outputsTable: OutputsListener,
-    private val stackName: String,
-    private val updateEveryMs: Int,
+    private val resourceListener: ResourceListener,
+    private val updateInterval: Duration,
+    private val updateIntervalOnFinalState: Duration,
     private val listener: UpdateListener,
     private val client: CloudFormationClient,
-    private val setPagesAvailable: (Set<Page>) -> Unit
+    private val setPagesAvailable: (Set<Page>) -> Unit,
+    private val stackId: String
 ) : Disposable {
 
     @Volatile
-    private var previousStackStatusType: StatusType = StatusType.UNKNOWN
-    private val eventsFetcher = EventsFetcher(stackName)
+    private var stackStatus: StatusType? = null
+
+    @Volatile
+    private var predicate: (StackResource) -> Boolean = { true }
+    private val updating = AtomicBoolean(false)
+    val running get() = updating.get()
+    private val eventsFetcher = EventsFetcher(stackId)
 
     private val app: Application
         get() = ApplicationManager.getApplication()
@@ -52,6 +61,9 @@ class Updater(
     private val alarm: Alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     fun start() {
+        updating.set(true)
+        // cancel pending requests after refreshing
+        alarm.cancelAllRequests()
         alarm.addRequest({ fetchDataSafely() }, 0)
     }
 
@@ -60,6 +72,14 @@ class Updater(
      */
     fun switchPage(page: Page) {
         alarm.addRequest({ fetchDataSafely(page) }, 0)
+    }
+
+    /**
+     * Apply a filter to the resources returned by the updater
+     */
+    fun applyFilter(predicate: (StackResource) -> Boolean) {
+        this.predicate = predicate
+        fetchDataSafely()
     }
 
     private fun fetchDataSafely(pageToSwitchTo: Page? = null) {
@@ -79,13 +99,16 @@ class Updater(
         val newStackStatusType = newStackStatus.type
         val newStackStatusNotInProgress = newStackStatusType !in setOf(StatusType.UNKNOWN, StatusType.PROGRESS)
 
-        // Stack changed to some "final" status just now, notify user
-        val stackSwitchedToFinalStatus = previousStackStatusType != newStackStatusType && newStackStatusNotInProgress
+        // Stack changed to some "final" status just now, notify the user. Don't show a notification if the state
+        // happened at creation time, which is distinguished by stackStatus being null
+        val stackSwitchedToFinalStatus = stackStatus != null &&
+            stackStatus != newStackStatusType &&
+            newStackStatusNotInProgress
 
         // Stack status is final and has not been changed
-        val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == previousStackStatusType
+        val stackStatusFinalNotChanged = newStackStatusNotInProgress && newStackStatusType == stackStatus
 
-        previousStackStatusType = newStackStatusType
+        stackStatus = newStackStatusType
 
         // Only fetch events if stack is not in final state or page switched
         val eventsAndButtonStates = if (stackStatusFinalNotChanged && pageToSwitchTo == null) {
@@ -96,10 +119,11 @@ class Updater(
 
         app.invokeLater {
             outputsTable.updatedOutputs(stackDetails.outputs)
+            resourceListener.updatedResources(stackDetails.resources)
 
             showData(
                 stackStatus = newStackStatus,
-                resources = stackDetails.resources,
+                resources = stackDetails.resources.filter(predicate),
                 newEvents = eventsAndButtonStates?.first ?: emptyList(),
                 pageChanged = pageToSwitchTo != null
             )
@@ -110,9 +134,16 @@ class Updater(
                 listener.onStackStatusChanged(newStackStatus)
             }
 
+            updating.set(!newStackStatusNotInProgress)
             // Reschedule next run
-            if (!alarm.isDisposed) {
-                alarm.addRequest({ fetchDataSafely() }, updateEveryMs)
+            if (stackStatus == StatusType.DELETED) {
+                alarm.cancelAllRequests()
+            } else if (!alarm.isDisposed && alarm.isEmpty) {
+                if (updating.get()) {
+                    alarm.addRequest({ fetchDataSafely() }, updateInterval.toMillis())
+                } else {
+                    alarm.addRequest({ fetchDataSafely() }, updateIntervalOnFinalState.toMillis())
+                }
             }
         }
     }
@@ -131,9 +162,9 @@ class Updater(
 
     private fun fetchStackDetails(): Stack {
         assert(!SwingUtilities.isEventDispatchThread())
-        val resourcesRequest = DescribeStackResourcesRequest.builder().stackName(stackName).build()
+        val resourcesRequest = DescribeStackResourcesRequest.builder().stackName(stackId).build()
         val resources = client.describeStackResources(resourcesRequest).stackResources()
-        val stack = client.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()
+        val stack = client.describeStacks { it.stackName(stackId) }.stacks().firstOrNull()
         val stackStatus = stack?.stackStatus() ?: StackStatus.UNKNOWN_TO_SDK_VERSION
         val outputs = stack?.outputs() ?: emptyList()
         return Stack(stackStatus, resources, outputs)
@@ -141,5 +172,6 @@ class Updater(
 
     private data class Stack(val status: StackStatus, val resources: List<StackResource>, val outputs: List<Output>)
 
-    override fun dispose() {}
+    override fun dispose() {
+    }
 }

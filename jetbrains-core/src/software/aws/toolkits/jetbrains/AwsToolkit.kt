@@ -4,13 +4,30 @@
 package software.aws.toolkits.jetbrains
 
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.util.registry.Registry
+import java.nio.file.Paths
 
 object AwsToolkit {
-    private const val PLUGIN_ID = "aws.toolkit"
+    const val PLUGIN_ID = "aws.toolkit"
+    const val GITHUB_URL = "https://github.com/aws/aws-toolkit-jetbrains"
+    const val AWS_DOCS_URL = "https://docs.aws.amazon.com/console/toolkit-for-jetbrains"
 
     val PLUGIN_VERSION: String by lazy {
-        // PluginManagerCore.getPlugin Requires MIN 193.2252. However we cannot set our IDE min to that because not all JB IDEs use the same build numbers
-        PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.version ?: "Unknown"
+        DESCRIPTOR?.version ?: "Unknown"
     }
+
+    val DESCRIPTOR: PluginDescriptor? by lazy {
+        PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))
+    }
+
+    fun pluginPath() = if (ApplicationManager.getApplication().isUnitTestMode) {
+        Paths.get(System.getProperty("plugin.path"))
+    } else {
+        DESCRIPTOR?.pluginPath ?: throw RuntimeException("Toolkit root not available")
+    }
+
+    fun isDeveloperMode() = Registry.`is`("aws.toolkit.developerMode", false)
 }

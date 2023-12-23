@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectRule
 import org.junit.rules.ExternalResource
@@ -12,6 +12,7 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.spinUntil
 import java.time.Duration
 
@@ -24,7 +25,8 @@ class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project)
         recentlyUsedRegions.clear()
         recentlyUsedProfiles.clear()
         val regionProvider = AwsRegionProvider.getInstance()
-        changeConnectionSettings(MockCredentialsManager.DUMMY_PROVIDER_IDENTIFIER, regionProvider.defaultRegion())
+        @Suppress("DEPRECATION")
+        changeConnectionSettings(DUMMY_PROVIDER_IDENTIFIER, regionProvider.defaultRegion())
 
         waitUntilConnectionStateIsStable()
     }
@@ -44,33 +46,53 @@ class MockAwsConnectionManager(project: Project) : AwsConnectionManager(project)
         waitUntilConnectionStateIsStable()
     }
 
-    fun nullifyRegionAndWait() {
-        changeConnectionSettings(selectedCredentialIdentifier, null)
-        waitUntilConnectionStateIsStable()
-    }
-
     fun setConnectionState(state: ConnectionState) {
         connectionState = state
     }
 
-    override suspend fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) {}
-
-    companion object {
-        fun getInstance(project: Project): MockAwsConnectionManager =
-            ServiceManager.getService(project, AwsConnectionManager::class.java) as MockAwsConnectionManager
+    fun addRecentRegion(region: AwsRegion) {
+        recentlyUsedRegions.add(region.id)
     }
 
-    class ProjectAccountSettingsManagerRule(projectRule: ProjectRule) : ExternalResource() {
-        val settingsManager by lazy {
-            getInstance(projectRule.project)
+    fun clearRecentRegions() {
+        recentlyUsedRegions.clear()
+    }
+
+    fun addRecentCredentials(identifier: CredentialIdentifier) {
+        recentlyUsedProfiles.add(identifier.id)
+    }
+
+    fun clearRecentCredentials() {
+        recentlyUsedProfiles.clear()
+    }
+
+    override fun validate(credentialsProvider: ToolkitCredentialsProvider, region: AwsRegion) {}
+
+    companion object {
+        fun getInstance(project: Project): MockAwsConnectionManager = project.service<AwsConnectionManager>() as MockAwsConnectionManager
+    }
+
+    class ProjectAccountSettingsManagerRule private constructor(projectSupplier: () -> Project) : ExternalResource() {
+        constructor(projectRule: ProjectRule) : this({ projectRule.project })
+        constructor(projectRule: CodeInsightTestFixtureRule) : this({ projectRule.project })
+
+        private val settingsManagerDelegate = lazy {
+            getInstance(projectSupplier())
         }
 
+        val settingsManager: MockAwsConnectionManager
+            get() = settingsManagerDelegate.value
+
         override fun before() {
-            settingsManager.reset()
+            if (settingsManagerDelegate.isInitialized()) {
+                settingsManager.reset()
+            }
         }
 
         override fun after() {
-            settingsManager.reset()
+            if (settingsManagerDelegate.isInitialized()) {
+                settingsManager.reset()
+            }
         }
     }
 }

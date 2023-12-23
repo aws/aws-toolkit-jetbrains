@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet.element
@@ -10,10 +10,12 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.FakePsiElement
-import com.jetbrains.rider.projectView.ProjectModelViewHost
-import com.jetbrains.rider.projectView.nodes.containingProject
-import com.jetbrains.rider.todo.getPsiFile
-import com.jetbrains.rider.util.idea.getComponent
+import com.jetbrains.rider.projectView.workspace.containingProjectEntity
+import com.jetbrains.rider.projectView.workspace.getProjectModelEntity
+import com.jetbrains.rider.projectView.workspace.getVirtualFileAsContentRoot
+import com.jetbrains.rider.util.idea.getPsiFile
+import software.aws.toolkits.jetbrains.core.compatability.toVirtualFile
+import software.aws.toolkits.jetbrains.services.lambda.WorkspaceModel
 import javax.swing.Icon
 
 /**
@@ -30,10 +32,11 @@ class RiderLambdaHandlerFakePsiElement(
 ) : FakePsiElement() {
     override fun getParent() = null
 
-    override fun getContainingFile(): PsiFile? =
-        project.getComponent<ProjectModelViewHost>().getItemById(fileId)
-            ?.getVirtualFile()
-            ?.getPsiFile(FileDocumentManager.getInstance(), PsiDocumentManager.getInstance(project))
+    override fun getContainingFile(): PsiFile? = WorkspaceModel
+        .getInstance(project)
+        .getProjectModelEntity(fileId)
+        ?.getVirtualFileAsContentRoot()
+        ?.getPsiFile(FileDocumentManager.getInstance(), PsiDocumentManager.getInstance(project))
 
     override fun isValid() = true
     override fun getProject() = project
@@ -43,8 +46,10 @@ class RiderLambdaHandlerFakePsiElement(
     override fun toString() = name
     override fun getManager() = PsiManager.getInstance(project)
 
-    fun getContainingProjectFile(): VirtualFile? =
-            project.getComponent<ProjectModelViewHost>().getItemById(fileId)
-                    ?.containingProject()
-                    ?.getVirtualFile()
+    fun getContainingProjectFile(): VirtualFile? = WorkspaceModel
+        .getInstance(project)
+        .getProjectModelEntity(fileId)
+        ?.containingProjectEntity()
+        ?.url
+        ?.toVirtualFile()
 }

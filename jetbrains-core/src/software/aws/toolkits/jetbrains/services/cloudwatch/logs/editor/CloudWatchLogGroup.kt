@@ -6,42 +6,50 @@ package software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SearchTextField
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
+import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsActor
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.insights.QueryEditorDialog
 import software.aws.toolkits.jetbrains.utils.ui.onEmpty
 import software.aws.toolkits.jetbrains.utils.ui.onEnter
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudWatchResourceType
+import software.aws.toolkits.telemetry.CloudwatchinsightsTelemetry
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
+import software.aws.toolkits.telemetry.InsightsDialogOpenSource
 import javax.swing.JPanel
 
 class CloudWatchLogGroup(
     private val project: Project,
     private val logGroup: String
-) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogsGroup"), Disposable {
+) : Disposable {
+    private val coroutineScope = disposableCoroutineScope(this)
     lateinit var content: JPanel
+        private set
 
-    private val edtContext = getCoroutineUiContext(disposable = this)
+    private val edtContext = getCoroutineUiContext()
 
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var locationInformation: LocationBreadcrumbs
     private lateinit var searchField: SearchTextField
     private lateinit var breadcrumbHolder: JPanel
 
-    val client: CloudWatchLogsClient = project.awsClient()
-    private val groupTable: LogGroupTable = LogGroupTable(project, client, logGroup, LogGroupTable.TableType.LIST)
+    private val client: CloudWatchLogsClient
+    private val connection: ConnectionSettings
+    private val groupTable: LogGroupTable
     private var searchGroupTable: LogGroupTable? = null
 
     private fun createUIComponents() {
@@ -52,10 +60,17 @@ class CloudWatchLogGroup(
     }
 
     init {
+
+        connection = when (val state = AwsConnectionManager.getInstance(project).connectionState) {
+            is ConnectionState.ValidConnection -> ConnectionSettings(state.credentials, state.region)
+            else -> throw IllegalStateException(state.shortMessage)
+        }
+        client = AwsClientManager.getInstance().getClient(connection.credentials, connection.region)
+        groupTable = LogGroupTable(project, client, logGroup, LogGroupTable.TableType.LIST)
+
         val locationCrumbs = LocationCrumbs(project, logGroup)
         locationInformation.crumbs = locationCrumbs.crumbs
         breadcrumbHolder.border = locationCrumbs.border
-        locationInformation.installClickListener()
 
         Disposer.register(this, groupTable)
         tablePanel.setContent(groupTable.component)
@@ -69,7 +84,7 @@ class CloudWatchLogGroup(
         searchField.onEmpty {
             val oldTable = searchGroupTable
             searchGroupTable = null
-            launch(edtContext) {
+            coroutineScope.launch(edtContext) {
                 tablePanel.setContent(groupTable.component)
                 // Dispose the old one if it was not null
                 oldTable?.let { launch { Disposer.dispose(it) } }
@@ -84,12 +99,12 @@ class CloudWatchLogGroup(
                 val table = LogGroupTable(project, client, logGroup, LogGroupTable.TableType.FILTER)
                 Disposer.register(this@CloudWatchLogGroup, table)
                 searchGroupTable = table
-                launch(edtContext) {
+                coroutineScope.launch(edtContext) {
                     tablePanel.setContent(table.component)
                     oldTable?.let { launch { Disposer.dispose(it) } }
                 }
-                launch {
-                    table.channel.send(LogActor.Message.LoadInitialFilter(searchField.text))
+                coroutineScope.launch {
+                    table.channel.send(CloudWatchLogsActor.Message.LoadInitialFilter(searchField.text))
                 }
             }
         }
@@ -97,17 +112,29 @@ class CloudWatchLogGroup(
 
     private fun addToolbar() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
-            override fun actionPerformed(e: AnActionEvent) {
-                CloudwatchlogsTelemetry.refreshGroup(project)
-                refreshTable()
+        actionGroup.addAction(
+            object : DumbAwareAction(message("general.refresh"), null, AllIcons.Actions.Refresh) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    CloudwatchlogsTelemetry.refresh(project, CloudWatchResourceType.LogGroup)
+                    refreshTable()
+                }
             }
-        })
-        tablePanel.toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false).component
+        )
+        actionGroup.addAction(
+            object : DumbAwareAction(message("cloudwatch.logs.query"), null, AllIcons.Actions.Find) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    QueryEditorDialog(project, connection, logGroup).show()
+                    CloudwatchinsightsTelemetry.openEditor(project, InsightsDialogOpenSource.LogGroup)
+                }
+            }
+        )
+        val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
+        toolbar.setTargetComponent(tablePanel.component)
+        tablePanel.toolbar = toolbar.component
     }
 
-    private fun refreshTable() {
-        launch { groupTable.channel.send(LogActor.Message.LoadInitial) }
+    internal fun refreshTable() {
+        coroutineScope.launch { groupTable.channel.send(CloudWatchLogsActor.Message.LoadInitial) }
     }
 
     override fun dispose() {}

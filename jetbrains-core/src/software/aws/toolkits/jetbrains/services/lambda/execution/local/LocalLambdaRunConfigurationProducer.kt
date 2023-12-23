@@ -8,7 +8,9 @@ import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.actions.ConfigurationContext
 import com.intellij.execution.actions.LazyRunConfigurationProducer
 import com.intellij.execution.configurations.ConfigurationFactory
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiElement
 import org.jetbrains.yaml.psi.YAMLKeyValue
@@ -16,7 +18,6 @@ import org.jetbrains.yaml.psi.YAMLPsiElement
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
-import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.execution.LambdaRunConfigurationType
 import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamTemplateUtils.functionFromElement
@@ -52,15 +53,25 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
 
     private fun setupFromSourceFile(element: PsiElement, context: ConfigurationContext, configuration: LocalLambdaRunConfiguration): Boolean {
         val runtimeGroup = element.language.runtimeGroup ?: return false
-        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups) {
+        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)
+
+        if (context.location?.virtualFile?.let { TestSourcesFilter.isTestSources(it, element.project) } == true) {
+            return false
+        }
+
+        val resolver = LambdaHandlerResolver.getInstance(runtimeGroup)
         val handler = resolver.determineHandler(element) ?: return false
-        val runtime = RuntimeGroup.determineRuntime(context.module) ?: RuntimeGroup.determineRuntime(context.project)
+
+        // In some scenarios, context lacks the module (bug?). If it can't be found ask for it explicitly from the PSI element
+        val module = context.module ?: ModuleUtilCore.findModuleForPsiElement(element)
+        val runtime = module?.let {
+            runtimeGroup.determineRuntime(it)
+        } ?: runtimeGroup.determineRuntime(element.project)
 
         setAccountOptions(configuration)
-        configuration.useHandler(runtime, handler)
+        configuration.useHandler(runtime?.toSdkRuntime(), handler)
 
         return true
     }
@@ -76,10 +87,10 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
 
     private fun isFromSourceFileContext(element: PsiElement, configuration: LocalLambdaRunConfiguration): Boolean {
         val runtimeGroup = element.language.runtimeGroup ?: return false
-        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups) {
+        if (runtimeGroup !in LambdaHandlerResolver.supportedRuntimeGroups()) {
             return false
         }
-        val resolver = LambdaHandlerResolver.getInstanceOrThrow(runtimeGroup)
+        val resolver = LambdaHandlerResolver.getInstance(runtimeGroup)
         val handler = resolver.determineHandler(element) ?: return false
         return configuration.handler() == handler
     }

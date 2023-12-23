@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
@@ -9,21 +9,23 @@ import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.jetbrains.rd.framework.impl.RpcTimeouts
-import com.jetbrains.rider.model.HandlerExistRequest
 import com.jetbrains.rider.model.MethodExistingRequest
 import com.jetbrains.rider.model.backendPsiHelperModel
-import com.jetbrains.rider.model.lambdaPsiModel
 import com.jetbrains.rider.model.publishableProjectsModel
-import com.jetbrains.rider.projectView.ProjectModelViewHost
 import com.jetbrains.rider.projectView.solution
-import com.jetbrains.rider.run.configurations.method.getProjectModeId
+import com.jetbrains.rider.projectView.workspace.getId
+import com.jetbrains.rider.projectView.workspace.getProjectModelEntities
+import com.jetbrains.rider.projectView.workspace.isProject
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.protocol.HandlerExistRequest
+import software.aws.toolkits.jetbrains.protocol.lambdaPsiModel
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
+import software.aws.toolkits.jetbrains.services.lambda.WorkspaceModel
 import software.aws.toolkits.jetbrains.services.lambda.dotnet.element.RiderLambdaHandlerFakePsiElement
+import java.nio.file.Path
 
 class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
-
-    override fun version(): Int = 1
-
     override fun findPsiElements(
         project: Project,
         handler: String,
@@ -43,27 +45,20 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     }
 
     override fun isHandlerValid(project: Project, handler: String): Boolean {
-        val handlerParts = handler.split("::")
-        if (handlerParts.size != 3) return false
+        val (assemblyName, type, methodName) = getHandlerParts(handler) ?: return false
+        val projectId = getProjectId(project, assemblyName) ?: return false
+        val handlerExistRequest = HandlerExistRequest(
+            className = type,
+            methodName = methodName,
+            projectId = projectId
+        )
 
-        val assemblyName = handlerParts[0]
-        val type = handlerParts[1]
-        val methodName = handlerParts[2]
-
-        return doesMethodExist(project, assemblyName, type, methodName)
+        return project.solution.lambdaPsiModel.isHandlerExists.sync(handlerExistRequest, RpcTimeouts.default)
     }
 
     fun getFieldIdByHandlerName(project: Project, handler: String): Int {
-        val handlerParts = handler.split("::")
-        if (handlerParts.size != 3) return -1
-
-        val assemblyName = handlerParts[0]
-        val type = handlerParts[1]
-        val methodName = handlerParts[2]
-
-        val projectModelViewHost = ProjectModelViewHost.getInstance(project)
-        val publishableProjects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
-        val projectToProcess = publishableProjects.find { it.projectName == assemblyName } ?: return -1
+        val (assemblyName, type, methodName) = getHandlerParts(handler) ?: return -1
+        val projectId = getProjectId(project, assemblyName) ?: return -1
 
         val model = project.solution.backendPsiHelperModel
         val fileIdResponse = model.findPublicMethod.sync(
@@ -71,24 +66,41 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
                 className = type,
                 methodName = methodName,
                 targetFramework = "",
-                projectId = projectModelViewHost.getProjectModeId(projectToProcess.projectFilePath)),
+                projectId = projectId
+            ),
             timeouts = RpcTimeouts.default
         )
 
         return fileIdResponse?.fileId ?: -1
     }
 
-    private fun doesMethodExist(project: Project, assemblyName: String, type: String, methodName: String): Boolean {
-        val projectModelViewHost = ProjectModelViewHost.getInstance(project)
-        val projects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
-        val projectToProcess = projects.find { it.projectName == assemblyName } ?: return false
+    private fun getHandlerParts(handler: String): Triple<String, String, String>? {
+        val handlerParts = handler.split("::")
+        if (handlerParts.size != 3) return null
 
-        val handlerExistRequest = HandlerExistRequest(
-            className = type,
-            methodName = methodName,
-            projectId = projectModelViewHost.getProjectModeId(projectToProcess.projectFilePath)
-        )
+        return Triple(handlerParts[0], handlerParts[1], handlerParts[2])
+    }
 
-        return project.solution.lambdaPsiModel.isHandlerExists.sync(handlerExistRequest, RpcTimeouts.default)
+    private fun getProjectId(project: Project, assemblyName: String): Int? {
+        val workspaceModel = WorkspaceModel.getInstance(project)
+        val publishableProjects = project.solution.publishableProjectsModel.publishableProjects.values.toList()
+        val projectToProcess = publishableProjects.find { it.projectName == assemblyName }
+        if (projectToProcess == null) {
+            LOG.warn { "No publishable project with name '$assemblyName` in solution projects:  $publishableProjects" }
+            return null
+        }
+
+        val projectPath = Path.of(projectToProcess.projectFilePath)
+        val projectId = workspaceModel.getProjectModelEntities(projectPath, project).singleOrNull { it.isProject() }?.getId(project)
+        if (projectId == null) {
+            LOG.warn { "Project Id is not found for project path: '$projectPath'" }
+            return null
+        }
+
+        return projectId
+    }
+
+    private companion object {
+        private val LOG = getLogger<DotNetLambdaHandlerResolver>()
     }
 }

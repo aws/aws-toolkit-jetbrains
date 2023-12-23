@@ -15,9 +15,11 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.CacheBackedAwsExplore
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
 import software.aws.toolkits.jetbrains.services.lambda.execution.remote.RemoteLambdaLocation
 import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
+import software.aws.toolkits.resources.message
 
 class LambdaServiceNode(project: Project, service: AwsExplorerServiceNode) :
     CacheBackedAwsExplorerServiceRootNode<FunctionConfiguration>(project, service, LambdaResources.LIST_FUNCTIONS) {
+    override fun displayName(): String = message("explorer.node.lambda")
     override fun toNode(child: FunctionConfiguration): AwsExplorerNode<*> = LambdaFunctionNode(nodeProject, child.toDataClass())
 }
 
@@ -29,7 +31,8 @@ open class LambdaFunctionNode(
     LambdaClient.SERVICE_NAME,
     function,
     AwsIcons.Resources.LAMBDA_FUNCTION
-), ResourceLocationNode {
+),
+    ResourceLocationNode {
 
     override fun resourceType() = "function"
 
@@ -43,6 +46,9 @@ open class LambdaFunctionNode(
 
     fun functionName(): String = value.name
 
-    fun handlerPsi(): Array<NavigatablePsiElement> =
-        Lambda.findPsiElementsForHandler(nodeProject, value.runtime, value.handler)
+    fun handlerPsi(): Array<NavigatablePsiElement> {
+        val runtime = value.runtime ?: return emptyArray()
+        val handler = value.handler ?: return emptyArray()
+        return Lambda.findPsiElementsForHandler(nodeProject, runtime, handler)
+    }
 }

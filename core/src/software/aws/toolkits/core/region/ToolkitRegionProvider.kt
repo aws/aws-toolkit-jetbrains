@@ -9,7 +9,11 @@ import java.util.concurrent.ConcurrentHashMap
  * An SPI to provide regions supported by this toolkit
  */
 abstract class ToolkitRegionProvider {
-    protected data class PartitionData(val description: String, val services: Map<String, Service>, val regions: Map<String, AwsRegion>)
+    protected data class PartitionData(
+        val description: String,
+        val services: Map<String, Service>,
+        val regions: Map<String, AwsRegion>
+    )
 
     protected abstract fun partitionData(): Map<String, PartitionData>
 
@@ -19,6 +23,11 @@ abstract class ToolkitRegionProvider {
      * Returns a map of region ID([AwsRegion.id]) to [AwsRegion]
      */
     fun allRegions(): Map<String, AwsRegion> = partitionData().flatMap { it.value.regions.asIterable() }.associate { it.key to it.value }
+
+    /**
+     * Returns a map of region ID([AwsRegion.id]) to [AwsRegion], filtering by if the service is supported
+     */
+    fun allRegionsForService(serviceId: String): Map<String, AwsRegion> = allRegions().filter { isServiceSupported(it.value, serviceId) }
 
     /**
      * Returns a map of region ID([AwsRegion.id]) to [AwsRegion] for the specified partition
@@ -46,8 +55,7 @@ abstract class ToolkitRegionProvider {
 
     open fun isServiceGlobal(region: AwsRegion, serviceId: String): Boolean {
         val partition = partitionData()[region.partitionId] ?: throw IllegalStateException("Partition data is missing for ${region.partitionId}")
-        val service = partition.services[serviceId] ?: throw IllegalStateException("Unknown service $serviceId in ${region.partitionId}")
-        return service.isGlobal
+        return partition.services[serviceId]?.isGlobal == true
     }
 
     fun getGlobalRegionForService(region: AwsRegion, serviceId: String): AwsRegion {

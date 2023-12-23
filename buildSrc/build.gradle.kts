@@ -1,66 +1,39 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
-
-val jacksonVersion: String by project
-val kotlinVersion: String by project
-val awsSdkVersion: String by project
-
-val assertjVersion: String by project
-val junitVersion: String by project
-val mockitoVersion: String by project
-val mockitoKotlinVersion: String by project
 
 buildscript {
     // This has to be here otherwise properties are not loaded and nothing works
-    val props = java.util.Properties()
+    val props = `java.util`.Properties()
     file("${project.projectDir.parent}/gradle.properties").inputStream().use { props.load(it) }
-    props.entries.forEach { it: Map.Entry<Any, Any> -> project.extensions.add(it.key.toString(), it.value) }
-
-    val kotlinVersion: String by project
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    }
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
+    props.entries.forEach { project.extensions.add(it.key.toString(), it.value) }
 }
 
 plugins {
-    // TODO this really doesn't work. The plugin block requires a const string but the above
-    // hack we had in place to copy the properties also fixes this for now.
-    val kotlinVersion: String by project
-    kotlin("jvm") version kotlinVersion
-    `java-gradle-plugin`
+    `kotlin-dsl`
 }
 
-sourceSets {
-    main.get().java.srcDir("src")
-    test.get().java.srcDir("src")
-}
+
+// Note: We can't use our standard source layout due to https://github.com/gradle/gradle/issues/14310
 
 dependencies {
-    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-    api("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    api("org.eclipse.jgit:org.eclipse.jgit:5.0.2.201807311906-r")
-    api("com.atlassian.commonmark:commonmark:0.11.0")
-    api("software.amazon.awssdk:codegen:$awsSdkVersion")
+    implementation(libs.jacoco)
+    implementation(libs.aws.codeGen)
+    implementation(libs.bundles.jackson)
+    implementation(libs.commonmark)
+    implementation(libs.gradlePlugin.detekt)
+    implementation(libs.gradlePlugin.intellij)
+    implementation(libs.gradlePlugin.kotlin)
+    implementation(libs.gradlePlugin.testLogger)
+    implementation(libs.gradlePlugin.testRetry)
+    implementation(libs.jgit)
 
-    testImplementation("org.assertj:assertj-core:$assertjVersion")
-    testImplementation("junit:junit:$junitVersion")
-    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion")
-    testImplementation("org.mockito:mockito-core:$mockitoVersion")
+    testImplementation(libs.assertj)
+    testImplementation(libs.junit4)
+    testImplementation(libs.bundles.mockito)
+
+    testRuntimeOnly(libs.junit5.jupiterVintage)
 }
 
-gradlePlugin {
-    plugins {
-        create("changeLog") {
-            id = "toolkit-change-log"
-            implementationClass = "toolkits.gradle.changelog.ChangeLogPlugin"
-        }
-    }
+tasks.test {
+    useJUnitPlatform()
 }

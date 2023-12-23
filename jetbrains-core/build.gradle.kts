@@ -1,72 +1,48 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import groovy.lang.Closure
-import org.gradle.jvm.tasks.Jar
-import org.jetbrains.intellij.IntelliJPluginExtension
-import org.jetbrains.intellij.tasks.PatchPluginXmlTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import software.aws.toolkits.gradle.buildMetadata
+import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
+import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.isCi
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
-import toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
-// Cannot be removed or else it will fail to compile
-import org.jetbrains.intellij.IntelliJPlugin
+
+val toolkitVersion: String by project
+val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
-    id("org.jetbrains.intellij")
+    id("toolkit-kotlin-conventions")
+    id("toolkit-testing")
+    id("toolkit-integration-testing")
+    id("toolkit-intellij-subplugin")
 }
-apply(from = "../intellijJVersions.gradle")
 
 buildscript {
-    val telemetryVersion: String by project
-    repositories {
-        mavenCentral()
-        maven { setUrl("https://jitpack.io") }
-    }
     dependencies {
-        classpath("software.aws.toolkits:telemetry-generator:$telemetryVersion")
+        classpath(libs.telemetryGenerator)
     }
 }
 
-val telemetryVersion: String by project
-val awsSdkVersion: String by project
-val coroutinesVersion: String by project
-
-val ideSdkVersion: Closure<String> by ext
-val idePlugins: Closure<ArrayList<String>> by ext
-val ideSinceVersion: Closure<String> by ext
-val ideUntilVersion: Closure<String> by ext
-
-val compileKotlin: KotlinCompile by tasks
-val patchPluginXml: PatchPluginXmlTask by tasks
-
-intellij {
-    val rootIntelliJTask = rootProject.intellij
-    version = ideSdkVersion("IC")
-    setPlugins(*(idePlugins("IC").toArray()))
-    pluginName = rootIntelliJTask.pluginName
-    updateSinceUntilBuild = rootIntelliJTask.updateSinceUntilBuild
-    downloadSources = rootIntelliJTask.downloadSources
+intellijToolkit {
+    ideFlavor.set(IdeFlavor.IC)
 }
 
-patchPluginXml.setSinceBuild(ideSinceVersion())
-patchPluginXml.setUntilBuild(ideUntilVersion())
-
-configurations {
-    testArtifacts
+sourceSets {
+    main {
+        java.srcDir("${project.buildDir}/generated-src")
+    }
 }
 
 val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf()
+    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
     outputDirectory = file("${project.buildDir}/generated-src")
 }
-compileKotlin.dependsOn(generateTelemetry)
 
-sourceSets {
-    main.get().java.srcDir("${project.buildDir}/generated-src")
-}
-
-tasks.test {
-    systemProperty("log.dir", "${project.intellij.sandboxDirectory}-test/logs")
+tasks.compileKotlin {
+    dependsOn(generateTelemetry)
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -76,32 +52,109 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
 
 tasks.jar {
     dependsOn(changelog)
-    archiveBaseName.set("aws-intellij-toolkit-core")
-    from(changelog.get().changeLogFile) {
+    from(changelog) {
         into("META-INF")
     }
 }
 
+val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
+    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
+    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
+
+    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
+    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+}
+
+val gatewayArtifacts by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    // share same dependencies as default configuration
+    extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
+}
+
+val gatewayJar = tasks.create<Jar>("gatewayJar") {
+    dependsOn(tasks.instrumentedJar)
+
+    archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
+    from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
+        exclude("**/plugin.xml")
+        exclude("**/plugin-intellij.xml")
+        exclude("**/inactive")
+    }
+
+    from(gatewayPluginXml) {
+        into("META-INF")
+    }
+
+    val pluginGateway = sourceSets.main.get().resources.first { it.name == "plugin-gateway.xml" }
+    from(pluginGateway) {
+        into("META-INF")
+    }
+}
+
+artifacts {
+    add("gatewayArtifacts", gatewayJar)
+}
+
+tasks.prepareSandbox {
+    // you probably do not want to modify this.
+    // this affects the IDE sandbox / build for `:jetbrains-core`, but will not propogate to the build generated by `:intellij`
+    // (which is what is ultimately published to the marketplace)
+    // without additional effort
+}
+
+tasks.testJar {
+    // classpath.index is a duplicated
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.processTestResources {
+    // TODO how can we remove this. Fails due to:
+    // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
 dependencies {
     api(project(":core"))
-    api("software.amazon.awssdk:s3:$awsSdkVersion")
-    api("software.amazon.awssdk:lambda:$awsSdkVersion")
-    api("software.amazon.awssdk:iam:$awsSdkVersion")
-    api("software.amazon.awssdk:ecs:$awsSdkVersion")
-    api("software.amazon.awssdk:cloudformation:$awsSdkVersion")
-    api("software.amazon.awssdk:schemas:$awsSdkVersion")
-    api("software.amazon.awssdk:cloudwatchlogs:$awsSdkVersion")
-    api("software.amazon.awssdk:apache-client:$awsSdkVersion")
-    api("software.amazon.awssdk:resourcegroupstaggingapi:$awsSdkVersion")
-    api("software.amazon.awssdk:rds:$awsSdkVersion")
-    api("software.amazon.awssdk:redshift:$awsSdkVersion")
-    api("software.amazon.awssdk:secretsmanager:$awsSdkVersion")
+    api(libs.aws.apacheClient)
+    api(libs.aws.apprunner)
+    api(libs.aws.cloudcontrol)
+    api(libs.aws.cloudformation)
+    api(libs.aws.cloudwatchlogs)
+    api(libs.aws.codecatalyst)
+    api(libs.aws.dynamodb)
+    api(libs.aws.ec2)
+    api(libs.aws.ecr)
+    api(libs.aws.ecs)
+    api(libs.aws.iam)
+    api(libs.aws.lambda)
+    api(libs.aws.rds)
+    api(libs.aws.redshift)
+    api(libs.aws.s3)
+    api(libs.aws.schemas)
+    api(libs.aws.secretsmanager)
+    api(libs.aws.sns)
+    api(libs.aws.sqs)
+    api(libs.aws.services)
+
+    implementation(project(":mynah-ui"))
+    implementation(libs.aws.crt)
+    implementation(libs.bundles.jackson)
+    implementation(libs.zjsonpatch)
+    implementation(libs.commonmark)
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
-    testImplementation("com.github.tomakehurst:wiremock-jre8:2.26.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$coroutinesVersion")
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlin.coroutinesTest)
+    testImplementation(libs.kotlin.coroutinesDebug)
+    testImplementation(libs.wiremock)
+}
 
-    integrationTestImplementation("org.eclipse.jetty:jetty-servlet:9.4.15.v20190215")
-    integrationTestImplementation("org.eclipse.jetty:jetty-proxy:9.4.15.v20190215")
+// fix implicit dependency on generated source
+tasks.withType<Detekt> {
+    dependsOn(generateTelemetry)
+}
+
+tasks.withType<DetektCreateBaselineTask> {
+    dependsOn(generateTelemetry)
 }

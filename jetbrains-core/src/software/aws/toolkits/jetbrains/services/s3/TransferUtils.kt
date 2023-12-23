@@ -7,10 +7,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.util.io.inputStream
 import com.intellij.util.io.outputStream
-import com.intellij.util.io.size
 import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.http.ContentStreamProvider
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.GetObjectResponse
@@ -37,12 +36,11 @@ fun S3Client.upload(
     key: String,
     message: String = message("s3.upload.object.progress", key),
     startInBackground: Boolean = true
-): CompletionStage<PutObjectResponse> = upload(project, source.inputStream(), source.size(), bucket, key, message, startInBackground)
+): CompletionStage<PutObjectResponse> = upload(project, RequestBody.fromFile(source), bucket, key, message, startInBackground)
 
-fun S3Client.upload(
+private fun S3Client.upload(
     project: Project,
-    source: InputStream,
-    length: Long,
+    source: RequestBody,
     bucket: String,
     key: String,
     message: String = message("s3.upload.object.progress", key),
@@ -50,57 +48,92 @@ fun S3Client.upload(
 ): CompletionStage<PutObjectResponse> {
     val future = CompletableFuture<PutObjectResponse>()
     val request = PutObjectRequest.builder().bucket(bucket).key(key).build()
-    ProgressManager.getInstance().run(object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
-        override fun run(indicator: ProgressIndicator) {
-            indicator.isIndeterminate = false
-            try {
-                val result = ProgressMonitorInputStream(indicator, source, length = length).use {
-                    this@upload.putObject(request, RequestBody.fromInputStream(it, length))
+    ProgressManager.getInstance().run(
+        object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
+            override fun run(indicator: ProgressIndicator) {
+                indicator.isIndeterminate = source.optionalContentLength().isEmpty
+                val requestSource = if (source.optionalContentLength().isPresent) {
+                    val length = source.optionalContentLength().get()
+                    val newProvider = ProgressTrackingContentProvider(indicator, source.contentStreamProvider(), length)
+
+                    RequestBody.fromContentProvider(newProvider, length, source.contentType())
+                } else {
+                    source
                 }
-                future.complete(result)
-            } catch (e: Exception) {
-                future.completeExceptionally(e)
+
+                try {
+                    future.complete(this@upload.putObject(request, requestSource))
+                } catch (e: Exception) {
+                    future.completeExceptionally(e)
+                }
             }
         }
-    })
+    )
     return future
+}
+
+private class ProgressTrackingContentProvider(
+    private val progressIndicator: ProgressIndicator,
+    private val underlyingInputStreamProvider: ContentStreamProvider,
+    private val length: Long
+) : ContentStreamProvider {
+    private var currentStream: InputStream? = null
+
+    override fun newStream(): InputStream {
+        currentStream?.let {
+            runCatching {
+                it.close()
+            }
+        }
+
+        return ProgressMonitorInputStream(progressIndicator, underlyingInputStreamProvider.newStream(), length).also {
+            currentStream = it
+        }
+    }
 }
 
 fun S3Client.download(
     project: Project,
     bucket: String,
     key: String,
+    versionId: String?,
     destination: Path,
     message: String = message("s3.download.object.progress", key),
     startInBackground: Boolean = true
-): CompletionStage<GetObjectResponse> = download(project, bucket, key, destination.outputStream(), message, startInBackground)
+): CompletionStage<GetObjectResponse> = download(project, bucket, key, versionId, destination.outputStream(), message, startInBackground)
 
 fun S3Client.download(
     project: Project,
     bucket: String,
     key: String,
+    versionId: String?,
     destination: OutputStream,
     message: String = message("s3.download.object.progress", key),
     startInBackground: Boolean = true
 ): CompletionStage<GetObjectResponse> {
     val future = CompletableFuture<GetObjectResponse>()
-    val request = GetObjectRequest.builder().bucket(bucket).key(key).build()
-    ProgressManager.getInstance().run(object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
-        override fun run(indicator: ProgressIndicator) {
-            try {
-                this@download.getObject(request) { response, inputStream ->
-                    indicator.isIndeterminate = false
-                    inputStream.use { input ->
-                        ProgressMonitorOutputStream(indicator, destination, response.contentLength()).use { output ->
-                            IoUtils.copy(input, output)
+    val requestBuilder = GetObjectRequest.builder().bucket(bucket).key(key)
+    versionId?.let {
+        requestBuilder.versionId(it)
+    }
+    ProgressManager.getInstance().run(
+        object : Task.Backgroundable(project, message, true, if (startInBackground) ALWAYS_BACKGROUND else null) {
+            override fun run(indicator: ProgressIndicator) {
+                try {
+                    this@download.getObject(requestBuilder.build()) { response, inputStream ->
+                        indicator.isIndeterminate = false
+                        inputStream.use { input ->
+                            ProgressMonitorOutputStream(indicator, destination, response.contentLength()).use { output ->
+                                IoUtils.copy(input, output)
+                            }
                         }
+                        future.complete(response)
                     }
-                    future.complete(response)
+                } catch (e: Exception) {
+                    future.completeExceptionally(e)
                 }
-            } catch (e: Exception) {
-                future.completeExceptionally(e)
             }
         }
-    })
+    )
     return future
 }

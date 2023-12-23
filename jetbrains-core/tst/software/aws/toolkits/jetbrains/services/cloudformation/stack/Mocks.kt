@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
-import com.nhaarman.mockitokotlin2.whenever
 import org.junit.Assert
 import org.mockito.Mockito
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsRequest
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackEventsResponse
@@ -23,14 +23,17 @@ internal class MockEventsGenerator {
     }
 
     fun addEvent() {
-        events.add(0, StackEvent.builder()
-            .physicalResourceId("P$lastEventId")
-            .logicalResourceId("L$lastEventId")
-            .resourceType("Type")
-            .resourceStatus(ResourceStatus.CREATE_IN_PROGRESS)
-            .timestamp(Instant.now())
-            .eventId(lastEventId.toString())
-            .build())
+        events.add(
+            0,
+            StackEvent.builder()
+                .physicalResourceId("P$lastEventId")
+                .logicalResourceId("L$lastEventId")
+                .resourceType("Type")
+                .resourceStatus(ResourceStatus.CREATE_IN_PROGRESS)
+                .timestamp(Instant.now())
+                .eventId(lastEventId.toString())
+                .build()
+        )
         lastEventId++
     }
 

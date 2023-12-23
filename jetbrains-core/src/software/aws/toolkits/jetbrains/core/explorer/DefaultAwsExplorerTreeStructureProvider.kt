@@ -3,15 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
-import com.intellij.ide.projectView.ViewSettings
 import com.intellij.ide.util.treeView.AbstractTreeNode
 
-class DefaultAwsExplorerTreeStructureProvider : AwsExplorerTreeStructureProvider {
-    override fun modify(
-        parent: AbstractTreeNode<*>,
-        children: MutableCollection<AbstractTreeNode<*>>,
-        settings: ViewSettings?
-    ): MutableCollection<AbstractTreeNode<*>> =
-        // By default sort the children in alphabetical order
+class DefaultAwsExplorerTreeStructureProvider : AwsExplorerTreeStructureProvider() {
+    // By default sort the children in alphabetical order
+    override fun modify(parent: AbstractTreeNode<*>, children: MutableCollection<AbstractTreeNode<*>>): MutableCollection<AbstractTreeNode<*>> =
         children.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.toString() }).toMutableList()
 }

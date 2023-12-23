@@ -11,18 +11,12 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.lambda.model.FunctionConfiguration
-import software.amazon.awssdk.services.lambda.model.Runtime
-import software.amazon.awssdk.services.lambda.model.TracingMode
-import software.aws.toolkits.jetbrains.core.MockResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
-import software.aws.toolkits.jetbrains.services.lambda.resources.LambdaResources
 import software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker
 import software.aws.toolkits.jetbrains.settings.LambdaSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openClass
 import software.aws.toolkits.jetbrains.utils.rules.openFile
-import java.util.concurrent.CompletableFuture
 
 class JavaLambdaLineMarkerTest {
     @Rule
@@ -123,7 +117,6 @@ class JavaLambdaLineMarkerTest {
 
     @Test
     fun singleArgumentStaticMethodsMarkedWhenDisablingLambdaSettingButDefinedInTemplate() {
-
         val fixture = projectRule.fixture
         LambdaSettings.getInstance(projectRule.project).showAllHandlerGutterIcons = false
 
@@ -162,7 +155,6 @@ Resources:
 
     @Test
     fun singleArgumentStaticMethodsMarkedWhenDisablingLambdaSettingButDefinedInTemplateGlobals() {
-
         val fixture = projectRule.fixture
         LambdaSettings.getInstance(projectRule.project).showAllHandlerGutterIcons = false
 
@@ -512,52 +504,6 @@ Resources:
 
         findAndAssertMarks(fixture) { marks ->
             assertThat(marks).isEmpty()
-        }
-    }
-
-    @Test
-    fun remoteLambdasGetMarked() {
-        LambdaSettings.getInstance(projectRule.project).showAllHandlerGutterIcons = false
-
-        val fixture = projectRule.fixture
-        val future = CompletableFuture<List<FunctionConfiguration>>()
-        MockResourceCache.getInstance(fixture.project).addEntry(LambdaResources.LIST_FUNCTIONS, future)
-
-        fixture.openClass(
-            """
-             package com.example;
-
-             public class UsefulUtils {
-
-                 public String upperCase(String input) {
-                     return input.toUpperCase();
-                 }
-             }
-             """
-        )
-
-        findAndAssertMarks(fixture) { marks ->
-            assertThat(marks).isEmpty()
-        }
-
-        val lambdaFunction = FunctionConfiguration.builder()
-            .functionName("upperCase")
-            .functionArn("arn")
-            .description(null)
-            .lastModified("someDate")
-            .handler("com.example.UsefulUtils::upperCase")
-            .runtime(Runtime.JAVA8)
-            .role("DummyRoleArn")
-            .environment { it.variables(emptyMap()) }
-            .timeout(60)
-            .memorySize(128)
-            .tracingConfig { it.mode(TracingMode.PASS_THROUGH) }
-            .build()
-
-        future.complete(listOf(lambdaFunction))
-
-        findAndAssertMarks(fixture) { marks ->
-            assertLineMarkerIs(marks, "upperCase")
         }
     }
 

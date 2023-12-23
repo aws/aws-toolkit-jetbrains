@@ -5,15 +5,30 @@
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="Python" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
     </extensions>
-
-    <extensions defaultExtensionNs="aws.toolkit.lambda">
-        <runtimeGroup runtimeGroup="PYTHON" implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup"/>
-        <builder runtimeGroup="PYTHON" implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaBuilder"/>
-        <handlerResolver runtimeGroup="PYTHON" implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaHandlerResolver"/>
-        <sam.debugSupport runtimeGroup="PYTHON" implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonSamDebugSupport"/>
-        <sam.projectWizard runtimeGroup="PYTHON" implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonSamProjectWizard"/>
+    <extensions defaultExtensionNs="Pythonid">
+        <runConfigurationExtension implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionExtension"/>
+        <pythonCommandLineTargetEnvironmentProvider
+            implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionCommandLineTargetEnvironmentProvider"/>
     </extensions>
-    <extensions defaultExtensionNs="aws.toolkit.clouddebug">
-        <debuggerSupport implementation="software.aws.toolkits.jetbrains.services.clouddebug.python.PythonDebuggerSupport"/>
+
+    <extensions defaultExtensionNs="aws.toolkit">
+        <experiment implementation="software.aws.toolkits.jetbrains.core.execution.PythonAwsConnectionExperiment"/>
+    </extensions>
+    <extensions defaultExtensionNs="aws.toolkit.lambda">
+        <runtimeGroup implementation="software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeGroup"/>
+        <builder id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaBuilder"/>
+        <handlerResolver id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonLambdaHandlerResolver"/>
+        <sam.runtimeDebugSupport id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonRuntimeDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python37ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python38ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python39ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python310ImageDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.python.Python311ImageDebugSupport"/>
+        <sam.projectWizard id="PYTHON" implementationClass="software.aws.toolkits.jetbrains.services.lambda.python.PythonSamProjectWizard"/>
+    </extensions>
+    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython"/>
+        <classResolver implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver"/>
+        <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererPythonImportAdder"/>
     </extensions>
 </idea-plugin>

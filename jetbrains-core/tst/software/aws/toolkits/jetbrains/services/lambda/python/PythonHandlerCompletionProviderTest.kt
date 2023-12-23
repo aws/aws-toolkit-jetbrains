@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.python
 import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
-import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.completion.HandlerCompletionProvider
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
@@ -17,26 +17,32 @@ class PythonHandlerCompletionProviderTest {
     val projectRule = PythonCodeInsightTestFixtureRule()
 
     @Test
-    fun completionIsNotSupportedPython27() {
-        val provider = HandlerCompletionProvider(projectRule.project, Runtime.PYTHON2_7)
-        assertFalse(provider.isCompletionSupported)
-    }
-
-    @Test
-    fun completionIsNotSupportedPython36() {
-        val provider = HandlerCompletionProvider(projectRule.project, Runtime.PYTHON3_6)
-        assertFalse(provider.isCompletionSupported)
-    }
-
-    @Test
     fun completionIsNotSupportedPython37() {
-        val provider = HandlerCompletionProvider(projectRule.project, Runtime.PYTHON3_7)
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_7)
         assertFalse(provider.isCompletionSupported)
     }
 
     @Test
     fun completionIsNotSupportedPython38() {
-        val provider = HandlerCompletionProvider(projectRule.project, Runtime.PYTHON3_8)
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_8)
+        assertFalse(provider.isCompletionSupported)
+    }
+
+    @Test
+    fun completionIsNotSupportedPython39() {
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_9)
+        assertFalse(provider.isCompletionSupported)
+    }
+
+    @Test
+    fun completionIsNotSupportedPython310() {
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_10)
+        assertFalse(provider.isCompletionSupported)
+    }
+
+    @Test
+    fun completionIsNotSupportedPython311() {
+        val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_11)
         assertFalse(provider.isCompletionSupported)
     }
 }

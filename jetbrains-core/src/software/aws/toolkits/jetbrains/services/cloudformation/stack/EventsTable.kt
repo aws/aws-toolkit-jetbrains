@@ -31,7 +31,7 @@ interface EventsTable : View {
     fun showBusyIcon()
 }
 
-private class StatusCellRenderer : DefaultTableCellRenderer() {
+class StatusCellRenderer : DefaultTableCellRenderer() {
     override fun getTableCellRendererComponent(table: JTable, value: Any, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component =
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column).also {
             it.foreground = StatusType.fromStatusValue(value as String).color
@@ -40,15 +40,18 @@ private class StatusCellRenderer : DefaultTableCellRenderer() {
 
 internal class EventsTableImpl : EventsTable, Disposable {
 
-    private val table = DynamicTableView<StackEvent>(
+    private val logicalId = DynamicTableView.Field<StackEvent>(message("cloudformation.stack.logical_id")) { e -> e.logicalResourceId() }
+    private val physicalId = DynamicTableView.Field<StackEvent>(message("cloudformation.stack.physical_id")) { e -> e.physicalResourceId() }
+
+    private val table = DynamicTableView(
         DynamicTableView.Field(message("general.time")) { e -> e.timestamp() },
         // CFN Resource Status does not match what we expect (StackStatus enum)
         DynamicTableView.Field(message("cloudformation.stack.status"), renderer = StatusCellRenderer()) { e -> e.resourceStatusAsString() },
-        DynamicTableView.Field(message("cloudformation.stack.logical_id")) { e -> e.logicalResourceId() },
-        DynamicTableView.Field(message("cloudformation.stack.physical_id")) { e -> e.physicalResourceId() },
+        logicalId,
+        physicalId,
         DynamicTableView.Field(
             message("cloudformation.stack.reason"),
-            WrappingCellRenderer(wrapOnSelection = true, toggleableWrap = false)
+            WrappingCellRenderer(wrapOnSelection = true, wrapOnToggle = false)
         ) { e -> e.resourceStatusReason() ?: "" }
     ).apply { component.border = IdeBorderFactory.createBorder(SideBorder.BOTTOM) }
 

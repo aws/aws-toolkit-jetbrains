@@ -5,15 +5,21 @@
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.lineMarkerProvider language="JavaScript" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
     </extensions>
-
     <extensions defaultExtensionNs="aws.toolkit.lambda">
-        <runtimeGroup runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsRuntimeGroup"/>
-        <builder runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaBuilder"/>
-        <handlerResolver runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaHandlerResolver"/>
-        <sam.debugSupport runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamDebugSupport"/>
-        <sam.projectWizard runtimeGroup="NODEJS" implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamProjectWizard"/>
+        <runtimeGroup implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsRuntimeGroup"/>
+        <builder id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaBuilder"/>
+        <handlerResolver id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsLambdaHandlerResolver"/>
+        <sam.runtimeDebugSupport id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsRuntimeDebugSupport"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs14ImageDebug"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs16ImageDebug"/>
+        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJs18ImageDebug"/>
+        <sam.projectWizard id="NODEJS" implementationClass="software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSamProjectWizard"/>
     </extensions>
-    <extensions defaultExtensionNs="aws.toolkit.clouddebug">
-        <debuggerSupport implementation="software.aws.toolkits.jetbrains.services.clouddebug.nodejs.NodeJsDebuggerSupport"/>
+    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript"/>
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript"/>
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx"/>
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx"/>
+        <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererJSImportAdder"/>
     </extensions>
 </idea-plugin>

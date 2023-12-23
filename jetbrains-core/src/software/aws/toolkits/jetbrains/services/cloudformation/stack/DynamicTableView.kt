@@ -4,10 +4,11 @@ package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import java.awt.event.MouseListener
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
-import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableCellRenderer
 
 class DynamicTableView<T>(private vararg val fields: Field<T>) : View {
     private val model = object : DefaultTableModel(fields.map(Field<T>::readableName).toTypedArray(), 0) {
@@ -17,11 +18,12 @@ class DynamicTableView<T>(private vararg val fields: Field<T>) : View {
     private val table = JBTable(model).apply {
         autoCreateRowSorter = true
         autoscrolls = true
+        cellSelectionEnabled = true
         setShowColumns(true)
         setPaintBusy(true)
-        fields.forEach {
-            when (val renderer = it.renderer) {
-                is DefaultTableCellRenderer -> getColumn(it.readableName).cellRenderer = renderer
+        fields.forEach { field ->
+            field.renderer?.let {
+                getColumn(field.readableName).cellRenderer = it
             }
         }
     }
@@ -43,9 +45,19 @@ class DynamicTableView<T>(private vararg val fields: Field<T>) : View {
         table.setPaintBusy(busy)
     }
 
+    fun addMouseListener(listener: MouseListener) = table.addMouseListener(listener)
+
+    fun selectedRow(): Map<Field<T>, Any?>? {
+        val row = table.selectedRows?.takeIf { it.size == 1 }?.firstOrNull() ?: return null
+        return (0 until model.columnCount).map { col ->
+            val field = fields.find { field -> field.readableName == model.getColumnName(col) } ?: return null
+            field to model.getValueAt(row, col)
+        }.toMap()
+    }
+
     data class Field<T>(
         val readableName: String,
-        val renderer: DefaultTableCellRenderer? = null,
+        val renderer: TableCellRenderer? = null,
         val getData: (T) -> Any?
     )
 }

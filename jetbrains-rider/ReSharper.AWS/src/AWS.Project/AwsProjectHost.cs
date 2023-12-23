@@ -1,9 +1,14 @@
-﻿using JetBrains.ProjectModel;
-using JetBrains.ReSharper.Host.Features;
-using JetBrains.Rider.Model;
+﻿using AWS.Toolkit.Rider.Model;
+using JetBrains.ProjectModel;
 using JetBrains.Rd.Tasks;
 using JetBrains.ReSharper.Resources.Shell;
 using JetBrains.Util;
+
+#if (PROFILE_2022_2 || PROFILE_2022_3 || PROFILE_2023_1) // FIX_WHEN_MIN_IS_232
+using JetBrains.RdBackend.Common.Features;
+#else
+using JetBrains.ReSharper.Feature.Services.Protocol;
+#endif
 
 namespace AWS.Project
 {
@@ -30,8 +35,8 @@ namespace AWS.Project
                         {
                             var assembly = project.GetOutputAssemblyInfo(targetFramework.FrameworkId);
                             if (assembly == null) continue;
-
-                            if (assembly.Location.StartsWith(assemblyPathPrefix))
+                            
+                            if(assembly.Location.FullPath.StartsWith(assemblyPathPrefix.FullPath))
                             {
                                 task.Set(new AwsProjectOutput(assembly.AssemblyNameInfo.Name, assembly.Location.FullPath));
                                 return task;

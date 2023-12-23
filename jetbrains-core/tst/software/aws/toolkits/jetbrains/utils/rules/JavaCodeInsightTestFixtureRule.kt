@@ -42,7 +42,7 @@ class JavaCodeInsightTestFixtureRule(testDescription: DefaultLightProjectDescrip
     CodeInsightTestFixtureRule(testDescription) {
 
     override fun createTestFixture(): CodeInsightTestFixture {
-        val fixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription)
+        val fixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder(testDescription, testName)
         val newFixture = JavaTestFixtureFactory.getFixtureFactory()
             .createCodeInsightFixture(fixtureBuilder.fixture, LightTempDirTestFixtureImpl(true))
         newFixture.setUp()
@@ -156,7 +156,7 @@ private fun JavaCodeInsightTestFixture.addFile(
     val sourceRoot = ModuleRootManager.getInstance(module).getSourceRoots(type).first()
     val fullPath = Paths.get(sourceRoot.path, fileName).toString()
     val projectRelativePath = FileUtil.getRelativePath(tempDirPath, fullPath, File.separatorChar)
-            ?: throw RuntimeException("Cannot determine relative path")
+        ?: throw RuntimeException("Cannot determine relative path")
     return addFileToProject(projectRelativePath.replace('\\', '/'), content)
 }
 

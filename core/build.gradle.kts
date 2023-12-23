@@ -1,24 +1,31 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-val awsSdkVersion: String by project
-val jacksonVersion: String by project
-val coroutinesVersion: String by project
+plugins {
+    id("toolkit-kotlin-conventions")
+    id("toolkit-testing")
+    id("toolkit-integration-testing")
+}
 
 dependencies {
     api(project(":resources"))
-    api(project(":telemetry-client"))
-    api("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    api("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonVersion")
-    api("software.amazon.awssdk:cognitoidentity:$awsSdkVersion")
-    api("software.amazon.awssdk:ecs:$awsSdkVersion")
-    api("software.amazon.awssdk:s3:$awsSdkVersion")
-    api("software.amazon.awssdk:sso:$awsSdkVersion")
-    api("software.amazon.awssdk:ssooidc:$awsSdkVersion")
-    api("software.amazon.awssdk:sts:$awsSdkVersion")
+    api(project(":sdk-codegen"))
 
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    api(libs.aws.cognitoidentity)
+    api(libs.aws.ecr)
+    api(libs.aws.ecs)
+    api(libs.aws.lambda)
+    api(libs.aws.s3)
+    api(libs.aws.sso)
+    api(libs.aws.ssooidc)
+    api(libs.aws.sts)
+    api(libs.bundles.jackson)
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    testImplementation(libs.junit4)
+
+    testRuntimeOnly(libs.junit5.jupiterVintage)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

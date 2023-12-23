@@ -51,7 +51,6 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
      * Remove outdated nodes, add new nodes, update status
      */
     private fun updateResourceList(resources: Collection<StackResource>) {
-
         val resourcesByName = resources.map { it.logicalResourceId() to it }.toMap()
         val existingResources = mutableSetOf<String>()
         val nodesToDelete = mutableListOf<MutableTreeNode>()
@@ -80,7 +79,7 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
             val resource = nameAndResource.value
 
             val status = resource.resourceStatus()
-            val newDescriptor = StackNodeDescriptor(project, name, status.type, status.name, rootDescriptor)
+            val newDescriptor = StackNodeDescriptor(project, name, status.type, status.name, rootDescriptor, physicalId = resource.physicalResourceId())
             rootNode.add(DefaultMutableTreeNode(newDescriptor, false))
         }
     }
@@ -89,7 +88,7 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
         val descriptor = StackNodeDescriptor(project, stackName, StatusType.UNKNOWN, message("loading_resource.loading"))
         val rootNode = DefaultMutableTreeNode(descriptor, true)
         model = DefaultTreeModel(rootNode)
-        tree = Tree(model)
+        tree = Tree(model).also { it.name = "$stackName.tree" }
         tree.setPaintBusy(true)
         component = JBScrollPane(tree)
     }
@@ -119,10 +118,11 @@ internal class TreeViewImpl(private val project: Project, stackName: String) : T
 
 private class StackNodeDescriptor(
     project: Project,
-    name: String,
+    val name: String,
     private var statusType: StatusType,
     private var status: String,
-    parent: StackNodeDescriptor? = null
+    parent: StackNodeDescriptor? = null,
+    var physicalId: String? = null
 ) : NodeDescriptor<String>(project, parent) {
 
     init {

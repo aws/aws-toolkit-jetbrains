@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.schemas.code
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.project.Project
 import com.intellij.util.io.Decompressor
 import software.amazon.awssdk.services.schemas.SchemasClient
 import software.amazon.awssdk.services.schemas.model.CodeGenerationStatus
@@ -13,13 +14,14 @@ import software.amazon.awssdk.services.schemas.model.DescribeCodeBindingRequest
 import software.amazon.awssdk.services.schemas.model.GetCodeBindingSourceRequest
 import software.amazon.awssdk.services.schemas.model.NotFoundException
 import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
-import software.aws.toolkits.core.ToolkitClientManager
-import software.aws.toolkits.core.utils.wait
+import software.aws.toolkits.core.ConnectionSettings
+import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Duration
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -29,16 +31,14 @@ class SchemaCodeDownloader(
     private val generator: CodeGenerator,
     private val poller: CodeGenerationStatusPoller,
     private val downloader: CodeDownloader,
-    private val extractor: CodeExtractor,
-    private val progressUpdater: ProgressUpdater
+    private val extractor: CodeExtractor
 ) {
     fun downloadCode(
         schemaDownloadRequest: SchemaCodeDownloadRequestDetails,
         indicator: ProgressIndicator
-    ): CompletionStage<File?> {
-
+    ): CompletionStage<Path?> {
         val schemaName = schemaDownloadRequest.schema.name
-        progressUpdater.updateProgress(indicator, message("schemas.schema.download_code_bindings.notification.start", schemaName))
+        indicator.updateProgress(message("schemas.schema.download_code_bindings.notification.start", schemaName))
 
         return downloader.download(schemaDownloadRequest) // Try to get code directly
             .handle { downloadedSchemaCode, exception ->
@@ -47,38 +47,49 @@ class SchemaCodeDownloader(
                     !is NotFoundException -> throw exception // Unexpected exception, throw
                 }
 
-                progressUpdater.updateProgress(indicator, message("schemas.schema.download_code_bindings.notification.generating", schemaName))
+                indicator.updateProgress(message("schemas.schema.download_code_bindings.notification.generating", schemaName))
                 generator.generate(schemaDownloadRequest) // If the code generation status wasn't previously requested, trigger it now
                     .thenCompose { initialCodeGenerationStatus ->
                         poller.pollForCompletion(schemaDownloadRequest, initialCodeGenerationStatus) // Then, poll for completion
                     }
                     .thenCompose {
-                        progressUpdater.updateProgress(indicator, message("schemas.schema.download_code_bindings.notification.downloading", schemaName))
+                        indicator.updateProgress(message("schemas.schema.download_code_bindings.notification.downloading", schemaName))
                         downloader.download(schemaDownloadRequest) // Download the code zip file
                     }
                     .toCompletableFuture().get()
             }
             .thenCompose { code ->
-                progressUpdater.updateProgress(indicator, message("schemas.schema.download_code_bindings.notification.extracting", schemaName))
+                indicator.updateProgress(message("schemas.schema.download_code_bindings.notification.extracting", schemaName))
                 extractor.extractAndPlace(schemaDownloadRequest, code) // Extract and place in workspace
             }
     }
 
+    private fun ProgressIndicator.updateProgress(newStatus: String) {
+        text = newStatus
+        isIndeterminate = true
+    }
+
     companion object {
-        fun create(clientManager: ToolkitClientManager): SchemaCodeDownloader = SchemaCodeDownloader(
-            CodeGenerator(clientManager.getClient()),
-            CodeGenerationStatusPoller(clientManager.getClient()),
-            CodeDownloader(clientManager.getClient()),
-            CodeExtractor(),
-            ProgressUpdater()
-        )
+        fun create(project: Project): SchemaCodeDownloader {
+            val connectionSettings = AwsConnectionManager.getInstance(project).connectionSettings()
+                ?: throw IllegalStateException("Attempting to use SchemaCodeDownload without valid AWS connection")
+            return create(connectionSettings)
+        }
+
+        fun create(connectionSettings: ConnectionSettings): SchemaCodeDownloader {
+            val clientManager = AwsClientManager.getInstance()
+            return SchemaCodeDownloader(
+                CodeGenerator(clientManager.getClient(connectionSettings.credentials, connectionSettings.region)),
+                CodeGenerationStatusPoller(clientManager.getClient(connectionSettings.credentials, connectionSettings.region)),
+                CodeDownloader(clientManager.getClient(connectionSettings.credentials, connectionSettings.region)),
+                CodeExtractor()
+            )
+        }
     }
 }
 
 class CodeGenerator(private val schemasClient: SchemasClient) {
-    fun generate(
-        schemaDownload: SchemaCodeDownloadRequestDetails
-    ): CompletionStage<CodeGenerationStatus> {
+    fun generate(schemaDownload: SchemaCodeDownloadRequestDetails): CompletionStage<CodeGenerationStatus> {
         val future = CompletableFuture<CodeGenerationStatus>()
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
@@ -101,11 +112,7 @@ class CodeGenerator(private val schemasClient: SchemasClient) {
     }
 }
 
-class CodeGenerationStatusPoller(
-    private val schemasClient: SchemasClient,
-    private val pollingSettings: PollingSettings = PollingSettings(DEFAULT_POLLING_DELAY, DEFAULT_POLLING_MAX_ATTEMPTS)
-) {
-
+class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
     fun pollForCompletion(
         schemaDownload: SchemaCodeDownloadRequestDetails,
         initialCodeGenerationStatus: CodeGenerationStatus = CodeGenerationStatus.CREATE_IN_PROGRESS
@@ -114,22 +121,12 @@ class CodeGenerationStatusPoller(
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 if (initialCodeGenerationStatus != CodeGenerationStatus.CREATE_COMPLETE) {
-                    wait(
-                        call = { getCurrentStatus(schemaDownload).toCompletableFuture().get() },
-                        success = { codeGenerationStatus -> codeGenerationStatus == CodeGenerationStatus.CREATE_COMPLETE },
-                        fail = { codeGenerationStatus ->
-                            if (codeGenerationStatus != CodeGenerationStatus.CREATE_IN_PROGRESS &&
-                                codeGenerationStatus != CodeGenerationStatus.CREATE_COMPLETE
-                            ) {
-                                message("schemas.schema.download_code_bindings.invalid_code_generation_status", codeGenerationStatus)
-                            } else {
-                                null
-                            }
-                        },
-                        timeoutErrorMessage = message("schemas.schema.download_code_bindings.timeout", schemaDownload.schema.name),
-                        attempts = pollingSettings.maxAttempts,
-                        delay = pollingSettings.delay
-                    )
+                    schemasClient.waiter().waitUntilCodeBindingExists {
+                        it.registryName(schemaDownload.schema.registryName)
+                        it.schemaName(schemaDownload.schema.name)
+                        it.schemaVersion(schemaDownload.version)
+                        it.language(schemaDownload.language.apiValue)
+                    }
                 }
 
                 future.complete(schemaDownload.schema.name)
@@ -164,16 +161,6 @@ class CodeGenerationStatusPoller(
         }
         return future
     }
-
-    companion object {
-        private val DEFAULT_POLLING_DELAY: Duration = Duration.ofSeconds(2)
-        private val DEFAULT_POLLING_MAX_ATTEMPTS: Int = 30 // p90 of code generation for most use cases [O(schemaSize)] is ~45 seconds. Retry for 60 seconds
-    }
-
-    data class PollingSettings(
-        val delay: Duration,
-        val maxAttempts: Int
-    )
 }
 
 class CodeDownloader(private val schemasClient: SchemasClient) {
@@ -208,15 +195,14 @@ class CodeExtractor {
     fun extractAndPlace(
         request: SchemaCodeDownloadRequestDetails,
         downloadedSchemaCode: DownloadedSchemaCode
-    ): CompletionStage<File?> {
-
+    ): CompletionStage<Path?> {
         val zipContents = downloadedSchemaCode.zipContents
         val zipFileName = "${request.schema.registryName}.${request.schema.name}.${request.version}.${request.language.apiValue}.zip"
 
         val schemaCoreCodeFileName = request.schemaCoreCodeFileName()
-        var schemaCoreCodeFile: File? = null
+        var schemaCoreCodeFile: Path? = null
 
-        val future = CompletableFuture<File?>()
+        val future = CompletableFuture<Path?>()
 
         try {
             val codeZipDir = createTempDir()
@@ -226,17 +212,16 @@ class CodeExtractor {
                 fileChannel.write(zipContents)
             }
 
-            val destinationDirectory = File(request.destinationDirectory)
-            validateNoFileCollisions(codeZipFile, destinationDirectory)
+            validateNoFileCollisions(codeZipFile, request.destinationDirectory)
 
             val decompressor = Decompressor.Zip(codeZipFile)
                 .overwrite(false)
-                .postprocessor { file ->
-                    if (schemaCoreCodeFile == null && file.name.equals(schemaCoreCodeFileName)) {
-                        schemaCoreCodeFile = file
+                .postProcessor { path ->
+                    if (schemaCoreCodeFile == null && path.fileName.toString() == schemaCoreCodeFileName) {
+                        schemaCoreCodeFile = path
                     }
                 }
-            decompressor.extract(destinationDirectory)
+            decompressor.extract(request.destinationDirectory)
 
             future.complete(schemaCoreCodeFile)
         } catch (e: Exception) {
@@ -247,36 +232,19 @@ class CodeExtractor {
 
     // Ensure that the downloaded code hierarchy has no collisions with the destination directory
     private fun validateNoFileCollisions(codeZipFile: File, destinationDirectory: File) {
-        ZipFile(codeZipFile).use({ zipFile ->
+        ZipFile(codeZipFile).use { zipFile ->
             val zipEntries = zipFile.entries()
             Collections.list(zipEntries).forEach { zipEntry ->
-                if (zipEntry.isDirectory()) {
-                    // Ignore directories because those can/will be merged
-                } else {
+                // Ignore directories because those can/will be merged
+                if (!zipEntry.isDirectory) {
                     val intendedDestinationPath = Paths.get(destinationDirectory.path, zipEntry.name)
                     val intendedDestinationFile = intendedDestinationPath.toFile()
                     if (intendedDestinationFile.exists() && !intendedDestinationFile.isDirectory) {
-                        val name = intendedDestinationFile.name
-                        throw SchemaCodeDownloadFileCollisionException(name)
+                        throw SchemaCodeDownloadFileCollisionException(intendedDestinationFile.name)
                     }
                 }
             }
-        })
-    }
-}
-
-class ProgressUpdater {
-    fun updateProgress(
-        indicator: ProgressIndicator,
-        newStatus: String
-    ): CompletionStage<Void> {
-
-        indicator.text = newStatus
-        indicator.setIndeterminate(true)
-
-        val future = CompletableFuture<Void>()
-        future.complete(null)
-        return future
+        }
     }
 }
 

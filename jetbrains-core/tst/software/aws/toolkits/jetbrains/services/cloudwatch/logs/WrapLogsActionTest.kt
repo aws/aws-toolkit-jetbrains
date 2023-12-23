@@ -11,9 +11,11 @@ import com.intellij.util.ui.ListTableModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogsAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamDateColumn
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.editor.LogStreamMessageColumn
+import java.awt.Container
 
 class WrapLogsActionTest {
     @JvmField
@@ -22,19 +24,25 @@ class WrapLogsActionTest {
 
     @Test
     fun wrappingChangesModel() {
-        val model = ListTableModel<LogStreamEntry>(LogStreamDateColumn(), LogStreamMessageColumn())
+        val model = ListTableModel<LogStreamEntry>(
+            arrayOf(LogStreamDateColumn(), LogStreamMessageColumn()),
+            listOf(mock())
+        )
         val table = TableView(model)
         val wrapLogsAction = WrapLogsAction(projectRule.project) { table }
         wrapLogsAction.setSelected(TestActionEvent(), true)
         val wrappedComponent = model.columnInfos[1].getRenderer(null)!!.getTableCellRendererComponent(table, 0, false, false, 0, 0)
-        assertThat(wrappedComponent).isInstanceOf(JBTextArea::class.java)
-        assertThat((wrappedComponent as JBTextArea).wrapStyleWord).isTrue()
-        assertThat(wrappedComponent.lineWrap).isTrue()
+
+        val textArea = (wrappedComponent as Container).getComponent(0)
+
+        assertThat(textArea).isInstanceOf(JBTextArea::class.java)
+        assertThat((textArea as JBTextArea).lineWrap).isTrue()
 
         wrapLogsAction.setSelected(TestActionEvent(), false)
         val component = model.columnInfos[1].getRenderer(null)!!.getTableCellRendererComponent(table, 0, false, false, 0, 0)
-        assertThat(component).isInstanceOf(JBTextArea::class.java)
-        assertThat((component as JBTextArea).wrapStyleWord).isFalse()
-        assertThat(component.lineWrap).isFalse()
+        val textArea2 = (component as Container).getComponent(0)
+
+        assertThat(textArea2).isInstanceOf(JBTextArea::class.java)
+        assertThat((textArea2 as JBTextArea).lineWrap).isFalse()
     }
 }

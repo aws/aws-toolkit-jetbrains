@@ -3,43 +3,82 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import com.intellij.ide.highlighter.ProjectFileType
+import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.ExtensionTestUtil
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectRule
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.doAnswer
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
+import com.intellij.testFramework.TemporaryDirectory
+import com.intellij.testFramework.createTestOpenProjectOptions
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_NOT_SET
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.jetbrains.core.MockResourceCache
-import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
+import software.aws.toolkits.core.telemetry.TelemetryPublisher
+import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
-import software.aws.toolkits.jetbrains.core.region.MockRegionProvider
+import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionStateIsStable
+import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
+import software.aws.toolkits.jetbrains.core.experiments.setState
+import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class TelemetryServiceTest {
-    private class TestTelemetryService(batcher: TelemetryBatcher) : TelemetryService(NoOpPublisher(), batcher)
+    private class TestTelemetryService(publisher: TelemetryPublisher = NoOpPublisher(), batcher: TelemetryBatcher) : TelemetryService(publisher, batcher)
 
     @Rule
     @JvmField
     val projectRule = ProjectRule()
 
+    @JvmField
+    @Rule
+    val resourceCache = MockResourceCacheRule()
+
+    @JvmField
+    @Rule
+    val regionProvider = MockRegionProviderRule()
+
+    @JvmField
+    @Rule
+    val credentialManager = MockCredentialManagerRule()
+
+    @JvmField
+    @Rule
+    val connectionSettingsManager = ProjectAccountSettingsManagerRule(projectRule)
+
+    @JvmField
+    @Rule
+    val disposableRule = DisposableRule()
+
     @After
     fun tearDown() {
         AwsSettings.getInstance().isTelemetryEnabled = false
-
-        MockAwsConnectionManager.getInstance(projectRule.project).reset()
-        MockCredentialsManager.getInstance().reset()
-        MockRegionProvider.getInstance().reset()
     }
 
     @Test
@@ -49,16 +88,14 @@ class TelemetryServiceTest {
         val changeCountDown = CountDownLatch(1)
         val changeCaptor = argumentCaptor<Boolean>()
 
-        val batcher = mock<TelemetryBatcher>()
-
-        batcher.stub {
-            on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
+        val batcher = mock<TelemetryBatcher> {
+            on { onTelemetryEnabledChanged(changeCaptor.capture()) }
                 .doAnswer {
                     changeCountDown.countDown()
                 }
         }
 
-        TestTelemetryService(batcher)
+        TestTelemetryService(batcher = batcher)
 
         changeCountDown.await(5, TimeUnit.SECONDS)
         verify(batcher).onTelemetryEnabledChanged(true)
@@ -82,7 +119,7 @@ class TelemetryServiceTest {
                 }
         }
 
-        val telemetryService = TestTelemetryService(batcher)
+        val telemetryService = TestTelemetryService(batcher = batcher)
 
         telemetryService.setTelemetryEnabled(false)
         telemetryService.setTelemetryEnabled(true)
@@ -98,14 +135,12 @@ class TelemetryServiceTest {
 
     @Test
     fun metricEventMetadataIsNotSet() {
-        val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-
-        accountSettings.nullifyCredentialProviderAndWait()
+        connectionSettingsManager.settingsManager.nullifyCredentialProviderAndWait()
 
         val eventCaptor = argumentCaptor<MetricEvent>()
 
         val batcher = mock<TelemetryBatcher>()
-        val telemetryService = TestTelemetryService(batcher)
+        val telemetryService = TestTelemetryService(batcher = batcher)
 
         telemetryService.record(projectRule.project) {
             datum("Foo")
@@ -119,22 +154,21 @@ class TelemetryServiceTest {
 
     @Test
     fun metricEventMetadataIsSet() {
-        val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        MockResourceCache.getInstance(projectRule.project).addValidAwsCredential(accountSettings.activeRegion.id, "profile:admin", "111111111111")
+        val credentials = credentialManager.addCredentials("profile:admin")
+        val mockRegion = regionProvider.createAwsRegion()
 
-        accountSettings.changeCredentialProvider(
-            MockCredentialsManager.getInstance().addCredentials("profile:admin")
-        )
+        addAccountId(credentials, mockRegion)
 
-        val mockRegion = AwsRegion("foo-region", "foo-region", "aws")
-        MockRegionProvider.getInstance().addRegion(mockRegion)
-        accountSettings.changeRegion(mockRegion)
+        connectionSettingsManager.settingsManager.changeCredentialProvider(credentials)
+        connectionSettingsManager.settingsManager.changeRegion(mockRegion)
+        connectionSettingsManager.settingsManager.waitUntilConnectionStateIsStable()
 
-        MockResourceCache.getInstance(projectRule.project).addValidAwsCredential("foo-region", "profile:admin", "111111111111")
+        // assert that connection setting succeeded. This test has been failing sometimes in the assert stage that there is nothing
+        assertThat(connectionSettingsManager.settingsManager.connectionState).isInstanceOf(ConnectionState.ValidConnection::class.java)
 
         val eventCaptor = argumentCaptor<MetricEvent>()
         val batcher = mock<TelemetryBatcher>()
-        val telemetryService = TestTelemetryService(batcher)
+        val telemetryService = TestTelemetryService(batcher = batcher)
 
         telemetryService.record(projectRule.project) {
             datum("Foo")
@@ -142,29 +176,28 @@ class TelemetryServiceTest {
         telemetryService.dispose()
 
         verify(batcher).enqueue(eventCaptor.capture())
-        assertMetricEventsContains(eventCaptor.allValues, "Foo", "111111111111", "foo-region")
+        assertMetricEventsContains(eventCaptor.allValues, "Foo", "1111222233333", mockRegion.id)
     }
 
     @Test
     fun metricEventMetadataIsOverridden() {
         val accountSettings = MockAwsConnectionManager.getInstance(projectRule.project)
-        MockResourceCache.getInstance(projectRule.project).addValidAwsCredential(accountSettings.activeRegion.id, "profile:admin", "111111111111")
+        val credentials = credentialManager.addCredentials("profile:admin")
 
-        accountSettings.changeCredentialProvider(
-            MockCredentialsManager.getInstance().addCredentials("profile:admin")
-        )
+        addAccountId(credentials, accountSettings.activeRegion)
+        accountSettings.changeCredentialProvider(credentials)
 
         val mockRegion = AwsRegion("foo-region", "foo-region", "aws")
-        MockRegionProvider.getInstance().addRegion(mockRegion)
+        regionProvider.addRegion(mockRegion)
         accountSettings.changeRegion(mockRegion)
 
         val eventCaptor = argumentCaptor<MetricEvent>()
 
         val batcher = mock<TelemetryBatcher>()
-        val telemetryService = TestTelemetryService(batcher)
+        val telemetryService = TestTelemetryService(batcher = batcher)
 
         telemetryService.record(
-            TelemetryService.MetricEventMetadata(
+            MetricEventMetadata(
                 awsAccount = "222222222222",
                 awsRegion = "bar-region"
             )
@@ -177,11 +210,97 @@ class TelemetryServiceTest {
         assertMetricEventsContains(eventCaptor.allValues, "Foo", "222222222222", "bar-region")
     }
 
-    private fun assertMetricEventsContains(events: Collection<MetricEvent>, event: String, awsAccount: String, awsRegion: String) {
-        val metricEvent = events.find { e ->
-            e.data.find { it.name == event } != null && e.awsAccount == awsAccount && e.awsRegion == awsRegion
-        }
+    @Test
+    fun telemetryCanBeSendOnAfterProjectClosed() {
+        // Create a temp project that we own the life cycle for
+        val projectFile = TemporaryDirectory.generateTemporaryPath("project_telemetryCanBeSendOnAfterProjectClosed${ProjectFileType.DOT_DEFAULT_EXTENSION}")
+        val options = createTestOpenProjectOptions(runPostStartUpActivities = false)
+        val project = ProjectManagerEx.getInstanceEx().openProject(projectFile, options)!!
+        try {
+            val credentials = credentialManager.addCredentials("profile:admin")
+            val mockRegion = regionProvider.createAwsRegion()
 
-        assertThat(metricEvent).isNotNull
+            addAccountId(credentials, mockRegion)
+
+            val connectionSettingsManager = AwsConnectionManager.getInstance(project)
+
+            connectionSettingsManager.changeCredentialProvider(credentials)
+            connectionSettingsManager.changeRegion(mockRegion)
+            connectionSettingsManager.waitUntilConnectionStateIsStable()
+
+            val batcher = mock<TelemetryBatcher>()
+            val telemetryService = TestTelemetryService(batcher = batcher)
+
+            telemetryService.record(project) {
+                datum("Foo")
+            }
+
+            PlatformTestUtil.forceCloseProjectWithoutSaving(project)
+
+            telemetryService.record(project) {
+                datum("Bar")
+            }
+
+            telemetryService.dispose()
+
+            argumentCaptor<MetricEvent>().apply {
+                verify(batcher, times(2)).enqueue(capture())
+
+                assertMetricEventsContains(allValues, "Foo", "1111222233333", mockRegion.id)
+                assertMetricEventsContains(allValues, "Bar", METADATA_INVALID, METADATA_INVALID)
+            }
+        } finally {
+            // Make sure we closed it if test failed
+            if (project.isOpen) {
+                PlatformTestUtil.forceCloseProjectWithoutSaving(project)
+            }
+        }
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    fun experimentStatusIsIncludedInFeedback() = runBlockingTest {
+        val fooExperiment = DummyExperiment()
+        val barExperiment = DummyExperiment()
+        val bloopExperiment = DummyExperiment()
+        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(fooExperiment, barExperiment, bloopExperiment), disposableRule.disposable)
+
+        fooExperiment.setState(true)
+        barExperiment.setState(true)
+
+        val publisher = mock<TelemetryPublisher>()
+        val telemetryService = TestTelemetryService(publisher = publisher, batcher = mock())
+
+        val comment = aString()
+
+        telemetryService.sendFeedback(Sentiment.NEGATIVE, comment)
+        telemetryService.dispose()
+
+        verify(publisher).sendFeedback(Sentiment.NEGATIVE, comment, mapOf(ENABLED_EXPERIMENTS to "${fooExperiment.id},${barExperiment.id}"))
+    }
+
+    @Test
+    fun disposeClosesThePublisher() {
+        val mockPublisher = mock<TelemetryPublisher>()
+        val mockBatcher = mock<TelemetryBatcher>()
+
+        val telemetryService = TestTelemetryService(mockPublisher, mockBatcher)
+        telemetryService.dispose()
+
+        verify(mockBatcher).shutdown()
+        verify(mockPublisher).close()
+    }
+
+    private fun addAccountId(credentialsIdentifier: CredentialIdentifier, region: AwsRegion) {
+        resourceCache.addEntry(StsResources.ACCOUNT, region.id, credentialsIdentifier.id, "1111222233333")
+    }
+
+    private fun assertMetricEventsContains(events: Collection<MetricEvent>, eventName: String, awsAccount: String, awsRegion: String) {
+        assertThat(events).filteredOn { event ->
+            event.data.any { it.name == eventName }
+        }.anySatisfy {
+            assertThat(it.awsAccount).isEqualTo(awsAccount)
+            assertThat(it.awsRegion).isEqualTo(awsRegion)
+        }
     }
 }

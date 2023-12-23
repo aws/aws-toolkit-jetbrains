@@ -16,20 +16,20 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.breadcrumbs.Breadcrumbs
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogActor
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
+import software.aws.toolkits.jetbrains.services.cloudwatch.logs.CloudWatchLogsActor
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.LogStreamEntry
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.OpenCurrentInEditorAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.TailLogsAction
 import software.aws.toolkits.jetbrains.services.cloudwatch.logs.actions.WrapLogsAction
-import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
-import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.utils.ui.onEmpty
 import software.aws.toolkits.jetbrains.utils.ui.onEnter
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CloudWatchResourceType
 import software.aws.toolkits.telemetry.CloudwatchlogsTelemetry
 import java.time.Duration
 import javax.swing.JPanel
@@ -39,19 +39,25 @@ class CloudWatchLogStream(
     private val logGroup: String,
     private val logStream: String,
     private val previousEvent: LogStreamEntry? = null,
-    private val duration: Duration? = null
-) : CoroutineScope by ApplicationThreadPoolScope("CloudWatchLogStream"), Disposable {
+    private val duration: Duration? = null,
+    streamLogs: Boolean = false
+) : Disposable {
+    private val coroutineScope = disposableCoroutineScope(this)
     lateinit var content: JPanel
+        private set
     private lateinit var breadcrumbHolder: JPanel
     private lateinit var locationInformation: Breadcrumbs
     private lateinit var tablePanel: SimpleToolWindowPanel
     private lateinit var searchField: SearchTextField
 
-    private val edtContext = getCoroutineUiContext(disposable = this)
+    private val edtContext = getCoroutineUiContext()
 
     private val client: CloudWatchLogsClient = project.awsClient()
-    private val logStreamTable: LogStreamTable = LogStreamTable(project, client, logGroup, logStream, LogStreamTable.TableType.LIST)
+    private val logStreamTable: LogStreamTable = LogStreamTable(project, client, logGroup, logStream, LogStreamTable.TableType.LIST).also {
+        Disposer.register(this@CloudWatchLogStream, it)
+    }
     private var searchStreamTable: LogStreamTable? = null
+    private val tailLogsAction = TailLogsAction(project) { searchStreamTable?.channel ?: logStreamTable.channel }
 
     private fun createUIComponents() {
         tablePanel = SimpleToolWindowPanel(false, true)
@@ -66,14 +72,15 @@ class CloudWatchLogStream(
         val locationCrumbs = LocationCrumbs(project, logGroup, logStream)
         locationInformation.crumbs = locationCrumbs.crumbs
         breadcrumbHolder.border = locationCrumbs.border
-        locationInformation.installClickListener()
-
-        Disposer.register(this, logStreamTable)
 
         addActionToolbar()
         addSearchListener()
 
         refreshTable()
+
+        if (streamLogs) {
+            tailLogsAction.setSelected(true)
+        }
     }
 
     private fun addSearchListener() {
@@ -84,7 +91,7 @@ class CloudWatchLogStream(
         searchField.onEmpty {
             val oldTable = searchStreamTable
             searchStreamTable = null
-            launch(edtContext) {
+            coroutineScope.launch(edtContext) {
                 tablePanel.setContent(logStreamTable.component)
                 // Dispose the old one if it was not null
                 oldTable?.let { launch { Disposer.dispose(it) } }
@@ -101,12 +108,12 @@ class CloudWatchLogStream(
                 val table = LogStreamTable(project, client, logGroup, logStream, LogStreamTable.TableType.FILTER)
                 Disposer.register(this@CloudWatchLogStream, table)
                 searchStreamTable = table
-                launch(edtContext) {
+                coroutineScope.launch(edtContext) {
                     tablePanel.setContent(table.component)
                     oldTable?.let { launch { Disposer.dispose(it) } }
                 }
-                launch {
-                    table.channel.send(LogActor.Message.LoadInitialFilter(searchField.text))
+                coroutineScope.launch {
+                    table.channel.send(CloudWatchLogsActor.Message.LoadInitialFilter(searchField.text))
                 }
             }
         }
@@ -114,28 +121,34 @@ class CloudWatchLogStream(
 
     private fun addActionToolbar() {
         val actionGroup = DefaultActionGroup()
-        actionGroup.addAction(object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
-            override fun actionPerformed(e: AnActionEvent) {
-                refreshTable()
-                CloudwatchlogsTelemetry.refreshStream(project)
+        actionGroup.addAction(
+            object : AnAction(message("general.refresh"), null, AllIcons.Actions.Refresh), DumbAware {
+                override fun actionPerformed(e: AnActionEvent) {
+                    refreshTable()
+                    CloudwatchlogsTelemetry.refresh(project, CloudWatchResourceType.LogStream)
+                }
+            },
+            Constraints.FIRST
+        )
+        actionGroup.add(
+            OpenCurrentInEditorAction(project, logStream) {
+                searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
             }
-        }, Constraints.FIRST)
-        actionGroup.add(OpenCurrentInEditorAction(project, logStream) {
-            searchStreamTable?.logsTable?.listTableModel?.items ?: logStreamTable.logsTable.listTableModel.items
-        })
-        actionGroup.add(TailLogsAction(project) { searchStreamTable?.channel ?: logStreamTable.channel })
+        )
+        actionGroup.add(tailLogsAction)
         actionGroup.add(WrapLogsAction(project) { searchStreamTable?.logsTable ?: logStreamTable.logsTable })
         val toolbar = ActionManager.getInstance().createActionToolbar("CloudWatchLogStream", actionGroup, false)
+        toolbar.setTargetComponent(tablePanel.component)
         tablePanel.toolbar = toolbar.component
     }
 
-    private fun refreshTable() = launch {
+    internal fun refreshTable() = coroutineScope.launch {
         if (searchField.text.isNotEmpty() && searchStreamTable != null) {
-            searchStreamTable?.channel?.send(LogActor.Message.LoadInitialFilter(searchField.text.trim()))
+            searchStreamTable?.channel?.send(CloudWatchLogsActor.Message.LoadInitialFilter(searchField.text.trim()))
         } else if (previousEvent != null && duration != null) {
-            logStreamTable.channel.send(LogActor.Message.LoadInitialRange(previousEvent, duration))
+            logStreamTable.channel.send(CloudWatchLogsActor.Message.LoadInitialRange(previousEvent, duration))
         } else {
-            logStreamTable.channel.send(LogActor.Message.LoadInitial)
+            logStreamTable.channel.send(CloudWatchLogsActor.Message.LoadInitial)
         }
     }
 

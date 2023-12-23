@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.notification.NotificationAction
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
@@ -21,18 +21,18 @@ interface CredentialsRegionHandler {
     fun determineSelectedRegion(identifier: CredentialIdentifier, selectedRegion: AwsRegion?): AwsRegion?
 
     companion object {
-        fun getInstance(project: Project): CredentialsRegionHandler = ServiceManager.getService(project, CredentialsRegionHandler::class.java)
+        fun getInstance(project: Project): CredentialsRegionHandler = project.service()
     }
 }
 
-internal open class DefaultCredentialsRegionHandler(private val project: Project) : CredentialsRegionHandler {
-    private val regionProvider by lazy { AwsRegionProvider.getInstance() }
-    private val settings by lazy { AwsSettings.getInstance() }
-
+internal class DefaultCredentialsRegionHandler(private val project: Project) : CredentialsRegionHandler {
     override fun determineSelectedRegion(identifier: CredentialIdentifier, selectedRegion: AwsRegion?): AwsRegion? {
+        val settings = AwsSettings.getInstance()
         if (settings.useDefaultCredentialRegion == UseAwsCredentialRegion.Never) {
             return selectedRegion
         }
+
+        val regionProvider = AwsRegionProvider.getInstance()
         val defaultCredentialRegion = identifier.defaultRegionId?.let { regionProvider[it] } ?: return selectedRegion
         when {
             selectedRegion == defaultCredentialRegion -> return defaultCredentialRegion
@@ -49,15 +49,15 @@ internal open class DefaultCredentialsRegionHandler(private val project: Project
             message("settings.credentials.prompt_for_default_region_switch", defaultCredentialRegion.id),
             project = project,
             notificationActions = listOf(
-                NotificationAction.create(message("settings.credentials.prompt_for_default_region_switch.yes")) { event, _ ->
-                    ChangeRegionAction(defaultCredentialRegion).actionPerformed(event)
+                NotificationAction.createSimpleExpiring(message("settings.credentials.prompt_for_default_region_switch.yes")) {
+                    AwsConnectionManager.getInstance(project).changeRegion(defaultCredentialRegion)
                 },
-                NotificationAction.create(message("settings.credentials.prompt_for_default_region_switch.always")) { event, _ ->
-                    settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Always
-                    ChangeRegionAction(defaultCredentialRegion).actionPerformed(event)
+                NotificationAction.createSimpleExpiring(message("settings.credentials.prompt_for_default_region_switch.always")) {
+                    AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Always
+                    AwsConnectionManager.getInstance(project).changeRegion(defaultCredentialRegion)
                 },
-                NotificationAction.createSimple(message("settings.credentials.prompt_for_default_region_switch.never")) {
-                    settings.useDefaultCredentialRegion = UseAwsCredentialRegion.Never
+                NotificationAction.createSimpleExpiring(message("settings.credentials.prompt_for_default_region_switch.never")) {
+                    AwsSettings.getInstance().useDefaultCredentialRegion = UseAwsCredentialRegion.Never
                 }
             )
         )

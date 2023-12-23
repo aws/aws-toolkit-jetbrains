@@ -6,10 +6,11 @@ package software.aws.toolkits.jetbrains.settings
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.service
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -21,12 +22,21 @@ interface AwsSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
     var useDefaultCredentialRegion: UseAwsCredentialRegion
+    var profilesNotification: ProfilesNotification
     val clientId: UUID
 
     companion object {
         @JvmStatic
-        fun getInstance(): AwsSettings = ServiceManager.getService(AwsSettings::class.java)
+        fun getInstance(): AwsSettings = service()
     }
+}
+
+enum class ProfilesNotification(private val description: String) {
+    Always(message("settings.profiles.always")),
+    OnFailure(message("settings.profiles.on_failure")),
+    Never(message("settings.profiles.never"));
+
+    override fun toString(): String = description
 }
 
 enum class UseAwsCredentialRegion(private val description: String) {
@@ -67,9 +77,25 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
             state.useDefaultCredentialRegion = value.name
         }
 
+    override var profilesNotification: ProfilesNotification
+        get() = state.profilesNotification?.let { ProfilesNotification.valueOf(it) } ?: ProfilesNotification.Always
+        set(value) {
+            state.profilesNotification = value.name
+        }
+
     override val clientId: UUID
-        @Synchronized get() = UUID.fromString(preferences.get(CLIENT_ID_KEY, UUID.randomUUID().toString())).also {
-            preferences.put(CLIENT_ID_KEY, it.toString())
+        @Synchronized get() {
+            val id = when {
+                ApplicationManager.getApplication().isUnitTestMode || System.getProperty("robot-server.port") != null -> "ffffffff-ffff-ffff-ffff-ffffffffffff"
+                isTelemetryEnabled == false -> "11111111-1111-1111-1111-111111111111"
+                else -> {
+                    preferences.get(CLIENT_ID_KEY, UUID.randomUUID().toString()).also {
+                        preferences.put(CLIENT_ID_KEY, it.toString())
+                    }
+                }
+            }
+
+            return UUID.fromString(id)
         }
 
     companion object {
@@ -80,7 +106,8 @@ class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettin
 data class AwsConfiguration(
     var isTelemetryEnabled: Boolean? = null,
     var promptedForTelemetry: Boolean? = null,
-    var useDefaultCredentialRegion: String? = null
+    var useDefaultCredentialRegion: String? = null,
+    var profilesNotification: String? = null
 )
 
 class ShowSettingsAction : AnAction(message("aws.settings.show.label")), DumbAware {

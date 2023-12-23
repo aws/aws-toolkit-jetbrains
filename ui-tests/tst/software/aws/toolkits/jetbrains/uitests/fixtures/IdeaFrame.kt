@@ -7,37 +7,47 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.fixtures.JMenuBarFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import java.awt.event.KeyEvent
 import java.time.Duration
 
 fun RemoteRobot.idea(function: IdeaFrame.() -> Unit) {
-    val frame = find<IdeaFrame>()
-    // FIX_WHEN_MIN_IS_203 remove this and set the system property "ide.show.tips.on.startup.default.value"
-    frame.apply { tryCloseTips() }
+    val frame = find<IdeaFrame>(timeout = Duration.ofSeconds(10))
     frame.apply(function)
 }
 
 @FixtureName("Idea frame")
 @DefaultXpath("IdeFrameImpl type", "//div[@class='IdeFrameImpl']")
 class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-    val projectViewTree
-        get() = find<ContainerFixture>(byXpath("ProjectViewTree", "//div[@class='ProjectViewTree']"))
+    init {
+        waitForProjectToBeAssigned()
+    }
 
-    val projectName
-        get() = step("Get project name") { return@step callJs<String>("component.getProject().getName()") }
+    val menuBar: JMenuBarFixture
+        get() = step("Menu...") {
+            return@step remoteRobot.find(JMenuBarFixture::class.java, JMenuBarFixture.byType())
+        }
+
+    private fun waitForProjectToBeAssigned() {
+        waitFor(duration = Duration.ofSeconds(30)) {
+            callJs(
+                """
+                var frameHelper = com.intellij.openapi.wm.impl.ProjectFrameHelper.getFrameHelper(component);
+                frameHelper.project != null
+                """.trimIndent(),
+                runInEdt = true
+            )
+        }
+    }
 
     fun dumbAware(timeout: Duration = Duration.ofMinutes(5), function: () -> Unit) {
         step("Wait for smart mode") {
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
-                runCatching { isDumbMode().not() }.getOrDefault(false)
+                isDumbMode().not()
             }
             function()
             step("..wait for smart mode again") {
@@ -51,66 +61,20 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     fun waitForBackgroundTasks(timeout: Duration = Duration.ofMinutes(5)) {
         step("Wait for background tasks to finish") {
             waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
-                // TODO FIX_WHEN_MIN_IS_202 remove the background process one
-                findAll<ComponentFixture>(byXpath("//div[@myname='Background process']")).isEmpty() &&
-                    // search for the progress bar
-                    findAll<ComponentFixture>(byXpath("//div[@class='JProgressBar']")).isEmpty()
+                // search for the progress bar
+                find<ComponentFixture>(byXpath("//div[@class='InlineProgressPanel']")).findAllText().isEmpty()
             }
         }
     }
 
-    private fun isDumbMode(): Boolean = callJs("com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
-
-    fun openProjectStructure() = step("Open Project Structure dialog") {
-        if (remoteRobot.isMac()) {
-            keyboard { hotKey(KeyEvent.VK_META, KeyEvent.VK_SEMICOLON) }
-        } else {
-            keyboard { hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT, KeyEvent.VK_S) }
-        }
-        find(ComponentFixture::class.java, byXpath("//div[@accessiblename='Project Structure']")).click()
-    }
-
-    // Show AWS Explorer, or leave it open if it is already open
-    fun showAwsExplorer() {
-        try {
-            find<AwsExplorer>(byXpath("//div[@class='ExplorerToolWindow']"))
-        } catch (e: Exception) {
-            find(ComponentFixture::class.java, byXpath("//div[@accessiblename='AWS Explorer' and @class='StripeButton' and @text='AWS Explorer']")).click()
-        }
-    }
-
-    fun setCredentials(profile: String, region: String) {
-        openCredentialsPanel()
-        // This will grab both the region and credentials
-        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
-            if (it.items.contains(profile)) {
-                it.selectItem(profile)
-            }
-        }
-        openCredentialsPanel()
-        findAll<JListFixture>(byXpath("//div[@class='MyList']")).forEach {
-            if (it.items.contains(region)) {
-                it.selectItem(region)
-            }
-        }
-    }
-
-    // Tips sometimes open when running, close it if it opens
-    fun tryCloseTips() {
-        try {
-            pressClose()
-        } catch (e: Exception) {
-        }
-    }
-
-    private fun openCredentialsPanel() = try {
-        // 2020.1
-        findAndClick("//div[@class='MultipleTextValues']")
-    } catch (e: Exception) {
-        // TODO FIX_WHEN_MIN_IS_201 remove this
-        // 2019.3
-        findAndClick("//div[@class='MultipleTextValuesPresentationWrapper']")
-    }
+    fun isDumbMode(): Boolean = callJs(
+        """
+            var frameHelper = com.intellij.openapi.wm.impl.ProjectFrameHelper.getFrameHelper(component);
+            com.intellij.openapi.project.DumbService.isDumb(frameHelper.project);
+        """.trimIndent(),
+        runInEdt = true
+    )
 
     fun findToast(timeout: Duration = Duration.ofSeconds(5)): ComponentFixture = find(byXpath("//div[@class='StatusPanel']"), timeout)
+    fun findToastText(timeout: Duration = Duration.ofSeconds(5)): List<String> = findToast(timeout).findAllText().map { it.text }
 }

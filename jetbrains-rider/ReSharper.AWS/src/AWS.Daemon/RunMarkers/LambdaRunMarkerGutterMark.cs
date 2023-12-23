@@ -6,23 +6,23 @@ using JetBrains.Application.UI.Controls.BulbMenu.Anchors;
 using JetBrains.Application.UI.Controls.BulbMenu.Items;
 using JetBrains.Application.UI.Icons.ComposedIcons;
 using JetBrains.ProjectModel;
-using JetBrains.ReSharper.Host.Features.RunMarkers;
 using JetBrains.ReSharper.Resources.Shell;
-using JetBrains.RiderTutorials.Utils;
 using JetBrains.TextControl.DocumentMarkup;
 using JetBrains.UI.Icons;
 using JetBrains.UI.RichText;
-using JetBrains.UI.ThemedIcons;
 using JetBrains.Util;
 using JetBrains.Util.Logging;
+using JetBrains.Rider.Backend.Features.RunMarkers;
+
+using IconGutterMarkType = JetBrains.TextControl.DocumentMarkup.IconGutterMarkType;
 
 namespace AWS.Daemon.RunMarkers
 {
-    public abstract class LambdaRunMarkerGutterMark : IconGutterMark
+    public abstract class LambdaRunMarkerGutterMark : IconGutterMarkType
     {
-        private static readonly ILogger ourLogger = Logger.GetLogger<LambdaRunMarkerGutterMark>();
+        private static readonly ILogger OurLogger = Logger.GetLogger<LambdaRunMarkerGutterMark>();
 
-        public override IAnchor Anchor => BulbMenuAnchors.PermanentBackgroundItems;
+        public override IAnchor Priority => BulbMenuAnchors.PermanentBackgroundItems;
 
         protected LambdaRunMarkerGutterMark([NotNull] IconId iconId) : base(iconId)
         {
@@ -53,7 +53,7 @@ namespace AWS.Daemon.RunMarkers
             var methodName = runMarker.Method.ShortName;
             if (methodName.IsEmpty())
             {
-                ourLogger.Warn("MethodName for lambda runMarker should not be empty");
+                OurLogger.Warn("MethodName for lambda runMarker should not be empty");
                 yield break;
             }
 
@@ -87,7 +87,7 @@ namespace AWS.Daemon.RunMarkers
             var containingType = runMarker.Method.GetContainingType();
             if (containingType == null) return "";
 
-            var typeString = containingType.GetFullClrName();
+            var typeString = containingType.GetClrName().FullName;
 
             var methodName = runMarker.Method.ShortName;
 

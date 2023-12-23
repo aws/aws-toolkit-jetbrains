@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.psi.PsiFile
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import software.aws.toolkits.core.lambda.LambdaRuntime
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -16,9 +19,9 @@ object SamCommonTestUtils {
         return SamCommon.mapper.writeValueAsString(tree)
     }
 
-    fun getMinVersionAsJson() = getVersionAsJson(SamExecutable().samMinVersion.toString())
+    fun getMinVersionAsJson() = getVersionAsJson(SamExecutable.minVersion.toString())
 
-    fun getMaxVersionAsJson() = getVersionAsJson(SamExecutable().samMaxVersion.toString())
+    fun getMaxVersionAsJson() = getVersionAsJson(SamExecutable.maxVersion.toString())
 
     fun makeATestSam(message: String, path: String? = null, exitCode: Int = 0): Path {
         val sam = path?.let {
@@ -53,4 +56,23 @@ object SamCommonTestUtils {
 
         return sam
     }
+
+    fun CodeInsightTestFixture.addSamTemplate(
+        logicalName: String = "Function",
+        codeUri: String,
+        handler: String,
+        runtime: LambdaRuntime
+    ): PsiFile = this.addFileToProject(
+        "template.yaml",
+        """
+        Resources:
+          $logicalName:
+            Type: AWS::Serverless::Function
+            Properties:
+              CodeUri: $codeUri
+              Handler: $handler
+              Runtime: $runtime
+              Timeout: 900
+        """.trimIndent()
+    )
 }

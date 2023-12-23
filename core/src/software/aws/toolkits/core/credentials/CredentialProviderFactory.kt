@@ -4,7 +4,6 @@
 package software.aws.toolkits.core.credentials
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.http.SdkHttpClient
 import software.aws.toolkits.core.region.AwsRegion
 
 /**
@@ -15,6 +14,11 @@ interface CredentialProviderFactory {
      * ID used to uniquely identify this factory
      */
     val id: String
+
+    /**
+     * ID used to indicate where credentials are stored or retrieved from
+     */
+    val credentialSourceId: CredentialSourceId
 
     /**
      * Invoked on creation of the factory to update the credential system with what [CredentialIdentifier] this factory
@@ -28,7 +32,6 @@ interface CredentialProviderFactory {
      */
     fun createAwsCredentialProvider(
         providerId: CredentialIdentifier,
-        region: AwsRegion,
-        sdkHttpClientSupplier: () -> SdkHttpClient
+        region: AwsRegion
     ): AwsCredentialsProvider
 }
