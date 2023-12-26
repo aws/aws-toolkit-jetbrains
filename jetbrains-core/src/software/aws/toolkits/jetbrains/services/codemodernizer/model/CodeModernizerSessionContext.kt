@@ -224,7 +224,6 @@ data class CodeModernizerSessionContext(
                         codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
                         reason = error
                     )
-                    return null
                 } else {
                     shouldTryMvnCommand = false
                     LOG.warn { "Maven executed successfully" }
@@ -244,7 +243,6 @@ data class CodeModernizerSessionContext(
                     reason = e.message
                 )
                 LOG.error(e) { e.message.toString() }
-                throw e
             }
         }
 
