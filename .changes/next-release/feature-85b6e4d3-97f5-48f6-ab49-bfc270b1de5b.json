@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Amazon Q Transform: Always execute IDE bundled maven whenever maven command fails"
+}
