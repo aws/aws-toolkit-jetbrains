@@ -39,6 +39,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.Locale
 import kotlin.io.NoSuchFileException
 import kotlin.io.byteInputStream
 import kotlin.io.deleteRecursively
@@ -177,7 +178,12 @@ data class CodeModernizerSessionContext(
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
         try {
-            val output = runCommand("./mvnw")
+            var mvnw = "./mvnw"
+            val system = System.getProperty("os.name").lowercase(Locale.getDefault())
+            if (system.contains("win")) {
+                mvnw = "./mvnw.cmd"
+            }
+            val output = runCommand(mvnw)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
                 val error = "The exitCode should be 0 while it was ${output.exitCode}"
