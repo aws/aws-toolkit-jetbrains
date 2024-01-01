@@ -59,9 +59,10 @@ class ExistingWorkspaces(
 
         val ssoSettings: SsoSettings? = ToolkitAuthManager.getInstance().getConnection(connectionSettings.providerId)?.let {
             if (it is AwsBearerTokenConnection) {
-                return@let SsoSettings(it.startUrl, it.region)
+                SsoSettings(it.startUrl, it.region)
+            } else {
+                null
             }
-            return@let null
         }
 
         return try {
