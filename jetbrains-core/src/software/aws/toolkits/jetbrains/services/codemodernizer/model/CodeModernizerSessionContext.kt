@@ -178,11 +178,10 @@ data class CodeModernizerSessionContext(
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
         try {
-            var mvnw = "./mvnw"
-            val system = System.getProperty("os.name").lowercase(Locale.getDefault())
-            if (system.contains("win")) {
-                mvnw = "./mvnw.cmd"
-            }
+           
+            val mvnw = if (SystemInfo.isWindows) {
+                "./mvnw.cmd"
+            } else  "./mvnw"
             val output = runCommand(mvnw)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
