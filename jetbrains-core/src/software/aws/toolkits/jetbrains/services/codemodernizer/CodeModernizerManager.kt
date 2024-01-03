@@ -352,7 +352,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             codeTransformationSession = session
             initModernizationJobUI(false, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
             codeModernizerBottomWindowPanelManager.setResumeJobUI(currentJobResult, plan, session.sessionContext.sourceJavaVersion)
-            session.resumeJob(currentJobResult.creationTime())
+            session.resumeJob(currentJobResult.creationTime(), lastJobId)
             val result = handleJobStarted(lastJobId, session)
             postModernizationJob(result)
         } catch (e: Exception) {

@@ -116,7 +116,7 @@ class CodeModernizerSession(
                 return CodeModernizerStartJobResult.Cancelled
             }
             val startJobResponse = startJob(uploadId)
-            state.putJobHistory(sessionContext, "STARTED")
+            state.putJobHistory(sessionContext, "STARTED", startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
             CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
         } catch (e: AlreadyDisposedException) {
@@ -250,7 +250,7 @@ class CodeModernizerSession(
     /**
      * This will resume the job, i.e. it will resume the main job loop kicked of by [createModernizationJob]
      */
-    fun resumeJob(startTime: Instant) = state.putJobHistory(sessionContext, "Started", startTime)
+    fun resumeJob(startTime: Instant, jobId: JobId) = state.putJobHistory(sessionContext, "Started", jobId.id, startTime)
 
     /*
      * Adapted from [CodeWhispererCodeScanSession]
