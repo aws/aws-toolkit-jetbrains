@@ -12,6 +12,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
@@ -39,7 +40,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.Locale
 import kotlin.io.NoSuchFileException
 import kotlin.io.byteInputStream
 import kotlin.io.deleteRecursively
@@ -178,7 +178,6 @@ data class CodeModernizerSessionContext(
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
         try {
-           
             val mvnw = if (SystemInfo.isWindows) {
                 "./mvnw.cmd"
             } else  "./mvnw"
