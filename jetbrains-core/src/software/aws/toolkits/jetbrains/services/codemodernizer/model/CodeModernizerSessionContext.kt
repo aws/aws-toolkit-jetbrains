@@ -180,7 +180,9 @@ data class CodeModernizerSessionContext(
         try {
             val mvnw = if (SystemInfo.isWindows) {
                 "./mvnw.cmd"
-            } else  "./mvnw"
+            } else {
+                "./mvnw"
+            }
             val output = runCommand(mvnw)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
