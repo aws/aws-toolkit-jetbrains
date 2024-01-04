@@ -242,6 +242,8 @@ data class CodeModernizerSessionContext(
                     reason = error
                 )
                 LOG.warn { error }
+                // for debug
+                LOG.warn { e.message.toString() }
             } catch (e: Exception) {
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
