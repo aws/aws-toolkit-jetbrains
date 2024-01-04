@@ -30,23 +30,23 @@ class CodeModernizerSessionState {
     var currentJobId: JobId? = null
 
     private fun getJobModuleName(sessionContext: CodeModernizerSessionContext) = Path(sessionContext.configurationFile.path).toAbsolutePath().toString()
-    fun putJobHistory(sessionContext: CodeModernizerSessionContext, status: String, jobId: String = "", startedAt: Instant = Instant.now()) {
-        val module = getJobModuleName(sessionContext)
+    fun putJobHistory(sessionContext: CodeModernizerSessionContext, status: TransformationStatus, jobId: String = "", startedAt: Instant = Instant.now()) {
+        val moduleName = getJobModuleName(sessionContext)
         val jobHistoryItem = JobHistoryItem(
-            module,
-            status,
+            moduleName,
+            status.name,
             startedAt,
             Duration.ZERO,
             jobId,
         )
-        previousJobHistory[module] = jobHistoryItem
+        previousJobHistory[moduleName] = jobHistoryItem
     }
 
-    fun updateJobHistory(sessionContext: CodeModernizerSessionContext, newStatus: String, endTime: Instant) {
-        val module = getJobModuleName(sessionContext)
-        val jobStatus = previousJobHistory.get(module) ?: throw CodeModernizerException("Unable to update the job history for $module")
+    fun updateJobHistory(sessionContext: CodeModernizerSessionContext, newStatus: TransformationStatus, endTime: Instant) {
+        val moduleName = getJobModuleName(sessionContext)
+        val jobStatus = previousJobHistory.get(moduleName) ?: throw CodeModernizerException("Unable to update the job history for $moduleName")
         val timeTaken = Duration.between(jobStatus.startTime, endTime)
-        previousJobHistory[module] = jobStatus.copy(status = newStatus, runTime = timeTaken)
+        previousJobHistory[moduleName] = jobStatus.copy(status = newStatus.name, runTime = timeTaken)
     }
 
     fun getJobHistory(): Array<JobHistoryItem> = previousJobHistory.values.toTypedArray()

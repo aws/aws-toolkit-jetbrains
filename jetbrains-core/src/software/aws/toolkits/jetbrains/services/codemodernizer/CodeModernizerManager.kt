@@ -606,7 +606,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     // Code successfully stopped toast will display when post job is run after this
                     CodetransformTelemetry.totalRunTime(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                        codeTransformResultStatusMessage = "JobCanceled",
+                        codeTransformResultStatusMessage = "JobCancelled",
                         codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
                     )
                 }
@@ -615,7 +615,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 notifyTransformationFailedToStop(e.localizedMessage)
                 CodetransformTelemetry.totalRunTime(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                    codeTransformResultStatusMessage = "JobCanceled",
+                    codeTransformResultStatusMessage = "JobCancelled",
                     codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
                 )
             }
