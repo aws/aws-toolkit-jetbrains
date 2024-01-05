@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinne
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.CodeWhispererExplorerRootNode
@@ -66,6 +67,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStarted
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_TITLE_FONT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_WIDTH
+import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
@@ -329,10 +331,8 @@ class GettingStartedPanel(
                         panelNotConnected = panel {
                             row {
                                 button(message("caws.getstarted.panel.login")) {
-                                    val loginSuccess = tryOrNull {
-                                        controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
-                                        loginSso(project, SONO_URL, SONO_REGION, CODECATALYST_SCOPES)
-                                    } != null
+                                    controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
+                                    val loginSuccess = requestCredentialsForCodeCatalyst(project)
 
                                     handleLogin(loginSuccess)
 
@@ -432,7 +432,12 @@ class GettingStartedPanel(
                             }
 
                             row {
-                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
+                                val messageId = if (connectionSettings?.isSono() == true) {
+                                    "gettingstarted.auth.connected.builderid"
+                                } else {
+                                    "gettingstarted.auth.connected.idc"
+                                }
+                                label(message(messageId)).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
                             }
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
