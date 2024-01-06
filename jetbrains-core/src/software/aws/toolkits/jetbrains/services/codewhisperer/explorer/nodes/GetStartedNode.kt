@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -12,8 +14,10 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QGettingStartedVirtualFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.startup.CodeWhispererProjectStartupActivity
+import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.MouseEvent
@@ -45,6 +49,22 @@ class GetStartedNode(nodeProject: Project) : CodeWhispererActionNode(
                 // Start from scratch if no active connection
                 if (requestCredentialsForCodeWhisperer(project)) {
                     project.refreshCwQTree()
+                    val meetQSettings = MeetQSettings.getInstance()
+                    if (!meetQSettings.shouldDisplayPage) {
+                        return@runInEdt
+                    } else {
+                        FileEditorManager.getInstance(
+                            project
+                        ).openTextEditor(
+                            OpenFileDescriptor(
+                                project,
+                                QGettingStartedVirtualFile()
+                            ),
+                            true
+                        )
+                        meetQSettings.shouldDisplayPage = false
+                        UiTelemetry.click(project, "toolkit_openedWelcomeToAmazonQPage")
+                    }
                 }
             }
         }
