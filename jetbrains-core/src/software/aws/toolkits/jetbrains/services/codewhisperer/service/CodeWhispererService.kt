@@ -13,8 +13,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
@@ -97,8 +95,6 @@ class CodeWhispererService {
     ) {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
-
-
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
