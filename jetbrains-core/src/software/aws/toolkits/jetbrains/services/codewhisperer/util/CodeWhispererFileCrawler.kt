@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.TestSourcesFilter
@@ -14,6 +15,8 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -110,7 +113,18 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }.orEmpty()
     }
 
-    override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
+    override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> =
+        if (CodeWhispererUserGroupSettings.getInstance().getUserGroup() === CodeWhispererUserGroup.CrossFile) {
+            listPreviousSelectedFile(target)
+        } else {
+            listAllOpenedFilesSortedByDist(target)
+        }
+
+
+    /**
+     * Default strategy will return all opened files sorted with file distance against the target
+     */
+    private fun listAllOpenedFilesSortedByDist(target: PsiFile): List<VirtualFile> {
         val targetFile = target.virtualFile
 
         val openedFiles = runReadAction {
@@ -128,6 +142,23 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
 
         return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+    }
+
+    /**
+     * New strategy will return opened files sorted by timeline the file is used (Most Recently Used), which should be as same as JB's file switcher (ctrl + tab)
+     * Note: test file is included here unlike the default strategy (thus different predicate inside filter)
+     */
+    // TODO: private and combine with [listCrossFileCandidate]
+    private fun listPreviousSelectedFile(target: PsiFile): List<VirtualFile> {
+        val targetVFile = target.virtualFile
+        return runReadAction {
+            (FileEditorManager.getInstance(target.project) as FileEditorManagerImpl).getSelectionHistory()
+                .map { it.first }
+                .filter {
+                    it.name != targetVFile.name &&
+                        isSameDialect(it.extension)
+                }
+        }
     }
 
     override fun listUtgCandidate(target: PsiFile): ListUtgCandidateResult {

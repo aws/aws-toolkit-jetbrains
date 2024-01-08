@@ -76,6 +76,7 @@ class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUse
     @VisibleForTesting
     fun getVersion() = version
 
+    // TODO: assign crossfile usergroup
     @VisibleForTesting
     fun determineUserGroup(): CodeWhispererUserGroup {
         val group = CodeWhispererUserGroup.Control
