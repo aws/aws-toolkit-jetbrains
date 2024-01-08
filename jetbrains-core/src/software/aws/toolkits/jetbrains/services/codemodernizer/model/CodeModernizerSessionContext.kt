@@ -130,7 +130,7 @@ data class CodeModernizerSessionContext(
                             var paddedPathString = paddedPath.toPath().toString()
                             // Convert Windows file path to work on Linux
                             if (File.separatorChar != '/') {
-                                paddedPathString = paddedPathString.replace("\\", "/")
+                                paddedPathString = paddedPathString.replace('\\', '/')
                             }
                             it.putNextEntry(paddedPathString, depfile.inputStream())
                         }
