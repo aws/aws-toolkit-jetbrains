@@ -8,28 +8,47 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessNotCreatedException
 import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.ToolWindowManager
+import org.jetbrains.idea.maven.execution.MavenRunner
+import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformRunnable
+import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
+import java.lang.Thread.sleep
 import java.nio.file.FileVisitOption
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
+import kotlin.io.NoSuchFileException
+import kotlin.io.byteInputStream
+import kotlin.io.deleteRecursively
+import kotlin.io.inputStream
 import kotlin.io.path.Path
+import kotlin.io.relativeTo
+import kotlin.io.resolve
+import kotlin.io.resolveSibling
+import kotlin.io.walkTopDown
 
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
@@ -37,6 +56,7 @@ const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     val configurationFile: VirtualFile,
@@ -118,10 +138,10 @@ data class CodeModernizerSessionContext(
                 }.toFile()
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
-                throw CodeModernizerException("Source folder not found: ${root.path}")
+                throw CodeModernizerException("Source folder not found")
             } catch (e: Exception) {
                 LOG.error(e) { e.message.toString() }
-                throw CodeModernizerException("Unknown exception occurred ${root.path}")
+                throw CodeModernizerException("Unknown exception occurred")
             } finally {
                 depDirectory?.deleteRecursively()
             }
@@ -135,15 +155,19 @@ data class CodeModernizerSessionContext(
     fun runMavenCommand(sourceFolder: File): File? {
         val currentTimestamp = System.currentTimeMillis()
         val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
+        val commandList = listOf(
+            "dependency:copy-dependencies",
+            "-DoutputDirectory=$destinationDir",
+            "-Dmdep.useRepositoryLayout=true",
+            "-Dmdep.copyPom=true",
+            "-Dmdep.addParentPoms=true"
+        )
         fun runCommand(mavenCommand: String): ProcessOutput {
-            val commandLine = GeneralCommandLine(
-                mavenCommand,
-                "dependency:copy-dependencies",
-                "-DoutputDirectory=$destinationDir",
-                "-Dmdep.useRepositoryLayout=true",
-                "-Dmdep.copyPom=true",
-                "-Dmdep.addParentPoms=true"
-            )
+            val command = buildList {
+                add(mavenCommand)
+                addAll(commandList)
+            }
+            val commandLine = GeneralCommandLine(command)
                 .withWorkDirectory(sourceFolder)
                 .withRedirectErrorStream(true)
             val output = ExecUtil.execAndGetOutput(commandLine)
@@ -154,7 +178,12 @@ data class CodeModernizerSessionContext(
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
         try {
-            val output = runCommand("./mvnw")
+            val mvnw = if (SystemInfo.isWindows) {
+                "./mvnw.cmd"
+            } else {
+                "./mvnw"
+            }
+            val output = runCommand(mvnw)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
                 val error = "The exitCode should be 0 while it was ${output.exitCode}"
@@ -201,8 +230,8 @@ data class CodeModernizerSessionContext(
                         codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
                         reason = error
                     )
-                    return null
                 } else {
+                    shouldTryMvnCommand = false
                     LOG.warn { "Maven executed successfully" }
                 }
             } catch (e: ProcessNotCreatedException) {
@@ -213,7 +242,6 @@ data class CodeModernizerSessionContext(
                     reason = error
                 )
                 LOG.warn { error }
-                return null
             } catch (e: Exception) {
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -221,7 +249,73 @@ data class CodeModernizerSessionContext(
                     reason = e.message
                 )
                 LOG.error(e) { e.message.toString() }
-                throw e
+            }
+        }
+
+        // 3. intellij-bundled maven runner
+        if (shouldTryMvnCommand) {
+            LOG.warn { "Executing IntelliJ bundled Maven" }
+            val explicitenabled = emptyList<String>()
+            try {
+                val params = MavenRunnerParameters(
+                    false,
+                    sourceFolder.absolutePath,
+                    null,
+                    commandList,
+                    explicitenabled,
+                    null
+                )
+
+                // Create MavenRunnerParametersMavenRunnerParameters
+                val mvnrunner = MavenRunner.getInstance(project)
+                val transformMvnRunner = TransformMavenRunner(project)
+                val mvnsettings = mvnrunner.settings
+                val createdDependencies = TransformRunnable()
+                runInEdt {
+                    try {
+                        transformMvnRunner.run(params, mvnsettings, createdDependencies)
+                    } catch (t: Throwable) {
+                        createdDependencies.exitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
+                        LOG.error { t.message.toString() }
+                        CodetransformTelemetry.mvnBuildFailed(
+                            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                            codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                            reason = t.message
+                        )
+                    }
+                }
+                while (createdDependencies.isComplete() == null) {
+                    // waiting mavenrunner building
+                    sleep(50)
+                }
+                if (createdDependencies.isComplete() == 0) {
+                    LOG.warn { "IntelliJ bundled Maven executed successfully" }
+                } else if (createdDependencies.isComplete() != Integer.MIN_VALUE) {
+                    val error = "The exitCode should be 0 while it was ${createdDependencies.isComplete()}"
+                    LOG.error { error }
+                    CodetransformTelemetry.mvnBuildFailed(
+                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                        codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                        reason = error
+                    )
+                    return null
+                } else {
+                    // when exit code is MIN_VALUE
+                    // return null
+                    return null
+                }
+            } catch (t: Throwable) {
+                LOG.error { t.message.toString() }
+                CodetransformTelemetry.mvnBuildFailed(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
+                    reason = t.message
+                )
+                return null
+            } finally {
+                // after the ide bundled maven building finished
+                // change the bottom window to transformation hub
+                showTransformationHub()
             }
         }
 
@@ -241,12 +335,21 @@ data class CodeModernizerSessionContext(
                     }
                     return FileVisitResult.CONTINUE
                 }
+
                 override fun visitFileFailed(file: Path?, exc: IOException?): FileVisitResult =
                     FileVisitResult.CONTINUE
             }
         )
         return dependencyfiles
     }
+
+    fun showTransformationHub() = runInEdt {
+        val appModernizerBottomWindow = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
+            ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
+        appModernizerBottomWindow.show()
+        CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
+    }
+
     companion object {
         private val LOG = getLogger<CodeModernizerSessionContext>()
     }
