@@ -7,4 +7,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <fileBasedIndex implementation="software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationTemplateIndex"/>
     </extensions>
+
+    <extensions defaultExtensionNs="JavaScript.JsonSchema">
+        <ProviderFactory implementation="software.aws.toolkits.jetbrains.services.doctypes.buildspec.CodeBuildBuildSpecSchemaProviderFactory"/>
+    </extensions>
 </idea-plugin>

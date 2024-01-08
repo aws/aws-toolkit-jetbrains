@@ -27,6 +27,7 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    "AWSCloudFormation:231.8109.91",
                     "PythonCore:231.8109.144",
                     "Docker:231.8109.217"
                 )
@@ -42,6 +43,7 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    "AWSCloudFormation:231.8109.91",
                     "Pythonid:231.8109.175",
                     "org.jetbrains.plugins.go:231.8109.175",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
