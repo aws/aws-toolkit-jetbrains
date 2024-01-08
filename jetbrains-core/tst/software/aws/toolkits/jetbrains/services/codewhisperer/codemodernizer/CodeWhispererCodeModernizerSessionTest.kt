@@ -199,7 +199,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizerSession can create zip and exludes nested target`() {
+    fun `CodeModernizerSession can create zip and exclude nested target`() {
         addFilesToProjectModule(
             "src/tmp.java",
             "target/smth.java",
@@ -231,6 +231,45 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                 Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
                 Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule/src/helloworld.java", fileContent)
                 Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
+                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+            }
+        }
+    }
+
+    @Test
+    fun `CodeModernizerSession can create zip and replace Windows file path`() {
+        addFilesToProjectModule(
+            "src\\tmp.java",
+            "target\\smth.java",
+            "target\\somedir\\anotherthing.class",
+            "pom.xml",
+            "someModule\\pom.xml",
+            "someModule\\target\\smth.class",
+            "someModule\\src\\helloworld.java",
+        )
+        var file: File? = null
+        val rootManager = ModuleRootManager.getInstance(module)
+        val roots = rootManager.contentRoots
+        assertFalse(roots.isEmpty() || roots.size > 1)
+
+        val pom = roots[0].children.first { it.name == "pom.xml" }
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        runInEdtAndWait {
+            file = context.createZipWithModuleFiles().payload
+        }
+        assertNotNull(file)
+        val zipFile = ZipFile(file)
+        val entries = zipFile.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement() ?: continue
+            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+            // Note: file contents are using the original path strings from addFilesToProjectModule.
+            when (Path(entry.name)) {
+                Path("manifest.json") -> assertNotNull(fileContent)
+                Path("sources/src/tmp.java") -> assertEquals("src\\tmp.java", fileContent)
+                Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
+                Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule\\src\\helloworld.java", fileContent)
+                Path("sources/someModule/pom.xml") -> assertEquals("someModule\\pom.xml", fileContent)
                 else -> throw AssertionError("Unexpected entry in zip file: $entry")
             }
         }
