@@ -144,7 +144,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                             | Chunk $index:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
-                            |    content = ${chunk.content}
+                            |    content = ${chunk.content.length}
                             |----------------------------------------------------------------
                         """.trimMargin()
                     }
@@ -165,6 +165,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         for (fileProducer in fileProducers) {
             yield()
             val files = fileProducer(psiFile)
+            val fileNames = files.map { it.name }
+            LOG.debug { "files used to generate crossfile context sorted by priority: $fileNames" }
+
             files.forEach { file ->
                 yield()
                 if (hasUsed.contains(file)) {
@@ -197,7 +200,15 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
-            runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
+            runReadAction {
+//                codewhispererCodeChunksIndex.getFileData(psiFile)
+
+                runBlocking {
+                    val fileCrawler = psiFile.programmingLanguage().fileCrawler
+                    val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listCrossFileCandidate(psiFile) }
+                    FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
+                }
+            }
         } catch (e: TimeoutCancellationException) {
             throw e
         }
