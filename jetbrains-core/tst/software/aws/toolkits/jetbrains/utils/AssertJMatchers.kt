@@ -4,9 +4,11 @@
 package software.aws.toolkits.jetbrains.utils
 
 import org.assertj.core.api.AbstractAssert
+import org.assertj.core.api.AbstractMapAssert
 import org.assertj.core.api.AbstractThrowableAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.CompletableFutureAssert
+import org.assertj.core.api.MapAssert
 import java.time.Duration
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.TimeUnit
@@ -42,3 +44,6 @@ fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractT
 
 inline fun <reified T> AbstractAssert<*, *>.isInstanceOf() = isInstanceOf(T::class.java)
 inline fun <reified T> AbstractAssert<*, *>.isInstanceOfSatisfying(checker: Consumer<T>) = isInstanceOfSatisfying(T::class.java, checker)
+
+
+fun <K, V> MapAssert<K, V>.containsEntries(vararg entry: Pair<K, V>) = containsAllEntriesOf(mapOf(*entry))!!
