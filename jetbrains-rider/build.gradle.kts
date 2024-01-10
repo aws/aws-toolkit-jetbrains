@@ -101,7 +101,7 @@ val csAwsProjectGeneratedOutput = File(resharperPluginPath, "src/AWS.Project/Pro
 val riderGeneratedSources = File("$nonLazyBuildDir/generated-src/software/aws/toolkits/jetbrains/protocol")
 
 val modelDir = File(projectDir, "protocol/model")
-val rdgenDir = File("${nonLazyBuildDir}/rdgen/")
+val rdgenDir = File("$nonLazyBuildDir/rdgen/")
 
 rdgenDir.mkdirs()
 

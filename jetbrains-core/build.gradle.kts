@@ -73,6 +73,10 @@ val gatewayArtifacts by configurations.creating {
 }
 
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
+    // META-INF/plugin.xml is a duplicate?
+    // unclear why the exclude() statement didn't work
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
     dependsOn(tasks.instrumentedJar)
 
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
@@ -104,7 +108,7 @@ tasks.prepareSandbox {
 }
 
 tasks.testJar {
-    // classpath.index is a duplicated
+    // classpath.index is a duplicate
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
