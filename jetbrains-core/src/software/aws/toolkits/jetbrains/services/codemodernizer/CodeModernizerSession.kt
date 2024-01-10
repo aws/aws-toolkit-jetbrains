@@ -14,7 +14,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -94,9 +93,9 @@ class CodeModernizerSession(
                 codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now())
             )
         } catch (e: Exception) {
-            LOG.error(e) { e.message.toString() }
+            val errorMessage = "Failed to upload archive"
             CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = e.message.toString(),
+                codeTransformApiErrorMessage = errorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             )
             state.currentJobStatus = TransformationStatus.FAILED
@@ -117,18 +116,18 @@ class CodeModernizerSession(
                 return CodeModernizerStartJobResult.Cancelled
             }
             val startJobResponse = startJob(uploadId)
-            state.putJobHistory(sessionContext, "STARTED")
+            state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
             CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
         } catch (e: AlreadyDisposedException) {
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
         } catch (e: Exception) {
-            LOG.warn { e.message.toString() }
-            state.putJobHistory(sessionContext, "FAILED TO START")
+            val errorMessage = "Failed to start job"
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = e.message.toString(),
+                codeTransformApiErrorMessage = errorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             )
             CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
@@ -162,7 +161,7 @@ class CodeModernizerSession(
             state.currentJobStatus = new
             sessionContext.project.refreshCwQTree()
             val instant = Instant.now()
-            state.updateJobHistory(sessionContext, new.name, instant)
+            state.updateJobHistory(sessionContext, new, instant)
             setCurrentJobStopTime(new, instant)
             setCurrentJobSummary(new)
             jobTransitionHandler(new, plan)
@@ -251,7 +250,7 @@ class CodeModernizerSession(
     /**
      * This will resume the job, i.e. it will resume the main job loop kicked of by [createModernizationJob]
      */
-    fun resumeJob(startTime: Instant) = state.putJobHistory(sessionContext, "Started", startTime)
+    fun resumeJob(startTime: Instant, jobId: JobId) = state.putJobHistory(sessionContext, TransformationStatus.STARTED, jobId.id, startTime)
 
     /*
      * Adapted from [CodeWhispererCodeScanSession]
@@ -285,7 +284,7 @@ class CodeModernizerSession(
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    private fun uploadPayload(payload: File): String {
+    fun uploadPayload(payload: File): String {
         val sha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(payload)))
         LOG.warn { "About to create an upload url" }
         if (isDisposed.get()) {
@@ -413,7 +412,7 @@ class CodeModernizerSession(
                     isPartialSuccess = true
                 }
                 val instant = Instant.now()
-                state.updateJobHistory(sessionContext, new.name, instant)
+                state.updateJobHistory(sessionContext, new, instant)
                 setCurrentJobStopTime(new, instant)
                 jobTransitionHandler(new, plan)
                 LOG.warn { "in awaitJobCompletion, state changed for job $jobId: $old -> $new" }
