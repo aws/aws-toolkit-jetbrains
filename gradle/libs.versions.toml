@@ -24,7 +24,8 @@ node-gradle = "7.0.1"
 telemetryGenerator = "1.0.176"
 testLogger = "3.1.0"
 testRetry = "1.5.2"
-slf4j = "1.7.36"
+# test-only; platform provides slf4j transitively at runtime. <233, 1.7.36; >=233, 2.0.9
+slf4j = "2.0.9"
 sshd = "2.11.0"
 wiremock = "2.35.0"
 zjsonpatch = "0.4.11"
@@ -94,6 +95,7 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 mockk = { module = "io.mockk:mockk", version.ref="mockk" }
 telemetryGenerator = { module = "software.aws.toolkits:telemetry-generator", version.ref = "telemetryGenerator" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
 sshd-scp = { module = "org.apache.sshd:sshd-scp", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
