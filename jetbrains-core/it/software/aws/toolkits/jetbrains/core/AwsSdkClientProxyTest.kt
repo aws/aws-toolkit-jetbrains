@@ -26,8 +26,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 
 class AwsSdkClientProxyTest {
     @Rule
@@ -54,8 +52,6 @@ class AwsSdkClientProxyTest {
 
     @Before
     fun setUp() {
-        getLogger<AwsSdkClientProxyTest>().warn { System.getenv("AWS_CONFIG_FILE") }
-        getLogger<AwsSdkClientProxyTest>().warn { System.getenv("ASSUME_ROLE_ARN") }
         awsSdkClient = AwsSdkClient()
         Disposer.register(disposableRule.disposable, awsSdkClient)
 
