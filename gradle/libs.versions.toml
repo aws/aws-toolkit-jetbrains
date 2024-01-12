@@ -27,7 +27,7 @@ testRetry = "1.5.2"
 # test-only; platform provides slf4j transitively at runtime. <233, 1.7.36; >=233, 2.0.9
 slf4j = "2.0.9"
 sshd = "2.11.0"
-wiremock = "2.35.0"
+wiremock = "3.3.1"
 zjsonpatch = "0.4.11"
 
 [libraries]
@@ -99,7 +99,7 @@ slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
 sshd-scp = { module = "org.apache.sshd:sshd-scp", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
-wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
 
 [bundles]

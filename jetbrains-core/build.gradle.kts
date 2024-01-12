@@ -151,7 +151,10 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
-    testImplementation(libs.wiremock)
+    testImplementation(libs.wiremock) {
+        // conflicts with transitive inclusion from docker plugin
+        exclude(group = "org.apache.httpcomponents.client5")
+    }
 
     // slf4j is v1.7.36 for <233
     // in <233, the classpass binding functionality picks up the wrong impl of StaticLoggerBinder (from the maven plugin instead of IDE platform) and causes a NoClassDefFoundError
