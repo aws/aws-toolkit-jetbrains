@@ -21,7 +21,6 @@ class JavaRuntimeGroup : SdkBasedRuntimeGroup() {
     override val supportsPathMappings: Boolean = false
 
     override val supportedRuntimes: List<LambdaRuntime> = listOf(
-        LambdaRuntime.JAVA8,
         LambdaRuntime.JAVA8_AL2,
         LambdaRuntime.JAVA11,
         LambdaRuntime.JAVA17,
