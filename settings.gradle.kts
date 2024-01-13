@@ -66,21 +66,21 @@ gradleEnterprise {
     }
 }
 
-val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
-val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
-val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
-if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
-    buildCache {
-        local {
-            isEnabled = false
-        }
-
-        remote<com.github.burrunan.s3cache.AwsS3BuildCache> {
-            region = regionEnv.get()
-            bucket = bucketEnv.get()
-            prefix = prefixEnv.get()
-            isPush = true
-            lookupDefaultAwsCredentials = true
-        }
-    }
-}
+//val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
+//val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
+//val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
+//if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
+//    buildCache {
+//        local {
+//            isEnabled = false
+//        }
+//
+//        remote<com.github.burrunan.s3cache.AwsS3BuildCache> {
+//            region = regionEnv.get()
+//            bucket = bucketEnv.get()
+//            prefix = prefixEnv.get()
+//            isPush = true
+//            lookupDefaultAwsCredentials = true
+//        }
+//    }
+//}
