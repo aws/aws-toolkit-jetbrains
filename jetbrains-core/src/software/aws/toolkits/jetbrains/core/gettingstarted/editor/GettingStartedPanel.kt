@@ -37,7 +37,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import icons.AwsIcons
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -45,21 +44,15 @@ import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerS
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.CodeWhispererExplorerRootNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
-import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
@@ -77,10 +70,6 @@ import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AuthTelemetry
-import software.aws.toolkits.telemetry.CredentialSourceId
-import software.aws.toolkits.telemetry.FeatureId
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Dimension
 import java.awt.Image
@@ -328,65 +317,12 @@ class GettingStartedPanel(
                                     UiTelemetry.click(project, "auth_CodecatalystDocumentation")
                                 }
                         }
+
                         panelNotConnected = panel {
                             row {
                                 button(message("caws.getstarted.panel.login")) {
                                     controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
-                                    val loginSuccess = requestCredentialsForCodeCatalyst(project)
-
-                                    handleLogin(loginSuccess)
-
-                                    if (loginSuccess) {
-                                        controlPanelVisibility(panelConnectionInProgress, panelConnected)
-                                        val tooltip = GotItTooltip(
-                                            "aws.toolkit.devtool.tab.whatsnew",
-                                            message("gettingstarted.explorer.gotit.codecatalyst.body"),
-                                            project
-                                        )
-                                            .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
-                                            .withPosition(Balloon.Position.above)
-
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
-                                        AuthTelemetry.addConnection(
-                                            project,
-                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-                                            FeatureId.Codecatalyst,
-                                            CredentialSourceId.AwsId,
-                                            isAggregated = true,
-                                            Result.Succeeded
-                                        )
-                                        AuthTelemetry.addedConnections(
-                                            project,
-                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-                                            oldConnectionCount,
-                                            getConnectionCount() - oldConnectionCount,
-                                            enabledAuthConnections = initialEnabledConnection,
-                                            newEnabledAuthConnections = getEnabledConnections(project).toString(),
-                                            attempts = 1,
-                                            Result.Succeeded
-                                        )
-                                    } else {
-                                        controlPanelVisibility(panelConnectionInProgress, panelNotConnected)
-                                        AuthTelemetry.addConnection(
-                                            project,
-                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-                                            FeatureId.Codecatalyst,
-                                            CredentialSourceId.AwsId,
-                                            isAggregated = false,
-                                            Result.Failed,
-                                            reason = "Browserloginfailure"
-                                        )
-                                        AuthTelemetry.addedConnections(
-                                            project,
-                                            getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-                                            oldConnectionCount,
-                                            getConnectionCount() - oldConnectionCount,
-                                            enabledAuthConnections = initialEnabledConnection,
-                                            newEnabledAuthConnections = getEnabledConnections(project).toString(),
-                                            attempts = 1,
-                                            Result.Failed
-                                        )
-                                    }
+                                    handleCodeCatalystLogin(requestCredentialsForCodeCatalyst(project), panelNotConnected)
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
@@ -394,7 +330,24 @@ class GettingStartedPanel(
                             row {
                                 browserLink(message("gettingstarted.codecatalyst.panel.setup"), PanelConstants.SET_UP_CODECATALYST)
                             }
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) is ActiveConnection.NotConnected)
+
+                            row {
+                                text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = false,
+                                            oldConnectionCount,
+                                            initialEnabledConnection,
+                                            isFirstInstance,
+                                            connectionInitiatedFromExplorer
+                                        ),
+                                        panelNotConnected
+                                    )
+                                }
+                            }
+                        }.visible(activeConnection() is ActiveConnection.NotConnected)
+
                         panelConnectionInProgress = panel {
                             row {
                                 button(
@@ -405,6 +358,22 @@ class GettingStartedPanel(
                             }
                             row {
                                 browserLink(message("gettingstarted.codecatalyst.panel.setup"), PanelConstants.SET_UP_CODECATALYST)
+                            }
+
+                            row {
+                                text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = false,
+                                            oldConnectionCount,
+                                            initialEnabledConnection,
+                                            isFirstInstance,
+                                            connectionInitiatedFromExplorer
+                                        ),
+                                        panelNotConnected
+                                    )
+                                }
                             }
                         }.visible(false)
 
@@ -432,49 +401,58 @@ class GettingStartedPanel(
                             }
 
                             row {
-                                val messageId = if (connectionSettings?.isSono() == true) {
-                                    "gettingstarted.auth.connected.builderid"
-                                } else {
-                                    "gettingstarted.auth.connected.idc"
-                                }
-                                label(message(messageId)).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
-                            }
+                                label(message("gettingstarted.auth.connected.builderid")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
+
+                            row {
+                                label(message("gettingstarted.auth.connected.idc")).applyToComponent { this.icon = PanelConstants.CHECKMARK_ICON }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.IAM_IDC)
+
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
-                                        CodeCatalystConnection.getInstance()
-                                    ) as AwsBearerTokenConnection
-                                    logoutFromSsoConnection(project, connection) {
-                                        controlPanelVisibility(panelConnected, panelNotConnected)
-                                    }
+                                    handleSignOut()
                                 }
                             }
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) is ActiveConnection.ValidBearer)
+
+                            row {
+                                text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = false,
+                                            oldConnectionCount,
+                                            initialEnabledConnection,
+                                            isFirstInstance,
+                                            connectionInitiatedFromExplorer
+                                        ),
+                                        panelConnected
+                                    )
+                                }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
+
+                            row {
+                                text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
+                                    controlPanelVisibility(panelConnected, panelConnectionInProgress)
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = true,
+                                            oldConnectionCount,
+                                            initialEnabledConnection,
+                                            isFirstInstance,
+                                            connectionInitiatedFromExplorer
+                                        ),
+                                        panelConnected
+                                    )
+                                }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.IAM_IDC)
+                        }.visible(activeConnection() is ActiveConnection.ValidBearer)
 
                         panelReauthenticationRequired = panel {
                             row {
                                 button(message("general.auth.reauthenticate")) {
                                     controlPanelVisibility(panelReauthenticationRequired, panelConnectionInProgress)
-                                    val loginSuccess = tryOrNull {
-                                        loginSso(project, SONO_URL, SONO_REGION, CODECATALYST_SCOPES)
-                                    } != null
-
-                                    handleLogin(loginSuccess)
-
-                                    if (loginSuccess) {
-                                        controlPanelVisibility(panelConnectionInProgress, panelConnected)
-                                        val tooltip = GotItTooltip(
-                                            "aws.toolkit.devtool.tab.whatsnew",
-                                            message("gettingstarted.explorer.gotit.codecatalyst.body"),
-                                            project
-                                        )
-                                            .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
-                                            .withPosition(Balloon.Position.above)
-
-                                        showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
-                                    } else {
-                                        controlPanelVisibility(panelConnectionInProgress, panelReauthenticationRequired)
-                                    }
+                                    handleCodeCatalystLogin(requestCredentialsForCodeCatalyst(project), panelReauthenticationRequired)
                                 }.applyToComponent {
                                     putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
                                 }
@@ -498,24 +476,95 @@ class GettingStartedPanel(
                             }
 
                             row {
-                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { icon = PanelConstants.X_ICON }
-                            }
+                                label(message("gettingstarted.auth.builderid.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
+
+                            row {
+                                label(message("gettingstarted.auth.idc.expired")).applyToComponent { this.icon = PanelConstants.X_ICON }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.IAM_IDC)
+
                             row {
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
-                                    val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
-                                        CodeCatalystConnection.getInstance()
-                                    ) as AwsBearerTokenConnection
-                                    logoutFromSsoConnection(project, connection) {
-                                        controlPanelVisibility(panelConnected, panelNotConnected)
-                                    }
+                                    handleSignOut()
                                 }
-                            }
-                        }.visible(checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) is ActiveConnection.ExpiredBearer)
+                                text(message("aws.onboarding.getstarted.panel.login_with_iam")) {
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = false,
+                                            isFirstInstance = isFirstInstance,
+                                            connectionInitiatedFromExplorer = connectionInitiatedFromExplorer
+                                        ),
+                                        panelNotConnected
+                                    )
+                                }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
+
+                            row {
+                                text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
+                                    controlPanelVisibility(panelConnected, panelConnectionInProgress)
+                                    handleCodeCatalystLogin(
+                                        requestCredentialsForCodeCatalyst(
+                                            project,
+                                            popupBuilderIdTab = true,
+                                            oldConnectionCount,
+                                            initialEnabledConnection,
+                                            isFirstInstance,
+                                            connectionInitiatedFromExplorer
+                                        ),
+                                        panelConnected
+                                    )
+                                }
+                            }.visible(activeConnection().connectionType == ActiveConnectionType.IAM_IDC)
+                        }.visible(activeConnection() is ActiveConnection.ExpiredBearer)
                     }
                 }.apply {
                     isOpaque = false
                 }
             )
+        }
+
+        private fun activeConnection() = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
+
+        private fun handleSignOut() {
+            val validConnection = activeConnection()
+
+            val connection = validConnection.activeConnectionBearer
+            if (connection is ProfileSsoManagedBearerSsoConnection) {
+                if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+                    val confirmDeletion = MessageDialogBuilder.okCancel(
+                        message("gettingstarted.auth.idc.sign.out.confirmation.title"),
+                        message("gettingstarted.auth.idc.sign.out.confirmation")
+                    ).yesText(message("general.confirm")).ask(project)
+                    if (confirmDeletion) {
+                        deleteSsoConnectionCW(connection)
+                    }
+                }
+            }
+            if (connection != null) {
+                logoutFromSsoConnection(project, connection) {
+                    controlPanelVisibility(panelConnected, panelNotConnected)
+                }
+            }
+        }
+
+        private fun handleCodeCatalystLogin(authResult: Boolean, revertToPanel: Panel) {
+            handleLogin(authResult)
+            if (authResult) {
+                controlPanelVisibility(panelConnectionInProgress, panelConnected)
+
+                val tooltip = GotItTooltip(
+                    "aws.toolkit.devtool.tab.whatsnew",
+                    message("gettingstarted.explorer.gotit.codecatalyst.body"),
+                    project
+                )
+                    .withHeader(message("gettingstarted.explorer.gotit.codecatalyst.title"))
+                    .withPosition(Balloon.Position.above)
+
+                showGotIt(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID, CawsServiceNode.NODE_NAME, tooltip)
+            } else {
+                controlPanelVisibility(panelConnectionInProgress, revertToPanel)
+            }
         }
     }
 
