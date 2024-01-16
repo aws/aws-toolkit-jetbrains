@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeWhisperer
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QGettingStartedVirtualFile
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.startup.CodeWhispererProjectStartupActivity
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
@@ -49,21 +50,8 @@ class GetStartedNode(nodeProject: Project) : CodeWhispererActionNode(
                 // Start from scratch if no active connection
                 if (requestCredentialsForCodeWhisperer(project)) {
                     project.refreshCwQTree()
-                    val meetQSettings = MeetQSettings.getInstance()
-                    if (!meetQSettings.shouldDisplayPage) {
+                    if (!openMeetQPage(project)) {
                         return@runInEdt
-                    } else {
-                        FileEditorManager.getInstance(
-                            project
-                        ).openTextEditor(
-                            OpenFileDescriptor(
-                                project,
-                                QGettingStartedVirtualFile()
-                            ),
-                            true
-                        )
-                        meetQSettings.shouldDisplayPage = false
-                        UiTelemetry.click(project, "toolkit_openedWelcomeToAmazonQPage")
                     }
                 }
             }
