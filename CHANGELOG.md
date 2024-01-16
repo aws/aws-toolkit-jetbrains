@@ -1,3 +1,24 @@
+# _2.3_ (2024-01-05)
+- **(Feature)** Emit additional CodeTransform telemetry
+- **(Feature)** Amazon Q Transform: Use the IDE Maven runner as a fallback
+- **(Feature)** Add Job Id to Code Transform Job History
+- **(Bug Fix)** Amazon Q Transform: Always execute IDE bundled maven whenever maven command fails
+- **(Bug Fix)** Improved recursion when validating projects for Q Code Transform.
+- **(Bug Fix)** CodeWhisperer: fix code scan UI of viewing scanned files not reflecting correct files
+
+# _2.2_ (2023-12-13)
+- **(Feature)** CodeWhisperer security scans support ruby files.
+- **(Feature)** Use MDE endpoint set by environment variable
+- **(Feature)** CodeWhisperer security scans now support Go files.
+- **(Bug Fix)** Normalize telemetry logging metrics for AmazonQ Transform
+- **(Bug Fix)** Fix telemetry logging for new Amazon Q Code Transform telemetry updates
+- **(Bug Fix)** CodeWhisperer: Increase polling frequency for security scans.
+- **(Bug Fix)** Fixed sign out button in the CodeWhisperer panel for Getting Started Page
+- **(Bug Fix)** Fix issue where the CodeWhisperer status bar widget is visible in a remote development environment
+- **(Bug Fix)** Amazon Q Transform: Fix to ensure backend gets necessary dependencies
+- **(Removal)** Removed support for 2022.3.x IDEs
+- **(Removal)** Removed support for Gateway 2023.2
+
 # _2.1_ (2023-12-04)
 - **(Feature)** CodeWhisperer: Simplify Learn More page
 - **(Bug Fix)** CodeWhisperer: Security scans for Java no longer require build artifacts

@@ -8,12 +8,16 @@ import com.github.tomakehurst.wiremock.client.WireMock.put
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.testFramework.common.ThreadLeakTracker
+import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.fail
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,6 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
@@ -62,21 +67,27 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     @JvmField
     val wireMock = WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort())
 
-    lateinit var gumbyUploadUrlResponse: CreateUploadUrlResponse
-
     @Before
     override fun setup() {
         super.setup()
-        val s3endpoint = "http://127.0.0.1:${wireMock.port()}"
-        gumbyUploadUrlResponse = CreateUploadUrlResponse.builder()
-            .uploadUrl(s3endpoint)
-            .uploadId("1234")
-            .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)))
-            .sdkHttpResponse(
-                SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build()
-            )
-            .build() as CreateUploadUrlResponse
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Process Proxy: Launcher")
+    }
+
+    // when maven is not installed in the local machine and mvnw does not support this pom.xml
+    @Test
+    fun `CodeModernizerSessionContext shows the transformation hub once ide maven finishes`() {
+        val module = projectRule.module
+        val fileText = "Morning"
+        projectRule.fixture.addFileToModule(module, "src/tmp.txt", fileText)
+
+        // get project.projectFile because project.projectFile can not be null
+        val roots = ModuleRootManager.getInstance(module).contentRoots
+        val root = roots[0]
+        val context = spy(CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
+        runInEdtAndWait {
+            context.createZipWithModuleFiles().payload
+            verify(context, times(1)).showTransformationHub()
+        }
     }
 
     @Test
@@ -85,7 +96,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val fileText = "Morning"
         projectRule.fixture.addFileToModule(module, "src/tmp.txt", fileText)
 
-        var file: File? = null
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
@@ -96,24 +106,23 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
         `when`(codeContext.runMavenCommand(mockFile)).thenReturn(mock(File::class.java))
-        runInEdtAndWait {
-            file = context.createZipWithModuleFiles().payload
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
         }
-        assertNotNull(file)
-        val zipFile = ZipFile(file)
-        val entries = zipFile.entries()
-        var numEntries = 0
-        while (entries.hasMoreElements()) {
-            numEntries += 1
-            val entry = entries.nextElement() ?: continue
-            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
-            when (Path(entry.name)) {
-                Path("manifest.json") -> assertNotNull(fileContent)
-                Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
-                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+        ZipFile(file).use { zipFile ->
+            var numEntries = 0
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                numEntries += 1
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
+                    else -> fail("Unexpected entry in zip file: $entry")
+                }
             }
+            zipFile.close()
+            assert(numEntries == 2)
         }
-        assert(numEntries == 2)
     }
 
     @Test
@@ -125,7 +134,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         projectRule.fixture.addFileToModule(module, "target/somedir/anotherthing.class", fileText)
         projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
 
-        var file: File? = null
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
@@ -136,21 +144,20 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
         `when`(codeContext.runMavenCommand(mockFile)).thenReturn(mock(File::class.java))
-        runInEdtAndWait {
-            file = context.createZipWithModuleFiles().payload
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
         }
-        assertNotNull(file)
-        val zipFile = ZipFile(file)
-        val entries = zipFile.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement() ?: continue
-            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
-            when (Path(entry.name)) {
-                Path("manifest.json") -> assertNotNull(fileContent)
-                Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
-                Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
-                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+        ZipFile(file).use { zipFile ->
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
+                    Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
+                    else -> fail("Unexpected entry in zip file: $entry")
+                }
             }
+            zipFile.close()
         }
     }
 
@@ -163,7 +170,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         projectRule.fixture.addFileToModule(module, "target/somedir/anotherthing.class", fileText)
         projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
 
-        var file: File? = null
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
@@ -171,26 +177,25 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
-        runInEdtAndWait {
-            file = context.createZipWithModuleFiles().payload
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
         }
-        assertNotNull(file)
-        val zipFile = ZipFile(file)
-        val entries = zipFile.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement() ?: continue
-            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
-            when (Path(entry.name)) {
-                Path("manifest.json") -> assertNotNull(fileContent)
-                Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
-                Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
-                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+        ZipFile(file).use { zipFile ->
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
+                    Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
+                    else -> fail("Unexpected entry in zip file: $entry")
+                }
             }
+            zipFile.close()
         }
     }
 
     @Test
-    fun `CodeModernizerSession can create zip and exludes nested target`() {
+    fun `CodeModernizerSession can create zip and exclude nested target`() {
         addFilesToProjectModule(
             "src/tmp.java",
             "target/smth.java",
@@ -200,30 +205,64 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             "someModule/target/smth.class",
             "someModule/src/helloworld.java",
         )
-        var file: File? = null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
         assertFalse(roots.isEmpty() || roots.size > 1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
-        runInEdtAndWait {
-            file = context.createZipWithModuleFiles().payload
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
         }
-        assertNotNull(file)
-        val zipFile = ZipFile(file)
-        val entries = zipFile.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement() ?: continue
-            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
-            when (Path(entry.name)) {
-                Path("manifest.json") -> assertNotNull(fileContent)
-                Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
-                Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
-                Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule/src/helloworld.java", fileContent)
-                Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
-                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+        ZipFile(file).use { zipFile ->
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
+                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
+                    Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule/src/helloworld.java", fileContent)
+                    Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
+                    else -> fail("Unexpected entry in zip file: $entry")
+                }
             }
+            zipFile.close()
+        }
+    }
+
+    @Test
+    fun `CodeModernizerSession can create zip and replace Windows file path`() {
+        addFilesToProjectModule(
+            "src\\tmp.java",
+            "target\\smth.java",
+            "target\\somedir\\anotherthing.class",
+            "pom.xml",
+            "someModule\\pom.xml",
+            "someModule\\target\\smth.class",
+            "someModule\\src\\helloworld.java",
+        )
+        val rootManager = ModuleRootManager.getInstance(module)
+        val roots = rootManager.contentRoots
+        assertFalse(roots.isEmpty() || roots.size > 1)
+
+        val pom = roots[0].children.first { it.name == "pom.xml" }
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
+        }
+        ZipFile(file).use { zipFile ->
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.java") -> assertEquals("src\\tmp.java", fileContent)
+                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
+                    Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule\\src\\helloworld.java", fileContent)
+                    Path("sources/someModule/pom.xml") -> assertEquals("someModule\\pom.xml", fileContent)
+                    else -> fail("Unexpected entry in zip file: $entry")
+                }
+            }
+            zipFile.close()
         }
     }
 
@@ -236,7 +275,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             "someModule/pom.xml",
             "someModule/.idea/smthelse.iml"
         )
-        var file: File? = null
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
@@ -244,22 +282,21 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
-        runInEdtAndWait {
-            file = context.createZipWithModuleFiles().payload
+        val file = runInEdtAndGet {
+            context.createZipWithModuleFiles().payload
         }
-        assertNotNull(file)
-        val zipFile = ZipFile(file)
-        val entries = zipFile.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement() ?: continue
-            val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
-            when (Path(entry.name)) {
-                Path("manifest.json") -> assertNotNull(fileContent)
-                Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
-                Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
-                Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
-                else -> throw AssertionError("Unexpected entry in zip file: $entry")
+        ZipFile(file).use { zipFile ->
+            assertThat(zipFile.entries().toList()).allSatisfy { entry ->
+                val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
+                when (Path(entry.name)) {
+                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
+                    Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
+                    Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
+                    else -> throw AssertionError("Unexpected entry in zip file: $entry")
+                }
             }
+            zipFile.close()
         }
     }
 
@@ -328,6 +365,16 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
     @Test
     fun `test uploadPayload()`() {
+        val s3endpoint = "http://127.0.0.1:${wireMock.port()}"
+        val gumbyUploadUrlResponse = CreateUploadUrlResponse.builder()
+            .uploadUrl(s3endpoint)
+            .uploadId("1234")
+            .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)))
+            .sdkHttpResponse(
+                SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build()
+            )
+            .build() as CreateUploadUrlResponse
         val expectedSha256checksum: String =
             Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(expectedFilePath.toAbsolutePath().toString())))
         clientAdaptorSpy.stub {
