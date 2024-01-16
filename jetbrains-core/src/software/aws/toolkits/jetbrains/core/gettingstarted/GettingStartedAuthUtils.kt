@@ -294,24 +294,7 @@ fun requestCredentialsForCodeCatalyst(
                 state = GatewaySetupAuthenticationDialogState().also {
                     it.selectedTab.set(GatewaySetupAuthenticationTabs.BUILDER_ID)
                 },
-                tabSettings = mapOf(
-                    GatewaySetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
-                        disabled = false,
-                        notice = SetupAuthenticationNotice(
-                            SetupAuthenticationNotice.NoticeType.WARNING,
-                            message("gettingstarted.setup.codecatalyst.use_builder_id"),
-                            CAWS_DOCS
-                        )
-                    ),
-                    GatewaySetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
-                        disabled = false,
-                        notice = SetupAuthenticationNotice(
-                            SetupAuthenticationNotice.NoticeType.WARNING,
-                            message("gettingstarted.setup.codecatalyst.use_identity_center"),
-                            CAWS_DOCS
-                        )
-                    )
-                ),
+                tabSettings = emptyMap(),
                 scopes = CODECATALYST_SCOPES,
                 promptForIdcPermissionSet = false
             )
@@ -325,22 +308,6 @@ fun requestCredentialsForCodeCatalyst(
                     }
                 },
                 tabSettings = mapOf(
-                    SetupAuthenticationTabs.IDENTITY_CENTER to AuthenticationTabSettings(
-                        disabled = false,
-                        notice = SetupAuthenticationNotice(
-                            SetupAuthenticationNotice.NoticeType.WARNING,
-                            message("gettingstarted.setup.codecatalyst.use_builder_id"),
-                            CAWS_DOCS
-                        )
-                    ),
-                    SetupAuthenticationTabs.BUILDER_ID to AuthenticationTabSettings(
-                        disabled = false,
-                        notice = SetupAuthenticationNotice(
-                            SetupAuthenticationNotice.NoticeType.WARNING,
-                            message("gettingstarted.setup.codecatalyst.use_identity_center"),
-                            CAWS_DOCS
-                        )
-                    ),
                     SetupAuthenticationTabs.IAM_LONG_LIVED to AuthenticationTabSettings(
                         disabled = true,
                         notice = SetupAuthenticationNotice(
