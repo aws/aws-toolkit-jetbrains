@@ -247,9 +247,9 @@ class GettingStartedPanel(
                                     message("caws.title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            false,
+                                            true,
                                             message("iam_identity_center.name"),
-                                            message("aws.getstarted.auth.panel.notSupport_text")
+                                            message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
                                             true,
