@@ -17,10 +17,8 @@ phases:
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output
       - setfacl -m d:o::rwx,o::rwx /root
-      - ls -alh $CODEBUILD_SRC_DIR
-      - ls -alh $CODEBUILD_SRC_DIR/..
-      - git --version
-      - git config --global --add safe.directory $CODEBUILD_SRC_DIR
+      - git config --global --add safe.directory "$CODEBUILD_SRC_DIR"
+      - git config --global -l
 
   build:
     commands:
