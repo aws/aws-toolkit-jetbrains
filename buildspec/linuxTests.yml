@@ -17,7 +17,7 @@ phases:
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output
       - setfacl -m d:o::rwx,o::rwx /root
-      - chown -R codebuild-user:codebuild-user /root/.git/config
+      - chown -R codebuild-user:codebuild-user "$CODEBUILD_SRC_DIR"/.git/config
       # (CVE-2022-24765) fatal: detected dubious ownership in repository
       - su codebuild-user -c "git config --global --add safe.directory \"$CODEBUILD_SRC_DIR\""
 
