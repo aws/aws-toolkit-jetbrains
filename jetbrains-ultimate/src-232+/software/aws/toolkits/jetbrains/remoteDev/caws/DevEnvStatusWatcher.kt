@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredent
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentClient
 import software.aws.toolkits.jetbrains.services.caws.envclient.models.UpdateActivityRequest
+import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import java.time.Instant
@@ -35,7 +36,7 @@ class DevEnvStatusWatcher : StartupActivity {
     }
 
     override fun runActivity(project: Project) {
-        if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
+        if (!isCodeCatalystDevEnv()) {
             return
         }
         val connection = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()

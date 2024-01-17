@@ -135,7 +135,7 @@ class CodeWhispererClientAdaptorTest {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn listFeatureEvaluationsResponse
         }
 
-        val mockConnection = mock<BearerSsoConnection>()
+        val mockConnection = mock<AwsBearerTokenConnection>()
         whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
 
         connectionManager = mock {

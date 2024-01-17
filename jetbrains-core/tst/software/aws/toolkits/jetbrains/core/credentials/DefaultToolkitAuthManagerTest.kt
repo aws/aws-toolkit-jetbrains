@@ -326,10 +326,10 @@ class DefaultToolkitAuthManagerTest {
             val newScopes = listOf("existing1", "new1")
             loginSso(projectRule.project, "foo", "us-east-1", newScopes)
 
-            assertThat(connectionManager.activeConnection() as BearerSsoConnection).satisfies { connection ->
+            assertThat(connectionManager.activeConnection() as AwsBearerTokenConnection).satisfies { connection ->
                 assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3", "new1"))
             }
-            assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<BearerSsoConnection> { connection ->
+            assertThat(sut.listConnections()).singleElement().isInstanceOfSatisfying<AwsBearerTokenConnection> { connection ->
                 assertThat(connection).usingRecursiveComparison().isNotEqualTo(existingConnection)
                 assertThat(connection.scopes.toSet()).isEqualTo(setOf("existing1", "existing2", "existing3", "new1"))
             }

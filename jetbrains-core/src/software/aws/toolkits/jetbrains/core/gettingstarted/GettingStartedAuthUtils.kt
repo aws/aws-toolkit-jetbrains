@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.profiles.Profile
+import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
@@ -18,7 +19,6 @@ import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
@@ -57,7 +57,7 @@ fun rolePopupFromConnection(
     isFirstInstance: Boolean = false
 ) {
     runInEdt {
-        if (!connection.id.startsWith(SsoSessionConstants.SSO_SESSION_SECTION_NAME) || connection !is BearerSsoConnection) {
+        if (!connection.id.startsWith(SsoSessionConstants.SSO_SESSION_SECTION_NAME)) {
             // require reauth if it's not a profile-based sso connection
             requestCredentialsForExplorer(project, isFirstInstance = isFirstInstance, connectionInitiatedFromExplorer = true)
         } else {
@@ -486,7 +486,7 @@ internal fun authAndUpdateConfig(
     profile: UserConfigSsoSessionProfile,
     configFilesFacade: ConfigFilesFacade,
     onError: (String) -> Unit
-): BearerSsoConnection? {
+): AwsBearerTokenConnection? {
     val connection = try {
         ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(profile) {
             reauthConnectionIfNeeded(project, it)
@@ -505,9 +505,9 @@ internal fun authAndUpdateConfig(
             .name(profile.configSessionName)
             .properties(
                 mapOf(
-                    "sso_start_url" to profile.startUrl,
-                    "sso_region" to profile.ssoRegion,
-                    "sso_registration_scopes" to profile.scopes.joinToString(",")
+                    ProfileProperty.SSO_START_URL to profile.startUrl,
+                    ProfileProperty.SSO_REGION to profile.ssoRegion,
+                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to profile.scopes.joinToString(",")
                 )
             ).build()
     )

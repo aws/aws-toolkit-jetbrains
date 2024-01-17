@@ -86,7 +86,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
             on { exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>()) } doReturn CompletableFuture()
         }
 
-        val mockConnection = mock<BearerSsoConnection>()
+        val mockConnection = mock<AwsBearerTokenConnection>()
         whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
 
         connectionManager = mock {

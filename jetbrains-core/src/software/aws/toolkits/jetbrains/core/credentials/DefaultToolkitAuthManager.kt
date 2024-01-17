@@ -81,8 +81,8 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
     override fun listConnections(): List<ToolkitConnection> = connections.toList() + transientConnections
 
-    override fun tryCreateTransientSsoConnection(profile: AuthProfile, callback: (BearerSsoConnection) -> Unit): BearerSsoConnection {
-        val connection = (connectionFromProfile(profile) as BearerSsoConnection).also {
+    override fun tryCreateTransientSsoConnection(profile: AuthProfile, callback: (AwsBearerTokenConnection) -> Unit): AwsBearerTokenConnection {
+        val connection = (connectionFromProfile(profile) as AwsBearerTokenConnection).also {
             callback(it)
             transientConnections.add(it)
         }
@@ -90,12 +90,12 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         return connection
     }
 
-    override fun getOrCreateSsoConnection(profile: UserConfigSsoSessionProfile): BearerSsoConnection {
-        (transientConnections.firstOrNull { it.id == profile.id } as? BearerSsoConnection)?.let {
+    override fun getOrCreateSsoConnection(profile: UserConfigSsoSessionProfile): AwsBearerTokenConnection {
+        (transientConnections.firstOrNull { it.id == profile.id } as? AwsBearerTokenConnection)?.let {
             return it
         }
 
-        val connection = connectionFromProfile(profile) as BearerSsoConnection
+        val connection = connectionFromProfile(profile) as AwsBearerTokenConnection
         transientConnections.add(connection)
 
         return connection
@@ -226,7 +226,8 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         is DetectedDiskSsoSessionProfile -> DetectedDiskSsoSessionConnection(
             sessionProfileName = profile.profileName,
             startUrl = profile.startUrl,
-            region = profile.ssoRegion
+            region = profile.ssoRegion,
+            scopes = profile.scopes
         )
     }
 
