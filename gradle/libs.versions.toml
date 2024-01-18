@@ -28,6 +28,7 @@ slf4j = "1.7.36"
 sshd = "2.11.0"
 wiremock = "2.35.0"
 zjsonpatch = "0.4.11"
+jsoup = "1.14.3"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
@@ -99,6 +100,8 @@ sshd-scp = { module = "org.apache.sshd:sshd-scp", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }
 zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+
 
 [bundles]
 jackson = ["jackson-datetime", "jackson-kotlin", "jackson-yaml", "jackson-xml"]

@@ -73,6 +73,15 @@ import java.io.File
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import kotlinx.serialization.json.Json;
+import kotlinx.serialization.json.JsonObject;
 
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
@@ -373,6 +382,113 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     /**
+    helper function to generate 1p dependency metrics
+    makes GET requests to maven central to check for 1p dependencies for a small subset of the project's
+    dependencies
+     */
+    private fun makeGETRequests(groupId: String, artifactId: String, version: String, jobId: JobId): Boolean {
+        val httpClient = HttpClient.newHttpClient();
+        val request =  HttpRequest.newBuilder()
+            .uri(URI.create("https://search.maven.org/solrsearch/select?q=g:$groupId%20AND%20a:$artifactId%20AND%20v:$version%20AND%20p:jar&rows=20&wt=json"))
+            .GET()
+            .build();
+
+        try{
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if(response.statusCode() == 200){
+                val jsonResponse = response.body();
+                try {
+                    val json: JsonObject = Json.parseToJsonElement(jsonResponse) as JsonObject;
+                    val responses = json["response"] as? JsonObject;
+                    val numFound = responses?.get("numFound");
+
+
+                    if(numFound.toString() == "0"){
+                        CodetransformTelemetry.projectContains1pDependencies(
+                            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                            codeTransformJobId = jobId.id,
+                            has1pdependency = true
+                        )
+                        return true;
+                    }
+                } catch (e: Exception){
+                    LOG.warn{"Error parsing JSON response from GET request to maven central: ${e.printStackTrace()}"}
+                }
+            } else {
+                LOG.warn{"Error making request to maven central. Response code: ${response.statusCode()}"}
+            }
+        } catch(e: Exception){
+            LOG.warn{"Exception while making GET request to maven central: ${e.printStackTrace()}"}
+        }
+        return false;
+    }
+
+
+    /**
+     * Coroutine to find and generate metrics on 1p dependencies (dependencies
+     * not available in maven central)
+     */
+    fun generate1pDependencyMetrics(jobId: JobId, session: CodeModernizerSession) = projectCoroutineScope(project).launch {
+        val dir = project.basePath;
+        val commandList = listOf(
+            "versions:dependency-updates-aggregate-report",
+            "-DonlyProjectDependencies=true"
+        )
+
+        try{
+            session.sessionContext.runMavenShellCommand(File(dir), commandList);
+
+            val successImgSrc = "images/icon_success_sml.gif";
+            var aggregateReport = Jsoup.parse(File("$dir/target/site/dependency-updates-aggregate-report.html"), "UTF-8");
+
+            // delete everything after dependency updates <h2> to reduce parsing size
+            val text = "Dependency Updates";
+            val h2 = aggregateReport.select("h2:contains($text)");
+
+            if(h2 != null){
+                val elementsAfterH2 = h2.nextAll();
+                elementsAfterH2.remove();
+            }
+
+            val imgElements: Elements = aggregateReport.select("td img[src=$successImgSrc]");
+            var found1pDependency = false;
+
+            for(img: Element in imgElements){
+                var td = img.parent()?.parent();
+
+                if (td != null){
+                    if(td.childrenSize() > 3){
+                        val followingElements = td.children().subList(1,4);
+
+                        val groupId = followingElements[0].text();
+                        val artifactId = followingElements[1].text();
+                        val version = followingElements[2].text();
+                        found1pDependency = makeGETRequests(groupId, artifactId, version, jobId);
+
+                        if(found1pDependency){
+                            break; // break once one 1p dependency is found to emit metric
+                        }
+                    }
+                }
+            }
+
+            if(!found1pDependency){
+                CodetransformTelemetry.projectContains1pDependencies(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformJobId = jobId.id,
+                    has1pdependency = false
+                )
+            }
+        } catch (e: Exception){
+            CodetransformTelemetry.logGeneralError(
+                codeTransformApiErrorMessage = "Failed to run maven command and parse 1p dependencies",
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            )
+        }
+
+    }
+    /**
      *Start the modernization job and return the reference
      */
     internal suspend fun initModernizationJob(session: CodeModernizerSession): CodeModernizerJobCompletedResult {
@@ -413,6 +529,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         ApplicationManager.getApplication().invokeLater {
             codeModernizerBottomWindowPanelManager.setJobRunningUI()
         }
+
+        // start coroutine to generate 1p dependency metrics
+        generate1pDependencyMetrics(jobId, session);
 
         return session.pollUntilJobCompletion(jobId) { new, plan ->
             codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion)

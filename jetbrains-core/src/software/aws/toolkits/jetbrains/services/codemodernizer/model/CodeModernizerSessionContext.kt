@@ -158,32 +158,19 @@ data class CodeModernizerSessionContext(
         }
     }
 
-    /**
-     * @description
-     * this command is used to run the maven commmand which copies all the dependencies to a temp file which we will use to zip our own files to
-     */
-    fun runMavenCommand(sourceFolder: File): File? {
-        val currentTimestamp = System.currentTimeMillis()
-        val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
-        val commandList = listOf(
-            "dependency:copy-dependencies",
-            "-DoutputDirectory=$destinationDir",
-            "-Dmdep.useRepositoryLayout=true",
-            "-Dmdep.copyPom=true",
-            "-Dmdep.addParentPoms=true"
-        )
-        fun runCommand(mavenCommand: String): ProcessOutput {
-            val command = buildList {
-                add(mavenCommand)
-                addAll(commandList)
-            }
-            val commandLine = GeneralCommandLine(command)
-                .withWorkDirectory(sourceFolder)
-                .withRedirectErrorStream(true)
-            val output = ExecUtil.execAndGetOutput(commandLine)
-            return output
+    fun runCommand(sourceFolder: File, mavenCommand: String, commandList: List<String>): ProcessOutput {
+        val command = buildList {
+            add(mavenCommand)
+            addAll(commandList)
         }
+        val commandLine = GeneralCommandLine(command)
+            .withWorkDirectory(sourceFolder)
+            .withRedirectErrorStream(true)
+        val output = ExecUtil.execAndGetOutput(commandLine)
+        return output
+    }
 
+    fun runMavenWrappers(sourceFolder: File, commandList: List<String>): Boolean?{
         // 1. Try to execute Maven Wrapper Command
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
@@ -193,7 +180,7 @@ data class CodeModernizerSessionContext(
             } else {
                 "./mvnw"
             }
-            val output = runCommand(mvnw)
+            val output = runCommand(sourceFolder, mvnw, commandList)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
                 val error = "The exitCode should be 0 while it was ${output.exitCode}"
@@ -231,7 +218,7 @@ data class CodeModernizerSessionContext(
         if (shouldTryMvnCommand) {
             LOG.warn { "Executing mvn" }
             try {
-                val output = runCommand("mvn")
+                val output = runCommand(sourceFolder, "mvn", commandList)
                 if (output.exitCode != 0) {
                     LOG.error { "Maven command output:\n$output" }
                     val error = "The exitCode should be 0 while it was ${output.exitCode}"
@@ -328,8 +315,34 @@ data class CodeModernizerSessionContext(
                 showTransformationHub()
             }
         }
+        return shouldTryMvnCommand;
+    }
 
+    /**
+     * @description
+     * this command is used to run the maven commmand which copies all the dependencies to a temp file which we will use to zip our own files to
+     */
+    fun runMavenCommand(sourceFolder: File): File? {
+        val currentTimestamp = System.currentTimeMillis()
+        val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
+        val commandList = listOf(
+            "dependency:copy-dependencies",
+            "-DoutputDirectory=$destinationDir",
+            "-Dmdep.useRepositoryLayout=true",
+            "-Dmdep.copyPom=true",
+            "-Dmdep.addParentPoms=true"
+        )
+
+        runMavenWrappers(sourceFolder, commandList);
         return destinationDir.toFile()
+    }
+
+    /**
+     * @description
+     * Run any maven shell command by passing in the commandList
+     */
+    fun runMavenShellCommand(sourceFolder: File, commandList: List<String>) {
+        runMavenWrappers(sourceFolder, commandList);
     }
 
     private fun iterateThroughDependencies(depDirectory: File): MutableList<File> {
