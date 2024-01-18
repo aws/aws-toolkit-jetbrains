@@ -29,7 +29,6 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.RunAll
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.util.io.isDirectory
 import com.intellij.xdebugger.XDebuggerUtil
 import org.jetbrains.idea.maven.model.MavenExplicitProfiles
 import org.jetbrains.idea.maven.project.MavenProjectsManager
@@ -44,6 +43,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.isDirectory
 
 fun HeavyJavaCodeInsightTestFixtureRule.setUpJdk(jdkName: String = "Real JDK"): String {
     val jdkHome = IdeaTestUtil.requireRealJdkHome()
@@ -260,7 +260,6 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     projectsManager.resetManagedFilesAndProfilesInTests(poms, MavenExplicitProfiles(emptyList()))
 
     runInEdtAndWait {
-        projectsManager.waitForReadingCompletion()
         projectsManager.importProjects()
     }
 

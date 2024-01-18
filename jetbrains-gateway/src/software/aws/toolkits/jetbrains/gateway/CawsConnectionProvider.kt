@@ -22,9 +22,10 @@ import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.util.Disposer
 import com.intellij.remoteDev.downloader.CodeWithMeClientDownloader
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.ui.layout.panel
 import com.intellij.util.ui.JBFont
 import com.jetbrains.gateway.api.ConnectionRequestor
 import com.jetbrains.gateway.api.GatewayConnectionHandle
@@ -77,7 +78,6 @@ import javax.swing.JLabel
 import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
-import com.intellij.ui.dsl.builder.panel as panelv2
 import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 @ExperimentalTime
@@ -289,7 +289,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                 runInEdt {
                                     DialogBuilder().apply {
                                         setCenterPanel(
-                                            panelv2 {
+                                            panel {
                                                 row {
                                                     icon(AllIcons.General.ErrorDialog).verticalAlign(VerticalAlign.TOP)
 
@@ -345,7 +345,8 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
                 return@let panel {
                     row {
-                        view(grow)
+                        cell(view)
+                            .align(Align.FILL)
                     }
                 }
             }
