@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 const val ZIP_SOURCES_PATH = "sources"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
+val ACCOUNT_ID_REGEX = Regex("[0-9]{12}")
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -96,7 +97,7 @@ class CodeModernizerSession(
             )
         } catch (e: Exception) {
             LOG.error(e) { e.message.toString() }
-            val sanitizedErrorMessage = "Failed to create zip: " + sanitizeMessage(e.message.toString())
+            val sanitizedErrorMessage = "Failed to create zip: ${sanitizeMessage(e.message.toString())}"
             CodetransformTelemetry.logGeneralError(
                 codeTransformApiErrorMessage = sanitizedErrorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -126,10 +127,10 @@ class CodeModernizerSession(
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
         } catch (e: Exception) {
-            LOG.error(e) { e.message.toString() }
+            val sanitizedErrorMessage = "Failed to start job: ${sanitizeMessage(e.message.toString())}"
+            LOG.error(e) { "Failed to start job" }
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            val sanitizedErrorMessage = "Failed to start job: " + sanitizeMessage(e.message.toString())
             CodetransformTelemetry.logGeneralError(
                 codeTransformApiErrorMessage = sanitizedErrorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -270,7 +271,7 @@ class CodeModernizerSession(
             uploadArtifactToS3(createUploadUrlResponse.uploadUrl(), payload, sha256checksum, createUploadUrlResponse.kmsKeyArn().orEmpty())
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when uploading artifact to S3"
-            LOG.error(e) { e.message.toString() }
+            LOG.error(e) { errorMessage }
             CodetransformTelemetry.logApiError(
                 codeTransformApiErrorMessage = errorMessage,
                 codeTransformApiNames = CodeTransformApiNames.UploadZip,
@@ -440,7 +441,7 @@ class CodeModernizerSession(
         }
     }
 
-    private fun sanitizeMessage(error: String): String = error.replace(Regex("[0-9]{12}"), "{awsAccountId}")
+    private fun sanitizeMessage(error: String): String = error.replace(ACCOUNT_ID_REGEX, "{awsAccountId}")
 
     companion object {
         private val LOG = getLogger<CodeModernizerSession>()

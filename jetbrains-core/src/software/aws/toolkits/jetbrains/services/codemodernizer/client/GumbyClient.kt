@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
-import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveRequest
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -130,10 +129,10 @@ class GumbyClient(private val project: Project) {
         val checksum = AtomicReference("")
         try {
             val result = streamingBearerClient().exportResultArchive(
-                ExportResultArchiveRequest.builder()
-                    .exportId(jobId.id)
-                    .exportIntent(ExportIntent.TRANSFORMATION)
-                    .build(),
+                {
+                    it.exportId(jobId.id)
+                    it.exportIntent(ExportIntent.TRANSFORMATION)
+                },
                 ExportResultArchiveResponseHandler.builder().subscriber(
                     ExportResultArchiveResponseHandler.Visitor.builder()
                         .onBinaryMetadataEvent {
