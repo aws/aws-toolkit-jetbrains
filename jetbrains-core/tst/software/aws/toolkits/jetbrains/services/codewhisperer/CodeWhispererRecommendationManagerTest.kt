@@ -17,8 +17,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererRecommendationManagerTest {
@@ -72,7 +74,7 @@ class CodeWhispererRecommendationManagerTest {
     fun `test duplicated recommendation after truncation will be discarded`() {
         val userInput = ""
         sut.stub {
-            onGeneric { findRightContextOverlap(any(), any()) } doReturn "}"
+            onGeneric { findRightContextOverlap(any<RequestContext>(), any<Completion>()) } doReturn "}"
             onGeneric { reformatReference(any(), any()) } doReturn aCompletion("def")
         }
         val detail = sut.buildDetailContext(
@@ -91,7 +93,7 @@ class CodeWhispererRecommendationManagerTest {
     fun `test blank recommendation after truncation will be discarded`() {
         val userInput = ""
         sut.stub {
-            onGeneric { findRightContextOverlap(any(), any()) } doReturn "}"
+            onGeneric { findRightContextOverlap(any<RequestContext>(), any<Completion>()) } doReturn "}"
         }
         val detail = sut.buildDetailContext(
             aRequestContext(project),
@@ -101,5 +103,63 @@ class CodeWhispererRecommendationManagerTest {
         )
         assertThat(detail[0].isDiscarded).isTrue
         assertThat(detail[0].isTruncatedOnRight).isTrue
+    }
+
+    @Test
+    fun `should not be considered as overlap if right context has new line char`() {
+        var overlap: String
+
+        /**
+         * return |
+         *
+         * def foo:
+         *     pass
+         */
+        overlap = sut.findRightContextOverlap("\n\ndef foo():\n\tpass", "has_d_at_end")
+        assertThat(overlap).isEqualTo("")
+
+        /**
+         * {
+         *    { foo: foo },
+         *    { bar: bar },
+         *    { |
+         * }
+         *
+         */
+        overlap = sut.findRightContextOverlap("\n}", "baz: baz }")
+        assertThat(overlap).isEqualTo("")
+
+        /** A case we can't cover
+         * def foo():
+         *   |
+         *
+         *
+         * return foo
+         */
+        overlap = sut.findRightContextOverlap("\n\n\nreturn x", "return foo")
+        assertThat(overlap).isEqualTo("")
+    }
+
+    @Test
+    fun `trim extra prefixing new line character`() {
+        var actual: String
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("")
+        assertThat(actual).isEqualTo("")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("f")
+        assertThat(actual).isEqualTo("f")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\n\n")
+        assertThat(actual).isEqualTo("\n")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("foo")
+        assertThat(actual).isEqualTo("foo")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\nfoo")
+        assertThat(actual).isEqualTo("\nfoo")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\n\n\nfoo\nbar")
+        assertThat(actual).isEqualTo("\nfoo\nbar")
     }
 }
