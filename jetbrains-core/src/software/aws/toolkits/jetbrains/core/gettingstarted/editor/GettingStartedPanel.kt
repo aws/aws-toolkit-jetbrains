@@ -236,9 +236,9 @@ class GettingStartedPanel(
                                     message("caws.title"),
                                     listOf(
                                         AuthPanelBullet(
-                                            false,
+                                            true,
                                             message("iam_identity_center.name"),
-                                            message("aws.getstarted.auth.panel.notSupport_text")
+                                            message("aws.onboarding.getstarted.panel.idc_row_comment_text")
                                         ),
                                         AuthPanelBullet(
                                             true,
@@ -312,7 +312,7 @@ class GettingStartedPanel(
                         }
 
                         row {
-                            browserLink(message("codewhisperer.gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl())
+                            browserLink(message("gettingstarted.panel.learn_more"), CawsEndpoints.ConsoleFactory.baseUrl())
                                 .actionListener { event, component ->
                                     UiTelemetry.click(project, "auth_CodecatalystDocumentation")
                                 }
@@ -320,7 +320,7 @@ class GettingStartedPanel(
 
                         panelNotConnected = panel {
                             row {
-                                button(message("caws.getstarted.panel.login")) {
+                                button(message("gettingstarted.panel.login_button")) {
                                     controlPanelVisibility(panelNotConnected, panelConnectionInProgress)
                                     handleCodeCatalystLogin(requestCredentialsForCodeCatalyst(project), panelNotConnected)
                                 }.applyToComponent {
@@ -431,7 +431,7 @@ class GettingStartedPanel(
                             }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
 
                             row {
-                                text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
+                                text("<a>${message("gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeCatalystLogin(
                                         requestCredentialsForCodeCatalyst(
@@ -501,7 +501,7 @@ class GettingStartedPanel(
                             }.visible(activeConnection().connectionType == ActiveConnectionType.BUILDER_ID)
 
                             row {
-                                text("<a>${message("codewhisperer.gettingstarted.panel.login_button")}</a>") {
+                                text("<a>${message("gettingstarted.panel.login_button")}</a>") {
                                     controlPanelVisibility(panelConnected, panelConnectionInProgress)
                                     handleCodeCatalystLogin(
                                         requestCredentialsForCodeCatalyst(
