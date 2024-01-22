@@ -106,7 +106,7 @@ class CodeWhispererRecommendationManagerTest {
     }
 
     @Test
-    fun `should not be considered as overlap if right context has new line char`() {
+    fun `overlap calculation should trim new line character starting from second character (index 1 of a string)`() {
         // recommendation is wrapped inside |recommendationContent|
         /**
          * public foo() {
