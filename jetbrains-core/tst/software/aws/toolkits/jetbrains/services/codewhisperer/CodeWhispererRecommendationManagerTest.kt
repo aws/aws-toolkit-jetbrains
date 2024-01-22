@@ -138,7 +138,6 @@ class CodeWhispererRecommendationManagerTest {
         overlap = sut.findRightContextOverlap(rightContext = "ld);\nString foo = \"foo\";", recommendationContent = "world)")
         assertThat(overlap).isEqualTo("ld)")
 
-
         /**
          * return |has_d_at_end|
          *
