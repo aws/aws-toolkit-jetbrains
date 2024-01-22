@@ -107,44 +107,72 @@ class CodeWhispererRecommendationManagerTest {
 
     @Test
     fun `should not be considered as overlap if right context has new line char`() {
-        var overlap: String
+        // recommendation is wrapped inside |recommendationContent|
+        /**
+         * public foo() {
+         *     re|turn foo
+         *}|
+         * public bar() {
+         *     return bar
+         * }
+         */
+        var overlap: String = sut.findRightContextOverlap(rightContext = " foo\n}\n\n\npublic bar () {\n\treturn bar\n}", recommendationContent = "turn foo\n}")
+        assertThat(overlap).isEqualTo(" foo\n}")
 
         /**
-         * return |
+         * public foo() {
+         *     |return foo
+         * }|
+         *
+         * public bar() {
+         *     return bar
+         * }
+         */
+        overlap = sut.findRightContextOverlap(rightContext = "\n\n\n\npublic bar() {\n\treturn bar\n}", recommendationContent = "return foo\n}")
+        assertThat(overlap).isEqualTo("")
+
+        /**
+         * println(|world)|;
+         * String foo = "foo";
+         */
+        overlap = sut.findRightContextOverlap(rightContext = "ld);\nString foo = \"foo\";", recommendationContent = "world)")
+        assertThat(overlap).isEqualTo("ld)")
+
+
+        /**
+         * return |has_d_at_end|
          *
          * def foo:
          *     pass
          */
-        overlap = sut.findRightContextOverlap("\n\ndef foo():\n\tpass", "has_d_at_end")
+        overlap = sut.findRightContextOverlap(rightContext = "\n\ndef foo():\n\tpass", recommendationContent = "has_d_at_end")
         assertThat(overlap).isEqualTo("")
 
         /**
          * {
          *    { foo: foo },
          *    { bar: bar },
-         *    { |
+         *    { |baz: baz }|
          * }
          *
          */
-        overlap = sut.findRightContextOverlap("\n}", "baz: baz }")
+        overlap = sut.findRightContextOverlap(rightContext = "\n}", recommendationContent = "baz: baz }")
         assertThat(overlap).isEqualTo("")
 
         /** A case we can't cover
          * def foo():
-         *   |
+         *   |print(foo)|
          *
          *
-         * return foo
+         *   print(foo)
          */
-        overlap = sut.findRightContextOverlap("\n\n\nreturn x", "return foo")
+        overlap = sut.findRightContextOverlap(rightContext = "\n\n\n\tprint(foo)", recommendationContent = "print(foo)")
         assertThat(overlap).isEqualTo("")
     }
 
     @Test
     fun `trim extra prefixing new line character`() {
-        var actual: String
-
-        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("")
+        var actual: String = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("")
         assertThat(actual).isEqualTo("")
 
         actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("f")
