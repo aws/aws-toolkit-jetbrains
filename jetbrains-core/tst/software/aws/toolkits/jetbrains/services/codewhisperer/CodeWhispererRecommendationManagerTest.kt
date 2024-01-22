@@ -158,6 +158,15 @@ class CodeWhispererRecommendationManagerTest {
         overlap = sut.findRightContextOverlap(rightContext = "\n}", recommendationContent = "baz: baz }")
         assertThat(overlap).isEqualTo("")
 
+        /**
+         * |
+         *
+         *     foo|
+         *
+         */
+        overlap = sut.findRightContextOverlap(rightContext = "\n\n\tfoo}", recommendationContent = "\n\tfoo")
+        assertThat(overlap).isEqualTo("\n\tfoo")
+
         /** A case we can't cover
          * def foo():
          *   |print(foo)|
@@ -188,5 +197,11 @@ class CodeWhispererRecommendationManagerTest {
 
         actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\n\n\nfoo\nbar")
         assertThat(actual).isEqualTo("\nfoo\nbar")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\n\n  foo\nbar")
+        assertThat(actual).isEqualTo("\n  foo\nbar")
+
+        actual = CodeWhispererRecommendationManager.trimExtraPrefixNewLine("\n\n\tfoo\nbar")
+        assertThat(actual).isEqualTo("\n\tfoo\nbar")
     }
 }

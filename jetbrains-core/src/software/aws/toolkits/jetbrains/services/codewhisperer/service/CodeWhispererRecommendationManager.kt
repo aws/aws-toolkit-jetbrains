@@ -178,6 +178,10 @@ class CodeWhispererRecommendationManager {
          * example:
          *  content = "\n\n\nfoo\n\nbar\nbaz"
          *  return = "\nfoo\n\nbar\nbaz"
+         *
+         * example:
+         *  content = "\n\n\tfoobar\nbaz"
+         *  return = "\n\tfoobar\nbaz"
          */
         fun trimExtraPrefixNewLine(content: String): String {
             if (content.isEmpty()) {
@@ -189,7 +193,12 @@ class CodeWhispererRecommendationManager {
                 return content
             }
 
-            return firstChar + content.substring(1).trimStart()
+            var index = 1
+            while (index < content.length && content[index] == '\n') {
+                index++
+            }
+
+            return firstChar + content.substring(index)
         }
     }
 }
