@@ -33,6 +33,7 @@ import com.intellij.xdebugger.XDebuggerUtil
 import org.jetbrains.idea.maven.model.MavenExplicitProfiles
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.idea.maven.server.MavenServerManager
+import org.jetbrains.idea.maven.utils.MavenProgressIndicator.MavenProgressTracker
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.junit.Assert.fail
@@ -260,6 +261,7 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     projectsManager.resetManagedFilesAndProfilesInTests(poms, MavenExplicitProfiles(emptyList()))
 
     runInEdtAndWait {
+        project.getServiceIfCreated(MavenProgressTracker::class.java)?.waitForProgressCompletion()
         projectsManager.importProjects()
     }
 
