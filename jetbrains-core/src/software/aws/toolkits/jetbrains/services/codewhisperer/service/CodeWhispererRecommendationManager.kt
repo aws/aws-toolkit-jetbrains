@@ -173,7 +173,12 @@ class CodeWhispererRecommendationManager {
     companion object {
         fun getInstance(): CodeWhispererRecommendationManager = service()
 
-        // a function to trim extra prefixing new line character (only leave 1 new line character)
+        /**
+         * a function to trim extra prefixing new line character (only leave 1 new line character)
+         * example:
+         *  content = "\n\n\nfoo\n\nbar\nbaz"
+         *  return = "\nfoo\n\nbar\nbaz"
+         */
         fun trimExtraPrefixNewLine(content: String): String {
             if (content.isEmpty()) {
                 return ""
