@@ -36,11 +36,13 @@ include("jetbrains-core")
 
 when (providers.gradleProperty("ideProfileName").get()) {
     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-    "2022.3", "2023.1" -> {}
+    "2023.1", "2023.2" -> {}
     else -> {
         include("jetbrains-gateway")
     }
 }
+
+apply(from = "kotlinResolution.settings.gradle.kts")
 
 include("jetbrains-ultimate")
 include("jetbrains-rider")

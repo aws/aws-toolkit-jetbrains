@@ -216,13 +216,15 @@ sealed class CodeScanSessionConfig(
             when (file.programmingLanguage().toTelemetryType()) {
                 CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project)
                 CodewhispererLanguage.Python -> PythonCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Typescript -> TypeScriptCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Javascript)
+                CodewhispererLanguage.Typescript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Typescript)
                 CodewhispererLanguage.Csharp -> CsharpCodeScanSessionConfig(file, project)
                 CodewhispererLanguage.Yaml -> CloudFormationYamlCodeScanSessionConfig(file, project)
                 CodewhispererLanguage.Json -> CloudFormationJsonCodeScanSessionConfig(file, project)
                 CodewhispererLanguage.Tf,
                 CodewhispererLanguage.Hcl -> TerraformCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Go -> GoCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Ruby -> RubyCodeScanSessionConfig(file, project)
                 else -> fileFormatNotSupported(file.extension ?: "")
             }
     }
