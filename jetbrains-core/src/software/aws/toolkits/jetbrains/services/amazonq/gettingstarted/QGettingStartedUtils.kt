@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.UiTelemetry
 
-fun openMeetQPage(project: Project) : Boolean {
+fun openMeetQPage(project: Project): Boolean {
     val meetQSettings = MeetQSettings.getInstance()
     if (!meetQSettings.shouldDisplayPage) {
         return false
