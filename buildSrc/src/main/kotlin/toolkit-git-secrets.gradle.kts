@@ -22,6 +22,9 @@ val gitSecrets = tasks.register<Exec>("gitSecrets") {
 
     dependsOn(downloadGitSecrets)
     workingDir(project.rootDir)
+    val path = "$buildDir${File.pathSeparator}"
+    environment = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
+
     commandLine("/bin/sh", "$buildDir/git-secrets", "--register-aws")
 
     // cleaner than having 2 separate exec tasks
