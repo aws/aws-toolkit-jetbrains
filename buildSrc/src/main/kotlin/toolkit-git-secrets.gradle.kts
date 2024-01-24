@@ -23,13 +23,16 @@ val gitSecrets = tasks.register<Exec>("gitSecrets") {
     dependsOn(downloadGitSecrets)
     workingDir(project.rootDir)
     val path = "$buildDir${File.pathSeparator}"
-    environment = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
+    val patchendEnv = environment.apply { replace("PATH", path + getOrDefault("PATH", "")) }
+    environment = patchendEnv
 
     commandLine("/bin/sh", "$buildDir/git-secrets", "--register-aws")
 
     // cleaner than having 2 separate exec tasks
     doLast {
         exec {
+            workingDir(project.rootDir)
+            environment = patchendEnv
             commandLine("/bin/sh", "$buildDir/git-secrets", "--scan")
         }
     }
