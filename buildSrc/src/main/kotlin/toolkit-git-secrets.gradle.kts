@@ -28,8 +28,13 @@ val gitSecrets = tasks.register<Exec>("gitSecrets") {
 
     commandLine("/bin/sh", "$buildDir/git-secrets", "--register-aws")
 
-    // cleaner than having 2 separate exec tasks
+    // cleaner than having multiple separate exec tasks
     doLast {
+        exec {
+            workingDir(project.rootDir)
+            commandLine("git", "config", "--add", "secrets.allowed", "123456789012")
+        }
+
         exec {
             workingDir(project.rootDir)
             environment = patchendEnv
