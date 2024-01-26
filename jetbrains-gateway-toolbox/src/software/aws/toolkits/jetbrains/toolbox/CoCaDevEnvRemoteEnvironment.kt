@@ -3,16 +3,19 @@
 
 package software.aws.toolkits.jetbrains.toolbox
 
+import com.jetbrains.toolbox.gateway.AbstractRemoteProviderEnvironment
 import com.jetbrains.toolbox.gateway.EnvironmentVisibilityState
-import com.jetbrains.toolbox.gateway.RemoteEnvironmentPropertiesConsumer
 import com.jetbrains.toolbox.gateway.RemoteProviderEnvironment
 import com.jetbrains.toolbox.gateway.environments.EnvironmentContentsView
+import com.jetbrains.toolbox.gateway.states.EnvironmentStateConsumer
+import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import java.util.concurrent.CompletableFuture
 
 class CoCaDevEnvRemoteEnvironment(
+    private val coroutineScope: CoroutineScope,
     private val project: CawsProject
-): RemoteProviderEnvironment {
+): AbstractRemoteProviderEnvironment() {
     override fun getId(): String {
         return project.toString()
     }
@@ -21,14 +24,8 @@ class CoCaDevEnvRemoteEnvironment(
         return project.toString()
     }
 
-    override fun addStateListener(consumer: RemoteEnvironmentPropertiesConsumer?) {
-    }
-
-    override fun removeStateListener(consumer: RemoteEnvironmentPropertiesConsumer?) {
-    }
-
     override fun getContentsView(): CompletableFuture<EnvironmentContentsView> {
-        return CompletableFuture.completedFuture(CoCaDevEnvRemoteEnvironmentContentsView())
+        return CompletableFuture.completedFuture(CoCaDevEnvRemoteEnvironmentContentsView(coroutineScope))
     }
 
     override fun setVisible(visibilityState: EnvironmentVisibilityState) {

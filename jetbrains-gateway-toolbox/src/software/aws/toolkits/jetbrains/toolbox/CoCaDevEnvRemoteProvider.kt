@@ -50,56 +50,57 @@ class CoCaDevEnvRemoteProvider(
 ) : RemoteProvider {
 
     init {
-        coroutineScope.launch {
-            val tokenProvider = InteractiveBearerTokenProviderNoOpenApi(
-                startUrl = SONO_URL,
-                region = SONO_REGION,
-                scopes = CODECATALYST_SCOPES
-            )
-
-            val state = tokenProvider.state()
-            when (state) {
-                BearerTokenAuthState.NOT_AUTHENTICATED -> {
-                    tokenProvider.reauthenticate()
-                }
-
-                BearerTokenAuthState.NEEDS_REFRESH -> {
-                    try {
-                        tokenProvider.resolveToken()
-                    } catch (e: SsoOidcException) {
-                        tokenProvider.reauthenticate()
-                    }
-                }
-
-                BearerTokenAuthState.AUTHORIZED -> { }
-            }
-
-            val client = CodeCatalystClient.builder()
-                .region(Region.AWS_GLOBAL)
-                .endpointOverride(URI("https://public.codecatalyst.global.api.aws"))
-                .tokenProvider(tokenProvider)
-                .build()
-
-            sequence {
-                client.listSpacesPaginator {}
-                    .items()
-                    .stream()
-                    .asSequence()
-                    .forEach {
-                        println(it)
-                        val space = it.name()
-                        yieldAll(
-                            client.listAccessibleProjectsPaginator { it.spaceName(space) }
-                                .items()
-                                .map { CawsProject(space = space, project = it.name()) }
-                        )
-                    }
-            }.map {
-                CoCaDevEnvRemoteEnvironment(it)
-            }.let {
-                consumer.consumeEnvironments(listOf(it.first()))
-            }
-        }
+//        coroutineScope.launch {
+//            val tokenProvider = InteractiveBearerTokenProviderNoOpenApi(
+//                startUrl = SONO_URL,
+//                region = SONO_REGION,
+//                scopes = CODECATALYST_SCOPES
+//            )
+//
+//            val state = tokenProvider.state()
+//            when (state) {
+//                BearerTokenAuthState.NOT_AUTHENTICATED -> {
+//                    tokenProvider.reauthenticate()
+//                }
+//
+//                BearerTokenAuthState.NEEDS_REFRESH -> {
+//                    try {
+//                        tokenProvider.resolveToken()
+//                    } catch (e: SsoOidcException) {
+//                        tokenProvider.reauthenticate()
+//                    }
+//                }
+//
+//                BearerTokenAuthState.AUTHORIZED -> { }
+//            }
+//
+//            val client = CodeCatalystClient.builder()
+//                .region(Region.AWS_GLOBAL)
+//                .endpointOverride(URI("https://codecatalyst.global.api.aws"))
+//                .tokenProvider(tokenProvider)
+//                .build()
+//
+//            sequence {
+//                client.listSpacesPaginator {}
+//                    .items()
+//                    .stream()
+//                    .asSequence()
+//                    .forEach {
+//                        println(it)
+//                        val space = it.name()
+//                        yieldAll(
+//                            client.listAccessibleProjectsPaginator { it.spaceName(space) }
+//                                .items()
+//                                .map { CawsProject(space = space, project = it.name()) }
+//                        )
+//                    }
+//            }.map {
+//                CoCaDevEnvRemoteEnvironment(it)
+//            }.let {
+//                consumer.consumeEnvironments(listOf(it.first()))
+//            }
+//        }
+        consumer.consumeEnvironments(listOf(CoCaDevEnvRemoteEnvironment(coroutineScope, CawsProject("aaaaa", "bbbbb"))))
     }
 
     override fun getNewEnvironmentUiPage(): UiPage {
@@ -130,7 +131,8 @@ class CoCaDevEnvRemoteProvider(
 
     override fun isSingleEnvironment(): Boolean = false
 
-    override fun setVisibilityState(visibilityState: ProviderVisibilityState) {
+    override fun setVisible(visibilityState: ProviderVisibilityState) {
+        println(visibilityState)
     }
 
     override fun addEnvironmentsListener(listener: RemoteEnvironmentConsumer?) {

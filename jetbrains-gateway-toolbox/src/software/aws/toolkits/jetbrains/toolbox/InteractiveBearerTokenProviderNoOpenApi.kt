@@ -59,9 +59,7 @@ class InteractiveBearerTokenProviderNoOpenApi(
         val token = if (Duration.between(Instant.now(), lastToken.expiresAt) > Duration.ofMinutes(30)) {
             lastToken
         } else {
-            accessTokenProvider.refreshToken(lastToken).also {
-                this.lastToken.set(it)
-            }
+            refresh()
         }
 
         return RefreshResult.builder(token)
@@ -78,6 +76,16 @@ class InteractiveBearerTokenProviderNoOpenApi(
     }
 
     override fun currentToken() = lastToken.get()
+
+    /**
+     * Only use if you know what you're doing.
+     */
+    override fun refresh(): AccessToken {
+        val lastToken = lastToken.get() ?: error("Token refresh started before session initialized")
+        return accessTokenProvider.refreshToken(lastToken).also {
+            this.lastToken.set(it)
+        }
+    }
 
     override fun invalidate() {
         accessTokenProvider.invalidate()

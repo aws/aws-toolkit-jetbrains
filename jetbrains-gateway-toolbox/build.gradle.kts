@@ -18,7 +18,7 @@ dependencies {
     api(project(":jetbrains-core"))
     api(project(":jetbrains-gateway"))
     compileOnly(libs.sshd.core)
-    implementation("com.jetbrains.toolbox.gateway:gateway-api:2.1.0.16315")
+    implementation("com.jetbrains.toolbox.gateway:gateway-api:2.1.0.17705")
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
 }
