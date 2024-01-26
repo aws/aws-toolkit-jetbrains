@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 const val ZIP_SOURCES_PATH = "sources"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
-val ACCOUNT_ID_REGEX = Regex("[0-9]{12}")
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -96,10 +95,10 @@ class CodeModernizerSession(
                 codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now())
             )
         } catch (e: Exception) {
-            LOG.error(e) { e.message.toString() }
-            val sanitizedErrorMessage = "Failed to create zip: ${sanitizeMessage(e.message.toString())}"
+            val errorMessage = "Failed to create zip"
+            LOG.error(e) { errorMessage }
             CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = sanitizedErrorMessage,
+                codeTransformApiErrorMessage = errorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             )
             state.currentJobStatus = TransformationStatus.FAILED
@@ -127,12 +126,12 @@ class CodeModernizerSession(
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
         } catch (e: Exception) {
-            val sanitizedErrorMessage = "Failed to start job: ${sanitizeMessage(e.message.toString())}"
-            LOG.error(e) { "Failed to start job" }
+            val errorMessage = "Failed to start job"
+            LOG.error(e) { errorMessage }
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = sanitizedErrorMessage,
+                codeTransformApiErrorMessage = errorMessage,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             )
             CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
@@ -440,8 +439,6 @@ class CodeModernizerSession(
             }
         }
     }
-
-    private fun sanitizeMessage(error: String): String = error.replace(ACCOUNT_ID_REGEX, "{awsAccountId}")
 
     companion object {
         private val LOG = getLogger<CodeModernizerSession>()
