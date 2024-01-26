@@ -70,7 +70,7 @@ class CodeCatalystCredentialManager {
         return connection.getConnectionSettings()
     }
 
-    fun promptAuth(): BearerTokenProvider {
+    fun promptAuth(): BearerTokenProvider? {
         connection()?.let {
             return reauthProviderIfNeeded(project, provider(it))
         }
@@ -83,8 +83,9 @@ class CodeCatalystCredentialManager {
                 connection()?.let {
                     return@runUnderProgressIfNeeded provider(it)
                 }
+                error("Unable to request credentials for CodeCatalyst")
             }
-            error("Unable to request credentials for CodeCatalyst")
+            return@runUnderProgressIfNeeded null
         }
     }
 
