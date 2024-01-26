@@ -12,6 +12,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
@@ -126,21 +127,31 @@ data class CodeModernizerSessionContext(
                         dependencyfiles.forEach { depfile ->
                             val relativePath = File(depfile.path).relativeTo(depDirectory.parentFile)
                             val paddedPath = depSources.resolve(relativePath)
-                            it.putNextEntry(paddedPath.toPath().toString(), depfile.inputStream())
+                            var paddedPathString = paddedPath.toPath().toString()
+                            // Convert Windows file path to work on Linux
+                            if (File.separatorChar != '/') {
+                                paddedPathString = paddedPathString.replace('\\', '/')
+                            }
+                            it.putNextEntry(paddedPathString, depfile.inputStream())
                         }
                     }
                     files.forEach { file ->
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
-                        it.putNextEntry(paddedPath.toPath().toString(), file.inputStream)
+                        var paddedPathString = paddedPath.toPath().toString()
+                        // Convert Windows file path to work on Linux
+                        if (File.separatorChar != '/') {
+                            paddedPathString = paddedPathString.replace('\\', '/')
+                        }
+                        it.putNextEntry(paddedPathString, file.inputStream)
                     }
                 }.toFile()
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
-                throw CodeModernizerException("Source folder not found: ${root.path}")
+                throw CodeModernizerException("Source folder not found")
             } catch (e: Exception) {
                 LOG.error(e) { e.message.toString() }
-                throw CodeModernizerException("Unknown exception occurred ${root.path}")
+                throw CodeModernizerException("Unknown exception occurred")
             } finally {
                 depDirectory?.deleteRecursively()
             }
@@ -177,7 +188,12 @@ data class CodeModernizerSessionContext(
         LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
         try {
-            val output = runCommand("./mvnw")
+            val mvnw = if (SystemInfo.isWindows) {
+                "./mvnw.cmd"
+            } else {
+                "./mvnw"
+            }
+            val output = runCommand(mvnw)
             if (output.exitCode != 0) {
                 LOG.error { "mvnw command output:\n$output" }
                 val error = "The exitCode should be 0 while it was ${output.exitCode}"
@@ -224,7 +240,6 @@ data class CodeModernizerSessionContext(
                         codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
                         reason = error
                     )
-                    return null
                 } else {
                     shouldTryMvnCommand = false
                     LOG.warn { "Maven executed successfully" }
@@ -244,7 +259,6 @@ data class CodeModernizerSessionContext(
                     reason = e.message
                 )
                 LOG.error(e) { e.message.toString() }
-                throw e
             }
         }
 
