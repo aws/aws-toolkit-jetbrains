@@ -32,7 +32,7 @@ class CodeCatalystCredentialManager {
         this.project = null
     }
 
-    internal fun connection() = (
+    fun connection() = (
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as? AwsBearerTokenConnection
         )
