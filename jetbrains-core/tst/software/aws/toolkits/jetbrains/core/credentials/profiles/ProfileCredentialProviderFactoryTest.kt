@@ -52,7 +52,6 @@ import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.BearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.InteractiveCredential
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
