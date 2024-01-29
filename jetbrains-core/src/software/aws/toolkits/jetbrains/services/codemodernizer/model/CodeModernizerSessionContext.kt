@@ -196,8 +196,10 @@ data class CodeModernizerSessionContext(
             val installOutput = ExecUtil.execAndGetOutput(installCommandLine)
             buildlogBuilder.appendLine("$installOutput")
             if (installOutput.exitCode == 0) {
+                LOG.info { "$mavenCommand clean install succeeded" }
                 buildlogBuilder.appendLine("$mavenCommand clean install succeeded")
             } else {
+                LOG.error { "$mavenCommand clean install failed" }
                 buildlogBuilder.appendLine("$mavenCommand clean install failed")
             }
             return installOutput
@@ -215,25 +217,27 @@ data class CodeModernizerSessionContext(
             val copyOutput = ExecUtil.execAndGetOutput(copyCommandLine)
             buildlogBuilder.appendLine("$copyOutput")
             if (copyOutput.exitCode == 0) {
+                LOG.info { "$mavenCommand copy-dependencies succeeded" }
                 buildlogBuilder.appendLine("$mavenCommand copy-dependencies succeeded")
             } else {
+                LOG.error { "$mavenCommand copy-dependencies failed" }
                 buildlogBuilder.appendLine("$mavenCommand copy-dependencies failed")
             }
             return copyOutput
         }
 
         // 1. Try to execute Maven Wrapper Command
-        LOG.warn { "Executing ./mvnw" }
         var shouldTryMvnCommand = true
+        val mvnw = if (SystemInfo.isWindows) {
+            "./mvnw.cmd"
+        } else {
+            "./mvnw"
+        }
         try {
-            val mvnw = if (SystemInfo.isWindows) {
-                "./mvnw.cmd"
-            } else {
-                "./mvnw"
-            }
+            LOG.info { "Executing $mvnw" }
             val installOutput = runInstallCommand(mvnw)
             if (installOutput.exitCode != 0) {
-                LOG.error { "mvnw install output: $installOutput" }
+                LOG.error { "$mvnw install output: $installOutput" }
                 val error = "Maven Install: The exitCode should be 0 while it was ${installOutput.exitCode}"
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -244,7 +248,7 @@ data class CodeModernizerSessionContext(
                 // Copy Dependencies if install is successful
                 val copyOutput = runCopyCommand(mvnw)
                 if (copyOutput.exitCode != 0) {
-                    LOG.error { "mvnw command output: $copyOutput" }
+                    LOG.error { "$mvnw command output: $copyOutput" }
                     val error = "Maven Copy: The exitCode should be 0 while it was ${copyOutput.exitCode}"
                     CodetransformTelemetry.mvnBuildFailed(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -252,35 +256,37 @@ data class CodeModernizerSessionContext(
                         reason = error
                     )
                 } else {
-                    LOG.warn { "mvnw executed successfully" }
+                    LOG.info { "$mvnw executed successfully" }
                     shouldTryMvnCommand = false
                 }
             }
         } catch (e: ProcessNotCreatedException) {
-            val error = "./mvnw failed to execute as its likely not a unix machine"
-            buildlogBuilder.appendLine("./mvnw failed to execute: $e")
+            val error = "$mvnw failed to execute as its likely not a unix machine"
+            buildlogBuilder.appendLine("$mvnw failed to execute: $e")
             CodetransformTelemetry.mvnBuildFailed(
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                 codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
                 reason = error
             )
-            LOG.warn { error }
+            LOG.warn(e) { error }
         } catch (e: Exception) {
-            buildlogBuilder.appendLine("./mvnw failed to execute: $e")
+            val error = "Unexpected exception when running $mvnw"
+            buildlogBuilder.appendLine("$mvnw failed to execute: $e")
             CodetransformTelemetry.mvnBuildFailed(
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                 codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
-                reason = e.message
+                reason = error
             )
             when {
                 e.message?.contains("Cannot run program \"./mvnw\"") == true -> {} // noop
                 else -> throw e
             }
+            LOG.error(e) { error }
         }
 
         // 2. maybe execute maven wrapper command
         if (shouldTryMvnCommand) {
-            LOG.warn { "Executing mvn" }
+            LOG.info { "Executing mvn" }
             try {
                 val installOutput = runInstallCommand("mvn")
                 if (installOutput.exitCode != 0) {
@@ -304,7 +310,7 @@ data class CodeModernizerSessionContext(
                         )
                     } else {
                         shouldTryMvnCommand = false
-                        LOG.warn { "Maven executed successfully" }
+                        LOG.info { "Maven executed successfully" }
                     }
                 }
             } catch (e: ProcessNotCreatedException) {
@@ -315,29 +321,30 @@ data class CodeModernizerSessionContext(
                     codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
                     reason = error
                 )
-                LOG.warn { error }
+                LOG.error(e) { error }
             } catch (e: Exception) {
+                val error = "Unexpected exception when running mvn"
                 buildlogBuilder.appendLine("mvn failed to execute: $e")
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvn,
-                    reason = e.message
+                    reason = error
                 )
-                LOG.error(e) { e.message.toString() }
+                LOG.error(e) { error }
             }
         }
 
         // 3. intellij-bundled maven runner
         if (shouldTryMvnCommand) {
-            LOG.warn { "Executing IntelliJ bundled Maven" }
-            val explicitenabled = emptyList<String>()
+            LOG.info { "Executing IntelliJ bundled Maven" }
+            val explicitEnabled = emptyList<String>()
             try {
                 val installParams = MavenRunnerParameters(
                     false,
                     sourceFolder.absolutePath,
                     null,
                     installCommandList,
-                    explicitenabled,
+                    explicitEnabled,
                     null
                 )
 
@@ -346,7 +353,7 @@ data class CodeModernizerSessionContext(
                     sourceFolder.absolutePath,
                     null,
                     copyCommandList,
-                    explicitenabled,
+                    explicitEnabled,
                     null
                 )
 
@@ -361,13 +368,14 @@ data class CodeModernizerSessionContext(
                         buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven clean install")
                         transformMvnRunner.run(installParams, mvnsettings, cleanInstalled)
                     } catch (t: Throwable) {
+                        val error = "Unexpected error when executing bundled Maven clean install"
                         cleanInstalled.exitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
-                        LOG.error { t.message.toString() }
+                        LOG.error(t) { error }
                         buildlogBuilder.appendLine("IntelliJ bundled Maven install executed failed: ${t.message}")
                         CodetransformTelemetry.mvnBuildFailed(
                             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                             codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-                            reason = t.message
+                            reason = error
                         )
                     }
                 }
@@ -401,13 +409,14 @@ data class CodeModernizerSessionContext(
                         buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven dependency:copy-dependencies")
                         transformMvnRunner.run(copyParams, mvnsettings, createdDependencies)
                     } catch (t: Throwable) {
+                        val error = "Unexpected error when executing bundled Maven dependency:copy-dependencies"
                         createdDependencies.exitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
-                        LOG.error { t.message.toString() }
+                        LOG.error(t) { error }
                         buildlogBuilder.appendLine("IntelliJ bundled Maven copy-dependencies executed failed: ${t.message}")
                         CodetransformTelemetry.mvnBuildFailed(
                             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                             codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-                            reason = t.message
+                            reason = error
                         )
                     }
                 }
@@ -436,12 +445,13 @@ data class CodeModernizerSessionContext(
                     return null
                 }
             } catch (t: Throwable) {
-                LOG.error { t.message.toString() }
+                val error = "Unexpected error when executing bundled Maven"
+                LOG.error(t) { error }
                 buildlogBuilder.appendLine("IntelliJ bundled Maven executed failed: ${t.message}")
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.IDEBundledMaven,
-                    reason = t.message
+                    reason = error
                 )
                 return null
             } finally {
