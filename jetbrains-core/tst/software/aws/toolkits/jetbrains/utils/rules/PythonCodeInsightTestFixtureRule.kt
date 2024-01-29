@@ -29,6 +29,8 @@ import com.jetbrains.python.PythonModuleTypeBase
 import com.jetbrains.python.psi.PyFile
 import com.jetbrains.python.sdk.PythonSdkAdditionalData
 import com.jetbrains.python.sdk.PythonSdkType
+import com.jetbrains.python.sdk.flavors.PyFlavorAndData
+import com.jetbrains.python.sdk.flavors.PyFlavorData
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
@@ -115,7 +117,10 @@ internal class PlatformPythonModuleType : PythonModuleTypeBase<EmptyModuleBuilde
 
 class PyTestSdk(private val version: String) : ProjectJdkImpl("PySdk $version", PythonSdkType.getInstance()) {
     init {
-        sdkAdditionalData = PythonSdkAdditionalData(FakeCPython())
+        sdkModificator.apply {
+            sdkAdditionalData = PythonSdkAdditionalData(PyFlavorAndData(PyFlavorData.Empty, FakeCPython()))
+            commitChanges()
+        }
     }
 
     override fun getVersionString(): String = "FakeCPython $version"
