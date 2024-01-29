@@ -47,8 +47,6 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -106,7 +104,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)
 
         val connectionSettings = try {
-            loginSso(null, ssoSettings.startUrl, ssoSettings.region, CODECATALYST_SCOPES)
             CodeCatalystCredentialManager.getInstance().getConnectionSettings() ?: error("Unable to find connection settings")
         } catch (e: ProcessCanceledException) {
             return null
@@ -306,6 +303,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                                             label(message("caws.workspace.connection.failed")).applyToComponent {
                                                                 font = JBFont.regular().asBold()
                                                             }
+                                                            label("Please ensure you are logged into the correct account.")
                                                         }
 
                                                         row {
