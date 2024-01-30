@@ -139,7 +139,6 @@ dependencies {
 
     implementation(project(":mynah-ui"))
     implementation(libs.aws.crt)
-    implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
