@@ -117,7 +117,14 @@ abstract class CodeWhispererCodeCoverageTracker(
 
         // Don't capture deletion events
         if (event.newLength <= event.oldLength) return
-        incrementTotalTokens(event.document, event.newLength - event.oldLength)
+
+        // only count total tokens when it is a user keystroke input
+        // do not count doc changes from copy & paste of >=2 characters
+        // do not count other changes from formatter, git command, etc
+        if (event.newLength == 1 && event.oldLength == 0) {
+            incrementTotalTokens(event.document, event.newLength - event.oldLength)
+        }
+
     }
 
     internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
@@ -159,6 +166,8 @@ abstract class CodeWhispererCodeCoverageTracker(
             fileToTokens[document] = tokens
         }
         tokens.acceptedTokens.addAndGet(delta)
+        // also increment total tokens because accepted tokens are part of it
+        incrementTotalTokens(document, delta)
     }
 
     private fun incrementTotalTokens(document: Document, delta: Int) {
@@ -184,8 +193,12 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     internal fun emitCodeWhispererCodeContribution() {
-        // If the user is inactive, don't emit the telemetry
+        // If the user is inactive or did not invoke, don't emit the telemetry
         if (percentage == null) return
+        if (myServiceInvocationCount.get() <= 0) return
+
+        // accepted char count without considering modification
+        var rawAcceptedCharacterCount = 0
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
             // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
@@ -199,6 +212,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
                 return@forEach
             }
+            rawAcceptedCharacterCount += originalRecommendation.length
             val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
             runReadAction {
                 incrementAcceptedTokens(rangeMarker.document, delta)
@@ -207,12 +221,14 @@ abstract class CodeWhispererCodeCoverageTracker(
         val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
         runIfIdcConnectionOrTelemetryEnabled(project) {
+            // here acceptedTokensSize is the count of accepted chars post user modification
             try {
                 val response = CodeWhispererClientAdaptor.getInstance(project).sendCodePercentageTelemetry(
                     language,
                     customizationArn,
-                    acceptedTokensSize,
-                    totalTokensSize
+                    rawAcceptedCharacterCount,
+                    totalTokensSize,
+                    acceptedTokensSize
                 )
                 LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {
