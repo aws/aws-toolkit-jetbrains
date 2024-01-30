@@ -207,6 +207,11 @@
                 "q",
                 "codewhispererQ"
             ]
+        },
+        {
+            "name": "has1pdependency",
+            "type": "boolean",
+            "description": "Project contains at least 1 dependency not available in maven central"
         }
     ],
     "metrics": [
@@ -505,6 +510,24 @@
                 {
                     "type": "cwsprChatCommandName",
                     "required": false
+                }
+            ]
+        },
+        {
+            "name": "codeTransform_projectContains1pDependencies",
+            "description": "When a project contains dependencies not available on maven central",
+            "metadata": [
+                {
+                    "type": "codeTransformSessionId",
+                    "required": true
+                },
+                {
+                    "type": "codeTransformJobId",
+                    "required": true
+                },
+                {
+                    "type": "has1pdependency",
+                    "required": true
                 }
             ]
         }

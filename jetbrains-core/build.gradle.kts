@@ -142,6 +142,7 @@ dependencies {
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
+    implementation(libs.jsoup)
 
     testImplementation(project(path = ":core", configuration = "testArtifacts"))
     testImplementation(libs.mockk)

@@ -73,6 +73,10 @@ import java.io.File
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
+import org.jsoup.Jsoup;
+import kotlinx.serialization.json.Json;
+import kotlinx.serialization.json.JsonObject;
+import software.aws.toolkits.jetbrains.core.getTextFromUrl;
 
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
@@ -373,6 +377,84 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     /**
+    helper function to generate 1p dependency metrics
+    makes GET requests to maven central to check for 1p dependencies for a small subset of the project's
+    dependencies
+     */
+    private fun makeGETRequests(groupId: String, artifactId: String, version: String, jobId: JobId): Boolean {
+        try{
+            val response = getTextFromUrl("https://search.maven.org/solrsearch/select?q=g:$groupId%20AND%20a:$artifactId%20AND%20v:$version%20AND%20p:jar&rows=20&wt=json")
+                try {
+                    val json: JsonObject = Json.parseToJsonElement(response) as JsonObject;
+                    val responses = json["response"] as? JsonObject;
+                    val numFound = responses?.get("numFound");
+
+
+                    if(numFound.toString() == "0"){
+                        CodetransformTelemetry.projectContains1pDependencies(
+                            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                            codeTransformJobId = jobId.id,
+                            has1pdependency = true
+                        )
+                        return true;
+                    }
+                } catch (e: Exception){
+                    LOG.warn{"Error parsing JSON response from GET request to maven central: ${e.printStackTrace()}"}
+                }
+        } catch(e: Exception){
+            LOG.warn{"Exception while making GET request to maven central: ${e.printStackTrace()}"}
+        }
+        return false;
+    }
+
+
+    /**
+     * Coroutine to find and generate metrics on 1p dependencies (dependencies
+     * not available in maven central)
+     */
+    fun generate1pDependencyMetrics(jobId: JobId, session: CodeModernizerSession) = projectCoroutineScope(project).launch {
+        val dir = project.basePath;
+        val commandList = listOf(
+            "versions:dependency-updates-aggregate-report",
+            "-DonlyProjectDependencies=true",
+            "-DdependencyUpdatesReportFormats=xml"
+        )
+
+        try{
+            session.sessionContext.runMavenShellCommand(File(dir), commandList);
+            var aggregateReport = Jsoup.parse(File("$dir/target/dependency-updates-aggregate-report.xml"), "UTF-8");
+
+            var found1pDependency = false;
+            val dependencies = aggregateReport.select("DependencyUpdatesReport dependencies dependency");
+
+            for ((index, dependency) in dependencies.withIndex()){
+                val status = dependency.select("status").text();
+
+                if(status == "no new available"){
+                    val groupId = dependency.select("groupId").text();
+                    val artifactId = dependency.select("artifactId").text();
+                    val version = dependency.select("currentVersion").text();
+                    found1pDependency = makeGETRequests(groupId, artifactId, version, jobId);
+
+                    if(found1pDependency){
+                        break; // break once one 1p dependency is found to emit metric
+                    }
+                }
+            }
+
+            if(!found1pDependency){
+                CodetransformTelemetry.projectContains1pDependencies(
+                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                    codeTransformJobId = jobId.id,
+                    has1pdependency = false
+                )
+            }
+        } catch (e: Exception){
+            LOG.warn{"Failed to run maven command and parse 1p dependencies"};
+        }
+
+    }
+    /**
      *Start the modernization job and return the reference
      */
     internal suspend fun initModernizationJob(session: CodeModernizerSession): CodeModernizerJobCompletedResult {
@@ -413,6 +495,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         ApplicationManager.getApplication().invokeLater {
             codeModernizerBottomWindowPanelManager.setJobRunningUI()
         }
+
+        // start coroutine to generate 1p dependency metrics
+        generate1pDependencyMetrics(jobId, session);
 
         return session.pollUntilJobCompletion(jobId) { new, plan ->
             codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion)
