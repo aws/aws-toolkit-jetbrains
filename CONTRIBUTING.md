@@ -163,6 +163,13 @@ This project has adopted the [Amazon Open Source Code of Conduct](https://aws.gi
 For more information see the [Code of Conduct FAQ](https://aws.github.io/code-of-conduct-faq) or contact 
 [opensource-codeofconduct@amazon.com](mailto:opensource-codeofconduct@amazon.com) with any additional questions or comments.
 
+## Additional References
+
+* https://plugins.jetbrains.com/docs/intellij/kotlin.html#kotlin-standard-library
+* https://plugins.jetbrains.com/docs/intellij/welcome.html
+* https://jetbrains.design/intellij/
+* https://www.jetbrains.com/help/resharper/sdk/Rider.html
+* https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs
 
 ## Licensing
 
