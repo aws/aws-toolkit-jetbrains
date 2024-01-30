@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.utils.rules
 
 import com.intellij.ide.util.projectWizard.EmptyModuleBuilder
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleType
@@ -119,7 +120,9 @@ class PyTestSdk(private val version: String) : ProjectJdkImpl("PySdk $version", 
     init {
         sdkModificator.apply {
             sdkAdditionalData = PythonSdkAdditionalData(PyFlavorAndData(PyFlavorData.Empty, FakeCPython()))
-            commitChanges()
+            WriteAction.computeAndWait<Any, Exception> {
+                commitChanges()
+            }
         }
     }
 

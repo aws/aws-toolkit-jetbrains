@@ -250,7 +250,8 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     Disposer.register(this.fixture.testRootDisposable) {
         RunAll.runAll(
             { runWriteActionAndWait { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() } },
-            { MavenServerManager.getInstance().closeAllConnectorsAndWait() }
+            // unsure why we can't let connectors be closed automatically during disposer cleanup
+            { Disposer.dispose(MavenServerManager.getInstance()) }
         )
     }
 

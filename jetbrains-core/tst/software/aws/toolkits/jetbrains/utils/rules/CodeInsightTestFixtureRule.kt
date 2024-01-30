@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.utils.rules
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.module.Module
@@ -40,9 +41,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     ApplicationRule() {
     private lateinit var description: Description
     protected val lazyFixture = ClearableLazy {
-        invokeAndWait {
-            createTestFixture()
-        }
+        createTestFixture()
     }
 
     protected open fun createTestFixture(): CodeInsightTestFixture {
