@@ -28,7 +28,7 @@ reported the issue. Please try to include as much information as you can. Detail
   * In theory, you can use a higher version, however we build with .NET 6 in CI
   * macOS steps:
     ```
-    brew install --cask dotnet-sdk
+    brew install dotnet@6
     ```
 
 ### Instructions
