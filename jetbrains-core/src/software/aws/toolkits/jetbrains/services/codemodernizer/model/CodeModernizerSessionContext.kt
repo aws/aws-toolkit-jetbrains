@@ -234,7 +234,7 @@ data class CodeModernizerSessionContext(
             "./mvnw"
         }
         try {
-            LOG.info { "Executing $mvnw" }
+            LOG.info { "Executing $mvnw install" }
             val installOutput = runInstallCommand(mvnw)
             if (installOutput.exitCode != 0) {
                 LOG.error { "$mvnw install output: $installOutput" }
@@ -244,12 +244,15 @@ data class CodeModernizerSessionContext(
                     codeTransformMavenBuildCommand = CodeTransformMavenBuildCommand.Mvnw,
                     reason = error
                 )
+            } else {
+                LOG.info { "$mvnw install executed successfully" }
             }
-            // TODO: currently running copy dependencies even if install failed.
+            // TODO: currently running copy dependencies even if install failed, because copy can still succeed.
             //  This Should be updated to fast fail the transform if install failed.
+            LOG.info { "Executing $mvnw copy-dependencies" }
             val copyOutput = runCopyCommand(mvnw)
             if (copyOutput.exitCode != 0) {
-                LOG.error { "$mvnw command output: $copyOutput" }
+                LOG.error { "$mvnw copy-dependencies command output: $copyOutput" }
                 val error = "Maven Copy: The exitCode should be 0 while it was ${copyOutput.exitCode}"
                 CodetransformTelemetry.mvnBuildFailed(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -257,11 +260,11 @@ data class CodeModernizerSessionContext(
                     reason = error
                 )
             } else {
-                LOG.info { "$mvnw executed successfully" }
+                LOG.info { "$mvnw copy-dependencies executed successfully" }
                 shouldTryMvnCommand = false
             }
         } catch (e: ProcessNotCreatedException) {
-            val error = "$mvnw failed to execute as its likely not a unix machine"
+            val error = "$mvnw failed to execute as wrapper is likely not set up"
             buildlogBuilder.appendLine("$mvnw failed to execute: $e")
             CodetransformTelemetry.mvnBuildFailed(
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -298,7 +301,7 @@ data class CodeModernizerSessionContext(
                         reason = error
                     )
                 }
-                // TODO: currently running copy dependencies even if install failed.
+                // TODO: currently running copy dependencies even if install failed, because copy can still succeed.
                 //  This Should be updated to fast fail the transform if install failed.
                 val copyOutput = runCopyCommand("mvn")
                 if (copyOutput.exitCode != 0) {
@@ -383,6 +386,10 @@ data class CodeModernizerSessionContext(
                     // waiting mavenrunner building
                     sleep(50)
                 }
+
+                // log the output from runner
+                buildlogBuilder.appendLine(cleanInstalled.getOutput())
+
                 if (cleanInstalled.isComplete() == 0) {
                     val successMsg = "IntelliJ bundled Maven install executed successfully"
                     LOG.info { successMsg }
@@ -398,7 +405,7 @@ data class CodeModernizerSessionContext(
                         reason = error
                     )
                 }
-                // TODO: currently running copy dependencies even if install failed.
+                // TODO: currently running copy dependencies even if install failed, because copy can still succeed.
                 //  This Should be updated to fast fail the transform if install failed.
                 runInEdt {
                     try {
@@ -420,12 +427,15 @@ data class CodeModernizerSessionContext(
                     // waiting mavenrunner building
                     sleep(50)
                 }
+
+                // log the output from runner
+                buildlogBuilder.appendLine(createdDependencies.getOutput())
+
                 if (createdDependencies.isComplete() == 0) {
                     val successMsg = "IntelliJ bundled Maven copy-dependencies executed successfully"
                     LOG.info { successMsg }
                     buildlogBuilder.appendLine(successMsg)
                 } else if (createdDependencies.isComplete() != Integer.MIN_VALUE) {
-                    // TODO: improve bundled maven error logging
                     val error = "IntelliJ bundled Maven copy-dependencies failed: exitCode ${createdDependencies.isComplete()}"
                     LOG.error { error }
                     buildlogBuilder.appendLine(error)

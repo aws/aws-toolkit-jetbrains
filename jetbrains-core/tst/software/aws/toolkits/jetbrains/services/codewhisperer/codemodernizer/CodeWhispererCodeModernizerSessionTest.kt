@@ -27,7 +27,6 @@ import org.junit.Test
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doNothing
@@ -106,7 +105,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
         val mockStringBUilder = mock(StringBuilder::class.java)
-        `when`(codeContext.runMavenCommand(mockFile, mockStringBUilder)).thenReturn(mock(File::class.java))
+        whenever(codeContext.runMavenCommand(mockFile, mockStringBUilder)).thenReturn(mock(File::class.java))
         val file = runInEdtAndGet {
             context.createZipWithModuleFiles().payload
         }
@@ -146,7 +145,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
         val mockStringBUilder = mock(StringBuilder::class.java)
-        `when`(codeContext.runMavenCommand(mockFile, mockStringBUilder)).thenReturn(mock(File::class.java))
+        whenever(codeContext.runMavenCommand(mockFile, mockStringBUilder)).thenReturn(mock(File::class.java))
         val file = runInEdtAndGet {
             context.createZipWithModuleFiles().payload
         }
