@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
@@ -13,6 +15,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
+import software.aws.toolkits.jetbrains.core.plugins.ToolkitUpdateManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -26,6 +29,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorAccountless
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyWarnAccountless
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.time.LocalDateTime
 import java.util.Date
 import java.util.Timer
@@ -43,6 +53,11 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     override fun runActivity(project: Project) {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             CodeWhispererStatusBarManager.getInstance(project).updateWidget()
+        }
+        ToolkitUpdateManager.getInstance()
+        if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
+            notifyAutoUpdateFeature(project)
+            AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
         }
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
@@ -62,6 +77,26 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         showAccountlessNotificationIfNeeded(project)
 
         runOnce = true
+    }
+
+    private fun notifyAutoUpdateFeature(project: Project) {
+        notifyInfo(
+            title = message("aws.notification.auto_update.feature_intro.title"),
+            project = project,
+            notificationActions = listOf(
+                NotificationAction.createSimpleExpiring(message("aws.notification.auto_update.feature_intro.ok")) {},
+                NotificationAction.createSimple(message("aws.notification.auto_update.settings.title")) {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
+                    ToolkitTelemetry.invokeAction(
+                        project = null,
+                        result = Result.Succeeded,
+                        id = ToolkitUpdateManager.ID_ACTION_AUTO_UPDATE_SETTINGS,
+                        source = ToolkitUpdateManager.SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY,
+                        component = Component.Filesystem
+                    )
+                }
+            )
+        )
     }
 
     private fun showAccountlessNotificationIfNeeded(project: Project) {
