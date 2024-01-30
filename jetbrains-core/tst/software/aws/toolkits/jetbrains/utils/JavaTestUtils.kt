@@ -250,7 +250,7 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     Disposer.register(this.fixture.testRootDisposable) {
         RunAll.runAll(
             { runWriteActionAndWait { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() } },
-            { MavenServerManager.getInstance().shutdown(true) }
+            { MavenServerManager.getInstance().closeAllConnectorsAndWait() }
         )
     }
 
@@ -258,7 +258,7 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     projectsManager.initForTests()
 
     val poms = listOf(pomFile)
-    projectsManager.resetManagedFilesAndProfilesInTests(poms, MavenExplicitProfiles(emptyList()))
+    projectsManager.projectsTreeForTests.resetManagedFilesAndProfiles(poms, MavenExplicitProfiles(emptyList()))
 
     runInEdtAndWait {
         project.getServiceIfCreated(MavenProgressTracker::class.java)?.waitForProgressCompletion()
