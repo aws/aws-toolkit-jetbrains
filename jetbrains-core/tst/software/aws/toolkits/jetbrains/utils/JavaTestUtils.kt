@@ -213,7 +213,7 @@ private fun findGradlew(): Path {
     throw IllegalStateException("Failed to locate gradlew")
 }
 
-internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
+internal suspend fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     val fixture = this.fixture
     val pomFile = fixture.addFileToModule(
         this.module,
@@ -259,7 +259,7 @@ internal fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): PsiClass {
     projectsManager.initForTests()
 
     val poms = listOf(pomFile)
-    projectsManager.projectsTreeForTests.resetManagedFilesAndProfiles(poms, MavenExplicitProfiles(emptyList()))
+    projectsManager.addManagedFilesWithProfilesAndUpdate(poms, MavenExplicitProfiles.NONE, null, null)
 
     runInEdtAndWait {
         project.getServiceIfCreated(MavenProgressTracker::class.java)?.waitForProgressCompletion()
