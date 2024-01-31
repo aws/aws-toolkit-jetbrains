@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.caws.envclient.CawsEnvironmentCl
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.jetbrains.services.caws.isSupportedInFreeTier
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
+import software.aws.toolkits.jetbrains.utils.isCodeCatalystDevEnv
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
@@ -52,7 +53,7 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 class UpdateWorkspaceSettingsTab : GatewayControlCenterTabProvider {
     init {
-        if (System.getenv(CawsConstants.CAWS_ENV_ID_VAR) == null) {
+        if (!isCodeCatalystDevEnv()) {
             throw ExtensionNotApplicableException.create()
         }
     }

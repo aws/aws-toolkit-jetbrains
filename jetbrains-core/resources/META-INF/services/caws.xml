@@ -11,10 +11,6 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.caws.projectstate.CawsProjectSettings"/>
     </extensions>
 
-    <extensions defaultExtensionNs="aws.toolkit">
-        <startupAuthFactory implementation="software.aws.toolkits.jetbrains.core.credentials.sono.SonoDiskProfileAuthFactory"/>
-    </extensions>
-
     <actions>
         <group id="aws.caws.devtools.actions.loggedin">
             <action class="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.CopyCawsRepositoryUrl" id="aws.caws.devtools.actions.copyCloneUrl"/>
