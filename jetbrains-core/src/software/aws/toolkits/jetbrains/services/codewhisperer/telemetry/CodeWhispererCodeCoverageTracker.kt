@@ -85,8 +85,10 @@ abstract class CodeWhispererCodeCoverageTracker(
                     rangeMarkers.add(rangeMarker)
                     val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
                     rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
-                    // also increment total tokens because accepted tokens are part of it
-                    incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
+                    runReadAction {
+                        // also increment total tokens because accepted tokens are part of it
+                        incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
+                    }
                 }
             }
         )

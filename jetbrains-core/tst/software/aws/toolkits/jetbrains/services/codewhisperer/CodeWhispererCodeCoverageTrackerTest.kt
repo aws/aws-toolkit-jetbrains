@@ -296,7 +296,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     }
 
     @Test
-    fun `test tracker documentChanged - will not increment tokens on blank string of length greater than 1`() {
+    fun `test tracker documentChanged - will increment tokens on user input blank string`() {
         sut = TestCodePercentageTracker(
             project,
             TOTAL_SECONDS_IN_MINUTE,
@@ -313,7 +313,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
 
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length + 1)
     }
 
     @Test
@@ -438,7 +438,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             1,
             CWSPR_PERCENTAGE to "1",
             CWSPR_ACCEPTED_TOKENS to "1",
-            CWSPR_TOTAL_TOKENS to "101",
+            CWSPR_TOTAL_TOKENS to "100",
             "codewhispererUserGroup" to userGroup.name,
         )
     }
