@@ -5,4 +5,8 @@
     <depends>com.intellij.modules.lang</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
     <depends>AWSCloudFormation</depends>
+
+    <incompatible-with>com.intellij.cwm.guest</incompatible-with>
+    <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
+    <incompatible-with>com.intellij.gateway</incompatible-with>
 </idea-plugin>
