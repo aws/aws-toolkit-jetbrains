@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
@@ -127,11 +128,12 @@ class SsoAccessTokenProvider(
         val authorization = authorizeClient(registration)
 
         progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
+
         onPendingToken.tokenPending(authorization, progressIndicator)
 
         var backOffTime = Duration.ofSeconds(authorization.pollInterval)
 
-        while (true) {
+        while (!progressIndicator.isCanceled) {
             try {
                 val tokenResponse = client.createToken {
                     it.clientId(registration.clientId)
@@ -154,6 +156,7 @@ class SsoAccessTokenProvider(
 
             sleepWithCancellation(backOffTime, progressIndicator)
         }
+        throw ProcessCanceledException()
     }
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
