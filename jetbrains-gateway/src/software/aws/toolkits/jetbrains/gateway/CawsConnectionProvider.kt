@@ -47,10 +47,15 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
+import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
@@ -102,6 +107,27 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         }
 
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)
+
+        val currentConnection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeCatalystConnection.getInstance())
+            as AwsBearerTokenConnection?
+        if (ssoSettings.startUrl != currentConnection?.startUrl) {
+            val ans = Messages.showOkCancelDialog(
+                message("gateway.auth.different.account.required"),
+                message("caws.login"),
+                message("gateway.auth.different.account.sign.in"),
+                message("general.cancel"),
+                Messages.getErrorIcon(),
+                null
+            )
+            if (ans == 0) {
+                if (currentConnection != null) {
+                    logoutFromSsoConnection(project = null, currentConnection)
+                }
+                requestCredentialsForCodeCatalyst(project = null)
+            } else {
+                return null
+            }
+        }
 
         val connectionSettings = try {
             CodeCatalystCredentialManager.getInstance().getConnectionSettings() ?: error("Unable to find connection settings")

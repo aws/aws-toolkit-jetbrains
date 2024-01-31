@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressIndicator
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.ConfirmUserCodeLoginDialog
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
@@ -26,12 +27,13 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
 }
 
 object SsoPrompt : SsoLoginCallback {
-    override fun tokenPending(authorization: Authorization) {
+    override fun tokenPending(authorization: Authorization, progressIndicator: ProgressIndicator?) {
         computeOnEdt {
             val result = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 message("credentials.sso.login.title"),
-                CredentialType.SsoProfile
+                CredentialType.SsoProfile,
+                progressIndicator
             ).showAndGet()
 
             if (result) {
@@ -52,12 +54,13 @@ object SsoPrompt : SsoLoginCallback {
 }
 
 object BearerTokenPrompt : SsoLoginCallback {
-    override fun tokenPending(authorization: Authorization) {
+    override fun tokenPending(authorization: Authorization, progressIndicator: ProgressIndicator?) {
         computeOnEdt {
             val codeCopied = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 message("credentials.sono.login"),
-                CredentialType.BearerToken
+                CredentialType.BearerToken,
+                progressIndicator
             ).showAndGet()
 
             if (codeCopied) {

@@ -127,7 +127,7 @@ class SsoAccessTokenProvider(
         val authorization = authorizeClient(registration)
 
         progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
-        onPendingToken.tokenPending(authorization)
+        onPendingToken.tokenPending(authorization, progressIndicator)
 
         var backOffTime = Duration.ofSeconds(authorization.pollInterval)
 

@@ -12,6 +12,7 @@ import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.editor.colors.EditorColorsUtil
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.panel
@@ -33,7 +34,8 @@ import javax.swing.JComponent
 class ConfirmUserCodeLoginDialog(
     private val authCode: String,
     private val dialogTitle: String,
-    private val credentialType: CredentialType
+    private val credentialType: CredentialType,
+    private val progressIndicator: ProgressIndicator?
 ) : DialogWrapper(null) {
 
     private val pane = panel {
@@ -88,8 +90,9 @@ class ConfirmUserCodeLoginDialog(
         }
     }
 
-    private inner class SignInWithDifferentAccountButton : DialogWrapperAction(message("aws.sso.signing.device.code.diff.account")) {
+    private inner class SignInWithDifferentAccountButton : DialogWrapperAction(message("gateway.auth.different.account.sign.in")) {
         override fun doAction(e: ActionEvent?) {
+            progressIndicator?.cancel()
             close(CLOSE_EXIT_CODE)
             requestCredentialsForCodeCatalyst(project = null)
         }

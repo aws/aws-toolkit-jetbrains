@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.intellij.openapi.progress.ProgressIndicator
+
 /**
  * Callback interface to allow for UI elements to react to the different stages of the SSO login flow
  */
@@ -10,7 +12,7 @@ interface SsoLoginCallback {
     /**
      * Called when a new authorization is pending within SSO service. User should be notified so they can perform the login flow.
      */
-    fun tokenPending(authorization: Authorization)
+    fun tokenPending(authorization: Authorization, progressIndicator: ProgressIndicator? = null)
 
     /**
      * Called when the user successfully logs into the SSO service.
