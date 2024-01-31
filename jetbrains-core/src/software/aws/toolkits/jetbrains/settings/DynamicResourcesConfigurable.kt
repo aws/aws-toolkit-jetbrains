@@ -112,7 +112,7 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
     }
 
     private fun CheckBoxList<*>.toggleAll(state: Boolean) {
-        for (idx in 0..model.size-1) {
+        for (idx in 0..model.size - 1) {
             checkboxStateHandler(idx, state)
         }
 
