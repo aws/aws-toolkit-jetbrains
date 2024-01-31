@@ -15,13 +15,8 @@ class RebuildDevfileRequiredNotification : MetricProvider {
 
     override fun getMetrics(): Map<String, Metric> =
         if (DevfileWatcher.getInstance().hasDevfileChanged()) {
-            mapOf(Pair("devfileRebuild", RebuildDevfileMetric))
+            mapOf("devfileRebuild" to Metric(MetricType.PERFORMANCE, MetricsStatus.DANGER_RESOURCES_CRITICAL, message("caws.rebuild.workspace.notification")))
         } else {
-            mapOf()
+            emptyMap()
         }
-
-    // Adding MetricStatus as Danger instead of Warning, cause Warning is overriden by other notifications provided by the client
-    object RebuildDevfileMetric : Metric(MetricType.OTHER, MetricsStatus.DANGER, true) {
-        override fun toString(): String = message("caws.rebuild.workspace.notification")
-    }
 }

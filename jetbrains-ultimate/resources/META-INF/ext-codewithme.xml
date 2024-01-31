@@ -8,8 +8,6 @@
         <gateway.customization.metrics implementation="software.aws.toolkits.jetbrains.remoteDev.caws.RebuildDevfileRequiredNotification"/>
         <gateway.customization.name implementation="software.aws.toolkits.jetbrains.remoteDev.caws.CodeCatalystGatewayClientCustomizer"/>
 
-        <postStartupActivity implementation="software.aws.toolkits.jetbrains.remoteDev.caws.DevfileWatcher"/>
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.remoteDev.caws.DevfileWatcher"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.remoteDev.caws.DevEnvStatusWatcher"/>
 
         <dynamicActionConfigurationCustomizer implementation="software.aws.toolkits.jetbrains.remoteDev.caws.RebuildActionConfigurationCustomizer"/>
