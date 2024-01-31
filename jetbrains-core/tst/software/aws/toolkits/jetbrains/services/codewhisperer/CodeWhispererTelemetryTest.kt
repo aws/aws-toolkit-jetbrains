@@ -41,6 +41,7 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.emptyListResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.keystrokeInput
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfEmptyRecommendationResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfMixedEmptyAndNonEmptyRecommendationResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
@@ -508,11 +509,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val fixture = projectRule.fixture
         val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
         // simulate users typing behavior of the following
-        // def addTwoNumbers(
+        // user hit one key stroke
         runInEdtAndWait {
             fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
-                fixture.editor.appendString(pythonTestLeftContext)
+                fixture.editor.appendString(keystrokeInput)
             }
         }
         // simulate users accepting the recommendation and delete part of the recommendation
@@ -533,7 +534,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = pythonResponse.completions()[0].content().length - deletedTokenByUser
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length
+        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -559,19 +560,19 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         runInEdtAndWait {
             fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
-                fixture.editor.appendString(pythonTestLeftContext)
+                fixture.editor.appendString(keystrokeInput)
             }
         }
         // simulate users accepting the recommendation
         // (x, y):\n    return x + y
-        val anotherCodeSnippet = "\ndef functionWritenByMyself():\n\tpass()"
+        val anotherKeyStrokeInput = "\n"
         withCodeWhispererServiceInvokedAndWait {
             popupManagerSpy.popupComponents.acceptButton.doClick()
         }
 
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
-                fixture.editor.appendString(anotherCodeSnippet)
+                fixture.editor.appendString(anotherKeyStrokeInput)
                 val currentOffset = fixture.editor.caretModel.offset
                 // delete 1 char
                 fixture.editor.document.deleteString(currentOffset - 1, currentOffset)
@@ -581,7 +582,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
 
         val acceptedTokensSize = pythonResponse.completions()[0].content().length
-        val totalTokensSize = pythonTestLeftContext.length + pythonResponse.completions()[0].content().length + anotherCodeSnippet.length
+        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length + anotherKeyStrokeInput.length
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -663,7 +664,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         runInEdtAndWait {
             fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
-                fixture.editor.appendString("$pythonTestLeftContext(")
+                fixture.editor.appendString("(")
                 // add closing paren but not move the caret position, simulating IDE's behavior
                 fixture.editor.document.insertString(fixture.editor.caretModel.offset, ")")
             }
@@ -675,7 +676,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val acceptedTokensSize = "x, y):\n    return x + y".length
-        val totalTokensSize = "$pythonTestLeftContext(".length + acceptedTokensSize
+        val totalTokensSize = "()".length + acceptedTokensSize
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
         assertEventsContainsFieldsAndCount(

@@ -85,6 +85,8 @@ abstract class CodeWhispererCodeCoverageTracker(
                     rangeMarkers.add(rangeMarker)
                     val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
                     rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
+                    // also increment total tokens because accepted tokens are part of it
+                    incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
                 }
             }
         )
@@ -112,19 +114,13 @@ abstract class CodeWhispererCodeCoverageTracker(
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
             if (event.oldTimeStamp == 0L) return
         }
-        // This case capture IDE reformatting the document, which will be blank string
-        if (isDocumentEventFromReformatting(event)) return
-
-        // Don't capture deletion events
-        if (event.newLength <= event.oldLength) return
-
         // only count total tokens when it is a user keystroke input
         // do not count doc changes from copy & paste of >=2 characters
         // do not count other changes from formatter, git command, etc
         if (event.newLength == 1 && event.oldLength == 0) {
             incrementTotalTokens(event.document, event.newLength - event.oldLength)
+            return
         }
-
     }
 
     internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
@@ -166,8 +162,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             fileToTokens[document] = tokens
         }
         tokens.acceptedTokens.addAndGet(delta)
-        // also increment total tokens because accepted tokens are part of it
-        incrementTotalTokens(document, delta)
     }
 
     private fun incrementTotalTokens(document: Document, delta: Int) {
