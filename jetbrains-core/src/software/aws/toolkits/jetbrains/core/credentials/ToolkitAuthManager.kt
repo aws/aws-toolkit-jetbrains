@@ -43,12 +43,9 @@ interface AwsCredentialConnection : ToolkitConnection {
 interface AwsBearerTokenConnection : ToolkitConnection {
     val startUrl: String
     val region: String
+    val scopes: List<String>
 
     override fun getConnectionSettings(): TokenConnectionSettings
-}
-
-interface BearerSsoConnection : AwsBearerTokenConnection {
-    val scopes: List<String>
 }
 
 sealed interface AuthProfile
@@ -72,7 +69,8 @@ data class UserConfigSsoSessionProfile(
 data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
     var startUrl: String = "",
-    var ssoRegion: String = ""
+    var ssoRegion: String = "",
+    var scopes: List<String> = emptyList()
 ) : AuthProfile
 
 /**
@@ -93,10 +91,10 @@ interface ToolkitAuthManager {
 
     /**
      * Creates a connection that is not visible to the rest of the toolkit unless authentication succeeds
-     * @return [BearerSsoConnection] on success
+     * @return [AwsBearerTokenConnection] on success
      */
-    fun tryCreateTransientSsoConnection(profile: AuthProfile, callback: (BearerSsoConnection) -> Unit): BearerSsoConnection
-    fun getOrCreateSsoConnection(profile: UserConfigSsoSessionProfile): BearerSsoConnection
+    fun tryCreateTransientSsoConnection(profile: AuthProfile, callback: (AwsBearerTokenConnection) -> Unit): AwsBearerTokenConnection
+    fun getOrCreateSsoConnection(profile: UserConfigSsoSessionProfile): AwsBearerTokenConnection
 
     fun deleteConnection(connection: ToolkitConnection)
     fun deleteConnection(connectionId: String)
@@ -135,7 +133,7 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
         val logger = getLogger<ToolkitAuthManager>()
         // requested Builder ID, but one already exists
         // TBD: do we do this for regular SSO too?
-        if (connection.isSono() && connection is BearerSsoConnection && requestedScopes.all { it in connection.scopes }) {
+        if (connection.isSono() && connection is AwsBearerTokenConnection && requestedScopes.all { it in connection.scopes }) {
             val signOut = computeOnEdt {
                 MessageDialogBuilder.yesNo(
                     message("toolkit.login.aws_builder_id.already_connected.title"),
@@ -151,13 +149,13 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
                     "Forcing reauth on ${connection.id} since user requested Builder ID while already connected to Builder ID"
                 }
 
-                logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
+                logoutFromSsoConnection(project, connection)
                 return@let null
             }
         }
 
         // There is an existing connection we can use
-        if (connection is BearerSsoConnection && !requestedScopes.all { it in connection.scopes }) {
+        if (connection is AwsBearerTokenConnection && !requestedScopes.all { it in connection.scopes }) {
             allScopes.addAll(connection.scopes)
 
             logger.info {
@@ -166,7 +164,7 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
                     are not a complete subset of current scopes (${connection.scopes})
                 """.trimIndent()
             }
-            logoutFromSsoConnection(project, connection as AwsBearerTokenConnection)
+            logoutFromSsoConnection(project, connection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
             return@let null
         }
