@@ -3,6 +3,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessNotCreatedException
 import com.intellij.execution.util.ExecUtil
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationAction
@@ -645,8 +646,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 if (output.exitCode == 0) {
                     return parseMavenVersion(output.stdout)
                 } else {
-                    LOG.error(output.stdout) { "Failed to fetch $mavenCommand version" }
+                    LOG.error { "Failed to fetch $mavenCommand version: ${output.stdout}" }
                 }
+            } catch (e: ProcessNotCreatedException) {
+                LOG.warn { "$mavenCommand not set up" }
             } catch (e: Exception) {
                 LOG.error(e) { "Failed to fetch $mavenCommand version" }
             }
