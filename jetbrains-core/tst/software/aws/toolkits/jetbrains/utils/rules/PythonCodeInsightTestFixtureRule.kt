@@ -14,6 +14,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.SdkAdditionalData
 import com.intellij.openapi.projectRoots.impl.ProjectJdkImpl
 import com.intellij.openapi.roots.ModuleRootModificationUtil
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.builders.ModuleFixtureBuilder
@@ -127,7 +128,7 @@ class PyTestSdk private constructor(private val version: LanguageLevel) : Projec
             val level = LanguageLevel.fromPythonVersion(version) ?: error("Invalid version")
             val sdk = PyTestSdk(level)
 
-            sdk.putUserData(PythonSdkType.MOCK_PY_MARKER_KEY, true)
+            sdk.putUserData(Key.create("MOCK_PY_MARKER_KEY"), true)
 
             return sdk
         }
