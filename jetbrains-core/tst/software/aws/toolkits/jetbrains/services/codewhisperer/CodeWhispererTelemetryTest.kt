@@ -555,8 +555,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val project = projectRule.project
         val fixture = projectRule.fixture
         val emptyFile = fixture.addFileToProject("/anotherFile.py", "")
-        // simulate users typing behavior of the following
-        // def addTwoNumbers
+        // simulate users typing behavior
         runInEdtAndWait {
             fixture.openFileInEditor(emptyFile.virtualFile)
             WriteCommandAction.runWriteCommandAction(project) {
@@ -606,17 +605,21 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         val project = projectRule.project
         val fixture = projectRule.fixture
-        fixture.configureByText("/file1.py", pythonTestLeftContext)
-        runInEdt {
-            fixture.editor.caretModel.moveToOffset(fixture.editor.document.textLength)
+        val emptyFile = fixture.addFileToProject("/anotherFile.py", pythonTestLeftContext)
+        // simulate users typing behavior
+        runInEdtAndWait {
+            fixture.openFileInEditor(emptyFile.virtualFile)
+            WriteCommandAction.runWriteCommandAction(project) {
+                fixture.editor.appendString(keystrokeInput)
+            }
         }
-        val file2 = fixture.addFileToProject("./file2.py", "Pre-existing string")
 
         // accept recommendation in file1.py
         withCodeWhispererServiceInvokedAndWait {
             popupManagerSpy.popupComponents.acceptButton.doClick()
         }
 
+        val file2 = fixture.addFileToProject("./file2.py", "Pre-existing string")
         // switch to file2.py and delete code there
         runInEdtAndWait {
             fixture.openFileInEditor(file2.virtualFile)
@@ -635,8 +638,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             codePercentage,
             1,
             "codewhispererAcceptedTokens" to pythonResponse.completions()[0].content().length.toString(),
-            "codewhispererTotalTokens" to pythonResponse.completions()[0].content().length.toString(),
-            "codewhispererPercentage" to "100",
+            "codewhispererTotalTokens" to (1 + pythonResponse.completions()[0].content().length).toString(),
+            "codewhispererPercentage" to "96",
             "codewhispererUserGroup" to userGroup.name,
         )
     }
