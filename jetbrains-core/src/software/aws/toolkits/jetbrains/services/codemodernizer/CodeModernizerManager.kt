@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
@@ -18,11 +20,14 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.idea.maven.project.MavenProjectsManager
+import org.jetbrains.idea.maven.utils.MavenUtil
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
@@ -534,7 +539,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodetransformTelemetry.totalRunTime(
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             codeTransformResultStatusMessage = result.toString(),
-            codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+            codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+            codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(),
+            codeTransformLocalMavenVersion = getMavenVersions(),
         )
         when (result) {
             is CodeModernizerJobCompletedResult.UnableToCreateJob -> notifyJobFailure(
@@ -607,7 +614,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     CodetransformTelemetry.totalRunTime(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                         codeTransformResultStatusMessage = "JobCancelled",
-                        codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+                        codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+                        codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(),
+                        codeTransformLocalMavenVersion = getMavenVersions(),
                     )
                 }
             } catch (e: Exception) {
@@ -616,10 +625,56 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 CodetransformTelemetry.totalRunTime(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformResultStatusMessage = "JobCancelled",
-                    codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+                    codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+                    codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(),
+                    codeTransformLocalMavenVersion = getMavenVersions(),
                 )
             }
         }
+    }
+
+    private fun getJavaVersionFromProjectSetting(): String? = project.tryGetJdk()?.toString()
+
+    private fun getMavenVersions(): String {
+        fun getVersion(mavenCommand: String): String? {
+            try {
+                val commandLine = GeneralCommandLine(listOf(mavenCommand, "-v"))
+                    .withWorkDirectory(project.basePath)
+                    .withRedirectErrorStream(true)
+                val output = ExecUtil.execAndGetOutput(commandLine)
+                if (output.exitCode == 0) {
+                    return parseMavenVersion(output.stdout)
+                } else {
+                    LOG.error(output.stdout) { "Failed to fetch $mavenCommand version" }
+                }
+            } catch (e: Exception) {
+                LOG.error(e) { "Failed to fetch $mavenCommand version" }
+            }
+            return null
+        }
+
+        // Get local maven version
+        val localMavenVersion: String? = getVersion("mvn")
+
+        // Get wrapper maven version
+        val mvnw = if (SystemInfo.isWindows) "./mvnw.cmd" else "./mvnw"
+        val wrapperMavenVersion: String? = getVersion(mvnw)
+
+        // Get user's Maven setting (using bundled vs local vs wrapper)
+        val mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings()
+        val mavenHome = mavenSettings.getMavenHome()
+        // TODO: Need to detect bundled Maven version that come with IDEA
+        //  The utility returns "Use Maven wrapper" if using wrapper, "Bundled (Maven 3)" if using Bundled Maven, otherwise the local maven version.
+        val userMavenSetting = MavenUtil.getMavenVersion(mavenHome) ?: mavenHome
+
+        return "$wrapperMavenVersion (mvnw) -- $localMavenVersion (mvn) -- user setting: $userMavenSetting"
+    }
+
+    private fun parseMavenVersion(output: String?): String? {
+        if (output == null) return null
+        val mavenVersionIndex = output.indexOf("Apache Maven")
+        val mavenVersionString = output.slice(IntRange(mavenVersionIndex + 13, output.length - 1))
+        return mavenVersionString.slice(IntRange(0, output.indexOf(' ') - 1))
     }
 
     fun isModernizationJobActive(): Boolean = isModernizationInProgress.get()
