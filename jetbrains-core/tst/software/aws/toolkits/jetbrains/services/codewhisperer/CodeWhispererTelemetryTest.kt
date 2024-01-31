@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup

@@ -116,6 +116,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
             if (event.oldTimeStamp == 0L) return
         }
+        LOG.debug { "event  $event" }
         // only count total tokens when it is a user keystroke input
         // do not count doc changes from copy & paste of >=2 characters
         // do not count other changes from formatter, git command, etc
@@ -177,9 +178,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             if (totalTokens.get() < 0) totalTokens.set(0)
         }
     }
-
-    private fun isDocumentEventFromReformatting(event: DocumentEvent): Boolean =
-        (event.newFragment.toString().isBlank() && event.oldFragment.toString().isBlank()) && (event.oldLength == 0 || event.newLength == 0)
 
     private fun reset() {
         startTime = Instant.now()

@@ -241,7 +241,6 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(keystrokeInput)
-        val oldSize = sut.totalTokensSize
         assertThat(sut.totalTokensSize).isEqualTo(keystrokeInput.length)
     }
 
@@ -260,7 +259,6 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(pythonTestLeftContext)
-        val oldSize = sut.totalTokensSize
         assertThat(sut.totalTokensSize).isEqualTo(0)
 
         val anotherCode = "(x, y):"
