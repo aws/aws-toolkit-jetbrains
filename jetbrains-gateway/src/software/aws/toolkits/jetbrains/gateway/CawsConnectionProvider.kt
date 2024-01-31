@@ -329,7 +329,6 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                                             label(message("caws.workspace.connection.failed")).applyToComponent {
                                                                 font = JBFont.regular().asBold()
                                                             }
-                                                            label("Please ensure you are logged into the correct account.")
                                                         }
 
                                                         row {
