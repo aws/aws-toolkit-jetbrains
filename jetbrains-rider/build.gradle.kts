@@ -21,7 +21,7 @@ buildscript {
 
     dependencies {
         if (rdversion.contains("pre")) {
-            classpath(files("bin/rd-gen-$rdversion.jar"))
+            classpath(fileTree("bin/$rdversion"))
         } else {
             classpath("com.jetbrains.rd:rd-gen:$rdversion")
         }

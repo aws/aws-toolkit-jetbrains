@@ -179,13 +179,13 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2023.3",
+                sdkVersion = "2024.1-EAP2-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2023.3.2",
-                nugetVersion = "2023.3.0"
+                rdGenVersion = "2024.1.0-pre1",
+                nugetVersion = "2024.1.0-eap02"
             )
         ),
 
