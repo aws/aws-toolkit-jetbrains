@@ -116,7 +116,6 @@ abstract class CodeWhispererCodeCoverageTracker(
             LOG.debug { "event with isWholeTextReplaced flag: $event" }
             if (event.oldTimeStamp == 0L) return
         }
-        LOG.debug { "event  $event" }
         // only count total tokens when it is a user keystroke input
         // do not count doc changes from copy & paste of >=2 characters
         // do not count other changes from formatter, git command, etc
