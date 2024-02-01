@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.core.credentials.sono
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
@@ -12,8 +14,8 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
@@ -21,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
+import javax.swing.JComponent
 
 class CodeCatalystCredentialManager {
     private val project: Project?
@@ -32,7 +35,7 @@ class CodeCatalystCredentialManager {
         this.project = null
     }
 
-    internal fun connection() = (
+    fun connection() = (
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as? AwsBearerTokenConnection
         )
@@ -72,21 +75,41 @@ class CodeCatalystCredentialManager {
 
     fun promptAuth(): BearerTokenProvider? {
         connection()?.let {
-            return reauthProviderIfNeeded(project, provider(it))
+            val tokenProvider = provider(it)
+            val reauthRequired = maybeReauthProviderIfNeeded(project, tokenProvider) {}
+            if (reauthRequired) {
+                val useCurrentCredentials =
+                    computeOnEdt {
+                        val accountType = if (it.startUrl == SONO_URL) "Builder ID" else "IAM Identity Center"
+                        SignInWithTheCurrentCredentials(project, accountType).showAndGet()
+                    }
+                if (useCurrentCredentials) {
+                    runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+                        tokenProvider.reauthenticate()
+                    }
+                    return tokenProvider
+                } else {
+                    return newCredentialRequest()
+                }
+            } else {
+                return tokenProvider
+            }
         }
 
-        return runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            val closed = computeOnEdt {
-                requestCredentialsForCodeCatalyst(project)
-            }
-            if (closed) {
-                connection()?.let {
-                    return@runUnderProgressIfNeeded provider(it)
-                }
-                error("Unable to request credentials for CodeCatalyst")
-            }
-            return@runUnderProgressIfNeeded null
+        return newCredentialRequest()
+    }
+
+    private fun newCredentialRequest() = runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+        val closed = computeOnEdt {
+            requestCredentialsForCodeCatalyst(project)
         }
+        if (closed) {
+            connection()?.let {
+                return@runUnderProgressIfNeeded provider(it)
+            }
+            error("Unable to request credentials for CodeCatalyst")
+        }
+        return@runUnderProgressIfNeeded null
     }
 
     fun closeConnection() {
@@ -94,6 +117,20 @@ class CodeCatalystCredentialManager {
     }
 
     fun isConnected(): Boolean = connection()?.let { provider(it).state() != BearerTokenAuthState.NOT_AUTHENTICATED } ?: false
+
+    inner class SignInWithTheCurrentCredentials(project: Project?, private val accountType: String) : DialogWrapper(project) {
+
+        init {
+            super.init()
+            title = "Reauthenticate"
+            setCancelButtonText(message("gateway.auth.different.account.sign.in"))
+        }
+        override fun createCenterPanel(): JComponent = panel {
+            row {
+                label(message("gateway.auth.different.account.already.signed.in", accountType))
+            }
+        }
+    }
 
     companion object {
         fun getInstance(project: Project? = null) = project?.let { it.service<CodeCatalystCredentialManager>() } ?: service()

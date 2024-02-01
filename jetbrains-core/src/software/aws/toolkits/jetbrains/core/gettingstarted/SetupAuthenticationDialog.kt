@@ -19,6 +19,7 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
@@ -520,7 +521,7 @@ class IdcTabPanelBuilder(
                 .align(AlignX.FILL)
                 .errorOnApply(message("gettingstarted.setup.error.not_empty")) { it.text.isBlank() }
                 .errorOnApply(message("gettingstarted.setup.idc.no_builder_id")) { it.text == SONO_URL }
-                .bindText(startUrl)
+                .bind({ it.text.trim() }, { t, v -> t.text = v.trim() }, startUrl.toMutableProperty())
         }
 
         row(message("gettingstarted.setup.idc.region")) {

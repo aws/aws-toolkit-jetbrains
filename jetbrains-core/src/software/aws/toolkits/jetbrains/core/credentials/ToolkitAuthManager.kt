@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
@@ -206,6 +207,9 @@ internal fun reauthConnection(project: Project?, connection: ToolkitConnection):
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+        ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC).invalidate(
+            connection.getConnectionSettings().providerId
+        )
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             // TODO: Connection handling in GettingStartedAuthUtils needs to be refactored
             deleteSsoConnectionCW(connection)

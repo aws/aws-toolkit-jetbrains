@@ -196,6 +196,8 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     CawsConnectionParameters.DEV_SETTING_USE_BUNDLED_TOOLKIT to context.useBundledToolkit.toString(),
                     CawsConnectionParameters.DEV_SETTING_S3_STAGING to context.s3StagingBucket,
                     CawsConnectionParameters.DEV_SETTING_TOOLKIT_PATH to context.toolkitLocation,
+                    CawsConnectionParameters.SSO_REGION to "-1",
+                    CawsConnectionParameters.SSO_START_URL to "-1"
                 ) + buildMap {
                     when (context.cloneType) {
                         CawsWizardCloneType.CAWS -> {
