@@ -20,8 +20,8 @@ sourceSets {
 
 configurations.getByName("integrationTestCompileClasspath") {
     extendsFrom(configurations.getByName(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME))
-    isCanBeResolved = true
 }
+
 configurations.getByName("integrationTestRuntimeClasspath") {
     extendsFrom(configurations.getByName(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME))
     isCanBeResolved = true
