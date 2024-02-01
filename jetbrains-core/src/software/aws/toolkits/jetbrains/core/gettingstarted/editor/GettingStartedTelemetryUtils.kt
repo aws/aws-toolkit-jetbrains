@@ -28,8 +28,14 @@ fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
             )
         }
     }
-    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) // Currently this will always be builder id
-    if (codeCatalystConnection !is ActiveConnection.NotConnected) enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
+    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
+    if (codeCatalystConnection !is ActiveConnection.NotConnected) {
+        if (codeCatalystConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+            enabledConnections.add(AuthFormId.IDENTITYCENTER_CODECATALYST)
+        } else {
+            enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
+        }
+    }
 
     val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
     if (codeWhispererConnection !is ActiveConnection.NotConnected) {
@@ -51,6 +57,7 @@ enum class AuthFormId {
     IAMCREDENTIALS_EXPLORER,
     IDENTITYCENTER_EXPLORER,
     BUILDERID_CODECATALYST,
+    IDENTITYCENTER_CODECATALYST,
     BUILDERID_CODEWHISPERER,
     IDENTITYCENTER_CODEWHISPERER,
     UNKNOWN
