@@ -526,7 +526,8 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
             class Answer {
                 private int knapsack(int[] w, int[] v, int c) {
                 int[][] dp = new int[w.length + 1][c + 1];
-                    for (int i = 0; i < w.length; i++) {for (int j = 0; j <= c; j++) {
+                    for (int i = 0; i < w.length; i++) {
+                    for (int j = 0; j <= c; j++) {
                                    if (j < w[i]) {
                                 dp[i + 1][j] = dp[i][j];
                         } 
