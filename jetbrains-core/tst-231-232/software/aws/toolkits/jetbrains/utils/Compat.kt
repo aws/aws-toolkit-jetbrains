@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.runInEdtAndWait
 import org.jetbrains.idea.maven.model.MavenExplicitProfiles
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 
@@ -15,4 +16,7 @@ suspend fun MavenProjectsManager.addManagedFilesWithProfilesAndUpdate(
     nothing1: Nothing?
 ) {
     resetManagedFilesAndProfilesInTests(poms, profiles)
+    runInEdtAndWait {
+        waitForReadingCompletion()
+    }
 }
