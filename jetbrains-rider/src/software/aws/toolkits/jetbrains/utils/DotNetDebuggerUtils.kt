@@ -20,7 +20,7 @@ import com.jetbrains.rider.run.IDebuggerOutputListener
 import java.io.File
 
 object DotNetDebuggerUtils {
-    val debuggerName = "JetBrains.Debugger.Worker.exe"
+    const val debuggerName = "JetBrains.Debugger.Worker.exe"
 
     val debuggerAssemblyFile: File = RiderEnvironment.getBundledFile(debuggerName)
 
