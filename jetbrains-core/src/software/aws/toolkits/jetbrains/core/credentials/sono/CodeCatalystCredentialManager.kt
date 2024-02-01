@@ -80,7 +80,7 @@ class CodeCatalystCredentialManager {
             if (reauthRequired) {
                 val useCurrentCredentials =
                     computeOnEdt {
-                        val accountType = if (it.startUrl == SONO_URL) "Builder ID" else "IAM Identity Center"
+                        val accountType = if (it.startUrl == SONO_URL) message("aws_builder_id.service_name") else message("iam_identity_center.name")
                         SignInWithTheCurrentCredentials(project, accountType).showAndGet()
                     }
                 if (useCurrentCredentials) {
@@ -121,8 +121,8 @@ class CodeCatalystCredentialManager {
     inner class SignInWithTheCurrentCredentials(project: Project?, private val accountType: String) : DialogWrapper(project) {
 
         init {
-            super.init()
-            title = "Reauthenticate"
+            init()
+            title = message("general.auth.reauthenticate")
             setCancelButtonText(message("gateway.auth.different.account.sign.in"))
         }
         override fun createCenterPanel(): JComponent = panel {

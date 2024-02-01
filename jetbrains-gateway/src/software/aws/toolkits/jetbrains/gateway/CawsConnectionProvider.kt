@@ -110,24 +110,23 @@ class CawsConnectionProvider : GatewayConnectionProvider {
         val currentConnection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as AwsBearerTokenConnection?
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)
-        if (connectionParams.ssoSettings?.startUrl != "-1" && connectionParams.ssoSettings?.region != "-1") {
-            if (ssoSettings.startUrl != currentConnection?.startUrl) {
-                val ans = Messages.showOkCancelDialog(
-                    message("gateway.auth.different.account.required", ssoSettings.startUrl),
-                    message("gateway.auth.different.account.sign.in"),
-                    message("caws.login"),
-                    message("general.cancel"),
-                    Messages.getErrorIcon(),
-                    null
-                )
-                if (ans == Messages.OK) {
-                    if (currentConnection != null) {
-                        logoutFromSsoConnection(project = null, currentConnection)
-                    }
-                    loginSso(project = null, ssoSettings.startUrl, ssoSettings.region, CODECATALYST_SCOPES)
-                } else {
-                    return null
+
+        if (ssoSettings.startUrl != currentConnection?.startUrl) {
+            val ans = Messages.showOkCancelDialog(
+                message("gateway.auth.different.account.required", ssoSettings.startUrl),
+                message("gateway.auth.different.account.sign.in"),
+                message("caws.login"),
+                message("general.cancel"),
+                Messages.getErrorIcon(),
+                null
+            )
+            if (ans == Messages.OK) {
+                if (currentConnection != null) {
+                    logoutFromSsoConnection(project = null, currentConnection)
                 }
+                loginSso(project = null, ssoSettings.startUrl, ssoSettings.region, CODECATALYST_SCOPES)
+            } else {
+                return null
             }
         }
 
