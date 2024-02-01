@@ -563,7 +563,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
         // simulate users accepting the recommendation
         // (x, y):\n    return x + y
-        val anotherKeyStrokeInput = "\n"
+        val anotherKeyStrokeInput = "\n  "
         withCodeWhispererServiceInvokedAndWait {
             popupManagerSpy.popupComponents.acceptButton.doClick()
         }
@@ -580,7 +580,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
 
         val acceptedTokensSize = pythonResponse.completions()[0].content().length
-        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length + anotherKeyStrokeInput.length
+        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length + 1
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
