@@ -77,6 +77,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepExecutor
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepWorkflow
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URLDecoder
@@ -109,24 +110,25 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
         val currentConnection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as AwsBearerTokenConnection?
+        notifyInfo("Current connection", currentConnection?.startUrl.toString())
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)
 
-        if (ssoSettings.startUrl != currentConnection?.startUrl) {
-            val ans = Messages.showOkCancelDialog(
-                message("gateway.auth.different.account.required", ssoSettings.startUrl),
-                message("gateway.auth.different.account.sign.in"),
-                message("caws.login"),
-                message("general.cancel"),
-                Messages.getErrorIcon(),
-                null
-            )
-            if (ans == Messages.OK) {
-                if (currentConnection != null) {
+        if (currentConnection != null) {
+            if (ssoSettings.startUrl != currentConnection.startUrl) {
+                val ans = Messages.showOkCancelDialog(
+                    message("gateway.auth.different.account.required", ssoSettings.startUrl),
+                    message("gateway.auth.different.account.sign.in"),
+                    message("caws.login"),
+                    message("general.cancel"),
+                    Messages.getErrorIcon(),
+                    null
+                )
+                if (ans == Messages.OK) {
                     logoutFromSsoConnection(project = null, currentConnection)
+                    loginSso(project = null, ssoSettings.startUrl, ssoSettings.region, CODECATALYST_SCOPES)
+                } else {
+                    return null
                 }
-                loginSso(project = null, ssoSettings.startUrl, ssoSettings.region, CODECATALYST_SCOPES)
-            } else {
-                return null
             }
         }
 
