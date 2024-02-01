@@ -30,12 +30,11 @@ fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
     }
     val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
     if (codeCatalystConnection !is ActiveConnection.NotConnected) {
-        if(codeCatalystConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+        if (codeCatalystConnection.connectionType == ActiveConnectionType.IAM_IDC) {
             enabledConnections.add(AuthFormId.IDENTITYCENTER_CODECATALYST)
         } else {
             enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
         }
-
     }
 
     val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
