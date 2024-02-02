@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -71,7 +69,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        assertThat(sessionConfigSpy.getSourceFilesUnderProjectRoot(testPy).size).isEqualTo(3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, testPy, 3)
     }
 
     @Test
@@ -94,31 +92,17 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
 
     @Test
     fun `test includeDependencies()`() {
-        val payloadMetadata = sessionConfigSpy.includeDependencies()
-        assertNotNull(payloadMetadata)
-        assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        val (includedSourceFiles, srcPayloadSize, totalLines, buildPaths) = payloadMetadata
-        assertThat(includedSourceFiles.size).isEqualTo(3)
-        assertThat(srcPayloadSize).isEqualTo(totalSize)
-        assertThat(totalLines).isEqualTo(this.totalLines)
-        assertThat(buildPaths).hasSize(0)
+        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 0)
     }
 
     @Test
     fun `test getTotalProjectSizeInBytes()`() {
-        runBlocking {
-            assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
-        }
+        getTotalProjectSizeInBytes(sessionConfigSpy, this.totalSize)
     }
 
     @Test
     fun `selected file larger than payload limit throws exception`() {
-        sessionConfigSpy.stub {
-            onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
-        }
-        assertThrows<CodeWhispererCodeScanException> {
-            sessionConfigSpy.createPayload()
-        }
+        selectedFileLargerThanPayloadSizeThrowsException(sessionConfigSpy)
     }
 
     @Test
@@ -147,6 +131,42 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         }
 
         assertThat(filesInZip).isEqualTo(2)
+    }
+
+    @Test
+    fun `test createPayload for file outside project`() {
+        val fileOutsideProjectPy = projectRule.fixture.addFileToProject(
+            "../fileOutsideProject.py",
+            """
+                import numpy as np
+                import util
+                a = 1
+                """
+        ).virtualFile
+        val totalSize = fileOutsideProjectPy.length
+        val totalLines = fileOutsideProjectPy.toNioPath().toFile().readLines().size.toLong()
+        sessionConfigSpy = spy(CodeScanSessionConfig.create(fileOutsideProjectPy, project) as PythonCodeScanSessionConfig)
+
+        val payload = sessionConfigSpy.createPayload()
+        assertNotNull(payload)
+        assertThat(payload.context.totalFiles).isEqualTo(1)
+
+        assertThat(payload.context.scannedFiles.size).isEqualTo(1)
+        assertThat(payload.context.scannedFiles).containsExactly(fileOutsideProjectPy)
+
+        assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
+        assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Python)
+        assertThat(payload.context.totalLines).isEqualTo(totalLines)
+        assertNotNull(payload.srcZip)
+
+        val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
+        val zis = ZipInputStream(bufferedInputStream)
+        var filesInZip = 0
+        while (zis.nextEntry != null) {
+            filesInZip += 1
+        }
+
+        assertThat(filesInZip).isEqualTo(1)
     }
 
     @Test

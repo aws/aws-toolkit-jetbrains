@@ -33,9 +33,10 @@ sealed class CodeScanSessionConfig(
     private val selectedFile: VirtualFile,
     private val project: Project
 ) {
-    val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+    var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+        private set
 
-    abstract val sourceExt: String
+    abstract val sourceExt: List<String>
 
     private var isProjectTruncated = false
 
@@ -54,6 +55,8 @@ sealed class CodeScanSessionConfig(
 
     open fun getImportedFiles(file: VirtualFile, includedSourceFiles: Set<String>): List<String> = listOf()
 
+    open fun getSelectedFile(): VirtualFile = selectedFile
+
     open fun createPayload(): Payload {
         // Fail fast if the selected file size is greater than the payload limit.
         if (selectedFile.length > getPayloadLimitInBytes()) {
@@ -64,22 +67,37 @@ sealed class CodeScanSessionConfig(
 
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${selectedFile.path}" }
 
-        val (includedSourceFiles, payloadSize, totalLines, _) = includeDependencies()
+        val payloadMetadata = when (selectedFile.path.startsWith(projectRoot.path)) {
+            true -> includeDependencies()
+            false -> {
+                // Set project root as the parent of the selected file.
+                projectRoot = selectedFile.parent
+                includeFileOutsideProjectRoot()
+            }
+        }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(includedSourceFiles.map { Path.of(it) })
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
             selectedFile.programmingLanguage().toTelemetryType(),
-            totalLines,
-            includedSourceFiles.size,
+            payloadMetadata.linesScanned,
+            payloadMetadata.sourceFiles.size,
             Instant.now().toEpochMilli() - start,
-            includedSourceFiles.mapNotNull { Path.of(it).toFile().toVirtualFile() },
-            payloadSize,
+            payloadMetadata.sourceFiles.mapNotNull { Path.of(it).toFile().toVirtualFile() },
+            payloadMetadata.payloadSize,
             srcZip.length()
         )
 
         return Payload(payloadContext, srcZip)
     }
+
+    open fun includeFileOutsideProjectRoot(): PayloadMetadata =
+        // Handle the case where the selected file is outside the project root.
+        PayloadMetadata(
+            setOf(selectedFile.path),
+            selectedFile.length,
+            Files.lines(selectedFile.toNioPath()).count().toLong()
+        )
 
     open fun includeDependencies(): PayloadMetadata {
         val includedSourceFiles = mutableSetOf<String>()
@@ -112,7 +130,6 @@ sealed class CodeScanSessionConfig(
                 currentTotalFileSize += currentFileSize
                 currentTotalLines += Files.lines(currentFile.toNioPath()).count()
                 includedSourceFiles.add(currentFilePath)
-
                 getImportedFiles(currentFile, includedSourceFiles).forEach {
                     if (!includedSourceFiles.contains(it)) queue.addLast(it)
                 }
@@ -137,7 +154,13 @@ sealed class CodeScanSessionConfig(
         try {
             withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
                 VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                    !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && it.path.endsWith(sourceExt)
+                    !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
+                        it.path.endsWith(sourceExt[0]) || (
+                            sourceExt.getOrNull(1) != null && it.path.endsWith(
+                                sourceExt[1]
+                            )
+                            )
+                        )
                 }.fold(0L) { acc, next ->
                     totalSize = acc + next.length
                     totalSize
@@ -167,7 +190,7 @@ sealed class CodeScanSessionConfig(
         if (selectedFile.path.startsWith(projectRoot.path)) {
             files.addAll(
                 VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                    it.path.endsWith(sourceExt) && it != selectedFile
+                    (it.path.endsWith(sourceExt[0]) || (sourceExt.getOrNull(1) != null && it.path.endsWith(sourceExt[1]))) && it != selectedFile
                 }
             )
         }
@@ -189,12 +212,21 @@ sealed class CodeScanSessionConfig(
         private val LOG = getLogger<CodeScanSessionConfig>()
         private const val TELEMETRY_TIMEOUT_IN_SECONDS: Long = 10
         const val FILE_SEPARATOR = '/'
-        fun create(file: VirtualFile, project: Project): CodeScanSessionConfig = when (file.programmingLanguage().toTelemetryType()) {
-            CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project)
-            CodewhispererLanguage.Python -> PythonCodeScanSessionConfig(file, project)
-            CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project)
-            else -> fileFormatNotSupported(file.extension ?: "")
-        }
+        fun create(file: VirtualFile, project: Project): CodeScanSessionConfig =
+            when (file.programmingLanguage().toTelemetryType()) {
+                CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Python -> PythonCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Javascript)
+                CodewhispererLanguage.Typescript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Typescript)
+                CodewhispererLanguage.Csharp -> CsharpCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Yaml -> CloudFormationYamlCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Json -> CloudFormationJsonCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Tf,
+                CodewhispererLanguage.Hcl -> TerraformCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Go -> GoCodeScanSessionConfig(file, project)
+                CodewhispererLanguage.Ruby -> RubyCodeScanSessionConfig(file, project)
+                else -> fileFormatNotSupported(file.extension ?: "")
+            }
     }
 }
 

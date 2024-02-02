@@ -4,8 +4,6 @@
 
 package software.aws.toolkits.jetbrains.utils.ui
 
-import com.intellij.icons.AllIcons
-import com.intellij.ide.HelpTooltip
 import com.intellij.lang.Language
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.CommandProcessor
@@ -15,28 +13,20 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.CellRendererPanel
 import com.intellij.ui.ClickListener
 import com.intellij.ui.EditorTextField
+import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.JBColor
 import com.intellij.ui.JreHiDpiUtil
-import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MutableProperty
-import com.intellij.ui.layout.Cell
-import com.intellij.ui.layout.CellBuilder
-import com.intellij.ui.layout.ComponentPredicate
-import com.intellij.ui.layout.PropertyBinding
-import com.intellij.ui.layout.Row
-import com.intellij.ui.layout.applyToComponent
-import com.intellij.ui.layout.toBinding
-import com.intellij.ui.layout.withSelectedBinding
 import com.intellij.ui.paint.LinePainter2D
 import com.intellij.ui.speedSearch.SpeedSearchSupply
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.util.text.SyncDateFormat
 import com.intellij.util.ui.GraphicsUtil
+import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import org.jetbrains.annotations.Nls
 import software.aws.toolkits.jetbrains.ui.KeyValueTextField
 import software.aws.toolkits.jetbrains.utils.formatText
 import java.awt.AlphaComposite
@@ -49,18 +39,17 @@ import java.awt.event.MouseEvent
 import java.awt.geom.RoundRectangle2D
 import java.text.SimpleDateFormat
 import javax.swing.AbstractButton
-import javax.swing.JButton
+import javax.swing.BorderFactory
 import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JTable
 import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.ListModel
+import javax.swing.border.Border
 import javax.swing.table.TableCellRenderer
 import javax.swing.text.Highlighter
 import javax.swing.text.JTextComponent
-import kotlin.reflect.KMutableProperty0
-import com.intellij.ui.dsl.builder.Cell as Cell2
 
 fun JTextField?.blankAsNull(): String? = if (this?.text?.isNotBlank() == true) {
     text
@@ -251,14 +240,8 @@ class ResizingTextColumnRenderer : ResizingColumnRenderer() {
  * the child panels. This function makes it so the validation callbacks and apply are actually called.
  * @param applies An additional function that allows control based on visibility of other components or other factors
  */
-fun CellBuilder<DialogPanel>.installOnParent(applies: () -> Boolean = { true }): CellBuilder<DialogPanel> {
-    withValidationOnApply {
-        validate(applies, it)
-    }
-    return this
-}
 
-fun Cell2<DialogPanel>.installOnParent(applies: () -> Boolean = { true }): Cell2<DialogPanel> {
+fun Cell<DialogPanel>.installOnParent(applies: () -> Boolean = { true }): Cell<DialogPanel> {
     validationOnApply {
         validate(applies, it)
     }
@@ -276,77 +259,27 @@ private inline fun validate(applies: () -> Boolean, component: DialogPanel): Val
         errors.firstOrNull()
     }
 
-// backport since removed in 223
-fun <T> CellBuilder<JBRadioButton>.bindValueToProperty(prop: PropertyBinding<T>, value: T): CellBuilder<JBRadioButton> = apply {
-    component.isSelected = prop.get() == value
-    onApply { if (component.isSelected) prop.set(value) }
-    onReset { component.isSelected = prop.get() == value }
-    onIsModified { component.isSelected != (prop.get() == value) }
-}
-
-fun Row.visibleIf(predicate: ComponentPredicate): Row {
-    visible = predicate()
-    predicate.addListener { visible = it }
-    return this
-}
-
 /**
  * Add a contextual help icon component
  */
-fun Cell.contextualHelp(description: String): CellBuilder<JBLabel> {
-    val l = JBLabel(AllIcons.General.ContextHelp)
-    HelpTooltip().apply {
-        setDescription(description)
-        installOn(l)
-    }
-    return component(l)
-}
 
-fun CellBuilder<KeyValueTextField>.withBinding(binding: PropertyBinding<Map<String, String>>) =
-    this.withBinding(
-        componentGet = { component -> component.envVars },
-        componentSet = { component, value -> component.envVars = value },
-        binding
-    )
-
-fun com.intellij.ui.dsl.builder.Cell<KeyValueTextField>.withBinding(binding: MutableProperty<Map<String, String>>) =
+fun Cell<KeyValueTextField>.withBinding(binding: MutableProperty<Map<String, String>>) =
     this.bind(
         componentGet = { component -> component.envVars },
         componentSet = { component, value -> component.envVars = value },
         binding
     )
 
-fun Row.keyValueTextField(title: String? = null, property: KMutableProperty0<Map<String, String>>): CellBuilder<KeyValueTextField> {
-    val field = if (title == null) {
-        KeyValueTextField()
-    } else {
-        KeyValueTextField(title)
-    }
-
-    return component(field)
-        .withBinding(property.toBinding())
-}
-
-fun <T : JComponent> CellBuilder<T>.toolTipText(@Nls text: String): CellBuilder<T> {
-    applyToComponent {
-        toolTipText = text
-    }
-
-    return this
-}
-
-fun JButton.setEnabledAndVisible(state: Boolean) {
-    isEnabled = state
-    isVisible = state
-}
-
-fun<T> CellBuilder<JBRadioButton>.enumBinding(property: KMutableProperty0<T>, buttonValue: T) = this
-    .withSelectedBinding(
-        PropertyBinding(
-            get = { property.get() == buttonValue },
-            set = { if (it) property.set(buttonValue) }
+fun editorNotificationCompoundBorder(outsideBorder: Border) = BorderFactory.createCompoundBorder(
+    // outside border
+    outsideBorder,
+    // inside border
+    // helper util not available in JBUI until 232
+    // https://github.com/JetBrains/intellij-community/blob/222/platform/platform-api/src/com/intellij/ui/EditorNotificationPanel.java#L135-L136
+    JBUI.Borders.empty(
+        JBUI.insets(
+            "Editor.Notification.borderInsets",
+            if (ExperimentalUI.isNewUI()) JBInsets.create(9, 16) else JBInsets.create(5, 10)
         )
     )
-    .applyToComponent {
-        isSelected = property.get() == buttonValue
-    }
+)

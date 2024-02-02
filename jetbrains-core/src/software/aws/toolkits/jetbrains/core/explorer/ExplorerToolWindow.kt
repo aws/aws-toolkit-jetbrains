@@ -32,7 +32,6 @@ import com.intellij.ui.PopupHandler
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.panels.NonOpaquePanel
-import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.Tree
@@ -48,9 +47,11 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_RESOURCE_NODES
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerDataKeys.SELECTED_SERVICE_NODE
@@ -61,7 +62,12 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNo
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerServiceRootNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceActionNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.ResourceLocationNode
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel
+import software.aws.toolkits.jetbrains.core.gettingstarted.rolePopupFromConnection
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.DynamicResourceResourceTypeNode
+import software.aws.toolkits.jetbrains.ui.CenteredInfoPanel
+import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -76,7 +82,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 import kotlin.reflect.KClass
 
-class ExplorerToolWindow(project: Project) :
+class ExplorerToolWindow(private val project: Project) :
     SimpleToolWindowPanel(true, true),
     ConnectionSettingsStateChangeNotifier,
     ToolkitConnectionManagerListener,
@@ -99,7 +105,7 @@ class ExplorerToolWindow(project: Project) :
         project.messageBus.connect(this).subscribe(AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED, this)
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(ToolkitConnectionManagerListener.TOPIC, this)
 
-        connectionChanged()
+        connectionChanged(connectionManager.activeConnection())
     }
 
     private fun createInfoPanel(state: ConnectionState): JComponent {
@@ -154,42 +160,80 @@ class ExplorerToolWindow(project: Project) :
     }
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-        connectionChanged()
+        // weird race condition where message bus fires before active connection has reflected in the connection manager
+        connectionChanged(newConnection)
     }
 
     override fun settingsStateChanged(newState: ConnectionState) {
-        connectionChanged()
+        // we use the active connection to ignore changes to AwsConnectionManager when it's not the active connection
+        connectionChanged(connectionManager.activeConnection())
     }
 
-    private fun connectionChanged() {
-        val connection = connectionManager.activeConnection()
-        val credentialstate = accountSettingsManager.connectionState
+    private fun connectionChanged(newConnection: ToolkitConnection?) {
+        val connectionState = accountSettingsManager.connectionState
 
-        when (connection) {
+        fun drawConnectionManagerPanel() {
+            runInEdt {
+                treePanelWrapper.setContent(
+                    when (connectionState) {
+                        is ConnectionState.ValidConnection -> {
+                            invalidateTree()
+                            awsTreePanel
+                        }
+                        else -> createInfoPanel(connectionState)
+                    }
+                )
+            }
+        }
+
+        when (newConnection) {
             is AwsConnectionManagerConnection -> {
-                runInEdt {
-                    treePanelWrapper.setContent(
-                        when (credentialstate) {
-                            is ConnectionState.ValidConnection -> {
-                                invalidateTree()
-                                awsTreePanel
+                drawConnectionManagerPanel()
+            }
+
+            null -> {
+                // double check that we don't already have iam creds because the ToolkitConnectionListener can fire last, leading to weird state
+                // where we show "setup" button instead of explorer tree
+                if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                    drawConnectionManagerPanel()
+                    UiTelemetry.click(project, "ExplorerToolWindow_raceConditionHit")
+                } else {
+                    runInEdt {
+                        treePanelWrapper.setContent(
+                            CenteredInfoPanel().apply {
+                                addLine(message("gettingstarted.explorer.new.setup.info"))
+                                addDefaultActionButton(message("gettingstarted.explorer.new.setup")) {
+                                    GettingStartedPanel.openPanel(project)
+                                }
                             }
-                            else -> createInfoPanel(credentialstate)
-                        }
-                    )
+                        )
+                    }
                 }
             }
-            null, is AwsBearerTokenConnection -> {
+
+            is AwsBearerTokenConnection -> {
                 runInEdt {
                     treePanelWrapper.setContent(
-                        buildIamHelpPanel(connection).apply {
-                            isOpaque = false
+                        CenteredInfoPanel().apply {
+                            if (!newConnection.isSono() || CredentialManager.getInstance().getCredentialIdentifiers().isEmpty()) {
+                                // if no iam credentials or we're connected to identity center...
+                                addLine(message("gettingstarted.explorer.iam.add.info"))
+                                addDefaultActionButton(message("gettingstarted.explorer.iam.add")) {
+                                    // if builder id, popup identity center add connection
+                                    // else if already identity center, popup just the role selector
+                                    rolePopupFromConnection(project, newConnection)
+                                }
+                            } else {
+                                // else if iam credentials available
+                                addLine(message("gettingstarted.explorer.iam.switch"))
+                            }
                         }
                     )
                 }
             }
+
             else -> {
-                // TODO: tree doesn't support other connection types yet
+                // tree doesn't support other connection types yet
             }
         }
     }

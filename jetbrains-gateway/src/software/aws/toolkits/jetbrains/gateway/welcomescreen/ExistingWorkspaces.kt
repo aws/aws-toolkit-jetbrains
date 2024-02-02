@@ -17,7 +17,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.gateway.CawsLoadingPanel
+import software.aws.toolkits.jetbrains.gateway.SsoSettings
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.WorkspaceDataRetriever.Companion.createWorkspaceDataRetriever
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
@@ -47,11 +50,19 @@ class ExistingWorkspaces(
 
         val space = CawsSpaceTracker.getInstance().lastSpaceName()
         if (space == null || space !in spaces) {
-            return InfoPanel()
+            return infoPanel()
                 .addLine(message("caws.workspace.details.select_org"))
                 .addAction(message("general.get_started")) {
                     BrowserLauncher.instance.browse(CawsEndpoints.ConsoleFactory.baseUrl())
                 }
+        }
+
+        val ssoSettings: SsoSettings? = ToolkitAuthManager.getInstance().getConnection(connectionSettings.providerId)?.let {
+            if (it is AwsBearerTokenConnection) {
+                SsoSettings(it.startUrl, it.region)
+            } else {
+                null
+            }
         }
 
         return try {
@@ -60,9 +71,9 @@ class ExistingWorkspaces(
             Disposer.register(disposable, workspaces)
 
             if (workspaces.workspaces().isNotEmpty() || workspaces.codeRepos().isNotEmpty()) {
-                WorkspaceListPanel(workspaces, client, setContentCallback, { startLoading() }, lifetime)
+                WorkspaceListPanel(workspaces, client, ssoSettings, setContentCallback, { startLoading() }, lifetime)
             } else {
-                InfoPanel()
+                infoPanel()
                     .addLine(message("caws.information_panel"))
                     .addLine(message("caws.information.panel"))
                     .addAction(message("general.refresh")) { lifetime.launchOnUi { startLoading() } }

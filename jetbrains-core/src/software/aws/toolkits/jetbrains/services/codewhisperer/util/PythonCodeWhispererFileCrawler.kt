@@ -3,61 +3,40 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import com.jetbrains.python.psi.PyFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.ClassResolverKey
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver
 
 object PythonCodeWhispererFileCrawler : CodeWhispererFileCrawler() {
     override val fileExtension: String = "py"
     override val dialects: Set<String> = setOf("py")
+    override val testFileNamingPatterns: List<Regex> = listOf(
+        Regex("""^test_(.+)(\.py)$"""),
+        Regex("""^(.+)_test(\.py)$""")
+    )
 
-    override val testFilenamePattern: Regex = Regex("""(?:test_([^/\\]+)\.py|([^/\\]+)_test\.py)${'$'}""")
     override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
 
-    override fun guessSourceFileName(tstFileName: String): String {
-        assert(testFilenamePattern.matches(tstFileName))
-        return tstFileName.substring(5)
-    }
-
-    override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> {
-        val targetPackagePath = psiFile.virtualFile.let {
-            it.path.removeSuffix(it.name)
-        }
-        return listFilesUnderProjectRoot(psiFile.project).filter {
-            val packagePath = it.path.removeSuffix(it.name)
-            targetPackagePath == packagePath && it != psiFile.virtualFile
-        }
-    }
-
-    override fun findFocalFileForTest(psiFile: PsiFile): VirtualFile? = findSourceFileByName(psiFile) ?: findRelevantFileFromEditors(psiFile)
-
-    private fun findSourceFileByName(psiFile: PsiFile): VirtualFile? = super.listFilesUnderProjectRoot(psiFile.project).find {
+    override fun findSourceFileByName(target: PsiFile): VirtualFile? = super.listFilesUnderProjectRoot(target.project).find {
         !it.isDirectory &&
             it.isWritable &&
-            it.name != psiFile.virtualFile.name &&
-            // TODO: should we use strict equal instead?
-            it.name.contains(guessSourceFileName(psiFile.name))
+            it.name != target.virtualFile.name &&
+            it.name == guessSourceFileName(target.name)
     }
 
     /**
      * check files in editors and pick one which has most substring matches to the target
      */
-    private fun findRelevantFileFromEditors(psiFile: PsiFile): VirtualFile? = searchRelevantFileInEditors(psiFile) { myPsiFile ->
-        if (myPsiFile !is PyFile) {
-            return@searchRelevantFileInEditors emptyList()
-        }
+    override fun findSourceFileByContent(target: PsiFile): VirtualFile? = searchRelevantFileInEditors(target) { myPsiFile ->
+        CodeWhispererClassResolver.EP_NAME.findFirstSafe { it is CodeWhispererPythonClassResolver }?.let {
+            val classAndMethos = it.resolveClassAndMembers(myPsiFile)
+            val clazz = classAndMethos[ClassResolverKey.ClassName].orEmpty()
+            val methods = classAndMethos[ClassResolverKey.MethodName].orEmpty()
+            val func = it.resolveTopLevelFunction(myPsiFile)
 
-        val classAndMethod = runReadAction {
-            myPsiFile.topLevelClasses.mapNotNull {
-                listOfNotNull(it.name) + it.methods.mapNotNull { method -> method.name }
-            }.flatten()
-        }
-
-        val topLevelFunc = runReadAction {
-            myPsiFile.topLevelFunctions.mapNotNull { it.name }
-        }
-
-        classAndMethod + topLevelFunc
+            clazz + methods + func
+        }.orEmpty()
     }
 }
