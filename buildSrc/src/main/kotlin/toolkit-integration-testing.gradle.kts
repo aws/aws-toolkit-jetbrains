@@ -1,4 +1,6 @@
 import software.aws.toolkits.gradle.ciOnly
+import software.aws.toolkits.gradle.findFolders
+import software.aws.toolkits.gradle.intellij.IdeVersions
 
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
@@ -17,6 +19,13 @@ sourceSets {
 
         compileClasspath += main.get().output + test.get().output
         runtimeClasspath += main.get().output + test.get().output
+
+        // different convention for intellij projects
+        plugins.withType<ToolkitIntellijSubpluginPlugin> {
+            val ideProfile = IdeVersions.ideProfile(project)
+            java.srcDirs(findFolders(project, "it", ideProfile))
+            resources.srcDirs(findFolders(project, "it-resources", ideProfile))
+        }
     }
 }
 
@@ -41,7 +50,7 @@ idea {
     }
 }
 
-tasks.register<Test>("integrationTest") {
+val integTestTask = tasks.register<Test>("integrationTest") {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs the integration tests."
     testClassesDirs = integrationTests.output.classesDirs
@@ -58,4 +67,19 @@ tasks.register<Test>("integrationTest") {
 
 tasks.check {
     dependsOn(integrationTests.compileJavaTaskName, integrationTests.getCompileTaskName("kotlin"))
+}
+
+afterEvaluate {
+    plugins.withType<ToolkitIntellijSubpluginPlugin> {
+        // weird implicit dependency issue, maybe with how the task graph works?
+        // or because tests are on the ide classpath for some reason?
+        tasks.named("classpathIndexCleanup") {
+            mustRunAfter(tasks.named("compileIntegrationTestKotlin"))
+        }
+
+        // intellij plugin overrides with instrumented classes that we don't want or need
+        integTestTask.configure {
+            testClassesDirs = integrationTests.output.classesDirs
+        }
+    }
 }

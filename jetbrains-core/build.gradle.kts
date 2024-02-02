@@ -16,8 +16,8 @@ val ideProfile = IdeVersions.ideProfile(project)
 plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
-    id("toolkit-integration-testing")
     id("toolkit-intellij-subplugin")
+    id("toolkit-integration-testing")
 }
 
 buildscript {
