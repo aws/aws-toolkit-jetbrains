@@ -1,3 +1,5 @@
+import software.aws.toolkits.gradle.ciOnly
+
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,7 +47,11 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = integrationTests.output.classesDirs
     classpath = integrationTests.runtimeClasspath
 
-    systemProperty("aws.configFile", System.getenv("AWS_CONFIG_FILE"))
+    ciOnly {
+        environment.remove("AWS_ACCESS_KEY_ID")
+        environment.remove("AWS_SECRET_ACCESS_KEY")
+        environment.remove("AWS_SESSION_TOKEN")
+    }
 
     mustRunAfter(tasks.test)
 }
