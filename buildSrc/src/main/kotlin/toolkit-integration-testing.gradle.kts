@@ -45,6 +45,8 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = integrationTests.output.classesDirs
     classpath = integrationTests.runtimeClasspath
 
+    systemProperty("aws.configFile", System.getenv("AWS_CONFIG_FILE"))
+
     mustRunAfter(tasks.test)
 }
 
