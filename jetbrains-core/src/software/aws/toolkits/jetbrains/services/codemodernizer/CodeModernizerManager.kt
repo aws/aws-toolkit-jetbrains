@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
@@ -357,7 +358,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             postModernizationJob(result)
         } catch (e: Exception) {
             notifyUnableToResumeJob()
-            LOG.warn(e) { e.message.toString() }
+            LOG.error(e) { e.message.toString() }
             return@launch
         }
     }
@@ -443,12 +444,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val notYetResumed = isResumingJob.compareAndSet(false, true)
             if (!notYetResumed) return@launch
 
-            LOG.warn { "Attempting to resume job, current state is: $managerState" }
+            LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
             val context = managerState.toSessionContext(project)
             val session = CodeModernizerSession(context)
             val lastJobId = managerState.getLatestJobId()
-            LOG.warn { "Attempting to resume job with id $lastJobId" }
+            LOG.info { "Attempting to resume job with id $lastJobId" }
             val result = session.getJobDetails(lastJobId)
             when (result.status()) {
                 TransformationStatus.COMPLETED -> {
@@ -501,10 +502,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 codeTransformStatus = result.status().toString()
             )
         } catch (e: AccessDeniedException) {
-            LOG.warn { "Unable to resume job as credentials are invalid" }
+            LOG.error { "Unable to resume job as credentials are invalid" }
             // User is logged in with old or invalid credentials, nothing to do until they log in with valid credentials
         } catch (e: Exception) {
-            LOG.warn { "Unable to resume job as an unexpected exception occurred ${e.stackTraceToString()}" }
+            LOG.error { "Unable to resume job as an unexpected exception occurred ${e.stackTraceToString()}" }
         } finally {
             isResumingJob.set(false)
         }
@@ -534,7 +535,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodetransformTelemetry.totalRunTime(
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             codeTransformResultStatusMessage = result.toString(),
-            codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+            codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+            codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
+            codeTransformLocalMavenVersion = getMavenVersions(project),
         )
         when (result) {
             is CodeModernizerJobCompletedResult.UnableToCreateJob -> notifyJobFailure(
@@ -607,7 +610,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     CodetransformTelemetry.totalRunTime(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                         codeTransformResultStatusMessage = "JobCancelled",
-                        codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+                        codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+                        codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
+                        codeTransformLocalMavenVersion = getMavenVersions(project),
                     )
                 }
             } catch (e: Exception) {
@@ -616,7 +621,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 CodetransformTelemetry.totalRunTime(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformResultStatusMessage = "JobCancelled",
-                    codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now())
+                    codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
+                    codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
+                    codeTransformLocalMavenVersion = getMavenVersions(project),
                 )
             }
         }

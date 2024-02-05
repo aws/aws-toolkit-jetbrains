@@ -4,9 +4,9 @@ assertJ = "3.20.2" # Upgrading leads to SAM errors: https://youtrack.jetbrains.c
 # match with <root>/settings.gradle.kts
 awsSdk = "2.21.33"
 commonmark = "0.17.1"
-detekt = "1.23.0"
-intellijGradle = "1.13.2"
-intellijRemoteRobot = "0.11.18"
+detekt = "1.23.5"
+intellijGradle = "1.17.0"
+intellijRemoteRobot = "0.11.21"
 jackson = "2.15.1"
 jacoco = "0.8.11"
 jgit = "6.5.0.202303070854-r"
@@ -21,12 +21,14 @@ mockito = "4.6.1"
 mockitoKotlin = "4.0.0"
 mockk = "1.13.8"
 node-gradle = "7.0.1"
-telemetryGenerator = "1.0.176"
+telemetryGenerator = "1.0.182"
 testLogger = "4.0.0"
 testRetry = "1.5.2"
-slf4j = "1.7.36"
+# test-only; platform provides slf4j transitively at runtime. <233, 1.7.36; >=233, 2.0.9
+slf4j = "2.0.9"
 sshd = "2.11.0"
-wiremock = "2.35.0"
+wiremock = "3.3.1"
+undercouch-download = "5.2.1"
 zjsonpatch = "0.4.11"
 
 [libraries]
@@ -70,6 +72,7 @@ gradlePlugin-intellij = { module = "org.jetbrains.intellij:org.jetbrains.intelli
 gradlePlugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradlePlugin-testLogger = { module = "com.adarshr:gradle-test-logger-plugin", version.ref = "testLogger" }
 gradlePlugin-testRetry = { module = "org.gradle:test-retry-gradle-plugin", version.ref = "testRetry" }
+gradlePlugin-undercouch-download = { module = "de.undercouch:gradle-download-task", version.ref = "undercouch-download" }
 intellijRemoteFixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "intellijRemoteRobot" }
 intellijRemoteRobot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "intellijRemoteRobot" }
 jackson-datetime = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
@@ -94,10 +97,11 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 mockk = { module = "io.mockk:mockk", version.ref="mockk" }
 telemetryGenerator = { module = "software.aws.toolkits:telemetry-generator", version.ref = "telemetryGenerator" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
 sshd-scp = { module = "org.apache.sshd:sshd-scp", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
-wiremock = { module = "com.github.tomakehurst:wiremock-jre8", version.ref = "wiremock" }
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
 
 [bundles]

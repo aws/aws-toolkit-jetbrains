@@ -14,37 +14,50 @@ fun getConnectionCount(): Int {
     return bearerTokenCount + iamCredentialCount
 }
 
-fun getEnabledConnectionsForTelemetry(project: Project): Set<AuthFormId> {
+fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
+    project ?: return emptySet()
     val enabledConnections = mutableSetOf<AuthFormId>()
+
     val explorerConnection = checkIamConnectionValidity(project)
     if (explorerConnection !is ActiveConnection.NotConnected) {
         if (explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
             enabledConnections.add(AuthFormId.IDENTITYCENTER_EXPLORER)
-        } else enabledConnections.add(
-            AuthFormId.IAMCREDENTIALS_EXPLORER
-        )
+        } else {
+            enabledConnections.add(
+                AuthFormId.IAMCREDENTIALS_EXPLORER
+            )
+        }
     }
-    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST) // Currently this will always be builder id
-    if (codeCatalystConnection !is ActiveConnection.NotConnected) enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
+    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
+    if (codeCatalystConnection !is ActiveConnection.NotConnected) {
+        if (codeCatalystConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+            enabledConnections.add(AuthFormId.IDENTITYCENTER_CODECATALYST)
+        } else {
+            enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
+        }
+    }
 
     val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
     if (codeWhispererConnection !is ActiveConnection.NotConnected) {
         if (codeWhispererConnection.connectionType == ActiveConnectionType.IAM_IDC) {
             enabledConnections.add(AuthFormId.IDENTITYCENTER_CODEWHISPERER)
-        } else enabledConnections.add(
-            AuthFormId.BUILDERID_CODEWHISPERER
-        )
+        } else {
+            enabledConnections.add(
+                AuthFormId.BUILDERID_CODEWHISPERER
+            )
+        }
     }
     return enabledConnections
 }
 
-fun getEnabledConnections(project: Project): String =
+fun getEnabledConnections(project: Project?): String =
     getEnabledConnectionsForTelemetry(project).joinToString(",")
 
 enum class AuthFormId {
     IAMCREDENTIALS_EXPLORER,
     IDENTITYCENTER_EXPLORER,
     BUILDERID_CODECATALYST,
+    IDENTITYCENTER_CODECATALYST,
     BUILDERID_CODEWHISPERER,
     IDENTITYCENTER_CODEWHISPERER,
     UNKNOWN
