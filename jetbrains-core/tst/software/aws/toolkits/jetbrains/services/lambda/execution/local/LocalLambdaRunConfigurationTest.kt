@@ -56,7 +56,7 @@ class LocalLambdaRunConfigurationTest {
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
-    private val runtime = Runtime.JAVA8
+    private val runtime = Runtime.JAVA21
     private val defaultHandler = "com.example.LambdaHandler::handleRequest"
 
     @Before
