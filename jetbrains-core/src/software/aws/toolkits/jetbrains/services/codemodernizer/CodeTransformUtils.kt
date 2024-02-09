@@ -45,8 +45,10 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFea
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.telemetry.CodetransformTelemetry
+import java.io.File
 import java.io.FileOutputStream
 import java.lang.Thread.sleep
 import java.nio.file.Path
@@ -245,6 +247,29 @@ fun filterOnlyParentFiles(filePaths: Set<VirtualFile>): List<VirtualFile> {
         }
     }
     return shortestRoots.toList()
+}
+
+/**
+ * @description For every directory, check if any supported build files (pom.xml etc) exists.
+ * If we find a valid build file, store it and stop further recursion.
+ */
+fun findBuildFiles(sourceFolder: File, supportedBuildFileNames: List<String>): List<File> {
+    val buildFiles = mutableListOf<File>()
+    sourceFolder.walkTopDown()
+        .maxDepth(5)
+        .onEnter { currentDir ->
+            supportedBuildFileNames.forEach {
+                val maybeSupportedFile = currentDir.resolve(MAVEN_CONFIGURATION_FILE_NAME)
+                if (maybeSupportedFile.exists()) {
+                    buildFiles.add(maybeSupportedFile)
+                    return@onEnter false
+                }
+            }
+            return@onEnter true
+        }.forEach {
+            // noop, collects the sequence
+        }
+    return buildFiles
 }
 
 fun isIntellij(): Boolean {

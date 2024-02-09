@@ -20,12 +20,12 @@ import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
-import software.aws.toolkits.jetbrains.services.codemodernizer.getSupportedJavaMappingsForProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.tryGetJdk
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodetransformTelemetry
+import javax.swing.JLabel
 import kotlin.math.max
 
 class PreCodeTransformUserDialog(
@@ -37,8 +37,8 @@ class PreCodeTransformUserDialog(
     internal data class Model(
         var focusedBuildFileIndex: Int,
         var focusedBuildFile: VirtualFile?,
-        var selectedMigrationPath: String?,
-        var supportedMigrationPaths: List<String>,
+        var selectedJavaModuleVersion: JavaSdkVersion?,
+        var targetUpgradeVersion: JavaSdkVersion,
         var focusedBuildFileModule: Module?,
     )
 
@@ -48,20 +48,22 @@ class PreCodeTransformUserDialog(
     fun create(): CustomerSelection? {
         lateinit var dialogPanel: DialogPanel
         lateinit var buildFileComboBox: ComboBox<String>
+        lateinit var javaInputSdkComboBox: ComboBox<JavaSdkVersion>
 
-        val buildfiles = supportedBuildFilesInProject
+        val buildFiles = supportedBuildFilesInProject
+        val javaTransformInputSdks = supportedJavaMappings.keys.map { it }
         var focusedModuleIndex = 0
-        var chosenBuildFile = buildfiles.firstOrNull()
+        var chosenBuildFile = buildFiles.firstOrNull()
         val chosenFile = FileEditorManager.getInstance(project).selectedEditor?.file
 
         // Detect default selection for the build file
         if (chosenFile != null) {
             val focusedModule = ModuleUtil.findModuleForFile(chosenFile, project)
-            val matchingBuildFileForChosenModule = buildfiles.find { ModuleUtil.findModuleForFile(it, project) == focusedModule }
+            val matchingBuildFileForChosenModule = buildFiles.find { ModuleUtil.findModuleForFile(it, project) == focusedModule }
 
             if (focusedModule != null && matchingBuildFileForChosenModule != null) {
                 chosenBuildFile = matchingBuildFileForChosenModule
-                focusedModuleIndex = max(0, buildfiles.indexOfFirst { it == chosenBuildFile })
+                focusedModuleIndex = max(0, buildFiles.indexOfFirst { it == chosenBuildFile })
             }
         }
 
@@ -71,47 +73,62 @@ class PreCodeTransformUserDialog(
             chosenModule = ModuleUtil.findModuleForFile(chosenBuildFile, project)
         }
 
-        // Detect the supported migration path for the module, revert to project default if file not part of module.
-        fun supportedJdkForModuleOrProject(module: Module?): List<String> {
-            val jdk = if (module != null) {
-                getSupportedJavaVersions(module)
-            } else {
-                project.getSupportedJavaMappingsForProject(supportedJavaMappings)
-            }
-            return jdk.map { it.replace("_", " ") }
+        /**
+         * @description Try to smart detect the Java version, if none or an unsupported version
+         * we should display the supported Java list versions of 8 and 11.
+         */
+        fun tryToGetModuleJavaVersion(module: Module?): JavaSdkVersion? {
+            return module?.tryGetJdk(project)
         }
-
-        val supportedJavaVersions = supportedJdkForModuleOrProject(chosenModule)
 
         // Initialize model to hold form data
         val model = Model(
             focusedBuildFileIndex = focusedModuleIndex,
             focusedBuildFile = chosenBuildFile,
             focusedBuildFileModule = chosenModule,
-            selectedMigrationPath = supportedJavaVersions.firstOrNull(),
-            supportedMigrationPaths = supportedJavaVersions,
+            selectedJavaModuleVersion = tryToGetModuleJavaVersion(chosenModule),
+            targetUpgradeVersion = JavaSdkVersion.JDK_17,
         )
 
+        val jdkVersionText = if (model.selectedJavaModuleVersion != null) "We detected Java version: " + model.selectedJavaModuleVersion else "We are unable to detect the Java version of your module"
+        val jdkVersionLabel = JLabel(jdkVersionText)
         dialogPanel = panel {
             row { text(message("codemodernizer.customerselectiondialog.description.main")) }
             row { text(message("codemodernizer.customerselectiondialog.description.select")) }
             row {
-                buildFileComboBox = comboBox(buildfiles.map { it.path })
+                buildFileComboBox = comboBox(buildFiles.map { it.path })
                     .bind({ it.selectedIndex }, { t, v -> t.selectedIndex = v }, model::focusedBuildFileIndex.toMutableProperty())
                     .align(AlignX.FILL)
                     .columns(COLUMNS_MEDIUM)
                     .component
                 buildFileComboBox.whenItemSelected {
                     dialogPanel.apply() // apply user changes to model
-                    model.focusedBuildFile = buildfiles[model.focusedBuildFileIndex]
-                    model.focusedBuildFileModule = ModuleUtil.findModuleForFile(buildfiles[model.focusedBuildFileIndex], project)
-                    model.supportedMigrationPaths = supportedJdkForModuleOrProject(model.focusedBuildFileModule)
+                    model.focusedBuildFile = buildFiles[model.focusedBuildFileIndex]
+                    model.focusedBuildFileModule = ModuleUtil.findModuleForFile(buildFiles[model.focusedBuildFileIndex], project)
+                    model.selectedJavaModuleVersion = tryToGetModuleJavaVersion(model.focusedBuildFileModule)
                     dialogPanel.reset() // present model changes to user
+                    jdkVersionLabel.text = if (model.selectedJavaModuleVersion != null) "We detected Java version: " + model.selectedJavaModuleVersion else "We are unable to detect the Java version of your module"
+                    if (model.selectedJavaModuleVersion != null) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
                 }
                 buildFileComboBox.addActionListener {
                     CodetransformTelemetry.configurationFileSelectedChanged(
-                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId()
+                        codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     )
+                }
+            }
+            row {
+                cell(jdkVersionLabel)
+            }
+            row { text("Select a supported Java version for transformation:") }
+            row {
+                javaInputSdkComboBox = comboBox(javaTransformInputSdks.map { it })
+                    .align(AlignX.FILL)
+                    .columns(COLUMNS_MEDIUM)
+                    .component
+                if (model.selectedJavaModuleVersion != null) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
+                javaInputSdkComboBox.whenItemSelected {
+                    dialogPanel.apply() // apply user changes to model
+                    dialogPanel.reset() // present model changes to user
                 }
             }
             row {
@@ -141,10 +158,10 @@ class PreCodeTransformUserDialog(
         builder.setCenterPanel(dialogPanel)
         builder.setTitle(message("codemodernizer.customerselectiondialog.title"))
         if (builder.showAndGet()) {
-            val selectedMigrationPath = model.selectedMigrationPath?.replace(" ", "_") ?: throw RuntimeException("Migration path is required")
-            val sourceJavaVersion = model.focusedBuildFileModule?.tryGetJdk(project) ?: project.tryGetJdk()
-                ?: throw RuntimeException("Unable to detect source language of selected ")
-            val targetJavaVersion = JavaSdkVersion.fromVersionString(selectedMigrationPath) ?: throw RuntimeException("Invalid migration path")
+            val targetJavaVersion = model.targetUpgradeVersion
+            val sourceJavaVersion = model.selectedJavaModuleVersion
+                ?: throw RuntimeException("Unable to detect source version of selected module")
+
             return CustomerSelection(
                 model.focusedBuildFile ?: throw RuntimeException("A build file must be selected"),
                 sourceJavaVersion,
@@ -153,7 +170,4 @@ class PreCodeTransformUserDialog(
         }
         return null
     }
-
-    private fun getSupportedJavaVersions(module: Module?): List<String> =
-        supportedJavaMappings.get(module?.tryGetJdk(project))?.map { it.name } ?: listOf("Unsupported module")
 }
