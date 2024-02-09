@@ -129,7 +129,7 @@ class SamRunningState(
         buildRequest: BuildLambdaRequest,
         buildView: BuildView
     ): ProcessHandler {
-        val startSam = SamRunnerStep(environment, settings, environment.isDebug())
+        val startSam = SamRunnerStep(environment, settings, buildRequest.templatePath.toAbsolutePath().parent, environment.isDebug())
 
         val workflow = StepWorkflow(
             buildList {

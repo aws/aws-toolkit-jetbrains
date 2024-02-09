@@ -17,8 +17,14 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.sam.resolveDebu
 import software.aws.toolkits.jetbrains.services.lambda.steps.GetPorts.Companion.DEBUG_PORTS
 import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.resources.message
+import java.nio.file.Path
 
-class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLambdaRunSettings, val debug: Boolean) : SamCliStep() {
+class SamRunnerStep(
+    val environment: ExecutionEnvironment,
+    val settings: LocalLambdaRunSettings,
+    val workingDir: Path,
+    val debug: Boolean
+) : SamCliStep() {
     override val stepName: String = message("lambda.debug.step.start_sam")
     override fun onProcessStart(context: Context, processHandler: ProcessHandler) {
         context.putAttribute(SAM_PROCESS_HANDLER, processHandler)
@@ -51,6 +57,7 @@ class SamRunnerStep(val environment: ExecutionEnvironment, val settings: LocalLa
             .withCharset(EncodingProjectManager.getInstance(environment.project).defaultCharset)
             .withEnvironment(totalEnvVars)
             .withEnvironment("PYTHONUNBUFFERED", "1") // Force SAM to not buffer stdout/stderr so it gets shown in IDE
+            .withWorkDirectory(workingDir.toString())
 
         if (debug) {
             val debugExtension = settings.resolveDebuggerSupport()
