@@ -20,6 +20,8 @@ import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
+import software.aws.toolkits.jetbrains.services.codemodernizer.getJdkVersionText
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.tryGetJdk
@@ -30,8 +32,7 @@ import kotlin.math.max
 
 class PreCodeTransformUserDialog(
     val project: Project,
-    val supportedBuildFilesInProject: List<VirtualFile>,
-    val supportedJavaMappings: Map<JavaSdkVersion, Set<JavaSdkVersion>>,
+    val supportedBuildFilesInProject: List<VirtualFile>
 ) {
 
     internal data class Model(
@@ -51,7 +52,7 @@ class PreCodeTransformUserDialog(
         lateinit var javaInputSdkComboBox: ComboBox<JavaSdkVersion>
 
         val buildFiles = supportedBuildFilesInProject
-        val javaTransformInputSdks = supportedJavaMappings.keys.map { it }
+        val javaTransformInputSdks = CodeModernizerUIConstants.supportedSourceJDKs
         var focusedModuleIndex = 0
         var chosenBuildFile = buildFiles.firstOrNull()
         val chosenFile = FileEditorManager.getInstance(project).selectedEditor?.file
@@ -90,7 +91,7 @@ class PreCodeTransformUserDialog(
             targetUpgradeVersion = JavaSdkVersion.JDK_17,
         )
 
-        val jdkVersionText = if (model.selectedJavaModuleVersion != null) "We detected Java version: " + model.selectedJavaModuleVersion else "We are unable to detect the Java version of your module"
+        val jdkVersionText = getJdkVersionText(model.selectedJavaModuleVersion)
         val jdkVersionLabel = JLabel(jdkVersionText)
         dialogPanel = panel {
             row { text(message("codemodernizer.customerselectiondialog.description.main")) }
@@ -107,8 +108,8 @@ class PreCodeTransformUserDialog(
                     model.focusedBuildFileModule = ModuleUtil.findModuleForFile(buildFiles[model.focusedBuildFileIndex], project)
                     model.selectedJavaModuleVersion = tryToGetModuleJavaVersion(model.focusedBuildFileModule)
                     dialogPanel.reset() // present model changes to user
-                    jdkVersionLabel.text = if (model.selectedJavaModuleVersion != null) "We detected Java version: " + model.selectedJavaModuleVersion else "We are unable to detect the Java version of your module"
-                    if (model.selectedJavaModuleVersion != null) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
+                    jdkVersionLabel.text = getJdkVersionText(model.selectedJavaModuleVersion)
+                    if (javaTransformInputSdks.contains(model.selectedJavaModuleVersion)) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
                 }
                 buildFileComboBox.addActionListener {
                     CodetransformTelemetry.configurationFileSelectedChanged(
@@ -119,7 +120,6 @@ class PreCodeTransformUserDialog(
             row {
                 cell(jdkVersionLabel)
             }
-            row { text("Select a supported Java version for transformation:") }
             row {
                 javaInputSdkComboBox = comboBox(javaTransformInputSdks.map { it })
                     .align(AlignX.FILL)

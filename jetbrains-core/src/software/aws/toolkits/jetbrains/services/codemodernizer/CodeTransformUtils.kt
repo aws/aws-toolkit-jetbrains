@@ -9,6 +9,7 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -44,6 +45,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
@@ -127,6 +129,17 @@ fun String.toTransformationLanguage() = when (this) {
     "JDK_11" -> TransformationLanguage.JAVA_11
     "JDK_17" -> TransformationLanguage.JAVA_17
     else -> TransformationLanguage.UNKNOWN_TO_SDK_VERSION
+}
+
+fun getJdkVersionText(version: JavaSdkVersion?): String {
+    val jdkVersionText: String = if (CodeModernizerUIConstants.supportedSourceJDKs.contains(version)) { // detected java version is supported
+        "We found Java version: $version. Select a different version if incorrect."
+    } else if (version != null) { // found the version, but unsupported
+        "We found an unsupported Java version ($version). Select your version here if incorrect."
+    } else {
+        "Choose your project's Java version here." // could not find version
+    }
+    return jdkVersionText
 }
 
 fun calculateTotalLatency(startTime: Instant, endTime: Instant) = (endTime.toEpochMilli() - startTime.toEpochMilli()).toInt()

@@ -88,10 +88,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
     private val supportedBuildFileNames = listOf(MAVEN_CONFIGURATION_FILE_NAME)
-    private val supportedJavaMappings = mapOf(
-        JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
-        JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
-    )
     private val isModernizationInProgress = AtomicBoolean(false)
     private val isResumingJob = AtomicBoolean(false)
 
@@ -260,7 +256,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun getCustomerSelection(validatedBuildFiles: List<VirtualFile>): CustomerSelection? = PreCodeTransformUserDialog(
         project,
         validatedBuildFiles,
-        supportedJavaMappings,
     ).create()
 
     private fun notifyJobFailure(failureReason: String?, retryable: Boolean) {
