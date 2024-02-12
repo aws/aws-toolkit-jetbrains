@@ -81,7 +81,6 @@ class PreCodeTransformUserDialog(
         fun tryToGetModuleJavaVersion(module: Module?): JavaSdkVersion? {
             return module?.tryGetJdk(project)
         }
-
         // Initialize model to hold form data
         val model = Model(
             focusedBuildFileIndex = focusedModuleIndex,
@@ -91,8 +90,7 @@ class PreCodeTransformUserDialog(
             targetUpgradeVersion = JavaSdkVersion.JDK_17,
         )
 
-        val jdkVersionText = getJdkVersionText(model.selectedJavaModuleVersion)
-        val jdkVersionLabel = JLabel(jdkVersionText)
+        val jdkVersionLabel = JLabel(getJdkVersionText(model.selectedJavaModuleVersion))
         dialogPanel = panel {
             row { text(message("codemodernizer.customerselectiondialog.description.main")) }
             row { text(message("codemodernizer.customerselectiondialog.description.select")) }
@@ -125,7 +123,7 @@ class PreCodeTransformUserDialog(
                     .align(AlignX.FILL)
                     .columns(COLUMNS_MEDIUM)
                     .component
-                if (model.selectedJavaModuleVersion != null) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
+                if (javaTransformInputSdks.contains(model.selectedJavaModuleVersion)) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
                 javaInputSdkComboBox.whenItemSelected {
                     dialogPanel.apply() // apply user changes to model
                     dialogPanel.reset() // present model changes to user
