@@ -79,9 +79,8 @@ class PreCodeTransformUserDialog(
          * @description Try to smart detect the Java version, if none or an unsupported version
          * we should display the supported Java list versions of 8 and 11.
          */
-        fun tryToGetModuleJavaVersion(module: Module?): JavaSdkVersion? {
-            return module?.tryGetJdk(project)
-        }
+        fun tryToGetModuleJavaVersion(module: Module?): JavaSdkVersion? = module?.tryGetJdk(project)
+
         // Initialize model to hold form data
         val model = Model(
             focusedBuildFileIndex = focusedModuleIndex,

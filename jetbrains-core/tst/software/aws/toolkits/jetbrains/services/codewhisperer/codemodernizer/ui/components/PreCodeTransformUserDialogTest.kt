@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codemodernizer.ui.components
 
-import org.junit.Test
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import junit.framework.TestCase.assertEquals
+import org.junit.Test
 
 class PreCodeTransformUserDialogTest {
     @Test
