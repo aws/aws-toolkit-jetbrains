@@ -120,7 +120,7 @@ class PreCodeTransformUserDialog(
                 cell(jdkVersionLabel)
             }
             row {
-                javaInputSdkComboBox = comboBox(javaTransformInputSdks.map { it })
+                javaInputSdkComboBox = comboBox(javaTransformInputSdks)
                     .bind({ it.selectedIndex }, { t, v -> t.selectedIndex = v }, model::focusedJdkVersionIndex.toMutableProperty())
                     .align(AlignX.FILL)
                     .columns(COLUMNS_MEDIUM)

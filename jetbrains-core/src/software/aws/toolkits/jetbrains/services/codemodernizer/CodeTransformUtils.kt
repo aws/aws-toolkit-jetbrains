@@ -133,12 +133,12 @@ fun String.toTransformationLanguage() = when (this) {
 }
 
 fun getJdkVersionText(version: JavaSdkVersion?): String {
-    val jdkVersionText: String = if (CodeModernizerUIConstants.supportedSourceJDKs.contains(version)) { // detected java version is supported
-        message("codemodernizer.customerselectiondialog.found_supported_jdk", version!!)
-    } else if (version != null) { // found the version, but unsupported
-        message("codemodernizer.customerselectiondialog.found_unsupported_jdk", version)
-    } else {
+    val jdkVersionText: String = if (version == null) {
         message("codemodernizer.customerselectiondialog.unknown_jdk")
+    } else if (CodeModernizerUIConstants.supportedSourceJDKs.contains(version)) { // detected java version is supported
+        message("codemodernizer.customerselectiondialog.found_supported_jdk", version)
+    } else {
+        message("codemodernizer.customerselectiondialog.found_unsupported_jdk", version) // found the version, but unsupported
     }
     return jdkVersionText
 }
