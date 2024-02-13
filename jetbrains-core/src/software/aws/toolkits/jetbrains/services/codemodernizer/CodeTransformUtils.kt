@@ -49,6 +49,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeMod
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.FileOutputStream
@@ -133,11 +134,11 @@ fun String.toTransformationLanguage() = when (this) {
 
 fun getJdkVersionText(version: JavaSdkVersion?): String {
     val jdkVersionText: String = if (CodeModernizerUIConstants.supportedSourceJDKs.contains(version)) { // detected java version is supported
-        "We found Java version: $version. Select a different version if incorrect."
+        message("codemodernizer.customerselectiondialog.found_supported_jdk", version!!)
     } else if (version != null) { // found the version, but unsupported
-        "We found an unsupported Java version ($version). Select your version here if incorrect."
+        message("codemodernizer.customerselectiondialog.found_unsupported_jdk", version)
     } else {
-        "Choose your project's Java version here." // could not find version
+        message("codemodernizer.customerselectiondialog.unknown_jdk")
     }
     return jdkVersionText
 }

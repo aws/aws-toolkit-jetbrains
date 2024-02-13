@@ -37,6 +37,7 @@ class PreCodeTransformUserDialog(
 
     internal data class Model(
         var focusedBuildFileIndex: Int,
+        var focusedJdkVersionIndex: Int,
         var focusedBuildFile: VirtualFile?,
         var selectedJavaModuleVersion: JavaSdkVersion?,
         var targetUpgradeVersion: JavaSdkVersion,
@@ -84,6 +85,7 @@ class PreCodeTransformUserDialog(
         // Initialize model to hold form data
         val model = Model(
             focusedBuildFileIndex = focusedModuleIndex,
+            focusedJdkVersionIndex = 0,
             focusedBuildFile = chosenBuildFile,
             focusedBuildFileModule = chosenModule,
             selectedJavaModuleVersion = tryToGetModuleJavaVersion(chosenModule),
@@ -120,12 +122,14 @@ class PreCodeTransformUserDialog(
             }
             row {
                 javaInputSdkComboBox = comboBox(javaTransformInputSdks.map { it })
+                    .bind({ it.selectedIndex }, { t, v -> t.selectedIndex = v }, model::focusedJdkVersionIndex.toMutableProperty())
                     .align(AlignX.FILL)
                     .columns(COLUMNS_MEDIUM)
                     .component
                 if (javaTransformInputSdks.contains(model.selectedJavaModuleVersion)) javaInputSdkComboBox.selectedItem = model.selectedJavaModuleVersion
                 javaInputSdkComboBox.whenItemSelected {
                     dialogPanel.apply() // apply user changes to model
+                    model.selectedJavaModuleVersion = javaTransformInputSdks[model.focusedJdkVersionIndex]
                     dialogPanel.reset() // present model changes to user
                 }
             }
@@ -156,10 +160,17 @@ class PreCodeTransformUserDialog(
         builder.setCenterPanel(dialogPanel)
         builder.setTitle(message("codemodernizer.customerselectiondialog.title"))
         if (builder.showAndGet()) {
+            /* below IF condition is true if you open dialog on a valid project, but then switch to an invalid project
+             * (unknown or unsupported JDK) and do not click on a Java version from the JDK selection dropdown
+             */
+            if (model.selectedJavaModuleVersion == null || !javaTransformInputSdks.contains(model.selectedJavaModuleVersion)) {
+                model.selectedJavaModuleVersion = javaTransformInputSdks[model.focusedJdkVersionIndex]
+            }
+            println("SOURCE JAVA VERSION = " + model.selectedJavaModuleVersion)
+            println("SOURCE BUILD FILE = " + model.focusedBuildFile)
             val targetJavaVersion = model.targetUpgradeVersion
             val sourceJavaVersion = model.selectedJavaModuleVersion
                 ?: throw RuntimeException("Unable to detect source version of selected module")
-
             return CustomerSelection(
                 model.focusedBuildFile ?: throw RuntimeException("A build file must be selected"),
                 sourceJavaVersion,
