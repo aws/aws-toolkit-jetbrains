@@ -166,8 +166,6 @@ class PreCodeTransformUserDialog(
             if (model.selectedJavaModuleVersion == null || !javaTransformInputSdks.contains(model.selectedJavaModuleVersion)) {
                 model.selectedJavaModuleVersion = javaTransformInputSdks[model.focusedJdkVersionIndex]
             }
-            println("SOURCE JAVA VERSION = " + model.selectedJavaModuleVersion)
-            println("SOURCE BUILD FILE = " + model.focusedBuildFile)
             val targetJavaVersion = model.targetUpgradeVersion
             val sourceJavaVersion = model.selectedJavaModuleVersion
                 ?: throw RuntimeException("Unable to detect source version of selected module")
