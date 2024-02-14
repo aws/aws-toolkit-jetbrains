@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.BuildErrorDialog
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.PreCodeTransformUserDialog
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.ValidationErrorDialog
+import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -383,6 +384,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerStartJobResult.Cancelled -> {
                 CodeModernizerJobCompletedResult.JobAbortedBeforeStarting
             }
+
+            is CodeModernizerStartJobResult.CancelledMissingDependencies -> {
+                CodeModernizerJobCompletedResult.JobAbortedMissingDependencies
+            }
         }
     }
 
@@ -507,6 +512,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         artifactHandler.displayDiffAction(jobId)
     }
 
+    private fun openTroubleshootingGuideNotificationAction() = OpenBrowserAction(
+        message("codemodernizer.notification.info.view_troubleshooting_guide"),
+        url="https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#transform-issues")
+
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
             artifactHandler.showTransformationSummary(jobId)
@@ -558,6 +567,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             is CodeModernizerJobCompletedResult.ManagerDisposed -> LOG.warn { "Manager disposed" }
             is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> LOG.warn { "Job was aborted" }
+            is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> notifyStickyInfo(
+                message("codemodernizer.notification.warn.maven_failed.title"),
+                message("codemodernizer.notification.warn.maven_failed.content"),
+                project,
+                listOf(openTroubleshootingGuideNotificationAction()),
+            )
         }
     }
 

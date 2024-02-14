@@ -79,17 +79,12 @@ class CodeModernizerSession(
             }
             val startTime = Instant.now()
             val result = sessionContext.createZipWithModuleFiles()
-            payload = when (result) {
-                is ZipCreationResult.Missing1P -> {
-                    notifyStickyInfo(
-                        message("codemodernizer.notification.info.maven_failed.title"),
-                        message("codemodernizer.notification.info.maven_failed.content")
-                    )
-                    result.payload
-                }
 
-                is ZipCreationResult.Succeeded -> result.payload
+            if(result is ZipCreationResult.Missing1P){
+                return CodeModernizerStartJobResult.CancelledMissingDependencies
             }
+
+            payload = result.payload
             CodetransformTelemetry.jobCreateZipEndTime(
                 codeTransformTotalByteSize = payload.length().toInt(),
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
