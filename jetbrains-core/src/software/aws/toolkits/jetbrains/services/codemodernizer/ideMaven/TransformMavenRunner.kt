@@ -46,6 +46,8 @@ class TransformMavenRunner(val project: Project) {
                 }
             })
         }
-        MavenRunConfigurationType.runConfiguration(project, parameters, null, settings, callback, false)
+        // Change runner from IntelliJ controlled to Maven controlled
+        // Setting isDelegateBuild = true  allows us to set the JRE used by Maven during runtime
+        MavenRunConfigurationType.runConfiguration(project, parameters, null, settings, callback, true)
     }
 }

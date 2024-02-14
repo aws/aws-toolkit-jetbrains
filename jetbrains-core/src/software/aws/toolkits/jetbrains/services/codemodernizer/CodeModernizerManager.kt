@@ -13,6 +13,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -100,9 +102,17 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             field = session
         }
     private val artifactHandler = ArtifactHandler(project, GumbyClient.getInstance(project))
-
+    private val supportedJavaMappings = mapOf(
+        JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
+        JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
+    )
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
+    }
+
+    private fun getSupportedModulesInProject() = project.modules.filter {
+        val moduleJdk = it.tryGetJdk(project) ?: return@filter false
+        moduleJdk in supportedJavaMappings
     }
 
     fun validate(project: Project): ValidationResult {
@@ -132,6 +142,18 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
                 InvalidTelemetryReason(
                     CodeTransformPreValidationError.NoPom
+                )
+            )
+        }
+        val supportedModules = getSupportedModulesInProject().toSet()
+        val validProjectJdk = project.getSupportedJavaMappingsForProject(supportedJavaMappings).isNotEmpty()
+        if (supportedModules.isEmpty() && !validProjectJdk) {
+            return ValidationResult(
+                false,
+                message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
+                InvalidTelemetryReason(
+                    CodeTransformPreValidationError.UnsupportedJavaVersion,
+                    project.tryGetJdk().toString()
                 )
             )
         }
@@ -256,6 +278,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun getCustomerSelection(validatedBuildFiles: List<VirtualFile>): CustomerSelection? = PreCodeTransformUserDialog(
         project,
         validatedBuildFiles,
+        supportedJavaMappings,
     ).create()
 
     private fun notifyJobFailure(failureReason: String?, retryable: Boolean) {

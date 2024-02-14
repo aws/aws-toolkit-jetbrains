@@ -3,11 +3,25 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
+import ai.grazie.utils.firstOrError
+import com.intellij.externalSystem.JavaProjectData
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkProvider
+import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil.getAvailableJdk
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.projectRoots.JavaSdkVersionUtil
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
+import com.intellij.openapi.roots.LanguageLevelProjectExtension
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.util.NlsSafe
+import com.intellij.pom.java.LanguageLevel
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
+import org.jetbrains.idea.maven.execution.MavenRunnerSettings.USE_JAVA_HOME
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -116,19 +130,44 @@ data class MavenRunManager(val project: Project) {
     }
 
 
+    private fun identifyAvailableJdksForVersion(desired: JavaSdkVersion): List<Sdk> {
+        val javaSdkType = ExternalSystemJdkProvider.getInstance().javaSdkType;
+        val allJdks = ProjectJdkTable.getInstance().getSdksOfType(javaSdkType)
+        return allJdks.filter{JavaSdkImpl.getInstance().getVersion(it) == desired}
+    }
+
+    private fun resolveSuitableJreName(desired: JavaSdkVersion): String? {
+        val jdk = getAvailableJdk(project) // current Jdk
+        if(JavaSdkImpl.getInstance().getVersion(jdk.second) != desired){
+            LOG.info("Chosen JDK is not compatible with configured JDK in project settings, looking for alternative JDK to use.")
+            val compatibleJdks = identifyAvailableJdksForVersion(desired)
+            if(compatibleJdks.isEmpty()){
+                emitMavenFailure("No compatible jdk version matching $desired was found")
+                return null // TODO show details like no matching JDK to $desired found, add a JDK matching java version $desired to project structure to continue
+            } else {
+                val compatibleJdk = compatibleJdks.first().name
+                LOG.info("Found compatible jdk version matching $desired") // TODO maybe delete?
+                return compatibleJdk
+            }
+        } else {
+            return jdk.second.name
+        }
+    }
+
     /**
      * @description
      * this command is used to run the maven commmands which copies all the dependencies to a temp file which we will use to zip our own files to
      */
-    fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder): MavenCopyCommandsResult {
+    fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, desiredJavaSdkVersion: JavaSdkVersion): MavenCopyCommandsResult {
         val currentTimestamp = System.currentTimeMillis()
         val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_" + currentTimestamp)
 
         LOG.info { "Executing IntelliJ bundled Maven" }
         try {
-            // Create share parameters
+            // Create shared parameters
             val transformMvnRunner = TransformMavenRunner(project)
-            val mvnSettings = MavenRunner.getInstance(project).settings
+            val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+            mvnSettings.setJreName(resolveSuitableJreName(desiredJavaSdkVersion) ?: return MavenCopyCommandsResult.Failure)
 
             // Run clean
             val cleanRunnable = runMavenClean(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner )

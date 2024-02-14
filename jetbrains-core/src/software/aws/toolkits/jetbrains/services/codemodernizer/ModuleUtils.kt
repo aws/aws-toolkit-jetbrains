@@ -46,5 +46,14 @@ fun Project.tryGetJdk(): JavaSdkVersion? {
     val javaSdk = JavaSdkImpl.getInstance()
     return javaSdk.getVersion(projectSdk ?: return null)
 }
+fun Project.getSupportedJavaMappingsForProject(supportedJavaMappings: Map<JavaSdkVersion, Set<JavaSdkVersion>>): List<String> {
+    val projectSdk = ProjectRootManager.getInstance(this).projectSdk
+    val javaSdk = JavaSdkImpl.getInstance()
+    return if (projectSdk == null) {
+        listOf()
+    } else {
+        supportedJavaMappings.getOrDefault(javaSdk.getVersion(projectSdk), listOf()).map { it.name }.toList()
+    }
+}
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name

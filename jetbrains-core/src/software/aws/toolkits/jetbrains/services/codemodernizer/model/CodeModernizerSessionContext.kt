@@ -103,7 +103,7 @@ data class CodeModernizerSessionContext(
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
-        val result = MavenRunManager(project).runMavenCopyCommands(sourceFolder, buildLogBuilder)
+        val result = MavenRunManager(project).runMavenCopyCommands(sourceFolder, buildLogBuilder, sourceJavaVersion)
         val depDirectory: File? = if (result is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId())
