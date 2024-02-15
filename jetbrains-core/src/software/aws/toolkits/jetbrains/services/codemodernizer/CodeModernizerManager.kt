@@ -207,11 +207,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (isModernizationInProgress.getAndSet(true)) return@launch
             val validationResult = validate(project)
             runInEdt {
+                sendValidationResultTelemetry(validationResult)
                 if (validationResult.valid) {
                     runModernize(validationResult.validatedBuildFiles) ?: isModernizationInProgress.set(false)
                 } else {
                     warnUnsupportedProject(validationResult.invalidReason)
-                    sendValidationResultTelemetry(validationResult)
                     isModernizationInProgress.set(false)
                 }
             }
@@ -226,8 +226,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         )
     }
 
-    private fun sendValidationResultTelemetry(validationResult: ValidationResult) {
-        if (!validationResult.valid) {
+    private fun sendValidationResultTelemetry(validationResult: ValidationResult, projectOnLoad: Boolean = false) {
+        // Old telemetry event to be fired only when users click on transform
+        if (!validationResult.valid && !projectOnLoad) {
             CodetransformTelemetry.isDoubleClickedToTriggerInvalidProject(
                 codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -235,6 +236,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 reason = validationResult.invalidTelemetryReason.additonalInfo
             )
         }
+        // New projectDetails metric should always be fired whether the project was valid or invalid
+        CodetransformTelemetry.projectDetails(
+            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            result = if (!validationResult.valid) Result.Failed else Result.Unknown,
+            reason = if (!validationResult.valid) validationResult.invalidTelemetryReason.additonalInfo else null,
+            codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
+            codeTransformLocalJavaVersion = project.tryGetJdk().toString()
+        )
     }
 
     fun stopModernize() {
@@ -448,6 +457,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (!notYetResumed) {
                 return@launch
             }
+
+            // Gather project details
+            val validationResult = validate(project)
+            sendValidationResultTelemetry(validationResult, true)
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch

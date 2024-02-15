@@ -18,17 +18,6 @@ class CodeModernizerStartupActivity : StartupActivity.DumbAware {
      */
     override fun runActivity(project: Project) {
         if (!isCodeModernizerAvailable(project)) return
-        // Do quick validation and log users project details on startup.
-        val codeModernizerManager = CodeModernizerManager.getInstance(project)
-        val validationResult = codeModernizerManager.validate(project)
-        CodetransformTelemetry.projectDetails(
-            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            result = if (!validationResult.valid) Result.Failed else Result.Unknown,
-            reason = if (!validationResult.valid) validationResult.invalidTelemetryReason.additonalInfo else null,
-            codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
-            codeTransformLocalJavaVersion = project.tryGetJdk().toString()
-        )
-        // Post project validation try to re-start the job
         CodeModernizerManager.getInstance(project).tryResumeJob()
     }
 }
