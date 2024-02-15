@@ -13,7 +13,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
@@ -110,11 +109,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).setDefaults()
     }
 
-    private fun getSupportedModulesInProject() = project.modules.filter {
-        val moduleJdk = it.tryGetJdk(project) ?: return@filter false
-        moduleJdk in supportedJavaMappings
-    }
-
     fun validate(project: Project): ValidationResult {
         if (isRunningOnRemoteBackend()) {
             return ValidationResult(
@@ -145,8 +139,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             )
         }
-        val supportedModules = getSupportedModulesInProject().toSet()
-        val validProjectJdk = project.getSupportedJavaMappingsForProject(supportedJavaMappings).isNotEmpty()
+        val supportedModules = project.getSupportedModules(supportedJavaMappings).toSet()
+        val validProjectJdk = project.getSupportedJavaMappings(supportedJavaMappings).isNotEmpty()
         if (supportedModules.isEmpty() && !validProjectJdk) {
             return ValidationResult(
                 false,
@@ -157,7 +151,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             )
         }
-        val validatedBuildFiles = project.getSupportedBuildModules(supportedBuildFileNames)
+        val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
         return if (validatedBuildFiles.isNotEmpty()) {
             ValidationResult(true, validatedBuildFiles = validatedBuildFiles)
         } else {
@@ -537,7 +531,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     private fun openTroubleshootingGuideNotificationAction() = OpenBrowserAction(
         message("codemodernizer.notification.info.view_troubleshooting_guide"),
-        url="https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#transform-issues")
+        url = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#transform-issues"
+    )
 
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {

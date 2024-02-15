@@ -5,8 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import java.io.File
 
-sealed class MavenCopyCommandsResult{
+sealed class MavenCopyCommandsResult {
     data class Success(val dependencyDirectory: File) : MavenCopyCommandsResult()
     object Failure : MavenCopyCommandsResult()
 }
-
