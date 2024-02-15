@@ -24,7 +24,7 @@ class CodeModernizerStartupActivity : StartupActivity.DumbAware {
         CodetransformTelemetry.projectDetails(
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
             result = if (!validationResult.valid) Result.Failed else Result.Unknown,
-            reason = validationResult.invalidTelemetryReason.additonalInfo,
+            reason = if (!validationResult.valid) validationResult.invalidTelemetryReason.additonalInfo else null,
             codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
             codeTransformLocalJavaVersion = project.tryGetJdk().toString()
         )
