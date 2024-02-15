@@ -23,7 +23,7 @@ class CodeModernizerStartupActivity : StartupActivity.DumbAware {
         val validationResult = codeModernizerManager.validate(project)
         CodetransformTelemetry.projectDetails(
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            result = if (!validationResult.valid) Result.Failed else Result.Succeeded,
+            result = if (!validationResult.valid) Result.Failed else Result.Unknown,
             reason = validationResult.invalidTelemetryReason.additonalInfo,
             codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
             codeTransformLocalJavaVersion = project.tryGetJdk().toString()
