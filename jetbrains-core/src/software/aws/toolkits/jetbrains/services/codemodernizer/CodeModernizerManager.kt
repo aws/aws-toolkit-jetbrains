@@ -443,6 +443,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun tryResumeJob() = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
+            // If the job is already running, compareAndSet will return false because the expected
+            // behavior is that the job is not running when trying to resume
             if (!notYetResumed) {
                 return@launch
             }
