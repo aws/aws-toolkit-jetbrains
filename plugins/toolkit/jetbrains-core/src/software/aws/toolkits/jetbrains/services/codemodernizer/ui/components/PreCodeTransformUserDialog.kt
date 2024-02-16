@@ -20,7 +20,7 @@ import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
-import software.aws.toolkits.jetbrains.services.codemodernizer.getSupportedJavaMappingsForProject
+import software.aws.toolkits.jetbrains.services.codemodernizer.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.tryGetJdk
@@ -76,7 +76,7 @@ class PreCodeTransformUserDialog(
             val jdk = if (module != null) {
                 getSupportedJavaVersions(module)
             } else {
-                project.getSupportedJavaMappingsForProject(supportedJavaMappings)
+                project.getSupportedJavaMappings(supportedJavaMappings)
             }
             return jdk.map { it.replace("_", " ") }
         }
