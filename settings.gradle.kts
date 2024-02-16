@@ -130,6 +130,5 @@ file("plugins").listFiles()?.forEach root@ {
             val projectName = path.joinToString(separator = ":", prefix = ":")
             include(projectName)
             project(projectName).projectDir = it
-            println("$projectName: $it")
         }
 }

@@ -48,7 +48,8 @@ tasks.createRelease.configure {
 }
 
 dependencies {
-    aggregateCoverage(project(":plugin-toolkit"))
+    aggregateCoverage(project(":plugin-toolkit:intellij"))
+    aggregateCoverage(project(":plugin-toolkit:jetbrains-gateway"))
     aggregateCoverage(project(":ui-tests"))
 }
 
