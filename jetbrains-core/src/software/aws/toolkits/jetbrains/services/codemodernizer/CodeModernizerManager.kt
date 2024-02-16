@@ -7,14 +7,12 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
@@ -58,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.BuildErrorDialog
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.PreCodeTransformUserDialog
 import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.ValidationErrorDialog
+import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -70,7 +69,6 @@ import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.io.File
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
@@ -91,10 +89,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
     private val supportedBuildFileNames = listOf(MAVEN_CONFIGURATION_FILE_NAME)
-    private val supportedJavaMappings = mapOf(
-        JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
-        JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
-    )
     private val isModernizationInProgress = AtomicBoolean(false)
     private val isResumingJob = AtomicBoolean(false)
 
@@ -107,7 +101,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             field = session
         }
     private val artifactHandler = ArtifactHandler(project, GumbyClient.getInstance(project))
-
+    private val supportedJavaMappings = mapOf(
+        JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
+        JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
+    )
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
     }
@@ -142,8 +139,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             )
         }
-        val supportedModules = getSupportedModulesInProject().toSet()
-        val validProjectJdk = project.getSupportedJavaMappingsForProject(supportedJavaMappings).isNotEmpty()
+        val supportedModules = project.getSupportedModules(supportedJavaMappings).toSet()
+        val validProjectJdk = project.getSupportedJavaMappings(supportedJavaMappings).isNotEmpty()
         if (supportedModules.isEmpty() && !validProjectJdk) {
             return ValidationResult(
                 false,
@@ -154,7 +151,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             )
         }
-        val validatedBuildFiles = getSupportedBuildFilesInProject()
+        val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
         return if (validatedBuildFiles.isNotEmpty()) {
             ValidationResult(true, validatedBuildFiles = validatedBuildFiles)
         } else {
@@ -404,6 +401,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerStartJobResult.Cancelled -> {
                 CodeModernizerJobCompletedResult.JobAbortedBeforeStarting
             }
+
+            is CodeModernizerStartJobResult.CancelledMissingDependencies -> {
+                CodeModernizerJobCompletedResult.JobAbortedMissingDependencies
+            }
         }
     }
 
@@ -442,7 +443,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun tryResumeJob() = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
-            if (!notYetResumed) return@launch
+            if (!notYetResumed) {
+                return@launch
+            }
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
@@ -526,6 +529,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         artifactHandler.displayDiffAction(jobId)
     }
 
+    private fun openTroubleshootingGuideNotificationAction() = OpenBrowserAction(
+        message("codemodernizer.notification.info.view_troubleshooting_guide"),
+        url = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#transform-issues"
+    )
+
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
             artifactHandler.showTransformationSummary(jobId)
@@ -577,6 +585,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             is CodeModernizerJobCompletedResult.ManagerDisposed -> LOG.warn { "Manager disposed" }
             is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> LOG.warn { "Job was aborted" }
+            is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> notifyStickyInfo(
+                message("codemodernizer.notification.warn.maven_failed.title"),
+                message("codemodernizer.notification.warn.maven_failed.content"),
+                project,
+                listOf(openTroubleshootingGuideNotificationAction()),
+            )
         }
     }
 
@@ -647,57 +661,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         managerState.lastJobContext.putAll(state.lastJobContext)
         managerState.flags.clear()
         managerState.flags.putAll(state.flags)
-    }
-
-    private fun findBuildFiles(sourceFolder: File): List<File> {
-        /**
-         * For every dir, check if any supported build files (pom.xml etc) exists.
-         * If found store it and stop further recursion.
-         */
-        val buildFiles = mutableListOf<File>()
-        sourceFolder.walkTopDown()
-            .maxDepth(5)
-            .onEnter { currentDir ->
-                supportedBuildFileNames.forEach {
-                    val maybeSupportedFile = currentDir.resolve(MAVEN_CONFIGURATION_FILE_NAME)
-                    if (maybeSupportedFile.exists()) {
-                        buildFiles.add(maybeSupportedFile)
-                        return@onEnter false
-                    }
-                }
-                return@onEnter true
-            }.forEach {
-                // noop, collects the sequence
-            }
-        return buildFiles
-    }
-
-    private fun getSupportedBuildFilesInProject(): List<VirtualFile> {
-        /**
-         * Strategy:
-         * 1. Find folders with pom.xml or build.gradle.kts or build.gradle
-         * 2. Filter out subdirectories
-         */
-        val projectRootManager = ProjectRootManager.getInstance(project)
-        val probableProjectRoot = project.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
-        val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
-        probableContentRoots.add(probableProjectRoot) // dedupe
-        val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
-        val detectedBuildFiles = topLevelRoots.flatMap { root ->
-            findBuildFiles(root.toNioPath().toFile()).mapNotNull { it.path.toVirtualFile() }
-        }
-
-        val supportedModules = getSupportedModulesInProject().toSet()
-        val validProjectJdk = project.getSupportedJavaMappingsForProject(supportedJavaMappings).isNotEmpty()
-        return detectedBuildFiles.filter {
-            val moduleOfFile = runReadAction { projectRootManager.fileIndex.getModuleForFile(it) }
-            return@filter (moduleOfFile in supportedModules) || (moduleOfFile == null && validProjectJdk)
-        }
-    }
-
-    private fun getSupportedModulesInProject() = project.modules.filter {
-        val moduleJdk = it.tryGetJdk(project) ?: return@filter false
-        moduleJdk in supportedJavaMappings
     }
 
     fun warnUnsupportedProject(reason: String?) {
