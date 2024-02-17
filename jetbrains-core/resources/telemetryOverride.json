@@ -211,32 +211,6 @@
     ],
     "metrics": [
         {
-            "name": "codeTransform_projectDetails",
-            "description": "Transform initiates project validation before user interaction and we want to gather project details then.",
-            "metadata" : [
-                {
-                    "type": "codeTransformSessionId",
-                    "required": true
-                },
-                {
-                    "type": "result",
-                    "required": true
-                },
-                {
-                    "type": "reason",
-                    "required": false
-                },
-                {
-                    "type": "codeTransformPreValidationError",
-                    "required": false
-                },
-                {
-                    "type": "codeTransformLocalJavaVersion",
-                    "required": false
-                }
-            ]
-        },
-        {
             "name": "aws_openLocalTerminal",
             "description": "Open local terminal with aws connection injected",
             "metadata": [
