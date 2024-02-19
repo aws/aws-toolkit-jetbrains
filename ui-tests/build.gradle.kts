@@ -55,7 +55,7 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("testDataPath", project.rootDir.resolve("testdata").toString())
     systemProperty("testReportPath", project.buildDir.resolve("reports").resolve("tests").resolve("testRecordings").toString())
 
-    systemProperty("GRADLE_PROJECT", ":plugin-toolkit:jetbrains-core")
+    systemProperty("GRADLE_PROJECT", "plugin-toolkit:jetbrains-core")
     useJUnitPlatform {
         includeTags("core")
     }
