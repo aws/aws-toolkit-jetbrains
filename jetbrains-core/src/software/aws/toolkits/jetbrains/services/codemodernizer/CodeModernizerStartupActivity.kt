@@ -5,10 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
-import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodetransformTelemetry
-import software.aws.toolkits.telemetry.Result
 
 class CodeModernizerStartupActivity : StartupActivity.DumbAware {
 
