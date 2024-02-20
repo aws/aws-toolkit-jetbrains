@@ -141,7 +141,7 @@ dependencies {
     api(libs.aws.sqs)
     api(libs.aws.services)
 
-    implementation(project(":plugin-cwq:mynah-ui"))
+    implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)

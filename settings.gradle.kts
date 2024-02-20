@@ -78,17 +78,17 @@ plugins/
     toolkit/                    :plugin-toolkit
         resources/              :plugin-toolkit:resources
         ...
-    cwq/                        :plugin-cwq
-        codewhisperer/          :plugin-cwq:codewhisperer
-            community/          :plugin-cwq:codewhisperer:ultimate
-            ultimate/           :plugin-cwq:codewhisperer:community
+    amazonq/                    :plugin-amazonq
+        codewhisperer/          :plugin-amazonq:codewhisperer
+            community/          :plugin-amazonq:codewhisperer:ultimate
+            ultimate/           :plugin-amazonq:codewhisperer:community
         codemodernizer/         ...
             community/          ...
             ultimate/
         featuredev/
             community/
             ultimate/
-        mynah-ui/               :plugin-cwq:mynah-ui
+        mynah-ui/               :plugin-amazonq:mynah-ui
  */
 file("plugins").listFiles()?.forEach root@ {
     if (!it.isDirectory) return@root
