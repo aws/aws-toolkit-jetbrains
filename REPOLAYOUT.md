@@ -51,22 +51,22 @@ aws-toolkit-jetbrains
 │   │   │   └── build.gradle.kts
 │   │   └── build.gradle.kts
 │   │
-│   ├── cwq                                 :plugin-cwq
-│   │   ├── codewhisperer                   :plugin-cwq:codewhisperer
-│   │   │   ├── community                   :plugin-cwq:codewhisperer:community
+│   ├── amazonq                              :plugin-amazonq
+│   │   ├── codewhisperer                   :plugin-amazonq:codewhisperer
+│   │   │   ├── community                   :plugin-amazonq:codewhisperer:community
 │   │   │   │   ├── ⋮
 │   │   │   │   └── build.gradle.kts
-│   │   │   ├── ultimate                    :plugin-cwq:codewhisperer:ultimate
+│   │   │   ├── ultimate                    :plugin-amazonq:codewhisperer:ultimate
 │   │   │   │   ├── ⋮
 │   │   │   │   └── build.gradle.kts
 │   │   │   └── build.gradle.kts
-│   │   ├── codemodernizer                  :plugin-cwq:codemodernizer
-│   │   │   ├── community                   :plugin-cwq:codemodernizer:community
+│   │   ├── codemodernizer                  :plugin-amazonq:codemodernizer
+│   │   │   ├── community                   :plugin-amazonq:codemodernizer:community
 │   │   │   │   ├── ⋮
 │   │   │   │   └── build.gradle.kts
 │   │   │   └── build.gradle.kts
 │   │   ├── ⋮
-│   │   ├── mynah-ui                        :plugin-cwq:mynah-ui  
+│   │   ├── mynah-ui                        :plugin-amazonq:mynah-ui  
 │   │   │   ├── ⋮
 │   │   │   └── build.gradle.kts
 │   │   └── build.gradle.kts 
@@ -141,7 +141,7 @@ For artifacts where major functional logic is developed by multiple independent 
 Below is a sample of the layout and sourceset interactions for the given artifacts:
 * `plugin-core.zip`
 * `plugin-toolkit.zip`
-* `plugin-cwq.zip`
+* `plugin-amazonq.zip`
 
 ```mermaid
 flowchart LR
@@ -149,7 +149,7 @@ flowchart LR
 
     common <-. depends/input for .-> plugin-core
     common <-. depends/input for .-> plugin-toolkit
-    common <-. depends/input for .-> plugin-cwq
+    common <-. depends/input for .-> plugin-amazonq
 
     subgraph plugin-core
         resources-core[resources]
@@ -211,7 +211,7 @@ flowchart LR
     end
 
 
-    subgraph plugin-cwq
+    subgraph plugin-amazonq
         direction LR
         mynah-ui
 
@@ -226,15 +226,15 @@ flowchart LR
             instrument-codewhisperer[[InstrumentJarTask]]
         end
 
-        subgraph cwq[cwq shared: intellij platform sourcesets]
-            community-cwq[community]
-            ultimate-cwq[ultimate]
+        subgraph amazonq[amazonq shared: intellij platform sourcesets]
+            community-amazonq[community]
+            ultimate-amazonq[ultimate]
             
-            ultimate-cwq --depends--> community-cwq
+            ultimate-amazonq --depends--> community-amazonq
 
-            community-cwq -. input for .-> instrument-cwq
-            ultimate-cwq -. input for .-> instrument-cwq
-            instrument-cwq[[InstrumentJarTask]]
+            community-amazonq -. input for .-> instrument-amazonq
+            ultimate-amazonq -. input for .-> instrument-amazonq
+            instrument-amazonq[[InstrumentJarTask]]
         end
 
         subgraph codemodernizer[codemodernizer: intellij platform sourcesets]
@@ -244,20 +244,20 @@ flowchart LR
             instrument-codemodernizer[[InstrumentJarTask]]
         end
 
-        codewhisperer --depends---> cwq
-        codemodernizer --depends---> cwq
+        codewhisperer --depends---> amazonq
+        codemodernizer --depends---> amazonq
 
-        mynah-ui -. input for .-> build-cwq
-        instrument-cwq -. input for .-> build-cwq
-        instrument-codewhisperer -. input for .-> build-cwq
-        instrument-codemodernizer -. input for .-> build-cwq
-        build-cwq[[PrepareSandbox + BuildPlugin]]
+        mynah-ui -. input for .-> build-amazonq
+        instrument-amazonq -. input for .-> build-amazonq
+        instrument-codewhisperer -. input for .-> build-amazonq
+        instrument-codemodernizer -. input for .-> build-amazonq
+        build-amazonq[[PrepareSandbox + BuildPlugin]]
         
-        build-cwq -- emits --> plugincwqzip
-        plugincwqzip[plugin-cwq.zip\n* mynah-ui.jar\n* instrumented-cwqshared-community.jar\n* instrumented-cwqshared-ultimate.jar\n* instrumented-codewhisperer-community.jar\n* instrumented-codewhisperer-ultimate.jar\n* instrumented-chat-community.jar\n* instrumented-codemodernizer-community.jar\n* common.jar]
-        style plugincwqzip text-align:left
+        build-amazonq -- emits --> pluginamazonqzip
+        pluginamazonqzip[plugin-amazonq.zip\n* mynah-ui.jar\n* instrumented-amazonqshared-community.jar\n* instrumented-amazonqshared-ultimate.jar\n* instrumented-codewhisperer-community.jar\n* instrumented-codewhisperer-ultimate.jar\n* instrumented-chat-community.jar\n* instrumented-codemodernizer-community.jar\n* common.jar]
+        style pluginamazonqzip text-align:left
     end
 
     plugin-toolkit -. runtime dependency on API .-> plugincorezip
-    plugin-cwq -. runtime dependency on API .-> plugincorezip
+    plugin-amazonq -. runtime dependency on API .-> plugincorezip
 ```
