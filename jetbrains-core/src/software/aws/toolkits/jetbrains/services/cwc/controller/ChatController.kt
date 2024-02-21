@@ -348,7 +348,6 @@ class ChatController private constructor(
         triggerType: TriggerType,
     ) {
         val credentialState = authController.getAuthNeededState(context.project)
-        telemetryHelper.startUrl = authController.getStartUrl()
         if (credentialState != null) {
             sendAuthNeededException(
                 tabId = tabId,

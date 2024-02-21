@@ -7,6 +7,9 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
@@ -18,13 +21,6 @@ import software.aws.toolkits.telemetry.CwsprChatCommandType
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class AuthController {
-
-    private var startUrl: String? = null
-
-    /**
-     * Return the start url of current active connection
-     */
-    fun getStartUrl() = startUrl
 
     /**
      * Check the state of the Q connection. If the connection is valid then null is returned, otherwise it returns a [AuthNeededState]
@@ -51,7 +47,6 @@ class AuthController {
             }
 
             is ActiveConnection.ValidBearer -> {
-                startUrl = connectionState.activeConnectionBearer?.startUrl
                 return null
             }
             is ActiveConnection.ExpiredBearer -> AuthNeededState(
@@ -82,7 +77,8 @@ class AuthController {
                 reauthenticateWithQ(project)
             }
         }
-        TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Auth, type.name, startUrl)
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())as AwsBearerTokenConnection?
+        TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Auth, type.name, connection?.startUrl)
     }
 
     companion object {

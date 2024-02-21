@@ -10,6 +10,9 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -39,12 +42,13 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
-    private var _startUrl: String? = null
-    var startUrl: String?
-        get() = _startUrl
-        set(value) {
-            _startUrl = value
-        }
+    var startUrl: String? = null
+        get() = getStartUrl()
+
+    private fun getStartUrl(): String? {
+        val connection = ToolkitConnectionManager.getInstance(context.project).activeConnectionForFeature(QConnection.getInstance())as AwsBearerTokenConnection?
+        return connection?.startUrl
+    }
 
     fun getConversationId(tabId: String): String? = sessionStorage.getSession(tabId)?.session?.conversationId
 
@@ -77,7 +81,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     fun recordStartConversation(tabId: String, data: ChatRequestData) {
         val sessionHistory = sessionStorage.getSession(tabId)?.history ?: return
         if (sessionHistory.size > 1) return
-
         AmazonqTelemetry.startConversation(
             cwsprChatConversationId = getConversationId(tabId).orEmpty(),
             cwsprChatTriggerInteraction = getTelemetryTriggerType(data.triggerType),
