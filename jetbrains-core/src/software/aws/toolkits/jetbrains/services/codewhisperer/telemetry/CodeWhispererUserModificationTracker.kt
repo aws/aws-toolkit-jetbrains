@@ -62,6 +62,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     private val isShuttingDown = AtomicBoolean(false)
+
     init {
         scheduleCodeWhispererTracker()
     }

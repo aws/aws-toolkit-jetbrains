@@ -21,7 +21,6 @@ import software.aws.toolkits.telemetry.CwsprChatCommandType
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class AuthController {
-
     /**
      * Check the state of the Q connection. If the connection is valid then null is returned, otherwise it returns a [AuthNeededState]
      * holding a message indicating the problem and what type of authentication is needed to resolve.
@@ -29,7 +28,6 @@ class AuthController {
     fun getAuthNeededState(project: Project): AuthNeededState? {
         val connectionState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
         val codeWhispererState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
-
         return when (connectionState) {
             ActiveConnection.NotConnected -> {
                 if (codeWhispererState == ActiveConnection.NotConnected) {
@@ -46,9 +44,7 @@ class AuthController {
                 }
             }
 
-            is ActiveConnection.ValidBearer -> {
-                return null
-            }
+            is ActiveConnection.ValidBearer -> null
             is ActiveConnection.ExpiredBearer -> AuthNeededState(
                 message = message("q.connection.expired"),
                 authType = AuthFollowUpType.ReAuth,
