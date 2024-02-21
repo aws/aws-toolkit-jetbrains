@@ -16,14 +16,12 @@ import com.intellij.util.AlarmFactory
 import info.debatty.java.stringsimilarity.Levenshtein
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -197,13 +195,11 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
     }
 
     private fun sendModificationWithChatTelemetry(insertedCode: InsertedCodeModificationEntry, percentage: Double) {
-        val qConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())as AwsBearerTokenConnection?
-        val startUrl = qConnection?.startUrl
         AmazonqTelemetry.modifyCode(
             cwsprChatConversationId = insertedCode.conversationId,
             cwsprChatMessageId = insertedCode.messageId,
             cwsprChatModificationPercentage = percentage,
-            credentialStartUrl = startUrl
+            credentialStartUrl = getStartUrl(project)
         )
         CodeWhispererClientAdaptor.getInstance(project).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, null, percentage)
     }
