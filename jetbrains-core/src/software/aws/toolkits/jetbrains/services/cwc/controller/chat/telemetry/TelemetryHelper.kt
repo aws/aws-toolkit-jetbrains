@@ -42,9 +42,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
-    var startUrl: String? = null
-        get() = getStartUrl()
-
     private fun getStartUrl(): String? {
         val connection = ToolkitConnectionManager.getInstance(context.project).activeConnectionForFeature(QConnection.getInstance())as AwsBearerTokenConnection?
         return connection?.startUrl
@@ -88,7 +85,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatUserIntent = data.userIntent?.let { getTelemetryUserIntent(it) },
             cwsprChatHasCodeSnippet = data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false,
             cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
-            credentialStartUrl = startUrl
+            credentialStartUrl = getStartUrl()
         )
     }
 
@@ -114,7 +111,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatRequestLength = data.message.length,
             cwsprChatResponseLength = responseLength,
             cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = startUrl
+            credentialStartUrl = getStartUrl()
         )
 
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
@@ -147,7 +144,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatResponseCode = responseCode,
             cwsprChatRequestLength = data.message.length,
             cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = startUrl
+            credentialStartUrl = getStartUrl()
         )
     }
 
@@ -163,7 +160,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                         "downvote" -> CwsprChatInteractionType.Downvote
                         else -> CwsprChatInteractionType.Unknown
                     },
-                    credentialStartUrl = startUrl
+                    credentialStartUrl = getStartUrl()
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -183,7 +180,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
                     cwsprChatMessageId = message.messageId.orEmpty(),
                     cwsprChatInteractionType = CwsprChatInteractionType.ClickFollowUp,
-                    credentialStartUrl = startUrl
+                    credentialStartUrl = getStartUrl()
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -200,7 +197,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatAcceptedCharactersLength = message.code.length,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = startUrl
+                    credentialStartUrl = getStartUrl()
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -219,7 +216,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatAcceptedCharactersLength = message.code.length,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = startUrl
+                    credentialStartUrl = getStartUrl()
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -245,7 +242,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatInteractionType = linkInteractionType,
                     cwsprChatInteractionTarget = message.link,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = startUrl
+                    credentialStartUrl = getStartUrl()
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
