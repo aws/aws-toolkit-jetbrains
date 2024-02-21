@@ -39,6 +39,12 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
+    private var _startUrl: String? = null
+    var startUrl: String?
+        get() = _startUrl
+        set(value) {
+            _startUrl = value
+        }
 
     fun getConversationId(tabId: String): String? = sessionStorage.getSession(tabId)?.session?.conversationId
 
@@ -68,7 +74,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         AmazonqTelemetry.exitFocusChat(passive = true)
     }
 
-    fun recordStartConversation(tabId: String, data: ChatRequestData, startUrl: String?) {
+    fun recordStartConversation(tabId: String, data: ChatRequestData) {
         val sessionHistory = sessionStorage.getSession(tabId)?.history ?: return
         if (sessionHistory.size > 1) return
 
@@ -84,7 +90,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     }
 
     // When Chat API responds to a user message (full response streamed)
-    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, startUrl: String?) {
+    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int) {
         AmazonqTelemetry.addMessage(
             cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
             cwsprChatMessageId = response.messageId,
@@ -126,7 +132,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         )
     }
 
-    fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int, startUrl: String?) {
+    fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int) {
         AmazonqTelemetry.messageResponseError(
             cwsprChatConversationId = getConversationId(tabId).orEmpty(),
             cwsprChatTriggerInteraction = getTelemetryTriggerType(data.triggerType),
@@ -143,7 +149,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     }
 
     // When user interacts with a message (e.g. copy code, insert code, vote)
-    suspend fun recordInteractWithMessage(message: IncomingCwcMessage, startUrl: String?) {
+    suspend fun recordInteractWithMessage(message: IncomingCwcMessage) {
         val event: ChatInteractWithMessageEvent? = when (message) {
             is IncomingCwcMessage.ChatItemVoted -> {
                 AmazonqTelemetry.interactWithMessage(
