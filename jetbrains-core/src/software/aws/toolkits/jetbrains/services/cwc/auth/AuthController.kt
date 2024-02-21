@@ -20,12 +20,12 @@ import software.aws.toolkits.telemetry.UiTelemetry
 class AuthController {
 
     private var startUrl: String? = null
+
     /**
      * Return the start url of current active connection
-    */
-    fun getStartUrl(): String? {
-        return this.startUrl
-    }
+     */
+    fun getStartUrl() = startUrl
+
     /**
      * Check the state of the Q connection. If the connection is valid then null is returned, otherwise it returns a [AuthNeededState]
      * holding a message indicating the problem and what type of authentication is needed to resolve.

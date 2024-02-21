@@ -12,7 +12,6 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1
