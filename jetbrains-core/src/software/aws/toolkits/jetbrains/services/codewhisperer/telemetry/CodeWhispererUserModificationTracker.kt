@@ -197,7 +197,8 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
         AmazonqTelemetry.modifyCode(
             cwsprChatConversationId = insertedCode.conversationId,
             cwsprChatMessageId = insertedCode.messageId,
-            cwsprChatModificationPercentage = percentage
+            cwsprChatModificationPercentage = percentage,
+            credentialStartUrl = ""
         )
         CodeWhispererClientAdaptor.getInstance(project).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, null, percentage)
     }

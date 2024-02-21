@@ -189,11 +189,11 @@ class ChatController private constructor(
             TriggerType.Click,
         )
 
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     override suspend fun processCodeWasCopiedToClipboard(message: IncomingCwcMessage.CopyCodeToClipboard) {
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
@@ -226,7 +226,7 @@ class ChatController private constructor(
                 }
             }
         }
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     override suspend fun processStopResponseMessage(message: IncomingCwcMessage.StopResponse) {
@@ -236,11 +236,11 @@ class ChatController private constructor(
     }
 
     override suspend fun processChatItemVoted(message: IncomingCwcMessage.ChatItemVoted) {
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     override suspend fun processChatItemFeedback(message: IncomingCwcMessage.ChatItemFeedback) {
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     override suspend fun processUIFocus(message: IncomingCwcMessage.UIFocus) {
@@ -336,7 +336,7 @@ class ChatController private constructor(
 
     override suspend fun processLinkClick(message: IncomingCwcMessage.ClickedLink) {
         BrowserUtil.browse(message.link)
-        telemetryHelper.recordInteractWithMessage(message)
+        telemetryHelper.recordInteractWithMessage(message, authController.getStartUrl())
     }
 
     private suspend fun handleChat(
@@ -371,7 +371,7 @@ class ChatController private constructor(
         sessionInfo.history.add(requestData)
 
         telemetryHelper.recordEnterFocusConversation(tabId)
-        telemetryHelper.recordStartConversation(tabId, requestData)
+        telemetryHelper.recordStartConversation(tabId, requestData, authController.getStartUrl())
 
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
