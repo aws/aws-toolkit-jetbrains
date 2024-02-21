@@ -97,9 +97,6 @@ class ChatController private constructor(
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
     )
-    init {
-        telemetryHelper.startUrl = authController.getStartUrl()
-    }
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
         chatSessionStorage.deleteSession(message.tabId)
@@ -351,6 +348,7 @@ class ChatController private constructor(
         triggerType: TriggerType,
     ) {
         val credentialState = authController.getAuthNeededState(context.project)
+        telemetryHelper.startUrl = authController.getStartUrl()
         if (credentialState != null) {
             sendAuthNeededException(
                 tabId = tabId,
