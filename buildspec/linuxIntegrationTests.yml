@@ -14,6 +14,7 @@ env:
 phases:
   install:
     commands:
+      - pip3 install cfn-lint
       - sed -i 's/latest\/download/download\/v1.98.0/g' /usr/local/bin/installSam.sh
       - installSam.sh --update
       - goenv versions --bare | xargs -I'{}' goenv uninstall -f '{}'

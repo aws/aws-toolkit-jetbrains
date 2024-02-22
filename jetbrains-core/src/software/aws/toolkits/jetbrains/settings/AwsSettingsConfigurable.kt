@@ -34,6 +34,10 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         get() = ExecutableType.getExecutable(SamExecutable::class.java)
     val samExecutablePath: TextFieldWithBrowseButton = createCliConfigurationElement(samExecutableInstance, SAM)
 
+    private val cfnLintExecutableInstance: CfnLintExecutable
+        get() = ExecutableType.getExecutable(CfnLintExecutable::class.java)
+    val cfnLintExecutablePath: TextFieldWithBrowseButton = createCliConfigurationElement(cfnLintExecutableInstance, CFN_LINT)
+
     private val defaultRegionHandling: ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
     private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
@@ -44,6 +48,15 @@ class AwsSettingsConfigurable : SearchableConfigurable {
                 label(message("aws.settings.sam.location"))
                 // samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
                 cell(samExecutablePath).align(AlignX.FILL).resizableColumn()
+                browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
+            }
+        }
+
+        group(message("aws.settings.cfnlint")) {
+            row {
+                label(message("aws.settings.cfnlint.location"))
+                // cfnLintExecutablePath = createCliConfigurationElement(cfnLintExecutableInstance, CFN_LINT)
+                cell(cfnLintExecutablePath).align(AlignX.FILL).resizableColumn()
                 browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
             }
         }
@@ -107,7 +120,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         }
         field.addBrowseFolderListener(
             message("aws.settings.find.title", cliName),
-            message("aws.settings.find.description", cliName),
+            message("aws.settings.executables.find.description", cliName),
             null,
             FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
         )

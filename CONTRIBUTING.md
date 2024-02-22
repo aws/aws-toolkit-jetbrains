@@ -111,7 +111,8 @@ These tests make no network calls and are safe for anyone to run.
 It is **NOT** recommended for third party contributors to run these due to they create and mutate AWS resources.
 
 - Requires valid AWS credentials (take care: it will respect any credentials currently defined in your environmental variables, and fallback to your default AWS profile otherwise).
-- Requires `sam` CLI to be on your `$PATH`.
+- Requires [`sam`](https://github.com/awslabs/serverless-application-model) CLI to be on your `$PATH`.
+  - Requires [`cfn-lint`](https://github.com/aws-cloudformation/cfn-python-lint/) CLI to be on your `$PATH`.
  ```
  ./gradlew integrationTest
  ```
