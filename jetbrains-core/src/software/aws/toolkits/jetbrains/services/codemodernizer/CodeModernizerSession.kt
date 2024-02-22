@@ -32,7 +32,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModerniz
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import software.aws.toolkits.telemetry.CodetransformTelemetry
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
+const val MAX_ZIP_SIZE = 1000000000 // 1GB
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -79,22 +79,24 @@ class CodeModernizerSession(
             }
             val startTime = Instant.now()
             val result = sessionContext.createZipWithModuleFiles()
-            payload = when (result) {
-                is ZipCreationResult.Missing1P -> {
-                    notifyStickyInfo(
-                        message("codemodernizer.notification.info.maven_failed.title"),
-                        message("codemodernizer.notification.info.maven_failed.content")
-                    )
-                    result.payload
-                }
 
-                is ZipCreationResult.Succeeded -> result.payload
+            if (result is ZipCreationResult.Missing1P) {
+                return CodeModernizerStartJobResult.CancelledMissingDependencies
             }
+
+            payload = result.payload
+
+            val payloadSize = payload.length().toInt()
+
             CodetransformTelemetry.jobCreateZipEndTime(
-                codeTransformTotalByteSize = payload.length().toInt(),
+                codeTransformTotalByteSize = payloadSize,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                 codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now())
             )
+
+            if (payloadSize > MAX_ZIP_SIZE) {
+                return CodeModernizerStartJobResult.CancelledZipTooLarge
+            }
         } catch (e: Exception) {
             val errorMessage = "Failed to create zip"
             LOG.error(e) { errorMessage }

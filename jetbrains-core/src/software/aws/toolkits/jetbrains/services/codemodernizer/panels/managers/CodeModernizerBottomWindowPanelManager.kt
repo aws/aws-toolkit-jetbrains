@@ -179,7 +179,9 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         stopTimer()
         buildProgressSplitterPanelManager.apply {
             when (result) {
-                is CodeModernizerJobCompletedResult.UnableToCreateJob -> setJobFailedToStartUI()
+                is CodeModernizerJobCompletedResult.UnableToCreateJob,
+                is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge,
+                is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> setJobFailedToStartUI()
 
                 is CodeModernizerJobCompletedResult.RetryableFailure,
                 is CodeModernizerJobCompletedResult.JobFailedInitialBuild,
