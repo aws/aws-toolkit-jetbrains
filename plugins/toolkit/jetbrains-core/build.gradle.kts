@@ -132,6 +132,7 @@ dependencies {
     api(libs.aws.ecs)
     api(libs.aws.iam)
     api(libs.aws.lambda)
+    api(libs.aws.nettyClient)
     api(libs.aws.rds)
     api(libs.aws.redshift)
     api(libs.aws.s3)
@@ -142,7 +143,6 @@ dependencies {
     api(libs.aws.services)
 
     implementation(project(":plugin-amazonq:mynah-ui"))
-    implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
