@@ -32,7 +32,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.xdebugger.XDebuggerUtil
 import org.jetbrains.idea.maven.model.MavenExplicitProfiles
 import org.jetbrains.idea.maven.project.MavenProjectsManager
-import org.jetbrains.idea.maven.project.MavenProjectsManagerEx
 import org.jetbrains.idea.maven.server.MavenServerManager
 import org.jetbrains.idea.maven.utils.MavenProgressIndicator.MavenProgressTracker
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
@@ -256,11 +255,11 @@ internal suspend fun HeavyJavaCodeInsightTestFixtureRule.setUpMavenProject(): Ps
         )
     }
 
-    val projectsManager = MavenProjectsManager.getInstance(project) as MavenProjectsManagerEx
+    val projectsManager = MavenProjectsManager.getInstance(project)
     projectsManager.initForTests()
 
     val poms = listOf(pomFile)
-    projectsManager.addManagedFilesWithProfilesAndUpdate(poms, MavenExplicitProfiles.NONE, null, null)
+    projectsManager.addManagedFilesWithProfiles(poms, MavenExplicitProfiles.NONE, null, null, true)
 
     runInEdtAndWait {
         project.getServiceIfCreated(MavenProgressTracker::class.java)?.waitForProgressCompletion()
