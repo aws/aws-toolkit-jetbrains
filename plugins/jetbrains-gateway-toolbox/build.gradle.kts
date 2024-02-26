@@ -1,9 +1,10 @@
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import org.jetbrains.kotlin.com.intellij.openapi.util.SystemInfoRt
 import java.nio.file.Path
 import kotlin.io.path.div
 
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
 plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-detekt")
@@ -14,9 +15,9 @@ repositories {
 }
 
 dependencies {
-    api(project(":core"))
-    api(project(":jetbrains-core"))
-    api(project(":jetbrains-gateway"))
+    api(project(":plugin-toolkit:core"))
+    api(project(":plugin-toolkit:jetbrains-core"))
+    api(project(":plugin-toolkit:jetbrains-gateway"))
     compileOnly(libs.sshd.core)
     implementation("com.jetbrains.toolbox.gateway:gateway-api:2.1.0.17705")
     implementation("org.slf4j:slf4j-api:2.0.7")
