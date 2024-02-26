@@ -16,7 +16,10 @@ phases:
       - useradd codebuild-user
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output
+      - chown -R codebuild-user:codebuild-user /codebuild/local-cache
       - setfacl -m d:o::rwx,o::rwx /root
+      # (CVE-2022-24765) fatal: detected dubious ownership in repository
+      - su codebuild-user -c "git config --global --add safe.directory \"$CODEBUILD_SRC_DIR\""
 
   build:
     commands:
@@ -47,7 +50,7 @@ phases:
       - rsync -rmq --include='*/' --include '**/build/idea-sandbox/system*/log/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/build/reports/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/test-results/**/*.xml' --exclude='*' . $TEST_ARTIFACTS/test-reports || true
-      - cp -r ./intellij/build/distributions/*.zip $BUILD_ARTIFACTS/ || touch $BUILD_ARTIFACTS/build_failed
+      - cp -r ./plugins/toolkit/intellij/build/distributions/*.zip $BUILD_ARTIFACTS/ || touch $BUILD_ARTIFACTS/build_failed
 
 reports:
   unit-test:

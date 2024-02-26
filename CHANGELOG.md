@@ -1,3 +1,16 @@
+# _2.8_ (2024-02-15)
+- **(Feature)** CodeTransform: smart select Java version of project
+- **(Bug Fix)** Fix for AmazonQ on Linux input focus problem ([#4100](https://github.com/aws/aws-toolkit-jetbrains/issues/4100))
+
+# _2.7_ (2024-02-07)
+- **(Bug Fix)** CodeWhisperer: Improve CodePercentage telemetry reporting
+
+# _2.6_ (2024-02-02)
+- **(Feature)** Add support for IAM Identity Center connections for CodeCatalyst
+
+# _2.5_ (2024-01-24)
+- **(Bug Fix)** Fix issue where CodeWhisperer suggestions are sometimes trimmed
+
 # _2.4_ (2024-01-10)
 - **(Bug Fix)** Fix Code Transform Plan UI component alignment
 - **(Bug Fix)** Fix Code Transform uploaded artifact file paths when submitting from Windows machine

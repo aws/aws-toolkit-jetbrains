@@ -40,13 +40,6 @@ sourceSets {
         java.srcDirs(findFolders(project, "tst", ideProfile))
         resources.srcDirs(findFolders(project, "tst-resources", ideProfile))
     }
-
-    plugins.withType<ToolkitIntegrationTestingPlugin> {
-        maybeCreate("integrationTest").apply {
-            java.srcDirs(findFolders(project, "it", ideProfile))
-            resources.srcDirs(findFolders(project, "it-resources", ideProfile))
-        }
-    }
 }
 
 configurations {
@@ -154,7 +147,7 @@ val openedPackages = OpenedPackages + listOf(
 tasks.withType<Test>().all {
     systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
-    val jetbrainsCoreTestResources = project(":jetbrains-core").projectDir.resolve("tst-resources")
+    val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")
     // FIX_WHEN_MIN_IS_221: log4j 1.2 removed in 221
     systemProperty("log4j.configuration", jetbrainsCoreTestResources.resolve("log4j.xml"))
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
@@ -239,12 +232,6 @@ tasks.withType<RunIdeForUiTestTask>().all {
             output = Output.TCP_CLIENT // Dump to our jacoco server instead of to a file
         }
     }
-}
-
-// weird implicit dependency issue, maybe with how the task graph works?
-// or because tests are on the ide classpath for some reason?
-tasks.named("classpathIndexCleanup") {
-    mustRunAfter(tasks.named("compileIntegrationTestKotlin"))
 }
 
 configurations.instrumentedJar.configure {
