@@ -3,43 +3,39 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
-import com.intellij.ui.ColorUtil
-import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.JBTabbedPane
-import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
-import com.intellij.xml.util.XmlUtil
-import com.jetbrains.rider.ideaInterop.fileTypes.sln.SolutionFileType
-import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharperTemplateGeneratorBase
-import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
-import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
-import com.jetbrains.rider.ui.themes.RiderTheme
+import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
+import com.jetbrains.rd.util.lifetime.Lifetime
+import com.jetbrains.rider.model.RdProjectTemplate2
+import com.jetbrains.rider.projectView.projectTemplates.NewProjectDialogContext
+import com.jetbrains.rider.projectView.projectTemplates.ProjectTemplatesSharedModel
+import com.jetbrains.rider.projectView.projectTemplates.StatusMessageType
+import com.jetbrains.rider.projectView.projectTemplates.StatusMessages
+import com.jetbrains.rider.projectView.projectTemplates.generators.ProjectTemplateGeneratorBase
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.RuntimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamInitSelectionPanel
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectGenerator
 import software.aws.toolkits.jetbrains.utils.DotNetRuntimeUtils
-import software.aws.toolkits.resources.message
-import java.awt.Dimension
-import java.io.File
-import javax.swing.JScrollPane
-import javax.swing.JTabbedPane
-import javax.swing.JTextPane
+import javax.swing.JComponent
 
 abstract class DotNetSamProjectGeneratorRoot(
-    private val context: ProjectTemplateDialogContext,
-    group: String,
-    categoryName: String,
-    model: ProjectTemplateTransferableModel
-) : ReSharperTemplateGeneratorBase(
-    model = model,
-    createSolution = true,
-    createProject = true,
-    item = context.entity
+    lifetime: Lifetime,
+    private val context: NewProjectDialogContext,
+    sharedModel: ProjectTemplatesSharedModel
+) : ProjectTemplateGeneratorBase(
+    lifetime,
+    context,
+    sharedModel,
+    createProject = true
 ) {
     companion object {
         private const val SAM_HELLO_WORLD_PROJECT_NAME = "HelloWorld"
     }
+
+    override val defaultName = SAM_HELLO_WORLD_PROJECT_NAME
 
     // TODO: Decouple SamProjectGenerator from the framework wizards so we can re-use its panels
     private val generator = SamProjectGenerator()
@@ -55,127 +51,45 @@ abstract class DotNetSamProjectGeneratorRoot(
 
     fun getSamGenerator() = generator
 
-    private val projectStructurePanel: JTabbedPane
-
-    private val structurePane = JTextPane().apply {
-        contentType = "text/html"
-        isEditable = false
-        background = RiderTheme.activeFieldBackground
-        border = null
-    }
-
     init {
-        title.labels = arrayOf(group, categoryName)
-        initProjectTextField()
+        /**
+         * The project name is generated inside SAM CLI generator and cannot be re-defined via parameters.
+         * Hardcode the project name to the generated one - "HelloWorld".
+         */
+        projectNameProperty.set(SAM_HELLO_WORLD_PROJECT_NAME)
+        sameDirectoryProperty.set(false)
+
         initSamPanel()
-
-        projectStructurePanel = JBTabbedPane()
-        val structureScroll = JBScrollPane(structurePane).apply {
-            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
-            verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            border = JBUI.Borders.empty()
-            background = UIUtil.getTextFieldBackground()
-            preferredSize = Dimension(1, JBUI.scale(60))
-        }
-
-        projectStructurePanel.add("Resulting project structure", structureScroll)
-
-        updateInfo()
-        super.initialize()
-        super.layout()
-
-        // Call this init method after super.initialize() to make sure solutionNameField override a base listener
-        initSolutionTextField()
-
-        addAdditionPane(samPanel.mainPanel)
-        addAdditionPane(projectStructurePanel)
     }
 
-    override fun validateData() {
-        super.validateData()
-        if (validationError.value != null) {
+    override fun getComponent(): JComponent {
+        val component = super.getComponent()
+        projectNameTextField?.component?.isEnabled = false
+        sameDirectoryCheckbox?.component?.isEnabled = false
+        return component
+    }
+
+    override fun createTemplateSpecificPanel(): DialogPanel {
+        val panel = panel { row { cell(samPanel.mainPanel).align(Align.FILL).resizableColumn() }.resizableRow() }
+        validateData()
+        return panel
+    }
+
+    override fun checkIsAbleToExpand(template: RdProjectTemplate2?, validations: Map<JComponent, ValidationInfo>) {
+        // we don't care about template here.
+        canExpand.set(validations.isEmpty())
+    }
+
+    private fun validateData() {
+        // first validateData comes from SamInitSelectionPanel constructor...
+        samPanel?.validate()?.let {
+            context.statusMessages.add(StatusMessages.Error(it.message))
             return
         }
-        samPanel.validate()?.let {
-            validationError.set(it.message)
-            return
-        }
-        validationError.set(null)
-    }
-
-    override fun updateInfo() {
-        super.updateInfo()
-        val sep = File.separator
-        val builder = StringBuilder()
-        val font = JBUI.Fonts.label()
-        builder.appendLine("<html><span style=\"font-family:${font.family};font-size:${font.size}\"")
-
-        val solutionDirectory = getSolutionDirectory()
-        val projectDirectory = getProjectDirectory()
-
-        val parentName = solutionDirectory?.parentFile?.name
-        val parentStr = if (parentName.isNullOrEmpty()) sep else "$sep$parentName$sep"
-
-        val vcsMarker = vcsPanel?.getVcsMarker()
-        if (solutionDirectory != null && vcsMarker != null) {
-            builder.appendLine(
-                htmlText(
-                    "$sep${solutionDirectory.parentFile.name}$sep",
-                    "${solutionDirectory.name}$sep$vcsMarker"
-                )
-            )
-        }
-
-        if (solutionDirectory != null) {
-            val solutionName = getSolutionName() + SolutionFileType.solutionExtensionWithDot
-            builder.appendLine(htmlText(parentStr, "${solutionDirectory.name}$sep$solutionName"))
-        }
-
-        if (projectDirectory != null) {
-            val projectsText = "project files"
-            val projectFilesLabel = XmlUtil.escape("<$projectsText>")
-            if (solutionDirectory != null && solutionDirectory != projectDirectory) {
-                builder.appendLine(htmlText(parentStr, "${solutionDirectory.name}${sep}src$sep${projectDirectory.name}$sep$projectFilesLabel"))
-                builder.appendLine(htmlText(parentStr, "${solutionDirectory.name}${sep}test$sep${projectDirectory.name}.Test$sep$projectFilesLabel"))
-            } else {
-                builder.appendLine(htmlText(parentStr, "src$sep${projectDirectory.name}$sep$projectFilesLabel"))
-                builder.appendLine(htmlText(parentStr, "test$sep${projectDirectory.name}.Test$sep$projectFilesLabel"))
-            }
-        }
-
-        builder.appendLine("</span></html>")
-        structurePane.text = builder.toString()
-        validateData()
-    }
-
-    override fun refreshUI() {
-        super.refreshUI()
-        // This restore project name when user change a solution name and switch between templates
-        projectNameField.text = SAM_HELLO_WORLD_PROJECT_NAME
-        validationError.set(null)
-        validateData()
-    }
-
-    private fun initSolutionTextField() {
-        solutionNameField.text = getPossibleName(SAM_HELLO_WORLD_PROJECT_NAME)
-    }
-
-    /**
-     * The project name is generated inside SAM CLI generator and cannot be re-defined via parameters.
-     * Hardcode the project name to the generated one - "HelloWorld".
-     */
-    private fun initProjectTextField() {
-        projectNameField.text = SAM_HELLO_WORLD_PROJECT_NAME
-        projectNameField.isEnabled = false
-        projectNameSetByUser = true
-
-        sameDirectoryCheckBox.isEnabled = false
+        context.statusMessages.removeIf { it.type == StatusMessageType.Error }
     }
 
     private fun initSamPanel() {
         samPanel.setRuntime(DotNetRuntimeUtils.getCurrentDotNetCoreRuntime())
     }
-
-    private fun htmlText(baseDir: String, relativePath: String) =
-        "<font color=#${ColorUtil.toHex(UIUtil.getLabelDisabledForeground())}>...$baseDir</font>$relativePath<br>"
 }
