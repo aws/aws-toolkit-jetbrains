@@ -285,7 +285,7 @@ fun getJavaVersionFromProjectSetting(project: Project): String? = project.tryGet
 fun getMavenVersion(project: Project): String {
     val mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings()
     // should be set to Maven Wrapper if setup instructions were followed
-    return mavenSettings.getMavenHome()
+    return mavenSettings.getMavenHomeType().title
 }
 
 fun openTroubleshootingGuideNotificationAction(targetUrl: String) = OpenBrowserAction(
