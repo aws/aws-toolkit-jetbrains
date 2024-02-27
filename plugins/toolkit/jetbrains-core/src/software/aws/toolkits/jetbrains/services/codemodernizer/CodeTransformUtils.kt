@@ -282,15 +282,10 @@ fun isGradleProject(project: Project) = !GradleSettings.getInstance(project).lin
 
 fun getJavaVersionFromProjectSetting(project: Project): String? = project.tryGetJdk()?.toString()
 
-fun getMavenVersion(project: Project): String? {
+fun getMavenVersion(project: Project): String {
     val mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings()
     // should be set to Maven Wrapper if setup instructions were followed
-    val mavenHome = mavenSettings.getMavenHome()
-    return if (mavenHome.contains("Bundled")) {
-        mavenHome
-    } else {
-        null
-    }
+    return mavenSettings.getMavenHome() ?: "Unknown"
 }
 
 fun openTroubleshootingGuideNotificationAction(targetUrl: String) = OpenBrowserAction(
