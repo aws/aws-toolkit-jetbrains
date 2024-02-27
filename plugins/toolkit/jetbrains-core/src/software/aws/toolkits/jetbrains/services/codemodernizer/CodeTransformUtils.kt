@@ -168,15 +168,13 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 
     try {
         waitUntil(
-            succeedOn = { state in succeedOn },
-            failOn = { state in failOn },
+            succeedOn = { result -> result in succeedOn },
+            failOn = { result -> result in failOn },
             maxDuration = maxDuration,
             exceptionsToStopOn = setOf(
                 InternalServerException::class,
                 ValidationException::class,
-                AccessDeniedException::class,
                 AwsServiceException::class,
-                SdkClientException::class,
                 CodeWhispererRuntimeException::class,
                 RuntimeException::class,
             ),
@@ -215,9 +213,11 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 }
                 state = newStatus
                 numRefreshes = 0
+                return@waitUntil state
             } catch (e: AccessDeniedException) {
                 if (numRefreshes++ > maxRefreshes) throw e
                 refreshToken(project)
+                return@waitUntil state
             } finally {
                 sleep(sleepDurationMillis)
             }
