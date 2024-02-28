@@ -89,8 +89,6 @@ val TERMINAL_STATES = setOf(
     TransformationStatus.COMPLETED,
 )
 
-private val LOG = LoggerFactory.getLogger("CodeTransformUtils")
-
 fun String.toVirtualFile() = VirtualFileManager.getInstance().findFileByUrl(VfsUtilCore.pathToUrl(this))
 fun Project.moduleFor(path: String) = ModuleUtil.findModuleForFile(
     path.toVirtualFile() ?: throw RuntimeException("File not found $path"),
