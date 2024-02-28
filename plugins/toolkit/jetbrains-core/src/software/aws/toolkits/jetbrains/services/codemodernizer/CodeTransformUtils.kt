@@ -281,7 +281,7 @@ fun getJavaVersionFromProjectSetting(project: Project): String? = project.tryGet
 
 fun getMavenVersion(project: Project): String {
     val mavenSettings = MavenProjectsManager.getInstance(project).getGeneralSettings()
-    // should be set to Maven Wrapper if setup instructions were followed
+    // should be set to "Bundled (Maven X)" if setup instructions were followed
     return mavenSettings.getMavenHome() ?: "Unknown"
 }
 
