@@ -157,6 +157,8 @@ object IdeVersions {
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
+                    // transitive for python
+                    "org.toml.lang:241.13688.21",
                     "PythonCore:241.13688.18",
                     "Docker:241.13688.22"
                 )
@@ -172,6 +174,8 @@ object IdeVersions {
                     "JavaScriptDebugger",
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
+                    // transitive for python
+                    "org.toml.lang:241.13688.21",
                     "Pythonid:241.13688.18",
                     "org.jetbrains.plugins.go:241.13688.18",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
