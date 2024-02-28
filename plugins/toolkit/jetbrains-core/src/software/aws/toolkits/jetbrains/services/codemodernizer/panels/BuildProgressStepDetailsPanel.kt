@@ -135,20 +135,28 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
         }
     }
 
+    fun setStopView() {
+        val newElements = getTransformationProgressStepsByTransformationStepId(currentStepIdRendered, transformationPlanLocal).map {
+            // For the currently ongoing step, stop the spinner and show "Job is stopped" description with red color
+            if (it.status == BuildStepStatus.WORKING) it.copy(status = BuildStepStatus.ERROR, description = message("codemodernizer.migration_plan.substeps.description_stopped")) else it
+        }
+        renderStepDetailElements(newElements)
+    }
+
     fun updateListData(stepId: Int) {
         currentStepIdRendered = stepId
-        val model = stepDetailsList.model as DefaultListModel<BuildProgressTimelineStepDetailItem>
         val newElements = getTransformationProgressStepsByTransformationStepId(stepId, transformationPlanLocal)
+        renderStepDetailElements(newElements)
+    }
 
-        // Clear the existing elements
+    private fun renderStepDetailElements(elements: List<BuildProgressTimelineStepDetailItem>) {
+        val model = stepDetailsList.model as DefaultListModel<BuildProgressTimelineStepDetailItem>
         model.removeAllElements()
-
-        // Add the new elements
-        for (element in newElements) {
+        for (element in elements) {
             model.addElement(element)
         }
         stepDetailsList.model = model
-        val stepName = transformationPlanLocal?.transformationSteps()?.get(stepId - 1)?.name().orEmpty()
+        val stepName = transformationPlanLocal?.transformationSteps()?.get(currentStepIdRendered - 1)?.name().orEmpty()
         setHeaderText("$stepName details")
         revalidate()
         repaint()
