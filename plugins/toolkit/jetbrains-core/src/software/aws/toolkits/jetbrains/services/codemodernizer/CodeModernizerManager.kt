@@ -383,7 +383,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             is CodeModernizerStartJobResult.UnableToStartJob -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
-                    message("codemodernizer.notification.warn.unable_to_start_job", result.exception), // TODO maybe not display the entire message
+                    message("codemodernizer.notification.warn.unable_to_start_job", result.exception),
                     true,
                 )
             }
@@ -586,13 +586,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.maven_issues.url"))),
+                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS)),
             )
             is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> notifyStickyInfo(
                 message("codemodernizer.notification.warn.zip_too_large.title"),
                 message("codemodernizer.notification.warn.zip_too_large.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.prerequisites.url"))),
+                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES)),
             )
         }
     }
@@ -677,7 +677,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             message("codemodernizer.validationerrordialog.description.title"),
             message("codemodernizer.validationerrordialog.description.main"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.prerequisites.url"))),
+            listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES)),
         )
     }
 

@@ -416,7 +416,6 @@ class CodeModernizerSession(
                 TransformationStatus.FAILED,
             )
         ) {
-            // val response = TODO()
             val summary = TransformationSummary(
                 """
             # Transformation summary
