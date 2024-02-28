@@ -88,9 +88,12 @@ val TERMINAL_STATES = setOf(
     TransformationStatus.COMPLETED,
 )
 
-const val TROUBLESHOOTING_URL_DOWNLOAD_DIFF = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19c11" // ktlint-disable max-line-length
-const val TROUBLESHOOTING_URL_MAVEN_COMMANDS = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19b7" // ktlint-disable max-line-length
-const val TROUBLESHOOTING_URL_PREREQUISITES = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#prerequisites"
+const val TROUBLESHOOTING_URL_DOWNLOAD_DIFF =
+    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19c11"
+const val TROUBLESHOOTING_URL_MAVEN_COMMANDS =
+    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19b7"
+const val TROUBLESHOOTING_URL_PREREQUISITES =
+    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#prerequisites"
 
 fun String.toVirtualFile() = VirtualFileManager.getInstance().findFileByUrl(VfsUtilCore.pathToUrl(this))
 fun Project.moduleFor(path: String) = ModuleUtil.findModuleForFile(
