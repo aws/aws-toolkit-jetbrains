@@ -12,7 +12,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.serviceContainer.AlreadyDisposedException
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.plugins.gradle.settings.GradleSettings
-import org.slf4j.LoggerFactory
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException

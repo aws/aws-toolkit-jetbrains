@@ -24,8 +24,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.summary.CodeModernizerSummaryEditorProvider
-import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPatchViewerCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
@@ -111,7 +111,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     codeTransformRunTimeLatency = calculateTotalLatency(downloadStartTime, Instant.now()),
                     codeTransformJobId = job.id,
                     codeTransformTotalByteSize = totalDownloadBytes,
-                    codeTransformRuntimeError = telemetryErrorMessage
+                    codeTransformRuntimeError = telemetryErrorMessage,
                 )
             }
         } catch (e: Exception) {
@@ -144,21 +144,21 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             CodetransformTelemetry.vcsDiffViewerVisible(
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                codeTransformJobId = jobId.id
+                codeTransformJobId = jobId.id,
             )
 
             if (dialog.showAndGet()) {
                 CodetransformTelemetry.vcsViewerSubmitted(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformJobId = jobId.id,
-                    codeTransformStatus = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
+                    codeTransformStatus = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString(),
                 )
             } else {
                 CodetransformTelemetry.vcsViewerCanceled(
                     codeTransformPatchViewerCancelSrcComponents = CodeTransformPatchViewerCancelSrcComponents.CancelButton,
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformJobId = jobId.id,
-                    codeTransformStatus = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
+                    codeTransformStatus = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString(),
                 )
             }
         }
@@ -170,7 +170,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.warn.view_diff_failed.title"),
             message("codemodernizer.notification.warn.view_diff_failed.content"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.download_diff.url")))
+            listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.download_diff.url"))),
         )
     }
 
@@ -180,7 +180,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.warn.view_summary_failed.title"),
             message("codemodernizer.notification.warn.view_summary_failed.content"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.download_diff.url")))
+            listOf(openTroubleshootingGuideNotificationAction(message("codemodernizer.notification.info.view_troubleshooting_guide.download_diff.url"))),
         )
     }
 
@@ -188,7 +188,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         CodetransformTelemetry.vcsViewerClicked(
             codeTransformVCSViewerSrcComponents = CodeTransformVCSViewerSrcComponents.ToastNotification,
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            codeTransformJobId = jobId.id
+            codeTransformJobId = jobId.id,
         )
         projectCoroutineScope(project).launch {
             displayDiff(jobId)
