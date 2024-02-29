@@ -51,6 +51,7 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 
 val STATES_WHERE_PLAN_EXIST = setOf(
     TransformationStatus.PLANNED,
@@ -222,6 +223,8 @@ suspend fun JobId.pollTransformationStatusAndPlan(
             }
         }
     } catch (e: WaiterUnrecoverableException) {
+        return PollingResult(false, transformationResponse?.transformationJob(), state, transformationPlan)
+    } catch (e: AccessDeniedException) {
         return PollingResult(false, transformationResponse?.transformationJob(), state, transformationPlan)
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
