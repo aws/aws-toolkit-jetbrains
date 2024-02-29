@@ -138,7 +138,14 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
     fun setStopView() {
         val newElements = getTransformationProgressStepsByTransformationStepId(currentStepIdRendered, transformationPlanLocal).map {
             // For the currently ongoing step, stop the spinner and show "Job is stopped" description with red color
-            if (it.status == BuildStepStatus.WORKING) it.copy(status = BuildStepStatus.ERROR, description = message("codemodernizer.migration_plan.substeps.description_stopped")) else it
+            if (it.status == BuildStepStatus.WORKING) {
+                it.copy(
+                    status = BuildStepStatus.ERROR,
+                    description = message("codemodernizer.migration_plan.substeps.description_stopped")
+                )
+            } else {
+                it
+            }
         }
         renderStepDetailElements(newElements)
     }
