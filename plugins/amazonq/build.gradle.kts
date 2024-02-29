@@ -36,7 +36,3 @@ configurations {
         exclude(group = "org.jetbrains.kotlinx")
     }
 }
-
-tasks.jar {
-    enabled = false
-}

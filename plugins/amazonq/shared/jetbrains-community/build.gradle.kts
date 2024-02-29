@@ -10,3 +10,8 @@ plugins {
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
+
+dependencies {
+    // delete when fully split
+    compileOnly(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
+}

@@ -9,7 +9,3 @@ dependencies {
     implementation(project(":plugin-amazonq:codewhisperer:jetbrains-community", "instrumentedJar"))
     implementation(project(":plugin-amazonq:codewhisperer:jetbrains-ultimate", "instrumentedJar"))
 }
-
-tasks.jar {
-    enabled = false
-}
