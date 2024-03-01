@@ -279,7 +279,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             revalidate()
         } else if (newState == TransformationStatus.STOPPED || newState == TransformationStatus.FAILED) {
             setSplitPanelStopView()
-            buildProgressStepDetailsPanel.setStopView()
+            buildProgressStepDetailsPanel.setStopView(newState)
             revalidate()
             repaint()
         } else {

@@ -7,6 +7,7 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.BuildProgressTimelineStepDetailItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.BuildStepStatus
@@ -135,13 +136,17 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
         }
     }
 
-    fun setStopView() {
+    fun setStopView(state: TransformationStatus) {
         val newElements = getTransformationProgressStepsByTransformationStepId(currentStepIdRendered, transformationPlanLocal).map {
             // For the currently ongoing step, stop the spinner and show "Job is stopped" description with red color
             if (it.status == BuildStepStatus.WORKING) {
                 it.copy(
                     status = BuildStepStatus.ERROR,
-                    description = message("codemodernizer.migration_plan.substeps.description_stopped")
+                    description = if (state == TransformationStatus.STOPPED) {
+                        message("codemodernizer.migration_plan.substeps.description_stopped")
+                    } else {
+                        message("codemodernizer.migration_plan.substeps.description_failed")
+                    }
                 )
             } else {
                 it

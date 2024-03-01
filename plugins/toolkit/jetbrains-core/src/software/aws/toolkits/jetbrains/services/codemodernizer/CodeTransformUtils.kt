@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
@@ -223,7 +224,12 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     } catch (e: Exception) {
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
-        return PollingResult(false, transformationResponse?.transformationJob(), state, transformationPlan)
+        when (e) {
+            is WaiterUnrecoverableException, is AccessDeniedException -> {
+                return PollingResult(false, transformationResponse?.transformationJob(), state, transformationPlan)
+            }
+            else -> throw e
+        }
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
 }
