@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.ui.Messages
 import software.aws.toolkits.resources.AmazonQBundle
 
 class Hello : AnAction(AmazonQBundle.message("q.hello")), DumbAware {
