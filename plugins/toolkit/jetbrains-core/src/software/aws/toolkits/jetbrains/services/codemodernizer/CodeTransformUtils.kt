@@ -206,7 +206,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                         codeTransformStatus = "PLAN_UPDATED"
                     )
                 }
-                if (newStatus != state || newPlan != transformationPlan) {
+                if (newStatus !in failOn && (newStatus != state || newPlan != transformationPlan)) {
                     transformationPlan = newPlan
                     onStateChange(state, newStatus, transformationPlan)
                 }
