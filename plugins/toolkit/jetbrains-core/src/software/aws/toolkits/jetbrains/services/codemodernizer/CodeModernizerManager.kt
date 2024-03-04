@@ -226,9 +226,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         )
     }
 
-    private fun sendValidationResultTelemetry(validationResult: ValidationResult, projectOnLoad: Boolean = false) {
+    private fun sendValidationResultTelemetry(validationResult: ValidationResult, onProjectFirstOpen: Boolean = false) {
         // Old telemetry event to be fired only when users click on transform
-        if (!validationResult.valid && !projectOnLoad) {
+        if (!validationResult.valid && !onProjectFirstOpen) {
             CodetransformTelemetry.isDoubleClickedToTriggerInvalidProject(
                 codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
@@ -461,10 +461,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (!notYetResumed) {
                 return@launch
             }
-
-            // Gather project details
-            val validationResult = validate(project)
-            sendValidationResultTelemetry(validationResult, true)
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch

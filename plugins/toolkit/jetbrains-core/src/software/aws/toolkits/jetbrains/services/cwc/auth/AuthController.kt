@@ -34,7 +34,7 @@ class AuthController {
                         authType = AuthFollowUpType.FullAuth,
                     )
                 } else {
-                    // There is a connection for codewhisperer, but it's not valid for Q
+                  g  // There is a connection for codewhisperer, but it's not valid for Q
                     AuthNeededState(
                         message = message("q.connection.need_scopes"),
                         authType = AuthFollowUpType.MissingScopes,
