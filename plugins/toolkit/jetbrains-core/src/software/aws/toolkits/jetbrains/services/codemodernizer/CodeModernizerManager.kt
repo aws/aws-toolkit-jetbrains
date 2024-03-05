@@ -451,7 +451,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun tryResumeJob() = projectCoroutineScope(project).launch {
+    fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
             // If the job is already running, compareAndSet will return false because the expected
@@ -462,6 +462,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
+
+            // Gather project details
+            if (onProjectFirstOpen) {
+                val validationResult = validate(project)
+                sendValidationResultTelemetry(validationResult, onProjectFirstOpen)
+            }
+
             val context = managerState.toSessionContext(project)
             val session = CodeModernizerSession(context)
             val lastJobId = managerState.getLatestJobId()
