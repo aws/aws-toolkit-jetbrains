@@ -21,7 +21,6 @@ class PythonRuntimeGroup : SdkBasedRuntimeGroup() {
     override val supportsPathMappings: Boolean = true
 
     override val supportedRuntimes = listOf(
-        LambdaRuntime.PYTHON3_7,
         LambdaRuntime.PYTHON3_8,
         LambdaRuntime.PYTHON3_9,
         LambdaRuntime.PYTHON3_10,
@@ -37,7 +36,6 @@ class PythonRuntimeGroup : SdkBasedRuntimeGroup() {
         PythonSdkType.getLanguageLevelForSdk(sdk).isAtLeast(LanguageLevel.PYTHON310) -> LambdaRuntime.PYTHON3_10
         PythonSdkType.getLanguageLevelForSdk(sdk).isAtLeast(LanguageLevel.PYTHON39) -> LambdaRuntime.PYTHON3_9
         PythonSdkType.getLanguageLevelForSdk(sdk).isAtLeast(LanguageLevel.PYTHON38) -> LambdaRuntime.PYTHON3_8
-        PythonSdkType.getLanguageLevelForSdk(sdk).isAtLeast(LanguageLevel.PYTHON37) -> LambdaRuntime.PYTHON3_7
 
         else -> null
     }

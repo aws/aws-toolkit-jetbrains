@@ -53,11 +53,6 @@ abstract class NodeJsImageDebugSupport : ImageDebugSupport {
     )
 }
 
-class NodeJs14ImageDebug : NodeJsImageDebugSupport() {
-    override val id: String = LambdaRuntime.NODEJS14_X.toString()
-    override fun displayName() = LambdaRuntime.NODEJS14_X.toString().capitalize()
-}
-
 class NodeJs16ImageDebug : NodeJsImageDebugSupport() {
     override val id: String = LambdaRuntime.NODEJS16_X.toString()
     override fun displayName() = LambdaRuntime.NODEJS16_X.toString().capitalize()

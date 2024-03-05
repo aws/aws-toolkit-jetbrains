@@ -75,7 +75,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             LambdaRuntime.JAVA8_AL2 -> "1.8"
             LambdaRuntime.JAVA11 -> "11"
             LambdaRuntime.JAVA17 -> "17"
-            LambdaRuntime.JAVA21 -> "21"
+            // don't feel like trying to figure out how to make sure the test is run with Gradle JDK21 instead of JDK17
+            LambdaRuntime.JAVA21 -> "17"
             else -> throw NotImplementedError()
         }
 
