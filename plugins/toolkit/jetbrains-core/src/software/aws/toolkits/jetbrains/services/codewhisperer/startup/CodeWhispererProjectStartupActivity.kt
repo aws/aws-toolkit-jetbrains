@@ -86,7 +86,6 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             notificationActions = listOf(
                 NotificationAction.createSimpleExpiring(message("aws.notification.auto_update.feature_intro.ok")) {},
                 NotificationAction.createSimple(message("aws.notification.auto_update.settings.title")) {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
                     ToolkitTelemetry.invokeAction(
                         project = null,
                         result = Result.Succeeded,
@@ -94,6 +93,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
                         source = ToolkitUpdateManager.SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY,
                         component = Component.Filesystem
                     )
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
                 }
             )
         )

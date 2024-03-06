@@ -107,7 +107,6 @@ class ToolkitUpdateManager {
             project = null,
             notificationActions = listOf(
                 NotificationAction.createSimpleExpiring(message("aws.settings.auto_update.notification.yes")) {
-                    // It's better to send this telemetry before the action is done
                     ToolkitTelemetry.invokeAction(
                         project = null,
                         result = Result.Succeeded,
@@ -127,7 +126,6 @@ class ToolkitUpdateManager {
                     )
                 },
                 NotificationAction.createSimple(message("aws.notification.auto_update.settings.title")) {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsConfigurable::class.java)
                     ToolkitTelemetry.invokeAction(
                         project = null,
                         result = Result.Succeeded,
@@ -135,6 +133,7 @@ class ToolkitUpdateManager {
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem
                     )
+                    ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsConfigurable::class.java)
                 }
             )
         )
