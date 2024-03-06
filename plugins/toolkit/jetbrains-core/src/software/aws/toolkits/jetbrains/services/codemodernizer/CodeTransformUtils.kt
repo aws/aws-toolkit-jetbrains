@@ -196,7 +196,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     CodetransformTelemetry.jobStatusChanged(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                         codeTransformJobId = this.id,
-                        codeTransformStatus = newStatus.toString()
+                        codeTransformStatus = "$state -> $newStatus", // old status -> new status
                     )
                 }
                 if (newPlan != transformationPlan) {

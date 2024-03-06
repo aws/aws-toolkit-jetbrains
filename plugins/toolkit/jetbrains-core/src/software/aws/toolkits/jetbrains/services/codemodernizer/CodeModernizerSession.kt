@@ -284,6 +284,7 @@ class CodeModernizerSession(
         if (!shouldStop.get()) {
             CodetransformTelemetry.logApiLatency(
                 codeTransformApiNames = CodeTransformApiNames.UploadZip,
+                codeTransformUploadId = createUploadUrlResponse.uploadId(),
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                 codeTransformRunTimeLatency = calculateTotalLatency(uploadStartTime, Instant.now()),
                 codeTransformTotalByteSize = payload.length().toInt()

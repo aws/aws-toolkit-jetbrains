@@ -5,9 +5,11 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -98,6 +100,14 @@ open class CodeModernizerArtifact(
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
             if (!patchesDir.isDirectory()) {
                 throw RuntimeException("Expected root for patches was not a directory.")
+            }
+            val patch = patchesDir.walk().map { fileSystem.findFileByNioFile(it) }.toList()
+            if (patch[0] == null) {
+                ApplicationManager.getApplication().invokeLater {
+                    ApplicationManager.getApplication().runWriteAction {
+                        VirtualFileManager.getInstance().syncRefresh() // try refreshing Virtual File System if diff.patch not found
+                    }
+                }
             }
             return patchesDir.walk()
                 .map { fileSystem.findFileByNioFile(it) ?: throw RuntimeException("Could not find patch") }
