@@ -55,7 +55,6 @@ open class CodeModernizerArtifact(
                 val manifest = loadManifest()
                 if (manifest.version > maxSupportedVersion) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
-                    // Can also notify user to consider upgrading the toolkit version.
                     LOG.warn { "Unsupported version: ${manifest.version}" }
                 }
                 val patches = extractPatches(manifest)
@@ -101,15 +100,17 @@ open class CodeModernizerArtifact(
             if (!patchesDir.isDirectory()) {
                 throw RuntimeException("Expected root for patches was not a directory.")
             }
-            val patch = patchesDir.walk().map { fileSystem.findFileByNioFile(it) }.toList()
-            if (patch[0] == null) {
-                ApplicationManager.getApplication().invokeLater {
+            val patchPathSequence = patchesDir.walk()
+            val patchFileList = patchPathSequence.map { fileSystem.findFileByNioFile(it) }.toList()
+            if (patchFileList[0] == null) {
+                ApplicationManager.getApplication().invokeAndWait {
                     ApplicationManager.getApplication().runWriteAction {
-                        VirtualFileManager.getInstance().syncRefresh() // try refreshing Virtual File System if diff.patch not found
+                        // try refreshing Virtual File System if diff.patch not found
+                        VirtualFileManager.getInstance().refreshAndFindFileByNioPath(patchPathSequence.first())
                     }
                 }
             }
-            return patchesDir.walk()
+            return patchPathSequence
                 .map { fileSystem.findFileByNioFile(it) ?: throw RuntimeException("Could not find patch") }
                 .toList()
         }
