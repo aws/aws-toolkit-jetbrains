@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.isFile
 import org.apache.commons.codec.digest.DigestUtils
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.putNextEntry
@@ -15,7 +16,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model.ZipCreat
 import java.io.File
 import java.io.FileInputStream
 import java.util.Base64
-import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
 class FeatureDevSessionContext(val project: Project) {
@@ -50,19 +50,19 @@ class FeatureDevSessionContext(val project: Project) {
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    private fun ignoreFile(file: File): Boolean {
-        val ignorePatternsWithGitIgnore = ignorePatterns + parseGitIgnore(File(projectRoot.path, ".gitignore")).map { Regex(it) }
-        return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
-    }
+    private fun zipFiles(projectRoot: VirtualFile): File {
+        val gitIgnorePatterns = parseGitIgnore(File(projectRoot.path, ".gitignore")).map { Regex(it) }
+        val allIgnorePatterns = ignorePatterns + gitIgnorePatterns
 
-    private fun zipFiles(projectRoot: VirtualFile): File = createTemporaryZipFile {
-        VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->
-            if (file.isFile() && !ignoreFile(file)) {
-                val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                it.putNextEntry(relativePath.toString(), Path(file.path))
+        return createTemporaryZipFile {
+            VfsUtil.collectChildrenRecursively(projectRoot).forEach { virtualFile ->
+                if (virtualFile.isFile && !allIgnorePatterns.any { p -> p.containsMatchIn(virtualFile.path) }) {
+                    val relativePath = virtualFile.toNioPath().relativeTo(projectRoot.toNioPath())
+                    it.putNextEntry(relativePath.toString(), virtualFile.toNioPath())
+                }
             }
-        }
-    }.toFile()
+        }.toFile()
+    }
 
     private fun parseGitIgnore(gitIgnoreFile: File): List<String> {
         if (!gitIgnoreFile.exists()) {
