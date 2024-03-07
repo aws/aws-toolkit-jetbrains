@@ -100,18 +100,8 @@ open class CodeModernizerArtifact(
             if (!patchesDir.isDirectory()) {
                 throw RuntimeException("Expected root for patches was not a directory.")
             }
-            val patchPathSequence = patchesDir.walk()
-            val patchFileList = patchPathSequence.map { fileSystem.findFileByNioFile(it) }.toList()
-            if (patchFileList[0] == null) {
-                ApplicationManager.getApplication().invokeAndWait {
-                    ApplicationManager.getApplication().runWriteAction {
-                        // try refreshing Virtual File System if diff.patch not found
-                        VirtualFileManager.getInstance().refreshAndFindFileByNioPath(patchPathSequence.first())
-                    }
-                }
-            }
-            return patchPathSequence
-                .map { fileSystem.findFileByNioFile(it) ?: throw RuntimeException("Could not find patch") }
+            return patchesDir.walk()
+                .map { fileSystem.refreshAndFindFileByNioFile(it) ?: throw RuntimeException("Could not find patch") }
                 .toList()
         }
     }
