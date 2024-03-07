@@ -287,7 +287,8 @@ class CodeModernizerSession(
                 codeTransformUploadId = createUploadUrlResponse.uploadId(),
                 codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                 codeTransformRunTimeLatency = calculateTotalLatency(uploadStartTime, Instant.now()),
-                codeTransformTotalByteSize = payload.length().toInt()
+                codeTransformTotalByteSize = payload.length().toInt(),
+                codeTransformRequestId = createUploadUrlResponse.responseMetadata().requestId()
             )
             LOG.warn { "Upload complete" }
         }
