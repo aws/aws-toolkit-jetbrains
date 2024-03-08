@@ -10,6 +10,8 @@ plugins {
 dependencies {
     api(project(":plugin-toolkit:resources"))
     compileOnly(project(":plugin-core:sdk-codegen"))
+    // delete when fully split
+    implementation(project(":plugin-core:sdk-codegen"))
 
     api(libs.aws.cognitoidentity)
     api(libs.aws.ecr)
