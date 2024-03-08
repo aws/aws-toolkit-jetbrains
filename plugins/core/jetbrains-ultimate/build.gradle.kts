@@ -12,5 +12,5 @@ intellijToolkit {
 }
 
 dependencies {
-    compileOnly(project(":plugin-core:jetbrains-ultimate"))
+    compileOnly(project(":plugin-core:jetbrains-community"))
 }
