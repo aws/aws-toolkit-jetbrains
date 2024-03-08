@@ -53,9 +53,6 @@ class AwsSdkClientProxyTest {
 
     @Before
     fun setUp() {
-        println("file: ${ProfileFileLocation.configurationFilePath()}")
-        println("loca: ${ProfileFileLocation.configurationFileLocation()}")
-        println("envv: ${System.getenv("AWS_CONFIG_FILE")}")
         awsSdkClient = AwsSdkClient()
         Disposer.register(disposableRule.disposable, awsSdkClient)
 
