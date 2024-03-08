@@ -11,11 +11,28 @@ import java.io.File
 import java.lang.Math.max
 import java.lang.Math.min
 
-class JetBrainsWriter(private val changeNotesFile: File, issueUrl: String? = null) : ChangeLogWriter(issueUrl) {
+class JetBrainsWriter(private val changeNotesFile: File, repoUrl: String? = null) : ChangeLogWriter(repoUrl) {
     private val sb = StringBuilder()
+    private var entryCount = 0
 
-    override fun append(line: String) {
-        sb.append(line)
+    override fun append(entry: String) {
+        // if there are too many entries, we fail validation:
+        // Invalid plugin descriptor 'plugin.xml'. The value of the '<change-notes>' parameter is too long. Its length is 65573 which is more than maximum 65535 characters long.
+        // HtmlRenderer is not that flexible, so do the simple thing instead of trying to backtrack and maximize the size of the bundled changelog
+        if (entryCount > 10) return
+        if (++entryCount > 10) {
+            // language=Markdown
+            repoUrl?.let {
+                sb.append("""
+                    ----
+                    Full plugin changelog available on [GitHub]($repoUrl/blob/main/CHANGELOG.md)
+                """.trimIndent())
+            }
+
+            return
+        }
+
+        sb.append(entry)
     }
 
     override fun close() {

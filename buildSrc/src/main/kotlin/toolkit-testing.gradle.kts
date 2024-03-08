@@ -17,7 +17,12 @@ dependencies {
     testImplementation(versionCatalog.findBundle("mockito").get())
     testImplementation(versionCatalog.findLibrary("assertj").get())
 
-    // Don't add a test framework by default since we use junit4, junit5, and testng depending on project
+    // Everything uses junit4/5 except rider, which uses TestNG
+    testImplementation(platform(versionCatalog.findLibrary("junit5-bom").get()))
+    testImplementation(versionCatalog.findLibrary("junit5-jupiterApi").get())
+
+    testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterEngine").get())
+    testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterVintage").get())
 }
 
 jacoco {
@@ -46,6 +51,8 @@ artifacts {
 }
 
 tasks.withType<Test>().all {
+    useJUnitPlatform()
+
     ciOnly {
         retry {
             failOnPassedAfterRetry.set(false)
