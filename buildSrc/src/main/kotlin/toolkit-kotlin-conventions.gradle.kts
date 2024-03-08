@@ -55,7 +55,7 @@ tasks.withType<KotlinCompile>().all {
     kotlinOptions {
         jvmTarget = javaVersion.majorVersion
         apiVersion = project.kotlinTarget().get()
-        languageVersion = project.kotlinTarget().get()
+        languageVersion = "2.0"
         freeCompilerArgs = listOf("-Xjvm-default=all")
     }
 }
