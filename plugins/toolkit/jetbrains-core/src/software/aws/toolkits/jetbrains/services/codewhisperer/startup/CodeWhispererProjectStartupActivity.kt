@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
@@ -54,10 +55,12 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             CodeWhispererStatusBarManager.getInstance(project).updateWidget()
         }
-        ToolkitUpdateManager.getInstance()
-        if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
-            notifyAutoUpdateFeature(project)
-            AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
+        RunOnceUtil.runOnceForApp("Auto update init") {
+            ToolkitUpdateManager.getInstance()
+            if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
+                notifyAutoUpdateFeature(project)
+                AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
+            }
         }
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return

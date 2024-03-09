@@ -4,10 +4,12 @@
 package software.aws.toolkits.jetbrains.core.plugins
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
+import com.intellij.ide.plugins.InstalledPluginsState
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -65,6 +67,12 @@ class ToolkitUpdateManager {
     fun checkForUpdates(progressIndicator: ProgressIndicator) {
         // Note: This will need to handle exceptions and ensure thread-safety
         try {
+            // wasUpdatedWithRestart means that, it was an update and it needs to restart to apply
+            if (InstalledPluginsState.getInstance().wasUpdatedWithRestart(PluginId.getId(AwsToolkit.PLUGIN_ID))) {
+                LOG.debug { "AWS Toolkit was recently updated and needed restart, not performing auto-update again" }
+                return
+            }
+
             val toolkitPlugin = AwsToolkit.DESCRIPTOR as IdeaPluginDescriptor? ?: return
             if (!toolkitPlugin.isEnabled) {
                 LOG.debug { "AWS Toolkit is disabled, not performing auto-update" }
@@ -89,7 +97,7 @@ class ToolkitUpdateManager {
                 component = Component.Filesystem
             )
         } catch (e: Exception) {
-            LOG.debug(e) { "Unable to install AWS Toolkit" }
+            LOG.debug(e) { "Unable to update AWS Toolkit" }
             ToolkitTelemetry.showAction(
                 project = null,
                 success = false,
@@ -142,8 +150,9 @@ class ToolkitUpdateManager {
     @VisibleForTesting
     internal fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
         getUpdateInfo().firstOrNull {
-            it.id == pluginDescriptor.pluginId &&
-                compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
+            it.id == pluginDescriptor.pluginId && (
+                compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0 || true
+                )
         }
 
     // TODO: Optimize this to only search the result for AWS Toolkit
