@@ -556,7 +556,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
             }
         }
         // reformat should fire documentChanged events, but tracker should not update token from these events
-        // verify(sut, atLeastOnce()).documentChanged(any())
+        verify(sut, atLeastOnce()).documentChanged(any())
         assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
 
         val formatted = """
