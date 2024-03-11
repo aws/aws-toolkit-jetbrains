@@ -45,7 +45,7 @@ tasks.test {
 
 tasks.register<Test>("uiTestCore") {
     dependsOn(":plugin-toolkit:intellij:buildPlugin")
-    inputs.files(project(":plugin-toolkit:intellij:buildPlugin").configurations.runtimeClasspath)
+    inputs.files(":plugin-toolkit:intellij:buildPlugin")
 
     systemProperty("ide.experimental.ui", false)
     systemProperty("org.gradle.project.ideProfileName", ideProfileName)
