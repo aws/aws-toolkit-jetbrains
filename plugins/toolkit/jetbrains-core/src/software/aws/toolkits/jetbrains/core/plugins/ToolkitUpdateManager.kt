@@ -150,9 +150,8 @@ class ToolkitUpdateManager {
     @VisibleForTesting
     internal fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
         getUpdateInfo().firstOrNull {
-            it.id == pluginDescriptor.pluginId && (
-                compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0 || true
-                )
+            it.id == pluginDescriptor.pluginId &&
+                compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
         }
 
     // TODO: Optimize this to only search the result for AWS Toolkit
