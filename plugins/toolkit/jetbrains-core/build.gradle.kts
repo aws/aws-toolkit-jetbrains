@@ -145,6 +145,7 @@ dependencies {
     runtimeOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
     // can't seem to make this transitive from :plugin-core:jetbrains-community
     compileOnly(project(":plugin-core:sdk-codegen"))
+    testImplementation(project(":plugin-core:sdk-codegen"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.aws.crt)
