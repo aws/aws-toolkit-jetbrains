@@ -87,12 +87,12 @@ abstract class CodeWhispererCodeCoverageTracker(
                     val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
                     rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
                     runReadAction {
+                        // also increment total tokens because accepted tokens are part of it
+                        incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
                         // avoid counting CodeWhisperer inserted suggestion twice in total tokens
                         if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
                             incrementTotalTokens(rangeMarker.document, -rangeMarker.textRange.length)
                         }
-                        // also increment total tokens because accepted tokens are part of it
-                        incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
                     }
                 }
             }
@@ -130,7 +130,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         if ((event.newLength == 1 && event.oldLength == 0) || (text.startsWith('\n') && text.trim().isEmpty())) {
             incrementTotalTokens(event.document, 1)
             return
-        } else if (event.newLength < 50 && event.oldLength == 0 && text.trim().isNotEmpty()) {
+        } else if (event.newLength < 50 && text.trim().isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
             incrementTotalTokens(event.document, event.newLength)
