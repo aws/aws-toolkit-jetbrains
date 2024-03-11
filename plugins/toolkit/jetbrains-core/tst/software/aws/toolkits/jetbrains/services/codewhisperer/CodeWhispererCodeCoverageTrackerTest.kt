@@ -245,7 +245,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
     }
 
     @Test
-    fun `test tracker is not listening to multi char input and will not increment totalTokens - add new code`() {
+    fun `test tracker is not listening to multi char input more than 50 and will not increment totalTokens - add new code`() {
         sut = spy(TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE))
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
@@ -259,15 +259,15 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(pythonTestLeftContext)
-        assertThat(sut.totalTokensSize).isEqualTo(0)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
 
-        val anotherCode = "(x, y):"
+        val anotherCode = "(x, y):".repeat(8)
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
                 fixture.editor.appendString(anotherCode)
             }
         }
-        assertThat(sut.totalTokensSize).isEqualTo(0)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
     }
 
     @Test
@@ -555,7 +555,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
                 CodeStyleManager.getInstance(project).reformatText(file, 0, fixture.editor.document.textLength)
             }
         }
-        // reformat should fire documentChanged events, but tracker should not update token from these events
+        // reformat should fire documentChanged events, tracker should update token from these events if they are less than 50 char
         verify(sut, atLeastOnce()).documentChanged(any())
         assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
 
