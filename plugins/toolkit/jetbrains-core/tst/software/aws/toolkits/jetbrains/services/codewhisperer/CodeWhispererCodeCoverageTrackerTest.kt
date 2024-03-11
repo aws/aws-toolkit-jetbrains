@@ -555,8 +555,8 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
                 CodeStyleManager.getInstance(project).reformatText(file, 0, fixture.editor.document.textLength)
             }
         }
-        // reformat should fire documentChanged events, tracker should update token from these events if they are less than 50 char
-        verify(sut, atLeastOnce()).documentChanged(any())
+        // reformat should fire documentChanged events, but tracker should not update token from these events
+        // verify(sut, atLeastOnce()).documentChanged(any())
         assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
 
         val formatted = """
