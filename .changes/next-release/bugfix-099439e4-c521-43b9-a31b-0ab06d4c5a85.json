@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Updating error telemetry on upload zip errors for Q Code Transform."
+}
