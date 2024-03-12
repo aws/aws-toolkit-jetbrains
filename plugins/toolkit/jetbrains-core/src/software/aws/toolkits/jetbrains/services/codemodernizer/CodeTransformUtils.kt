@@ -196,16 +196,14 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     CodetransformTelemetry.jobStatusChanged(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                         codeTransformJobId = this.id,
-                        codeTransformStatus = newStatus.toString(),
-                        codeTransformPreviousStatus = state.toString()
+                        codeTransformStatus = newStatus.toString()
                     )
                 }
                 if (newPlan != transformationPlan) {
                     CodetransformTelemetry.jobStatusChanged(
                         codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                         codeTransformJobId = this.id,
-                        codeTransformStatus = "PLAN_UPDATED",
-                        codeTransformPreviousStatus = state.toString()
+                        codeTransformStatus = "PLAN_UPDATED"
                     )
                 }
                 if (newStatus !in failOn && (newStatus != state || newPlan != transformationPlan)) {
