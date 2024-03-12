@@ -168,8 +168,7 @@ class ToolkitUpdateManager {
 
     // TODO: Optimize this to only search the result for AWS Toolkit
     @VisibleForTesting
-    internal fun getUpdateInfo(): Collection<PluginDownloader> =
-        UpdateChecker.getInternalPluginUpdates().pluginUpdates.allEnabled
+    internal fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()
 
     companion object {
         fun getInstance(): ToolkitUpdateManager = service()
