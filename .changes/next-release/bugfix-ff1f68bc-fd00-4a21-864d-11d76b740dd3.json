@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Include small user copied code in percentage code written metrics"
+  "description" : "CodeWhisperer: Include copied code in percentage code written metrics"
 }
