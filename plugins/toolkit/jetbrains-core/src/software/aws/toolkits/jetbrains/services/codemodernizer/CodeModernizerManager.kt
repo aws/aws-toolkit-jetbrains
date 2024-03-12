@@ -484,7 +484,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                         message("codemodernizer.manager.job_finished_title"),
                         message("codemodernizer.manager.job_finished_content"),
                         project,
-                        listOf(displayDiffNotificationAction(lastJobId), displaySummaryNotificationAction(lastJobId), viewTransformationHubAction())
+                        listOf(displayDiffNotificationAction(lastJobId),
+                            displaySummaryNotificationAction(lastJobId),
+                            viewTransformationHubAction()
+                        )
                     )
                     resumeJob(session, lastJobId, result)
                     setJobNotOngoing()
@@ -495,7 +498,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                         message("codemodernizer.notification.info.modernize_failed.title"),
                         message("codemodernizer.manager.job_failed_content", result.reason()),
                         project,
-                        listOf(displayDiffNotificationAction(lastJobId), displaySummaryNotificationAction(lastJobId), displayFeedbackNotificationAction(), viewTransformationHubAction())
+                        listOf(
+                            displayDiffNotificationAction(lastJobId),
+                            displaySummaryNotificationAction(lastJobId),
+                            displayFeedbackNotificationAction(),
+                            viewTransformationHubAction()
+                        )
                     )
                     resumeJob(session, lastJobId, result)
                     setJobNotOngoing()
