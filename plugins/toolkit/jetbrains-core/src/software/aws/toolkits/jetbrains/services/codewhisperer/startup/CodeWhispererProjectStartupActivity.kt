@@ -58,11 +58,12 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         }
 
         // We want the auto-update feature to be triggered only once per running application
-        if (autoUpdateRunOnce.getAndSet(true)) return
-        ToolkitUpdateManager.getInstance()
-        if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
-            notifyAutoUpdateFeature(project)
-            AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
+        if (!autoUpdateRunOnce.getAndSet(true)) {
+            ToolkitUpdateManager.getInstance()
+            if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
+                notifyAutoUpdateFeature(project)
+                AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
+            }
         }
 
         if (!isCodeWhispererEnabled(project)) return
