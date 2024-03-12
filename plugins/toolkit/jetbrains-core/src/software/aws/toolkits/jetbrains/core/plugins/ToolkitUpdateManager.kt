@@ -107,6 +107,18 @@ class ToolkitUpdateManager {
                 reason = e.message
             )
             return
+        } catch (e: Error) {
+            // Handle cases like NoSuchMethodError when the API is not available in certain versions
+            LOG.debug(e) { "Unable to update AWS Toolkit" }
+            ToolkitTelemetry.showAction(
+                project = null,
+                success = false,
+                id = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
+                source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
+                component = Component.Filesystem,
+                reason = e.message
+            )
+            return
         }
         if (!AwsSettings.getInstance().isAutoUpdateNotificationEnabled) return
         notifyInfo(

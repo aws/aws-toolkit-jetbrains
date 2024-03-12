@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
-import com.intellij.ide.util.RunOnceUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
@@ -40,11 +39,13 @@ import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.time.LocalDateTime
 import java.util.Date
 import java.util.Timer
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     private var runOnce = false
+    private var autoUpdateRunOnce = AtomicBoolean(false)
 
     /**
      * Should be invoked when
@@ -55,13 +56,15 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             CodeWhispererStatusBarManager.getInstance(project).updateWidget()
         }
-        RunOnceUtil.runOnceForApp("Auto update init") {
-            ToolkitUpdateManager.getInstance()
-            if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
-                notifyAutoUpdateFeature(project)
-                AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
-            }
+
+        // We want the auto-update feature to be triggered only once per running application
+        if (autoUpdateRunOnce.getAndSet(true)) return
+        ToolkitUpdateManager.getInstance()
+        if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
+            notifyAutoUpdateFeature(project)
+            AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
         }
+
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
 
