@@ -45,7 +45,7 @@ import kotlin.concurrent.schedule
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     private var runOnce = false
-    private var autoUpdateRunOnce = AtomicBoolean(false)
+    private val autoUpdateRunOnce = AtomicBoolean(false)
 
     /**
      * Should be invoked when
