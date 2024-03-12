@@ -484,7 +484,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                         message("codemodernizer.manager.job_finished_title"),
                         message("codemodernizer.manager.job_finished_content"),
                         project,
-                        listOf(displayDiffNotificationAction(lastJobId),
+                        listOf(
+                            displayDiffNotificationAction(lastJobId),
                             displaySummaryNotificationAction(lastJobId),
                             viewTransformationHubAction()
                         )
