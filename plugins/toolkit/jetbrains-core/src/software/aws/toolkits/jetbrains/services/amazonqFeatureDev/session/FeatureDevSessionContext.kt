@@ -13,6 +13,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model.ZipCreationResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.IgnorePatternFactory
 import java.io.File
 import java.io.FileInputStream
 import java.util.Base64
@@ -21,42 +22,17 @@ import kotlin.io.path.relativeTo
 class FeatureDevSessionContext(val project: Project) {
 
     private var _projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
-    private val ignorePatterns = listOf(
-        "\\.aws-sam",
-        "\\.svn",
-        "\\.hg/",
-        "\\.rvm",
-        "\\.git/",
-        "\\.project",
-        "\\.gem",
-        "/\\.idea/",
-        "\\.zip$",
-        "\\.bin$",
-        "\\.png$",
-        "\\.jpg$",
-        "\\.svg$",
-        "\\.pyc$",
-        "/license\\.txt$",
-        "/License\\.txt$",
-        "/LICENSE\\.txt$",
-        "/license\\.md$",
-        "/License\\.md$",
-        "/LICENSE\\.md$",
-    ).map { Regex(it) }
-
     fun getProjectZip(): ZipCreationResult {
         val zippedProject = runReadAction { zipFiles(projectRoot) }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
-
     private fun zipFiles(projectRoot: VirtualFile): File {
-        val gitIgnorePatterns = parseGitIgnore(File(projectRoot.path, ".gitignore")).map { Regex(it) }
-        val allIgnorePatterns = ignorePatterns + gitIgnorePatterns
+        val patternIgnorer = IgnorePatternFactory.createFromFileName(".gitignore", projectRoot)
 
         return createTemporaryZipFile {
             VfsUtil.collectChildrenRecursively(projectRoot).forEach { virtualFile ->
-                if (virtualFile.isFile && !allIgnorePatterns.any { p -> p.containsMatchIn(virtualFile.path) }) {
+                if (virtualFile.isFile && patternIgnorer.shouldIgnore(virtualFile.path)) {
                     val relativePath = virtualFile.toNioPath().relativeTo(projectRoot.toNioPath())
                     it.putNextEntry(relativePath.toString(), virtualFile.toNioPath())
                 }
