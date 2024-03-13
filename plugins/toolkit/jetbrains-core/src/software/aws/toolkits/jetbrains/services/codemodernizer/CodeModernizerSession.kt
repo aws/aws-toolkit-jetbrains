@@ -20,6 +20,11 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
+import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
+import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
+import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
+import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
+import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.AwaitModernizationPlanResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -236,8 +241,8 @@ class CodeModernizerSession(
         HttpRequests.put(url, APPLICATION_ZIP).userAgent(AwsClientManager.userAgent).tuner {
             it.setRequestProperty(CONTENT_SHA256, checksum)
             if (kmsArn.isNotEmpty()) {
-                it.setRequestProperty(CodeWhispererCodeScanSession.SERVER_SIDE_ENCRYPTION, CodeWhispererCodeScanSession.AWS_KMS)
-                it.setRequestProperty(CodeWhispererCodeScanSession.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+                it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
+                it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
             }
         }
             .connect { request -> // default connect timeout is 10s
@@ -281,7 +286,7 @@ class CodeModernizerSession(
         try {
             uploadArtifactToS3(createUploadUrlResponse.uploadUrl(), payload, sha256checksum, createUploadUrlResponse.kmsKeyArn().orEmpty())
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading artifact to S3"
+            val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
             LOG.error(e) { errorMessage }
             CodetransformTelemetry.logApiError(
                 codeTransformApiErrorMessage = errorMessage,
@@ -455,8 +460,6 @@ class CodeModernizerSession(
 
     companion object {
         private val LOG = getLogger<CodeModernizerSession>()
-        const val APPLICATION_ZIP = "application/zip"
-        const val CONTENT_SHA256 = "x-amz-checksum-sha256"
     }
 
     override fun dispose() {
