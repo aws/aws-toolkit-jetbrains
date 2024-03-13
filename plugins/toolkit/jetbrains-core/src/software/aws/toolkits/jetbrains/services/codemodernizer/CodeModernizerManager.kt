@@ -71,6 +71,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
 
 const val AMAZON_Q_FEEDBACK_DIALOG_KEY = "Amazon Q"
+
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
     private var managerState = CodeModernizerState()
