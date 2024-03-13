@@ -1,17 +1,11 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.actionSystem.AnAction
-import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCache
 import software.aws.toolkits.resources.message
-
-/**
- * Shared disk cache for SSO for the IDE
- */
-val diskCache by lazy { DiskCache() }
 
 interface SsoRequiredInteractiveCredentials : InteractiveCredential {
     val ssoCache: SsoCache

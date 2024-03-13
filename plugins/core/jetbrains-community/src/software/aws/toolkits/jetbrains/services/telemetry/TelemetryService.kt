@@ -19,11 +19,9 @@ import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
-import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class MetricEventMetadata(
@@ -117,8 +115,9 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
     }
 
     suspend fun sendFeedback(sentiment: Sentiment, comment: String, metadata: Map<String, String> = emptyMap()) {
-        val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }
-        publisher.sendFeedback(sentiment, comment, metadata + (ENABLED_EXPERIMENTS to experiments))
+        // FIXME
+//        val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }
+//        publisher.sendFeedback(sentiment, comment, metadata + (ENABLED_EXPERIMENTS to experiments))
     }
 
     companion object {

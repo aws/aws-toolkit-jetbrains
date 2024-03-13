@@ -47,6 +47,7 @@ import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.inProgress
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
 import software.aws.toolkits.resources.message
 import java.awt.Color
@@ -124,7 +125,7 @@ class WorkspaceDetails(
         if (ws.status == DevEnvironmentStatus.RUNNING) {
             buttonPanel.add(createActionButton(ConfigureAction(ws, workspaces, cawsClient)))
 
-            if (AwsToolkit.isDeveloperMode()) {
+            if (isDeveloperMode()) {
                 buttonPanel.add(createActionButton(ShellAction(ws, workspaces, cawsClient)))
             }
         }

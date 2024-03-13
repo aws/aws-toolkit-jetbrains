@@ -1,4 +1,4 @@
-// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
@@ -30,7 +30,6 @@ import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.core.credentials.CredentialsChangeEvent
 import software.aws.toolkits.core.credentials.CredentialsChangeListener
 import software.aws.toolkits.core.credentials.SsoSessionBackedCredentialIdentifier
-import software.aws.toolkits.core.credentials.SsoSessionIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -60,7 +59,6 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 const val DEFAULT_PROFILE_NAME = "default"
-const val DEFAULT_PROFILE_ID = "profile:default"
 
 private const val PROFILE_FACTORY_ID = "ProfileCredentialProviderFactory"
 
@@ -144,15 +142,6 @@ private class NeverShowAgain : DumbAwareAction(message("settings.never_show_agai
     override fun actionPerformed(e: AnActionEvent) {
         AwsSettings.getInstance().profilesNotification = ProfilesNotification.Never
     }
-}
-
-data class ProfileSsoSessionIdentifier(
-    val profileName: String,
-    override val startUrl: String,
-    override val ssoRegion: String,
-    override val scopes: Set<String>
-) : SsoSessionIdentifier {
-    override val id = "$SSO_SESSION_SECTION_NAME:$profileName"
 }
 
 class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCache) : CredentialProviderFactory {

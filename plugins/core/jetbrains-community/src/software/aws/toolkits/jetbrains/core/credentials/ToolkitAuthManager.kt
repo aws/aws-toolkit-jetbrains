@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
@@ -208,7 +207,8 @@ fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnect
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             // TODO: Connection handling in GettingStartedAuthUtils needs to be refactored
-            deleteSsoConnectionCW(connection)
+            // FIXME
+//            deleteSsoConnectionCW(connection)
         }
     } finally {
         callback()

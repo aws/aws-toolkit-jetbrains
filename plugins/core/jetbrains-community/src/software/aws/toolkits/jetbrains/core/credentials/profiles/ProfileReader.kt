@@ -115,7 +115,7 @@ private fun validateSsoSession(profile: Profile) {
     profile.requiredProperty(ProfileProperty.SSO_REGION)
 }
 
-internal fun ProfileFile.ssoSessions(): Map<String, Profile> {
+fun ProfileFile.ssoSessions(): Map<String, Profile> {
     // we could also manually parse the file to avoid reflection, but the SDK encodes a lot of logic that we don't want to try to duplicate
     val rawProfilesField = javaClass.declaredFields.first { it.name == "profilesAndSectionsMap" }.apply {
         isAccessible = true

@@ -10,18 +10,12 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications.Bus.notify
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ScrollPaneFactory
-import software.aws.toolkits.core.utils.getLogger
+import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
-import software.aws.toolkits.jetbrains.core.credentials.ConfigureAwsConnectionAction
-import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
 import javax.swing.JTextArea
@@ -29,7 +23,7 @@ import javax.swing.JTextArea
 private const val GROUP_DISPLAY_ID = "AWS Toolkit"
 private const val GROUP_DISPLAY_ID_STICKY = "aws.toolkit_sticky"
 
-private val LOG = getLogger<AwsToolkit>()
+private val LOG = LoggerFactory.getLogger("NotificationUtils.kt")
 
 fun Throwable.notifyError(title: String = "", project: Project? = null, stripHtml: Boolean = true) {
     val message = getCleanedContent(this.message ?: "${this::class.java.name}${this.stackTrace?.joinToString("\n", prefix = "\n")}", stripHtml)
@@ -111,42 +105,6 @@ fun notifyError(
     stripHtml: Boolean = true
 ) = notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.ERROR, listener), project)
 
-/**
- * Notify error that AWS credentials are not configured.
- */
-fun notifyNoActiveCredentialsError(
-    project: Project,
-    title: String = message("aws.notification.title"),
-    content: String = message("aws.notification.credentials_missing")
-) {
-    notifyError(
-        title = title,
-        content = content,
-        project = project,
-        action = ConfigureAwsConnectionAction(ChangeSettingsMode.CREDENTIALS)
-    )
-}
-
-/**
- * Notify error that AWS SAM CLI is not valid.
- */
-fun notifySamCliNotValidError(
-    project: Project,
-    title: String = message("aws.notification.title"),
-    content: String
-) {
-    notifyError(
-        title = title,
-        content = message("aws.notification.sam_cli_not_valid", content),
-        project = project,
-        listener = NotificationListener { notification, _ ->
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
-            notification.expire()
-        },
-        stripHtml = false
-    )
-}
-
 fun <T> tryNotify(message: String, block: () -> T): T? = try {
     block()
 } catch (e: Exception) {
@@ -184,7 +142,8 @@ fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message:
                 setNorthPanel(JLabel(message))
                 setCenterPanel(ScrollPaneFactory.createScrollPane(textArea))
                 setPreferredFocusComponent(textArea)
-                setHelpId(HelpIds.SETUP_CREDENTIALS.id)
+                // FIXME
+//                setHelpId(HelpIds.SETUP_CREDENTIALS.id)
                 removeAllActions()
                 addOkAction()
             }

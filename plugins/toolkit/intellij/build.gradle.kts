@@ -85,6 +85,11 @@ dependencies {
         implementation(it)
         resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
     }
+
+    // delete when fully split
+    implementation(project(":plugin-amazonq", "moduleOnlyJars")) // automatically pulls in instrumented variants in submodules
+    implementation(project(":plugin-core:jetbrains-community", "instrumentedJar"))
+    implementation(project(":plugin-core:jetbrains-ultimate", "instrumentedJar"))
 }
 
 configurations {

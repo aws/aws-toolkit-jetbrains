@@ -8,41 +8,20 @@ import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
-import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
+    id("java-library")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
 }
 
-buildscript {
-    dependencies {
-        classpath(libs.telemetryGenerator)
-    }
-}
-
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
-}
-
-sourceSets {
-    main {
-        java.srcDir("${project.buildDir}/generated-src")
-    }
-}
-
-val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = file("${project.buildDir}/generated-src")
-}
-
-tasks.compileKotlin {
-    dependsOn(generateTelemetry)
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -55,6 +34,10 @@ tasks.jar {
     from(changelog) {
         into("META-INF")
     }
+
+    // delete when fully split
+    // module loader can't figure out paths across jars
+    from(project(":plugin-core:jetbrains-community").file("resources/aws.toolkit.core.xml"))
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
@@ -119,7 +102,7 @@ tasks.processTestResources {
 }
 
 dependencies {
-    api(project(":plugin-toolkit:core"))
+    compileOnlyApi(project(":plugin-toolkit:core"))
     api(libs.aws.apacheClient)
     api(libs.aws.apprunner)
     api(libs.aws.cloudcontrol)
@@ -141,11 +124,9 @@ dependencies {
     api(libs.aws.sqs)
     api(libs.aws.services)
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
+    compileOnlyApi(project(":plugin-core:jetbrains-community"))
+    // delete when fully split
     runtimeOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
-    // can't seem to make this transitive from :plugin-core:jetbrains-community
-    compileOnly(project(":plugin-core:sdk-codegen"))
-    testImplementation(project(":plugin-core:sdk-codegen"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.aws.crt)
@@ -167,13 +148,4 @@ dependencies {
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
-}
-
-// fix implicit dependency on generated source
-tasks.withType<Detekt> {
-    dependsOn(generateTelemetry)
-}
-
-tasks.withType<DetektCreateBaselineTask> {
-    dependsOn(generateTelemetry)
 }

@@ -53,8 +53,10 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
     protected val recentlyUsedRegions = MRUList<String>(MAX_HISTORY)
 
     // Internal state is visible for AwsSettingsPanel and ChangeAccountSettingsActionGroup
-    internal var selectedCredentialIdentifier: CredentialIdentifier? = null
-    internal var selectedRegion: AwsRegion? = null
+    var selectedCredentialIdentifier: CredentialIdentifier? = null
+        internal set
+    var selectedRegion: AwsRegion? = null
+        internal set
 
     init {
         @Suppress("LeakingThis")
@@ -305,8 +307,8 @@ fun <T> Project.withAwsConnection(block: (ConnectionSettings) -> T): T {
  * state is temporary in the 'connection validation' workflow or if this is a terminal state.
  */
 sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean) {
-    protected val gettingStartedAction: AnAction = ActionManager.getInstance().getAction("aws.toolkit.toolwindow.newConnection")
-    protected val editCredsAction: AnAction = ActionManager.getInstance().getAction("aws.settings.upsertCredentials")
+    protected val gettingStartedAction by lazy { ActionManager.getInstance().getAction("aws.toolkit.toolwindow.newConnection") }
+    protected val editCredsAction by lazy { ActionManager.getInstance().getAction("aws.settings.upsertCredentials") }
 
     /**
      * An optional short message to display in places where space is at a premium
@@ -321,7 +323,7 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         override val shortMessage: String = message("settings.states.validating.short")
     }
 
-    class ValidConnection(internal val credentials: ToolkitCredentialsProvider, internal val region: AwsRegion) :
+    class ValidConnection(val credentials: ToolkitCredentialsProvider, val region: AwsRegion) :
         ConnectionState("${credentials.displayName}@${region.displayName}", isTerminal = true) {
         override val shortMessage: String = "${credentials.shortName}@${region.id}"
         val connection by lazy { ConnectionSettings(credentials, region) }
@@ -343,7 +345,9 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         ConnectionState(message("settings.states.invalid", ExceptionUtil.getMessage(cause) ?: ExceptionUtil.getThrowableText(cause)), isTerminal = true) {
         override val shortMessage = message("settings.states.invalid.short")
 
-        override val actions: List<AnAction> = listOf(RefreshConnectionAction(message("settings.retry")), gettingStartedAction, editCredsAction)
+        // FIXME
+        override val actions = emptyList<AnAction>()
+//        override val actions: List<AnAction> = listOf(RefreshConnectionAction(message("settings.retry")), gettingStartedAction, editCredsAction)
     }
 
     class RequiresUserAction(interactiveCredentials: InteractiveCredential) :

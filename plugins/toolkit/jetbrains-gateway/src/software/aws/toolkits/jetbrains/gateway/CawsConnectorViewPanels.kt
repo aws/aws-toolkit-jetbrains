@@ -62,6 +62,7 @@ import software.aws.toolkits.jetbrains.core.utils.buildMap
 import software.aws.toolkits.jetbrains.gateway.connection.IdeBackendActions
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.recursivelySetBackground
 import software.aws.toolkits.jetbrains.gateway.welcomescreen.setDefaultBackgroundAndBorder
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.CawsCodeRepository
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
@@ -480,7 +481,7 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                             }
                         }
 
-                        if (AwsToolkit.isDeveloperMode()) {
+                        if (isDeveloperMode()) {
                             group(message("caws.workspace.details.developer_tool_settings")) {
                                 lateinit var useBundledToolkit: Cell<JBCheckBox>
                                 row {

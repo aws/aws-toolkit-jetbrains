@@ -17,7 +17,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.telemetry.MetricEvent
-import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import javax.swing.BorderFactory
 import javax.swing.JComponent
 
@@ -29,7 +29,7 @@ class OpenTelemetryAction : DumbAwareAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = AwsToolkit.isDeveloperMode()
+        e.presentation.isEnabledAndVisible = isDeveloperMode()
     }
 
     private class TelemetryDialog : FrameWrapper(null), TelemetryListener {
