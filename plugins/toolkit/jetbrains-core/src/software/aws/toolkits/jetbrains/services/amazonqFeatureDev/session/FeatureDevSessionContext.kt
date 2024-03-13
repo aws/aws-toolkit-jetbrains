@@ -13,7 +13,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model.ZipCreationResult
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.IgnorePatternFactory
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.createPatternIgnorerFromFileName
 import java.io.File
 import java.io.FileInputStream
 import java.util.Base64
@@ -27,33 +27,19 @@ class FeatureDevSessionContext(val project: Project) {
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
+
     private fun zipFiles(projectRoot: VirtualFile): File {
-        val patternIgnorer = IgnorePatternFactory.createFromFileName(".gitignore", projectRoot)
+        val shouldIgnore = createPatternIgnorerFromFileName(".gitignore", projectRoot)
 
         return createTemporaryZipFile {
             VfsUtil.collectChildrenRecursively(projectRoot).forEach { virtualFile ->
-                if (virtualFile.isFile && patternIgnorer.shouldIgnore(virtualFile.path)) {
+                if (virtualFile.isFile && !shouldIgnore(virtualFile.path)) {
                     val relativePath = virtualFile.toNioPath().relativeTo(projectRoot.toNioPath())
                     it.putNextEntry(relativePath.toString(), virtualFile.toNioPath())
                 }
             }
         }.toFile()
     }
-
-    private fun parseGitIgnore(gitIgnoreFile: File): List<String> {
-        if (!gitIgnoreFile.exists()) {
-            return emptyList()
-        }
-        return gitIgnoreFile.readLines()
-            .filterNot { it.isBlank() || it.startsWith("#") }
-            .map { it.trim() }
-            .map { convertGitIgnorePatternToRegex(it) }
-    }
-
-    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
-        .replace(".", "\\.")
-        .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it?" else it } // Handle directory-specific patterns by optionally matching trailing slash
 
     var projectRoot: VirtualFile
         set(newRoot) {

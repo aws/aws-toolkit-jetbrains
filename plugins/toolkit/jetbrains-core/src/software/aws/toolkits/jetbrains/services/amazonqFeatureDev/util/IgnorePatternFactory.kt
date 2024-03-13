@@ -29,30 +29,22 @@ private val baseIgnorePatterns = listOf(
     "/LICENSE\\.md$",
 ).map { Regex(it) }
 
-class IgnorePatternFactory {
-    class PatternIgnorer(private val ignorePatterns: List<Regex>) {
-        fun shouldIgnore(filePath: String): Boolean {
-            return ignorePatterns.any { ip -> ip.containsMatchIn(filePath) }
-        }
+private typealias PatternIgnorer = (String) -> Boolean
+
+fun createPatternIgnorerFromFileName(fileName: String, projectRoot: VirtualFile?): PatternIgnorer {
+    val file = if (projectRoot != null) File(projectRoot.path, fileName) else File(fileName)
+
+    var allIgnorePatterns: List<Regex> = baseIgnorePatterns
+
+    if (file.exists()) {
+        allIgnorePatterns += file.readLines()
+            .filterNot { it.isBlank() || it.startsWith("#") }
+            .map { it.trim() }
+            .map { convertGitIgnorePatternToRegex(it) }
+            .map { Regex(it) }
     }
 
-    companion object {
-        fun createFromFileName(fileName: String, projectRoot: VirtualFile?): PatternIgnorer {
-            val file = if (projectRoot != null) File(projectRoot.path, fileName) else File(fileName)
-
-            var allIgnorePatterns: List<Regex> = baseIgnorePatterns
-
-            if (file.exists()) {
-                allIgnorePatterns += file.readLines()
-                    .filterNot { it.isBlank() || it.startsWith("#") }
-                    .map { it.trim() }
-                    .map { convertGitIgnorePatternToRegex(it) }
-                    .map { Regex(it) }
-            }
-
-            return PatternIgnorer(allIgnorePatterns)
-        }
-    }
+    return { filePath -> allIgnorePatterns.any { ip -> ip.containsMatchIn(filePath) } }
 }
 
 private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
