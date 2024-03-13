@@ -258,13 +258,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     private fun calculateProjectHash(customerSelection: CustomerSelection) = Base64
         .getEncoder()
-        .encodeToString(
-            DigestUtils.sha256(
-                customerSelection.configurationFile.toNioPath()
-                    .toAbsolutePath()
-                    .toString()
-            )
-        )
+        .encodeToString(DigestUtils.sha256(customerSelection.configurationFile.path))
 
     fun runModernize(validatedBuildFiles: List<VirtualFile>): Job? {
         initStopParameters()
