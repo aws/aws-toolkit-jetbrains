@@ -251,7 +251,7 @@ fun getNugetPackagesPath(): File {
     val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
 
     println("NuGet packages: $riderSdk")
-    if (!riderSdk.isDirectory) throw IllegalStateException("$riderSdk does not exist or not a directory")
+    if (!riderSdk.isDirectory) error("$riderSdk does not exist or not a directory")
 
     return riderSdk
 }

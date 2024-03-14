@@ -16,6 +16,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
 import javax.swing.JTextArea
@@ -142,8 +143,7 @@ fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message:
                 setNorthPanel(JLabel(message))
                 setCenterPanel(ScrollPaneFactory.createScrollPane(textArea))
                 setPreferredFocusComponent(textArea)
-                // FIXME
-//                setHelpId(HelpIds.SETUP_CREDENTIALS.id)
+                setHelpId(HelpIds.SETUP_CREDENTIALS.id)
                 removeAllActions()
                 addOkAction()
             }

@@ -60,5 +60,7 @@
                      restartRequired="true"/>
         <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false"
                      defaultValue="false"/>
+
+        <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
     </extensions>
 </idea-plugin>

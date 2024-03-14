@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.help
 
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-
 enum class HelpIds(shortId: String, val url: String) {
     // App Runner
     APPRUNNER_PAUSE_RESUME(
@@ -107,25 +105,25 @@ enum class HelpIds(shortId: String, val url: String) {
     // CodeWhisperer
     CODEWHISPERER_TOKEN(
         "CodeWhispererToken",
-        CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     ),
 
     // TODO: update this
     CODEWHISPERER_LOGIN_YES_NO(
         "CodeWhispererLoginYesNoDialog",
-        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     ),
 
     // TODO: update this
     CODEWHISPERER_LOGIN_DIALOG(
         "CodeWhispererLoginDialog",
-        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     ),
 
     // TODO: update this
     TOOLKIT_ADD_CONNECTIONS_DIALOG(
         "ToolkitAddConnectionsDialog",
-        CodeWhispererConstants.CODEWHISPERER_LOGIN_HELP_URI
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     )
     ;
 

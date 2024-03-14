@@ -6,13 +6,10 @@ package software.aws.toolkits.jetbrains.services.telemetry
 import com.intellij.ide.highlighter.ProjectFileType
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.testFramework.DisposableRule
-import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.TemporaryDirectory
 import com.intellij.testFramework.createTestOpenProjectOptions
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Rule
@@ -23,7 +20,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADATA_INVALID
@@ -31,7 +27,6 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent.Companion.METADAT
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
@@ -39,13 +34,9 @@ import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionStateIsStable
-import software.aws.toolkits.jetbrains.core.experiments.DummyExperiment
-import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
-import software.aws.toolkits.jetbrains.core.experiments.setState
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.ui.feedback.ENABLED_EXPERIMENTS
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -255,28 +246,6 @@ class TelemetryServiceTest {
                 PlatformTestUtil.forceCloseProjectWithoutSaving(project)
             }
         }
-    }
-
-    @Test
-    @ExperimentalCoroutinesApi
-    fun experimentStatusIsIncludedInFeedback() = runBlockingTest {
-        val fooExperiment = DummyExperiment()
-        val barExperiment = DummyExperiment()
-        val bloopExperiment = DummyExperiment()
-        ExtensionTestUtil.maskExtensions(ToolkitExperimentManager.EP_NAME, listOf(fooExperiment, barExperiment, bloopExperiment), disposableRule.disposable)
-
-        fooExperiment.setState(true)
-        barExperiment.setState(true)
-
-        val publisher = mock<TelemetryPublisher>()
-        val telemetryService = TestTelemetryService(publisher = publisher, batcher = mock())
-
-        val comment = aString()
-
-        telemetryService.sendFeedback(Sentiment.NEGATIVE, comment)
-        telemetryService.dispose()
-
-        verify(publisher).sendFeedback(Sentiment.NEGATIVE, comment, mapOf(ENABLED_EXPERIMENTS to "${fooExperiment.id},${barExperiment.id}"))
     }
 
     @Test

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core
 
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -89,8 +90,8 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
         val userAgent: String by lazy {
             val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }
             val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
-            // FIXME
-            "AWS-Toolkit-For-JetBrains/0.0.0 $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
+            val pluginVersion = tryOrNull { PluginManager.getPluginByClass(this::class.java)?.version }
+            "AWS-Toolkit-For-JetBrains/$pluginVersion $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
         }
 
         val CUSTOMIZER_EP = ExtensionPointName<ToolkitClientCustomizer>("aws.toolkit.sdk.clientCustomizer")

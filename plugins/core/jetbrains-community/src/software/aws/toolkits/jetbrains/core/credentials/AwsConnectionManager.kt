@@ -345,9 +345,7 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
         ConnectionState(message("settings.states.invalid", ExceptionUtil.getMessage(cause) ?: ExceptionUtil.getThrowableText(cause)), isTerminal = true) {
         override val shortMessage = message("settings.states.invalid.short")
 
-        // FIXME
-        override val actions = emptyList<AnAction>()
-//        override val actions: List<AnAction> = listOf(RefreshConnectionAction(message("settings.retry")), gettingStartedAction, editCredsAction)
+        override val actions: List<AnAction> = listOf(RefreshConnectionAction(message("settings.retry")), gettingStartedAction, editCredsAction)
     }
 
     class RequiresUserAction(interactiveCredentials: InteractiveCredential) :

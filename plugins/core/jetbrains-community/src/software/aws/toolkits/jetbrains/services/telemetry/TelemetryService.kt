@@ -115,9 +115,7 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, priva
     }
 
     suspend fun sendFeedback(sentiment: Sentiment, comment: String, metadata: Map<String, String> = emptyMap()) {
-        // FIXME
-//        val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }
-//        publisher.sendFeedback(sentiment, comment, metadata + (ENABLED_EXPERIMENTS to experiments))
+        publisher.sendFeedback(sentiment, comment, metadata)
     }
 
     companion object {
