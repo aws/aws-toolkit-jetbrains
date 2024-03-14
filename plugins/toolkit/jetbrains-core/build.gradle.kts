@@ -129,6 +129,8 @@ dependencies {
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
+    // CodeWhispererTelemetryService uses a CircularFifoQueue, transitive from zjsonpatch
+    implementation(libs.commons.collections)
 
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     // slf4j is v1.7.36 for <233

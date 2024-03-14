@@ -29,6 +29,6 @@ dependencies {
         // dont pull in any of the SDKs / other nonsense needed at runtime because it's provided by :plugin-core
         isTransitive = false
     }
-    // CodeWhispererTelemetryService
-    runtimeOnly("org.apache.commons:commons-collections4:4.4")
+    // CodeWhispererTelemetryService uses a CircularFifoQueue
+    implementation(libs.commons.collections)
 }
