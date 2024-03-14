@@ -8,6 +8,7 @@ import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 plugins {
     id("java-library")
+    id("toolkit-testing")
     id("toolkit-intellij-subplugin")
 }
 
@@ -40,6 +41,15 @@ dependencies {
     compileOnlyApi(project(":plugin-core:sdk-codegen"))
     compileOnlyApi(libs.aws.apacheClient)
 
+    testFixturesApi(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
+    testFixturesApi(libs.mockk)
+    testFixturesApi(libs.kotlin.coroutinesTest)
+    testFixturesApi(libs.kotlin.coroutinesDebug)
+    testFixturesApi(libs.wiremock) {
+        // conflicts with transitive inclusion from docker plugin
+        exclude(group = "org.apache.httpcomponents.client5")
+    }
+
     // delete when fully split
     compileOnlyApi(project(":plugin-toolkit:core"))
     runtimeOnly(project(":plugin-toolkit:core"))
@@ -52,4 +62,21 @@ tasks.withType<Detekt> {
 
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
+}
+
+// rewrite `runtimeElements` to use the `instrumentedJar` variant
+// there should never be a reason to use the default artifact at runtime, but `testFixturesRuntimeElements` pulls in `runtimeElements`
+// which is causing conflict between the `runtimeElements` and `instrumentedJar` variants
+configurations.runtimeElements {
+    outgoing.artifacts.clear()
+
+    outgoing.artifacts(configurations.instrumentedJar.map { it.artifacts })
+    outgoing.variants {
+        get("classes").apply {
+            artifacts.clear()
+            artifact(tasks.instrumentCode) {
+                type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
+            }
+        }
+    }
 }

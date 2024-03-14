@@ -10,6 +10,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
@@ -82,7 +83,7 @@ private class ProfileCredentialsIdentifierLegacySso(
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials
 
-class ProfileCredentialsIdentifierSso internal constructor(
+class ProfileCredentialsIdentifierSso @TestOnly constructor(
     profileName: String,
     val ssoSessionName: String,
     defaultRegionId: String?,

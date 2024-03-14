@@ -16,6 +16,7 @@ import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.execution.ParametersListUtil
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -30,7 +31,7 @@ import java.util.Enumeration
 /**
  * Similar to the SDKs ProcessCredentialsProvider, but ties in the env var system of the IDE such as getting $PATH
  */
-class ToolkitCredentialProcessProvider internal constructor(
+class ToolkitCredentialProcessProvider @TestOnly constructor(
     private val command: String,
     private val parser: CredentialProcessOutputParser
 ) : AwsCredentialsProvider, SdkAutoCloseable {
@@ -90,13 +91,13 @@ class ToolkitCredentialProcessProvider internal constructor(
     }
 }
 
-internal data class CredentialProcessOutput(val accessKeyId: String, val secretAccessKey: String, val sessionToken: String?, val expiration: Instant?)
+data class CredentialProcessOutput(val accessKeyId: String, val secretAccessKey: String, val sessionToken: String?, val expiration: Instant?)
 
-internal abstract class CredentialProcessOutputParser {
+abstract class CredentialProcessOutputParser {
     abstract fun parse(input: String): CredentialProcessOutput
 }
 
-internal object DefaultCredentialProcessOutputParser : CredentialProcessOutputParser() {
+object DefaultCredentialProcessOutputParser : CredentialProcessOutputParser() {
     private val mapper = jacksonObjectMapper()
         .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)

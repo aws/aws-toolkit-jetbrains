@@ -14,6 +14,3 @@ class RefreshExplorerCredentials(val project: Project) : ChangeConnectionSetting
     }
 }
 
-interface ChangeConnectionSettingIfValid {
-    fun changeConnection(profile: ProfileCredentialsIdentifier) {}
-}

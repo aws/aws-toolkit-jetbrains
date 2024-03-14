@@ -36,7 +36,6 @@ import software.aws.toolkits.core.utils.test.retryableAssert
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.utils.hasCauseWithMessage
 import software.aws.toolkits.jetbrains.utils.hasException
 import software.aws.toolkits.jetbrains.utils.hasValue
@@ -562,24 +561,5 @@ class AwsResourceCacheTest {
         private val US_WEST_2 = AwsRegion("us-west-2", "USW2", "aws")
 
         private val DEFAULT_EXPIRY = Duration.ofMinutes(10)
-
-        private open class DummyResource<T>(override val id: String, private val value: T) : Resource.Cached<T>() {
-            val callCount = AtomicInteger(0)
-
-            override fun fetch(connectionSettings: ClientConnectionSettings<*>): T {
-                callCount.getAndIncrement()
-                return value
-            }
-        }
-
-        private class StringResource(id: String) : DummyResource<String>(id, id)
-
-        fun dummyResource(value: String = aString()): Resource.Cached<String> = StringResource(value)
     }
 }
-
-val Resource<*>.id: String
-    get() = when (this) {
-        is Resource.Cached -> this.id
-        is Resource.View<*, *> -> this.underlying.id
-    }

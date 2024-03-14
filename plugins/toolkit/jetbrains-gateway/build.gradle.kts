@@ -33,11 +33,12 @@ dependencies {
 
     compileOnly(project(":plugin-core:jetbrains-community"))
     // delete when fully split
-    implementation(project(":plugin-core:jetbrains-community", "instrumentedJar"))
+    gatewayRunOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
 
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
     testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)

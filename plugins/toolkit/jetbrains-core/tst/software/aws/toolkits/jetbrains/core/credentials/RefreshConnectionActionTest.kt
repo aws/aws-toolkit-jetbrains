@@ -12,8 +12,8 @@ import org.junit.Test
 import software.aws.toolkits.core.credentials.aToolkitCredentialsProvider
 import software.aws.toolkits.core.region.anAwsRegion
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.core.AwsResourceCacheTest.Companion.dummyResource
 import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
+import software.aws.toolkits.jetbrains.core.dummyResource
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

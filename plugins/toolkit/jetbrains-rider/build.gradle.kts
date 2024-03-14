@@ -58,6 +58,7 @@ dependencies {
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
     testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
 }
 
 /**
