@@ -15,9 +15,8 @@ dependencies {
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))
 
-    testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
-    testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    testImplementation(project(":plugin-toolkit:jetbrains-core"))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testImplementation(libs.mockk)

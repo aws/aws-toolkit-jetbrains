@@ -1,4 +1,4 @@
-// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.credentials
@@ -7,7 +7,7 @@ import com.intellij.notification.Notification
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +55,7 @@ class CredentialsRegionHandlerTest {
         val identifier = aCredentialsIdentifier(defaultRegionId = null)
         val region = anAwsRegion()
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, region)).isEqualTo(region)
+        assertThat(sut.determineSelectedRegion(identifier, region)).isEqualTo(region)
     }
 
     @Test
@@ -63,7 +63,7 @@ class CredentialsRegionHandlerTest {
         val defaultRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isEqualTo(defaultRegion)
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isEqualTo(defaultRegion)
     }
 
     @Test
@@ -71,7 +71,7 @@ class CredentialsRegionHandlerTest {
         val defaultRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = regionProviderRule.createAwsRegion())).isEqualTo(defaultRegion)
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = regionProviderRule.createAwsRegion())).isEqualTo(defaultRegion)
     }
 
     @Test
@@ -81,7 +81,7 @@ class CredentialsRegionHandlerTest {
         val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(defaultRegion)
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(defaultRegion)
     }
 
     @Test
@@ -91,7 +91,7 @@ class CredentialsRegionHandlerTest {
         val selectedRegion = regionProviderRule.createAwsRegion(partitionId = defaultRegion.partitionId)
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
     }
 
     @Test
@@ -101,7 +101,7 @@ class CredentialsRegionHandlerTest {
         val selectedRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)).isEqualTo(selectedRegion)
     }
 
     @Test
@@ -110,7 +110,7 @@ class CredentialsRegionHandlerTest {
         val defaultRegion = regionProviderRule.createAwsRegion()
         val identifier = aCredentialsIdentifier(defaultRegionId = defaultRegion.id)
 
-        Assertions.assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isNull()
+        assertThat(sut.determineSelectedRegion(identifier, selectedRegion = null)).isNull()
     }
 
     @Test
@@ -123,9 +123,9 @@ class CredentialsRegionHandlerTest {
 
         val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = selectedRegion)
 
-        Assertions.assertThat(newSelected).isEqualTo(selectedRegion)
+        assertThat(newSelected).isEqualTo(selectedRegion)
         val notification = getOnlyNotification()
-        Assertions.assertThat(notification.actions).hasSize(3)
+        assertThat(notification.actions).hasSize(3)
     }
 
     @Test
@@ -137,8 +137,8 @@ class CredentialsRegionHandlerTest {
 
         val newSelected = sut.determineSelectedRegion(identifier, selectedRegion = defaultRegion)
 
-        Assertions.assertThat(newSelected).isEqualTo(defaultRegion)
-        Assertions.assertThat(notificationListener.notifications.filter { it.title == message("aws.notification.title") }).isEmpty()
+        assertThat(newSelected).isEqualTo(defaultRegion)
+        assertThat(notificationListener.notifications.filter { it.title == message("aws.notification.title") }).isEmpty()
     }
 
     @Test
@@ -157,7 +157,7 @@ class CredentialsRegionHandlerTest {
             Notification.fire(notification, notification.actions.first { it.templateText == "Never" }, null)
         }
 
-        Assertions.assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Never)
+        assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Never)
     }
 
     @Test
@@ -176,12 +176,12 @@ class CredentialsRegionHandlerTest {
             Notification.fire(notification, notification.actions.first { it.templateText == "Always" }, null)
         }
 
-        Assertions.assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)
+        assertThat(AwsSettings.getInstance().useDefaultCredentialRegion).isEqualTo(UseAwsCredentialRegion.Always)
     }
 
     private fun getOnlyNotification(): Notification {
         val credentialNotifications = notificationListener.notifications.filter { it.title == message("aws.notification.title") }
-        Assertions.assertThat(credentialNotifications).hasSize(1)
+        assertThat(credentialNotifications).hasSize(1)
 
         return credentialNotifications.first()
     }

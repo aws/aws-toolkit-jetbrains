@@ -1,8 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -102,7 +100,7 @@ tasks.processTestResources {
 }
 
 dependencies {
-    compileOnlyApi(project(":plugin-toolkit:core"))
+    api(project(":plugin-toolkit:core"))
     api(libs.aws.apacheClient)
     api(libs.aws.apprunner)
     api(libs.aws.cloudcontrol)
@@ -123,10 +121,8 @@ dependencies {
     api(libs.aws.sns)
     api(libs.aws.sqs)
     api(libs.aws.services)
-
-    compileOnlyApi(project(":plugin-core:jetbrains-community"))
     // delete when fully split
-    runtimeOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
+    api(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.aws.crt)

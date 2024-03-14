@@ -38,7 +38,6 @@ import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.gateway.CawsConnectionParameters
 import software.aws.toolkits.jetbrains.gateway.SsoSettings

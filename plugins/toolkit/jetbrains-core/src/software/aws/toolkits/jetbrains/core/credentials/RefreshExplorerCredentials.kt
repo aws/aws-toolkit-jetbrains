@@ -13,4 +13,3 @@ class RefreshExplorerCredentials(val project: Project) : ChangeConnectionSetting
         AwsConnectionManager.getInstance(project).changeCredentialProvider(profile)
     }
 }
-

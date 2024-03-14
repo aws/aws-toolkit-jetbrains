@@ -73,8 +73,8 @@ tasks.test {
 }
 
 dependencies {
-    implementation(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
-    implementation(project(":plugin-toolkit:jetbrains-ultimate", "instrumentedJar"))
+    implementation(project(":plugin-toolkit:jetbrains-core"))
+    implementation(project(":plugin-toolkit:jetbrains-ultimate"))
     project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {
         // does this need to be the instrumented variant?
         implementation(it)
@@ -87,9 +87,9 @@ dependencies {
     }
 
     // delete when fully split
-    implementation(project(":plugin-amazonq", "moduleOnlyJars")) // automatically pulls in instrumented variants in submodules
-    implementation(project(":plugin-core:jetbrains-community", "instrumentedJar"))
-    implementation(project(":plugin-core:jetbrains-ultimate", "instrumentedJar"))
+    implementation(project(":plugin-amazonq", "moduleOnlyJars"))
+    implementation(project(":plugin-core:jetbrains-community"))
+    implementation(project(":plugin-core:jetbrains-ultimate"))
 }
 
 configurations {

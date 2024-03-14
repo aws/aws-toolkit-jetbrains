@@ -9,4 +9,3 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
  * Shared disk cache for SSO for the IDE
  */
 val diskCache by lazy { DiskCache() }
-

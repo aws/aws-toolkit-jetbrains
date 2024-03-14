@@ -128,4 +128,3 @@ data class AwsConfiguration(
     var isAutoUpdateNotificationEnabled: Boolean? = null,
     var isAutoUpdateFeatureNotificationShownOnce: Boolean? = null
 )
-

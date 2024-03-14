@@ -31,9 +31,8 @@ dependencies {
     compileOnly(project(":plugin-toolkit:jetbrains-core"))
     gatewayRunOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
     // delete when fully split
-    gatewayRunOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
+    implementation(project(":plugin-core:jetbrains-community"))
 
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))

@@ -43,6 +43,7 @@ configurations {
 }
 
 val moduleOnlyJar = tasks.create<Jar>("moduleOnlyJar") {
+    archiveClassifier.set("module-only")
     // empty jar
 }
 

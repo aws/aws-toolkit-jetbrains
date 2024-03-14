@@ -24,8 +24,8 @@ intellij {
 
 dependencies {
     implementation(project(":plugin-core:sdk-codegen"))
-    implementation(project(":plugin-core:jetbrains-community", "instrumentedJar"))
-    implementation(project(":plugin-core:jetbrains-ultimate", "instrumentedJar"))
+    implementation(project(":plugin-core:jetbrains-community"))
+    implementation(project(":plugin-core:jetbrains-ultimate"))
 }
 
 configurations {

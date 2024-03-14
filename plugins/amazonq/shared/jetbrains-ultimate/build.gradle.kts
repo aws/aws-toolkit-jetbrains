@@ -16,5 +16,5 @@ dependencies {
     compileOnly(project(":plugin-core:jetbrains-ultimate"))
 
     // delete when fully split
-    implementation(project(":plugin-toolkit:jetbrains-ultimate", "instrumentedJar"))
+    implementation(project(":plugin-toolkit:jetbrains-ultimate"))
 }

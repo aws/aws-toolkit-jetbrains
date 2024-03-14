@@ -50,7 +50,6 @@ import software.amazon.awssdk.services.codecatalyst.model.InstanceType
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.awsClient

@@ -6,9 +6,6 @@ package software.aws.toolkits.jetbrains.services.telemetry
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.util.SystemInfo
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
-import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
-import software.amazon.awssdk.services.codewhispererruntime.model.UserContext
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 
