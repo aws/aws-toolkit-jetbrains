@@ -43,7 +43,7 @@ intellijToolkit {
 val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
     archiveFileName.set("dummy.jar")
 
-    from(project(":plugin-core").relativePath("src/main/resources"))
+    from(project(":plugin-core").file("src/main/resources"))
 }
 
 tasks.prepareTestingSandbox {
