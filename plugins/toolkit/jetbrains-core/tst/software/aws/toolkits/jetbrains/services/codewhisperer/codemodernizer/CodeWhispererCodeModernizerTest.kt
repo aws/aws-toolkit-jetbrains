@@ -48,43 +48,6 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     }
 
     @Test
-    fun `test runModernize handles user cancelled dialog`() {
-        doReturn(null).whenever(codeModernizerManagerSpy).getCustomerSelection(any())
-        runInEdtAndWait {
-            val buildFiles = listOf(emptyPomFile)
-            val job = codeModernizerManagerSpy.runModernize(buildFiles)
-            assertNull(job)
-            verify(codeModernizerManagerSpy, times(1)).runModernize(buildFiles)
-            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection(buildFiles)
-            // verify execution stopped after user cancelled
-            verify(codeModernizerManagerSpy, times(0)).createCodeModernizerSession(any(), any())
-            verify(codeModernizerManagerSpy, times(0)).launchModernizationJob(any())
-            verify(codeModernizerManagerSpy, times(0)).postModernizationJob(any())
-            verifyNoMoreInteractions(codeModernizerManagerSpy)
-        }
-    }
-
-    @Test
-    fun `test runModernize handles users completed dialog`() {
-        var mockFile = Mockito.mock(VirtualFile::class.java)
-        `when`(mockFile.name).thenReturn("pomx.xml")
-        `when`(mockFile.path).thenReturn("/mocked/path/pom.xml")
-        val selection = CustomerSelection(mockFile, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
-        doReturn(selection).whenever(codeModernizerManagerSpy).getCustomerSelection(any())
-        doNothing().whenever(codeModernizerManagerSpy).postModernizationJob(any())
-        doReturn(CodeModernizerStartJobResult.Started(jobId)).whenever(testSessionSpy).createModernizationJob()
-        runInEdtAndWait {
-            val buildFiles = listOf(emptyPomFile)
-            val job = codeModernizerManagerSpy.runModernize(buildFiles)
-            assertNotNull(job)
-            verify(codeModernizerManagerSpy, times(1)).runModernize(buildFiles)
-            verify(codeModernizerManagerSpy, times(1)).getCustomerSelection(buildFiles)
-            verify(codeModernizerManagerSpy, times(1)).createCodeModernizerSession(any(), any())
-            verify(codeModernizerManagerSpy, times(1)).launchModernizationJob(any())
-        }
-    }
-
-    @Test
     fun `ArtifactHandler notifies users if patch does not exist`() = runBlocking {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val path = testCodeModernizerArtifact.zipPath

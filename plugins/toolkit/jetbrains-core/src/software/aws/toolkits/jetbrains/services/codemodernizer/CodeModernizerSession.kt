@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -53,6 +54,8 @@ const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
+const val APPLICATION_ZIP = "application/zip"
+const val CONTENT_SHA256 = "x-amz-checksum-sha256"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -64,6 +67,10 @@ class CodeModernizerSession(
     private val isDisposed = AtomicBoolean(false)
     private val shouldStop = AtomicBoolean(false)
 
+    suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
+        return sessionContext.getDependenciesUsingMaven()
+    }
+
     /**
      * Note that this function makes network calls and needs to be run from a background thread.
      * Runs a code modernizer session which comprises the following steps:
@@ -74,6 +81,80 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
+    fun createModernizationJob2(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
+        LOG.info { "Starting Modernization Job" }
+        val payload: File?
+
+        try {
+            if (isDisposed.get()) {
+                LOG.warn { "Disposed when about to create zip to upload" }
+                return CodeModernizerStartJobResult.Disposed
+            }
+            val startTime = Instant.now()
+            val result = sessionContext.createZipWithModuleFiles2(copyResult)
+
+            if (result is ZipCreationResult.Missing1P) {
+                return CodeModernizerStartJobResult.CancelledMissingDependencies
+            }
+
+            payload = result.payload
+
+            val payloadSize = payload.length().toInt()
+
+            CodetransformTelemetry.jobCreateZipEndTime(
+                codeTransformTotalByteSize = payloadSize,
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+                codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now())
+            )
+
+            if (payloadSize > MAX_ZIP_SIZE) {
+                return CodeModernizerStartJobResult.CancelledZipTooLarge
+            }
+        } catch (e: Exception) {
+            val errorMessage = "Failed to create zip"
+            LOG.error(e) { errorMessage }
+            CodetransformTelemetry.logGeneralError(
+                codeTransformApiErrorMessage = errorMessage,
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            )
+            state.currentJobStatus = TransformationStatus.FAILED
+            return when (e) {
+                is CodeModernizerException -> CodeModernizerStartJobResult.ZipCreationFailed(e.message)
+                else -> CodeModernizerStartJobResult.ZipCreationFailed(message("codemodernizer.notification.warn.zip_creation_failed.reasons.unknown"))
+            }
+        }
+
+        return try {
+            if (shouldStop.get()) {
+                LOG.warn { "Job was cancelled by user before upload was called" }
+                return CodeModernizerStartJobResult.Cancelled
+            }
+            val uploadId = uploadPayload(payload)
+            if (shouldStop.get()) {
+                LOG.warn { "Job was cancelled by user before start job was called" }
+                return CodeModernizerStartJobResult.Cancelled
+            }
+            val startJobResponse = startJob(uploadId)
+            state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
+            state.currentJobStatus = TransformationStatus.STARTED
+            CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
+        } catch (e: AlreadyDisposedException) {
+            LOG.warn { e.localizedMessage }
+            return CodeModernizerStartJobResult.Disposed
+        } catch (e: Exception) {
+            val errorMessage = "Failed to start job"
+            LOG.error(e) { errorMessage }
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            CodetransformTelemetry.logGeneralError(
+                codeTransformApiErrorMessage = errorMessage,
+                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            )
+            CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
+        } finally {
+            deleteUploadArtifact(payload)
+        }
+    }
     fun createModernizationJob(): CodeModernizerStartJobResult {
         LOG.info { "Starting Modernization Job" }
         val payload: File?
@@ -163,6 +244,7 @@ class CodeModernizerSession(
         }
     }
 
+    // TODO get modernization plan
     private suspend fun awaitModernizationPlan(
         jobId: JobId,
         jobTransitionHandler: (currentStatus: TransformationStatus, migrationPlan: TransformationPlan?) -> Unit,
@@ -208,6 +290,7 @@ class CodeModernizerSession(
         }
     }
 
+    // TODO upload ZIP
     private fun startJob(uploadId: String): StartTransformationResponse {
         val sourceLanguage = sessionContext.sourceJavaVersion.name.toTransformationLanguage()
         val targetLanguage = sessionContext.targetJavaVersion.name.toTransformationLanguage()
@@ -227,6 +310,11 @@ class CodeModernizerSession(
     fun getJobDetails(jobId: JobId): TransformationJob {
         LOG.info { "Getting job details." }
         return clientAdaptor.getCodeModernizationJob(jobId.id).transformationJob()
+    }
+
+    fun getTransformPlanDetails(jobId: JobId): TransformationPlan {
+        LOG.info { "Getting transform plan details." }
+        return clientAdaptor.getCodeModernizationPlan(jobId).transformationPlan()
     }
 
     /**

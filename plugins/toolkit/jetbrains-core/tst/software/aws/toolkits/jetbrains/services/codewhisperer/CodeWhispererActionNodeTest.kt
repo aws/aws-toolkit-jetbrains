@@ -23,7 +23,6 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes.CodeModernizerRunModernizeNode
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.OpenCodeReference
@@ -105,14 +104,12 @@ class CodeWhispererActionNodeTest {
 
     @Test
     fun `runCodeModernizer`() {
-        whenever(codeModernizerManager.validate(any())).thenReturn(ValidationResult(true))
+        whenever(codeModernizerManager.isModernizationJobActive()).thenReturn(false)
         whenever(codeModernizerManager.getRunActionButtonIcon()).thenReturn(AllIcons.Actions.Execute)
-        whenever(codeModernizerManager.runModernize(any())).thenReturn(Job())
         sut = CodeModernizerRunModernizeNode(project)
 
         sut.onDoubleClick(mock())
 
-        verify(codeModernizerManager).validateAndStart()
         verify(codeModernizerManager).getRunActionButtonIcon()
     }
 }

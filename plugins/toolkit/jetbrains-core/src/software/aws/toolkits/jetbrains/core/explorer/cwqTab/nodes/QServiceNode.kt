@@ -25,7 +25,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFea
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes.CodeModernizerRunModernizeNode
-import software.aws.toolkits.jetbrains.services.codemodernizer.isCodeModernizerAvailable
+import software.aws.toolkits.jetbrains.services.codemodernizer.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.OpenCodeReferenceNode
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
@@ -75,7 +75,7 @@ class QRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(nod
         }
         return if (groupId == Q_SIGNED_IN_ACTION_GROUP) {
             val signedInNodes = childNodes + OpenCodeReferenceNode(nodeProject)
-            if (connection.connectionType == ActiveConnectionType.IAM_IDC && isCodeModernizerAvailable(project)) {
+            if (connection.connectionType == ActiveConnectionType.IAM_IDC && isCodeTransformAvailable(project)) {
                 signedInNodes + runCodeModernizerNode
             } else {
                 signedInNodes

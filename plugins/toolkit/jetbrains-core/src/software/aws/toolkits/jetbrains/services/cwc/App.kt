@@ -10,7 +10,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
-import software.aws.toolkits.jetbrains.services.cwc.commands.ActionRegistrar
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
+import software.aws.toolkits.jetbrains.services.cwc.commands.ActionRegister
 import software.aws.toolkits.jetbrains.services.cwc.commands.ContextMenuActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
@@ -43,14 +44,13 @@ class App : AmazonQApp {
             "auth-follow-up-was-clicked" to IncomingCwcMessage.AuthFollowUpWasClicked::class,
 
             // JB specific (not in vscode)
-            "transform" to IncomingCwcMessage.Transform::class,
             "source-link-click" to IncomingCwcMessage.ClickedLink::class,
             "response-body-link-click" to IncomingCwcMessage.ClickedLink::class,
             "footer-info-link-click" to IncomingCwcMessage.ClickedLink::class,
         )
 
         scope.launch {
-            merge(ActionRegistrar.instance.flow, context.messagesFromUiToApp.flow).collect { message ->
+            merge(CodeTransformMessageListener.instance.flow, ActionRegister.instance.flow, context.messagesFromUiToApp.flow).collect { message ->
                 // Launch a new coroutine to handle each message
                 scope.launch { handleMessage(message, inboundAppMessagesHandler) }
             }
@@ -61,7 +61,6 @@ class App : AmazonQApp {
         when (message) {
             is IncomingCwcMessage.ClearChat -> inboundAppMessagesHandler.processClearQuickAction(message)
             is IncomingCwcMessage.Help -> inboundAppMessagesHandler.processHelpQuickAction(message)
-            is IncomingCwcMessage.Transform -> inboundAppMessagesHandler.processTransformQuickAction(message)
             is IncomingCwcMessage.ChatPrompt -> inboundAppMessagesHandler.processPromptChatMessage(message)
             is IncomingCwcMessage.TabRemoved -> inboundAppMessagesHandler.processTabWasRemoved(message)
             is IncomingCwcMessage.TabChanged -> inboundAppMessagesHandler.processTabChanged(message)

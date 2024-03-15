@@ -20,7 +20,7 @@ class CodeTransformProjectStartupSettingListener(private val project: Project) :
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
         runInEdt {
-            val isAvailable = isCodeModernizerAvailable(project)
+            val isAvailable = isCodeTransformAvailable(project)
             CodeModernizerBottomWindowPanelManager.getInstance(project).toolWindow?.isAvailable = isAvailable
             CodeModernizerManager.getInstance(project).handleCredentialsChanged()
             if (isAvailable) {

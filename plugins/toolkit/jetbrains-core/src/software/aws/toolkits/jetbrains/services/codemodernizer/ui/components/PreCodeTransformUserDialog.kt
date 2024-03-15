@@ -56,6 +56,8 @@ class PreCodeTransformUserDialog(
 
         // Detect default selection for the build file
         if (chosenFile != null) {
+
+            // TODO find module options
             val focusedModule = ModuleUtil.findModuleForFile(chosenFile, project)
             val matchingBuildFileForChosenModule = buildfiles.find { ModuleUtil.findModuleForFile(it, project) == focusedModule }
 

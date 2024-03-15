@@ -4,15 +4,18 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes
 
 import com.intellij.ide.projectView.PresentationData
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.SimpleTextAttributes
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.CodeWhispererActionNode
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.MouseEvent
 
@@ -26,10 +29,14 @@ class CodeModernizerRunModernizeNode(private val nodeProject: Project) : CodeWhi
     private val codeModernizerManager = CodeModernizerManager.getInstance(project)
 
     override fun onDoubleClick(event: MouseEvent) {
+        runInEdt {
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
+            toolWindow?.show()
+        }
         if (!codeModernizerManager.isModernizationJobActive()) {
-            codeModernizerManager.validateAndStart(CodeTransformStartSrcComponents.DevToolsStartButton)
+            CodeTransformMessageListener.instance.onStart()
         } else {
-            codeModernizerManager.stopModernize()
+            CodeTransformMessageListener.instance.onStop()
         }
         UiTelemetry.click(nodeProject, "amazonq_transform")
     }

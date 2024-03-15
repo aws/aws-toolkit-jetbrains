@@ -16,7 +16,7 @@ import { QuickActionHandler } from './quickActions/handler'
 import { TextMessageHandler } from './messages/handler'
 import { MessageController } from './messages/controller'
 
-export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumbyInitEnabled: boolean) => {
+export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeTransformInitEnabled: boolean) => {
     // eslint-disable-next-line prefer-const
     let mynahUI: MynahUI
     // eslint-disable-next-line prefer-const
@@ -41,14 +41,14 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
         isSelected: true,
     })
 
-    // used to keep track of whether or not featureDev is enabled and has an active idC
+    // used to keep track of whether featureDev is enabled and has an active idC
     let isFeatureDevEnabled = featureDevInitEnabled
 
-    let isGumbyEnabled = gumbyInitEnabled
+    let isCodeTransformEnabled = codeTransformInitEnabled
 
     const tabDataGenerator = new TabDataGenerator({
         isFeatureDevEnabled,
-        isGumbyEnabled,
+        isCodeTransformEnabled,
     })
 
     // eslint-disable-next-line prefer-const
@@ -63,14 +63,14 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
     // eslint-disable-next-line prefer-const
     connector = new Connector({
         tabsStorage,
-        onUpdateAuthentication: (featureDevEnabled: boolean, gumbyEnabled: boolean, authenticatingTabIDs: string[]): void => {
+        onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]): void => {
             isFeatureDevEnabled = featureDevEnabled
-            isGumbyEnabled = gumbyEnabled
+            isCodeTransformEnabled = codeTransformEnabled
 
             quickActionHandler.isFeatureDevEnabled = isFeatureDevEnabled
-            quickActionHandler.isGumbyEnabled = isGumbyEnabled
+            quickActionHandler.isCodeTransformEnabled = isCodeTransformEnabled
             tabDataGenerator.quickActionsGenerator.isFeatureDevEnabled = isFeatureDevEnabled
-            tabDataGenerator.quickActionsGenerator.isGumbyEnabled = isGumbyEnabled
+            tabDataGenerator.quickActionsGenerator.isCodeTransformEnabled = isCodeTransformEnabled
 
             // Set the new defaults for the quick action commands in all tabs now that isFeatureDevEnabled was enabled/disabled
             for (const tab of tabsStorage.getTabs()) {
@@ -80,14 +80,14 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
             }
 
             // Unlock every authenticated tab that is now authenticated
-            if (featureDevEnabled) {
+            if (featureDevEnabled || codeTransformEnabled) {
                 for (const tabID of authenticatingTabIDs) {
                     mynahUI.addChatItem(tabID, {
                         type: ChatItemType.ANSWER,
                         body: 'Authentication successful. Connected to Amazon Q.',
                     })
                     mynahUI.updateStore(tabID, {
-                        promptInputDisabledState: false,
+                        promptInputDisabledState: tabsStorage.getTab(tabID)?.type === 'codetransform',
                     })
                 }
             }
@@ -134,6 +134,62 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
                 promptInputDisabledState: tabsStorage.isTabDead(tabID),
             })
             tabsStorage.updateTabStatus(tabID, 'free')
+        },
+        onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => {
+            if (message.type === ChatItemType.ANSWER_PART) {
+                console.log("answer part")
+                console.log(JSON.stringify(message))
+                mynahUI.updateLastChatAnswer(tabID, {
+                    ...(message.messageId !== undefined ? { messageId: message.messageId } : {}),
+                    ...(message.canBeVoted !== undefined ? { canBeVoted: message.canBeVoted } : {}),
+                    ...(message.codeReference !== undefined ? { codeReference: message.codeReference } : {}),
+                    ...(message.body !== undefined ? { body: message.body } : {}),
+                    ...(message.relatedContent !== undefined ? { relatedContent: message.relatedContent } : {}),
+                    ...(message.formItems !== undefined ? { formItems: message.formItems} : {}),
+                    ...(message.buttons !== undefined ? { buttons: message.buttons} : {buttons: []}),
+                    // For loading animation to work, do not update the chat item type
+                    ...(message.followUp !== undefined ? { followUp: message.followUp} : {}),
+                })
+
+                return
+            }
+
+            if (message.type === ChatItemType.PROMPT || message.type === ChatItemType.ANSWER_STREAM || message.type === ChatItemType.ANSWER) {
+                mynahUI.addChatItem(tabID, message)
+                mynahUI.updateStore(tabID, {
+                    loadingChat: message.type === ChatItemType.ANSWER ? false : true,
+                })
+
+                if (message.type === ChatItemType.PROMPT) {
+                    tabsStorage.updateTabStatus(tabID, 'busy')
+                } else if (message.type === ChatItemType.ANSWER) {
+                    tabsStorage.updateTabStatus(tabID, 'free')
+                }
+            }
+        },
+        onNotification: (notification: {
+            content: string;
+            title?: string;
+            type: NotificationType;
+        }) => {
+            mynahUI.notify(notification)
+        },
+        onCodeTransformCommandMessageReceived: (_message: ChatItem, command?: string) => {
+            if (command === 'start') {
+                // TODO event Id
+                quickActionHandler.handle({command: '/transform'}, '', Math.random().toString())
+            } else if (command === 'stop') {
+                const codeTransformTabIndex = tabsStorage.getTabs().findIndex((tab) => tab.type === 'codetransform')
+                if (codeTransformTabIndex !== -1) {
+                    const existingTransformTab = tabsStorage.getTabs()[codeTransformTabIndex]
+
+                    ideApi.postMessage({
+                        command: 'codetransform-stop',
+                        tabID: existingTransformTab.id,
+                        tabType: 'codetransform',
+                    })
+                }
+            }
         },
         sendMessageToExtension: message => {
             ideApi.postMessage(message)
@@ -252,6 +308,10 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
 
             mynahUI.updateStore(newTabID, tabDataGenerator.getTabData(tabType, true))
         },
+        onStartNewTransform(tabID: string) {
+            mynahUI.updateStore(tabID, { chatItems: [] })
+            mynahUI.updateStore(tabID, tabDataGenerator.getTabData("codetransform", true))
+        },
     })
 
     mynahUI = new MynahUI({
@@ -266,7 +326,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
         },
         onTabRemove: connector.onTabRemove,
         onTabChange: connector.onTabChange,
-        onChatPrompt: (tabID: string, prompt: ChatPrompt) => {
+        onChatPrompt: (tabID, prompt, eventId) => {
             if ((prompt.prompt ?? '') === '' && (prompt.command ?? '') === '') {
                 return
             }
@@ -278,7 +338,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
             }
 
             if (prompt.command !== undefined && prompt.command.trim() !== '') {
-                quickActionHandler.handle(prompt, tabID)
+                quickActionHandler.handle(prompt, tabID, eventId)
                 return
             }
 
@@ -331,6 +391,9 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
                 store: tabDataGenerator.getTabData('cwc', true),
             },
         },
+        onInBodyButtonClicked: (tabId, messageId, action) => {
+            connector.onFormButtonClick(tabId, messageId, action)
+        },
         defaults: {
             store: tabDataGenerator.getTabData('cwc', true),
         },
@@ -351,7 +414,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
         connector,
         tabsStorage,
         isFeatureDevEnabled,
-        isGumbyEnabled,
+        isCodeTransformEnabled,
     })
     textMessageHandler = new TextMessageHandler({
         mynahUI,
@@ -363,6 +426,6 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, gumby
         connector,
         tabsStorage,
         isFeatureDevEnabled,
-        isGumbyEnabled,
+        isCodeTransformEnabled,
     })
 }

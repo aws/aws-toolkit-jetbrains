@@ -7,10 +7,13 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.wm.ToolWindowManager
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 
 class CodeModernizerStartModernizerAction :
     AnAction(
@@ -29,6 +32,10 @@ class CodeModernizerStartModernizerAction :
 
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
-        CodeModernizerManager.getInstance(project).validateAndStart(CodeTransformStartSrcComponents.BottomPanelSideNavButton)
+        runInEdt {
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
+            toolWindow?.show()
+        }
+        CodeTransformMessageListener.instance.onStart()
     }
 }

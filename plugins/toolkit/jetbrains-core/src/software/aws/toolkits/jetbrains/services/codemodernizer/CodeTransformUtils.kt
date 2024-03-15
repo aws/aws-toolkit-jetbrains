@@ -285,7 +285,7 @@ fun isIntellij(): Boolean {
     return productCode == "IC" || productCode == "IU"
 }
 
-fun isCodeModernizerAvailable(project: Project): Boolean {
+fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
     return connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer

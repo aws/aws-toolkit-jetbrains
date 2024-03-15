@@ -13,8 +13,7 @@ class CodeModernizerStartupActivity : StartupActivity.DumbAware {
      * Prompts users of jobs that finished while IDE was closed.
      */
     override fun runActivity(project: Project) {
-        if (!isCodeModernizerAvailable(project)) return
-        val codeModernizerInstance = CodeModernizerManager.getInstance(project)
-        codeModernizerInstance.tryResumeJob(true)
+        if (!isCodeTransformAvailable(project)) return
+        CodeModernizerManager.getInstance(project).tryResumeJob(true)
     }
 }
