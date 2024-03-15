@@ -244,7 +244,6 @@ class CodeModernizerSession(
         }
     }
 
-    // TODO get modernization plan
     private suspend fun awaitModernizationPlan(
         jobId: JobId,
         jobTransitionHandler: (currentStatus: TransformationStatus, migrationPlan: TransformationPlan?) -> Unit,
@@ -290,7 +289,6 @@ class CodeModernizerSession(
         }
     }
 
-    // TODO upload ZIP
     private fun startJob(uploadId: String): StartTransformationResponse {
         val sourceLanguage = sessionContext.sourceJavaVersion.name.toTransformationLanguage()
         val targetLanguage = sessionContext.targetJavaVersion.name.toTransformationLanguage()

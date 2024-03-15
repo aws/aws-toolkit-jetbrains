@@ -75,7 +75,6 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
     }
 }
 
-// TODO comment
 fun Project.getSupportedBuildModulesPath(supportedBuildFileNames: List<String>): List<String> {
     val projectRootManager = ProjectRootManager.getInstance(this)
     val probableProjectRoot = this.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)

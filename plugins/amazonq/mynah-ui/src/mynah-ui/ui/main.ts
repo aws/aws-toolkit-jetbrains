@@ -176,7 +176,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
         },
         onCodeTransformCommandMessageReceived: (_message: ChatItem, command?: string) => {
             if (command === 'start') {
-                // TODO event Id
+                // TODO need to switch without event Id
                 quickActionHandler.handle({command: '/transform'}, '', Math.random().toString())
             } else if (command === 'stop') {
                 const codeTransformTabIndex = tabsStorage.getTabs().findIndex((tab) => tab.type === 'codetransform')
