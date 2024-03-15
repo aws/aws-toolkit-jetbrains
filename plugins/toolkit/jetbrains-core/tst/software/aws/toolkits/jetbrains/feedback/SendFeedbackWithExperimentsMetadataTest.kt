@@ -7,7 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.junit5.TestDisposable
 import kotlinx.coroutines.test.runTest
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment

@@ -105,25 +105,25 @@ enum class HelpIds(shortId: String, val url: String) {
     // CodeWhisperer
     CODEWHISPERER_TOKEN(
         "CodeWhispererToken",
-        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
+        "https://aws.amazon.com/codewhisperer"
     ),
 
     // TODO: update this
     CODEWHISPERER_LOGIN_YES_NO(
         "CodeWhispererLoginYesNoDialog",
-        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
 
     // TODO: update this
     CODEWHISPERER_LOGIN_DIALOG(
         "CodeWhispererLoginDialog",
-        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
 
     // TODO: update this
     TOOLKIT_ADD_CONNECTIONS_DIALOG(
         "ToolkitAddConnectionsDialog",
-        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
+        "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     )
     ;
 
