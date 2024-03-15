@@ -35,7 +35,7 @@ tasks.jar {
 
     // delete when fully split
     // module loader can't figure out paths across jars
-    from(project(":plugin-core:jetbrains-community").file("resources/aws.toolkit.core.xml"))
+    from(project(":plugin-core").file("src/main/resources/aws.toolkit.core.xml"))
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
@@ -124,7 +124,6 @@ dependencies {
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
-    implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
