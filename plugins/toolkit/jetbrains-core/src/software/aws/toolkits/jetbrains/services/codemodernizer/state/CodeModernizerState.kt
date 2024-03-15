@@ -58,4 +58,3 @@ class CodeModernizerState : BaseState() {
         return CodeModernizerSessionContext(project, configurationFile, sourceJavaSdkVersion, targetJavaSdkVersion)
     }
 }
-

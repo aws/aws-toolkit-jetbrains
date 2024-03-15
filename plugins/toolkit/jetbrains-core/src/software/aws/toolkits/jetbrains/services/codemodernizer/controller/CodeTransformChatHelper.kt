@@ -19,7 +19,7 @@ class CodeTransformChatHelper(
         activeCodeTransformTabId = tabId
     }
 
-    suspend fun showChatNotification(title:  String, content: String) {
+    suspend fun showChatNotification(title: String, content: String) {
         messagePublisher.publish(
             CodeTransformNotificationMessage(
                 title = title,
@@ -30,7 +30,7 @@ class CodeTransformChatHelper(
 
     suspend fun addNewMessage(content: CodeTransformChatMessageContent) {
         // If the previous item is in loading state
-        if (messageHistory.isNotEmpty() &&  messageHistory.last().type == CodeTransformChatMessageType.PendingAnswer) {
+        if (messageHistory.isNotEmpty() && messageHistory.last().type == CodeTransformChatMessageType.PendingAnswer) {
             messageHistory[messageHistory.lastIndex] = messageHistory.last().copy(
                 type = CodeTransformChatMessageType.FinalizedAnswer,
                 // Remove the buttons and follow ups

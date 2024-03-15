@@ -29,14 +29,14 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -115,14 +115,12 @@ class CodeTransformChatController(
 
             addNewMessage(buildUserCancelledChatContent())
         }
-
     }
 
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
-        val (tabId, modulePath, targetVersion) = message;
+        val (tabId, modulePath, targetVersion) = message
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
-
 
         codeTransformChatHelper.run {
             removeLastHistoryItem()
@@ -134,7 +132,8 @@ class CodeTransformChatController(
 
         val selection = CustomerSelection(
             moduleVirtualFile,
-            JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17
+            JavaSdkVersion.JDK_1_8,
+            JavaSdkVersion.JDK_17
         )
         val session = codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
@@ -169,11 +168,9 @@ class CodeTransformChatController(
             addNewMessage(buildTransformInProgressChatContent())
         }
 
-
         runInEdt {
             codeModernizerManager.runModernize(session, result)
         }
-
     }
 
     override suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop) {
@@ -287,7 +284,7 @@ class CodeTransformChatController(
             is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
                 message("codemodernizer.chat.message.result.zip_too_large")
             }
-            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully  -> {
+            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
                 message("codemodernizer.chat.message.result.success")
             }
             is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {

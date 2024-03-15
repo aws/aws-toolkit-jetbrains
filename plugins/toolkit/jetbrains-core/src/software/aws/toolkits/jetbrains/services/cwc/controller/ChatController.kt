@@ -70,8 +70,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInter
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
-import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID

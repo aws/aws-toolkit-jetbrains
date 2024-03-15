@@ -95,8 +95,6 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
     ) : IncomingCodeTransformMessage
 }
 
-
-
 // === App -> UI messages ===
 sealed class CodeTransformUiMessage(
     open val tabId: String?,

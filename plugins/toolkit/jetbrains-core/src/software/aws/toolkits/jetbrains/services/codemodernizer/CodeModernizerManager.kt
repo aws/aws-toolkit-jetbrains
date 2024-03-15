@@ -63,8 +63,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
-import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
-import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
@@ -442,6 +440,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
         }
     }
+
     /**
      *Start the modernization job and return the reference
      */

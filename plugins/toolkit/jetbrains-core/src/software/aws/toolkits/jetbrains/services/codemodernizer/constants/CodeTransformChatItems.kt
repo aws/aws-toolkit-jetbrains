@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
-private val cancelUserSelectionButton =  Button(
+private val cancelUserSelectionButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = false,
     text = message("codemodernizer.chat.message.button.cancel"),
@@ -177,7 +177,11 @@ fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
 
 fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "${message("codemodernizer.chat.message.local_build_failed")}\n\n${message("codemodernizer.chat.message.doc_link_prefix")} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)",
+    message = "${message(
+        "codemodernizer.chat.message.local_build_failed"
+    )}\n\n${message(
+        "codemodernizer.chat.message.doc_link_prefix"
+    )} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)",
     followUps = listOf(
         startNewTransformFollowUp,
     )
@@ -209,9 +213,13 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
 fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
-            "${message("codemodernizer.chat.message.result.zip_too_large")}\n\n${message("codemodernizer.chat.message.doc_link_prefix")} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)"
+            "${message(
+                "codemodernizer.chat.message.result.zip_too_large"
+            )}\n\n${message(
+                "codemodernizer.chat.message.doc_link_prefix"
+            )} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)"
         }
-        is CodeModernizerJobCompletedResult.JobCompletedSuccessfully  -> {
+        is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
             message("codemodernizer.chat.message.result.success")
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {

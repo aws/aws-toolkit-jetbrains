@@ -13,12 +13,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
-import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationUpdateMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 
 class CodeTransformChatApp : AmazonQApp {
     private val scope = disposableCoroutineScope(this)
@@ -76,9 +76,9 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)
-            is IncomingCodeTransformMessage.TabCreated-> inboundAppMessagesHandler.processTabCreated(message)
-            is IncomingCodeTransformMessage.TabRemoved-> inboundAppMessagesHandler.processTabRemoved(message)
-            is IncomingCodeTransformMessage.AuthFollowUpWasClicked-> inboundAppMessagesHandler.processAuthFollowUpClick(message)
+            is IncomingCodeTransformMessage.TabCreated -> inboundAppMessagesHandler.processTabCreated(message)
+            is IncomingCodeTransformMessage.TabRemoved -> inboundAppMessagesHandler.processTabRemoved(message)
+            is IncomingCodeTransformMessage.AuthFollowUpWasClicked -> inboundAppMessagesHandler.processAuthFollowUpClick(message)
             is CodeTransformActionMessage -> inboundAppMessagesHandler.processCodeTransformCommand(message)
         }
     }
