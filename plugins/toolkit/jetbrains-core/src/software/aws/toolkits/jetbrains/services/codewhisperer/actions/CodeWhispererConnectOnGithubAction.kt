@@ -16,7 +16,7 @@ class CodeWhispererConnectOnGithubAction :
     AnAction(
         message("codewhisperer.actions.connect_github.title"),
         null,
-        AllIcons.Actions.Help // PR TODO: change to github icon
+        AllIcons.Vcs.Vendors.Github
     ),
     DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
