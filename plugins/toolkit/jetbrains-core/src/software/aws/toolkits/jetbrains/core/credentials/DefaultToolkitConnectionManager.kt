@@ -4,14 +4,20 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.ide.ActivityTracker
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.utils.createShowMoreInfoDialogAction
+import software.aws.toolkits.jetbrains.utils.notifyWarn
+import software.aws.toolkits.resources.AwsToolkitBundle
 
 // TODO: unify with AwsConnectionManager
 @State(name = "connectionManager", storages = [Storage("aws.xml")])
@@ -77,6 +83,38 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
             null
         }
+    }
+
+    @Synchronized
+    override fun checkConnectionForFeatureForPartialExpiration(feature: FeatureWithPinnedConnection): ToolkitConnection? = try {
+        activeConnectionForFeature(feature)
+    } catch (e: AccessDeniedException) {
+        val codeWhispererConnection = activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        codeWhispererConnection?.let {
+            // Partial Expiration Case
+            notifyWarn(
+                title = AwsToolkitBundle.message("credentials.checkConnection.title"),
+                content = AwsToolkitBundle.message("credentials.checkConnection.partialExpirationMessage"),
+                project = project,
+                notificationActions = listOf(
+                    NotificationAction.create(
+                        AwsToolkitBundle.message("credentials.individual_identity.reconnect")
+                    ) { _, notification ->
+                        ApplicationManager.getApplication().executeOnPooledThread {
+                            CodeCatalystCredentialManager.getInstance(project).promptAuth()
+                        }
+                        notification.expire()
+                    },
+                    createShowMoreInfoDialogAction(
+                        AwsToolkitBundle.message("credentials.invalid.more_info"),
+                        AwsToolkitBundle.message("credentials.checkConnection.title"),
+                        AwsToolkitBundle.message("credentials.checkConnection.partialExpirationMessage"),
+                        e.cause.toString()
+                    )
+                )
+            )
+        }
+        throw e
     }
 
     override fun getState() = ToolkitConnectionManagerState(
