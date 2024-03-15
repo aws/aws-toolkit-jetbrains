@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.feedback
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.junit5.TestDisposable
 import kotlinx.coroutines.test.runTest
@@ -39,8 +40,8 @@ class SendFeedbackWithExperimentsMetadataTest {
 
         val comment = aString()
 
-        telemetryService.sendFeedback(Sentiment.NEGATIVE, comment)
-        telemetryService.dispose()
+        sendFeedbackWithExperimentsMetadata(Sentiment.NEGATIVE, comment)
+        Disposer.dispose(telemetryService)
 
         verify(publisher).sendFeedback(Sentiment.NEGATIVE, comment, mapOf(ENABLED_EXPERIMENTS to "${fooExperiment.id},${barExperiment.id}"))
     }

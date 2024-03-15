@@ -63,4 +63,9 @@
 
         <webHelpProvider implementation="software.aws.toolkits.jetbrains.core.help.HelpIdTranslator"/>
     </extensions>
+
+    <actions>
+        <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials"
+                icon="AwsIcons.Logos.AWS"/>
+    </actions>
 </idea-plugin>
