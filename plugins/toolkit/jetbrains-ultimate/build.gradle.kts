@@ -20,6 +20,10 @@ dependencies {
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testImplementation(libs.mockk)
+
+    // delete when fully split
+    testRuntimeOnly(project(":plugin-core:jetbrains-ultimate"))
+    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }
 
 intellijToolkit {

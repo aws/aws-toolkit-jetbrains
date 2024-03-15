@@ -121,8 +121,7 @@ dependencies {
     api(libs.aws.sns)
     api(libs.aws.sqs)
     api(libs.aws.services)
-    // delete when fully split
-    api(project(":plugin-core:jetbrains-community"))
+    compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.aws.crt)
@@ -138,4 +137,8 @@ dependencies {
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
+
+    // delete when fully split
+    testRuntimeOnly(project(":plugin-core:jetbrains-community"))
+    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }

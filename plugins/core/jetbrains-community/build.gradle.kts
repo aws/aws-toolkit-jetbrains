@@ -3,6 +3,8 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.intellij.IntelliJPlugin
+import org.jetbrains.intellij.IntelliJPluginExtension
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -35,6 +37,20 @@ tasks.compileKotlin {
 
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
+}
+
+// delete when fully split
+val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
+    archiveFileName.set("dummy.jar")
+
+    from(project(":plugin-core").relativePath("src/main/resources"))
+}
+
+tasks.prepareTestingSandbox {
+    dependsOn(dummyPluginJar)
+
+    intoChild(pluginName.map { "$it/lib" })
+        .from(dummyPluginJar)
 }
 
 dependencies {
