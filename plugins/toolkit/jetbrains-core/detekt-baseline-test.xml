@@ -33,10 +33,6 @@
     <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun NonSamFunction()</ID>
     <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun NonSamFunction_Substring()</ID>
     <ID>FunctionNaming:CreateLambdaFunctionActionTest.kt$CreateLambdaFunctionActionTest$@Test fun SamFunction()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun bothFilesOpened_bothFilesExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun configFileOpened_onlyConfigExists()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun confirmConfigFileCreated_bothFilesDoNotExist()</ID>
-    <ID>FunctionNaming:CreateOrUpdateCredentialProfilesActionTest.kt$CreateOrUpdateCredentialProfilesActionTest$@Test fun credentialFileOpened_onlyCredentialsExists()</ID>
     <ID>FunctionNaming:DeleteWaiterTest.kt$DeleteWaiterTest$@Test fun deleteSuccessful_stackNotExist()</ID>
     <ID>FunctionNaming:DeploySettingsTest.kt$DeploySettingsTest$@Test fun relativeSamPath_null()</ID>
     <ID>FunctionNaming:DeploySettingsTest.kt$DeploySettingsTest$@Test fun relativeSamPath_root()</ID>
