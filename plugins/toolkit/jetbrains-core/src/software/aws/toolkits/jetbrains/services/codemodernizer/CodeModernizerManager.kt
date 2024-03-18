@@ -678,38 +678,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeModernizerBottomWindowPanelManager.setPreviousJobHistoryUI(isModernizationJobActive())
     }
 
-    suspend fun userInitiatedStopCodeModernization2() {
-        notifyTransformationStartStopping()
-        if (transformationStoppedByUsr.getAndSet(true)) return
-        val currentId = codeTransformationSession?.getActiveJobId()?.id
-        try {
-            val success = codeTransformationSession?.stopTransformation(currentId) ?: true // no session -> no job to stop
-            if (!success) {
-                // This should not happen
-                throw CodeModernizerException(message("codemodernizer.notification.info.transformation_start_stopping.as_no_response"))
-            } else {
-                // Code successfully stopped toast will display when post job is run after this
-                CodetransformTelemetry.totalRunTime(
-                    codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                    codeTransformResultStatusMessage = "JobCancelled",
-                    codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
-                    codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
-                    codeTransformLocalMavenVersion = getMavenVersion(project),
-                )
-            }
-        } catch (e: Exception) {
-            LOG.error(e) { e.message.toString() }
-            notifyTransformationFailedToStop(e.localizedMessage)
-            CodetransformTelemetry.totalRunTime(
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                codeTransformResultStatusMessage = "JobCancelled",
-                codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),
-                codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
-                codeTransformLocalMavenVersion = getMavenVersion(project),
-            )
-        }
-    }
-
     fun userInitiatedStopCodeModernization() {
         notifyTransformationStartStopping()
         if (transformationStoppedByUsr.getAndSet(true)) return
