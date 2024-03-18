@@ -4,10 +4,12 @@
 package software.aws.toolkits.jetbrains.feedback
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -40,6 +42,7 @@ class SendFeedbackWithExperimentsMetadataTest {
 
         val publisher = mock<TelemetryPublisher>()
         val telemetryService = TestTelemetryService(publisher = publisher, batcher = mock())
+        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
 
         val comment = aString()
 
