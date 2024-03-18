@@ -82,14 +82,14 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
+    fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
 
-    fun createZipWithModuleFiles2(copyResult: MavenCopyCommandsResult): ZipCreationResult {
+    fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -97,89 +97,6 @@ data class CodeModernizerSessionContext(
             showTransformationHub()
             CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId())
             copyResult.dependencyDirectory
-        } else {
-            null
-        }
-
-        return runReadAction {
-            try {
-                val directoriesToExclude = findDirectoriesToExclude(sourceFolder)
-                val files = VfsUtil.collectChildrenRecursively(root).filter { child ->
-                    val childPath = Path(child.path)
-                    !child.isDirectory && directoriesToExclude.none { childPath.startsWith(it.toPath()) }
-                }
-                val dependencyfiles = if (depDirectory != null) {
-                    iterateThroughDependencies(depDirectory)
-                } else {
-                    mutableListOf()
-                }
-
-                val zipSources = File(ZIP_SOURCES_PATH)
-                val depSources = File(ZIP_DEPENDENCIES_PATH)
-                val outputFile = createTemporaryZipFile { zip ->
-                    // 1) Manifest file
-                    val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot))
-                        .byteInputStream()
-                        .use {
-                            zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)
-                        }
-
-                    // 2) Dependencies
-                    if (depDirectory != null) {
-                        dependencyfiles.forEach { depfile ->
-                            val relativePath = File(depfile.path).relativeTo(depDirectory.parentFile)
-                            val paddedPath = depSources.resolve(relativePath)
-                            var paddedPathString = paddedPath.toPath().toString()
-                            // Convert Windows file path to work on Linux
-                            if (File.separatorChar != '/') {
-                                paddedPathString = paddedPathString.replace('\\', '/')
-                            }
-                            depfile.inputStream().use {
-                                zip.putNextEntry(paddedPathString, it)
-                            }
-                        }
-                    }
-
-                    // 3) Sources
-                    files.forEach { file ->
-                        val relativePath = File(file.path).relativeTo(sourceFolder)
-                        val paddedPath = zipSources.resolve(relativePath)
-                        var paddedPathString = paddedPath.toPath().toString()
-                        // Convert Windows file path to work on Linux
-                        if (File.separatorChar != '/') {
-                            paddedPathString = paddedPathString.replace('\\', '/')
-                        }
-                        file.inputStream.use {
-                            zip.putNextEntry(paddedPathString, it)
-                        }
-                    }
-
-                    // 4) Build Log
-                    buildLogBuilder.toString().byteInputStream().use {
-                        zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
-                    }
-                }.toFile()
-                if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
-            } catch (e: NoSuchFileException) {
-                throw CodeModernizerException("Source folder not found")
-            } catch (e: Exception) {
-                LOG.error(e) { e.message.toString() }
-                throw CodeModernizerException("Unknown exception occurred")
-            } finally {
-                depDirectory?.deleteRecursively()
-            }
-        }
-    }
-    fun createZipWithModuleFiles(): ZipCreationResult {
-        val root = configurationFile.parent
-        val sourceFolder = File(root.path)
-        val buildLogBuilder = StringBuilder("Starting Build Log...\n")
-        val result = executeMavenCopyCommands(sourceFolder, buildLogBuilder)
-        val depDirectory = if (result is MavenCopyCommandsResult.Success) {
-            showTransformationHub()
-            CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId())
-            result.dependencyDirectory
         } else {
             null
         }

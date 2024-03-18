@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 // Register Editor Actions in the Editor Context Menu
-class ActionRegister {
+class ActionRegistrar {
 
     private val _messages by lazy { MutableSharedFlow<ContextMenuActionMessage>(extraBufferCapacity = 10) }
     val flow = _messages.asSharedFlow()
@@ -18,6 +18,6 @@ class ActionRegister {
 
     // provide singleton access
     companion object {
-        val instance = ActionRegister()
+        val instance = ActionRegistrar()
     }
 }

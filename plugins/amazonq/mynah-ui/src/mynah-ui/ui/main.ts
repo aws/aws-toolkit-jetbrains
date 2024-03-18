@@ -137,8 +137,6 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
         },
         onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => {
             if (message.type === ChatItemType.ANSWER_PART) {
-                console.log("answer part")
-                console.log(JSON.stringify(message))
                 mynahUI.updateLastChatAnswer(tabID, {
                     ...(message.messageId !== undefined ? { messageId: message.messageId } : {}),
                     ...(message.canBeVoted !== undefined ? { canBeVoted: message.canBeVoted } : {}),
@@ -157,7 +155,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             if (message.type === ChatItemType.PROMPT || message.type === ChatItemType.ANSWER_STREAM || message.type === ChatItemType.ANSWER) {
                 mynahUI.addChatItem(tabID, message)
                 mynahUI.updateStore(tabID, {
-                    loadingChat: message.type === ChatItemType.ANSWER ? false : true,
+                    loadingChat: message.type !== ChatItemType.ANSWER,
                 })
 
                 if (message.type === ChatItemType.PROMPT) {

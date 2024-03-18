@@ -81,7 +81,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob2(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
+    fun createModernizationJob(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
         LOG.info { "Starting Modernization Job" }
         val payload: File?
 
@@ -91,7 +91,7 @@ class CodeModernizerSession(
                 return CodeModernizerStartJobResult.Disposed
             }
             val startTime = Instant.now()
-            val result = sessionContext.createZipWithModuleFiles2(copyResult)
+            val result = sessionContext.createZipWithModuleFiles(copyResult)
 
             if (result is ZipCreationResult.Missing1P) {
                 return CodeModernizerStartJobResult.CancelledMissingDependencies
@@ -129,88 +129,6 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            val uploadId = uploadPayload(payload)
-            if (shouldStop.get()) {
-                LOG.warn { "Job was cancelled by user before start job was called" }
-                return CodeModernizerStartJobResult.Cancelled
-            }
-            val startJobResponse = startJob(uploadId)
-            state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
-            state.currentJobStatus = TransformationStatus.STARTED
-            CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
-        } catch (e: AlreadyDisposedException) {
-            LOG.warn { e.localizedMessage }
-            return CodeModernizerStartJobResult.Disposed
-        } catch (e: Exception) {
-            val errorMessage = "Failed to start job"
-            LOG.error(e) { errorMessage }
-            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
-            state.currentJobStatus = TransformationStatus.FAILED
-            CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = errorMessage,
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            )
-            CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
-        } finally {
-            deleteUploadArtifact(payload)
-        }
-    }
-    fun createModernizationJob(): CodeModernizerStartJobResult {
-        LOG.info { "Starting Modernization Job" }
-        val payload: File?
-
-        try {
-            if (isDisposed.get()) {
-                LOG.warn { "Disposed when about to create zip to upload" }
-                return CodeModernizerStartJobResult.Disposed
-            }
-            val startTime = Instant.now()
-            notifyStickyInfo(
-                message("codemodernizer.notification.info.compiling_project.title"),
-                message("codemodernizer.notification.info.compiling_project.content"),
-            )
-            val result = sessionContext.createZipWithModuleFiles()
-
-            if (result is ZipCreationResult.Missing1P) {
-                return CodeModernizerStartJobResult.CancelledMissingDependencies
-            }
-
-            payload = result.payload
-
-            val payloadSize = payload.length().toInt()
-
-            CodetransformTelemetry.jobCreateZipEndTime(
-                codeTransformTotalByteSize = payloadSize,
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-                codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now())
-            )
-
-            if (payloadSize > MAX_ZIP_SIZE) {
-                return CodeModernizerStartJobResult.CancelledZipTooLarge
-            }
-        } catch (e: Exception) {
-            val errorMessage = "Failed to create zip"
-            LOG.error(e) { errorMessage }
-            CodetransformTelemetry.logGeneralError(
-                codeTransformApiErrorMessage = errorMessage,
-                codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            )
-            state.currentJobStatus = TransformationStatus.FAILED
-            return when (e) {
-                is CodeModernizerException -> CodeModernizerStartJobResult.ZipCreationFailed(e.message)
-                else -> CodeModernizerStartJobResult.ZipCreationFailed(message("codemodernizer.notification.warn.zip_creation_failed.reasons.unknown"))
-            }
-        }
-
-        return try {
-            if (shouldStop.get()) {
-                LOG.warn { "Job was cancelled by user before upload was called" }
-                return CodeModernizerStartJobResult.Cancelled
-            }
-            notifyStickyInfo(
-                message("codemodernizer.notification.info.submitted_project.title"),
-                message("codemodernizer.notification.info.submitted_project.content"),
-            )
             val uploadId = uploadPayload(payload)
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }

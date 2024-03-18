@@ -350,7 +350,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun launchModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult) = projectCoroutineScope(project).launch {
-        val result = initModernizationJob2(session, copyResult)
+        val result = initModernizationJob(session, copyResult)
         postModernizationJob(result)
     }
 
@@ -402,8 +402,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         return result
     }
 
-    internal suspend fun initModernizationJob2(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
-        val result = session.createModernizationJob2(copyResult)
+    internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
+        val result = session.createModernizationJob(copyResult)
         return when (result) {
             is CodeModernizerStartJobResult.ZipCreationFailed -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
@@ -415,48 +415,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerStartJobResult.UnableToStartJob -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
                     message("codemodernizer.notification.warn.unable_to_start_job", result.exception), // TODO maybe not display the entire message
-                    true,
-                )
-            }
-
-            is CodeModernizerStartJobResult.Started -> {
-                handleJobStarted(result.jobId, session)
-            }
-
-            is CodeModernizerStartJobResult.Disposed -> {
-                CodeModernizerJobCompletedResult.ManagerDisposed
-            }
-
-            is CodeModernizerStartJobResult.Cancelled -> {
-                CodeModernizerJobCompletedResult.JobAbortedBeforeStarting
-            }
-
-            is CodeModernizerStartJobResult.CancelledMissingDependencies -> {
-                CodeModernizerJobCompletedResult.JobAbortedMissingDependencies
-            }
-
-            is CodeModernizerStartJobResult.CancelledZipTooLarge -> {
-                CodeModernizerJobCompletedResult.JobAbortedZipTooLarge
-            }
-        }
-    }
-
-    /**
-     *Start the modernization job and return the reference
-     */
-    internal suspend fun initModernizationJob(session: CodeModernizerSession): CodeModernizerJobCompletedResult {
-        val result = session.createModernizationJob()
-        return when (result) {
-            is CodeModernizerStartJobResult.ZipCreationFailed -> {
-                CodeModernizerJobCompletedResult.UnableToCreateJob(
-                    message("codemodernizer.notification.warn.zip_creation_failed", result.reason),
-                    false,
-                )
-            }
-
-            is CodeModernizerStartJobResult.UnableToStartJob -> {
-                CodeModernizerJobCompletedResult.UnableToCreateJob(
-                    message("codemodernizer.notification.warn.unable_to_start_job", result.exception),
                     true,
                 )
             }
