@@ -12,7 +12,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.remoteDev.downloader.JetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.downloader.TestJetBrainsClientDownloaderConfigurationProvider
 import com.intellij.remoteDev.hostStatus.UnattendedHostStatus
-import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestApplication
 import com.intellij.testFramework.registerOrReplaceServiceInstance
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.net.NetUtils
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.extension.AfterAllCallback
-import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
@@ -66,10 +65,10 @@ import kotlin.reflect.KFunction
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-@ExtendWith(ApplicationExtension::class)
 @SsoLogin("codecatalyst-test-account")
 @DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
 @DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "202*.*", disabledReason = "Flakes on 233+")
+@TestApplication
 class DevEnvConnectTest : AfterAllCallback {
     companion object {
         @JvmField
