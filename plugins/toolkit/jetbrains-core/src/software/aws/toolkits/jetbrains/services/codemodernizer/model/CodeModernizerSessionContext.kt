@@ -15,12 +15,11 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitOption
@@ -83,13 +82,14 @@ data class CodeModernizerSessionContext(
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipWithModuleFiles(): ZipCreationResult {
+        val telemetry = CodeModernizerTelemetryManager.getInstance(project)
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val result = executeMavenCopyCommands(sourceFolder, buildLogBuilder)
         val depDirectory = if (result is MavenCopyCommandsResult.Success) {
             showTransformationHub()
-            CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId())
+            telemetry.dependenciesCopied()
             result.dependencyDirectory
         } else {
             null
