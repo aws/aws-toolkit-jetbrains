@@ -50,7 +50,7 @@ class App : AmazonQApp {
         )
 
         scope.launch {
-            merge(CodeTransformMessageListener.instance.flow, ActionRegistrar.instance.flow, context.messagesFromUiToApp.flow).collect { message ->
+            merge(ActionRegistrar.instance.flow, context.messagesFromUiToApp.flow).collect { message ->
                 // Launch a new coroutine to handle each message
                 scope.launch { handleMessage(message, inboundAppMessagesHandler) }
             }
