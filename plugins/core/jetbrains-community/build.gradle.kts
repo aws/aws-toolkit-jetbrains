@@ -3,8 +3,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.intellij.IntelliJPlugin
-import org.jetbrains.intellij.IntelliJPluginExtension
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -80,4 +78,8 @@ tasks.withType<Detekt> {
 
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
+}
+
+tasks.processTestResources {
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
