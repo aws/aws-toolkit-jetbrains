@@ -21,7 +21,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerCon
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 
-class CawsRootNode(private val project: Project) : AbstractTreeNode<String>(project, CawsServiceNode.NODE_NAME), PinnedConnectionNode {
+class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(nodeProject, CawsServiceNode.NODE_NAME), PinnedConnectionNode {
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
         val groupId = when (connection) {
@@ -63,7 +63,7 @@ class CawsRootNode(private val project: Project) : AbstractTreeNode<String>(proj
 
 class CawsServiceNode : DevToolsServiceNode {
     override val serviceId: String = "aws.toolkit.caws.service"
-    override fun buildServiceRootNode(project: Project): AbstractTreeNode<*> = CawsRootNode(project)
+    override fun buildServiceRootNode(nodeProject: Project): AbstractTreeNode<*> = CawsRootNode(nodeProject)
 
     companion object {
         val NODE_NAME = message("caws.devtoolPanel.title")
