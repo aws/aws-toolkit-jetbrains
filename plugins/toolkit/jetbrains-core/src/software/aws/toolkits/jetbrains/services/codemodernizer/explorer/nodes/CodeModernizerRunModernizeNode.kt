@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeMod
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.CodeWhispererActionNode
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.MouseEvent
 
@@ -34,6 +35,7 @@ class CodeModernizerRunModernizeNode(private val nodeProject: Project) : CodeWhi
             toolWindow?.show()
         }
         if (!codeModernizerManager.isModernizationJobActive()) {
+            CodeModernizerManager.getInstance(project).sendUserClickedTelemetry(CodeTransformStartSrcComponents.DevToolsStartButton)
             CodeTransformMessageListener.instance.onStart()
         } else {
             CodeTransformMessageListener.instance.onStop()

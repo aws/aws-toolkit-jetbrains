@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWi
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 
 class CodeModernizerStartModernizerAction :
     AnAction(
@@ -36,6 +37,7 @@ class CodeModernizerStartModernizerAction :
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
             toolWindow?.show()
         }
+        CodeModernizerManager.getInstance(project).sendUserClickedTelemetry(CodeTransformStartSrcComponents.BottomPanelSideNavButton)
         CodeTransformMessageListener.instance.onStart()
     }
 }

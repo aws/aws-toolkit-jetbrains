@@ -63,6 +63,8 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
+import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
+import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
@@ -112,61 +114,68 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun validate(project: Project): ValidationResult {
-        if (isRunningOnRemoteBackend()) {
-            return ValidationResult(
-                false,
-                message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
-                InvalidTelemetryReason(
-                    CodeTransformPreValidationError.RemoteRunProject
+        fun validateCore(project: Project): ValidationResult {
+            if (isRunningOnRemoteBackend()) {
+                return ValidationResult(
+                    false,
+                    message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
+                    InvalidTelemetryReason(
+                        CodeTransformPreValidationError.RemoteRunProject
+                    )
                 )
-            )
-        }
-        val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-        if (!(connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer)) {
-            return ValidationResult(
-                false,
-                message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
-                InvalidTelemetryReason(
-                    CodeTransformPreValidationError.NonSsoLogin
+            }
+            val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+            if (!(connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer)) {
+                return ValidationResult(
+                    false,
+                    message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
+                    InvalidTelemetryReason(
+                        CodeTransformPreValidationError.NonSsoLogin
+                    )
                 )
-            )
+            }
+
+            if (ProjectRootManager.getInstance(project).contentRoots.isEmpty()) {
+                return ValidationResult(
+                    false,
+                    message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
+                    InvalidTelemetryReason(
+                        CodeTransformPreValidationError.NoPom
+                    )
+                )
+            }
+            val supportedModules = project.getSupportedModules(supportedJavaMappings).toSet()
+            val validProjectJdk = project.getSupportedJavaMappings(supportedJavaMappings).isNotEmpty()
+            val projectJdk = project.tryGetJdk()
+            if (supportedModules.isEmpty() && !validProjectJdk) {
+                return ValidationResult(
+                    false,
+                    message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
+                    InvalidTelemetryReason(
+                        CodeTransformPreValidationError.UnsupportedJavaVersion,
+                        projectJdk?.toString() ?: ""
+                    )
+                )
+            }
+            val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
+            return if (validatedBuildFiles.isNotEmpty()) {
+                ValidationResult(true, validatedBuildFiles = validatedBuildFiles, validatedProjectJdkName = projectJdk?.description ?: "")
+            } else {
+                ValidationResult(
+                    false,
+                    message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
+                    InvalidTelemetryReason(
+                        CodeTransformPreValidationError.NonMavenProject,
+                        if (isGradleProject(project)) "Gradle build" else "other build"
+                    )
+                )
+            }
         }
 
-        if (ProjectRootManager.getInstance(project).contentRoots.isEmpty()) {
-            return ValidationResult(
-                false,
-                message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
-                InvalidTelemetryReason(
-                    CodeTransformPreValidationError.NoPom
-                )
-            )
-        }
-        val supportedModules = project.getSupportedModules(supportedJavaMappings).toSet()
-        val validProjectJdk = project.getSupportedJavaMappings(supportedJavaMappings).isNotEmpty()
-        val projectJdk = project.tryGetJdk()
-        if (supportedModules.isEmpty() && !validProjectJdk) {
-            return ValidationResult(
-                false,
-                message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
-                InvalidTelemetryReason(
-                    CodeTransformPreValidationError.UnsupportedJavaVersion,
-                    projectJdk?.toString() ?: ""
-                )
-            )
-        }
-        val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
-        return if (validatedBuildFiles.isNotEmpty()) {
-            ValidationResult(true, validatedBuildFiles = validatedBuildFiles, validatedProjectJdkName = projectJdk?.description ?: "")
-        } else {
-            ValidationResult(
-                false,
-                message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
-                InvalidTelemetryReason(
-                    CodeTransformPreValidationError.NonMavenProject,
-                    if (isGradleProject(project)) "Gradle build" else "other build"
-                )
-            )
-        }
+        val result = validateCore(project)
+        sendValidationResultTelemetry(result)
+
+        return result
     }
 
     /**
@@ -204,7 +213,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeModernizerBottomWindowPanelManager.setJobStartingUI()
     }
 
-    private fun sendUserClickedTelemetry(srcStartComponent: CodeTransformStartSrcComponents) {
+    fun sendUserClickedTelemetry(srcStartComponent: CodeTransformStartSrcComponents) {
         CodeTransformTelemetryState.instance.setSessionId()
         CodeTransformTelemetryState.instance.setStartTime()
         CodetransformTelemetry.isDoubleClickedToTriggerUserModal(
@@ -243,16 +252,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
+    private fun calculateProjectHash(configFilePath: String) = Base64
+        .getEncoder()
+        .encodeToString(DigestUtils.sha256(configFilePath))
+
     fun runModernize(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): Job? {
         initStopParameters()
-
+        CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
+            codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(session.sessionContext.sourceJavaVersion.name),
+            codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(session.sessionContext.targetJavaVersion.name),
+            codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
+            codeTransformProjectId = calculateProjectHash(session.sessionContext.configurationFile.path),
+        )
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         codeTransformationSession = session
         return launchModernizationJob(session, copyResult)
     }
-    private fun calculateProjectHash(customerSelection: CustomerSelection) = Base64
-        .getEncoder()
-        .encodeToString(DigestUtils.sha256(customerSelection.configurationFile.path))
 
     private fun initStopParameters() {
         codeTransformationSession = null
@@ -261,12 +276,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).currentJobCreationTime = Instant.MIN
         CodeModernizerSessionState.getInstance(project).currentJobStopTime = Instant.MIN
     }
-
-    fun getCustomerSelection(validatedBuildFiles: List<VirtualFile>): CustomerSelection? = PreCodeTransformUserDialog(
-        project,
-        validatedBuildFiles,
-        supportedJavaMappings,
-    ).create()
 
     private fun isQChatPanelVisible() = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)?.isVisible == true
 

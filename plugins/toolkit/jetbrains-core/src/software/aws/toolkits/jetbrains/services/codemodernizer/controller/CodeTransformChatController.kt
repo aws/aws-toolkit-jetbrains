@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
 import software.aws.toolkits.jetbrains.services.codemodernizer.toVirtualFile
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -60,6 +61,7 @@ class CodeTransformChatController(
             return
         }
 
+        codeModernizerManager.sendUserClickedTelemetry(CodeTransformStartSrcComponents.ChatPrompt)
         codeTransformChatHelper.setActiveCodeTransformTabId(message.tabId)
 
         if (message.startNewTransform) {
