@@ -5,7 +5,7 @@
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/plugins/toolkit/intellij" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="-PrunIdeVariant=IC -PideProfileName=2023.1 --stacktrace" />
+      <option name="scriptParameters" value="-PrunIdeVariant=IC -PideProfileName=2023.1" />
       <option name="taskDescriptions">
         <list />
       </option>
@@ -19,7 +19,7 @@
     <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
     <DebugAllEnabled>false</DebugAllEnabled>
-    <RunAsTest>false</RunAsTest>
+    <ForceTestExec>false</ForceTestExec>
     <method v="2" />
   </configuration>
 </component>
