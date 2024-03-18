@@ -229,9 +229,6 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
 
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.profiles.DefaultProfileWatcher"/>
-
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
 
