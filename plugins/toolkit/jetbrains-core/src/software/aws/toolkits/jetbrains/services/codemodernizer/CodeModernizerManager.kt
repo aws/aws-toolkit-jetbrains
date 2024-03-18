@@ -240,7 +240,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // New projectDetails metric should always be fired whether the project was valid or invalid
         CodetransformTelemetry.projectDetails(
             codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
-            result = if (!validationResult.valid) Result.Failed else Result.Unknown,
+            result = if (!validationResult.valid) Result.Failed else Result.Succeeded,
             reason = if (!validationResult.valid) validationResult.invalidTelemetryReason.additonalInfo else null,
             codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
             codeTransformLocalJavaVersion = project.tryGetJdk().toString()
