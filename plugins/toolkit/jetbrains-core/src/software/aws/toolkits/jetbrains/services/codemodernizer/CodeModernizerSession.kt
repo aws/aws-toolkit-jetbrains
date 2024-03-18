@@ -35,7 +35,7 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
-import java.util.*
+import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
