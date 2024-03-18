@@ -88,7 +88,7 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
         BearerTokenFeatureSet.CODEWHISPERER -> ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
             CodeWhispererConnection.getInstance()
         )
-        BearerTokenFeatureSet.CODECATALYST -> ToolkitConnectionManager.getInstance(project).checkConnectionForFeatureForPartialExpiration(
+        BearerTokenFeatureSet.CODECATALYST -> ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
             CodeCatalystConnection.getInstance()
         )
         BearerTokenFeatureSet.Q -> ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(

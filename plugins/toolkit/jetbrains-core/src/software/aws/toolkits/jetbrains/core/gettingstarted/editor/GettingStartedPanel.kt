@@ -383,7 +383,7 @@ class GettingStartedPanel(
                                     AwsToolkitExplorerToolWindow.getInstance(project).selectTab(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)?.isVisible = true
                                 }
                             }
-                            val connectionSettings = ToolkitConnectionManager.getInstance(project).checkConnectionForFeatureForPartialExpiration(
+                            val connectionSettings = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
                                 CodeCatalystConnection.getInstance()
                             ) as AwsBearerTokenConnection?
                             if (connectionSettings != null) {
@@ -458,7 +458,7 @@ class GettingStartedPanel(
                                 }
                             }
 
-                            val connectionSettings = ToolkitConnectionManager.getInstance(project).checkConnectionForFeatureForPartialExpiration(
+                            val connectionSettings = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
                                 CodeCatalystConnection.getInstance()
                             ) as AwsBearerTokenConnection?
                             if (connectionSettings != null) {

@@ -42,7 +42,7 @@ class CawsRootNode(private val project: Project) : AbstractTreeNode<String>(proj
     override fun update(presentation: PresentationData) {
         presentation.addText(value, SimpleTextAttributes.REGULAR_ATTRIBUTES)
 
-        val connection = ToolkitConnectionManager.getInstance(project).checkConnectionForFeatureForPartialExpiration(CodeCatalystConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
         if (connection != null) {
             val msgId = if (connection.isSono()) {
                 "caws.connected.builder_id"

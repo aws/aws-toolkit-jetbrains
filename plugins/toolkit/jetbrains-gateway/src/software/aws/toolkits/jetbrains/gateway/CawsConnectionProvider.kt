@@ -107,7 +107,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
             return null
         }
 
-        val currentConnection = ToolkitConnectionManager.getInstance(null).checkConnectionForFeatureForPartialExpiration(CodeCatalystConnection.getInstance())
+        val currentConnection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as AwsBearerTokenConnection?
 
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)

@@ -36,7 +36,7 @@ class CodeCatalystCredentialManager {
     }
 
     fun connection() = (
-        ToolkitConnectionManager.getInstance(project).checkConnectionForFeatureForPartialExpiration(CodeCatalystConnection.getInstance())
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as? AwsBearerTokenConnection
         )
 
