@@ -10,7 +10,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
-import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.cwc.commands.ActionRegistrar
 import software.aws.toolkits.jetbrains.services.cwc.commands.ContextMenuActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
