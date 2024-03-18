@@ -155,7 +155,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     maxDuration: Duration = Duration.ofSeconds(604800),
     onStateChange: (previousStatus: TransformationStatus?, currentStatus: TransformationStatus, transformationPlan: TransformationPlan?) -> Unit,
 ): PollingResult {
-    val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+    val telemetry = CodeTransformTelemetryManager.getInstance(project)
     var state = TransformationStatus.UNKNOWN_TO_SDK_VERSION
     var transformationResponse: GetTransformationResponse? = null
     var transformationPlan: TransformationPlan? = null

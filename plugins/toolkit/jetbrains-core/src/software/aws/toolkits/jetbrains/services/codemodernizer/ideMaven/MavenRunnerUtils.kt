@@ -11,14 +11,14 @@ import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 import org.slf4j.Logger
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 
-private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeModernizerTelemetryManager, throwable: Throwable? = null) {
+private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeTransformTelemetryManager, throwable: Throwable? = null) {
     if (throwable != null) logger.error(throwable) { error } else logger.error { error }
     telemetry.mvnBuildFailed(CodeTransformMavenBuildCommand.IDEBundledMaven, error)
 }
@@ -26,7 +26,7 @@ private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeModer
 fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
     val currentTimestamp = System.currentTimeMillis()
     val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
-    val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+    val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
     try {
         // Create shared parameters
@@ -86,7 +86,7 @@ private fun runMavenCopyDependencies(
     transformMavenRunner: TransformMavenRunner,
     destinationDir: Path,
     logger: Logger,
-    telemetry: CodeModernizerTelemetryManager,
+    telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven dependency:copy-dependencies")
     val copyCommandList = listOf(
@@ -125,7 +125,7 @@ private fun runMavenClean(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeModernizerTelemetryManager,
+    telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven clean")
@@ -157,7 +157,7 @@ private fun runMavenInstall(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeModernizerTelemetryManager,
+    telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven install")

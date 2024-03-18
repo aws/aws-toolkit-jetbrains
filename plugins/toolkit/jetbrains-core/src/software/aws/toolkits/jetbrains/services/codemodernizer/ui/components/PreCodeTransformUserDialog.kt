@@ -20,7 +20,7 @@ import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.tryGetJdk
@@ -48,7 +48,7 @@ class PreCodeTransformUserDialog(
         lateinit var dialogPanel: DialogPanel
         lateinit var buildFileComboBox: ComboBox<String>
 
-        val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+        val telemetry = CodeTransformTelemetryManager.getInstance(project)
         val buildfiles = supportedBuildFilesInProject
         var focusedModuleIndex = 0
         var chosenBuildFile = buildfiles.firstOrNull()

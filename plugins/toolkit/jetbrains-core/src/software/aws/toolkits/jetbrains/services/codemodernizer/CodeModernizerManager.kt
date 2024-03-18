@@ -71,7 +71,7 @@ const val AMAZON_Q_FEEDBACK_DIALOG_KEY = "Amazon Q"
 
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
-    private val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+    private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private var managerState = CodeModernizerState()
     val codeModernizerBottomWindowPanelManager by lazy { CodeModernizerBottomWindowPanelManager(project) }
     private val codeModernizerBottomWindowPanelContent by lazy {

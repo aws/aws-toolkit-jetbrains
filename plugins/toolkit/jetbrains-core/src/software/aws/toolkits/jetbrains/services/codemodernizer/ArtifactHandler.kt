@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String)
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
-    private val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+    private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
 

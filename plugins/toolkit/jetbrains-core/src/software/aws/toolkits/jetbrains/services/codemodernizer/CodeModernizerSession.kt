@@ -53,7 +53,7 @@ class CodeModernizerSession(
     private val state = CodeModernizerSessionState.getInstance(sessionContext.project)
     private val isDisposed = AtomicBoolean(false)
     private val shouldStop = AtomicBoolean(false)
-    private val telemetry = CodeModernizerTelemetryManager.getInstance(sessionContext.project)
+    private val telemetry = CodeTransformTelemetryManager.getInstance(sessionContext.project)
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.

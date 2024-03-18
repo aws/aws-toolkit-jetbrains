@@ -41,7 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -144,7 +144,7 @@ class ChatController private constructor(
                 } else {
                     manager.getBottomToolWindow().show()
                 }
-                CodeModernizerTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
+                CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
             }
         }
         TelemetryHelper.recordTelemetryChatRunCommand(CwsprChatCommandType.Transform, startUrl = getStartUrl(context.project))

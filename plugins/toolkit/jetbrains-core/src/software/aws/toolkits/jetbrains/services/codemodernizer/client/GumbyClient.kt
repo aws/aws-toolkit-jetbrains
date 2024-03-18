@@ -36,7 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
@@ -45,7 +45,7 @@ import java.time.Instant
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
-    private val telemetry = CodeModernizerTelemetryManager.getInstance(project)
+    private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         ?: error("Attempted to use connection while one does not exist")
 

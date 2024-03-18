@@ -29,7 +29,7 @@ import java.util.Base64
 /**
  * CodeModernizerTelemetry contains helper functions for common operations that require telemetry.
  */
-class CodeModernizerTelemetryManager(private val project: Project) {
+class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
     private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
     fun sendUserClickedTelemetry(srcStartComponent: CodeTransformStartSrcComponents) {
@@ -186,6 +186,6 @@ class CodeModernizerTelemetryManager(private val project: Project) {
     fun jobIsStartedFromChatPrompt() = CodetransformTelemetry.jobIsStartedFromChatPrompt(codeTransformSessionId = sessionId)
 
     companion object {
-        fun getInstance(project: Project): CodeModernizerTelemetryManager = project.service()
+        fun getInstance(project: Project): CodeTransformTelemetryManager = project.service()
     }
 }
