@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VirtualFile
@@ -271,6 +272,10 @@ class CodeTransformChatController(
                 message = message("codemodernizer.chat.message.auth_prompt")
             )
         )
+    }
+
+    override suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked) {
+        BrowserUtil.browse(message.link)
     }
 
     private suspend fun handleCodeTransformJobResume() {

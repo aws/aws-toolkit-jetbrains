@@ -32,6 +32,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
     CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
     CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
     AuthFollowUpWasClicked("auth-follow-up-was-clicked"),
+    BodyLinkClicked("response-body-link-click"),
 }
 
 class CodeTransformChatApp : AmazonQApp {
@@ -54,6 +55,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
             CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
             CodeTransformMessageTypes.AuthFollowUpWasClicked.type to IncomingCodeTransformMessage.AuthFollowUpWasClicked::class,
+            CodeTransformMessageTypes.BodyLinkClicked.type to IncomingCodeTransformMessage.BodyLinkClicked::class,
         )
 
         scope.launch {
@@ -93,6 +95,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.TabCreated -> inboundAppMessagesHandler.processTabCreated(message)
             is IncomingCodeTransformMessage.TabRemoved -> inboundAppMessagesHandler.processTabRemoved(message)
             is IncomingCodeTransformMessage.AuthFollowUpWasClicked -> inboundAppMessagesHandler.processAuthFollowUpClick(message)
+            is IncomingCodeTransformMessage.BodyLinkClicked -> inboundAppMessagesHandler.processBodyLinkClicked(message)
             is CodeTransformActionMessage -> inboundAppMessagesHandler.processCodeTransformCommand(message)
         }
     }

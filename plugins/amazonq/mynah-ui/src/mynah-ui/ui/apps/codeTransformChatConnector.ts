@@ -191,4 +191,13 @@ export class CodeTransformChatConnector {
         })
     }
 
+    onResponseBodyLinkClick = (tabID: string, messageId: string, link: string): void => {
+        this.sendMessageToExtension({
+            command: 'response-body-link-click',
+            tabID,
+            messageId,
+            link,
+            tabType: 'codetransform',
+        })
+    }
 }

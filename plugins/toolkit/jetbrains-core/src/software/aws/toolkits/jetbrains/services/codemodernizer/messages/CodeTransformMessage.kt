@@ -95,6 +95,13 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         @JsonProperty("tabID") val tabId: String,
         val authType: AuthFollowUpType,
     ) : IncomingCodeTransformMessage
+
+    data class BodyLinkClicked(
+        @JsonProperty("tabID") val tabId: String,
+        val command: String,
+        val messageId: String?,
+        val link: String,
+    ) : IncomingCodeTransformMessage
 }
 
 // === App -> UI messages ===

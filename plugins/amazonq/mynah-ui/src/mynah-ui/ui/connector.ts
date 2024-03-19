@@ -89,6 +89,9 @@ export class Connector {
             case 'featuredev':
                 this.featureDevChatConnector.onResponseBodyLinkClick(tabID, messageId, link)
                 break
+            case 'codetransform':
+                this.codeTransformChatConnector.onResponseBodyLinkClick(tabID, messageId, link)
+                break
         }
     }
 
