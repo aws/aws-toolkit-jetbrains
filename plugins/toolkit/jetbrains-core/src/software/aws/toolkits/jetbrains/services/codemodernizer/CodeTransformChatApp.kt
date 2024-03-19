@@ -18,28 +18,42 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationUpdateMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.codeTransformTabName
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
+
+private enum class CodeTransformMessageTypes(val type: String) {
+    TabCreated("new-tab-was-created"),
+    TabRemoved("tab-was-removed"),
+    Transform("transform"),
+    CodeTransformStart("codetransform-start"),
+    CodeTransformStop("codetransform-stop"),
+    CodeTransformCancel("codetransform-cancel"),
+    CodeTransformNew("codetransform-new"),
+    CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
+    CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
+    AuthFollowUpWasClicked("auth-follow-up-was-clicked"),
+}
 
 class CodeTransformChatApp : AmazonQApp {
     private val scope = disposableCoroutineScope(this)
 
-    override val tabTypes = listOf("codetransform")
+    override val tabTypes = listOf(codeTransformTabName)
 
     override fun init(context: AmazonQAppInitContext) {
         val chatSessionStorage = ChatSessionStorage()
         val inboundAppMessagesHandler: InboundAppMessagesHandler = CodeTransformChatController(context, chatSessionStorage)
 
         context.messageTypeRegistry.register(
-            "new-tab-was-created" to IncomingCodeTransformMessage.TabCreated::class,
-            "tab-was-removed" to IncomingCodeTransformMessage.TabRemoved::class,
-            "transform" to IncomingCodeTransformMessage.Transform::class,
-            "codetransform-start" to IncomingCodeTransformMessage.CodeTransformStart::class,
-            "codetransform-stop" to IncomingCodeTransformMessage.CodeTransformStop::class,
-            "codetransform-cancel" to IncomingCodeTransformMessage.CodeTransformCancel::class,
-            "codetransform-new" to IncomingCodeTransformMessage.CodeTransformNew::class,
-            "codetransform-open-transform-hub" to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
-            "codetransform-open-mvn-build" to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
-            "auth-follow-up-was-clicked" to IncomingCodeTransformMessage.AuthFollowUpWasClicked::class,
+            CodeTransformMessageTypes.TabCreated.type to IncomingCodeTransformMessage.TabCreated::class,
+            CodeTransformMessageTypes.TabRemoved.type to IncomingCodeTransformMessage.TabRemoved::class,
+            CodeTransformMessageTypes.Transform.type to IncomingCodeTransformMessage.Transform::class,
+            CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
+            CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
+            CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
+            CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
+            CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
+            CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
+            CodeTransformMessageTypes.AuthFollowUpWasClicked.type to IncomingCodeTransformMessage.AuthFollowUpWasClicked::class,
         )
 
         scope.launch {
