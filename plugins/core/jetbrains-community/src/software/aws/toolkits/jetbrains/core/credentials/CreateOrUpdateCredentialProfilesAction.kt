@@ -30,7 +30,8 @@ class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
     message("configure.toolkit.upsert_credentials.action"),
     null,
     AwsIcons.Logos.AWS
-), DumbAware {
+),
+    DumbAware {
     @Suppress("unused")
     constructor() : this(
         DefaultConfigFilesFacade(
