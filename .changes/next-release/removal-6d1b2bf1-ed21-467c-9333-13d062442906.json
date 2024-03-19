@@ -1,4 +1,4 @@
 {
   "type" : "removal",
-  "description" : "CodeTransformation: remove play/stop buttons from Transformation Hub, use /transform in chat"
+  "description" : "CodeTransformation: remove play button from Transformation Hub, instead use /transform in chat"
 }
