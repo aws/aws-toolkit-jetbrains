@@ -20,6 +20,8 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
+const val docUrl = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html";
+
 private val cancelUserSelectionButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = false,
@@ -181,7 +183,7 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
         "codemodernizer.chat.message.local_build_failed"
     )}\n\n${message(
         "codemodernizer.chat.message.doc_link_prefix"
-    )} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)",
+    )} [$docUrl]($docUrl)",
     followUps = listOf(
         startNewTransformFollowUp,
     )
@@ -217,7 +219,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
                 "codemodernizer.chat.message.result.zip_too_large"
             )}\n\n${message(
                 "codemodernizer.chat.message.doc_link_prefix"
-            )} [https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html](https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html)"
+            )} [$docUrl]($docUrl)"
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
             message("codemodernizer.chat.message.result.success")
