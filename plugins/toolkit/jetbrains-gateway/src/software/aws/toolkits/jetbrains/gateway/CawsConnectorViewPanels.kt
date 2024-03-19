@@ -194,7 +194,7 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
 
                 val currentConnection = ToolkitConnectionManager.getInstance(
                     null
-                ).checkConnectionForFeatureForPartialExpiration(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
+                ).activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
                     ?: error("Connection cannot be null")
 
                 val parameters = mapOf(
