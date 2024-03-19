@@ -4,7 +4,7 @@
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
     <id>plugin-amazonq</id>
     <version>1.0</version>
-    <idea-version since-build="232" until-build="999"/>
+    <idea-version since-build="231" until-build="999"/>
 
     <depends>core</depends>
     <xi:include href="/META-INF/module-amazonq.xml" />

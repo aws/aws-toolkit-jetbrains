@@ -7,7 +7,7 @@
     <description>corecorecorecorecorecorecorecorecorecore</description>
     <vendor email="a@example.com">vendor</vendor>
     <version>1.0</version>
-    <idea-version since-build="232" until-build="999"/>
+    <idea-version since-build="231" until-build="999"/>
 
     <content>
         <module name="aws.toolkit.core"/>
