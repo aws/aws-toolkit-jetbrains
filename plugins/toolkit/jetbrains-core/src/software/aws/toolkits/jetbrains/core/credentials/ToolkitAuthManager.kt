@@ -110,6 +110,9 @@ interface ToolkitConnectionManager : Disposable {
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
 
+    fun checkConnectionForFeatureForPartialExpiration(feature: FeatureWithPinnedConnection): ToolkitConnection?
+
+    fun checkConnectionForFeatureForPartialExpiration(feature: FeatureWithPinnedConnection): ToolkitConnection?
     fun switchConnection(newConnection: ToolkitConnection?)
 
     override fun dispose() {}

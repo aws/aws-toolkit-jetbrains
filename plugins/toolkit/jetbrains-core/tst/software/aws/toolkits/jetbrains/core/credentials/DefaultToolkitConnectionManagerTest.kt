@@ -135,6 +135,23 @@ class DefaultToolkitConnectionManagerTest {
         assertThat(sut.activeConnectionForFeature(feature)).isEqualTo(connection)
     }
 
+    @Test
+    fun `checkConnectionForFeatureForPartialExpiration falls back to default if not pinned`() {
+        credManager.clear()
+        configureSut(sut, null)
+        val pinningMock = mock<ConnectionPinningManager>()
+        val feature = mock<FeatureWithPinnedConnection> {
+            on { it.supportsConnectionType(any()) } doReturn true
+            on { it.featureId } doReturn "test"
+        }
+
+        ApplicationManager.getApplication().replaceService(ConnectionPinningManager::class.java, pinningMock, disposableRule.disposable)
+        assertThat(sut.checkConnectionForFeatureForPartialExpiration(feature)).isNull()
+
+        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
+        assertThat(sut.checkConnectionForFeatureForPartialExpiration(feature)).isEqualTo(connection)
+    }
+
     private fun configureSut(sut: ToolkitConnectionManager, conneciton1: ToolkitConnection?) {
         val clazz = sut::class.java
         clazz.getDeclaredField("connection").apply {
