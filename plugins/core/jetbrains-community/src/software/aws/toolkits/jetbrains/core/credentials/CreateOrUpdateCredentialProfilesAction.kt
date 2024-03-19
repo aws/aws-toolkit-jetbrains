@@ -25,7 +25,11 @@ import java.nio.file.Path
 
 class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
     private val writer: ConfigFilesFacade
-) : AnAction(message("configure.toolkit.upsert_credentials.action")), DumbAware {
+) : AnAction(
+    message("configure.toolkit.upsert_credentials.action"),
+    null,
+    AwsIcons.Logos.AWS
+), DumbAware {
     @Suppress("unused")
     constructor() : this(
         DefaultConfigFilesFacade(

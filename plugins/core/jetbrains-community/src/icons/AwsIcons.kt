@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package icons
@@ -11,6 +11,7 @@ import javax.swing.Icon
 /**
  * Lives in `icons` package due to that is how [com.intellij.openapi.util.IconLoader.getReflectiveIcon] works
  */
+@Deprecated("Plugin-specific icons should not be declared in shared icons")
 object AwsIcons {
     object Logos {
         @JvmField val AWS = load("/icons/logos/AWS.svg") // 13x13
