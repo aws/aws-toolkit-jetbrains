@@ -66,10 +66,6 @@ data class CodeModernizerSessionContext(
         return isIdea
     }
 
-    /**
-     * TODO use an approach based on walkTopDown instead of VfsUtil.collectChildrenRecursively(root) in createZipWithModuleFiles.
-     * We now recurse the file tree twice and then filter which hurts performance for large projects.
-     */
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
