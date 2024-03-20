@@ -109,6 +109,7 @@ class CodeWhispererEndpointCustomizerTest {
                         {},
                         GenerateAssistantResponseResponseHandler.builder()
                             .onEventStream {}
+                            .onError { latch.countDown() }
                             .onComplete { latch.countDown() }
                             .build()
                     )
