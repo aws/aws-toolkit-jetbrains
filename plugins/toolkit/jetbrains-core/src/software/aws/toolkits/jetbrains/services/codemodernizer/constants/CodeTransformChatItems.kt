@@ -32,7 +32,7 @@ private val cancelUserSelectionButton = Button(
 private val confirmUserSelectionButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
-    text = message("codemodernizer.chat.message.button.transform"),
+    text = message("codemodernizer.chat.message.button.confirm"),
     id = CodeTransformButtonId.StartTransformation.id,
 )
 
@@ -78,7 +78,7 @@ private val selectTargetVersionFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = "Java 17",
+            label = "JDK17",
             value = "17",
         )
     )
@@ -86,7 +86,7 @@ private val selectTargetVersionFormItem = FormItem(
 
 private fun getUserSelectionFormattedMarkdown(moduleName: String): String {
     return """
-        ### ${message("codemodernizer.chat.prompt.title.summary")}
+        ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
         | | |
@@ -127,8 +127,8 @@ fun buildUserInputChatContent(project: Project, validationResult: ValidationResu
     return CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.form.user_selection.title"),
         buttons = listOf(
-            cancelUserSelectionButton,
             confirmUserSelectionButton,
+            cancelUserSelectionButton,
         ),
         formItems = listOf(
             getSelectModuleFormItem(project, moduleBuildFiles),
@@ -198,8 +198,8 @@ fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     message = message("codemodernizer.chat.message.transform_begin"),
     buttons = listOf(
-        stopTransformButton,
         openTransformHubButton,
+        stopTransformButton,
     ),
 )
 
@@ -207,8 +207,8 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.resume_ongoing"),
     type = CodeTransformChatMessageType.PendingAnswer,
     buttons = listOf(
-        stopTransformButton,
         openTransformHubButton,
+        stopTransformButton,
     ),
 )
 
