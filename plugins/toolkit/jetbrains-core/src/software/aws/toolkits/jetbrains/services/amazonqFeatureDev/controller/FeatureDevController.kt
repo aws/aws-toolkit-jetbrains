@@ -17,7 +17,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
@@ -256,8 +255,6 @@ class FeatureDevController(
         try {
             session = getSessionInfo(tabId)
 
-            AmazonqTelemetry.isAcceptedCodeChanges(amazonqConversationId = session.conversationId, enabled = true)
-
             var filePaths: List<NewFileZipInfo> = emptyList()
             var deletedFiles: List<String> = emptyList()
             var references: List<CodeReference> = emptyList()
@@ -269,7 +266,12 @@ class FeatureDevController(
                     references = state.references
                 }
             }
-
+            AmazonqTelemetry.isAcceptedCodeChanges(
+                project = null,
+                amazonqNumberOfFilesAccepted = (filePaths.size + deletedFiles.size) * 1.0,
+                amazonqConversationId = session.conversationId,
+                enabled = true
+            )
             session.insertChanges(filePaths = filePaths, deletedFiles = deletedFiles, references = references)
 
             messenger.sendAnswer(
@@ -644,7 +646,8 @@ class FeatureDevController(
     }
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
-        val uri = context.project.guessProjectDir() ?: error("Cannot guess base directory for project ${context.project.name}")
+        val session = getSessionInfo(tabId)
+        val uri = session.context.projectRoot
         val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
 
         val modifyFolderFollowUp = FollowUp(
@@ -683,7 +686,6 @@ class FeatureDevController(
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            val session = getSessionInfo(tabId)
             session.context.projectRoot = selectedFolder
 
             messenger.sendAnswer(

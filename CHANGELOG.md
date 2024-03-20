@@ -1,3 +1,15 @@
+# _2.12_ (2024-03-12)
+- **(Feature)** Add configurable auto plugin update feature
+- **(Feature)** Amazon Q: Support feature development (/dev)
+- **(Bug Fix)** Show better error message on upload zip errors for Q Code Transform.
+- **(Bug Fix)** CodeWhisperer: Include copied code in percentage code written metrics
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2023.3 and for for IDEs based on the 2023.1 platform
+
+# _2.11_ (2024-03-07)
+- **(Bug Fix)** Move 'Send to Amazon Q' action group after the 'Show Context Actions' action
+- **(Bug Fix)** fix(CodeTransform): Updating commands for copying dependencies
+- **(Bug Fix)** Fix 'ActionUpdateThread.OLD_EDT' deprecation errors in 2024.1
+
 # _2.10_ (2024-02-29)
 - **(Feature)** Amazon Q CodeTransform: show link to docs in error notifications
 - **(Feature)** Security issue hover telemetry includes additional metadata
