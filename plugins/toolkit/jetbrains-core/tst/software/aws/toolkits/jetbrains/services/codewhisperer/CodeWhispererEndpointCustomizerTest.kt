@@ -5,16 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
-import org.junit.Test
-import org.mockito.Mockito.*
 import com.intellij.testFramework.DisposableRule
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.auth.token.credentials.SdkToken
-import software.amazon.awssdk.auth.token.credentials.StaticTokenProvider
-import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
-import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.amazon.awssdk.regions.Region
 import com.intellij.util.net.HttpConfigurable
 import org.eclipse.jetty.proxy.ConnectHandler
 import org.eclipse.jetty.proxy.ProxyServlet
@@ -25,10 +16,19 @@ import org.eclipse.jetty.servlet.ServletHolder
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.junit.Test
+import org.mockito.Mockito.times
 import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
+import software.amazon.awssdk.auth.token.credentials.SdkToken
+import software.amazon.awssdk.auth.token.credentials.StaticTokenProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
+import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
 import software.amazon.awssdk.services.codewhispererstreaming.model.GenerateAssistantResponseResponseHandler
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager.Companion.useRealImplementations
 import java.util.concurrent.CountDownLatch
 
