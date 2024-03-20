@@ -89,7 +89,7 @@ class CodeTransformChatController(
             buildCheckingValidProjectChatContent()
         )
 
-        delay(500)
+        delay(3000)
 
         val validationResult = codeModernizerManager.validate(context.project)
 

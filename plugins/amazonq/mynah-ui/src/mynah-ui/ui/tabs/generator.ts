@@ -21,7 +21,7 @@ export class TabDataGenerator {
         ['unknown', 'Chat'],
         ['cwc', 'Chat'],
         ['featuredev', 'Q - Dev'],
-        ['codetransform', 'Q - Code Transformation'],
+        ['codetransform', 'Q - Transform'],
     ])
 
     private tabInputPlaceholder: Map<TabType, string> = new Map([
