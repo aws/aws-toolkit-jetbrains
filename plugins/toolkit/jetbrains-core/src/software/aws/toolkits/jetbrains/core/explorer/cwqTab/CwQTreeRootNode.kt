@@ -41,7 +41,10 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
             object : AnActionTreeNode(project, ToolkitPlaces.CWQ_TOOL_WINDOW, it) {
                 override fun update(presentation: PresentationData) {
                     super.update(presentation)
+
+                    // We only want to display not supported info in the "Open Chat Panel" node not the migration node
                     if (presentation.coloredText[0].text != message("action.q.openchat.text")) return
+
                     if (groupId == Q_SIGNED_IN_ACTION_GROUP) {
                         if (isRunningOnRemoteBackend()) {
                             presentation.addText(message("codewhisperer.explorer.root_node.unavailable"), SimpleTextAttributes.GRAY_ATTRIBUTES)
@@ -53,7 +56,7 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
             }
         }
 
-        // Temporary put the transform node in the panel(as the second node before the migration node), to be removed soon.
+        // Temporarily put the transform node in the panel(as the second node before the migration node), to be removed soon.
         if (groupId == Q_SIGNED_IN_ACTION_GROUP && isCodeModernizerAvailable(project)) {
             return listOf(childNodes[0], runCodeModernizerNode, childNodes[1])
         }
