@@ -9,12 +9,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.SimpleTextAttributes
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.CodeWhispererActionNode
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -30,6 +32,7 @@ class CodeModernizerRunModernizeNode(private val nodeProject: Project) : CodeWhi
     private val codeModernizerManager = CodeModernizerManager.getInstance(project)
 
     override fun onDoubleClick(event: MouseEvent) {
+        if (isRunningOnRemoteBackend() || !isQSupportedInThisVersion()) return
         runInEdt {
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
             toolWindow?.show()
@@ -45,6 +48,13 @@ class CodeModernizerRunModernizeNode(private val nodeProject: Project) : CodeWhi
 
     override fun update(presentation: PresentationData) {
         super.update(presentation)
+
+        if (isRunningOnRemoteBackend()) {
+            presentation.addText(message("codewhisperer.explorer.root_node.unavailable"), SimpleTextAttributes.GRAY_ATTRIBUTES)
+        } else if (!isQSupportedInThisVersion()) {
+            presentation.addText(message("q.unavailable"), SimpleTextAttributes.GRAY_ATTRIBUTES)
+        }
+
         val transformationStatus = when (CodeModernizerSessionState.getInstance(project).currentJobStatus) {
             TransformationStatus.CREATED -> message("codemodernizer.manager.job_status.created")
             TransformationStatus.ACCEPTED -> message("codemodernizer.manager.job_status.accepted")
