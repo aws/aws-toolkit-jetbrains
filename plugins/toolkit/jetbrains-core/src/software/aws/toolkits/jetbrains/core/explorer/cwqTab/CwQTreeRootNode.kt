@@ -12,11 +12,17 @@ import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
+import software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.QRootNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes.CodeModernizerRunModernizeNode
+import software.aws.toolkits.jetbrains.services.codemodernizer.isCodeModernizerAvailable
 
 class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Object()) {
+    private val runCodeModernizerNode by lazy { CodeModernizerRunModernizeNode(nodeProject) }
+
     override fun update(presentation: PresentationData) {}
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
@@ -31,6 +37,13 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
         val actions = ActionManager.getInstance().getAction(groupId) as ActionGroup
         val childNodes = actions.getChildren(null).mapNotNull {
             AnActionTreeNode(project, ToolkitPlaces.CWQ_TOOL_WINDOW, it)
+        }
+
+        // Temporary put the transform node in the panel, to be removed soon.
+        if (groupId == QRootNode.Q_SIGNED_IN_ACTION_GROUP) {
+            if (connection.connectionType == ActiveConnectionType.IAM_IDC && isCodeModernizerAvailable(project)) {
+                return childNodes + runCodeModernizerNode
+            }
         }
 
         return childNodes
