@@ -3,6 +3,4 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model
 
-import java.io.File
-
-data class ZipCreationResult(val payload: File, val checksum: String, val contentLength: Long)
+data class ZipCreationResult(val payload: ByteArray, val checksum: String, val contentLength: Long)

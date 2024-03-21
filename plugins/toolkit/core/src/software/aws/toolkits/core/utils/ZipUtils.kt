@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.core.utils
 
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -39,4 +40,17 @@ fun createTemporaryZipFile(block: (ZipOutputStream) -> Unit): Path {
     val file = Files.createTempFile(null, ".zip")
     ZipOutputStream(Files.newOutputStream(file)).use(block)
     return file
+}
+
+/**
+ * Create a zip file in a temporary location.
+ *
+ * Statements included in [block] populate the zip file with entries.
+ *
+ * @return the [Path] of the temporary file
+ */
+fun createZipByteArray(block: (ZipOutputStream) -> Unit): ByteArrayOutputStream {
+    val outputStream = ByteArrayOutputStream()
+    ZipOutputStream(outputStream).use(block)
+    return outputStream
 }
