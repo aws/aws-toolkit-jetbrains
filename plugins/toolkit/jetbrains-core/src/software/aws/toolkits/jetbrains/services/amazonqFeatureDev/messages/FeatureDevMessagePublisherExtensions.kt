@@ -6,7 +6,9 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.retriesRemaining
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.licenseText
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.resources.message
@@ -187,5 +189,33 @@ suspend fun MessagePublisher.sendCodeResult(
             deletedFiles = deletedFiles,
             references = refs
         )
+    )
+}
+
+suspend fun MessagePublisher.sendFailedCodeGeneration(
+    tabId: String,
+    session: Session,
+    message: String,
+    retryable: Boolean,
+) {
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = FeatureDevMessageType.Answer,
+        message = message
+    )
+
+    this.sendSystemPrompt(
+        tabId = tabId,
+        followUp = if ( retryable && session.retriesRemaining() > 0) {
+            listOf(
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.retry"),
+                    type = FollowUpTypes.RETRY,
+                    status = FollowUpStatusType.Warning
+                )
+            )
+        } else {
+            emptyList()
+        }
     )
 }

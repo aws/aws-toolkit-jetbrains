@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeGenerationWorkflowStatus
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 
@@ -41,11 +42,29 @@ data class NewFileZipInfo(
     val fileContent: String,
 )
 
-data class CodeGenerationResult(
+sealed interface CodeGenerationResult {
+    val status: CodeGenerationWorkflowStatus
+}
+
+data class CodeGenerationNotStarted(
+    override val status: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.IN_PROGRESS, // Status as a placeholder before code generation starts
+    var newFiles: List<NewFileZipInfo> = emptyList(),
+    var deletedFiles: List<String> = emptyList(),
+    var references: List<CodeReference> = emptyList(),
+) : CodeGenerationResult
+
+data class CodeGenerationComplete(
+    override val status: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE,
     var newFiles: List<NewFileZipInfo>,
     var deletedFiles: List<String>, // The string is the path of the file to be deleted
     var references: List<CodeReference>,
-)
+) : CodeGenerationResult
+
+data class CodeGenerationFailed(
+    override val status: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.FAILED,
+    var message: String,
+    var retryable: Boolean
+) : CodeGenerationResult
 
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.
 data class CodeGenerationStreamResult(

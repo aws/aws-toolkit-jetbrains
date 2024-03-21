@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.APPROACH_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
@@ -78,10 +79,8 @@ class Session(val tabID: String, val project: Project) {
             tabID = sessionState.tabID,
             approach = sessionState.approach,
             config = getSessionStateConfig(),
-            filePaths = emptyList(),
-            deletedFiles = emptyList(),
-            references = emptyList(),
-            currentIteration = 0, // first code gen iteration
+            codeGenerationResult = CodeGenerationNotStarted(),
+            currentIteration = 0, // First code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
         )
@@ -179,3 +178,10 @@ class Session(val tabID: String, val project: Project) {
         }
     }
 }
+
+fun Session?.retriesRemaining(): Int {
+    if ( this == null ) return DEFAULT_RETRY_LIMIT
+
+    return this.retries
+}
+

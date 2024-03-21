@@ -44,21 +44,19 @@ class CodeGenerationState(
 
         AmazonqTelemetry.codeGenerationInvoke(
             amazonqConversationId = config.conversationId,
-            amazonqCodeGenerationResult = CodeGenerationWorkflowStatus.COMPLETE.toString(),
+            amazonqCodeGenerationResult = codeGenerationResult.status.toString(),
             amazonqGenerateCodeIteration = currentIteration.toDouble(),
-            amazonqNumberOfReferences = codeGenerationResult.references.size.toDouble(),
             amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
-            amazonqNumberOfFilesGenerated = codeGenerationResult.newFiles.size.toDouble(),
             amazonqRepositorySize = repositorySize,
+            amazonqNumberOfFilesGenerated = if (codeGenerationResult is CodeGenerationComplete ) codeGenerationResult.newFiles.size.toDouble() else null,
+            amazonqNumberOfReferences = if (codeGenerationResult is CodeGenerationComplete ) codeGenerationResult.references.size.toDouble() else null,
         )
 
         val nextState = PrepareCodeGenerationState(
             tabID = tabID,
             approach = approach,
             config = config,
-            filePaths = codeGenerationResult.newFiles,
-            deletedFiles = codeGenerationResult.deletedFiles,
-            references = codeGenerationResult.references,
+            codeGenerationResult = codeGenerationResult,
             currentIteration = currentIteration + 1,
             uploadId = uploadId,
             messenger = messenger,
@@ -78,36 +76,40 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
     val requestDelay = 10000L
 
     repeat(pollCount) {
-        val codeGenerationResultState = getTaskAssistCodeGeneration(
+        val codeGenerationResult = getTaskAssistCodeGeneration(
             proxyClient = config.proxyClient,
             conversationId = config.conversationId,
             codeGenerationId = codeGenerationId,
         )
 
-        when (codeGenerationResultState.codeGenerationStatus().status()) {
+        when (codeGenerationResult.codeGenerationStatus().status()) {
+            CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
             CodeGenerationWorkflowStatus.COMPLETE -> {
                 val codeGenerationStreamResult = exportTaskAssistArchiveResult(
                     proxyClient = config.proxyClient,
                     conversationId = config.conversationId
                 )
 
-                val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
-
-                return CodeGenerationResult(
-                    newFiles = newFileInfo,
+                return CodeGenerationComplete(
+                    newFiles = codeGenerationStreamResult.new_file_contents.map { NewFileZipInfo(it.key, it.value) },
                     deletedFiles = codeGenerationStreamResult.deleted_files,
                     references = codeGenerationStreamResult.references
                 )
             }
-            CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
-            CodeGenerationWorkflowStatus.FAILED -> codeGenerationFailedError()
-            else -> error("Unknown status: ${codeGenerationResultState.codeGenerationStatus().status()}")
+            CodeGenerationWorkflowStatus.FAILED -> {
+                if ( codeGenerationResult.codeGenerationStatusDetail().isNullOrEmpty() ) {
+                    codeGenerationFailedError()
+                }
+
+                // Canned errors are not retryable, the error above on the contrary will let the user retry code generation.
+                return CodeGenerationFailed(
+                   message=codeGenerationResult.codeGenerationStatusDetail(),
+                   retryable=false
+                )
+            }
+            else -> error("Unknown status: ${codeGenerationResult.codeGenerationStatus().status()}")
         }
     }
 
-    return CodeGenerationResult(emptyList(), emptyList(), emptyList())
-}
-
-fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> = newFileContents.map {
-    NewFileZipInfo(zipFilePath = it.key, fileContent = it.value)
+    return CodeGenerationComplete(CodeGenerationWorkflowStatus.FAILED, emptyList(), emptyList(), emptyList())
 }
