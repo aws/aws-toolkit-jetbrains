@@ -180,8 +180,7 @@ class Session(val tabID: String, val project: Project) {
 }
 
 fun Session?.retriesRemaining(): Int {
-    if ( this == null ) return DEFAULT_RETRY_LIMIT
+    if (this == null) return DEFAULT_RETRY_LIMIT
 
     return this.retries
 }
-

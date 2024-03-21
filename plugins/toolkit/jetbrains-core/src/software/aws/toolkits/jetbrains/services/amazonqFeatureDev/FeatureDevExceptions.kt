@@ -31,7 +31,7 @@ internal fun apiError(message: String?, cause: Throwable?): Nothing =
 internal fun exportParseError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.exception.export_parsing_error"))
 
-internal fun InvalidCodeGenStateError(): Nothing =
+internal fun invalidCodeGenStateError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.exception.invalid_code_generation_state_error"))
 
 val denyListedErrors = arrayOf("Deserialization error", "Inaccessible host", "UnknownHost")

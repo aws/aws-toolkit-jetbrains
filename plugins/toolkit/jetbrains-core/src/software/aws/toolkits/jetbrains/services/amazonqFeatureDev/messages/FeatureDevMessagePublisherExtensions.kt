@@ -206,7 +206,7 @@ suspend fun MessagePublisher.sendFailedCodeGeneration(
 
     this.sendSystemPrompt(
         tabId = tabId,
-        followUp = if ( retryable && session.retriesRemaining() > 0) {
+        followUp = if (retryable && session.retriesRemaining() > 0) {
             listOf(
                 FollowUp(
                     pillText = message("amazonqFeatureDev.follow_up.retry"),

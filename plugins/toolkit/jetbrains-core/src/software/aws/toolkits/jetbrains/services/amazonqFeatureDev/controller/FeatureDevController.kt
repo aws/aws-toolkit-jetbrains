@@ -33,9 +33,9 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationL
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InvalidCodeGenStateError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.invalidCodeGenStateError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpIcons
@@ -173,7 +173,7 @@ class FeatureDevController(
 
         when (val sessionState = session.sessionState) {
             is PrepareCodeGenerationState -> {
-                if ( sessionState.codeGenerationResult !is CodeGenerationComplete) InvalidCodeGenStateError()
+                if (sessionState.codeGenerationResult !is CodeGenerationComplete) invalidCodeGenStateError()
 
                 runInEdt {
                     val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.projectRoot)
@@ -266,15 +266,15 @@ class FeatureDevController(
                 is PrepareCodeGenerationState -> {
                     val codeGenerationResult = state.codeGenerationResult
 
-                    if ( codeGenerationResult !is CodeGenerationComplete ) {
-                        InvalidCodeGenStateError()
+                    if (codeGenerationResult !is CodeGenerationComplete) {
+                        invalidCodeGenStateError()
                     }
 
                     filePaths = codeGenerationResult.newFiles
                     deletedFiles = codeGenerationResult.deletedFiles
                     references = codeGenerationResult.references
                 }
-                else -> InvalidCodeGenStateError()
+                else -> invalidCodeGenStateError()
             }
 
             AmazonqTelemetry.isAcceptedCodeChanges(
@@ -494,7 +494,7 @@ class FeatureDevController(
             inProgress = true,
             message = message("amazonqFeatureDev.chat_message.start_code_generation"),
         )
-        var enableInput = false;
+        var enableInput = false
 
         try {
             messenger.sendAnswer(
@@ -527,14 +527,14 @@ class FeatureDevController(
                             // enableInput = !codeGenerationResult.retryable
                             enableInput = true
                             messenger.sendFailedCodeGeneration(
-                                tabId=tabId,
+                                tabId = tabId,
                                 session = session,
                                 message = "whatever",
                                 retryable = codeGenerationResult.retryable
                             )
                             return // jump to finally block
                         }
-                        else -> InvalidCodeGenStateError()
+                        else -> invalidCodeGenStateError()
                     }
                 }
             }
@@ -552,14 +552,16 @@ class FeatureDevController(
             messenger.sendCodeResult(tabId = tabId, uploadId = uploadId, filePaths = filePaths, deletedFiles = deletedFiles, references = references)
 
             messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, interactionSucceeded = true))
-
         } finally {
             messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false) // Finish processing the event
 
             messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = enableInput)
 
             if (enableInput) {
-                messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")) // TODO: reviewing with johanna.
+                messenger.sendUpdatePlaceholder(
+                    tabId = tabId,
+                    newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")
+                ) // TODO: reviewing with johanna.
             } else {
                 messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
             }

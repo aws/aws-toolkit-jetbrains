@@ -48,8 +48,8 @@ class CodeGenerationState(
             amazonqGenerateCodeIteration = currentIteration.toDouble(),
             amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
             amazonqRepositorySize = repositorySize,
-            amazonqNumberOfFilesGenerated = if (codeGenerationResult is CodeGenerationComplete ) codeGenerationResult.newFiles.size.toDouble() else null,
-            amazonqNumberOfReferences = if (codeGenerationResult is CodeGenerationComplete ) codeGenerationResult.references.size.toDouble() else null,
+            amazonqNumberOfFilesGenerated = if (codeGenerationResult is CodeGenerationComplete) codeGenerationResult.newFiles.size.toDouble() else null,
+            amazonqNumberOfReferences = if (codeGenerationResult is CodeGenerationComplete) codeGenerationResult.references.size.toDouble() else null,
         )
 
         val nextState = PrepareCodeGenerationState(
@@ -97,14 +97,14 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
                 )
             }
             CodeGenerationWorkflowStatus.FAILED -> {
-                if ( codeGenerationResult.codeGenerationStatusDetail().isNullOrEmpty() ) {
+                if (codeGenerationResult.codeGenerationStatusDetail().isNullOrEmpty()) {
                     codeGenerationFailedError()
                 }
 
                 // Canned errors are not retryable, the error above on the contrary will let the user retry code generation.
                 return CodeGenerationFailed(
-                   message=codeGenerationResult.codeGenerationStatusDetail(),
-                   retryable=false
+                    message = codeGenerationResult.codeGenerationStatusDetail(),
+                    retryable = false
                 )
             }
             else -> error("Unknown status: ${codeGenerationResult.codeGenerationStatus().status()}")
