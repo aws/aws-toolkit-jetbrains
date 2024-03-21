@@ -277,30 +277,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).currentJobStopTime = Instant.MIN
     }
 
-    private fun isQChatPanelVisible() = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)?.isVisible == true
-
-    private fun notifyIfQChatNotVisible(
-        title: String,
-        content: String = "",
-        project: Project? = null,
-        notificationActions: Collection<AnAction> = listOf(),
-        stripHtml: Boolean = true
-    ) {
-        if (!isQChatPanelVisible()) {
-            notifyStickyInfo(
-                title,
-                content,
-                project,
-                notificationActions,
-                stripHtml
-            )
-        }
-    }
-
     private fun notifyJobFailure(failureReason: String?, retryable: Boolean) {
         val reason = failureReason ?: message("codemodernizer.notification.info.modernize_failed.unknown_failure_reason") // should not happen
         val retryablestring = if (retryable) message("codemodernizer.notification.info.modernize_failed.failure_is_retryable") else ""
-        notifyIfQChatNotVisible(
+        notifyStickyInfo(
             message("codemodernizer.notification.info.modernize_failed.title"),
             message("codemodernizer.notification.info.modernize_failed.description", reason, retryablestring),
             project,
@@ -309,7 +289,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     internal fun notifyTransformationStopped() {
-        notifyIfQChatNotVisible(
+        notifyStickyInfo(
             message("codemodernizer.notification.info.transformation_stop.title"),
             message("codemodernizer.notification.info.transformation_stop.content"),
             project,
@@ -318,7 +298,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     internal fun notifyUnableToResumeJob() {
-        notifyIfQChatNotVisible(
+        notifyStickyInfo(
             message("codemodernizer.notification.info.transformation_resume.title"),
             message("codemodernizer.notification.info.transformation_resume.content"),
             project,
@@ -327,29 +307,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     internal fun notifyTransformationStartStopping() {
-        notifyIfQChatNotVisible(
+        notifyStickyInfo(
             message("codemodernizer.notification.info.transformation_start_stopping.title"),
             message("codemodernizer.notification.info.transformation_start_stopping.content"),
             project,
         )
     }
 
-    internal fun notifyTransformationStartCannotYetStop() {
-        if (isQChatPanelVisible()) {
-            return
-        }
-        notifyStickyError(
-            message("codemodernizer.notification.info.transformation_start_stopping.failed_title"),
-            message("codemodernizer.notification.info.transformation_start_stopping.failed_as_job_not_started"),
-            project,
-            listOf(displayFeedbackNotificationAction())
-        )
-    }
-
     internal fun notifyTransformationFailedToStop(message: String) {
-        if (isQChatPanelVisible()) {
-            return
-        }
         notifyStickyError(
             message("codemodernizer.notification.info.transformation_start_stopping.failed_title"),
             message("codemodernizer.notification.info.transformation_start_stopping.failed_content", message),
@@ -513,7 +478,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             when (result.status()) {
                 TransformationStatus.COMPLETED -> {
                     CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyIfQChatNotVisible(
+                    notifyStickyInfo(
                         message("codemodernizer.manager.job_finished_title"),
                         message("codemodernizer.manager.job_finished_content"),
                         project,
@@ -529,7 +494,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
                 TransformationStatus.PARTIALLY_COMPLETED -> {
                     CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyIfQChatNotVisible(
+                    notifyStickyInfo(
                         message("codemodernizer.notification.info.modernize_failed.title"),
                         message("codemodernizer.manager.job_failed_content", result.reason()),
                         project,
@@ -546,7 +511,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
                 TransformationStatus.UNKNOWN_TO_SDK_VERSION -> {
                     CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyIfQChatNotVisible(
+                    notifyStickyInfo(
                         message("codemodernizer.notification.warn.on_resume.unknown_status_response.title"),
                         message("codemodernizer.notification.warn.on_resume.unknown_status_response.content"),
                     )
@@ -561,7 +526,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 else -> {
                     CodeTransformMessageListener.instance.onTransformResuming()
                     resumeJob(session, lastJobId, result)
-                    notifyIfQChatNotVisible(
+                    notifyStickyInfo(
                         message("codemodernizer.manager.job_ongoing_title"),
                         message("codemodernizer.manager.job_ongoing_content"),
                         project,
@@ -641,14 +606,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 listOf(displayFeedbackNotificationAction())
             )
 
-            is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> notifyIfQChatNotVisible(
+            is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> notifyStickyInfo(
                 message("codemodernizer.notification.info.modernize_partial_complete.title"),
                 message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
                 project,
                 listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
             )
 
-            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> notifyIfQChatNotVisible(
+            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> notifyStickyInfo(
                 message("codemodernizer.notification.info.modernize_complete.title"),
                 message("codemodernizer.notification.info.modernize_complete.content"),
                 project,
@@ -657,13 +622,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             is CodeModernizerJobCompletedResult.ManagerDisposed -> LOG.warn { "Manager disposed" }
             is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> LOG.warn { "Job was aborted" }
-            is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> notifyIfQChatNotVisible(
+            is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> notifyStickyInfo(
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
                 listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
             )
-            is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> notifyIfQChatNotVisible(
+            is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> notifyStickyInfo(
                 message("codemodernizer.notification.warn.zip_too_large.title"),
                 message("codemodernizer.notification.warn.zip_too_large.content"),
                 project,
@@ -754,7 +719,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         addCodeModernizeUI(true)
         val maybeUnknownReason = reason ?: message("codemodernizer.notification.warn.invalid_project.description.reason.unknown")
         codeModernizerBottomWindowPanelManager.setProjectInvalidUI(maybeUnknownReason)
-        notifyIfQChatNotVisible(
+        notifyStickyInfo(
             message("codemodernizer.validationerrordialog.description.title"),
             message("codemodernizer.validationerrordialog.description.main"),
             project,

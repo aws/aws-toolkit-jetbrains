@@ -54,6 +54,18 @@ private val openTransformHubButton = Button(
     keepCardAfterClick = true,
 )
 
+private val viewDiffButton = Button(
+    id = CodeTransformButtonId.ViewDiff.id,
+    text = message("codemodernizer.chat.message.button.view_diff"),
+    keepCardAfterClick = true,
+)
+
+private val viewSummaryButton = Button(
+    id = CodeTransformButtonId.ViewSummary.id,
+    text = message("codemodernizer.chat.message.button.view_summary"),
+    keepCardAfterClick = true,
+)
+
 private val startNewTransformFollowUp = FollowUp(
     type = FollowUpType.NewCodeTransform,
     pillText = message("codemodernizer.chat.message.follow_up.new_transformation"),
@@ -235,6 +247,11 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
+        buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
+            listOf(viewDiffButton, viewSummaryButton)
+        } else {
+            null
+        },
         followUps = listOf(
             startNewTransformFollowUp
         )

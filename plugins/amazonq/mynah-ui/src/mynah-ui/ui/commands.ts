@@ -35,5 +35,7 @@ type MessageCommand =
     | 'codetransform-new'
     | 'codetransform-open-transform-hub'
     | 'codetransform-open-mvn-build'
+    | 'codetransform-view-diff'
+    | 'codetransform-view-summary'
 
 export type ExtensionMessage = Record<string, any> & { command: MessageCommand }

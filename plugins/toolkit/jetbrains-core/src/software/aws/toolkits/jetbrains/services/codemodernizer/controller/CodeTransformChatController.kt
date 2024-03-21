@@ -13,8 +13,10 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
@@ -40,9 +42,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toVirtualFile
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
@@ -56,6 +60,7 @@ class CodeTransformChatController(
     private val messagePublisher = context.messagesFromAppToUi
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi)
+    private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
         if (!checkForAuth(message.tabId)) {
@@ -97,6 +102,7 @@ class CodeTransformChatController(
             codeTransformChatHelper.updateLastPendingMessage(
                 buildProjectInvalidChatContent(validationResult)
             )
+            codeModernizerManager.warnUnsupportedProject(validationResult.invalidReason)
 
             return
         }
@@ -142,25 +148,11 @@ class CodeTransformChatController(
 
         val result = codeModernizerManager.getDependenciesUsingMaven(session)
         if (result == MavenCopyCommandsResult.Cancelled) {
-            codeTransformChatHelper.run {
-                showChatNotification(
-                    message("codemodernizer.chat.notification.title"),
-                    message("codemodernizer.chat.message.transform_cancelled_by_user")
-                )
-
-                updateLastPendingMessage(buildUserCancelledChatContent())
-            }
+            codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
 
             return
         } else if (result == MavenCopyCommandsResult.Failure) {
-            codeTransformChatHelper.run {
-                showChatNotification(
-                    message("codemodernizer.chat.notification.title"),
-                    message("codemodernizer.chat.message.local_build_failed")
-                )
-
-                updateLastPendingMessage(buildCompileLocalFailedChatContent())
-            }
+            codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
 
             return
         }
@@ -198,6 +190,14 @@ class CodeTransformChatController(
         runInEdt {
             codeModernizerManager.getMvnBuildWindow().show()
         }
+    }
+
+    override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
+        artifactHandler.displayDiffAction(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
+
+    override suspend fun processCodeTransformViewSummary(message: IncomingCodeTransformMessage.CodeTransformViewSummary) {
+        artifactHandler.showTransformationSummary(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
     }
 
     override suspend fun processCodeTransformNewAction(message: IncomingCodeTransformMessage.CodeTransformNew) {
@@ -282,11 +282,11 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildTransformResumingChatContent())
     }
 
-    suspend fun handleCodeTransformStoppedByUser() {
+    private suspend fun handleCodeTransformStoppedByUser() {
         codeTransformChatHelper.updateLastPendingMessage(buildTransformStoppedChatContent())
     }
 
-    suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
+    private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
         val resultMessage = when (result) {
             is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
                 message("codemodernizer.chat.message.result.zip_too_large")
@@ -302,16 +302,9 @@ class CodeTransformChatController(
             }
         }
 
-        codeTransformChatHelper.run {
-            showChatNotification(
-                message("codemodernizer.chat.notification.title"),
-                resultMessage
-            )
-
-            updateLastPendingMessage(
-                buildTransformResultChatContent(result)
-            )
-        }
+        codeTransformChatHelper.updateLastPendingMessage(
+            buildTransformResultChatContent(result)
+        )
     }
 
     companion object {

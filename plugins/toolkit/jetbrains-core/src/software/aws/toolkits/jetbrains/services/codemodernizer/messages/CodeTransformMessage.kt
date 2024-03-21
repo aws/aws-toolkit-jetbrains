@@ -22,6 +22,8 @@ enum class CodeTransformButtonId(val id: String) {
     StopTransformation("stop_transform"),
     OpenTransformationHub("open_transformation_hub"),
     OpenMvnBuild("open_mvn_build"),
+    ViewDiff("view_diff"),
+    ViewSummary("view_summary"),
 }
 
 enum class CodeTransformFormItemId(val id: String) {
@@ -80,6 +82,14 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
     ) : IncomingCodeTransformMessage
 
     data class CodeTransformOpenTransformHub(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
+    data class CodeTransformViewDiff(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
+    data class CodeTransformViewSummary(
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 

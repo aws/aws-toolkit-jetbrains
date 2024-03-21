@@ -163,6 +163,18 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
+        } else if (action.id === 'view_diff') {
+            this.sendMessageToExtension({
+                command: 'codetransform-view-diff',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === 'view_summary') {
+            this.sendMessageToExtension({
+                command: 'codetransform-view-summary',
+                tabID,
+                tabType: 'codetransform',
+            })
         }
     }
 

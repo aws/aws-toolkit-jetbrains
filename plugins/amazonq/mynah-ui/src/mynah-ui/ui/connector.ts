@@ -379,6 +379,8 @@ export class Connector {
             || action.id === 'open_mvn_build'
             || action.id === 'stop_transform'
             || action.id === 'open_transformation_hub'
+            || action.id === 'view_diff'
+            || action.id === 'view_summary'
         ) {
             this.codeTransformChatConnector.onFormButtonClick(tabId, action)
         }
