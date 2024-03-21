@@ -582,7 +582,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
             codeTransformLocalMavenVersion = getMavenVersion(project),
         )
-
         when (result) {
             is CodeModernizerJobCompletedResult.UnableToCreateJob -> notifyJobFailure(
                 result.failureReason,
