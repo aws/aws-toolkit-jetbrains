@@ -113,7 +113,7 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
     }
 
     return CodeTransformChatMessageContent(
-        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info")}",
+        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", docUrl)}",
         type = CodeTransformChatMessageType.FinalizedAnswer,
         followUps = listOf(
             startNewTransformFollowUp
@@ -182,8 +182,8 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     message = "${message(
         "codemodernizer.chat.message.local_build_failed"
     )}\n\n${message(
-        "codemodernizer.chat.message.doc_link_prefix"
-    )} [$docUrl]($docUrl)",
+        "codemodernizer.chat.message.doc_link_prefix", docUrl
+    )}",
     followUps = listOf(
         startNewTransformFollowUp,
     )
@@ -218,8 +218,8 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
             "${message(
                 "codemodernizer.chat.message.result.zip_too_large"
             )}\n\n${message(
-                "codemodernizer.chat.message.doc_link_prefix"
-            )} [$docUrl]($docUrl)"
+                "codemodernizer.chat.message.doc_link_prefix", docUrl
+            )}"
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
             message("codemodernizer.chat.message.result.success")
