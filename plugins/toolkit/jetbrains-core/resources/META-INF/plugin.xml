@@ -865,7 +865,7 @@
         </group>
 
         <group id="q.not.supported">
-            <action class="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QNotSupportedNode"/>
+            <action class="software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.QNotSupportedNode"/>
         </group>
         <group id="aws.toolkit.q.idc.signed.in">
             <action
