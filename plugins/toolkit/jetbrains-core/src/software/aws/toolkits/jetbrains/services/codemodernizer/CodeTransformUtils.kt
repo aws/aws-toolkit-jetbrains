@@ -285,12 +285,6 @@ fun isIntellij(): Boolean {
     return productCode == "IC" || productCode == "IU"
 }
 
-fun isCodeTransformAvailable(project: Project): Boolean {
-    if (!isIntellij()) return false
-    val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    return connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer
-}
-
 fun isGradleProject(project: Project) = !GradleSettings.getInstance(project).linkedProjectsSettings.isEmpty()
 
 fun getJavaVersionFromProjectSetting(project: Project): String? = project.tryGetJdk()?.toString()

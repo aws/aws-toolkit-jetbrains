@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.PersistentStateComponent
@@ -17,7 +16,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,11 +30,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
-import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.auth.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -56,7 +50,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.buildState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
-import software.aws.toolkits.jetbrains.services.codemodernizer.ui.components.PreCodeTransformUserDialog
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
@@ -124,8 +117,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     )
                 )
             }
-            val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-            if (!(connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer)) {
+            if (!isCodeTransformAvailable(project)) {
                 return ValidationResult(
                     false,
                     message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
