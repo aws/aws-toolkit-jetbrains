@@ -306,10 +306,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         )
     }
 
-    internal fun notifyTransformationFailedToStop(message: String) {
+    internal fun notifyTransformationFailedToStop() {
         notifyStickyError(
             message("codemodernizer.notification.info.transformation_start_stopping.failed_title"),
-            message("codemodernizer.notification.info.transformation_start_stopping.failed_content", message),
+            message("codemodernizer.notification.info.transformation_start_stopping.failed_content"),
             project,
             listOf(displayFeedbackNotificationAction())
         )
@@ -669,7 +669,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 }
             } catch (e: Exception) {
                 LOG.error(e) { e.message.toString() }
-                notifyTransformationFailedToStop(e.localizedMessage)
+                notifyTransformationFailedToStop()
                 CodetransformTelemetry.totalRunTime(
                     codeTransformSessionId = CodeTransformTelemetryState.instance.getSessionId(),
                     codeTransformResultStatusMessage = "JobCancelled",

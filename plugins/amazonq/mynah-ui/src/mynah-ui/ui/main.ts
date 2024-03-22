@@ -182,7 +182,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 mynahUI.notify({
                     type: NotificationType.INFO,
                     title: 'Q - Transform',
-                    content: `Stopping Code Transformation. Click to go back to code transformation tab.`,
+                    content: `Amazon Q is stopping your transformation. To view progress in the Q - Transform tab, click anywhere on this notification.`,
                     duration: 10000,
                     onNotificationClick: (eventId) => {
                         if (codeTransformTab !== undefined) {
