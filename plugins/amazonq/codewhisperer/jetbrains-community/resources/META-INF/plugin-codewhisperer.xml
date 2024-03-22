@@ -48,7 +48,6 @@
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
                         testServiceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.MockCodeWhispererClientAdaptor"/>
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager"/>
@@ -84,10 +83,7 @@
 
     <extensions defaultExtensionNs="aws.toolkit">
         <connection.pinned.feature implementation="software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection"/>
-        <devTools.treeStructure implementation="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerTreeStructureProvider"/>
         <sdk.clientCustomizer implementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer"/>
-
-        <cwq.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.CodeWhispererExplorerRootNode"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
@@ -120,6 +116,6 @@
         </group>
 
         <group id="aws.toolkit.jetbrains.core.services.codewhisperer.suggestions"
-               class="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererNodeActionGroup" />
+               class="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup" />
     </actions>
 </idea-plugin>
