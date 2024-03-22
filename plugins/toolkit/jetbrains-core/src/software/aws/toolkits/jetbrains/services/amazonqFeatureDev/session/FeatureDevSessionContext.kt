@@ -9,14 +9,12 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.apache.commons.codec.digest.DigestUtils
+import software.aws.toolkits.core.utils.createZipByteArray
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model.ZipCreationResult
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.file.Path
 import java.util.Base64
-import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
@@ -57,20 +55,14 @@ class FeatureDevSessionContext(val project: Project) {
         return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
     }
 
-    private fun zipFiles(projectRoot: VirtualFile): ByteArray {
-        val outputStream = ByteArrayOutputStream()
-
-        ZipOutputStream(outputStream).use {
-            VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->
-                if (file.isFile() && !ignoreFile(file)) {
-                    val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                    it.putNextEntry(relativePath.toString(), Path(file.path))
-                }
+    private fun zipFiles(projectRoot: VirtualFile): ByteArray = createZipByteArray {
+        VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->
+            if (file.isFile() && !ignoreFile(file)) {
+                val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
+                it.putNextEntry(relativePath.toString(), Path(file.path))
             }
         }
-
-        return outputStream.toByteArray()
-    }
+    }.toByteArray()
 
     private fun parseGitIgnore(gitIgnoreFile: File): List<String> {
         if (!gitIgnoreFile.exists()) {

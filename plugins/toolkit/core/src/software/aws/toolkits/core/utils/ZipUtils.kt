@@ -43,11 +43,11 @@ fun createTemporaryZipFile(block: (ZipOutputStream) -> Unit): Path {
 }
 
 /**
- * Create a zip file in a temporary location.
+ * Create a buffered zip file
  *
  * Statements included in [block] populate the zip file with entries.
  *
- * @return the [Path] of the temporary file
+ * @return the output buffer stream
  */
 fun createZipByteArray(block: (ZipOutputStream) -> Unit): ByteArrayOutputStream {
     val outputStream = ByteArrayOutputStream()
