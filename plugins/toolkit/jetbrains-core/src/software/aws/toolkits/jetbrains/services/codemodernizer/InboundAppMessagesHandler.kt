@@ -13,7 +13,7 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart)
 
-    suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop)
+    suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop?)
 
     suspend fun processCodeTransformOpenTransformHub(message: IncomingCodeTransformMessage.CodeTransformOpenTransformHub)
 

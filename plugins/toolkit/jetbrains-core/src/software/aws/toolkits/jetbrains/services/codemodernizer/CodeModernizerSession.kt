@@ -38,12 +38,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModerniz
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.time.Instant
 import java.util.Base64
@@ -143,7 +143,11 @@ class CodeModernizerSession(
             return CodeModernizerStartJobResult.Disposed
         } catch (e: Exception) {
             val errorMessage = "Failed to start job"
-            LOG.error(e) { errorMessage }
+            if (e !is IOException) {
+                // Cancelling during S3 upload will cause IOException of "not enough data written",
+                // so no need to show an IDE error for it
+                LOG.error(e) { errorMessage }
+            }
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             CodetransformTelemetry.logGeneralError(
@@ -291,7 +295,6 @@ class CodeModernizerSession(
             uploadArtifactToS3(createUploadUrlResponse.uploadUrl(), payload, sha256checksum, createUploadUrlResponse.kmsKeyArn().orEmpty())
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
-            LOG.error(e) { errorMessage }
             CodetransformTelemetry.logApiError(
                 codeTransformApiErrorMessage = errorMessage,
                 codeTransformApiNames = CodeTransformApiNames.UploadZip,

@@ -173,20 +173,27 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             mynahUI.notify(notification)
         },
         onCodeTransformCommandMessageReceived: (_message: ChatItem, command?: string) => {
-            if (command === 'start') {
-                // TODO need to switch without event Id
-                quickActionHandler.handle({command: '/transform'}, '', Math.random().toString())
-            } else if (command === 'stop') {
-                const codeTransformTabIndex = tabsStorage.getTabs().findIndex((tab) => tab.type === 'codetransform')
-                if (codeTransformTabIndex !== -1) {
-                    const existingTransformTab = tabsStorage.getTabs()[codeTransformTabIndex]
-
-                    ideApi.postMessage({
-                        command: 'codetransform-stop',
-                        tabID: existingTransformTab.id,
-                        tabType: 'codetransform',
-                    })
+            if (command === 'stop') {
+                const codeTransformTab = tabsStorage.getTabs().find((tab) => tab.type === 'codetransform')
+                if (codeTransformTab !== undefined && codeTransformTab.isSelected) {
+                    return
                 }
+
+                mynahUI.notify({
+                    type: NotificationType.INFO,
+                    title: 'Q - Transform',
+                    content: `Stopping Code Transformation. Click to go back to code transformation tab.`,
+                    duration: 10000,
+                    onNotificationClick: (eventId) => {
+                        if (codeTransformTab !== undefined) {
+                            // Click to switch to the opened code transform tab
+                            mynahUI.selectTab(codeTransformTab.id, eventId)
+                        } else {
+                            // Click to open a new code transform tab
+                            quickActionHandler.handle({ command: '/transform' }, '', eventId)
+                        }
+                    }
+                })
             }
         },
         sendMessageToExtension: message => {

@@ -168,7 +168,7 @@ class CodeTransformChatController(
         }
     }
 
-    override suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop) {
+    override suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop?) {
         codeTransformChatHelper.run {
             addNewMessage(buildUserStopTransformChatContent())
 
@@ -207,10 +207,9 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformCommand(message: CodeTransformActionMessage) {
-        if (message.command == CodeTransformCommand.Start) {
-            messagePublisher.publish(CodeTransformCommandMessage(command = "start"))
-        } else if (message.command == CodeTransformCommand.Stop) {
+        if (message.command == CodeTransformCommand.Stop) {
             messagePublisher.publish(CodeTransformCommandMessage(command = "stop"))
+            processCodeTransformStopAction(null)
         } else if (message.command == CodeTransformCommand.TransformComplete) {
             val result = message.result
             if (result != null) {
