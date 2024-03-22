@@ -219,7 +219,6 @@
         <extensionPoint name="tool" interface="software.aws.toolkits.jetbrains.core.tools.ToolType" dynamic="true"/>
         <extensionPoint name="devTools.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.DevToolsServiceNode" dynamic="true"/>
         <extensionPoint name="devTools.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsTreeStructureProvider" dynamic="true"/>
-        <extensionPoint name="cwq.serviceNode" interface="software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.CwQServiceNode" dynamic="true"/>
         <extensionPoint name="cwq.treeStructure" interface="software.aws.toolkits.jetbrains.core.explorer.cwqTab.CwQTreeStructureProvider" dynamic="true"/>
 
         <extensionPoint name="amazonq.appFactory" interface="software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppFactory" dynamic="true" />
@@ -279,6 +278,32 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow" />
+
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.inlay.CodeWhispererInlayManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererLicenseInfoManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
+            serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService"/>
+
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
+                        serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
+                        testServiceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.MockCodeWhispererClientAdaptor"/>
+        <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
+                        serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager"/>
 
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.core.credentials.CredentialsFileHelpNotificationProvider"/>
         <editorNotificationProvider implementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceFileActionProvider"/>
@@ -419,9 +444,6 @@
 
         <!-- DevTools nodes-->
         <devTools.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode"/>
-
-        <!-- CodeWhisperer +Q nodes-->
-        <cwq.serviceNode implementation="software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.QServiceNode"/>
 
         <!-- Experiments -->
         <experiment implementation="software.aws.toolkits.jetbrains.services.ecs.EcsExecExperiment"/>
@@ -724,17 +746,17 @@
             </group>
         </group>
 
-        <group id="q.not.supported">
-            <action class="software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.QNotSupportedNode"/>
-        </group>
         <group id="aws.toolkit.q.idc.signed.in">
             <action
                 id="q.openchat"
-                class="software.aws.toolkits.jetbrains.services.amazonq.CwQChatAction"/>
+                class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction"/>
+            <action
+                id="q.migrate"
+                class="software.aws.toolkits.jetbrains.services.amazonq.QMigrationNotificationAction"/>
         </group>
 
         <group id="aws.toolkit.q.sign.in">
-            <action class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
+            <action id="q.sign.in" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
             <action id="q.learn.more" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.QLearnMoreAction"/>
         </group>
 
@@ -787,6 +809,10 @@
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt S" />
             </action>
         </group>
+
+        <group id="aws.toolkit.jetbrains.core.services.codewhisperer.suggestions"
+               class="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup" />
+
     </actions>
 
 </idea-plugin>
