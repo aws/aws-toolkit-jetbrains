@@ -1,0 +1,46 @@
+name: Set up a new Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      commitId:
+        description: "Commit Id"
+        default: ""
+        required: true
+        type: string
+      versionNumber:
+        description: "Version number/name"
+        default: ""
+        required: true
+        type: string
+
+jobs:
+  setupReleaseCandidateBranch:
+    name: Setup a release candidate branch
+    runs-on: ubuntu-latest
+    env:
+      releaseBranchPattern: "release/candidate/*"
+    steps:
+      - name: Sync code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commitId }}
+
+      - name: Check if remote branch exists
+        run: |
+          if git ls-remote --exit-code --heads origin $releaseBranchPattern; then
+            echo "EXISTS=true" >> $GITHUB_ENV
+            echo "Release candidate branch already exists"
+            exit 1
+          else
+            echo "EXISTS=false" >> $GITHUB_ENV
+            echo "Release candidate branch does not exist"
+          fi
+
+      - name: Set up release branch
+        env:
+          releaseBranch: "release/candidate/${{inputs.versionNumber}}"
+        if: ${{ env.EXISTS == 'false' }}
+        run: |
+          git checkout -b $releaseBranch
+          git push --set-upstream origin $releaseBranch
