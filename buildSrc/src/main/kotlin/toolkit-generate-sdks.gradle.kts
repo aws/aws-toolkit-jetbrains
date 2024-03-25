@@ -9,15 +9,10 @@ val sdkGenerator = project.extensions.create<GenerateSdkExtension>("sdkGenerator
 
 plugins {
     java
-    id("org.jetbrains.gradle.plugin.idea-ext")
 }
 
 sourceSets {
     main {
-        resources {
-            setSrcDirs(listOf(sdkGenerator.c2jFolder))
-        }
-
         java {
             setSrcDirs(listOf(sdkGenerator.srcDir()))
         }
@@ -43,12 +38,4 @@ tasks.withType<JavaCompile>().configureEach {
 val generateTask = tasks.register<GenerateSdk>("generateSdks")
 tasks.named("compileJava") {
     dependsOn(generateTask)
-}
-
-idea {
-    module {
-        afterEvaluate {
-            generatedSourceDirs = sourceDirs
-        }
-    }
 }

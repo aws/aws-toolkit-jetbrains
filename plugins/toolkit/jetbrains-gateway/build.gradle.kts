@@ -14,7 +14,6 @@ plugins {
 }
 
 intellij {
-    pluginName.set("aws-toolkit-jetbrains")
     type.set("GW")
 }
 
@@ -101,8 +100,9 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().all {
-    intoChild(pluginName.map { "$it/gateway-resources" })
-        .from(gatewayResourcesDir)
+    from(gatewayResourcesDir) {
+        into("aws-toolkit-jetbrains/gateway-resources")
+    }
 }
 
 tasks.prepareSandbox {

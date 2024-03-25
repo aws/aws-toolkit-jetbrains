@@ -307,8 +307,9 @@ intellij {
 tasks.withType<PrepareSandboxTask>().all {
     dependsOn(resharperDllsDir)
 
-    intoChild(pluginName.map { "$it/dotnet" })
-        .from(resharperDllsDir)
+    from(resharperDllsDir) {
+        into("aws-toolkit-jetbrains/dotnet")
+    }
 }
 
 tasks.compileKotlin {

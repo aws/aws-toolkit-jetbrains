@@ -93,12 +93,6 @@ tasks.testJar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-tasks.processTestResources {
-    // TODO how can we remove this. Fails due to:
-    // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-}
-
 dependencies {
     api(project(":plugin-toolkit:core"))
     api(libs.aws.apacheClient)
