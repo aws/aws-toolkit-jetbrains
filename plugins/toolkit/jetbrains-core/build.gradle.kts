@@ -1,25 +1,48 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
+import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
-    id("java-library")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
 }
 
+buildscript {
+    dependencies {
+        classpath(libs.telemetryGenerator)
+    }
+}
+
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
+}
+
+sourceSets {
+    main {
+        java.srcDir("${project.buildDir}/generated-src")
+    }
+}
+
+val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
+    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
+    outputDirectory = file("${project.buildDir}/generated-src")
+}
+
+tasks.compileKotlin {
+    dependsOn(generateTelemetry)
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -32,10 +55,6 @@ tasks.jar {
     from(changelog) {
         into("META-INF")
     }
-
-    // delete when fully split
-    // module loader can't figure out paths across jars
-    from(project(":plugin-core").file("src/main/resources/aws.toolkit.core.xml"))
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
@@ -93,6 +112,12 @@ tasks.testJar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
+tasks.processTestResources {
+    // TODO how can we remove this. Fails due to:
+    // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
 dependencies {
     api(project(":plugin-toolkit:core"))
     api(libs.aws.apacheClient)
@@ -116,23 +141,39 @@ dependencies {
     api(libs.aws.sns)
     api(libs.aws.sqs)
     api(libs.aws.services)
-    compileOnlyApi(project(":plugin-core:jetbrains-community"))
+
+    compileOnly(project(":plugin-core:jetbrains-community"))
+    runtimeOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
+    // can't seem to make this transitive from :plugin-core:jetbrains-community
+    compileOnly(project(":plugin-core:sdk-codegen"))
+    testImplementation(project(":plugin-core:sdk-codegen"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
-    // CodeWhispererTelemetryService uses a CircularFifoQueue, transitive from zjsonpatch
-    implementation(libs.commons.collections)
 
-    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlin.coroutinesTest)
+    testImplementation(libs.kotlin.coroutinesDebug)
+    testImplementation(libs.wiremock) {
+        // conflicts with transitive inclusion from docker plugin
+        exclude(group = "org.apache.httpcomponents.client5")
+    }
+
     // slf4j is v1.7.36 for <233
     // in <233, the classpass binding functionality picks up the wrong impl of StaticLoggerBinder (from the maven plugin instead of IDE platform) and causes a NoClassDefFoundError
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
+}
 
-    // delete when fully split
-    testRuntimeOnly(project(":plugin-core:jetbrains-community"))
-    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
+// fix implicit dependency on generated source
+tasks.withType<Detekt> {
+    dependsOn(generateTelemetry)
+}
+
+tasks.withType<DetektCreateBaselineTask> {
+    dependsOn(generateTelemetry)
 }
