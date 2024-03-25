@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.auth.isCodeTransf
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationUpdateMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.codeTransformTabName
@@ -76,7 +77,6 @@ class CodeTransformChatApp : AmazonQApp {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     scope.launch {
-
                         val authController = AuthController()
                         val credentialState = authController.getAuthNeededStates(context.project).amazonQ
                         if (credentialState == null) {
@@ -88,11 +88,25 @@ class CodeTransformChatApp : AmazonQApp {
                                     authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
                                 )
                             )
-                        } else {
-                            // TODO
-                            // Disable all buttons and forms
-                            // inboundAppMessagesHandler
 
+                            chatSessionStorage.changeAuthenticationNeeded(false)
+                            CodeTransformMessageListener.instance.onAuthRestored()
+                        } else {
+                            chatSessionStorage.changeAuthenticationNeeded(true)
+
+                            // Ask for reauth
+                            chatSessionStorage.getAuthenticatingSessions().filter { !it.authNeededNotified }.forEach {
+                                context.messagesFromAppToUi.publish(
+                                    AuthenticationNeededExceptionMessage(
+                                        tabId = it.tabId,
+                                        authType = credentialState.authType,
+                                        message = credentialState.message,
+                                    )
+                                )
+                            }
+
+                            // Prevent multiple calls to activeConnectionChanged
+                            chatSessionStorage.markAuthenticationNeededNotified()
                         }
                     }
                 }

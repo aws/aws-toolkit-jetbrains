@@ -60,7 +60,7 @@ class CodeTransformChatController(
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
-    private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi)
+    private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
@@ -249,22 +249,31 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformCommand(message: CodeTransformActionMessage) {
         val activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId() ?: return
 
-        if (message.command == CodeTransformCommand.Stop) {
-            messagePublisher.publish(CodeTransformCommandMessage(command = "stop"))
-            processCodeTransformStopAction(activeTabId)
-        } else if (message.command == CodeTransformCommand.TransformComplete) {
-            val result = message.transformResult
-            if (result != null) {
-                handleCodeTransformResult(result)
+        when (message.command) {
+            CodeTransformCommand.Stop -> {
+                messagePublisher.publish(CodeTransformCommandMessage(command = "stop"))
+                processCodeTransformStopAction(activeTabId)
             }
-        } else if (message.command == CodeTransformCommand.Cancel) {
-            handleCodeTransformStoppedByUser()
-        } else if (message.command == CodeTransformCommand.TransformResuming) {
-            handleCodeTransformJobResume()
-        } else if (message.command == CodeTransformCommand.MavenBuildComplete) {
-            val result = message.mavenBuildResult
-            if (result != null) {
-                handleMavenBuildResult(result)
+            CodeTransformCommand.MavenBuildComplete -> {
+                val result = message.mavenBuildResult
+                if (result != null) {
+                    handleMavenBuildResult(result)
+                }
+            }
+            CodeTransformCommand.TransformComplete -> {
+                val result = message.transformResult
+                if (result != null) {
+                    handleCodeTransformResult(result)
+                }
+            }
+            CodeTransformCommand.Cancel -> {
+                handleCodeTransformStoppedByUser()
+            }
+            CodeTransformCommand.TransformResuming -> {
+                handleCodeTransformJobResume()
+            }
+            else -> {
+                processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = activeTabId))
             }
         }
     }

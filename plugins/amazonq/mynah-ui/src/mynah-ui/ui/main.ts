@@ -140,6 +140,13 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             })
             tabsStorage.updateTabStatus(tabID, 'free')
         },
+        onCodeTransformChatDisabled: (tabID: string) => {
+            // Clear the chat window to prevent button clicks or form selections
+            mynahUI.updateStore(tabID, {
+                loadingChat: false,
+                chatItems: [],
+            })
+        },
         onCodeTransformMessageReceived: (tabID: string, chatItem: ChatItem) => {
             if (chatItem.type === ChatItemType.ANSWER_PART) {
                 mynahUI.updateLastChatAnswer(tabID, {

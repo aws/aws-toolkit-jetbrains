@@ -8,10 +8,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformNotificationMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 
 class CodeTransformChatHelper(
-    private val messagePublisher: MessagePublisher
+    private val messagePublisher: MessagePublisher,
+    private val chatSessionStorage: ChatSessionStorage
 ) {
     private var activeCodeTransformTabId: String? = null
     fun setActiveCodeTransformTabId(tabId: String) {
@@ -32,10 +34,9 @@ class CodeTransformChatHelper(
     }
 
     suspend fun addNewMessage(content: CodeTransformChatMessageContent) {
-        if (activeCodeTransformTabId == null) {
+        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId!!).isAuthenticating) {
             return
         }
-
 
         messagePublisher.publish(
             CodeTransformChatMessage(
@@ -55,7 +56,7 @@ class CodeTransformChatHelper(
     }
 
     suspend fun updateLastPendingMessage(content: CodeTransformChatMessageContent) {
-        if (activeCodeTransformTabId == null) {
+        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId!!).isAuthenticating) {
             return
         }
 

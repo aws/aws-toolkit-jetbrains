@@ -10,4 +10,5 @@ enum class CodeTransformCommand {
     MavenBuildComplete,
     TransformComplete,
     TransformResuming,
+    AuthRestored,
 }

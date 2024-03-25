@@ -10,6 +10,7 @@ import { FollowUpGenerator } from '../followUps/generator'
 
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
+    onCodeTransformChatDisabled: (tabID: string) => void
     onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => void
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
@@ -20,6 +21,7 @@ export interface ICodeTransformChatConnectorProps {
 
 export class CodeTransformChatConnector {
     private readonly sendMessageToExtension
+    private readonly onCodeTransformChatDisabled
     private readonly onCodeTransformMessageReceived
     private readonly onCodeTransformCommandMessageReceived
     private readonly onNotification
@@ -31,6 +33,7 @@ export class CodeTransformChatConnector {
     constructor(props: ICodeTransformChatConnectorProps) {
         this.sendMessageToExtension = props.sendMessageToExtension
         this.onStartNewTransform = props.onStartNewTransform
+        this.onCodeTransformChatDisabled = props.onCodeTransformChatDisabled
         this.onCodeTransformMessageReceived = props.onCodeTransformMessageReceived
         this.onCodeTransformCommandMessageReceived = props.onCodeTransformCommandMessageReceived
         this.onNotification = props.onNotification
@@ -101,6 +104,8 @@ export class CodeTransformChatConnector {
         if (this.onCodeTransformMessageReceived === undefined) {
             return
         }
+
+        this.onCodeTransformChatDisabled(messageData.tabID)
 
         this.onCodeTransformMessageReceived(messageData.tabID, {
             type: ChatItemType.ANSWER,

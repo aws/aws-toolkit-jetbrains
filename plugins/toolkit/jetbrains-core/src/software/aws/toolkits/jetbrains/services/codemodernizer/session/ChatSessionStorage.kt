@@ -20,4 +20,12 @@ class ChatSessionStorage {
 
     // Find all sessions that are currently waiting to be authenticated
     fun getAuthenticatingSessions(): List<Session> = this.sessions.values.filter { it.isAuthenticating }
+
+    fun changeAuthenticationNeeded(isAuthenticating: Boolean) {
+        sessions.keys.forEach { sessions[it]?.isAuthenticating = isAuthenticating }
+    }
+
+    fun markAuthenticationNeededNotified() {
+        sessions.keys.forEach { sessions[it]?.authNeededNotified = true }
+    }
 }
