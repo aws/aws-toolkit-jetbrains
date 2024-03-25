@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -169,6 +170,7 @@ data class CodeModernizerSessionContext(
     private fun Path.isIgnoredDependency() = this.toFile().extension in ignoredDependencyFileExtensions
 
     fun iterateThroughDependencies(depDirectory: File): MutableList<File> {
+        LOG.warn { "Using custom plugin from 21 march" }
         val dependencyfiles = mutableListOf<File>()
         Files.walkFileTree(
             depDirectory.toPath(),
