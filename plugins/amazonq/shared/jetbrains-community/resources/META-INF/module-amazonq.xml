@@ -9,4 +9,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.cwqTab.CodewhispererQToolWindow"/>
     </extensions>
+
+    <extensions defaultExtensionNs="aws.toolkit">
+        <cwq.rootNode implementation="software.aws.toolkits.jetbrains.core.explorer.cwqTab.CwQRootNodeProviderImpl"/>
+    </extensions>
 </idea-plugin>

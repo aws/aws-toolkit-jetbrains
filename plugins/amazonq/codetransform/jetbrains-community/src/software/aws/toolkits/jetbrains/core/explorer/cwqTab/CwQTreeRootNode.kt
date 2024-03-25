@@ -16,11 +16,20 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.ENABLE_Q_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_EXPIRED_TOKEN_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_IN_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes.CodeModernizerRunModernizeNode
 import software.aws.toolkits.jetbrains.services.codemodernizer.isCodeModernizerAvailable
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
+
+// giant hack so we can compile
+class CwQRootNodeProviderImpl : CwQRootNodeProvider {
+    override fun create(project: Project) = CwQTreeRootNode(project)
+}
 
 class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Object()) {
     private val runCodeModernizerNode by lazy { CodeModernizerRunModernizeNode(nodeProject) }
@@ -66,11 +75,4 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
 
     private fun otherActiveIdentityConnectionsAvailable() =
         ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().isNotEmpty()
-
-    companion object {
-        const val Q_SIGNED_IN_ACTION_GROUP = "aws.toolkit.q.idc.signed.in"
-        const val Q_SIGNED_OUT_ACTION_GROUP = "aws.toolkit.q.sign.in"
-        const val Q_EXPIRED_TOKEN_ACTION_GROUP = "aws.toolkit.q.expired"
-        const val ENABLE_Q_ACTION_GROUP = "aws.toolkit.q.enable"
-    }
 }
