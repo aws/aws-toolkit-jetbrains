@@ -67,8 +67,8 @@ export class QuickActionHandler {
             this.connector.onTabChange(existingTransformTab.id)
 
             this.mynahUI.notify({
-                title: "Code Transformation",
-                content: "Switched to opened transformation tab",
+                title: "Q - Transform",
+                content: "Switched to the opened transformation tab",
             });
             return
         }

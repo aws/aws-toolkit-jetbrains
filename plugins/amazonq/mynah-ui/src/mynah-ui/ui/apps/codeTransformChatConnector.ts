@@ -14,6 +14,7 @@ export interface ICodeTransformChatConnectorProps {
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
+    onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     tabsStorage: TabsStorage
 }
 
@@ -23,6 +24,7 @@ export class CodeTransformChatConnector {
     private readonly onCodeTransformCommandMessageReceived
     private readonly onNotification
     private readonly onStartNewTransform
+    private readonly onUpdateAuthentication
     private readonly tabsStorage
     private readonly followUpGenerator: FollowUpGenerator
 
@@ -32,6 +34,7 @@ export class CodeTransformChatConnector {
         this.onCodeTransformMessageReceived = props.onCodeTransformMessageReceived
         this.onCodeTransformCommandMessageReceived = props.onCodeTransformCommandMessageReceived
         this.onNotification = props.onNotification
+        this.onUpdateAuthentication = props.onUpdateAuthentication
         this.tabsStorage = props.tabsStorage
         this.followUpGenerator = new FollowUpGenerator()
     }
@@ -64,8 +67,18 @@ export class CodeTransformChatConnector {
             return
         }
 
-        const answer: ChatItem = {
-            type: messageData.messageType,
+        const tabID = messageData.tabID
+        const isAddingNewItem = messageData.isAddingNewItem
+        const type = messageData.messageType
+
+        if (isAddingNewItem && type === ChatItemType.ANSWER_PART) {
+            this.onCodeTransformMessageReceived(tabID, {
+                type: ChatItemType.ANSWER_STREAM,
+            })
+        }
+
+        const chatItem: ChatItem = {
+            type: type,
             body: messageData.message ?? undefined,
             messageId: messageData.messageId ?? messageData.triggerID ?? '',
             relatedContent: undefined,
@@ -81,7 +94,7 @@ export class CodeTransformChatConnector {
                       }
                     : undefined,
         }
-        this.onCodeTransformMessageReceived(messageData.tabID, answer)
+        this.onCodeTransformMessageReceived(tabID, chatItem)
     }
 
     private processAuthNeededException = async (messageData: any): Promise<void> => {
@@ -117,6 +130,11 @@ export class CodeTransformChatConnector {
 
         if (messageData.type === 'authNeededException') {
             await this.processAuthNeededException(messageData)
+            return
+        }
+
+        if (messageData.type === 'authenticationUpdateMessage') {
+            this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
             return
         }
     }

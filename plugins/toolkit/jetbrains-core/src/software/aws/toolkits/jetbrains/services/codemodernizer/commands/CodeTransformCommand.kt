@@ -7,6 +7,7 @@ enum class CodeTransformCommand {
     Start,
     Stop,
     Cancel,
+    MavenBuildComplete,
     TransformComplete,
     TransformResuming,
 }

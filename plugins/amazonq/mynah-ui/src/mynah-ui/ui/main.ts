@@ -72,7 +72,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             tabDataGenerator.quickActionsGenerator.isFeatureDevEnabled = isFeatureDevEnabled
             tabDataGenerator.quickActionsGenerator.isCodeTransformEnabled = isCodeTransformEnabled
 
-            // Set the new defaults for the quick action commands in all tabs now that isFeatureDevEnabled was enabled/disabled
+            // Set the new defaults for the quick action commands in all tabs now that isFeatureDevEnabled and isCodeTransformEnabled were enabled/disabled
             for (const tab of tabsStorage.getTabs()) {
                 mynahUI.updateStore(tab.id, {
                     quickActionCommands: tabDataGenerator.quickActionsGenerator.generateForTab(tab.type),
@@ -80,14 +80,19 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             }
 
             // Unlock every authenticated tab that is now authenticated
-            if (featureDevEnabled || codeTransformEnabled) {
-                for (const tabID of authenticatingTabIDs) {
+            for (const tabID of authenticatingTabIDs) {
+                const tabType = tabsStorage.getTab(tabID)?.type
+                if (
+                    (tabType === 'featuredev' && featureDevEnabled) ||
+                    (tabType === 'codetransform' && codeTransformEnabled)
+                ) {
                     mynahUI.addChatItem(tabID, {
                         type: ChatItemType.ANSWER,
                         body: 'Authentication successful. Connected to Amazon Q.',
                     })
                     mynahUI.updateStore(tabID, {
-                        promptInputDisabledState: tabsStorage.getTab(tabID)?.type === 'codetransform',
+                        // Always disable prompt for code transform tabs
+                        promptInputDisabledState: tabType === 'codetransform',
                     })
                 }
             }
@@ -135,32 +140,39 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             })
             tabsStorage.updateTabStatus(tabID, 'free')
         },
-        onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => {
-            if (message.type === ChatItemType.ANSWER_PART) {
+        onCodeTransformMessageReceived: (tabID: string, chatItem: ChatItem) => {
+            if (chatItem.type === ChatItemType.ANSWER_PART) {
                 mynahUI.updateLastChatAnswer(tabID, {
-                    ...(message.messageId !== undefined ? { messageId: message.messageId } : {}),
-                    ...(message.canBeVoted !== undefined ? { canBeVoted: message.canBeVoted } : {}),
-                    ...(message.codeReference !== undefined ? { codeReference: message.codeReference } : {}),
-                    ...(message.body !== undefined ? { body: message.body } : {}),
-                    ...(message.relatedContent !== undefined ? { relatedContent: message.relatedContent } : {}),
-                    ...(message.formItems !== undefined ? { formItems: message.formItems} : {}),
-                    ...(message.buttons !== undefined ? { buttons: message.buttons} : {buttons: []}),
+                    ...(chatItem.messageId !== undefined ? { messageId: chatItem.messageId } : {}),
+                    ...(chatItem.canBeVoted !== undefined ? { canBeVoted: chatItem.canBeVoted } : {}),
+                    ...(chatItem.codeReference !== undefined ? { codeReference: chatItem.codeReference } : {}),
+                    ...(chatItem.body !== undefined ? { body: chatItem.body } : {}),
+                    ...(chatItem.relatedContent !== undefined ? { relatedContent: chatItem.relatedContent } : {}),
+                    ...(chatItem.formItems !== undefined ? { formItems: chatItem.formItems} : {}),
+                    ...(chatItem.buttons !== undefined ? { buttons: chatItem.buttons} : {buttons: []}),
                     // For loading animation to work, do not update the chat item type
-                    ...(message.followUp !== undefined ? { followUp: message.followUp} : {}),
+                    ...(chatItem.followUp !== undefined ? { followUp: chatItem.followUp} : {}),
                 })
 
                 return
             }
 
-            if (message.type === ChatItemType.PROMPT || message.type === ChatItemType.ANSWER_STREAM || message.type === ChatItemType.ANSWER) {
-                mynahUI.addChatItem(tabID, message)
+            if (chatItem.type === ChatItemType.PROMPT || chatItem.type === ChatItemType.ANSWER_STREAM || chatItem.type === ChatItemType.ANSWER) {
+                if (chatItem.followUp === undefined) {
+                    mynahUI.updateLastChatAnswer(tabID, {
+                        buttons: [],
+                        followUp: { options: [] },
+                    })
+                }
+
+                mynahUI.addChatItem(tabID, chatItem)
                 mynahUI.updateStore(tabID, {
-                    loadingChat: message.type !== ChatItemType.ANSWER,
+                    loadingChat: chatItem.type !== ChatItemType.ANSWER,
                 })
 
-                if (message.type === ChatItemType.PROMPT) {
+                if (chatItem.type === ChatItemType.PROMPT) {
                     tabsStorage.updateTabStatus(tabID, 'busy')
-                } else if (message.type === ChatItemType.ANSWER) {
+                } else if (chatItem.type === ChatItemType.ANSWER) {
                     tabsStorage.updateTabStatus(tabID, 'free')
                 }
             }

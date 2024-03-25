@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.auth.isCodeTransformAvailable
@@ -75,13 +76,24 @@ class CodeTransformChatApp : AmazonQApp {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     scope.launch {
-                        context.messagesFromAppToUi.publish(
-                            AuthenticationUpdateMessage(
-                                featureDevEnabled = isFeatureDevAvailable(context.project),
-                                codeTransformEnabled = isCodeTransformAvailable(context.project),
-                                authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+
+                        val authController = AuthController()
+                        val credentialState = authController.getAuthNeededStates(context.project).amazonQ
+                        if (credentialState == null) {
+                            // Notify tabs about restoring authentication
+                            context.messagesFromAppToUi.publish(
+                                AuthenticationUpdateMessage(
+                                    featureDevEnabled = isFeatureDevAvailable(context.project),
+                                    codeTransformEnabled = isCodeTransformAvailable(context.project),
+                                    authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+                                )
                             )
-                        )
+                        } else {
+                            // TODO
+                            // Disable all buttons and forms
+                            // inboundAppMessagesHandler
+
+                        }
                     }
                 }
             }
@@ -93,7 +105,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.Transform -> inboundAppMessagesHandler.processTransformQuickAction(message)
             is IncomingCodeTransformMessage.CodeTransformStart -> inboundAppMessagesHandler.processCodeTransformStartAction(message)
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
-            is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message)
+            is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

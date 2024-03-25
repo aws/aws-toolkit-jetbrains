@@ -88,6 +88,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private val isModernizationInProgress = AtomicBoolean(false)
     private val isResumingJob = AtomicBoolean(false)
     private val isMvnRunning = AtomicBoolean(false)
+    private val isJobSuccessfullyResumed = AtomicBoolean(false)
 
     private val transformationStoppedByUsr = AtomicBoolean(false)
     private var codeTransformationSession: CodeModernizerSession? = null
@@ -248,8 +249,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         .getEncoder()
         .encodeToString(DigestUtils.sha256(configFilePath))
 
-    fun runModernize(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): Job? {
+    fun runModernize(copyResult: MavenCopyCommandsResult): Job? {
         initStopParameters()
+        val session = codeTransformationSession as CodeModernizerSession
         CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(session.sessionContext.sourceJavaVersion.name),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(session.sessionContext.targetJavaVersion.name),
@@ -257,12 +259,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             codeTransformProjectId = calculateProjectHash(session.sessionContext.configurationFile.path),
         )
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
-        codeTransformationSession = session
         return launchModernizationJob(session, copyResult)
     }
 
     private fun initStopParameters() {
-        codeTransformationSession = null
         transformationStoppedByUsr.set(false)
         CodeModernizerSessionState.getInstance(project).currentJobStatus = TransformationStatus.UNKNOWN_TO_SDK_VERSION
         CodeModernizerSessionState.getInstance(project).currentJobCreationTime = Instant.MIN
@@ -368,6 +368,35 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         return result
     }
 
+    fun handleLocalMavenBuildResult(mavenCopyCommandsResult: MavenCopyCommandsResult) {
+        codeTransformationSession?.setLastMvnBuildResult(mavenCopyCommandsResult)
+        // Send IDE notifications first
+        if (mavenCopyCommandsResult == MavenCopyCommandsResult.Failure) {
+            notifyStickyInfo(
+                message("codemodernizer.notification.warn.maven_failed.title"),
+                message("codemodernizer.notification.warn.maven_failed.content"),
+                project,
+                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+            )
+        }
+
+        CodeTransformMessageListener.instance.onMavenBuildResult(mavenCopyCommandsResult)
+    }
+
+    suspend fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
+        // Create and set a session
+        codeTransformationSession = null
+        val session = createCodeModernizerSession(customerSelection, project)
+        codeTransformationSession = session
+
+        projectCoroutineScope(project).launch {
+            isMvnRunning.set(true)
+            val result = session.getDependenciesUsingMaven()
+            isMvnRunning.set(false)
+            handleLocalMavenBuildResult(result)
+        }
+    }
+
     internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
         val result = session.createModernizationJob(copyResult)
         return when (result) {
@@ -421,9 +450,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     internal fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
+        codeTransformationSession?.setLastTransformResult(result)
+
         if (result is CodeModernizerJobCompletedResult.ManagerDisposed) {
             return
         }
+
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access
         ApplicationManager.getApplication().invokeLater {
             setJobNotOngoing()
@@ -516,6 +548,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 }
 
                 else -> {
+                    isJobSuccessfullyResumed.set(true)
                     CodeTransformMessageListener.instance.onTransformResuming()
                     resumeJob(session, lastJobId, result)
                     notifyStickyInfo(
@@ -688,6 +721,16 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun isModernizationJobActive(): Boolean = isModernizationInProgress.get()
 
     fun isRunningMvn(): Boolean = isMvnRunning.get()
+
+    fun isJobSuccessfullyResumed(): Boolean = isJobSuccessfullyResumed.get()
+
+    fun getLastMvnBuildResult(): MavenCopyCommandsResult? {
+        return codeTransformationSession?.getLastMvnBuildResult()
+    }
+
+    fun getLastTransformResult(): CodeModernizerJobCompletedResult? {
+        return codeTransformationSession?.getLastTransformResult()
+    }
 
     fun getBottomToolWindow() = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
         ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))

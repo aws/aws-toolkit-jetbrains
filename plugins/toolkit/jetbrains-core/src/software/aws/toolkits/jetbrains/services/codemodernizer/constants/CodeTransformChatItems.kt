@@ -127,6 +127,12 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
     return CodeTransformChatMessageContent(
         message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", docUrl)}",
         type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+}
+
+fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent {
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
         followUps = listOf(
             startNewTransformFollowUp
         )
@@ -153,9 +159,6 @@ fun buildUserInputChatContent(project: Project, validationResult: ValidationResu
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.transform_cancelled_by_user"),
-    followUps = listOf(
-        startNewTransformFollowUp,
-    )
 )
 
 fun buildUserStopTransformChatContent() = CodeTransformChatMessageContent(
@@ -171,9 +174,6 @@ fun buildTransformStoppingChatContent() = CodeTransformChatMessageContent(
 fun buildTransformStoppedChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.transform_stopped_by_user"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    followUps = listOf(
-        startNewTransformFollowUp,
-    )
 )
 
 fun buildUserSelectionSummaryChatContent(moduleName: String) = CodeTransformChatMessageContent(
@@ -196,9 +196,6 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     )}\n\n${message(
         "codemodernizer.chat.message.doc_link_prefix", docUrl
     )}",
-    followUps = listOf(
-        startNewTransformFollowUp,
-    )
 )
 
 fun buildCompileLocalSuccessChatContent() = CodeTransformChatMessageContent(
@@ -252,8 +249,5 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         } else {
             null
         },
-        followUps = listOf(
-            startNewTransformFollowUp
-        )
     )
 }

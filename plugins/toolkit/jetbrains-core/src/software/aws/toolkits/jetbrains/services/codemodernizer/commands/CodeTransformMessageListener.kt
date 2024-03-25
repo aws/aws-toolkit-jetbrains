@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.commands
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 
 class CodeTransformMessageListener {
 
@@ -20,8 +21,12 @@ class CodeTransformMessageListener {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Cancel))
     }
 
+    fun onMavenBuildResult(result: MavenCopyCommandsResult) {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.MavenBuildComplete, mavenBuildResult = result))
+    }
+
     fun onTransformResult(result: CodeModernizerJobCompletedResult) {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.TransformComplete, result))
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.TransformComplete, transformResult = result))
     }
 
     fun onTransformResuming() {

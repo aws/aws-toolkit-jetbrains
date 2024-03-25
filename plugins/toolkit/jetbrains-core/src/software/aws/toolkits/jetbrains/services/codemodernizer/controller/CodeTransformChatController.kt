@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCo
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResumingChatContent
@@ -70,24 +71,10 @@ class CodeTransformChatController(
         codeModernizerManager.sendUserClickedTelemetry(CodeTransformStartSrcComponents.ChatPrompt)
         codeTransformChatHelper.setActiveCodeTransformTabId(message.tabId)
 
-        if (message.startNewTransform) {
-            codeTransformChatHelper.clearHistory()
-        }
-
-        val isTransformOngoing = codeModernizerManager.isModernizationJobActive()
-        val isMvnRunning = codeModernizerManager.isRunningMvn()
-        val isTransformationResuming = codeModernizerManager.isModernizationJobResuming()
-
-        while (isTransformationResuming) {
-            delay(50)
-        }
-
-        if (isTransformOngoing || isMvnRunning || !codeTransformChatHelper.isHistoryEmpty()) {
-            // Resume history
-            runBlocking {
-                codeTransformChatHelper.restoreCurrentChatHistory()
+        if (!message.startNewTransform) {
+            if (tryRestoreChatProgress()) {
+                return
             }
-            return
         }
 
         codeTransformChatHelper.addNewMessage(
@@ -99,10 +86,13 @@ class CodeTransformChatController(
         val validationResult = codeModernizerManager.validate(context.project)
 
         if (!validationResult.valid) {
+            codeModernizerManager.warnUnsupportedProject(validationResult.invalidReason)
             codeTransformChatHelper.updateLastPendingMessage(
                 buildProjectInvalidChatContent(validationResult)
             )
-            codeModernizerManager.warnUnsupportedProject(validationResult.invalidReason)
+            codeTransformChatHelper.addNewMessage(
+                buildStartNewTransformFollowup()
+            )
 
             return
         }
@@ -118,22 +108,69 @@ class CodeTransformChatController(
         )
     }
 
-    override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
-        codeTransformChatHelper.run {
-            removeLastHistoryItem()
+    suspend fun tryRestoreChatProgress(): Boolean {
+        val isTransformOngoing = codeModernizerManager.isModernizationJobActive()
+        val isMvnRunning = codeModernizerManager.isRunningMvn()
+        val isTransformationResuming = codeModernizerManager.isModernizationJobResuming()
 
+        while (isTransformationResuming) {
+            delay(50)
+        }
+
+        if (isMvnRunning) {
+            codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+            return true
+        }
+
+        if (isTransformOngoing) {
+            if (codeModernizerManager.isJobSuccessfullyResumed()) {
+                codeTransformChatHelper.addNewMessage(buildTransformResumingChatContent())
+            } else {
+                codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
+            }
+            return true
+        }
+
+        val lastTransformResult = codeModernizerManager.getLastTransformResult()
+        if (lastTransformResult != null) {
+            codeTransformChatHelper.addNewMessage(buildTransformResumingChatContent())
+            handleCodeTransformResult(lastTransformResult)
+            return true
+        }
+
+        val lastMvnBuildResult = codeModernizerManager.getLastMvnBuildResult()
+        if (lastMvnBuildResult != null) {
+            codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+            handleMavenBuildResult(lastMvnBuildResult)
+            return true
+        }
+
+        return false
+    }
+
+    override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
+        if (!checkForAuth(message.tabId)) {
+            return
+        }
+
+        codeTransformChatHelper.run {
             addNewMessage(buildUserCancelledChatContent())
+            addNewMessage(buildStartNewTransformFollowup())
         }
     }
 
+
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
+        if (!checkForAuth(message.tabId)) {
+            return
+        }
+
         val (tabId, modulePath, targetVersion) = message
+
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
         codeTransformChatHelper.run {
-            removeLastHistoryItem()
-
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
 
             addNewMessage(buildCompileLocalInProgressChatContent())
@@ -144,16 +181,18 @@ class CodeTransformChatController(
             JavaSdkVersion.JDK_1_8,
             JavaSdkVersion.JDK_17
         )
-        val session = codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
-        val result = codeModernizerManager.getDependenciesUsingMaven(session)
-        if (result == MavenCopyCommandsResult.Cancelled) {
+        codeModernizerManager.runLocalMavenBuild(context.project, selection)
+    }
+
+    suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
+        if (mavenBuildResult == MavenCopyCommandsResult.Cancelled) {
             codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
-
+            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
             return
-        } else if (result == MavenCopyCommandsResult.Failure) {
+        } else if (mavenBuildResult == MavenCopyCommandsResult.Failure) {
             codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
-
+            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
             return
         }
 
@@ -164,11 +203,14 @@ class CodeTransformChatController(
         }
 
         runInEdt {
-            codeModernizerManager.runModernize(session, result)
+            codeModernizerManager.runModernize(mavenBuildResult)
         }
     }
 
-    override suspend fun processCodeTransformStopAction(message: IncomingCodeTransformMessage.CodeTransformStop?) {
+    override suspend fun processCodeTransformStopAction(tabId: String) {
+        if (!checkForAuth(tabId)) {
+            return
+        }
         codeTransformChatHelper.run {
             addNewMessage(buildUserStopTransformChatContent())
 
@@ -201,17 +243,17 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformNewAction(message: IncomingCodeTransformMessage.CodeTransformNew) {
-        codeTransformChatHelper.clearHistory()
-
         processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = message.tabId, startNewTransform = true))
     }
 
     override suspend fun processCodeTransformCommand(message: CodeTransformActionMessage) {
+        val activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId() ?: return
+
         if (message.command == CodeTransformCommand.Stop) {
             messagePublisher.publish(CodeTransformCommandMessage(command = "stop"))
-            processCodeTransformStopAction(null)
+            processCodeTransformStopAction(activeTabId)
         } else if (message.command == CodeTransformCommand.TransformComplete) {
-            val result = message.result
+            val result = message.transformResult
             if (result != null) {
                 handleCodeTransformResult(result)
             }
@@ -219,6 +261,11 @@ class CodeTransformChatController(
             handleCodeTransformStoppedByUser()
         } else if (message.command == CodeTransformCommand.TransformResuming) {
             handleCodeTransformJobResume()
+        } else if (message.command == CodeTransformCommand.MavenBuildComplete) {
+            val result = message.mavenBuildResult
+            if (result != null) {
+                handleMavenBuildResult(result)
+            }
         }
     }
 
@@ -283,27 +330,14 @@ class CodeTransformChatController(
 
     private suspend fun handleCodeTransformStoppedByUser() {
         codeTransformChatHelper.updateLastPendingMessage(buildTransformStoppedChatContent())
+        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
-        val resultMessage = when (result) {
-            is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
-                message("codemodernizer.chat.message.result.zip_too_large")
-            }
-            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-                message("codemodernizer.chat.message.result.success")
-            }
-            is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
-                message("codemodernizer.chat.message.result.partially_success")
-            }
-            else -> {
-                message("codemodernizer.chat.message.result.fail")
-            }
-        }
-
         codeTransformChatHelper.updateLastPendingMessage(
             buildTransformResultChatContent(result)
         )
+        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
     companion object {

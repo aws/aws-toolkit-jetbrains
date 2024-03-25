@@ -149,6 +149,7 @@ data class CodeTransformChatMessage(
     val buttons: List<Button>? = null,
     val formItems: List<FormItem>? = null,
     val followUps: List<FollowUp>? = null,
+    val isAddingNewItem: Boolean = true,
 ) : CodeTransformUiMessage(
     tabId = tabId,
     type = "chatMessage",

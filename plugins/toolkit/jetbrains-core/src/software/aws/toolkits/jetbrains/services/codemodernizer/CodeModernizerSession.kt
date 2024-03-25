@@ -67,6 +67,25 @@ class CodeModernizerSession(
     private val isDisposed = AtomicBoolean(false)
     private val shouldStop = AtomicBoolean(false)
 
+    private var mvnBuildResult: MavenCopyCommandsResult? = null
+    private var transformResult: CodeModernizerJobCompletedResult? = null
+
+    fun getLastMvnBuildResult(): MavenCopyCommandsResult? {
+        return mvnBuildResult
+    }
+
+    fun setLastMvnBuildResult(result: MavenCopyCommandsResult): Unit {
+        mvnBuildResult = result
+    }
+
+    fun getLastTransformResult(): CodeModernizerJobCompletedResult? {
+        return transformResult
+    }
+
+    fun setLastTransformResult(result: CodeModernizerJobCompletedResult): Unit {
+        transformResult = result
+    }
+
     suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
         return sessionContext.getDependenciesUsingMaven()
     }
