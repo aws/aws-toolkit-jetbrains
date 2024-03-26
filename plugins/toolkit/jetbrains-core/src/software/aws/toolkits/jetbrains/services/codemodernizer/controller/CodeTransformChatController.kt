@@ -159,7 +159,6 @@ class CodeTransformChatController(
         }
     }
 
-
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
         if (!checkForAuth(message.tabId)) {
             return

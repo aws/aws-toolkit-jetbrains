@@ -143,7 +143,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (supportedModules.isEmpty() && !validProjectJdk) {
                 return ValidationResult(
                     false,
-                    message("codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions", supportedJavaMappings.keys.joinToString()),
+                    message(
+                        "codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions",
+                        supportedJavaMappings.keys.joinToString()
+                    ),
                     InvalidTelemetryReason(
                         CodeTransformPreValidationError.UnsupportedJavaVersion,
                         projectJdk?.toString() ?: ""

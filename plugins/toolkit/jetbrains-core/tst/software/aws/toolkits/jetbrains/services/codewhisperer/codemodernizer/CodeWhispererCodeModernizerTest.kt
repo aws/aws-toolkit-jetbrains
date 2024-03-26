@@ -3,34 +3,23 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codemodernizer
 
-import com.intellij.openapi.projectRoots.JavaSdkVersion
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
-import com.intellij.testFramework.runInEdtAndWait
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertNotNull
-import junit.framework.TestCase.assertNull
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
 import org.mockito.Mockito.never
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.unzipFile
@@ -39,6 +28,7 @@ import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
+import kotlin.test.Test
 
 class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 

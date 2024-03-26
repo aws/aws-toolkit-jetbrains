@@ -13,5 +13,5 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.isIntellij
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    return connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer;
+    return connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer
 }

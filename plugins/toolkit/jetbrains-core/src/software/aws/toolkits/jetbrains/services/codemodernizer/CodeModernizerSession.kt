@@ -74,7 +74,7 @@ class CodeModernizerSession(
         return mvnBuildResult
     }
 
-    fun setLastMvnBuildResult(result: MavenCopyCommandsResult): Unit {
+    fun setLastMvnBuildResult(result: MavenCopyCommandsResult) {
         mvnBuildResult = result
     }
 
@@ -82,7 +82,7 @@ class CodeModernizerSession(
         return transformResult
     }
 
-    fun setLastTransformResult(result: CodeModernizerJobCompletedResult): Unit {
+    fun setLastTransformResult(result: CodeModernizerJobCompletedResult) {
         transformResult = result
     }
 
