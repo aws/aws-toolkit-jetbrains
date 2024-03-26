@@ -83,6 +83,7 @@ open class CodeWhispererCodeModernizerTestBase(
     internal lateinit var clientAdaptorSpy: GumbyClient
     internal lateinit var codeModernizerManagerSpy: CodeModernizerManager
     internal lateinit var toolkitConnectionManager: ToolkitConnectionManager
+    internal lateinit var telemetryManagerSpy: CodeTransformTelemetryManager
     lateinit var toolWindowMock: ToolWindow
     lateinit var testSessionContextSpy: CodeModernizerSessionContext
     lateinit var testModernizerBottomWindowPanelSpy: CodeModernizerBottomWindowPanelManager
@@ -234,9 +235,9 @@ open class CodeWhispererCodeModernizerTestBase(
             doReturn(connectionSettingsMock).whenever(it).getConnectionSettings()
         }
         doReturn(toolkitConnection).whenever(toolkitConnectionManager).activeConnectionForFeature(any())
-        val telemetryManager = mock<CodeTransformTelemetryManager> {}
-        project.replaceService(CodeTransformTelemetryManager::class.java, telemetryManager, disposableRule.disposable)
         project.replaceService(ToolkitConnectionManager::class.java, toolkitConnectionManager, disposableRule.disposable)
+        telemetryManagerSpy = spy(CodeTransformTelemetryManager.getInstance(project))
+        project.replaceService(CodeTransformTelemetryManager::class.java, telemetryManagerSpy, disposableRule.disposable)
         clientAdaptorSpy = spy(GumbyClient.getInstance(project))
         project.replaceService(GumbyClient::class.java, clientAdaptorSpy, disposableRule.disposable)
         testSessionStateSpy = spy(CodeModernizerSessionState.getInstance(project))

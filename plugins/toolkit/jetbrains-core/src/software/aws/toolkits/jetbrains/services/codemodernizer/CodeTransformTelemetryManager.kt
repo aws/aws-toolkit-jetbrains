@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.apache.commons.codec.digest.DigestUtils
@@ -29,6 +30,7 @@ import java.util.Base64
 /**
  * CodeModernizerTelemetry contains helper functions for common operations that require telemetry.
  */
+@Service(Service.Level.PROJECT)
 class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
     private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
