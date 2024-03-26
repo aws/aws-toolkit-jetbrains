@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.commands
 
 enum class CodeTransformCommand {
     Start,
-    Stop,
-    Cancel,
+    StopClicked,
+    TransformStopped,
     MavenBuildComplete,
     TransformComplete,
     TransformResuming,

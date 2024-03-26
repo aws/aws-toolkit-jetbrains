@@ -418,7 +418,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
         }
         if (transformationStoppedByUsr.get()) {
-            CodeTransformMessageListener.instance.onCancel()
+            CodeTransformMessageListener.instance.onTransformStopped()
         } else {
             CodeTransformMessageListener.instance.onTransformResult(result)
         }

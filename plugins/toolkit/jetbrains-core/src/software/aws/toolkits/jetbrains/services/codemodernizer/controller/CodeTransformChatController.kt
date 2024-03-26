@@ -253,7 +253,7 @@ class CodeTransformChatController(
         val activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId() ?: return
 
         when (message.command) {
-            CodeTransformCommand.Stop -> {
+            CodeTransformCommand.StopClicked -> {
                 messagePublisher.publish(CodeTransformCommandMessage(command = "stop"))
                 processCodeTransformStopAction(activeTabId)
             }
@@ -269,7 +269,7 @@ class CodeTransformChatController(
                     handleCodeTransformResult(result)
                 }
             }
-            CodeTransformCommand.Cancel -> {
+            CodeTransformCommand.TransformStopped -> {
                 handleCodeTransformStoppedByUser()
             }
             CodeTransformCommand.TransformResuming -> {

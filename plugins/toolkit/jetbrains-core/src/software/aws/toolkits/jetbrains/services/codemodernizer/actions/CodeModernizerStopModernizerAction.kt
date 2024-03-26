@@ -40,7 +40,7 @@ class CodeModernizerStopModernizerAction :
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
             toolWindow?.show()
         }
-        CodeTransformMessageListener.instance.onStop()
+        CodeTransformMessageListener.instance.onStopClicked()
         CodeTransformTelemetryManager.getInstance(project)
             .jobIsCancelledByUser(CodeTransformCancelSrcComponents.BottomPanelSideNavButton)
     }

@@ -13,12 +13,12 @@ class CodeTransformMessageListener {
     private val _messages by lazy { MutableSharedFlow<CodeTransformActionMessage>(extraBufferCapacity = 10) }
     val flow = _messages.asSharedFlow()
 
-    fun onStop() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Stop))
+    fun onStopClicked() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.StopClicked))
     }
 
-    fun onCancel() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Cancel))
+    fun onTransformStopped() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.TransformStopped))
     }
 
     fun onMavenBuildResult(result: MavenCopyCommandsResult) {
