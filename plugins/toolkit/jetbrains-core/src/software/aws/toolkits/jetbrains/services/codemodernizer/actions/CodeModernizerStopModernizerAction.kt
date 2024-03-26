@@ -12,8 +12,10 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.wm.ToolWindowManager
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 
 class CodeModernizerStopModernizerAction :
     AnAction(
@@ -39,5 +41,7 @@ class CodeModernizerStopModernizerAction :
             toolWindow?.show()
         }
         CodeTransformMessageListener.instance.onStop()
+        CodeTransformTelemetryManager.getInstance(project)
+            .jobIsCancelledByUser(CodeTransformCancelSrcComponents.BottomPanelSideNavButton)
     }
 }
