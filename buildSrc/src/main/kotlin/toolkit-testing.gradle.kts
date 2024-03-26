@@ -5,6 +5,7 @@ import software.aws.toolkits.gradle.ciOnly
 
 plugins {
     id("java") // Needed for referencing "implementation" configuration
+    id("java-test-fixtures")
     id("jacoco")
     id("org.gradle.test-retry")
     id("com.adarshr.test-logger")
@@ -13,10 +14,23 @@ plugins {
 // TODO: https://github.com/gradle/gradle/issues/15383
 val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 dependencies {
-    testImplementation(versionCatalog.findBundle("mockito").get())
-    testImplementation(versionCatalog.findLibrary("assertj").get())
+    testFixturesApi(versionCatalog.findBundle("mockito").get())
+    testFixturesApi(versionCatalog.findLibrary("assertj").get())
 
-    // Don't add a test framework by default since we use junit4, junit5, and testng depending on project
+    // Everything uses junit4/5 except rider, which uses TestNG
+    testFixturesApi(platform(versionCatalog.findLibrary("junit5-bom").get()))
+    testFixturesApi(versionCatalog.findLibrary("junit5-jupiterApi").get())
+
+    testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterEngine").get())
+    testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterVintage").get())
+}
+
+sourceSets {
+    testFixtures {
+        java.setSrcDirs(
+            listOf("tstFixtures")
+        )
+    }
 }
 
 jacoco {
@@ -45,6 +59,8 @@ artifacts {
 }
 
 tasks.withType<Test>().all {
+    useJUnitPlatform()
+
     ciOnly {
         retry {
             failOnPassedAfterRetry.set(false)
