@@ -25,7 +25,7 @@ class ChatSessionStorage {
         sessions.keys.forEach { sessions[it]?.isAuthenticating = isAuthenticating }
     }
 
-    fun markAuthenticationNeededNotified() {
-        sessions.keys.forEach { sessions[it]?.authNeededNotified = true }
+    fun changeAuthenticationNeededNotified(authNeededNotified: Boolean) {
+        sessions.keys.forEach { sessions[it]?.authNeededNotified = authNeededNotified}
     }
 }

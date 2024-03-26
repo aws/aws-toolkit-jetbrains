@@ -108,7 +108,7 @@ data class CodeModernizerSessionContext(
                     val childPath = Path(child.path)
                     !child.isDirectory && directoriesToExclude.none { childPath.startsWith(it.toPath()) }
                 }
-                val dependencyfiles = if (depDirectory != null) {
+                val dependencyFiles = if (depDirectory != null) {
                     iterateThroughDependencies(depDirectory)
                 } else {
                     mutableListOf()
@@ -127,7 +127,7 @@ data class CodeModernizerSessionContext(
 
                     // 2) Dependencies
                     if (depDirectory != null) {
-                        dependencyfiles.forEach { depfile ->
+                        dependencyFiles.forEach { depfile ->
                             val relativePath = File(depfile.path).relativeTo(depDirectory.parentFile)
                             val paddedPath = depSources.resolve(relativePath)
                             var paddedPathString = paddedPath.toPath().toString()

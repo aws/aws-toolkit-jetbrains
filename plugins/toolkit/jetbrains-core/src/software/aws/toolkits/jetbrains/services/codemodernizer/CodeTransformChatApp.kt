@@ -90,6 +90,7 @@ class CodeTransformChatApp : AmazonQApp {
                             )
 
                             chatSessionStorage.changeAuthenticationNeeded(false)
+                            chatSessionStorage.changeAuthenticationNeededNotified(false)
                             CodeTransformMessageListener.instance.onAuthRestored()
                         } else {
                             chatSessionStorage.changeAuthenticationNeeded(true)
@@ -106,7 +107,7 @@ class CodeTransformChatApp : AmazonQApp {
                             }
 
                             // Prevent multiple calls to activeConnectionChanged
-                            chatSessionStorage.markAuthenticationNeededNotified()
+                            chatSessionStorage.changeAuthenticationNeededNotified(true)
                         }
                     }
                 }
