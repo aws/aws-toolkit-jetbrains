@@ -21,7 +21,6 @@ import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
@@ -63,7 +62,6 @@ import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 import java.time.Instant
-import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.Icon
 
@@ -220,10 +218,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             telemetry.jobIsCancelledByUser(CodeTransformCancelSrcComponents.DevToolsStopButton)
         }
     }
-
-    private fun calculateProjectHash(customerSelection: CustomerSelection) = Base64
-        .getEncoder()
-        .encodeToString(DigestUtils.sha256(customerSelection.configurationFile.path))
 
     fun runModernize(validatedBuildFiles: List<VirtualFile>): Job? {
         initStopParameters()
@@ -537,7 +531,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
 
     fun informUserOfCompletion(result: CodeModernizerJobCompletedResult) {
-        telemetry.totalRunTime(result.toString())
+        var jobId: JobId? = null
         when (result) {
             is CodeModernizerJobCompletedResult.UnableToCreateJob -> notifyJobFailure(
                 result.failureReason,
@@ -561,19 +555,25 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 listOf(displayFeedbackNotificationAction())
             )
 
-            is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> notifyStickyInfo(
-                message("codemodernizer.notification.info.modernize_partial_complete.title"),
-                message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
-                project,
-                listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
-            )
+            is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
+                notifyStickyInfo(
+                    message("codemodernizer.notification.info.modernize_partial_complete.title"),
+                    message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
+                    project,
+                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
+                )
+                jobId = result.jobId
+            }
 
-            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> notifyStickyInfo(
-                message("codemodernizer.notification.info.modernize_complete.title"),
-                message("codemodernizer.notification.info.modernize_complete.content"),
-                project,
-                listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId)),
-            )
+            is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
+                notifyStickyInfo(
+                    message("codemodernizer.notification.info.modernize_complete.title"),
+                    message("codemodernizer.notification.info.modernize_complete.content"),
+                    project,
+                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId)),
+                )
+                jobId = result.jobId
+            }
 
             is CodeModernizerJobCompletedResult.ManagerDisposed -> LOG.warn { "Manager disposed" }
             is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> LOG.warn { "Job was aborted" }
@@ -590,6 +590,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES), displayFeedbackNotificationAction()),
             )
         }
+        telemetry.totalRunTime(result.toString(), jobId)
     }
 
     fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) = CodeModernizerSession(
@@ -610,10 +611,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun userInitiatedStopCodeModernization() {
         notifyTransformationStartStopping()
         if (transformationStoppedByUsr.getAndSet(true)) return
-        val currentId = codeTransformationSession?.getActiveJobId()?.id
+        val currentId = codeTransformationSession?.getActiveJobId()
         projectCoroutineScope(project).launch {
             try {
-                val success = codeTransformationSession?.stopTransformation(currentId) ?: true // no session -> no job to stop
+                val success = codeTransformationSession?.stopTransformation(currentId?.id) ?: true // no session -> no job to stop
                 if (!success) {
                     // This should not happen
                     throw CodeModernizerException(message("codemodernizer.notification.info.transformation_start_stopping.as_no_response"))
@@ -622,7 +623,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 LOG.error(e) { e.message.toString() }
                 notifyTransformationFailedToStop(e.localizedMessage)
             } finally {
-                telemetry.totalRunTime("JobCancelled")
+                telemetry.totalRunTime("JobCancelled", currentId)
             }
         }
     }

@@ -59,8 +59,8 @@ class CodeTransformTelemetryManager(private val project: Project) {
         // New projectDetails metric should always be fired whether the project was valid or invalid
         CodetransformTelemetry.projectDetails(
             codeTransformSessionId = sessionId,
-            result = if (!validationResult.valid) Result.Failed else Result.Unknown,
-            reason = if (!validationResult.valid) validationResult.invalidTelemetryReason.additonalInfo else null,
+            result = if (validationResult.valid) Result.Succeeded else Result.Failed,
+            reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additonalInfo,
             codeTransformPreValidationError = validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown,
             codeTransformLocalJavaVersion = project.tryGetJdk().toString()
         )
@@ -87,7 +87,8 @@ class CodeTransformTelemetryManager(private val project: Project) {
         codeTransformStatus = status.toString()
     )
 
-    fun totalRunTime(codeTransformResultStatusMessage: String) = CodetransformTelemetry.totalRunTime(
+    fun totalRunTime(codeTransformResultStatusMessage: String, jobId: JobId?) = CodetransformTelemetry.totalRunTime(
+        codeTransformJobId = jobId?.toString(),
         codeTransformSessionId = sessionId,
         codeTransformResultStatusMessage = codeTransformResultStatusMessage,
         codeTransformRunTimeLatency = calculateTotalLatency(CodeTransformTelemetryState.instance.getStartTime(), Instant.now()),

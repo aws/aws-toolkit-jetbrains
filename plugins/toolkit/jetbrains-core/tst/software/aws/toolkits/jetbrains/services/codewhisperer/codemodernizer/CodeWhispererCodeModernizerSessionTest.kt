@@ -52,7 +52,6 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.io.File
 import java.io.FileInputStream
-import java.nio.file.Path
 import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
@@ -339,7 +338,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles()
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doNothing().whenever(testSessionSpy).uploadArtifactToS3(any(), any(), any(), any())
+        doNothing().whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any()) { false }
         doReturn(exampleStartCodeMigrationResponse).whenever(clientAdaptorSpy).startCodeModernization(any(), any(), any())
         val result = testSessionSpy.createModernizationJob()
         assertEquals(result, CodeModernizerStartJobResult.Started(jobId))
@@ -419,11 +418,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         testSessionSpy.uploadPayload(expectedFilePath.toFile())
 
         val inOrder = inOrder(testSessionSpy)
-        inOrder.verify(testSessionSpy).uploadArtifactToS3(
+        inOrder.verify(clientAdaptorSpy).uploadArtifactToS3(
             eq(gumbyUploadUrlResponse.uploadUrl()),
             eq(expectedFilePath.toFile()),
             eq(expectedSha256checksum),
             eq(gumbyUploadUrlResponse.kmsKeyArn())
-        )
+        ) { false }
     }
 }

@@ -51,7 +51,8 @@ class GumbyClient(private val project: Project) {
 
     private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
 
-    private val amazonQStreamingClient = AmazonQStreamingClient.getInstance(project)
+    private val amazonQStreamingClient
+        get() = AmazonQStreamingClient.getInstance(project)
 
     fun createGumbyUploadUrl(sha256Checksum: String): CreateUploadUrlResponse {
         val request = CreateUploadUrlRequest.builder()
