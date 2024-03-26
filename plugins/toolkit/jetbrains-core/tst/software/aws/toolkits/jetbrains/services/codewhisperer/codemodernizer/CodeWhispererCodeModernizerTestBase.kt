@@ -49,6 +49,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerSession
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.TransformationSummary
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
@@ -218,6 +219,7 @@ open class CodeWhispererCodeModernizerTestBase(
     open fun setup() {
         project = projectRule.project
         toolkitConnectionManager = spy(ToolkitConnectionManager.getInstance(project))
+
         val accessToken = AccessToken(aString(), aString(), aString(), aString(), Instant.MAX, Instant.now())
         val provider = mock<BearerTokenProvider> {
             doReturn(accessToken).whenever(it).refresh()
@@ -232,6 +234,8 @@ open class CodeWhispererCodeModernizerTestBase(
             doReturn(connectionSettingsMock).whenever(it).getConnectionSettings()
         }
         doReturn(toolkitConnection).whenever(toolkitConnectionManager).activeConnectionForFeature(any())
+        val telemetryManager = mock<CodeTransformTelemetryManager> {}
+        project.replaceService(CodeTransformTelemetryManager::class.java, telemetryManager, disposableRule.disposable)
         project.replaceService(ToolkitConnectionManager::class.java, toolkitConnectionManager, disposableRule.disposable)
         clientAdaptorSpy = spy(GumbyClient.getInstance(project))
         project.replaceService(GumbyClient::class.java, clientAdaptorSpy, disposableRule.disposable)
