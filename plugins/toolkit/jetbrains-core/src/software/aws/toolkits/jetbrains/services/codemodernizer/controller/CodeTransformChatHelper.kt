@@ -20,9 +20,7 @@ class CodeTransformChatHelper(
         activeCodeTransformTabId = tabId
     }
 
-    fun getActiveCodeTransformTabId(): String? {
-        return activeCodeTransformTabId
-    }
+    fun getActiveCodeTransformTabId(): String? = activeCodeTransformTabId
 
     suspend fun showChatNotification(title: String, content: String) {
         messagePublisher.publish(

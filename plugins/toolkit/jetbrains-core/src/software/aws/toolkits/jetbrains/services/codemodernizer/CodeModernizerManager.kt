@@ -727,13 +727,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun isJobSuccessfullyResumed(): Boolean = isJobSuccessfullyResumed.get()
 
-    fun getLastMvnBuildResult(): MavenCopyCommandsResult? {
-        return codeTransformationSession?.getLastMvnBuildResult()
-    }
+    fun getLastMvnBuildResult(): MavenCopyCommandsResult? = codeTransformationSession?.getLastMvnBuildResult()
 
-    fun getLastTransformResult(): CodeModernizerJobCompletedResult? {
-        return codeTransformationSession?.getLastTransformResult()
-    }
+    fun getLastTransformResult(): CodeModernizerJobCompletedResult? = codeTransformationSession?.getLastTransformResult()
 
     fun getBottomToolWindow() = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
         ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))

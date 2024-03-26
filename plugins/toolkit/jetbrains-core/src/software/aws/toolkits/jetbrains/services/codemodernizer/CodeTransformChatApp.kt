@@ -20,8 +20,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationUpdateMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CODE_TRANSFORM_TAB_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.codeTransformTabName
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 
 private enum class CodeTransformMessageTypes(val type: String) {
@@ -43,7 +43,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
 class CodeTransformChatApp : AmazonQApp {
     private val scope = disposableCoroutineScope(this)
 
-    override val tabTypes = listOf(codeTransformTabName)
+    override val tabTypes = listOf(CODE_TRANSFORM_TAB_NAME)
 
     override fun init(context: AmazonQAppInitContext) {
         val chatSessionStorage = ChatSessionStorage()

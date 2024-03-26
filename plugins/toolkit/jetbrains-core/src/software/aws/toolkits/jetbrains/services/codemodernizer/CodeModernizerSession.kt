@@ -70,25 +70,19 @@ class CodeModernizerSession(
     private var mvnBuildResult: MavenCopyCommandsResult? = null
     private var transformResult: CodeModernizerJobCompletedResult? = null
 
-    fun getLastMvnBuildResult(): MavenCopyCommandsResult? {
-        return mvnBuildResult
-    }
+    fun getLastMvnBuildResult(): MavenCopyCommandsResult? = mvnBuildResult
 
     fun setLastMvnBuildResult(result: MavenCopyCommandsResult) {
         mvnBuildResult = result
     }
 
-    fun getLastTransformResult(): CodeModernizerJobCompletedResult? {
-        return transformResult
-    }
+    fun getLastTransformResult(): CodeModernizerJobCompletedResult? = transformResult
 
     fun setLastTransformResult(result: CodeModernizerJobCompletedResult) {
         transformResult = result
     }
 
-    suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
-        return sessionContext.getDependenciesUsingMaven()
-    }
+    suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.

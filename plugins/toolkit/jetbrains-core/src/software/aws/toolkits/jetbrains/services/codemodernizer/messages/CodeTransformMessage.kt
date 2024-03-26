@@ -11,7 +11,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import java.time.Instant
 import java.util.UUID
 
-const val codeTransformTabName = "codetransform"
+const val CODE_TRANSFORM_TAB_NAME = "codetransform"
 
 sealed interface CodeTransformBaseMessage : AmazonQMessage
 
@@ -121,7 +121,7 @@ sealed class CodeTransformUiMessage(
     val messageId: String? = UUID.randomUUID().toString(),
 ) : CodeTransformBaseMessage {
     val time = Instant.now().epochSecond
-    val sender = codeTransformTabName
+    val sender = CODE_TRANSFORM_TAB_NAME
 }
 
 data class AuthenticationNeededExceptionMessage(

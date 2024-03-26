@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
-const val docUrl = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html"
+const val DOC_URL = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html"
 
 private val cancelUserSelectionButton = Button(
     keepCardAfterClick = false,
@@ -96,8 +96,7 @@ private val selectTargetVersionFormItem = FormItem(
     )
 )
 
-private fun getUserSelectionFormattedMarkdown(moduleName: String): String {
-    return """
+private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
@@ -105,8 +104,7 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String {
         | :------------------- | -------: |
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
-    """.trimIndent()
-}
+""".trimIndent()
 
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.validation.check_eligible_projects"),
@@ -125,19 +123,17 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
     }
 
     return CodeTransformChatMessageContent(
-        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", docUrl)}",
+        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", DOC_URL)}",
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 }
 
-fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent {
-    return CodeTransformChatMessageContent(
-        type = CodeTransformChatMessageType.FinalizedAnswer,
-        followUps = listOf(
-            startNewTransformFollowUp
-        )
+fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    followUps = listOf(
+        startNewTransformFollowUp
     )
-}
+)
 
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
     val moduleBuildFiles = validationResult.validatedBuildFiles
@@ -195,7 +191,7 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
         "codemodernizer.chat.message.local_build_failed"
     )}\n\n${message(
         "codemodernizer.chat.message.doc_link_prefix",
-        docUrl
+        DOC_URL
     )}",
 )
 
@@ -229,7 +225,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
                 "codemodernizer.chat.message.result.zip_too_large"
             )}\n\n${message(
                 "codemodernizer.chat.message.doc_link_prefix",
-                docUrl
+                DOC_URL
             )}"
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
