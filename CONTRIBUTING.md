@@ -36,7 +36,7 @@ reported the issue. Please try to include as much information as you can. Detail
 
 1. Clone the github repository and run `./gradlew :plugin-toolkit:intellij:buildPlugin` <br/> (This will produce a plugin zip under `plugins/toolkit/intellij/build/distributions`)
 2. In your JetBrains IDE (e.g. IntelliJ) navigate to the `Plugins` preferences and select "Install Plugin from Disk...", navigate to the zip file produced in step 1. 
-4. You will be prompted to restart your IDE.
+3. You will be prompted to restart your IDE.
 
 ## Contributing via Pull Requests
 
