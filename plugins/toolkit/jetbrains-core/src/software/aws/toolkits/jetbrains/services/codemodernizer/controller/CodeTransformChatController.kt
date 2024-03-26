@@ -278,7 +278,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processTabCreated(message: IncomingCodeTransformMessage.TabCreated) {
-        logger.debug("$FEATURE_NAME: New tab created: $message")
+        logger.debug { "$FEATURE_NAME: New tab created: $message" }
     }
 
     private suspend fun checkForAuth(tabId: String): Boolean {

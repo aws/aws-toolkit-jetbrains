@@ -32,7 +32,7 @@ class CodeTransformChatHelper(
     }
 
     suspend fun addNewMessage(content: CodeTransformChatMessageContent) {
-        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId!!).isAuthenticating) {
+        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId as String).isAuthenticating) {
             return
         }
 
@@ -54,7 +54,7 @@ class CodeTransformChatHelper(
     }
 
     suspend fun updateLastPendingMessage(content: CodeTransformChatMessageContent) {
-        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId!!).isAuthenticating) {
+        if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId as String).isAuthenticating) {
             return
         }
 

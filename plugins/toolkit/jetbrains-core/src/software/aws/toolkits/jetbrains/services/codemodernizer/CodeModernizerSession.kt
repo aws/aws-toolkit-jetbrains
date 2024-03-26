@@ -82,7 +82,7 @@ class CodeModernizerSession(
         transformResult = result
     }
 
-    suspend fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
+    fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.

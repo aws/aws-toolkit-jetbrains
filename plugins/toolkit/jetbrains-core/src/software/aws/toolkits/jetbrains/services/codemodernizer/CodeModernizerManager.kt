@@ -149,13 +149,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     ),
                     InvalidTelemetryReason(
                         CodeTransformPreValidationError.UnsupportedJavaVersion,
-                        projectJdk?.toString() ?: ""
+                        projectJdk?.toString().orEmpty()
                     )
                 )
             }
             val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
             return if (validatedBuildFiles.isNotEmpty()) {
-                ValidationResult(true, validatedBuildFiles = validatedBuildFiles, validatedProjectJdkName = projectJdk?.description ?: "")
+                ValidationResult(true, validatedBuildFiles = validatedBuildFiles, validatedProjectJdkName = projectJdk?.description.orEmpty())
             } else {
                 ValidationResult(
                     false,
@@ -363,14 +363,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         managerState.flags[StateFlags.IS_ONGOING] = false
     }
 
-    suspend fun getDependenciesUsingMaven(session: CodeModernizerSession): MavenCopyCommandsResult {
-        isMvnRunning.set(true)
-        val result = session.getDependenciesUsingMaven()
-        isMvnRunning.set(false)
-
-        return result
-    }
-
     fun handleLocalMavenBuildResult(mavenCopyCommandsResult: MavenCopyCommandsResult) {
         codeTransformationSession?.setLastMvnBuildResult(mavenCopyCommandsResult)
         // Send IDE notifications first
@@ -386,7 +378,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeTransformMessageListener.instance.onMavenBuildResult(mavenCopyCommandsResult)
     }
 
-    suspend fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
+    fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
         // Create and set a session
         codeTransformationSession = null
         val session = createCodeModernizerSession(customerSelection, project)
