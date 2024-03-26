@@ -8,6 +8,7 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Test
 import org.mockito.Mockito.never
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
@@ -28,7 +29,6 @@ import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
-import kotlin.test.Test
 
 class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
