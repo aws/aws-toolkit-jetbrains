@@ -5,27 +5,27 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.DumbProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rider.ideaInterop.fileTypes.msbuild.CsprojFileType
 import com.jetbrains.rider.projectView.SolutionManager
-import com.jetbrains.rider.projectView.actions.projectTemplating.backend.ReSharperTemplatesInteraction
-import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateDialogContext
-import com.jetbrains.rider.projectView.actions.projectTemplating.impl.ProjectTemplateTransferableModel
+import com.jetbrains.rider.projectView.projectTemplates.NewProjectDialogContext
+import com.jetbrains.rider.projectView.projectTemplates.ProjectTemplatesSharedModel
+import com.jetbrains.rider.projectView.projectTemplates.utils.ProjectTemplatesExpanderUtils
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.resources.message
 import java.io.File
 
 class DotNetSamProjectGenerator(
-    private val context: ProjectTemplateDialogContext,
-    group: String,
-    categoryName: String,
-    model: ProjectTemplateTransferableModel
-) : DotNetSamProjectGeneratorRoot(context, group, categoryName, model) {
-    override fun expand() = Runnable {
+    lifetime: Lifetime,
+    private val context: NewProjectDialogContext,
+    sharedModel: ProjectTemplatesSharedModel
+) : DotNetSamProjectGeneratorRoot(lifetime, context, sharedModel) {
+    override suspend fun expandTemplate(): suspend () -> Unit = {
         val samPanel = getSamPanel()
         val generator = getSamGenerator()
         val samSettings = samPanel.getNewProjectSettings()
@@ -38,24 +38,18 @@ class DotNetSamProjectGenerator(
             FileUtil.createDirectory(solutionDirectory)
         }
 
-        val outDirVf = fileSystem.refreshAndFindFileByIoFile(solutionDirectory)
-            ?: throw Exception(message("sam.init.error.no.virtual.file"))
+        val outDirVf = blockingContext {
+            fileSystem.refreshAndFindFileByIoFile(solutionDirectory)
+                ?: throw Exception(message("sam.init.error.no.virtual.file"))
+        }
 
-        val progressManager = ProgressManager.getInstance()
         val samProjectBuilder = generator.createModuleBuilder()
-        progressManager.runProcessWithProgressSynchronously(
-            {
-                samProjectBuilder.runSamInit(
-                    context.project,
-                    projectNameField.text,
-                    samSettings,
-                    null,
-                    outDirVf
-                )
-            },
-            message("sam.init.generating.template"),
-            false,
-            null
+        samProjectBuilder.runSamInit(
+            context.project,
+            projectNameProperty.get(),
+            samSettings,
+            null,
+            outDirVf
         )
 
         // Create solution file
@@ -66,8 +60,8 @@ class DotNetSamProjectGenerator(
         // Get the rest of generated files and copy to "SolutionItems" default folder in project structure
         val solutionFiles = solutionDirectory.listFiles()?.filter { it.isFile }?.toList() ?: emptyList()
 
-        val solutionFile = ReSharperTemplatesInteraction.createSolution(
-            name = getSolutionName(),
+        val solutionFile = ProjectTemplatesExpanderUtils.expandSolution(
+            name = solutionNameProperty.get(),
             directory = solutionDirectory,
             projectFiles = projectFiles.toList(),
             protocolHost = context.protocolHost,
@@ -82,11 +76,13 @@ class DotNetSamProjectGenerator(
                     solutionFile = solutionFile,
                     forceConsiderTrusted = true
                 ) ?: return@launch
-            vcsPanel?.createInitializer()?.execute(project)
+            if (createGitRepositoryProperty.get() && repositoryInitializer.canInit()) {
+                repositoryInitializer.execute(project)
+            }
 
             val modifiableModel = ModuleManager.getInstance(project).modules.firstOrNull()?.rootManager?.modifiableModel ?: return@launch
             try {
-                val progressIndicator = if (progressManager.hasProgressIndicator()) progressManager.progressIndicator else DumbProgressIndicator()
+                val progressIndicator = DumbProgressIndicator()
 
                 samProjectBuilder.runPostSamInit(project, modifiableModel, progressIndicator, samSettings, outDirVf)
             } finally {

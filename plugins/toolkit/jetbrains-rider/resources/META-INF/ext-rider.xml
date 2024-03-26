@@ -18,7 +18,7 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
+        <projectTemplateProviderNew implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcherRegistrar"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.settings.RiderSyncSettings"/>
     </extensions>
