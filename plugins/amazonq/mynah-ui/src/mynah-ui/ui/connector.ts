@@ -12,6 +12,7 @@ import { TabType, TabsStorage } from './storages/tabsStorage'
 import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
 import { AuthFollowUpType } from './followUps/generator'
 import { CodeTransformChatConnector } from "./apps/codeTransformChatConnector";
+import { isFormButtonCodeTransform } from './forms/constants'
 
 export interface CodeReference {
     licenseName?: string
@@ -374,15 +375,7 @@ export class Connector {
             formItemValues?: Record<string, string>
         }
     ) => {
-        if (
-            action.id === 'codetransform-input-confirm'
-            || action.id === 'codetransform-input-cancel'
-            || action.id === 'open_mvn_build'
-            || action.id === 'stop_transform'
-            || action.id === 'open_transformation_hub'
-            || action.id === 'view_diff'
-            || action.id === 'view_summary'
-        ) {
+        if (isFormButtonCodeTransform(action.id)) {
             this.codeTransformChatConnector.onFormButtonClick(tabId, action)
         }
     }
