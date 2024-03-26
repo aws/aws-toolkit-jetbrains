@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.createUploadUrl
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.resources.message
@@ -59,7 +58,6 @@ class PrepareCodeGenerationState(
             repositorySize = zipFileLength.toDouble(),
             messenger = messenger
         )
-        deleteUploadArtifact(fileToUpload)
 
         return nextState.interact(action)
     }

@@ -20,7 +20,7 @@ import java.io.File
 import java.net.HttpURLConnection
 
 private val logger = getLogger<FeatureDevClient>()
-fun uploadArtifactToS3(url: String, fileToUpload: File, checksumSha256: String, contentLength: Long, kmsArn: String?) {
+fun uploadArtifactToS3(url: String, payload: ByteArray, checksumSha256: String, contentLength: Long, kmsArn: String?) {
     try {
         HttpRequests.put(url, APPLICATION_ZIP).userAgent(AwsClientManager.userAgent).tuner {
             it.setRequestProperty("Content-Type", APPLICATION_ZIP)
@@ -33,8 +33,8 @@ fun uploadArtifactToS3(url: String, fileToUpload: File, checksumSha256: String, 
         }
             .connect {
                 val connection = it.connection as HttpURLConnection
-                connection.setFixedLengthStreamingMode(fileToUpload.length())
-                IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
+                connection.setFixedLengthStreamingMode(payload.size)
+                IoUtils.copy(payload.inputStream(), connection.outputStream)
             }
     } catch (err: Exception) {
         logger.warn(err) { "$FEATURE_NAME: Failed to upload code to S3" }

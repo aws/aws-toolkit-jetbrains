@@ -9,11 +9,11 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.apache.commons.codec.digest.DigestUtils
-import software.aws.toolkits.core.utils.createTemporaryZipFile
+import software.aws.toolkits.core.utils.createZipByteArray
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.model.ZipCreationResult
+import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileInputStream
 import java.util.Base64
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
@@ -46,8 +46,8 @@ class FeatureDevSessionContext(val project: Project) {
 
     fun getProjectZip(): ZipCreationResult {
         val zippedProject = runReadAction { zipFiles(projectRoot) }
-        val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
-        return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
+        val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(ByteArrayInputStream(zippedProject)))
+        return ZipCreationResult(zippedProject, checkSum256, zippedProject.size.toLong())
     }
 
     private fun ignoreFile(file: File): Boolean {
@@ -55,14 +55,14 @@ class FeatureDevSessionContext(val project: Project) {
         return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
     }
 
-    private fun zipFiles(projectRoot: VirtualFile): File = createTemporaryZipFile {
+    private fun zipFiles(projectRoot: VirtualFile): ByteArray = createZipByteArray {
         VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->
             if (file.isFile() && !ignoreFile(file)) {
                 val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
                 it.putNextEntry(relativePath.toString(), Path(file.path))
             }
         }
-    }.toFile()
+    }.toByteArray()
 
     private fun parseGitIgnore(gitIgnoreFile: File): List<String> {
         if (!gitIgnoreFile.exists()) {

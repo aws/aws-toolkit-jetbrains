@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.createUploadUrl
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.AmazonqUploadIntent
@@ -32,7 +31,6 @@ class PrepareRefinementState(override var approach: String, override var tabID: 
             amazonqRepositorySize = zipFileLength.toDouble(),
             amazonqUploadIntent = AmazonqUploadIntent.TASKASSISTPLANNING
         )
-        deleteUploadArtifact(fileToUpload)
 
         val nextState = RefinementState(approach, tabID, config, uploadUrlResponse.uploadId(), 0)
         return nextState.interact(action)
