@@ -13,7 +13,7 @@ sealed class CodeModernizerAwaitModernizationJobResult {
 
 sealed class AwaitModernizationPlanResult {
     object UnknownStatusWhenPolling : AwaitModernizationPlanResult()
-    data object Stopped : AwaitModernizationPlanResult()
+    object Stopped : AwaitModernizationPlanResult()
     data class Success(val plan: TransformationPlan) : AwaitModernizationPlanResult()
 
     data class Failure(val failureReason: String) : AwaitModernizationPlanResult()
