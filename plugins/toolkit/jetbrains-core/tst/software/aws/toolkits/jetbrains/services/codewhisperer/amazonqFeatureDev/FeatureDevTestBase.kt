@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.GenerateTaskAssistPlanResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
@@ -56,6 +57,9 @@ open class FeatureDevTestBase(
     internal lateinit var toolkitConnectionManager: ToolkitConnectionManager
 
     internal val testConversationId = "1234"
+    internal val userMessage = "test-user-message"
+    internal val testChecksumSha = "test-sha"
+    internal val testContentLength: Long = 40
 
     internal val exampleCreateTaskAssistConversationResponse = CreateTaskAssistConversationResponse.builder()
         .conversationId(testConversationId)
@@ -70,6 +74,8 @@ open class FeatureDevTestBase(
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)))
         .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(CodeWhispererTestUtil.testSessionId))).build())
         .build() as CreateUploadUrlResponse
+
+    internal val exampleGenerateTaskAssistPlanResult = GenerateTaskAssistPlanResult(approach = "Generated approach for plan", succeededPlanning = true)
 
     internal val exampleStartTaskAssistConversationResponse = StartTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
