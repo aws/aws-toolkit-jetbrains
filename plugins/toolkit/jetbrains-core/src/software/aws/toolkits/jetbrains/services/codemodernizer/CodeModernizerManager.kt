@@ -411,16 +411,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (!transformationStoppedByUsr.get()) {
                 informUserOfCompletion(result)
                 codeModernizerBottomWindowPanelManager.setJobFinishedUI(result)
+                CodeTransformMessageListener.instance.onTransformResult(result)
             } else {
                 codeModernizerBottomWindowPanelManager.userInitiatedStopCodeModernizationUI()
                 notifyTransformationStopped()
                 transformationStoppedByUsr.set(false)
+                CodeTransformMessageListener.instance.onTransformStopped()
             }
-        }
-        if (transformationStoppedByUsr.get()) {
-            CodeTransformMessageListener.instance.onTransformStopped()
-        } else {
-            CodeTransformMessageListener.instance.onTransformResult(result)
         }
     }
 
@@ -601,6 +598,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.zip_too_large.content"),
                 project,
                 listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES), displayFeedbackNotificationAction()),
+            )
+            is CodeModernizerJobCompletedResult.Stopped -> notifyStickyInfo(
+                message("codemodernizer.notification.info.transformation_stop.title"),
+                message("codemodernizer.notification.info.transformation_stop.content"),
+                project,
+                listOf(displayFeedbackNotificationAction())
             )
         }
         telemetry.totalRunTime(result.toString(), jobId)

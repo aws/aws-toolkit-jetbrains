@@ -200,7 +200,7 @@ class CodeModernizerSession(
             !passedBuild && result.state == TransformationStatus.FAILED -> AwaitModernizationPlanResult.BuildFailed(
                 result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_build_failure")
             )
-
+            result.state == TransformationStatus.STOPPED -> AwaitModernizationPlanResult.Stopped
             else -> AwaitModernizationPlanResult.Failure(message("codemodernizer.notification.warn.unknown_status_response"))
         }
     }
@@ -299,7 +299,7 @@ class CodeModernizerSession(
                     jobId,
                     result.failureReason,
                 )
-
+                is AwaitModernizationPlanResult.Stopped -> return CodeModernizerJobCompletedResult.Stopped
                 is AwaitModernizationPlanResult.UnknownStatusWhenPolling -> return CodeModernizerJobCompletedResult.JobFailed(
                     jobId,
                     message("codemodernizer.notification.warn.unknown_status_response"),
@@ -341,6 +341,7 @@ class CodeModernizerSession(
                 LOG.info { "Waiting for Modernization Job [$jobId] to complete. State changed for job: $old -> $new" }
             }
             return when {
+                result.state == TransformationStatus.STOPPED -> CodeModernizerJobCompletedResult.Stopped
                 isPartialSuccess -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, sessionContext.targetJavaVersion)
                 result.succeeded -> CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
                 result.state == TransformationStatus.UNKNOWN_TO_SDK_VERSION -> CodeModernizerJobCompletedResult.JobFailed(

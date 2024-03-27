@@ -346,10 +346,16 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
-        codeTransformChatHelper.updateLastPendingMessage(
-            buildTransformResultChatContent(result)
-        )
-        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+        when (result) {
+            is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
+            else -> {
+                codeTransformChatHelper.updateLastPendingMessage(
+                    buildTransformResultChatContent(result)
+                )
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+            }
+        }
+
     }
 
     companion object {
