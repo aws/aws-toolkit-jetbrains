@@ -355,7 +355,6 @@ class CodeTransformChatController(
                 codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
             }
         }
-
     }
 
     companion object {
