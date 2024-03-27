@@ -1,8 +1,0 @@
-{
-  "date" : "2024-03-28",
-  "version" : "2.15",
-  "entries" : [ {
-    "type" : "feature",
-    "description" : "CodeTransform: new experience with Amazon Q chat integration"
-  }]
-}
