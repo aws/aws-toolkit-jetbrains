@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -199,6 +200,19 @@ interface CodeWhispererActivationChangedListener {
 
 fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
     checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
+}
+
+fun isQEnabled(project: Project): Boolean {
+    val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+    return conn?.let {
+        val provider = (it.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider) ?: return@let false
+
+        when (provider.state()) {
+            BearerTokenAuthState.AUTHORIZED -> true
+            BearerTokenAuthState.NEEDS_REFRESH -> true
+            BearerTokenAuthState.NOT_AUTHENTICATED -> false
+        }
+    } ?: false
 }
 
 /**

@@ -11,6 +11,7 @@ import java.nio.file.Paths
 
 object AwsToolkit {
     const val PLUGIN_ID = "aws.toolkit"
+    // TODO: change this
     const val Q_PLUGIN_ID = "aws.amazonq"
     const val GITHUB_URL = "https://github.com/aws/aws-toolkit-jetbrains"
     const val AWS_DOCS_URL = "https://docs.aws.amazon.com/console/toolkit-for-jetbrains"
