@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -40,6 +41,7 @@ import java.io.FileOutputStream
 import java.lang.Thread.sleep
 import java.nio.file.Path
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
@@ -119,6 +121,8 @@ fun String.toTransformationLanguage() = when (this) {
     "JDK_17" -> TransformationLanguage.JAVA_17
     else -> TransformationLanguage.UNKNOWN_TO_SDK_VERSION
 }
+
+fun calculateTotalLatency(startTime: Instant, endTime: Instant) = (endTime.toEpochMilli() - startTime.toEpochMilli()).toInt()
 
 data class PollingResult(
     val succeeded: Boolean,
@@ -259,6 +263,11 @@ fun findBuildFiles(sourceFolder: File, supportedBuildFileNames: List<String>): L
             // noop, collects the sequence
         }
     return buildFiles
+}
+
+fun isIntellij(): Boolean {
+    val productCode = ApplicationInfo.getInstance().build.productCode
+    return productCode == "IC" || productCode == "IU"
 }
 
 fun isGradleProject(project: Project) = !GradleSettings.getInstance(project).linkedProjectsSettings.isEmpty()

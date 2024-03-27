@@ -21,8 +21,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGr
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_IN_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
-import software.aws.toolkits.jetbrains.services.codemodernizer.explorer.nodes.CodeModernizerRunModernizeNode
-import software.aws.toolkits.jetbrains.services.codemodernizer.isCodeModernizerAvailable
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 
@@ -32,8 +30,6 @@ class CwQRootNodeProviderImpl : CwQRootNodeProvider {
 }
 
 class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Object()) {
-    private val runCodeModernizerNode by lazy { CodeModernizerRunModernizeNode(nodeProject) }
-
     override fun update(presentation: PresentationData) {}
 
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
@@ -63,11 +59,6 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
                     }
                 }
             }
-        }
-
-        // Temporarily put the transform node in the panel(as the second node before the migration node), to be removed soon.
-        if (groupId == Q_SIGNED_IN_ACTION_GROUP && isCodeModernizerAvailable(project)) {
-            return listOf(childNodes[0], runCodeModernizerNode, childNodes[1])
         }
 
         return childNodes

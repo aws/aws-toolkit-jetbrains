@@ -86,7 +86,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(null).`when`(result).dependencyDirectory
         doReturn(result).`when`(context).executeMavenCopyCommands(any(), any())
         runInEdtAndWait {
-            context.createZipWithModuleFiles().payload
+            context.createZipWithModuleFiles(result).payload
             verify(context, times(1)).showTransformationHub()
             verify(result, atLeastOnce()).dependencyDirectory
         }
@@ -105,7 +105,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val result = MavenCopyCommandsResult.Failure
         doReturn(result).`when`(context).executeMavenCopyCommands(any(), any())
         runInEdtAndWait {
-            context.createZipWithModuleFiles().payload
+            context.createZipWithModuleFiles(result).payload
             verify(context, times(0)).showTransformationHub()
         }
     }
@@ -123,14 +123,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
         val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
-        val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
-        val mockStringBUilder = mock(StringBuilder::class.java)
-        val mockDependencyDirectoryFile = mock(File::class.java)
-        val mavenResult = MavenCopyCommandsResult.Success(mockDependencyDirectoryFile)
-        whenever(codeContext.executeMavenCopyCommands(mockFile, mockStringBUilder)).thenReturn(mavenResult)
+        val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             var numEntries = 0
@@ -165,14 +162,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assert(rootManager.dependencies.isEmpty())
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
-        val codeContext = mock(CodeModernizerSessionContext::class.java)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
-        val mockDependencyDirectoryFile = mock(File::class.java)
-        val mavenResult = MavenCopyCommandsResult.Success(mockDependencyDirectoryFile)
-        whenever(codeContext.executeMavenCopyCommands(mockFile, mockStringBuilder)).thenReturn(mavenResult)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
@@ -205,8 +199,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val mockFile = mock(File::class.java)
+        val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
@@ -240,8 +237,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val mockFile = mock(File::class.java)
+        val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
@@ -277,8 +277,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val mockFile = mock(File::class.java)
+        val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
@@ -313,8 +316,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val mockFile = mock(File::class.java)
+        val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
-            context.createZipWithModuleFiles().payload
+            val result = context.executeMavenCopyCommands(mockFile, mockStringBuilder)
+            context.createZipWithModuleFiles(result).payload
         }
         ZipFile(file).use { zipFile ->
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
@@ -335,11 +341,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     @Test
     fun `CodeModernizer can create modernization job`() {
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
-            .whenever(testSessionContextSpy).createZipWithModuleFiles()
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doNothing().whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         doReturn(exampleStartCodeMigrationResponse).whenever(clientAdaptorSpy).startCodeModernization(any(), any(), any())
-        val result = testSessionSpy.createModernizationJob()
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
         assertEquals(result, CodeModernizerStartJobResult.Started(jobId))
         verify(clientAdaptorSpy, times(1)).createGumbyUploadUrl(any())
         verify(clientAdaptorSpy, times(1)).startCodeModernization(any(), any(), any())
