@@ -16,9 +16,5 @@ dependencies {
 
     compileOnly(project(":plugin-core:jetbrains-community"))
 
-    // delete when fully split
-    // hack so we can compile while they break the cross-module dependency
-    compileOnly(project(":plugin-amazonq:codetransform:jetbrains-community"))
-
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
 }
