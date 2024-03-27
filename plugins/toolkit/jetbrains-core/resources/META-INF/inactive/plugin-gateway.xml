@@ -1,7 +1,9 @@
 <!-- Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<idea-plugin>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="/META-INF/module-core.xml" />
+
     <depends>com.intellij.modules.platform</depends>
     <!-- doesn't actually work
     <depends>com.jetbrains.gateway</depends> -->
@@ -14,4 +16,9 @@
     <incompatible-with>com.intellij.modules.python</incompatible-with>
     <incompatible-with>com.intellij.modules.ultimate</incompatible-with>
     <incompatible-with>com.intellij.java</incompatible-with>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+    </extensions>
 </idea-plugin>
