@@ -44,8 +44,6 @@ const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
-const val APPLICATION_ZIP = "application/zip"
-const val CONTENT_SHA256 = "x-amz-checksum-sha256"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -140,7 +138,7 @@ class CodeModernizerSession(
             return CodeModernizerStartJobResult.Disposed
         } catch (e: Exception) {
             val errorMessage = "Failed to start job"
-            if (e !is IOException) {
+            if (e !is IOException && shouldStop.get()) {
                 // Cancelling during S3 upload will cause IOException of "not enough data written",
                 // so no need to show an IDE error for it
                 LOG.error(e) { errorMessage }

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC
 import software.aws.toolkits.jetbrains.services.codemodernizer.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Button
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
@@ -19,8 +20,6 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpT
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-
-const val DOC_URL = "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html"
 
 private val cancelUserSelectionButton = Button(
     keepCardAfterClick = false,
@@ -123,7 +122,7 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
     }
 
     return CodeTransformChatMessageContent(
-        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", DOC_URL)}",
+        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", CODE_TRANSFORM_TROUBLESHOOT_DOC)}",
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 }
@@ -191,7 +190,7 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
         "codemodernizer.chat.message.local_build_failed"
     )}\n\n${message(
         "codemodernizer.chat.message.doc_link_prefix",
-        DOC_URL
+        CODE_TRANSFORM_TROUBLESHOOT_DOC
     )}",
 )
 
@@ -225,7 +224,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
                 "codemodernizer.chat.message.result.zip_too_large"
             )}\n\n${message(
                 "codemodernizer.chat.message.doc_link_prefix",
-                DOC_URL
+                CODE_TRANSFORM_TROUBLESHOOT_DOC
             )}"
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {

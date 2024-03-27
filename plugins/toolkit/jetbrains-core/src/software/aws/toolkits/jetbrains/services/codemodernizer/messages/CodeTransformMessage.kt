@@ -18,7 +18,6 @@ sealed interface CodeTransformBaseMessage : AmazonQMessage
 enum class CodeTransformButtonId(val id: String) {
     StartTransformation("codetransform-input-confirm"),
     CancelTransformation("codetransform-input-cancel"),
-
     StopTransformation("stop_transform"),
     OpenTransformationHub("open_transformation_hub"),
     OpenMvnBuild("open_mvn_build"),

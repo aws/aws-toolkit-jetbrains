@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
-import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -57,7 +56,6 @@ import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.Icon
 
 const val AMAZON_Q_FEEDBACK_DIALOG_KEY = "Amazon Q"
 
@@ -357,7 +355,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             is CodeModernizerStartJobResult.UnableToStartJob -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
-                    message("codemodernizer.notification.warn.unable_to_start_job", result.exception), // TODO maybe not display the entire message
+                    message("codemodernizer.notification.warn.unable_to_start_job", result.exception),
                     true,
                 )
             }
@@ -663,9 +661,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun getMvnBuildWindow() = ToolWindowManager.getInstance(project).getToolWindow("Run")
         ?: error(message("codemodernizer.toolwindow.problems_mvn_window_not_found"))
-
-    fun getRunActionButtonIcon(): Icon =
-        if (isModernizationInProgress.get()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
 
     override fun getState(): CodeModernizerState = CodeModernizerState().apply {
         lastJobContext.putAll(managerState.lastJobContext)

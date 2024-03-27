@@ -7,6 +7,7 @@ import { ChatItem, ChatItemAction, ChatItemType, NotificationType } from '@aws/m
 import { ExtensionMessage } from '../commands'
 import { TabsStorage } from '../storages/tabsStorage'
 import { FollowUpGenerator } from '../followUps/generator'
+import { FormButtonIds } from '../forms/constants'
 
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
@@ -152,7 +153,7 @@ export class CodeTransformChatConnector {
             formItemValues?: Record<string, string>
         }
     ) => {
-        if (action.id === 'codetransform-input-confirm') {
+        if (action.id === FormButtonIds.CodeTransformInputConfirm) {
             this.sendMessageToExtension({
                 command: 'codetransform-start',
                 tabID,
@@ -160,13 +161,13 @@ export class CodeTransformChatConnector {
                 modulePath: action.formItemValues?.module,
                 targetVersion: 'Java 17',
             })
-        } else if (action.id === 'codetransform-input-cancel') {
+        } else if (action.id === FormButtonIds.CodeTransformInputCancel) {
             this.sendMessageToExtension({
                 command: 'codetransform-cancel',
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === 'open_mvn_build') {
+        } else if (action.id === FormButtonIds.OpenMvnBuild) {
             console.log('open_mvn_build')
 
             this.sendMessageToExtension({
@@ -174,25 +175,25 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === 'stop_transform') {
+        } else if (action.id === FormButtonIds.StopTransform) {
             this.sendMessageToExtension({
                 command: 'codetransform-stop',
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === 'open_transformation_hub') {
+        } else if (action.id === FormButtonIds.OpenTransformationHub) {
             this.sendMessageToExtension({
                 command: 'codetransform-open-transform-hub',
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === 'view_diff') {
+        } else if (action.id === FormButtonIds.CodeTransformViewDiff) {
             this.sendMessageToExtension({
                 command: 'codetransform-view-diff',
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === 'view_summary') {
+        } else if (action.id === FormButtonIds.CodeTransformViewSummary) {
             this.sendMessageToExtension({
                 command: 'codetransform-view-summary',
                 tabID,
