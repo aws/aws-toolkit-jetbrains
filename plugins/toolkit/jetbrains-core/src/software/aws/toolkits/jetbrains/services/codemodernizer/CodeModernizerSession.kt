@@ -136,13 +136,23 @@ class CodeModernizerSession(
         } catch (e: AlreadyDisposedException) {
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
-        } catch (e: Exception) {
-            val errorMessage = "Failed to start job"
-            if (e !is IOException && shouldStop.get()) {
+        } catch (e: IOException) {
+            if (shouldStop.get()) {
                 // Cancelling during S3 upload will cause IOException of "not enough data written",
                 // so no need to show an IDE error for it
+                LOG.warn { "Job was cancelled by user before start job was called" }
+                CodeModernizerStartJobResult.Cancelled
+            } else {
+                val errorMessage = "Failed to start job"
                 LOG.error(e) { errorMessage }
+                state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+                state.currentJobStatus = TransformationStatus.FAILED
+                telemetry.error(errorMessage)
+                CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
             }
+        } catch (e: Exception) {
+            val errorMessage = "Failed to start job"
+            LOG.error(e) { errorMessage }
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             telemetry.error(errorMessage)
