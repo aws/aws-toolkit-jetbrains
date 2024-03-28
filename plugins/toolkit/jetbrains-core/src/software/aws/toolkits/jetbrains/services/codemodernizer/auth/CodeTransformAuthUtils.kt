@@ -8,10 +8,14 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.isIntellij
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
+    if (isRunningOnRemoteBackend() || !isQSupportedInThisVersion()) return false
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    return connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer
+    return (connection.connectionType == ActiveConnectionType.IAM_IDC || connection.connectionType == ActiveConnectionType.BUILDER_ID) &&
+        connection is ActiveConnection.ValidBearer
 }

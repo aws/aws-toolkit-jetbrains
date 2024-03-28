@@ -31,7 +31,7 @@ class AuthController {
         // CW chat is enabled for Builder and IDC users, Amazon Q is only valid for IDC users
         return AuthNeededStates(
             chat = getAuthNeededState(connectionState, codeWhispererState),
-            amazonQ = getAuthNeededState(connectionState, codeWhispererState, true)
+            amazonQ = getAuthNeededState(connectionState, codeWhispererState)
         )
     }
 
