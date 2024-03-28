@@ -698,6 +698,7 @@
 
         <action id="aws.toolkit.connection.pinning.unpin"
                 class="software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.actions.UnpinConnectionAction"/>
+
     </actions>
 
 </idea-plugin>
