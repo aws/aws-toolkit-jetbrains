@@ -268,9 +268,9 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             issue.detectorId,
             issue.findingId,
             issue.ruleId,
-            "",
-            "",
-            "",
+            null,
+            null,
+            null,
             issue.suggestedFixes.isNotEmpty()
         )
 
@@ -362,7 +362,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 hidePopup()
                 sendCodeRemediationTelemetryToServiceApi(
                     issue.file.programmingLanguage(),
-                    "CODESCAN_ISSUE_HOVER",
+                    "CODESCAN_ISSUE_APPLY_FIX",
                     issue.detectorId,
                     issue.findingId,
                     issue.ruleId,
@@ -382,7 +382,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 issue.detectorId,
                 issue.findingId,
                 issue.ruleId,
-                "",
+                null,
                 err.message,
                 Result.Failed.toString(),
                 issue.suggestedFixes.isNotEmpty()
