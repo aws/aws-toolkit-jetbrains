@@ -83,8 +83,3 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
 }
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name
-
-fun Project.moduleFor(path: String) = ModuleUtil.findModuleForFile(
-    path.toVirtualFile() ?: throw RuntimeException("File not found $path"),
-    this,
-)

@@ -122,6 +122,7 @@ dependencies {
     api(libs.aws.sns)
     api(libs.aws.sqs)
     api(libs.aws.services)
+    implementation(project(mapOf("path" to ":plugin-toolkit:jetbrains-rider")))
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))

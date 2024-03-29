@@ -47,12 +47,14 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.buildState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
@@ -161,7 +163,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
                     InvalidTelemetryReason(
                         CodeTransformPreValidationError.NonMavenProject,
-                        if (software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject(project)) "Gradle build" else "other build"
+                        if (isGradleProject(project)) "Gradle build" else "other build"
                     )
                 )
             }
@@ -286,7 +288,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return@launch
         }
         try {
-            val plan = if (currentJobResult.status() in software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST) {
+            val plan = if (currentJobResult.status() in STATES_WHERE_PLAN_EXIST) {
                 try {
                     delay(1000)
                     session.fetchPlan(lastJobId).transformationPlan()
@@ -328,7 +330,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
             )
         }
 
