@@ -101,11 +101,6 @@ class CodeModernizerSession(
             }
             val startTime = Instant.now()
             val result = sessionContext.createZipWithModuleFiles(copyResult)
-            val humanInTheLoopFlag = true
-
-            if (humanInTheLoopFlag) {
-
-            }
 
             if (result is ZipCreationResult.Missing1P) {
                 return CodeModernizerStartJobResult.CancelledMissingDependencies
