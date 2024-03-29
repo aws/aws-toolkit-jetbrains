@@ -13,6 +13,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaVersionFromProjectSetting
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
@@ -94,18 +97,18 @@ class CodeTransformTelemetryManager(private val project: Project) {
         codeTransformJobId = jobId?.toString(),
         codeTransformSessionId = sessionId,
         codeTransformResultStatusMessage = codeTransformResultStatusMessage,
-        codeTransformRunTimeLatency = software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency(
+        codeTransformRunTimeLatency = calculateTotalLatency(
             CodeTransformTelemetryState.instance.getStartTime(),
             Instant.now()
         ),
-        codeTransformLocalJavaVersion = software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaVersionFromProjectSetting(project),
-        codeTransformLocalMavenVersion = software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion(project),
+        codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
+        codeTransformLocalMavenVersion = getMavenVersion(project),
     )
 
     fun jobCreateZipEndTime(payloadSize: Int, startTime: Instant) = CodetransformTelemetry.jobCreateZipEndTime(
         codeTransformTotalByteSize = payloadSize,
         codeTransformSessionId = sessionId,
-        codeTransformRunTimeLatency = software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency(startTime, Instant.now()),
+        codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()),
     )
 
     fun error(errorMessage: String) = CodetransformTelemetry.logGeneralError(
@@ -130,7 +133,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     ) = CodetransformTelemetry.logApiLatency(
         codeTransformApiNames = apiName,
         codeTransformSessionId = sessionId,
-        codeTransformRunTimeLatency = software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency(startTime, Instant.now()),
+        codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()),
         codeTransformUploadId = codeTransformUploadId,
         codeTransformJobId = codeTransformJobId,
         codeTransformTotalByteSize = codeTransformTotalByteSize,
@@ -171,7 +174,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     fun jobArtifactDownloadAndDeserializeTime(downloadStartTime: Instant, jobId: JobId, totalDownloadBytes: Int, telemetryErrorMessage: String?) {
         CodetransformTelemetry.jobArtifactDownloadAndDeserializeTime(
             codeTransformSessionId = sessionId,
-            codeTransformRunTimeLatency = software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency(downloadStartTime, Instant.now()),
+            codeTransformRunTimeLatency = calculateTotalLatency(downloadStartTime, Instant.now()),
             codeTransformJobId = jobId.id,
             codeTransformTotalByteSize = totalDownloadBytes,
             codeTransformRuntimeError = telemetryErrorMessage,

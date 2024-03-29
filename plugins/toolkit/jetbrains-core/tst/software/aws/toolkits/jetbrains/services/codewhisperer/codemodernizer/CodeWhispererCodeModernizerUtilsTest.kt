@@ -35,7 +35,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             .whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
         val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
-            software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan(
+            jobId.pollTransformationStatusAndPlan(
                 setOf(TransformationStatus.STARTED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,
@@ -67,7 +67,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val mutableList = mutableListOf<TransformationStatus>()
 
         val result = runBlocking {
-            software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan(
+            jobId.pollTransformationStatusAndPlan(
                 setOf(TransformationStatus.COMPLETED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,

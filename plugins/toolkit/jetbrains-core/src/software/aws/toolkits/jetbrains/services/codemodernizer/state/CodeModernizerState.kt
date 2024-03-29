@@ -48,7 +48,7 @@ class CodeModernizerState : BaseState() {
     fun getLatestJobId() = JobId(lastJobContext[JobDetails.LAST_JOB_ID] ?: throw RuntimeException("No Job has been executed!"))
 
     fun toSessionContext(project: Project): CodeModernizerSessionContext {
-        val configurationFile = software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile()
+        val configurationFile = lastJobContext[JobDetails.CONFIGURATION_FILE_PATH]?.toVirtualFile()
             ?: throw RuntimeException("No build file store in the state")
         val targetString =
             lastJobContext[JobDetails.TARGET_JAVA_VERSION] ?: throw RuntimeException("Expected target language for migration path of previous job but was null")

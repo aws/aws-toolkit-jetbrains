@@ -170,7 +170,7 @@ class CodeTransformChatController(
 
         val (tabId, modulePath, targetVersion) = message
 
-        val moduleVirtualFile: VirtualFile = software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile() as VirtualFile
+        val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
         codeTransformChatHelper.run {

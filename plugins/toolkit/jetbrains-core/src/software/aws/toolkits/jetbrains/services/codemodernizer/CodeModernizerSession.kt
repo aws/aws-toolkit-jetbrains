@@ -226,8 +226,8 @@ class CodeModernizerSession(
     }
 
     private fun startJob(uploadId: String): StartTransformationResponse {
-        val sourceLanguage = uploadId.toTransformationLanguage()
-        val targetLanguage = uploadId.toTransformationLanguage()
+        val sourceLanguage = sessionContext.sourceJavaVersion.name.toTransformationLanguage()
+        val targetLanguage = sessionContext.targetJavaVersion.name.toTransformationLanguage()
         if (sourceLanguage == TransformationLanguage.UNKNOWN_TO_SDK_VERSION) {
             throw RuntimeException("Source language is not supported")
         }

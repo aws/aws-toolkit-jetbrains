@@ -39,7 +39,7 @@ private fun Project.getAllSupportedBuildFiles(supportedBuildFileNames: List<Stri
      * 2. Filter out subdirectories
      */
     val projectRootManager = ProjectRootManager.getInstance(this)
-    val probableProjectRoot = projectRootManager.projectSdk?.toString()?.toVirtualFile() // May point to only one intellij module (the first opened one)
+    val probableProjectRoot = this.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
     val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
     probableContentRoots.add(probableProjectRoot) // dedupe
     val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
@@ -67,7 +67,7 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
 
 fun Project.getSupportedBuildModulesPath(supportedBuildFileNames: List<String>): List<String> {
     val projectRootManager = ProjectRootManager.getInstance(this)
-    val probableProjectRoot = projectRootManager.toString().toVirtualFile() // May point to only one intellij module (the first opened one)
+    val probableProjectRoot = this.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
     val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
     probableContentRoots.add(probableProjectRoot) // dedupe
     val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
