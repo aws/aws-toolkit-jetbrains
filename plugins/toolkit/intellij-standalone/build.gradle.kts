@@ -40,6 +40,11 @@ val gatewayResources = configurations.create("gatewayResources") {
 }
 
 intellij {
+    plugins.set(
+        listOf(
+            project(":plugin-core")
+        )
+    )
     pluginName.set("aws-toolkit-jetbrains")
 
     localPath.set(toolkitIntelliJ.localPath())
@@ -82,11 +87,6 @@ dependencies {
 
     implementation(project(":plugin-toolkit:jetbrains-rider"))
     resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
-
-    // delete when fully split
-    implementation(project(":plugin-amazonq", "moduleOnlyJars"))
-    implementation(project(":plugin-core:jetbrains-community"))
-    implementation(project(":plugin-core:jetbrains-ultimate"))
 }
 
 configurations {

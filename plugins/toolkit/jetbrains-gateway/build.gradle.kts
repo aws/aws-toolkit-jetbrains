@@ -33,7 +33,7 @@ dependencies {
     gatewayRunOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
 
     // delete when fully split
-    implementation(project(":plugin-core:jetbrains-community"))
+    gatewayRunOnly(project(":plugin-core:jetbrains-community"))
 
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
@@ -106,6 +106,10 @@ tasks.withType<PrepareSandboxTask>().all {
 }
 
 tasks.prepareSandbox {
+    runtimeClasspathFiles.set(gatewayRunOnly)
+}
+
+tasks.prepareTestingSandbox {
     runtimeClasspathFiles.set(gatewayRunOnly)
 }
 

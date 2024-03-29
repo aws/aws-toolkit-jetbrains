@@ -1,6 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -13,11 +14,7 @@ intellijToolkit {
 }
 
 intellij {
-    plugins.set(
-        listOf(
-            project(":plugin-core")
-        )
-    )
+    plugins.add(project(":plugin-core"))
 }
 
 dependencies {
