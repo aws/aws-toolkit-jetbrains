@@ -29,6 +29,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_INITIAL_BUILD
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_STARTED
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_JOB_STOPPED_PRE_PLAN_READY
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformApiNames
@@ -94,6 +101,11 @@ class CodeModernizerSession(
             }
             val startTime = Instant.now()
             val result = sessionContext.createZipWithModuleFiles(copyResult)
+            val humanInTheLoopFlag = true
+
+            if (humanInTheLoopFlag) {
+
+            }
 
             if (result is ZipCreationResult.Missing1P) {
                 return CodeModernizerStartJobResult.CancelledMissingDependencies
@@ -214,8 +226,8 @@ class CodeModernizerSession(
     }
 
     private fun startJob(uploadId: String): StartTransformationResponse {
-        val sourceLanguage = sessionContext.sourceJavaVersion.name.toTransformationLanguage()
-        val targetLanguage = sessionContext.targetJavaVersion.name.toTransformationLanguage()
+        val sourceLanguage = uploadId.toTransformationLanguage()
+        val targetLanguage = uploadId.toTransformationLanguage()
         if (sourceLanguage == TransformationLanguage.UNKNOWN_TO_SDK_VERSION) {
             throw RuntimeException("Source language is not supported")
         }
@@ -448,6 +460,4 @@ class CodeModernizerSession(
 
     fun getActiveJobId() = state.currentJobId
     fun fetchPlan(lastJobId: JobId) = clientAdaptor.getCodeModernizationPlan(lastJobId)
-
-    fun didJobStart() = state.currentJobId != null
 }

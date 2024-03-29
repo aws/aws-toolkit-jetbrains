@@ -13,7 +13,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.aws.toolkits.jetbrains.services.codemodernizer.pollTransformationStatusAndPlan
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import java.util.concurrent.atomic.AtomicBoolean
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
@@ -35,7 +35,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             .whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
         val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
-            jobId.pollTransformationStatusAndPlan(
+            software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan(
                 setOf(TransformationStatus.STARTED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,
@@ -67,7 +67,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val mutableList = mutableListOf<TransformationStatus>()
 
         val result = runBlocking {
-            jobId.pollTransformationStatusAndPlan(
+            software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan(
                 setOf(TransformationStatus.COMPLETED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,

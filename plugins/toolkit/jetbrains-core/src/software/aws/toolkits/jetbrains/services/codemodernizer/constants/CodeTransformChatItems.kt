@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC
-import software.aws.toolkits.jetbrains.services.codemodernizer.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Button
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent

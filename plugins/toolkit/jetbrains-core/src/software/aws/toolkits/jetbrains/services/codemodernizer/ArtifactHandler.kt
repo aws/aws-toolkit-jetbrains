@@ -152,7 +152,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.warn.view_diff_failed.title"),
             message("codemodernizer.notification.warn.view_diff_failed.content"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_DOWNLOAD_DIFF)),
+            listOf(
+                software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(
+                    software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                )
+            ),
         )
     }
 
@@ -162,7 +166,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.warn.view_summary_failed.title"),
             message("codemodernizer.notification.warn.view_summary_failed.content"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_DOWNLOAD_DIFF)),
+            listOf(
+                software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(
+                    software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                )
+            ),
         )
     }
 

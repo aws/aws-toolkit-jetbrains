@@ -47,6 +47,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.buildState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
@@ -153,7 +158,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
                     InvalidTelemetryReason(
                         CodeTransformPreValidationError.NonMavenProject,
-                        if (isGradleProject(project)) "Gradle build" else "other build"
+                        if (software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject(project)) "Gradle build" else "other build"
                     )
                 )
             }
@@ -278,7 +283,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return@launch
         }
         try {
-            val plan = if (currentJobResult.status() in STATES_WHERE_PLAN_EXIST) {
+            val plan = if (currentJobResult.status() in software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST) {
                 try {
                     delay(1000)
                     session.fetchPlan(lastJobId).transformationPlan()
@@ -320,7 +325,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+                listOf(software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
             )
         }
 
@@ -589,13 +594,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+                listOf(software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
             )
             is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> notifyStickyInfo(
                 message("codemodernizer.notification.warn.zip_too_large.title"),
                 message("codemodernizer.notification.warn.zip_too_large.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES), displayFeedbackNotificationAction()),
+                listOf(software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES), displayFeedbackNotificationAction()),
             )
             is CodeModernizerJobCompletedResult.Stopped -> notifyStickyInfo(
                 message("codemodernizer.notification.info.transformation_stop.title"),
@@ -682,7 +687,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             message("codemodernizer.validationerrordialog.description.title"),
             message("codemodernizer.validationerrordialog.description.main"),
             project,
-            listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES)),
+            listOf(software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction(software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES)),
         )
     }
 

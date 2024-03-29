@@ -1,27 +1,17 @@
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codemodernizer
+package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
-/**
- * @description Try to get the module SDK version and fallback to the project SDK version from the "project structure" settings.
- */
-fun Module.tryGetJdk(project: Project): JavaSdkVersion? {
-    val sdk = ModuleRootManager.getInstance(this).sdk ?: ProjectRootManager.getInstance(project).projectSdk ?: return null
-    val javaSdk = JavaSdkImpl.getInstance()
-    return javaSdk.getVersion(sdk)
-}
 
 /**
  * @description Try to get the project SDK version from the "project structure" settings
@@ -49,7 +39,7 @@ private fun Project.getAllSupportedBuildFiles(supportedBuildFileNames: List<Stri
      * 2. Filter out subdirectories
      */
     val projectRootManager = ProjectRootManager.getInstance(this)
-    val probableProjectRoot = this.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
+    val probableProjectRoot = projectRootManager.projectSdk?.toString()?.toVirtualFile() // May point to only one intellij module (the first opened one)
     val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
     probableContentRoots.add(probableProjectRoot) // dedupe
     val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
@@ -77,7 +67,7 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
 
 fun Project.getSupportedBuildModulesPath(supportedBuildFileNames: List<String>): List<String> {
     val projectRootManager = ProjectRootManager.getInstance(this)
-    val probableProjectRoot = this.basePath?.toVirtualFile() // May point to only one intellij module (the first opened one)
+    val probableProjectRoot = projectRootManager.toString().toVirtualFile() // May point to only one intellij module (the first opened one)
     val probableContentRoots = projectRootManager.contentRoots.toMutableSet() // May not point to the topmost folder of modules
     probableContentRoots.add(probableProjectRoot) // dedupe
     val topLevelRoots = filterOnlyParentFiles(probableContentRoots)
@@ -93,3 +83,8 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
 }
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name
+
+fun Project.moduleFor(path: String) = ModuleUtil.findModuleForFile(
+    path.toVirtualFile() ?: throw RuntimeException("File not found $path"),
+    this,
+)

@@ -19,11 +19,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.DownloadArtifactResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.filterOnlyParentFiles
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.unzipFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import kotlin.io.path.Path
