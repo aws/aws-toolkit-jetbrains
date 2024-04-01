@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.EditorMouseEvent
 import com.intellij.openapi.editor.event.EditorMouseEventArea
@@ -288,26 +289,29 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         includesFix: Boolean?
     ) {
         runIfIdcConnectionOrTelemetryEnabled(project) {
-            try {
-                val response = CodeWhispererClientAdaptor.getInstance(project)
-                    .sendCodeScanRemediationTelemetry(
-                        language,
-                        codeScanRemediationEventType,
-                        detectorId,
-                        findingId,
-                        ruleId,
-                        component,
-                        reason,
-                        result,
-                        includesFix
-                    )
-                LOG.debug { "Successfully sent code scan remediation telemetry. RequestId: ${response.responseMetadata().requestId()}" }
-            } catch (e: Exception) {
-                val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
-                LOG.debug {
-                    "Failed to send code scan remediation telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+            ApplicationManager.getApplication().executeOnPooledThread {
+                try {
+                    val response = CodeWhispererClientAdaptor.getInstance(project)
+                        .sendCodeScanRemediationTelemetry(
+                            language,
+                            codeScanRemediationEventType,
+                            detectorId,
+                            findingId,
+                            ruleId,
+                            component,
+                            reason,
+                            result,
+                            includesFix
+                        )
+                    LOG.debug { "Successfully sent code scan remediation telemetry. RequestId: ${response.responseMetadata().requestId()}" }
+                } catch (e: Exception) {
+                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                    LOG.debug {
+                        "Failed to send code scan remediation telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                    }
                 }
             }
+
         }
     }
 
@@ -360,18 +364,18 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 )
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)
                 hidePopup()
-                sendCodeRemediationTelemetryToServiceApi(
-                    issue.file.programmingLanguage(),
-                    "CODESCAN_ISSUE_APPLY_FIX",
-                    issue.detectorId,
-                    issue.findingId,
-                    issue.ruleId,
-                    null,
-                    null,
-                    Result.Succeeded.toString(),
-                    issue.suggestedFixes.isNotEmpty()
-                )
             }
+            sendCodeRemediationTelemetryToServiceApi(
+                issue.file.programmingLanguage(),
+                "CODESCAN_ISSUE_APPLY_FIX",
+                issue.detectorId,
+                issue.findingId,
+                issue.ruleId,
+                null,
+                null,
+                Result.Succeeded.toString(),
+                issue.suggestedFixes.isNotEmpty()
+            )
         } catch (err: Error) {
             notifyError(message("codewhisperer.codescan.fix_applied_fail", err))
             LOG.error { "Apply fix command failed. $err" }
