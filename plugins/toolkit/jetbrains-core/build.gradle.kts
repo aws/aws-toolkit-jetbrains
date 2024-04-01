@@ -95,6 +95,7 @@ tasks.processTestResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     // delete when fully split
+    // pull in shim to make tests pass
     from(project(":plugin-toolkit:intellij").file("src/main/resources"))
 }
 

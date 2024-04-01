@@ -40,11 +40,7 @@ val gatewayResources = configurations.create("gatewayResources") {
 }
 
 intellij {
-    plugins.set(
-        listOf(
-            project(":plugin-core")
-        )
-    )
+    plugins.add(project(":plugin-core"))
     pluginName.set("aws-toolkit-jetbrains")
 
     localPath.set(toolkitIntelliJ.localPath())
