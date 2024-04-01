@@ -8,6 +8,4 @@
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
     </extensions>
-
-    <xi:include href="/META-INF/module-amazonq.xml" />
 </idea-plugin>
