@@ -274,7 +274,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             null,
             issue.suggestedFixes.isNotEmpty()
         )
-
     }
 
     private fun sendCodeRemediationTelemetryToServiceApi(
@@ -311,7 +310,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                     }
                 }
             }
-
         }
     }
 
