@@ -57,7 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupporte
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
-import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
+import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
@@ -545,7 +545,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     private fun displayFeedbackNotificationAction() =
         NotificationAction.createSimple(message("codemodernizer.notification.warn.submit_feedback")) {
-            FeedbackDialog(project, productName = AMAZON_Q_FEEDBACK_DIALOG_KEY).showAndGet()
+            CodeTransformFeedbackDialog(project).showAndGet()
         }
 
     private fun informUserOfCompletion(result: CodeModernizerJobCompletedResult) {
