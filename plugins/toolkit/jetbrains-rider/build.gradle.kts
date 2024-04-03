@@ -9,7 +9,6 @@ import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.withCurrentProfileName
 import java.nio.file.Path
 
 buildscript {
