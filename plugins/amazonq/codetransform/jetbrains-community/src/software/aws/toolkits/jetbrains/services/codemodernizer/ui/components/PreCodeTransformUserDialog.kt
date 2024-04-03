@@ -21,8 +21,8 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.resources.message
 import kotlin.math.max

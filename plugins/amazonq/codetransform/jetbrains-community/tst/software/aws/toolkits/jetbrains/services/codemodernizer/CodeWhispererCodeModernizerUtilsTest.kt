@@ -1,7 +1,7 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.codemodernizer
+package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat

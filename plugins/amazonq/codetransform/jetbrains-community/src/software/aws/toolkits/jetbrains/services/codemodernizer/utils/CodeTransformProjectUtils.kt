@@ -12,7 +12,6 @@ import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
-
 /**
  * @description Try to get the project SDK version from the "project structure" settings
  */
