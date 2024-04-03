@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Q Code Transform - Omit Maven metadata files when uploading dependencies to fix certain build failures in backend."
+  "description" : "Amazon Q Code Transform - Omit Maven metadata files when uploading dependencies to fix certain build failures in backend."
 }
