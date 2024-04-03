@@ -50,12 +50,19 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createPomCopy
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadResultArchive
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getArtifactIdentifiers
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJsonValuesFromManifestFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTransformationStepsFixture
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.replacePomVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -208,6 +215,102 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // Initialize the bottom toolkit window with content
         addCodeModernizeUI(shouldOpenBottomWindowOnStart, moduleOrProjectNameForFile)
         codeModernizerBottomWindowPanelManager.setJobStartingUI()
+    }
+
+    suspend fun completeHumanInTheLoopWork(jobId: JobId, userInputRetryCount: Number) {
+        LOG.warn { "Entering completeHumanInTheLoopWork $jobId $userInputRetryCount" }
+
+        val pomReplacementDelimiter: String = "*****"
+//        val localPathToXmlDependencyList = "/target/dependency-updates-aggregate-report.xml"
+
+//        val osTmpDir = os.tmpdir()
+//        val tmpDependencyListFolderName = "q-pom-dependency-list"
+//        val userDependencyUpdateFolderName = "q-pom-dependency-update"
+//        val tmpDependencyListDir = path.join(osTmpDir, tmpDependencyListFolderName)
+//        val userDependencyUpdateDir = path.join(osTmpDir, userDependencyUpdateFolderName)
+
+        try {
+            // 1) We need to call GetTransformationPlan to get artifactId
+            val transformationSteps = getTransformationStepsFixture(jobId)
+            val artifactArr = getArtifactIdentifiers(transformationSteps)
+
+            // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
+            val pomRefArr = downloadResultArchive(
+                jobId,
+                artifactArr[0],
+                artifactArr[1]
+            )
+            val manifestFileValues = getJsonValuesFromManifestFile(pomRefArr[0])
+
+            // 3) We need to replace version in pom.xml
+            val newPomFileVirtualFileReference = createPomCopy(
+                "tmpDependencyListDir",
+                "pomFileVirtualFileReference",
+                "pom.xml"
+            )
+            manifestFileValues.sourcePomVersion?.let {
+                replacePomVersion(
+                    newPomFileVirtualFileReference,
+                    it,
+                    pomReplacementDelimiter
+                )
+            }
+//            await highlightPomIssueInProject(newPomFileVirtualFileReference, manifestFileValues.sourcePomVersion)
+
+            // 4) We need to run maven commands on that pom.xml to get available versions
+//            const compileFolderInfo: FolderInfo = {
+//                    name: tmpDependencyListFolderName,
+//                    path: tmpDependencyListDir,
+//            }
+//            runMavenDependencyUpdateCommands(compileFolderInfo)
+            val dependencyList = parseXmlDependenciesReport(
+                "path.join(tmpDependencyListDir, localPathToXmlDependencyList)"
+            )
+
+            // 5) We need to wait for user input
+            // transformByQState.getChatControllers()?.humanInTheLoopIntervention.fire({
+            //     latestVersion,
+            //     tabID: ChatSessionManager.Instance.getSession().tabID,
+            // })
+            val getUserInputValue = dependencyList[0]
+
+            // 6) We need to add user input to that pom.xml,
+            // original pom.xml is intact somewhere, and run maven compile
+            val userInputPomFileVirtualFileReference = createPomCopy(
+                "userDependencyUpdateDir",
+                "pomFileVirtualFileReference",
+                "pom.xml"
+            )
+            replacePomVersion(
+                userInputPomFileVirtualFileReference,
+                getUserInputValue,
+                pomReplacementDelimiter
+            )
+
+            // 7) We need to take that output of maven and use CreateUploadUrl
+//            const uploadFolderInfo: FolderInfo = {
+//                    name: userDependencyUpdateFolderName,
+//                    path: userDependencyUpdateDir,
+//            }
+//            runMavenDependencyBuildCommands(uploadFolderInfo)
+            // TODO modify code to be re-usable with current framework here
+            // TODO Update manifest.json file for upload
+//            const uploadPayloadFilePath = await zipCode(uploadFolderInfo)
+//            const uploadId = await uploadPayload(uploadPayloadFilePath)
+            LOG.warn { "Finished human in the loop work" }
+        } catch (err) {
+            // Will probably emit different TYPES of errors from the Human in the loop engagement
+            // catch them here and determine what to do with in parent function
+            LOG.warn { "Error in completeHumanInTheLoopWork $err" }
+        } finally {
+            // 1) TODO Always delete items off disk manifest.json and pom.xml
+
+            // Always delete the dependency output
+//            console.log('Deleting temporary dependency output', tmpDependencyListDir)
+//            fs.rmdirSync(tmpDependencyListDir, { recursive: true })
+//            console.log('Deleting temporary dependency output', userDependencyUpdateDir)
+//            fs.rmdirSync(userDependencyUpdateDir, { recursive: true })
+        }
     }
 
     fun stopModernize() {

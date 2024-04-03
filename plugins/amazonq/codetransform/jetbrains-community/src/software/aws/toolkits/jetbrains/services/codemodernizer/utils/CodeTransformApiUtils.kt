@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import java.lang.Thread.sleep
 import java.time.Duration
+import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
@@ -113,4 +114,62 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         }
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
+}
+
+data class TransformationStep(
+    val id: String,
+    val name: String,
+    val description: String,
+    val status: TransformationStepStatus,
+    val progressUpdates: List<ProgressUpdate>,
+    val startTime: Date,
+    val endTime: Date
+)
+
+data class ProgressUpdate(
+    val name: String,
+    val status: TransformationStepStatus,
+    val description: String,
+    val startTime: Date,
+    val endTime: Date
+)
+
+enum class TransformationStepStatus {
+    COMPLETED,
+    FAILED
+}
+
+fun getTransformationStepsFixture(
+    jobId: JobId
+): List<software.aws.toolkits.jetbrains.services.codemodernizer.utils.TransformationStep> {
+    println("In getTransformationStepsFixture $jobId")
+    // fake API call to get transformation steps
+    return listOf(
+        TransformationStep(
+            id = "fake-step-id-1",
+            name = "Building Code",
+            description = "Building dependencies",
+            status = TransformationStepStatus.COMPLETED,
+            progressUpdates = listOf(
+                ProgressUpdate(
+                    name = "Status step",
+                    status = TransformationStepStatus.FAILED,
+                    description = "This step should be hil identifier",
+                    startTime = Date(),
+                    endTime = Date()
+                )
+            ),
+            startTime = Date(),
+            endTime = Date()
+        )
+    )
+}
+
+
+fun getArtifactIdentifiers(transformationSteps: List<software.aws.toolkits.jetbrains.services.codemodernizer.utils.TransformationStep>): Array<String> {
+    return arrayOf("fake-artifact-id", "fake-artifact-type")
+}
+
+fun downloadResultArchive(jobId: JobId, artifactId: String, artifactType: String): Array<String> {
+    return arrayOf("pomFileVirtualRef", "manifestFileVirtualRef")
 }
