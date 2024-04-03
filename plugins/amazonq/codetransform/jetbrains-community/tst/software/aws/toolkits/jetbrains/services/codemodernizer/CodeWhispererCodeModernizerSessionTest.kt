@@ -21,6 +21,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -56,8 +58,6 @@ import java.io.FileInputStream
 import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     fun addFilesToProjectModule(vararg path: String) {
@@ -72,7 +72,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()
-
 
     @Before
     override fun setup() {
@@ -381,7 +380,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         val dependenciesToUpload = context.iterateThroughDependencies(tempFolder.root)
         assertEquals(m2Folders.size * expectedFilesAfterClean.size, dependenciesToUpload.size)
-        assertTrue { dependenciesToUpload.all { it.name in expectedFilesAfterClean } }
+        assertTrue(dependenciesToUpload.all { it.name in expectedFilesAfterClean })
     }
 
     @Test
