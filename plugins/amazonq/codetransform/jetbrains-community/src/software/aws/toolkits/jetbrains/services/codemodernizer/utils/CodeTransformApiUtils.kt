@@ -8,12 +8,14 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -22,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import java.lang.Thread.sleep
 import java.time.Duration
+import java.time.Instant
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -116,60 +119,38 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
 }
 
-data class TransformationStep(
-    val id: String,
-    val name: String,
-    val description: String,
-    val status: TransformationStepStatus,
-    val progressUpdates: List<ProgressUpdate>,
-    val startTime: Date,
-    val endTime: Date
-)
-
-data class ProgressUpdate(
-    val name: String,
-    val status: TransformationStepStatus,
-    val description: String,
-    val startTime: Date,
-    val endTime: Date
-)
-
-enum class TransformationStepStatus {
-    COMPLETED,
-    FAILED
-}
-
 fun getTransformationStepsFixture(
     jobId: JobId
-): List<software.aws.toolkits.jetbrains.services.codemodernizer.utils.TransformationStep> {
+): List<TransformationStep> {
     println("In getTransformationStepsFixture $jobId")
-    // fake API call to get transformation steps
-    return listOf(
-        TransformationStep(
-            id = "fake-step-id-1",
-            name = "Building Code",
-            description = "Building dependencies",
-            status = TransformationStepStatus.COMPLETED,
-            progressUpdates = listOf(
-                ProgressUpdate(
-                    name = "Status step",
-                    status = TransformationStepStatus.FAILED,
-                    description = "This step should be hil identifier",
-                    startTime = Date(),
-                    endTime = Date()
-                )
-            ),
-            startTime = Date(),
-            endTime = Date()
-        )
-    )
+    val transformationStepBuilder = TransformationStep.builder()
+        .id("fake-step-id-1")
+        .name("Building Code")
+        .description("Building dependencies")
+        .status(TransformationStatus.PAUSED.toString())
+        .startTime(Instant.now())
+        .endTime(Instant.now())
+
+//    progressUpdates = listOf(
+//        name = "Status step",
+//        status = TransformationStepStatus.FAILED,
+//        description = "This step should be hil identifier",
+//        startTime = Date(),
+//        endTime = Date()
+//    ),
+//            downloadArtifacts = listof(
+//
+//            ),
+
+    return listOf(transformationStepBuilder.build())
 }
 
-
-fun getArtifactIdentifiers(transformationSteps: List<software.aws.toolkits.jetbrains.services.codemodernizer.utils.TransformationStep>): Array<String> {
+fun getArtifactIdentifiers(transformationSteps: List<TransformationStep>): Array<String> {
+    println("In getArtifactIdentifiers $transformationSteps")
     return arrayOf("fake-artifact-id", "fake-artifact-type")
 }
 
 fun downloadResultArchive(jobId: JobId, artifactId: String, artifactType: String): Array<String> {
+    println("In downloadResultArchive $jobId $artifactId $artifactType")
     return arrayOf("pomFileVirtualRef", "manifestFileVirtualRef")
 }

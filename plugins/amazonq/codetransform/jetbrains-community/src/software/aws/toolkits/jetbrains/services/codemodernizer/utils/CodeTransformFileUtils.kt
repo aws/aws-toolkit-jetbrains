@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.JsonObject
 import org.gradle.internal.impldep.com.google.gson.Gson
@@ -17,8 +16,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.ZipFile
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.xpath.XPathFactory
 import kotlin.io.path.Path
 
 fun filterOnlyParentFiles(filePaths: Set<VirtualFile>): List<VirtualFile> {
@@ -85,7 +82,6 @@ fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
     return true
 }
 
-
 data class ManifestFile(
     val hilType: String?,
     val pomFolderName: String?,
@@ -142,6 +138,4 @@ fun replacePomVersion(pomFileVirtualFileReference: String, version: String, deli
     }
 }
 
-fun parseXmlDependenciesReport(pathToXmlOutput: String): Array<String> {
-    return arrayOf("12.04.1", "12.05.2")
-}
+fun parseXmlDependenciesReport(): Array<String> = arrayOf("12.04.1", "12.05.2")
