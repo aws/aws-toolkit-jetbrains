@@ -8,7 +8,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isIntellij
+import software.aws.toolkits.jetbrains.services.codemodernizer.isIntellij
 
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
