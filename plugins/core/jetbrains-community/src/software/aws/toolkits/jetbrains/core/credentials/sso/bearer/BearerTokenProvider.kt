@@ -9,7 +9,11 @@ import com.intellij.util.containers.orNull
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
+import software.amazon.awssdk.core.interceptor.Context
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
 import software.amazon.awssdk.core.retry.conditions.OrRetryCondition
 import software.amazon.awssdk.core.retry.conditions.RetryOnExceptionsCondition
 import software.amazon.awssdk.regions.Region
@@ -25,6 +29,8 @@ import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.clients.nullDefaultProfileFile
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProviderDelegate
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
@@ -242,6 +248,30 @@ val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> 
 
     // Update the RetryPolicy in the configuration
     configuration.retryPolicy(updatedRetryPolicy)
+
+    configuration.addExecutionInterceptor(object : ExecutionInterceptor {
+        override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
+            val exception = context.exception()
+            if (exception !is AwsServiceException) {
+                return exception
+            }
+
+            try {
+                val clazz = exception::class.java
+                val errorDescription = clazz.methods.firstOrNull { it.name == "errorDescription" }?.invoke(exception) as? String
+                if (errorDescription == null) {
+                    return exception
+                }
+                val oidcError = clazz.methods.firstOrNull { it.name == "error" }?.invoke(exception) as? String
+                    ?: exception.message?.substringBeforeLast('(')?.trimEnd() ?: "Unknown Error"
+
+                return exception.toBuilder().message("$oidcError: $errorDescription").build()
+            } catch (e: Exception) {
+                getLogger<BearerTokenProvider>().warn(e) { "Encountered error while augmenting service error message" }
+                return exception
+            }
+        }
+    })
 }
 
 fun buildUnmanagedSsoOidcClient(region: String): SsoOidcClient =
