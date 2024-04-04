@@ -259,9 +259,8 @@ val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> 
             try {
                 val clazz = exception::class.java
                 val errorDescription = clazz.methods.firstOrNull { it.name == "errorDescription" }?.invoke(exception) as? String
-                if (errorDescription == null) {
-                    return exception
-                }
+                    ?: return exception
+
                 val oidcError = clazz.methods.firstOrNull { it.name == "error" }?.invoke(exception) as? String
                     ?: exception.message?.substringBeforeLast('(')?.trimEnd() ?: "Unknown Error"
 
