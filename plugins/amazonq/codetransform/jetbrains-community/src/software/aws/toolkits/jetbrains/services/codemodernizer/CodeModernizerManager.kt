@@ -71,6 +71,8 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -223,11 +225,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val pomReplacementDelimiter: String = "*****"
 //        val localPathToXmlDependencyList = "/target/dependency-updates-aggregate-report.xml"
 
-//        val osTmpDir = os.tmpdir()
-//        val tmpDependencyListFolderName = "q-pom-dependency-list"
-//        val userDependencyUpdateFolderName = "q-pom-dependency-update"
-//        val tmpDependencyListDir = path.join(osTmpDir, tmpDependencyListFolderName)
-//        val userDependencyUpdateDir = path.join(osTmpDir, userDependencyUpdateFolderName)
+        val osTmpDir = Paths.get(System.getProperty("java.io.tmpdir"))
+        val tmpDependencyListFolderName = "q-pom-dependency-list"
+        val userDependencyUpdateFolderName = "q-pom-dependency-update"
+        val tmpDependencyListDir: Path = osTmpDir.resolve(tmpDependencyListFolderName)
+        val userDependencyUpdateDir: Path = osTmpDir.resolve(userDependencyUpdateFolderName)
 
         try {
             // 1) We need to call GetTransformationPlan to get artifactId
@@ -244,7 +246,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             // 3) We need to replace version in pom.xml
             val newPomFileVirtualFileReference = createPomCopy(
-                "tmpDependencyListDir",
+                tmpDependencyListDir.toString(),
                 "pomFileVirtualFileReference",
                 "pom.xml"
             )
@@ -277,7 +279,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             // 6) We need to add user input to that pom.xml,
             // original pom.xml is intact somewhere, and run maven compile
             val userInputPomFileVirtualFileReference = createPomCopy(
-                "userDependencyUpdateDir",
+                userDependencyUpdateDir.toString(),
                 "pomFileVirtualFileReference",
                 "pom.xml"
             )
@@ -298,7 +300,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 //            const uploadPayloadFilePath = await zipCode(uploadFolderInfo)
 //            const uploadId = await uploadPayload(uploadPayloadFilePath)
             LOG.warn { "Finished human in the loop work" }
-        } catch (err) {
+        } catch (err: Exception) {
             // Will probably emit different TYPES of errors from the Human in the loop engagement
             // catch them here and determine what to do with in parent function
             LOG.warn { "Error in completeHumanInTheLoopWork $err" }

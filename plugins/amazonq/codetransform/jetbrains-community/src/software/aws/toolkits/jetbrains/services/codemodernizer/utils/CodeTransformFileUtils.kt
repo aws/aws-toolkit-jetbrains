@@ -138,4 +138,7 @@ fun replacePomVersion(pomFileVirtualFileReference: String, version: String, deli
     }
 }
 
-fun parseXmlDependenciesReport(): Array<String> = arrayOf("12.04.1", "12.05.2")
+fun parseXmlDependenciesReport(pathToXmlDependency: String): Array<String> {
+    println("Inside parseXmlDependenciesReport $pathToXmlDependency")
+    return arrayOf("12.04.1", "12.05.2")
+}

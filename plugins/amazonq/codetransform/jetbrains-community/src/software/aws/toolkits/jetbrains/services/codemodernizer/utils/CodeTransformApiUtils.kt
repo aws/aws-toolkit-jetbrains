@@ -8,7 +8,6 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
@@ -25,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.Instant
-import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
