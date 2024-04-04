@@ -17,7 +17,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.deleteIfExists
-import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.inputStreamIfExists
 import software.aws.toolkits.core.utils.outputStream
@@ -81,7 +80,6 @@ class DiskCache(
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-            ?: clientRegistrationCacheBackwardCompatible(cacheKey).tryInputStreamIfExists()
             ?: return null
 
         return loadClientRegistration(inputStream)
@@ -96,13 +94,8 @@ class DiskCache(
     }
 
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
-        if (clientRegistrationCache(cacheKey).exists()) {
-            LOG.debug { "invalidateClientRegistration for $cacheKey" }
-            clientRegistrationCache(cacheKey).tryDeleteIfExists()
-        } else {
-            LOG.debug { "invalidateClientRegistration (backwards compat) for $cacheKey" }
-            clientRegistrationCacheBackwardCompatible(cacheKey).tryDeleteIfExists()
-        }
+        LOG.debug { "invalidateClientRegistration for $cacheKey" }
+        clientRegistrationCache(cacheKey).tryDeleteIfExists()
     }
 
     override fun loadAccessToken(ssoUrl: String): AccessToken? {
@@ -131,7 +124,13 @@ class DiskCache(
         val cacheFile = accessTokenCache(cacheKey)
         val inputStream = cacheFile.tryInputStreamIfExists() ?: return null
 
-        return loadAccessToken(inputStream)
+        val token = loadAccessToken(inputStream)
+
+        // don't co-mingle access tokens of different types
+        if (true && token !is PKCEAuthorizationGrantToken) {
+            return null
+        }
+        return token
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
@@ -156,20 +155,9 @@ class DiskCache(
         }.let {
             val sha = sha1(cacheNameMapper.writeValueAsString(it))
 
-            cacheDir.resolve("$sha.json")
-        }
-
-    // Can be removed when 2022.3 is no longer supported
-    private fun clientRegistrationCacheBackwardCompatible(cacheKey: ClientRegistrationCacheKey): Path =
-        cacheNameMapper.valueToTree<ObjectNode>(cacheKey).apply {
-            // session is omitted to keep the key deterministic since we attach an epoch
-            put("tool", "aws-toolkit-jetbrains")
-
-            // remove the region field to generate a key for the old key schema
-            remove("region")
-        }.let {
-            val sha = sha1(cacheNameMapper.writeValueAsString(it))
-            cacheDir.resolve("$sha.json")
+            cacheDir.resolve("$sha.json").also {
+                LOG.debug { "$cacheKey resolves to $it" }
+            }
         }
 
     private fun accessTokenCache(ssoUrl: String): Path {

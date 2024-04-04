@@ -41,10 +41,10 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessTokenCacheKey
-import software.aws.toolkits.jetbrains.core.credentials.sso.ClientRegistration
-import software.aws.toolkits.jetbrains.core.credentials.sso.ClientRegistrationCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistrationCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistration
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -160,7 +160,7 @@ class InteractiveBearerTokenProviderTest {
     fun `resolveToken does't refresh if token was retrieved recently`() {
         stubClientRegistration()
         whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "accessToken",
@@ -230,7 +230,7 @@ class InteractiveBearerTokenProviderTest {
         // and now instead of trying to stub out the entire OIDC device flow, abuse the fact that we short-circuit and read from disk if available
         Mockito.reset(diskCache)
         whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "access1",
@@ -267,8 +267,8 @@ class InteractiveBearerTokenProviderTest {
     )
 
     private fun stubClientRegistration() {
-        whenever(diskCache.loadClientRegistration(any<ClientRegistrationCacheKey>())).thenReturn(
-            ClientRegistration(
+        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>())).thenReturn(
+            DeviceAuthorizationClientRegistration(
                 "",
                 "",
                 Instant.MAX
@@ -278,7 +278,7 @@ class InteractiveBearerTokenProviderTest {
 
     private fun stubAccessToken() {
         whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "accessToken",

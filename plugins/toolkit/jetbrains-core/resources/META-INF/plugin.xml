@@ -217,6 +217,8 @@
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
+        <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackHandler"/>
+
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.EcsExecCommandSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.SamDisplayDevModeWarningSettings"/>
 
@@ -403,6 +405,8 @@
     </extensions>
 
     <actions resource-bundle="software.aws.toolkits.resources.MessagesBundle">
+        <action id="aws.auth.pkce" class="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE"/>
+
         <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
         <action id="aws.settings.refresh" class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>

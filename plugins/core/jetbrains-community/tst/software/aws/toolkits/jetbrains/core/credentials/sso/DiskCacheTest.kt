@@ -104,7 +104,7 @@ class DiskCacheTest {
         assertThat(sut.loadClientRegistration(ssoRegion))
             .usingRecursiveComparison()
             .isEqualTo(
-                ClientRegistration(
+                DeviceAuthorizationClientRegistration(
                     "DummyId",
                     "DummySecret",
                     expirationTime
@@ -114,7 +114,7 @@ class DiskCacheTest {
 
     @Test
     fun `valid scoped client registration loads correctly`() {
-        val key = ClientRegistrationCacheKey(
+        val key = DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
             region = ssoRegion
@@ -134,7 +134,7 @@ class DiskCacheTest {
         assertThat(sut.loadClientRegistration(key))
             .usingRecursiveComparison()
             .isEqualTo(
-                ClientRegistration(
+                DeviceAuthorizationClientRegistration(
                     "DummyId",
                     "DummySecret",
                     expirationTime,
@@ -148,7 +148,7 @@ class DiskCacheTest {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
         sut.saveClientRegistration(
             ssoRegion,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.from(expirationTime)
@@ -173,7 +173,7 @@ class DiskCacheTest {
 
     @Test
     fun `scoped client registration saves correctly`() {
-        val key = ClientRegistrationCacheKey(
+        val key = DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
             region = ssoRegion
@@ -181,7 +181,7 @@ class DiskCacheTest {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
         sut.saveClientRegistration(
             key,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.from(expirationTime),
@@ -242,7 +242,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        val key = ClientRegistrationCacheKey(
+        val key = DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
             region = ssoRegion
@@ -335,7 +335,7 @@ class DiskCacheTest {
         assertThat(sut.loadAccessToken(ssoUrl))
             .usingRecursiveComparison()
             .isEqualTo(
-                AccessToken(
+                DeviceAuthorizationGrantToken(
                     ssoUrl,
                     ssoRegion,
                     "DummyAccessToken",
@@ -360,7 +360,7 @@ class DiskCacheTest {
         assertThat(sut.loadAccessToken(ssoUrl))
             .usingRecursiveComparison()
             .isEqualTo(
-                AccessToken(
+                DeviceAuthorizationGrantToken(
                     ssoUrl,
                     ssoRegion,
                     "DummyAccessToken",
@@ -374,7 +374,7 @@ class DiskCacheTest {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
         sut.saveAccessToken(
             ssoUrl,
-            AccessToken(
+            DeviceAuthorizationGrantToken(
                 ssoUrl,
                 ssoRegion,
                 "DummyAccessToken",
@@ -408,7 +408,7 @@ class DiskCacheTest {
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
         sut.saveAccessToken(
             key,
-            AccessToken(
+            DeviceAuthorizationGrantToken(
                 ssoUrl,
                 ssoRegion,
                 "DummyAccessToken",
@@ -522,7 +522,7 @@ class DiskCacheTest {
 
         sut.saveClientRegistration(
             ssoRegion,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.now()
@@ -545,7 +545,7 @@ class DiskCacheTest {
         val registration = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
         sut.saveClientRegistration(
             ssoRegion,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.now()
@@ -557,7 +557,7 @@ class DiskCacheTest {
 
         sut.saveClientRegistration(
             ssoRegion,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.now()
@@ -572,7 +572,7 @@ class DiskCacheTest {
     fun `handles reading client registration when file is owned but not readable`() {
         sut.saveClientRegistration(
             ssoRegion,
-            ClientRegistration(
+            DeviceAuthorizationClientRegistration(
                 "DummyId",
                 "DummySecret",
                 Instant.MAX

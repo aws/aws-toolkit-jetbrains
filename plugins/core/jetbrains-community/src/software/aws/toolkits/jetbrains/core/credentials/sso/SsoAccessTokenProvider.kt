@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
-import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
@@ -13,7 +12,10 @@ import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.message
@@ -35,17 +37,22 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
-
-    @TestOnly
-    var authorizationCreationTime = Instant.now(clock)
-
-    private val clientRegistrationCacheKey by lazy {
-        ClientRegistrationCacheKey(
+    private val dagClientRegistrationCacheKey by lazy {
+        DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
             region = ssoRegion
         )
     }
+
+    private val pkceClientRegistrationCacheKey by lazy {
+        PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            region = ssoRegion,
+            scopes = scopes
+        )
+    }
+
     internal val accessTokenCacheKey by lazy {
         AccessTokenCacheKey(
             connectionId = ssoRegion,
@@ -63,29 +70,35 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val token = pollForToken()
+        val token = if (true) {
+            ToolkitOAuthService.getInstance().authorize(registerPkceClient()).get()
+        } else {
+            pollForDAGToken()
+        }
 
         saveAccessToken(token)
 
         return token
     }
 
-    private fun registerClient(): ClientRegistration {
+    @Deprecated("Device authorization grant flow is deprecated")
+    private fun registerDAGClient(): ClientRegistration {
         loadClientRegistration()?.let {
             return it
         }
 
         // Based on botocore: https://github.com/boto/botocore/blob/5dc8ee27415dc97cfff75b5bcfa66d410424e665/botocore/utils.py#L1753
         val registerResponse = client.registerClient {
-            it.clientType(CLIENT_REGISTRATION_TYPE)
+            it.clientType(PUBLIC_CLIENT_REGISTRATION_TYPE)
             it.scopes(scopes)
             it.clientName("AWS Toolkit for JetBrains")
         }
 
-        val registeredClient = ClientRegistration(
+        val registeredClient = DeviceAuthorizationClientRegistration(
             registerResponse.clientId(),
             registerResponse.clientSecret(),
-            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt())
+            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt()),
+            scopes
         )
 
         saveClientRegistration(registeredClient)
@@ -93,7 +106,47 @@ class SsoAccessTokenProvider(
         return registeredClient
     }
 
-    private fun authorizeClient(clientId: ClientRegistration): Authorization {
+    private fun registerPkceClient(): PKCEClientRegistration {
+        loadClientRegistration()?.let {
+            return it as PKCEClientRegistration
+        }
+
+        val grantTypes = listOf("authorization_code", "refresh_token")
+        val redirectUris = listOf("http://127.0.0.1/oauth/callback")
+
+        if (!ssoUrl.contains("identitycenter")) {
+            getLogger<SsoAccessTokenProvider>().warn { "$ssoUrl does not appear to be a valid issuer URL" }
+        }
+
+        val registerResponse = client.registerClient {
+            // TODO change this
+            it.clientName("AWS Toolkit for JetBrains")
+            it.clientType(PUBLIC_CLIENT_REGISTRATION_TYPE)
+            it.scopes(scopes)
+            it.grantTypes(grantTypes)
+            it.redirectUris(redirectUris)
+            it.issuerUrl(ssoUrl)
+        }
+
+        val registeredClient = PKCEClientRegistration(
+            registerResponse.clientId(),
+            registerResponse.clientSecret(),
+            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt()),
+            scopes,
+            issuerUrl = ssoUrl,
+            region = ssoRegion,
+            clientType = PUBLIC_CLIENT_REGISTRATION_TYPE,
+            grantTypes = grantTypes,
+            redirectUris = redirectUris
+        )
+
+        saveClientRegistration(registeredClient)
+
+        return registeredClient
+    }
+
+    @Deprecated("Device authorization grant flow is deprecated")
+    private fun authorizeDAGClient(clientId: ClientRegistration): Authorization {
         // Should not be cached, only good for 1 token and short lived
         val authorizationResponse = try {
             client.startDeviceAuthorization {
@@ -106,25 +159,26 @@ class SsoAccessTokenProvider(
             throw e
         }
 
-        authorizationCreationTime = Instant.now(clock)
+        val createTime = Instant.now(clock)
 
         return Authorization(
             authorizationResponse.deviceCode(),
             authorizationResponse.userCode(),
             authorizationResponse.verificationUri(),
             authorizationResponse.verificationUriComplete(),
-            Instant.now(clock).plusSeconds(authorizationResponse.expiresIn().toLong()),
+            createTime.plusSeconds(authorizationResponse.expiresIn().toLong()),
             authorizationResponse.interval()?.toLong()
                 ?: DEFAULT_INTERVAL_SECS,
-            authorizationCreationTime
+            createTime
         )
     }
 
-    private fun pollForToken(): AccessToken {
+    @Deprecated("Device authorization grant flow is deprecated")
+    private fun pollForDAGToken(): AccessToken {
         val onPendingToken = service<SsoLoginCallbackProvider>().getProvider(ssoUrl)
         val progressIndicator = ProgressManager.getInstance().progressIndicator
-        val registration = registerClient()
-        val authorization = authorizeClient(registration)
+        val registration = registerDAGClient()
+        val authorization = authorizeDAGClient(registration)
 
         progressIndicator?.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
         onPendingToken.tokenPending(authorization)
@@ -142,7 +196,7 @@ class SsoAccessTokenProvider(
 
                 onPendingToken.tokenRetrieved()
 
-                return tokenResponse.toAccessToken(authorization.createdAt)
+                return tokenResponse.toDAGAccessToken(authorization.createdAt)
             } catch (e: SlowDownException) {
                 backOffTime = backOffTime.plusSeconds(SLOW_DOWN_DELAY_SECS)
             } catch (e: AuthorizationPendingException) {
@@ -162,7 +216,7 @@ class SsoAccessTokenProvider(
 
             if (tokenCreationTime != Instant.EPOCH) {
                 val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
-                val credentialSourceId = if (currentToken.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
+                val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
                 AwsTelemetry.refreshCredentials(
                     project = null,
                     result = Result.Failed,
@@ -184,7 +238,7 @@ class SsoAccessTokenProvider(
             it.refreshToken(currentToken.refreshToken)
         }
 
-        val token = newToken.toAccessToken(currentToken.createdAt)
+        val token = newToken.toDAGAccessToken(currentToken.createdAt)
         saveAccessToken(token)
 
         return token
@@ -203,8 +257,14 @@ class SsoAccessTokenProvider(
             return it
         }
     } else {
-        cache.loadClientRegistration(clientRegistrationCacheKey)?.let {
-            return it
+        if (true) {
+            cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
+                return it
+            }
+        } else {
+            cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
+                return it
+            }
         }
     }
 
@@ -212,7 +272,12 @@ class SsoAccessTokenProvider(
         if (scopes.isEmpty()) {
             cache.saveClientRegistration(ssoRegion, registration)
         } else {
-            cache.saveClientRegistration(clientRegistrationCacheKey, registration)
+            if (true) {
+                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+
+            } else {
+                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+            }
         }
     }
 
@@ -220,7 +285,7 @@ class SsoAccessTokenProvider(
         if (scopes.isEmpty()) {
             cache.invalidateClientRegistration(ssoRegion)
         } else {
-            cache.invalidateClientRegistration(clientRegistrationCacheKey)
+            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
         }
     }
 
@@ -242,10 +307,10 @@ class SsoAccessTokenProvider(
         }
     }
 
-    private fun CreateTokenResponse.toAccessToken(creationTime: Instant): AccessToken {
+    private fun CreateTokenResponse.toDAGAccessToken(creationTime: Instant): AccessToken {
         val expirationTime = Instant.now(clock).plusSeconds(expiresIn().toLong())
 
-        return AccessToken(
+        return DeviceAuthorizationGrantToken(
             startUrl = ssoUrl,
             region = ssoRegion,
             accessToken = accessToken(),
@@ -256,7 +321,7 @@ class SsoAccessTokenProvider(
     }
 
     private companion object {
-        const val CLIENT_REGISTRATION_TYPE = "public"
+        const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
         const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
         const val REFRESH_GRANT_TYPE = "refresh_token"
 
