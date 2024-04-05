@@ -14,7 +14,7 @@ jobs:
   generate_artifact_toolkit:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2', '2023.1' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,11 +36,35 @@ jobs:
           name: plugin-toolkit-${{ matrix.supported_versions }}
           path: ./plugins/toolkit/intellij/build/distributions/*.zip
           retention-days: 1
-
+  generate_artifact_toolkit_standalone:
+    strategy:
+      matrix:
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.x'
+      - name: Generate artifact
+        run: |
+          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin --exclude-task buildResharperPlugin
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-toolkit-standalone-${{ matrix.supported_versions }}
+          path: ./plugins/toolkit/intellij-standalone/build/distributions/*.zip
+          retention-days: 1
   generate_artifact_q:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2', '2023.1' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +87,7 @@ jobs:
   generate_artifact_core:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2', '2023.1' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -159,3 +183,6 @@ jobs:
       - name: Publish Q
         run: |
           gh release upload $TAG_NAME plugin-amazonq-*/*.zip
+      - name: Publish Toolkit Standalone
+        run: |
+          gh release upload $TAG_NAME plugin-toolkit-standalone-*/*.zip
