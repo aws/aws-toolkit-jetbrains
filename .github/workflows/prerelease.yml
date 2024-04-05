@@ -14,12 +14,18 @@ jobs:
   generate_artifact_toolkit:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: remove unwanted dependencies
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
@@ -39,12 +45,18 @@ jobs:
   generate_artifact_toolkit_standalone:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: remove unwanted dependencies
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
@@ -64,12 +76,18 @@ jobs:
   generate_artifact_q:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: remove unwanted dependencies
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
@@ -87,16 +105,23 @@ jobs:
   generate_artifact_core:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2023.2' ]
+        supported_versions: [ '2023.3', '2023.2', '2024.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: remove unwanted dependencies
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
           java-version: '17'
+
       - name: Generate artifact
         run: |
 
