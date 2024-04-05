@@ -70,7 +70,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-toolkit-standalone-${{ matrix.supported_versions }}
+          name: plugin-standalone-${{ matrix.supported_versions }}
           path: ./plugins/toolkit/intellij-standalone/build/distributions/*.zip
           retention-days: 1
   generate_artifact_q:
@@ -210,4 +210,4 @@ jobs:
           gh release upload $TAG_NAME plugin-amazonq-*/*.zip
       - name: Publish Toolkit Standalone
         run: |
-          gh release upload $TAG_NAME plugin-toolkit-standalone-*/*.zip
+          gh release upload $TAG_NAME plugin-standalone-*/*.zip
