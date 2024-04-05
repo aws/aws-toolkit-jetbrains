@@ -9,9 +9,6 @@
     <version>1.0</version>
     <idea-version since-build="231" until-build="999"/>
 
-    <content>
-        <module name="aws.toolkit.core"/>
-    </content>
     <xi:include href="/META-INF/module-core.xml" />
 
     <extensions defaultExtensionNs="com.intellij">
