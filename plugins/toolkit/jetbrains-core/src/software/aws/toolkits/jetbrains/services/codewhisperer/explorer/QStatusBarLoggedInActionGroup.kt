@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.P
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.PauseCodeScans
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.ResumeCodeScans
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForCodeScan
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForConnectHelp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForInlineSuggestions
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForOtherFeatures
@@ -51,6 +52,10 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             add(Separator.create())
             add(Separator.create(message("codewhisperer.statusbar.sub_menu.inline.title")))
             addAll(buildActionListForInlineSuggestions(it, actionProvider))
+
+            add(Separator.create())
+            add(Separator.create(message("codewhisperer.statusbar.sub_menu.security_scans.title")))
+            addAll(buildActionListForCodeScan(it, actionProvider))
 
             add(Separator.create())
             add(Separator.create(message("codewhisperer.statusbar.sub_menu.other_features.title")))

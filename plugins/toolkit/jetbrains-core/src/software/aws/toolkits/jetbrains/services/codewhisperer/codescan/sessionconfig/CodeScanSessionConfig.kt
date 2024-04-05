@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreParsingUtil
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Files
@@ -42,6 +43,8 @@ sealed class CodeScanSessionConfig(
     abstract val sourceExt: List<String>
 
     private var isProjectTruncated = false
+
+    private val gitIgnoreUtil = GitIgnoreParsingUtil.getInstance(projectRoot.path)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -144,8 +147,18 @@ sealed class CodeScanSessionConfig(
                     currentTotalFileSize += currentFileSize
                     currentTotalLines += Files.lines(currentFile.toNioPath()).count()
                     includedSourceFiles.add(currentFilePath)
-                    getImportedFiles(currentFile, includedSourceFiles).forEach {
-                        if (!includedSourceFiles.contains(it)) queue.addLast(it)
+
+                    // Get all imports from the language Type files
+                    if (
+                        currentFilePath.endsWith(sourceExt[0]) ||
+                        (
+                            sourceExt.getOrNull(1) != null &&
+                                currentFilePath.endsWith(sourceExt[1])
+                            )
+                    ) {
+                        getImportedFiles(currentFile, includedSourceFiles).forEach {
+                            if (!includedSourceFiles.contains(it)) queue.addLast(it)
+                        }
                     }
                 }
             }
@@ -175,11 +188,7 @@ sealed class CodeScanSessionConfig(
             withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
                 VfsUtil.collectChildrenRecursively(projectRoot).filter {
                     !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                        it.path.endsWith(sourceExt[0]) || (
-                            sourceExt.getOrNull(1) != null && it.path.endsWith(
-                                sourceExt[1]
-                            )
-                            )
+                        !gitIgnoreUtil.ignoreFile(it)
                         )
                 }.fold(0L) { acc, next ->
                     totalSize = acc + next.length
@@ -214,7 +223,7 @@ sealed class CodeScanSessionConfig(
             if (selectedFile.path.startsWith(projectRoot.path)) {
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        (it.path.endsWith(sourceExt[0]) || (sourceExt.getOrNull(1) != null && it.path.endsWith(sourceExt[1]))) && it != selectedFile
+                        !gitIgnoreUtil.ignoreFile(it) && it != selectedFile
                     }
                 )
             }

@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLa
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreParsingUtil
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.IOException
@@ -167,9 +168,10 @@ internal class JavaCodeScanSessionConfig(
         } else {
             val sourceRoots = ProjectRootManager.getInstance(project).getModuleSourceRoots(setOf(JavaSourceRootType.SOURCE))
             sourceRoots.forEach { vFile ->
+                val gitIgnoreUtil = GitIgnoreParsingUtil.getInstance(vFile.path)
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(vFile).filter {
-                        it.path.endsWith(sourceExt[0]) && it != selectedFile
+                        !gitIgnoreUtil.ignoreFile(it) && it != selectedFile
                     }
                 )
             }
@@ -214,15 +216,17 @@ internal class JavaCodeScanSessionConfig(
                     currentTotalLines += Files.lines(currentFile.toNioPath()).count()
                     sourceFiles.add(currentFile)
 
-                    // Get all imports from the file
-                    val importsInfo = parseImports(currentFile)
-                    importsInfo.imports.forEach { importPath ->
-                        val importedFiles = getSourceFilesForImport(currentFile, importPath)
-                        importedFiles.forEach { importedFile ->
-                            if (!sourceFiles.contains(importedFile)) queue.addLast(importedFile)
+                    // Get all imports from the Java file and adding them to Build Paths
+                    if (currentFile.path.endsWith(sourceExt[0])) {
+                        val importsInfo = parseImports(currentFile)
+                        importsInfo.imports.forEach { importPath ->
+                            val importedFiles = getSourceFilesForImport(currentFile, importPath)
+                            importedFiles.forEach { importedFile ->
+                                if (!sourceFiles.contains(importedFile)) queue.addLast(importedFile)
+                            }
                         }
+                        buildPaths.add(getRelativeBuildPath(currentFile, importsInfo.packagePath))
                     }
-                    buildPaths.add(getRelativeBuildPath(currentFile, importsInfo.packagePath))
                 }
             }
         }
