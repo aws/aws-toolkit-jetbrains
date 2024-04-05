@@ -66,7 +66,7 @@ jobs:
           dotnet-version: '6.x'
       - name: Generate artifact
         run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin
+         # ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
