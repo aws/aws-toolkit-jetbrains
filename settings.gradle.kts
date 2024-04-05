@@ -55,6 +55,8 @@ plugins {
 
 gradleEnterprise {
     buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
         obfuscation {
             username { "<username>" }
             hostname { "<hostname>" }
