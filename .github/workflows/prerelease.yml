@@ -66,7 +66,7 @@ jobs:
           dotnet-version: '6.x'
       - name: Generate artifact
         run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin 
+          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -176,38 +176,38 @@ jobs:
           cat CHANGELOG.md | perl -ne 'BEGIN{$/="\n\n"} print; exit if $. == 1' >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
-#  publish:
-#    needs: [ generate_artifact_toolkit, generate_artifact_core, generate_artifact_q, generate_changelog ]
-#    env:
-#      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      GH_REPO: ${{ github.repository }}
-#      FEAT_NAME: ${{ needs.generate_changelog.outputs.feature }}
-#      TAG_NAME: ${{ needs.generate_changelog.outputs.tagname }}
-#      AWS_TOOLKIT_VERSION: ${{ needs.generate_changelog.outputs.version }}
-#      BRANCH: ${{ github.ref_name }}
-#      AWS_TOOLKIT_CHANGES: ${{ needs.generate_changelog.outputs.changes }}
-#    runs-on: ubuntu-latest
-#    permissions:
-#      contents: write
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: actions/download-artifact@v4
-#      - name: Delete existing prerelease
-#        # "prerelease" (main branch) or "pre-<feature>"
-#        if: "env.TAG_NAME == 'prerelease' || startsWith(env.TAG_NAME, 'pre-')"
-#        run: |
-#          echo "SUBJECT=AWS Toolkit ${AWS_TOOLKIT_VERSION}: ${FEAT_NAME:-${TAG_NAME}}" >> $GITHUB_ENV
-#          gh release delete "$TAG_NAME" --cleanup-tag --yes || true
-#      - name: Publish to GitHub Releases
-#        run: |
-#          envsubst < "$GITHUB_WORKSPACE/.github/workflows/prerelease_notes.md" > "$RUNNER_TEMP/prerelease_notes.md"
-#          gh release create $TAG_NAME --draft --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin-toolkit-*/*.zip
-#      - name: Publish core
-#        run: |
-#          gh release upload $TAG_NAME plugin-core-*/*.zip
-#      - name: Publish Q
-#        run: |
-#          gh release upload $TAG_NAME plugin-amazonq-*/*.zip
-#      - name: Publish Toolkit Standalone
-#        run: |
-#          gh release upload $TAG_NAME plugin-toolkit-standalone-*/*.zip
+  publish:
+    needs: [ generate_artifact_toolkit, generate_artifact_core, generate_artifact_q, generate_changelog ]
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      FEAT_NAME: ${{ needs.generate_changelog.outputs.feature }}
+      TAG_NAME: ${{ needs.generate_changelog.outputs.tagname }}
+      AWS_TOOLKIT_VERSION: ${{ needs.generate_changelog.outputs.version }}
+      BRANCH: ${{ github.ref_name }}
+      AWS_TOOLKIT_CHANGES: ${{ needs.generate_changelog.outputs.changes }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - name: Delete existing prerelease
+        # "prerelease" (main branch) or "pre-<feature>"
+        if: "env.TAG_NAME == 'prerelease' || startsWith(env.TAG_NAME, 'pre-')"
+        run: |
+          echo "SUBJECT=AWS Toolkit ${AWS_TOOLKIT_VERSION}: ${FEAT_NAME:-${TAG_NAME}}" >> $GITHUB_ENV
+          gh release delete "$TAG_NAME" --cleanup-tag --yes || true
+      - name: Publish to GitHub Releases
+        run: |
+          envsubst < "$GITHUB_WORKSPACE/.github/workflows/prerelease_notes.md" > "$RUNNER_TEMP/prerelease_notes.md"
+          gh release create $TAG_NAME --draft --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin-toolkit-*/*.zip
+      - name: Publish core
+        run: |
+          gh release upload $TAG_NAME plugin-core-*/*.zip
+      - name: Publish Q
+        run: |
+          gh release upload $TAG_NAME plugin-amazonq-*/*.zip
+      - name: Publish Toolkit Standalone
+        run: |
+          gh release upload $TAG_NAME plugin-toolkit-standalone-*/*.zip
