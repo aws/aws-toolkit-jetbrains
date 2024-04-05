@@ -7,7 +7,7 @@ on:
         required: false
         default: prerelease
   #push:
-  #  branches: [ manodnyb/addPrerelease3 ]
+  #  branches: [ main, feature/* ]
 
 
 jobs:
@@ -112,7 +112,7 @@ jobs:
         run: |
           TAG_NAME=${{ github.ref_name }}
           # change to feature later
-          FEAT_NAME=$(echo $TAG_NAME | sed 's/manodnyb\///')
+          FEAT_NAME=$(echo $TAG_NAME | sed 's/feature\///')
           echo "FEAT_NAME=$FEAT_NAME" >> $GITHUB_ENV
           echo "TAG_NAME=pre-$FEAT_NAME" >> $GITHUB_ENV
       - if: github.ref_name == 'main'
