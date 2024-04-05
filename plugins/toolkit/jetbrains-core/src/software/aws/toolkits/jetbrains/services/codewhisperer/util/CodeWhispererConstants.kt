@@ -42,6 +42,8 @@ object CodeWhispererConstants {
 
     const val CODEWHISPERER_LEARN_MORE_URI = "https://aws.amazon.com/codewhisperer"
     const val CODEWHISPERER_SSO_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer-auth.html"
+
+    // update link in HelpIds
     const val CODEWHISPERER_LOGIN_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     const val CODEWHISPERER_LOGIN_HELP_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     const val CODEWHISPERER_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/customizations.html"
@@ -50,6 +52,7 @@ object CodeWhispererConstants {
     const val CODEWHISPERER_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
     const val CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/features.html"
+    const val CODEWHISPERER_GITHUB_URI = "https://github.com/aws/aws-toolkit-jetbrains/issues"
 
     const val THROTTLING_MESSAGE = "Maximum recommendation count reached for this month."
 
@@ -102,7 +105,7 @@ object CodeWhispererConstants {
     }
 
     object Config {
-        const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/"
+        const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
 
         val Sigv4ClientRegion = Region.US_EAST_1

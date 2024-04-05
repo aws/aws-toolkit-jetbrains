@@ -1,12 +1,13 @@
 [versions]
-apacheCommons = "2.8.0"
+apache-commons-collections = "4.4"
+apache-commons-io = "2.16.0"
 assertJ = "3.20.2" # Upgrading leads to SAM errors: https://youtrack.jetbrains.com/issue/KT-17765
 # match with <root>/settings.gradle.kts
-awsSdk = "2.20.111"
+awsSdk = "2.21.33"
 commonmark = "0.17.1"
 detekt = "1.23.5"
-intellijGradle = "1.17.2"
-intellijRemoteRobot = "0.11.21"
+intellijGradle = "1.17.3"
+intellijRemoteRobot = "0.11.22"
 jackson = "2.16.1"
 jacoco = "0.8.11"
 jgit = "6.5.0.202303070854-r"
@@ -14,15 +15,15 @@ junit4 = "4.13.2"
 junit5 = "5.10.1"
 # https://plugins.jetbrains.com/docs/intellij/kotlin.html#adding-kotlin-support
 # https://kotlinlang.org/docs/releases.html#release-details
-kotlin = "1.9.21"
+kotlin = "1.9.23"
 # set in <root>/settings.gradle.kts
 kotlinCoroutines = "1.7.3"
 mockito = "5.10.0"
 mockitoKotlin = "5.2.1"
 mockk = "1.13.8"
 node-gradle = "7.0.1"
-telemetryGenerator = "1.0.192"
-testLogger = "3.1.0"
+telemetryGenerator = "1.0.197"
+testLogger = "4.0.0"
 testRetry = "1.5.2"
 # test-only; platform provides slf4j transitively at runtime. <233, 1.7.36; >=233, 2.0.9
 slf4j = "2.0.9"
@@ -42,7 +43,6 @@ aws-cloudwatchlogs = { module = "software.amazon.awssdk:cloudwatchlogs", version
 aws-codecatalyst = { module = "software.amazon.awssdk:codecatalyst", version.ref = "awsSdk" }
 aws-codeGen = { module = "software.amazon.awssdk:codegen", version.ref = "awsSdk" }
 aws-cognitoidentity = { module = "software.amazon.awssdk:cognitoidentity", version.ref = "awsSdk" }
-aws-crt = { module = "software.amazon.awssdk:aws-crt-client", version.ref = "awsSdk" }
 aws-dynamodb = { module = "software.amazon.awssdk:dynamodb", version.ref = "awsSdk" }
 aws-ec2 = { module = "software.amazon.awssdk:ec2", version.ref = "awsSdk" }
 aws-ecr = { module = "software.amazon.awssdk:ecr", version.ref = "awsSdk" }
@@ -50,6 +50,7 @@ aws-ecs = { module = "software.amazon.awssdk:ecs", version.ref = "awsSdk" }
 aws-iam = { module = "software.amazon.awssdk:iam", version.ref = "awsSdk" }
 aws-jsonProtocol = { module = "software.amazon.awssdk:aws-json-protocol", version.ref = "awsSdk" }
 aws-lambda = { module = "software.amazon.awssdk:lambda", version.ref = "awsSdk" }
+aws-nettyClient = { module = "software.amazon.awssdk:netty-nio-client", version.ref = "awsSdk" }
 aws-queryProtocol = { module = "software.amazon.awssdk:aws-query-protocol", version.ref = "awsSdk" }
 aws-rds = { module = "software.amazon.awssdk:rds", version.ref = "awsSdk" }
 aws-redshift = { module = "software.amazon.awssdk:redshift", version.ref = "awsSdk" }
@@ -63,7 +64,8 @@ aws-sso = { module = "software.amazon.awssdk:sso", version.ref = "awsSdk" }
 aws-ssooidc = { module = "software.amazon.awssdk:ssooidc", version.ref = "awsSdk" }
 aws-sts = { module = "software.amazon.awssdk:sts", version.ref = "awsSdk" }
 commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmark" }
-commons-io = { module = "commons-io:commons-io", version.ref = "apacheCommons" }
+commons-collections = { module = "org.apache.commons:commons-collections4", version.ref = "apache-commons-collections" }
+commons-io = { module = "commons-io:commons-io", version.ref = "apache-commons-io" }
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
 detekt-formattingRules = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }

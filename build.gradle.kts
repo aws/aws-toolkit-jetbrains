@@ -38,12 +38,11 @@ allprojects {
 }
 
 val generateChangeLog = tasks.register<GenerateGithubChangeLog>("generateChangeLog") {
+    mustRunAfter(tasks.createRelease)
     changeLogFile.set(project.file("CHANGELOG.md"))
 }
 
 tasks.createRelease.configure {
-    mustRunAfter(generateChangeLog)
-
     releaseVersion.set(providers.gradleProperty("toolkitVersion"))
 }
 
@@ -59,7 +58,7 @@ dependencies {
 
 tasks.register("runIde") {
     doFirst {
-        throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:jetbrains-core:runIde, :plugin-toolkit:intellij:runIde")
+        throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij:runIde")
     }
 }
 
@@ -69,7 +68,7 @@ if (idea.project != null) { // may be null during script compilation
             settings {
                 taskTriggers {
                     afterSync(":plugin-core:sdk-codegen:generateSdks")
-                    afterSync(":plugin-toolkit:jetbrains-core:generateTelemetry")
+                    afterSync(":plugin-core:jetbrains-community:generateTelemetry")
                 }
             }
         }

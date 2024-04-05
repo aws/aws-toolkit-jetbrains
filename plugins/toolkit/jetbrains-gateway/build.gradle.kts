@@ -14,6 +14,7 @@ plugins {
 }
 
 intellij {
+    pluginName.set("aws-toolkit-jetbrains")
     type.set("GW")
 }
 
@@ -21,19 +22,39 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.GW)
 }
 
-val gatewayRunOnly by configurations.creating {
+sourceSets {
+    create("gatewayOnly") {
+        java {
+            resources {
+                srcDir("resources-gatewayOnly")
+            }
+        }
+    }
+}
+
+val gatewayOnlyRuntimeOnly by configurations.getting {
     extendsFrom(configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME))
-    isCanBeResolved = true
+}
+
+val gatewayOnlyRuntimeClasspath by configurations.existing
+val processGatewayOnlyResources by tasks.existing
+val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("gatewayOnlyResources")
+    from(processGatewayOnlyResources)
 }
 
 dependencies {
     // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
     compileOnly(project(":plugin-toolkit:jetbrains-core"))
-    gatewayRunOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
+    gatewayOnlyRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
+
+    // delete when fully split
+    gatewayOnlyRuntimeOnly(project(":plugin-core:jetbrains-community"))
 
     testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
     testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(libs.kotlin.coroutinesTest)
     testImplementation(libs.kotlin.coroutinesDebug)
@@ -96,13 +117,21 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().all {
-    from(gatewayResourcesDir) {
-        into("aws-toolkit-jetbrains/gateway-resources")
-    }
+    intoChild(pluginName.map { "$it/gateway-resources" })
+        .from(gatewayResourcesDir)
 }
 
-tasks.prepareSandbox {
-    runtimeClasspathFiles.set(gatewayRunOnly)
+listOf(
+    tasks.prepareSandbox,
+    tasks.prepareTestingSandbox
+).forEach {
+    it.configure {
+        runtimeClasspathFiles.set(gatewayOnlyRuntimeClasspath)
+
+        dependsOn(gatewayOnlyResourcesJar)
+        intoChild(pluginName.map { "$it/lib" })
+            .from(gatewayOnlyResourcesJar)
+    }
 }
 
 tasks.buildPlugin {

@@ -1,48 +1,25 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
-import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
+    id("java-library")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
 }
 
-buildscript {
-    dependencies {
-        classpath(libs.telemetryGenerator)
-    }
-}
-
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
-}
-
-sourceSets {
-    main {
-        java.srcDir("${project.buildDir}/generated-src")
-    }
-}
-
-val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = file("${project.buildDir}/generated-src")
-}
-
-tasks.compileKotlin {
-    dependsOn(generateTelemetry)
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -75,7 +52,7 @@ val gatewayArtifacts by configurations.creating {
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.WARN
 
     dependsOn(tasks.instrumentedJar)
 
@@ -116,58 +93,58 @@ tasks.processTestResources {
     // TODO how can we remove this. Fails due to:
     // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    // delete when fully split
+    // pull in shim to make tests pass
+    from(project(":plugin-toolkit:intellij").file("src/main/resources"))
 }
 
 dependencies {
-    api(project(":plugin-toolkit:core"))
-    api(libs.aws.apacheClient)
-    api(libs.aws.apprunner)
-    api(libs.aws.cloudcontrol)
-    api(libs.aws.cloudformation)
-    api(libs.aws.cloudwatchlogs)
-    api(libs.aws.codecatalyst)
-    api(libs.aws.dynamodb)
-    api(libs.aws.ec2)
-    api(libs.aws.ecr)
-    api(libs.aws.ecs)
-    api(libs.aws.iam)
-    api(libs.aws.lambda)
-    api(libs.aws.rds)
-    api(libs.aws.redshift)
-    api(libs.aws.s3)
-    api(libs.aws.schemas)
-    api(libs.aws.secretsmanager)
-    api(libs.aws.sns)
-    api(libs.aws.sqs)
-    api(libs.aws.services)
+    listOf(
+        libs.aws.apprunner,
+        libs.aws.cloudcontrol,
+        libs.aws.cloudformation,
+        libs.aws.cloudwatchlogs,
+        libs.aws.codecatalyst,
+        libs.aws.dynamodb,
+        libs.aws.ec2,
+//        libs.aws.ecr,
+//        libs.aws.ecs,
+//        libs.aws.iam,
+//        libs.aws.lambda,
+        libs.aws.rds,
+        libs.aws.redshift,
+//        libs.aws.s3,
+        libs.aws.schemas,
+        libs.aws.secretsmanager,
+        libs.aws.sns,
+        libs.aws.sqs,
+        libs.aws.services,
+    ).forEach { api(it) { isTransitive = false } }
+
+    listOf(
+        libs.aws.apacheClient,
+        libs.aws.nettyClient,
+    ).forEach { compileOnlyApi(it) { isTransitive = false } }
+
+    compileOnlyApi(project(":plugin-toolkit:core"))
+    compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     implementation(project(":plugin-amazonq:mynah-ui"))
-    implementation(libs.aws.crt)
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
     implementation(libs.commonmark)
+    // CodeWhispererTelemetryService uses a CircularFifoQueue, transitive from zjsonpatch
+    implementation(libs.commons.collections)
 
-    testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
-    testImplementation(libs.mockk)
-    testImplementation(libs.kotlin.coroutinesTest)
-    testImplementation(libs.kotlin.coroutinesDebug)
-    testImplementation(libs.wiremock) {
-        // conflicts with transitive inclusion from docker plugin
-        exclude(group = "org.apache.httpcomponents.client5")
-    }
-
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     // slf4j is v1.7.36 for <233
     // in <233, the classpass binding functionality picks up the wrong impl of StaticLoggerBinder (from the maven plugin instead of IDE platform) and causes a NoClassDefFoundError
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
-}
 
-// fix implicit dependency on generated source
-tasks.withType<Detekt> {
-    dependsOn(generateTelemetry)
-}
-
-tasks.withType<DetektCreateBaselineTask> {
-    dependsOn(generateTelemetry)
+    // delete when fully split
+    testRuntimeOnly(project(":plugin-core:jetbrains-community"))
+    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }

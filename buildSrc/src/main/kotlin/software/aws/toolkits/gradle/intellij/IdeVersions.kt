@@ -19,46 +19,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2023.1",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2023.1",
-                plugins = commonPlugins + listOf(
-                    "java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                    "PythonCore:231.8109.144",
-                    "Docker:231.8109.217"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2023.1",
-                plugins = commonPlugins + listOf(
-                    "JavaScript",
-                    // Transitive dependency needed for javascript
-                    // Can remove when https://github.com/JetBrains/gradle-intellij-plugin/issues/608 is fixed
-                    "com.intellij.css",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                    "Pythonid:231.8109.175",
-                    "org.jetbrains.plugins.go:231.8109.175",
-                    // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
-                    "org.intellij.intelliLang"
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2023.1",
-                plugins = commonPlugins + listOf(
-                    "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
-                ),
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2023.1.2",
-                nugetVersion = "2023.1.0"
-            )
-        ),
-        Profile(
             name = "2023.2",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
@@ -100,11 +60,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2023.3",
-            gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "233.11799-EAP-CANDIDATE-SNAPSHOT",
-                plugins = arrayOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2023.3",
@@ -147,25 +102,25 @@ object IdeVersions {
             name = "2024.1",
             gateway = ProductProfile(
                 sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "241.14024-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "241.14494-EAP-CANDIDATE-SNAPSHOT",
                 plugins = arrayOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "241.14024-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "241.14494-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                     // transitive for python
-                    "org.toml.lang:241.14024.10",
-                    "PythonCore:241.14024.14",
-                    "Docker:241.14024.28"
+                    "org.toml.lang:241.14494.33",
+                    "PythonCore:241.14494.17",
+                    "Docker:241.14494.28"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "241.14024-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "241.14494-EAP-CANDIDATE-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "JavaScript",
                     // Transitive dependency needed for javascript
@@ -175,21 +130,21 @@ object IdeVersions {
                     "com.intellij.database",
                     "com.jetbrains.codeWithMe",
                     // transitive for python
-                    "org.toml.lang:241.14024.10",
-                    "Pythonid:241.14024.14",
-                    "org.jetbrains.plugins.go:241.14024.14",
+                    "org.toml.lang:241.14494.33",
+                    "Pythonid:241.14494.17",
+                    "org.jetbrains.plugins.go:241.14494.17",
                     // https://github.com/JetBrains/gradle-intellij-plugin/issues/1056
                     "org.intellij.intelliLang"
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.1-EAP5-SNAPSHOT",
+                sdkVersion = "2024.1-EAP8-SNAPSHOT",
                 plugins = commonPlugins + listOf(
                     "rider-plugins-appender" // Workaround for https://youtrack.jetbrains.com/issue/IDEA-179607
                 ),
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = "2024.1.0-eap05"
+                nugetVersion = "2024.1.0-eap08"
             )
         ),
 

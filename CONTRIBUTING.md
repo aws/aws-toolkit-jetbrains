@@ -30,12 +30,13 @@ reported the issue. Please try to include as much information as you can. Detail
     ```
     brew install dotnet@6
     ```
+  * If Gradle cannot find `dotnet`, run `./gradlew --stop` and `./gradlew projects` to reload the daemon. Note that this should be done in your terminal as invoking Gradle through the IDE will use the IDE's cached PATH.
 
 ### Instructions
 
-1. Clone the github repository and run `./gradlew :intellij:buildPlugin` <br/> (This will produce a plugin zip under `intellij/build/distributions`)
+1. Clone the github repository and run `./gradlew :plugin-toolkit:intellij:buildPlugin` <br/> (This will produce a plugin zip under `plugins/toolkit/intellij/build/distributions`)
 2. In your JetBrains IDE (e.g. IntelliJ) navigate to the `Plugins` preferences and select "Install Plugin from Disk...", navigate to the zip file produced in step 1. 
-4. You will be prompted to restart your IDE.
+3. You will be prompted to restart your IDE.
 
 ## Contributing via Pull Requests
 
@@ -82,9 +83,17 @@ If ran using the Debug feature, a debugger will be auto-attached to the sandbox 
 ### Running manually
 
   ```
-  ./gradlew jetbrains-core:runIde
-  ./gradlew jetbrains-ultimate:runIde
-  ./gradlew jetbrains-rider:runIde
+  # IntelliJ IDEA Community
+  ./gradlew :plugin-toolkit:intellij:runIde -PrunIdeVariant=IC
+
+  # IntelliJ IDEA Ultimate
+  ./gradlew :plugin-toolkit:intellij:runIde -PrunIdeVariant=IU
+
+  # Rider
+  ./gradlew :plugin-toolkit:intellij:runIde -PrunIdeVariant=RD
+
+  # Gateway
+  ./gradlew :plugin-toolkit:jetbrains-gateway:runIde
   ```
   - These targets download the required IDE for testing.
 
@@ -92,7 +101,7 @@ If ran using the Debug feature, a debugger will be auto-attached to the sandbox 
 
 - To run the plugin in a **specific JetBrains IDE** (and you have it installed), specify the `ALTERNATIVE_IDE` environment variable:
   ```
-  ALTERNATIVE_IDE=/path/to/ide ./gradlew :intellij:runIde
+  ALTERNATIVE_IDE=/path/to/ide ./gradlew :plugin-toolkit:intellij:runIde
   ```
   - This is needed to run PyCharm and WebStorm.
   - See also `alternativeIdePath` option in the `runIde` tasks provided by the Gradle IntelliJ Plugin [documentation](https://github.com/JetBrains/gradle-intellij-plugin).
@@ -137,8 +146,10 @@ If the tests run too quickly, you can tell the UI tests to wait for the debugger
 
 - Log messages (`LOG.info`, `LOG.error()`, …) by default are written to:
   ```
-  jetbrains-[subModule]/build/idea-sandbox/system/log/idea.log
-  jetbrains-[subModule]/build/idea-sandbox/system-test/logs/idea.log  # Tests
+  plugins/toolkit/intellij/build/idea-sandbox/system/log/idea.log
+  plugins/toolkit/intellij/build/idea-sandbox/system-test/logs/idea.log  # Tests
+
+  plugins/toolkit/jetbrains-gateway/build/idea-sandbox/system/logs/idea.log  # Gateway
   ```
 - DEBUG-level log messages are skipped by default. To enable them, add the
   following line to the _Help_ \> _Debug Log Settings_ dialog in the IDE

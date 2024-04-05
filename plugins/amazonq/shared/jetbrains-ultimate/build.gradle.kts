@@ -13,5 +13,8 @@ intellijToolkit {
 
 dependencies {
     compileOnly(project(":plugin-amazonq:shared:jetbrains-community"))
-    compileOnly(project(":plugin-toolkit:jetbrains-ultimate"))
+    compileOnly(project(":plugin-core:jetbrains-ultimate"))
+
+    // delete when fully split
+    implementation(project(":plugin-toolkit:jetbrains-ultimate"))
 }

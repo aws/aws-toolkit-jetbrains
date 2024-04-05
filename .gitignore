@@ -21,7 +21,7 @@ unload-*
 jetbrains-core/bin/
 jetbrains-ultimate/bin/
 resources/bin/
-jetbrains-rider/**/NuGet.config
+**/jetbrains-rider/**/NuGet.config
 RiderSdkPackageVersion.props
 *.Generated.cs
 core/bin
@@ -29,7 +29,7 @@ jetbrains-gateway/bin
 jetbrains-rider/bin
 sdk-codegen/bin
 ui-tests/bin
-
+**/bin
 #CodeWhispererChat
 node_modules
 !mynah-ui/package-lock.json
