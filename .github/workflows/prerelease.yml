@@ -11,7 +11,6 @@ on:
 
 
 jobs:
-
   generate_artifact_toolkit:
     strategy:
       matrix:
@@ -51,12 +50,8 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '17'
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.x'
       - name: Generate artifact
         run: |
-
           ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-amazonq:buildPlugin --exclude-task buildResharperPlugin
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -64,6 +59,7 @@ jobs:
           name: plugin-amazonq-${{ matrix.supported_versions }}
           path: ./plugins/amazonq/build/distributions/*.zip
           retention-days: 1
+
   generate_artifact_core:
     strategy:
       matrix:
@@ -77,9 +73,6 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '17'
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.x'
       - name: Generate artifact
         run: |
 
@@ -90,6 +83,7 @@ jobs:
           name: plugin-core-${{ matrix.supported_versions }}
           path: ./plugins/core/build/distributions/*.zip
           retention-days: 1
+
   generate_changelog:
     runs-on: ubuntu-latest
     outputs:
@@ -132,6 +126,7 @@ jobs:
           echo 'changes<<EOF' >> $GITHUB_OUTPUT
           cat CHANGELOG.md | perl -ne 'BEGIN{$/="\n\n"} print; exit if $. == 1' >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
+
   publish:
     needs: [ generate_artifact_toolkit, generate_artifact_core, generate_artifact_q, generate_changelog ]
     env:
