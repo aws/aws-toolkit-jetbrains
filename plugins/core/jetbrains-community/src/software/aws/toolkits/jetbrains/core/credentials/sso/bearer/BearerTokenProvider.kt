@@ -9,7 +9,6 @@ import com.intellij.util.containers.orNull
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
-import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.core.interceptor.Context
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes
@@ -21,6 +20,7 @@ import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcTokenProvider
 import software.amazon.awssdk.services.ssooidc.internal.OnDiskTokenManager
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.amazon.awssdk.utils.cache.CachedSupplier
 import software.amazon.awssdk.utils.cache.NonBlocking
@@ -252,17 +252,20 @@ val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> 
     configuration.addExecutionInterceptor(object : ExecutionInterceptor {
         override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
             val exception = context.exception()
-            if (exception !is AwsServiceException) {
+            if (exception !is SsoOidcException) {
                 return exception
             }
 
+            // SSO OIDC service generally has useful messages in the "errorDescription" field, but this is considered non-standard,
+            // so Java SDK does not find it and instead provides a generic default exception string
             try {
                 val clazz = exception::class.java
                 val errorDescription = clazz.methods.firstOrNull { it.name == "errorDescription" }?.invoke(exception) as? String
                     ?: return exception
 
+                // include the type of exception so we don't lose that information if we're only looking at the message and not the stack trace
                 val oidcError = clazz.methods.firstOrNull { it.name == "error" }?.invoke(exception) as? String
-                    ?: exception.message?.substringBeforeLast('(')?.trimEnd() ?: "Unknown Error"
+                    ?: exception.message?.substringBeforeLast('(')?.trimEnd() ?: clazz.name
 
                 return exception.toBuilder().message("$oidcError: $errorDescription").build()
             } catch (e: Exception) {
