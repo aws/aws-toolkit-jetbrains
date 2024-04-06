@@ -27,6 +27,10 @@ val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
 }
 
+tasks.compileJava {
+    options.isIncremental = false
+}
+
 tasks.jar {
     dependsOn(changelog)
     from(changelog) {
