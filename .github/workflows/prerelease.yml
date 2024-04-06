@@ -7,7 +7,7 @@ on:
         required: false
         default: prerelease
   push:
-    branches: [ manodnyb/addPrerelease3 ]
+    branches: [ main, feature/* ]
 
 
 jobs:
@@ -73,6 +73,7 @@ jobs:
           name: plugin-standalone-${{ matrix.supported_versions }}
           path: ./plugins/toolkit/intellij-standalone/build/distributions/*.zip
           retention-days: 1
+
   generate_artifact_q:
     strategy:
       matrix:
@@ -154,8 +155,7 @@ jobs:
       - if: github.ref_name != 'main'
         run: |
           TAG_NAME=${{ github.ref_name }}
-          # change to feature later
-          FEAT_NAME=$(echo $TAG_NAME | sed 's/manodnyb\///')
+          FEAT_NAME=$(echo $TAG_NAME | sed 's/feature\///')
           echo "FEAT_NAME=$FEAT_NAME" >> $GITHUB_ENV
           echo "TAG_NAME=pre-$FEAT_NAME" >> $GITHUB_ENV
       - if: github.ref_name == 'main'
@@ -201,7 +201,7 @@ jobs:
       - name: Publish to GitHub Releases
         run: |
           envsubst < "$GITHUB_WORKSPACE/.github/workflows/prerelease_notes.md" > "$RUNNER_TEMP/prerelease_notes.md"
-          gh release create $TAG_NAME --draft --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin-toolkit-*/*.zip
+          gh release create $TAG_NAME --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin-toolkit-*/*.zip
       - name: Publish core
         run: |
           gh release upload $TAG_NAME plugin-core-*/*.zip
