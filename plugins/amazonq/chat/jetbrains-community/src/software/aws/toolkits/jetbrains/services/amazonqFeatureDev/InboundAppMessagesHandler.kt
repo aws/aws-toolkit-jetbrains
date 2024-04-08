@@ -16,5 +16,4 @@ interface InboundAppMessagesHandler {
     suspend fun processInsertCodeAtCursorPosition(message: IncomingFeatureDevMessage.InsertCodeAtCursorPosition)
     suspend fun processOpenDiff(message: IncomingFeatureDevMessage.OpenDiff)
     suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked)
-
 }

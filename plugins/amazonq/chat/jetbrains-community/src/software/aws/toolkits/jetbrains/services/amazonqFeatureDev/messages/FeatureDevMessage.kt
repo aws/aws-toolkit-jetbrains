@@ -130,7 +130,7 @@ data class UpdatePlaceholderMessage(
     type = "updatePlaceholderMessage"
 )
 
-data class FileComponent (
+data class FileComponent(
     @JsonProperty("tabID") override val tabId: String,
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>

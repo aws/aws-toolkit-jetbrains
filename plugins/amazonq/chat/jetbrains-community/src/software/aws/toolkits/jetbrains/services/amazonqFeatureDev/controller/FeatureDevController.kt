@@ -209,8 +209,8 @@ class FeatureDevController(
     }
 
     override suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked) {
-        // TODO: telemetery?
         val fileToUpdate = message.filePath
+
         var session: Session? = null
         try {
             session = getSessionInfo(message.tabId)
@@ -223,8 +223,8 @@ class FeatureDevController(
                     deletedFiles = state.deletedFiles
                 }
             }
-            filePaths.find { it.zipFilePath == fileToUpdate }?.let{ it.rejected = !it.rejected}
-            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let{ it.rejected = !it.rejected}
+            filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
 
             session.updateFilesPaths(
                 messenger = messenger,
@@ -304,7 +304,7 @@ class FeatureDevController(
             }
             AmazonqTelemetry.isAcceptedCodeChanges(
                 project = null,
-                amazonqNumberOfFilesAccepted = (filePaths.size + deletedFiles.size) * 1.0,
+                amazonqNumberOfFilesAccepted = (filePaths.filterNot { it.rejected }.size + deletedFiles.filterNot { it.rejected }.size) * 1.0,
                 amazonqConversationId = session.conversationId,
                 enabled = true
             )
