@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendC
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
@@ -206,6 +207,41 @@ class FeatureDevController(
             }
         }
     }
+    
+    override suspend fun fileClicked(message: IncomingFeatureDevMessage.FileClicked) {
+        // TODO: telemetery?
+        val fileToUpdate = message.filePath
+        var session: Session? = null
+        try {
+            session = getSessionInfo(message.tabId)
+            var filePaths: List<NewFileZipInfo> = emptyList()
+            var deletedFiles: List<DeletedFileInfo> = emptyList()
+
+            when (val state = session.sessionState) {
+                is PrepareCodeGenerationState -> {
+                    filePaths = state.filePaths
+                    deletedFiles = state.deletedFiles
+                }
+            }
+            filePaths.find { it.zipFilePath == fileToUpdate }?.let{ it.rejected = !it.rejected}
+            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let{ it.rejected = !it.rejected}
+
+            session.updateFilesPaths(
+                messenger = messenger,
+                tabId = message.tabId,
+                filePaths = filePaths,
+                deletedFiles = deletedFiles
+            )
+        } catch (err: Exception) {
+            val errorMessage = createUserFacingErrorMessage("Failed to insert code changes: ${err.message}")
+            messenger.sendError(
+                tabId = message.tabId,
+                errMessage = errorMessage ?: message("amazonqFeatureDev.exception.insert_code_failed"),
+                retries = retriesRemaining(session),
+                phase = session?.sessionState?.phase
+            )
+        }
+    }
 
     private suspend fun newTabOpened(tabId: String) {
         var session: Session? = null
@@ -256,7 +292,7 @@ class FeatureDevController(
             session = getSessionInfo(tabId)
 
             var filePaths: List<NewFileZipInfo> = emptyList()
-            var deletedFiles: List<String> = emptyList()
+            var deletedFiles: List<DeletedFileInfo> = emptyList()
             var references: List<CodeReference> = emptyList()
 
             when (val state = session.sessionState) {
@@ -497,7 +533,7 @@ class FeatureDevController(
             val state = session.sessionState
 
             var filePaths: List<NewFileZipInfo> = emptyList()
-            var deletedFiles: List<String> = emptyList()
+            var deletedFiles: List<DeletedFileInfo> = emptyList()
             var references: List<CodeReference> = emptyList()
             var uploadId = ""
 

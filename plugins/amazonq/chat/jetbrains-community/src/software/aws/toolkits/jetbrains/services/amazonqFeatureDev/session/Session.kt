@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATIO
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.createConversation
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
@@ -90,10 +91,19 @@ class Session(val tabID: String, val project: Project) {
         AmazonqTelemetry.isApproachAccepted(amazonqConversationId = conversationId, enabled = true)
     }
 
+    suspend fun updateFilesPaths(
+        messenger: MessagePublisher,
+        tabId: String,
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>
+    ) {
+        messenger.updateFileComponent(tabId, filePaths, deletedFiles)
+    }
+
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<String>, references: List<CodeReference>) {
+    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReference>) {
         val projectRootPath = context.projectRoot.toNioPath()
 
         filePaths.forEach {
@@ -102,8 +112,10 @@ class Session(val tabID: String, val project: Project) {
             filePath.writeBytes(it.fileContent.toByteArray(Charsets.UTF_8))
         }
 
-        deletedFiles.forEach {
-            val deleteFilePath = projectRootPath.resolve(it)
+        deletedFiles.filter {
+            !it.rejected
+        }.forEach {
+            val deleteFilePath = projectRootPath.resolve(it.zipFilePath)
             deleteFilePath.deleteIfExists()
         }
 
