@@ -166,8 +166,8 @@ export class Connector {
                 // TODO get the backend to store a message id in addition to conversationID
                 messageId: messageData.messageID ?? messageData.triggerID ?? messageData.conversationID,
                 fileList: {
-                    filePaths: messageData.filePaths,
-                    deletedFiles: messageData.deletedFiles,
+                    filePaths: (messageData.filePaths as DiffTreeFileInfo[]).map(path => path.zipFilePath),
+                    deletedFiles: (messageData.deletedFiles as DiffTreeFileInfo[]).map(path => path.zipFilePath),
                     actions,
                 },
                 body: '',

@@ -269,8 +269,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             const updateWith: Partial<ChatItem> = {
                 type: ChatItemType.CODE_RESULT,
                 fileList: {
-                    filePaths: filePaths.map(i => i.relativePath),
-                    deletedFiles: deletedFiles.map(i => i.relativePath),
+                    filePaths: filePaths.map(i => i.zipFilePath),
+                    deletedFiles: deletedFiles.map(i => i.zipFilePath),
                     details: getDetails(filePaths),
                     actions: getActions([...filePaths, ...deletedFiles]),
                 },

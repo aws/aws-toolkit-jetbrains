@@ -3,6 +3,5 @@
 
 export type DiffTreeFileInfo = {
     zipFilePath: string
-    relativePath: string
     rejected: boolean
 }
