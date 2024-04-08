@@ -207,8 +207,8 @@ class FeatureDevController(
             }
         }
     }
-    
-    override suspend fun fileClicked(message: IncomingFeatureDevMessage.FileClicked) {
+
+    override suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked) {
         // TODO: telemetery?
         val fileToUpdate = message.filePath
         var session: Session? = null
@@ -233,7 +233,7 @@ class FeatureDevController(
                 deletedFiles = deletedFiles
             )
         } catch (err: Exception) {
-            val errorMessage = createUserFacingErrorMessage("Failed to insert code changes: ${err.message}")
+            val errorMessage = createUserFacingErrorMessage("Failed to process diff tree file clicked: ${err.message}")
             messenger.sendError(
                 tabId = message.tabId,
                 errMessage = errorMessage ?: message("amazonqFeatureDev.exception.insert_code_failed"),

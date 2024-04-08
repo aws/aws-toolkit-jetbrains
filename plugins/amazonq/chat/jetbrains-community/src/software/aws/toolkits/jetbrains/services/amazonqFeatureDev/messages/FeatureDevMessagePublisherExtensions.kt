@@ -193,8 +193,8 @@ suspend fun MessagePublisher.sendCodeResult(
         CodeResultMessage(
             tabId = tabId,
             conversationId = uploadId,
-            filePaths = filePaths.map { it.zipFilePath },
-            deletedFiles = deletedFiles.map { it.zipFilePath },
+            filePaths = filePaths,
+            deletedFiles = deletedFiles,
             references = refs
         )
     )

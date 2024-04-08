@@ -180,8 +180,8 @@ data class AuthNeededException(
 data class CodeResultMessage(
     @JsonProperty("tabID") override val tabId: String,
     val conversationId: String,
-    val filePaths: List<String>,
-    val deletedFiles: List<String>,
+    val filePaths: List<NewFileZipInfo>,
+    val deletedFiles: List<DeletedFileInfo>,
     val references: List<ReducedCodeReference>
 ) : UiMessage(
     tabId = tabId,

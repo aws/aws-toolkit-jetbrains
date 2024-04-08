@@ -106,18 +106,20 @@ class Session(val tabID: String, val project: Project) {
     fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReference>) {
         val projectRootPath = context.projectRoot.toNioPath()
 
-        filePaths.forEach {
-            val filePath = projectRootPath.resolve(it.zipFilePath)
-            filePath.parent.createDirectories() // Create directories if needed
-            filePath.writeBytes(it.fileContent.toByteArray(Charsets.UTF_8))
-        }
+        filePaths
+            .filterNot { it.rejected }
+            .forEach {
+                val filePath = projectRootPath.resolve(it.zipFilePath)
+                filePath.parent.createDirectories() // Create directories if needed
+                filePath.writeBytes(it.fileContent.toByteArray(Charsets.UTF_8))
+            }
 
-        deletedFiles.filter {
-            !it.rejected
-        }.forEach {
-            val deleteFilePath = projectRootPath.resolve(it.zipFilePath)
-            deleteFilePath.deleteIfExists()
-        }
+        deletedFiles
+            .filterNot { it.rejected }
+            .forEach {
+                val deleteFilePath = projectRootPath.resolve(it.zipFilePath)
+                deleteFilePath.deleteIfExists()
+            }
 
         ReferenceLogController.addReferenceLog(references, project)
 
