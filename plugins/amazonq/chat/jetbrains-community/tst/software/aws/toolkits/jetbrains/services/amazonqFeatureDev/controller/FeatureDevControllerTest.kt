@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.testFramework.RuleChain
+import com.intellij.testFramework.replaceService
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
@@ -58,7 +59,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             on { messagesFromAppToUi }.thenReturn(messenger)
         }
         authController = spy(AuthController())
-        spySession = spy(Session("tabId", project))
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.UploadArtifactKt")
         every { uploadArtifactToS3(any(), any(), any(), any(), any()) } just runs
 
@@ -67,7 +67,8 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
     @Test
     fun `test new tab opened`() {
-        val message: IncomingFeatureDevMessage.NewTabCreated = IncomingFeatureDevMessage.NewTabCreated("new-tab-created", tabId)
+        val message = IncomingFeatureDevMessage.NewTabCreated("new-tab-created", tabId)
+        spySession = spy(Session("tabId", project))
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
         runTest {
@@ -82,7 +83,8 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     fun `test handle chat for planning phase`() {
         val testAuth = AuthNeededStates(amazonQ = null)
         val message: IncomingFeatureDevMessage.ChatPrompt = IncomingFeatureDevMessage.ChatPrompt(userMessage, "chat-prompt", tabId)
-        spySession.proxyClient = featureDevClient
+        projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
+        spySession = spy(Session("tabId", project))
 
         doReturn(testAuth).`when`(authController).getAuthNeededStates(any())
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)

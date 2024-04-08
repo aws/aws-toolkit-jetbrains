@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.intellij.testFramework.RuleChain
+import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -29,8 +30,8 @@ class SessionTest : FeatureDevTestBase() {
     @Before
     override fun setup() {
         featureDevClient = mock()
+        projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
         session = Session("tabId", projectRule.project)
-        session.proxyClient = featureDevClient
         messenger = mock()
     }
 

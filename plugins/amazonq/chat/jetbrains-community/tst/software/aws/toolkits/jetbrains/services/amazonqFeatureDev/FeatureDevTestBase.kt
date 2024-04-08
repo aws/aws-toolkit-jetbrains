@@ -9,7 +9,6 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
-import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.Mockito
@@ -19,6 +18,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeGenerationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
@@ -61,14 +61,14 @@ open class FeatureDevTestBase(
 
     internal val exampleCreateTaskAssistConversationResponse = CreateTaskAssistConversationResponse.builder()
         .conversationId(testConversationId)
-        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as CreateTaskAssistConversationResponse
 
     internal val exampleCreateUploadUrlResponse = CreateUploadUrlResponse.builder()
         .uploadUrl("https://smth.com")
         .uploadId("1234")
         .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
-        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as CreateUploadUrlResponse
 
     internal val exampleGenerateTaskAssistPlanResult = GenerateTaskAssistPlanResult(approach = "Generated approach for plan", succeededPlanning = true)
@@ -76,13 +76,13 @@ open class FeatureDevTestBase(
     internal val exampleStartTaskAssistConversationResponse = StartTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
         .codeGenerationId("1234")
-        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as StartTaskAssistCodeGenerationResponse
 
     internal val exampleGetTaskAssistConversationResponse = GetTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
         .codeGenerationStatus(CodeGenerationStatus.builder().status("InitialCodeGeneration").currentStage("InProgress").build())
-        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as GetTaskAssistCodeGenerationResponse
 
     internal val exampleExportResultArchiveResponse = mutableListOf(byteArrayOf(100))
