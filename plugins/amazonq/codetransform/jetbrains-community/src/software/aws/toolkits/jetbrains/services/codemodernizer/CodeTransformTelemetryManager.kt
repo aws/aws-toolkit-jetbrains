@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import io.ktor.network.sockets.connect
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
