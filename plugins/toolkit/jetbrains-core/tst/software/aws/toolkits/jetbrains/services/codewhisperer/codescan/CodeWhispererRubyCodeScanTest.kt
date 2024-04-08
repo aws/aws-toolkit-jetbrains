@@ -53,7 +53,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         assertThat(payload.context.totalFiles).isEqualTo(5)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(5)
-        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby, sampleRuby, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby, readMeMd, sampleRuby)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Ruby)
