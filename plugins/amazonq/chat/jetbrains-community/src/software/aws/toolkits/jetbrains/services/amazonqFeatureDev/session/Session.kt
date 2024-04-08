@@ -28,7 +28,7 @@ class Session(val tabID: String, val project: Project) {
     private var _conversationId: String? = null
     private var _latestMessage: String = ""
     private var task: String = ""
-    private var proxyClient: FeatureDevClient
+    private val proxyClient: FeatureDevClient
 
     // retry session state vars
     private var approachRetries: Int
