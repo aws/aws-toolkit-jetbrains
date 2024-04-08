@@ -114,7 +114,7 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase(HeavyJavaCod
 
     @Test
     fun `test getTotalProjectSizeInBytes()`() {
-        getTotalProjectSizeInBytes(sessionConfigSpy, this.totalSize)
+        getTotalProjectSizeInBytes(sessionConfigSpy, 2003L)
     }
 
     @Test
@@ -292,6 +292,10 @@ class CodeWhispererJavaCodeScanTest : CodeWhispererCodeScanTestBase(HeavyJavaCod
         totalLines += test2Java.toNioPath().toFile().readLines().size
 
         projectRule.fixture.addFileToProject("/notIncluded.md", "### should NOT be included")
+
+        // Adding gitignore file and gitignore file member for testing.
+        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
+        projectRule.fixture.addFileToProject("test.idea", "ref: refs/heads/main")
 
         compileProject()
     }

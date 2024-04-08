@@ -116,6 +116,30 @@ object CodeWhispererConstants {
         PROJECT
     }
 
+    val ignorePatterns = listOf(
+        "\\.aws-sam",
+        "\\.svn",
+        "\\.hg/",
+        "\\.rvm",
+        "\\.git/",
+        "\\.gitignore",
+        "\\.project",
+        "\\.gem",
+        "/\\.idea/",
+        "\\.zip$",
+        "\\.bin$",
+        "\\.png$",
+        "\\.jpg$",
+        "\\.svg$",
+        "\\.pyc$",
+        "/license\\.txt$",
+        "/License\\.txt$",
+        "/LICENSE\\.txt$",
+        "/license\\.md$",
+        "/License\\.md$",
+        "/LICENSE\\.md$",
+    ).map { Regex(it) }
+
     object Config {
         const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"

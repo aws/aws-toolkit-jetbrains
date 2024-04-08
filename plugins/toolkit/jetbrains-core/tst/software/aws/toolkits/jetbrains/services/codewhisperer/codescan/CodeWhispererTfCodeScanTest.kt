@@ -25,6 +25,7 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
     private lateinit var testTf: VirtualFile
     private lateinit var test2Tf: VirtualFile
     private lateinit var test3Tf: VirtualFile
+    private lateinit var readMeMd: VirtualFile
     private lateinit var sessionConfigSpy: TerraformCodeScanSessionConfig
 
     private var totalSize: Long = 0
@@ -49,10 +50,10 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(4)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testTf, test3Tf, test2Tf)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(4)
+        assertThat(payload.context.scannedFiles).containsExactly(testTf, test3Tf, readMeMd, test2Tf)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Tf)
@@ -66,12 +67,12 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(4)
     }
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        getSourceFilesUnderProjectRoot(sessionConfigSpy, testTf, 3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, testTf, 4)
     }
 
     @Test
@@ -83,7 +84,7 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
 
     @Test
     fun `test includeDependencies()`() {
-        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 0)
+        includeDependencies(sessionConfigSpy, 4, totalSize, this.totalLines, 0)
     }
 
     @Test
@@ -104,14 +105,14 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
-        assertThat(payload.context.totalFiles).isEqualTo(1)
+        assertThat(payload.context.totalFiles).isEqualTo(2)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(1)
-        assertThat(payload.context.scannedFiles).containsExactly(testTf)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
+        assertThat(payload.context.scannedFiles).containsExactly(testTf, readMeMd)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(334)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(350)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Tf)
-        assertThat(payload.context.totalLines).isEqualTo(11)
+        assertThat(payload.context.totalLines).isEqualTo(12)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -121,12 +122,12 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(1)
+        assertThat(filesInZip).isEqualTo(2)
     }
 
     @Test
     fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 3, totalSize, 2)
+        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 4, totalSize, 2)
     }
 
     private fun setupTfProject() {
@@ -253,6 +254,8 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
         totalSize += test3Tf.length
         totalLines += test3Tf.toNioPath().toFile().readLines().size
 
-        projectRule.fixture.addFileToProject("/notIncluded.md", "### should NOT be included")
+        readMeMd = projectRule.fixture.addFileToProject("/ReadMe.md", "### Now included").virtualFile
+        totalSize += readMeMd.length
+        totalLines += readMeMd.toNioPath().toFile().readLines().size
     }
 }

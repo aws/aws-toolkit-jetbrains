@@ -25,6 +25,7 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     internal lateinit var testJs: VirtualFile
     internal lateinit var utilsJs: VirtualFile
     internal lateinit var helperJs: VirtualFile
+    private lateinit var readMeMd: VirtualFile
     internal lateinit var sessionConfigSpy: JavaScriptCodeScanSessionConfig
 
     private var totalSize: Long = 0
@@ -55,10 +56,10 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(4)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs, helperJs)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(4)
+        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs, helperJs, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Javascript)
@@ -72,12 +73,12 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(4)
     }
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        getSourceFilesUnderProjectRoot(sessionConfigSpy, testJs, 3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, testJs, 4)
     }
 
     @Test
@@ -100,7 +101,7 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
 
     @Test
     fun `test includeDependencies()`() {
-        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 0)
+        includeDependencies(sessionConfigSpy, 4, totalSize, this.totalLines, 0)
     }
 
     @Test
@@ -121,14 +122,14 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
-        assertThat(payload.context.totalFiles).isEqualTo(2)
+        assertThat(payload.context.totalFiles).isEqualTo(3)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
-        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
+        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs, readMeMd)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(816)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(832)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Javascript)
-        assertThat(payload.context.totalLines).isEqualTo(31)
+        assertThat(payload.context.totalLines).isEqualTo(32)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -138,12 +139,12 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(2)
+        assertThat(filesInZip).isEqualTo(3)
     }
 
     @Test
     fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 3, totalSize, 2)
+        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 4, totalSize, 2)
     }
 
     private fun setupJavaScriptProject() {
@@ -220,6 +221,8 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         totalSize += helperJs.length
         totalLines += helperJs.toNioPath().toFile().readLines().size
 
-        projectRule.fixture.addFileToProject("/notIncluded.md", "### should NOT be included")
+        readMeMd = projectRule.fixture.addFileToProject("/ReadMe.md", "### Now included").virtualFile
+        totalSize += readMeMd.length
+        totalLines += readMeMd.toNioPath().toFile().readLines().size
     }
 }

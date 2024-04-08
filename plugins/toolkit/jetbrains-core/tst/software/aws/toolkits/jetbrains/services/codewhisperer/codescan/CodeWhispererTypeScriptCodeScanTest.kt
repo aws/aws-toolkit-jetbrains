@@ -26,6 +26,7 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     internal lateinit var testTs: VirtualFile
     internal lateinit var utilsTs: VirtualFile
     internal lateinit var helperTs: VirtualFile
+    private lateinit var readMeMd: VirtualFile
     internal lateinit var sessionConfigSpy: JavaScriptCodeScanSessionConfig
 
     private var totalSize: Long = 0
@@ -56,10 +57,10 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(4)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testTs, utilsTs, helperTs)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(4)
+        assertThat(payload.context.scannedFiles).containsExactly(testTs, utilsTs, helperTs, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Typescript)
@@ -73,7 +74,7 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(4)
     }
 
     @Test
@@ -83,7 +84,7 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
                 testTs,
                 CodeWhispererConstants.SecurityScanType.PROJECT
             ).size
-        ).isEqualTo(3)
+        ).isEqualTo(4)
     }
 
     @Test
@@ -111,7 +112,7 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         val payloadMetadata = sessionConfigSpy.includeDependencies()
         assertNotNull(payloadMetadata)
         assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        assertThat(payloadMetadata.sourceFiles.size).isEqualTo(3)
+        assertThat(payloadMetadata.sourceFiles.size).isEqualTo(4)
         assertThat(payloadMetadata.payloadSize).isEqualTo(totalSize)
         assertThat(payloadMetadata.linesScanned).isEqualTo(this.totalLines)
         assertThat(payloadMetadata.buildPaths).hasSize(0)
@@ -135,14 +136,14 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
-        assertThat(payload.context.totalFiles).isEqualTo(2)
+        assertThat(payload.context.totalFiles).isEqualTo(3)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
-        assertThat(payload.context.scannedFiles).containsExactly(testTs, utilsTs)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
+        assertThat(payload.context.scannedFiles).containsExactly(testTs, utilsTs, readMeMd)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(632L)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(648L)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Typescript)
-        assertThat(payload.context.totalLines).isEqualTo(25)
+        assertThat(payload.context.totalLines).isEqualTo(26)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -152,12 +153,12 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(2)
+        assertThat(filesInZip).isEqualTo(3)
     }
 
     @Test
     fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 3, totalSize, 2)
+        assertE2ERunsSuccessfully(sessionConfigSpy, projectRule.project, totalLines, 4, totalSize, 2)
     }
 
     private fun setupTypeScriptProject() {
@@ -226,6 +227,8 @@ class CodeWhispererTypeScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         totalSize += helperTs.length
         totalLines += helperTs.toNioPath().toFile().readLines().size
 
-        projectRule.fixture.addFileToProject("/notIncluded.md", "### should NOT be included")
+        readMeMd = projectRule.fixture.addFileToProject("/ReadMe.md", "### Now included").virtualFile
+        totalSize += readMeMd.length
+        totalLines += readMeMd.toNioPath().toFile().readLines().size
     }
 }

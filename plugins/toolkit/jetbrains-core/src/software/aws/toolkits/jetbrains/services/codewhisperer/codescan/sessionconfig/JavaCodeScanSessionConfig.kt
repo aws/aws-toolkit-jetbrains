@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLa
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreParsingUtil
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.IOException
@@ -168,10 +167,9 @@ internal class JavaCodeScanSessionConfig(
         } else {
             val sourceRoots = ProjectRootManager.getInstance(project).getModuleSourceRoots(setOf(JavaSourceRootType.SOURCE))
             sourceRoots.forEach { vFile ->
-                val gitIgnoreUtil = GitIgnoreParsingUtil.getInstance(vFile.path)
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(vFile).filter {
-                        !gitIgnoreUtil.ignoreFile(it) && it != selectedFile
+                        it != selectedFile && !it.isDirectory && !ignoreFile(it)
                     }
                 )
             }
@@ -202,7 +200,8 @@ internal class JavaCodeScanSessionConfig(
                     val currentFile = queue.removeFirst()
                     if (!currentFile.path.startsWith(projectRoot.path) ||
                         sourceFiles.contains(currentFile) ||
-                        willExceedPayloadLimit(currentTotalFileSize, currentFile.length)
+                        willExceedPayloadLimit(currentTotalFileSize, currentFile.length) ||
+                        currentFile.isDirectory
                     ) {
                         if (!currentFile.path.startsWith(projectRoot.path)) {
                             LOG.error { "Invalid workspace: Current file ${currentFile.path} is not under the project root ${projectRoot.path}" }

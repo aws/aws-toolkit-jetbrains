@@ -24,6 +24,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     private lateinit var testPy: VirtualFile
     private lateinit var utilsPy: VirtualFile
     private lateinit var helperPy: VirtualFile
+    private lateinit var readMeMd: VirtualFile
     private lateinit var sessionConfigSpy: PythonCodeScanSessionConfig
 
     private var totalSize: Long = 0
@@ -48,10 +49,10 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(4)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testPy, utilsPy, helperPy)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(4)
+        assertThat(payload.context.scannedFiles).containsExactly(testPy, utilsPy, helperPy, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Python)
@@ -65,12 +66,12 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(4)
     }
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        getSourceFilesUnderProjectRoot(sessionConfigSpy, testPy, 3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, testPy, 4)
     }
 
     @Test
@@ -93,7 +94,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
 
     @Test
     fun `test includeDependencies()`() {
-        includeDependencies(sessionConfigSpy, 3, totalSize, this.totalLines, 0)
+        includeDependencies(sessionConfigSpy, 4, totalSize, this.totalLines, 0)
     }
 
     @Test
@@ -114,14 +115,14 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
-        assertThat(payload.context.totalFiles).isEqualTo(2)
+        assertThat(payload.context.totalFiles).isEqualTo(3)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
-        assertThat(payload.context.scannedFiles).containsExactly(testPy, helperPy)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
+        assertThat(payload.context.scannedFiles).containsExactly(testPy, helperPy, readMeMd)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(363)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(379)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Python)
-        assertThat(payload.context.totalLines).isEqualTo(18)
+        assertThat(payload.context.totalLines).isEqualTo(19)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -131,7 +132,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(2)
+        assertThat(filesInZip).isEqualTo(3)
     }
 
     @Test
@@ -178,7 +179,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
 
     @Test
     fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 3, totalSize, 2)
+        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 4, totalSize, 2)
     }
 
     private fun setupPythonProject() {
@@ -258,6 +259,8 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         totalSize += helperPy.length
         totalLines += helperPy.toNioPath().toFile().readLines().size
 
-        projectRule.fixture.addFileToProject("/notIncluded.md", "### should NOT be included")
+        readMeMd = projectRule.fixture.addFileToProject("/ReadMe.md", "### Now included").virtualFile
+        totalSize += readMeMd.length
+        totalLines += readMeMd.toNioPath().toFile().readLines().size
     }
 }
