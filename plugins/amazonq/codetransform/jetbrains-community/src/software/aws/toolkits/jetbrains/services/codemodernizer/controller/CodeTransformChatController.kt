@@ -54,7 +54,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformStartSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
