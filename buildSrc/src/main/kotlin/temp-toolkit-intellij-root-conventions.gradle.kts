@@ -101,7 +101,8 @@ configurations {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
 
-        exclude("io.netty", "netty-codec-http")
+//        exclude("io.netty", "netty-codec-http")
+        exclude("io.netty")
     }
 }
 

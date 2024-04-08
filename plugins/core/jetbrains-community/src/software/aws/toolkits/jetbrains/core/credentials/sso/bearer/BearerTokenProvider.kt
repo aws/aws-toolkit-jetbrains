@@ -111,7 +111,7 @@ class InteractiveBearerTokenProvider(
     private val supplier = CachedSupplier.builder { refreshToken() }.prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
     private val lastToken = AtomicReference<AccessToken?>()
     init {
-        lastToken.set(cache.loadAccessToken(accessTokenProvider.accessTokenCacheKey))
+        lastToken.set(accessTokenProvider.loadAccessToken())
 
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,

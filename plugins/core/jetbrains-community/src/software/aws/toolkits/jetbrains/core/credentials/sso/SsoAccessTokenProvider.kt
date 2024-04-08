@@ -25,6 +25,7 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import kotlin.reflect.jvm.jvmName
 
 /**
  * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
@@ -37,6 +38,8 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
+    private val isPkce = true
+
     private val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
@@ -53,7 +56,7 @@ class SsoAccessTokenProvider(
         )
     }
 
-    internal val accessTokenCacheKey by lazy {
+    private val accessTokenCacheKey by lazy {
         AccessTokenCacheKey(
             connectionId = ssoRegion,
             startUrl = ssoUrl,
@@ -70,7 +73,7 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val token = if (true) {
+        val token = if (isPkce) {
             ToolkitOAuthService.getInstance().authorize(registerPkceClient()).get()
         } else {
             pollForDAGToken()
@@ -257,7 +260,7 @@ class SsoAccessTokenProvider(
             return it
         }
     } else {
-        if (true) {
+        if (isPkce) {
             cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
                 return it
             }
@@ -272,7 +275,7 @@ class SsoAccessTokenProvider(
         if (scopes.isEmpty()) {
             cache.saveClientRegistration(ssoRegion, registration)
         } else {
-            if (true) {
+            if (isPkce) {
                 cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
 
             } else {
@@ -286,15 +289,21 @@ class SsoAccessTokenProvider(
             cache.invalidateClientRegistration(ssoRegion)
         } else {
             cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
         }
     }
 
-    private fun loadAccessToken(): AccessToken? = if (scopes.isEmpty()) {
+    internal fun loadAccessToken(): AccessToken? = if (scopes.isEmpty()) {
         cache.loadAccessToken(ssoUrl)?.let {
             return it
         }
     } else {
         cache.loadAccessToken(accessTokenCacheKey)?.let {
+            if (isPkce) {
+                check(it is PKCEAuthorizationGrantToken) {
+                    "SsoAccessTokenProvider expected instance of PKCEAuthorizationGrantToken token from disk cache, but found: ${it::class.jvmName}"
+                }
+            }
             return it
         }
     }
