@@ -72,9 +72,6 @@ class CodeTransformChatController(
             return
         }
 
-        CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
-
-        telemetry.sendUserClickedTelemetry(CodeTransformStartSrcComponents.ChatPrompt)
         codeTransformChatHelper.setActiveCodeTransformTabId(message.tabId)
 
         if (!message.startNewTransform) {
@@ -107,6 +104,8 @@ class CodeTransformChatController(
         )
 
         delay(500)
+
+        CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
