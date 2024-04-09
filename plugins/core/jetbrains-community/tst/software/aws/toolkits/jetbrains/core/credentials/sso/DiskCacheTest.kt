@@ -404,7 +404,7 @@ class DiskCacheTest {
 
     @Test
     fun `scoped access token saves correctly`() {
-        val key = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+        val key = DeviceGrantAccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
         val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
         sut.saveAccessToken(
             key,
@@ -465,7 +465,7 @@ class DiskCacheTest {
     fun `invalidate scoped access token deletes file`() {
         val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("72286fb950f12c77c840239851fd64ac60275c5c.json")
-        val key = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+        val key = DeviceGrantAccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
 
         cacheFile.writeText(
             """
@@ -491,8 +491,8 @@ class DiskCacheTest {
     fun `scope order does not matter for scoped access token cache`() {
         val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("72286fb950f12c77c840239851fd64ac60275c5c.json")
-        val key1 = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
-        val key2 = AccessTokenCacheKey("connectionId", ssoUrl, listOf("scope2", "scope1"))
+        val key1 = DeviceGrantAccessTokenCacheKey("connectionId", ssoUrl, listOf("scope1", "scope2"))
+        val key2 = DeviceGrantAccessTokenCacheKey("connectionId", ssoUrl, listOf("scope2", "scope1"))
 
         cacheFile.writeText(
             """

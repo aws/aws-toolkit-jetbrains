@@ -126,10 +126,6 @@ class DiskCache(
 
         val token = loadAccessToken(inputStream)
 
-        // don't co-mingle access tokens of different types
-        if (true && token !is PKCEAuthorizationGrantToken) {
-            return null
-        }
         return token
     }
 
@@ -166,7 +162,7 @@ class DiskCache(
     }
 
     private fun accessTokenCache(cacheKey: AccessTokenCacheKey): Path {
-        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey.copy(scopes = cacheKey.scopes.sorted())))}.json"
+        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey.withScopes(scopes = cacheKey.scopes.sorted())))}.json"
         return cacheDir.resolve(fileName)
     }
 

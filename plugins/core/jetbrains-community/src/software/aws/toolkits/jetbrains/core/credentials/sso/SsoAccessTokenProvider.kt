@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.util.registry.Registry
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
@@ -25,7 +26,6 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import kotlin.reflect.jvm.jvmName
 
 /**
  * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
@@ -38,7 +38,7 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
-    private val isPkce = true
+    private val isNewAuthPkce = Registry.`is`("aws.dev.pkceAuth", false)
 
     private val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
@@ -56,10 +56,18 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val accessTokenCacheKey by lazy {
-        AccessTokenCacheKey(
+    private val dagAccessTokenCacheKey by lazy {
+        DeviceGrantAccessTokenCacheKey(
             connectionId = ssoRegion,
             startUrl = ssoUrl,
+            scopes = scopes
+        )
+    }
+
+    private val pkceAccessTokenCacheKey by lazy {
+        PKCEAccessTokenCacheKey(
+            issuerUrl = ssoUrl,
+            region = ssoRegion,
             scopes = scopes
         )
     }
@@ -73,7 +81,7 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val token = if (isPkce) {
+        val token = if (isNewAuthPkce) {
             ToolkitOAuthService.getInstance().authorize(registerPkceClient()).get()
         } else {
             pollForDAGToken()
@@ -86,7 +94,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadClientRegistration()?.let {
+        loadDagClientRegistration()?.let {
             return it
         }
 
@@ -110,8 +118,8 @@ class SsoAccessTokenProvider(
     }
 
     private fun registerPkceClient(): PKCEClientRegistration {
-        loadClientRegistration()?.let {
-            return it as PKCEClientRegistration
+        loadPkceClientRegistration()?.let {
+            return it
         }
 
         val grantTypes = listOf("authorization_code", "refresh_token")
@@ -232,7 +240,10 @@ class SsoAccessTokenProvider(
             throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
         }
 
-        val registration = loadClientRegistration() ?: throw InvalidClientException.builder().message("Unable to load client registration").build()
+        val registration = when (currentToken) {
+            is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
+            is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+        } ?: throw InvalidClientException.builder().message("Unable to load client registration").build()
 
         val newToken = client.createToken {
             it.clientId(registration.clientId)
@@ -251,35 +262,38 @@ class SsoAccessTokenProvider(
         if (scopes.isEmpty()) {
             cache.invalidateAccessToken(ssoUrl)
         } else {
-            cache.invalidateAccessToken(accessTokenCacheKey)
+            cache.invalidateAccessToken(dagAccessTokenCacheKey)
+            cache.invalidateAccessToken(pkceAccessTokenCacheKey)
         }
     }
 
-    private fun loadClientRegistration(): ClientRegistration? = if (scopes.isEmpty()) {
+    private fun loadDagClientRegistration(): ClientRegistration? = if (scopes.isEmpty()) {
         cache.loadClientRegistration(ssoRegion)?.let {
             return it
         }
     } else {
-        if (isPkce) {
-            cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
-                return it
-            }
-        } else {
-            cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
-                return it
-            }
+        cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
+            return it
         }
     }
 
-    private fun saveClientRegistration(registration: ClientRegistration) {
-        if (scopes.isEmpty()) {
-            cache.saveClientRegistration(ssoRegion, registration)
-        } else {
-            if (isPkce) {
-                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+    private fun loadPkceClientRegistration(): PKCEClientRegistration? =
+        cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
+            return it as PKCEClientRegistration
+        }
 
-            } else {
-                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+    private fun saveClientRegistration(registration: ClientRegistration) {
+        when (registration) {
+            is DeviceAuthorizationClientRegistration -> {
+                if (scopes.isEmpty()) {
+                    cache.saveClientRegistration(ssoRegion, registration)
+                } else {
+                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+                }
+            }
+
+            is PKCEClientRegistration -> {
+                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
             }
         }
     }
@@ -298,21 +312,32 @@ class SsoAccessTokenProvider(
             return it
         }
     } else {
-        cache.loadAccessToken(accessTokenCacheKey)?.let {
-            if (isPkce) {
-                check(it is PKCEAuthorizationGrantToken) {
-                    "SsoAccessTokenProvider expected instance of PKCEAuthorizationGrantToken token from disk cache, but found: ${it::class.jvmName}"
-                }
-            }
+        // load DAG if exists, otherwise PKCE
+        cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
             return it
         }
+
+        if (isNewAuthPkce) {
+            // don't check existence of PKCE if we're not planning on starting flows with PKCE
+            cache.loadAccessToken(pkceAccessTokenCacheKey)?.let {
+                return it
+            }
+        }
+
+        null
     }
 
     private fun saveAccessToken(token: AccessToken) {
-        if (scopes.isEmpty()) {
-            cache.saveAccessToken(ssoUrl, token)
-        } else {
-            cache.saveAccessToken(accessTokenCacheKey, token)
+        when (token) {
+            is DeviceAuthorizationGrantToken -> {
+                if (scopes.isEmpty()) {
+                    cache.saveAccessToken(ssoUrl, token)
+                } else {
+                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
+                }
+            }
+
+            is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
         }
     }
 

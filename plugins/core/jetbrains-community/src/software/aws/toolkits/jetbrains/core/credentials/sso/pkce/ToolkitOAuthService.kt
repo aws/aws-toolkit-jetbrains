@@ -168,11 +168,3 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         return request.uri().trim('/').startsWith("oauth/callback")
     }
 }
-
-class PKCE : DumbAwareAction("PKCE") {
-    override fun actionPerformed(e: AnActionEvent) {
-//        ApplicationManager.getApplication().executeOnPooledThread {
-//            ToolkitOAuthService.getInstance().authorize()
-//        }
-    }
-}

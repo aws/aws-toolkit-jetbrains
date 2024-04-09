@@ -20,7 +20,7 @@ import java.util.Optional
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 @JsonSubTypes(value = [JsonSubTypes.Type(DeviceAuthorizationGrantToken::class), JsonSubTypes.Type(PKCEAuthorizationGrantToken::class) ])
-interface AccessToken : SdkToken, Credentials {
+sealed interface AccessToken : SdkToken, Credentials {
     val ssoUrl: String
     val region: String
 
@@ -67,11 +67,31 @@ data class PKCEAuthorizationGrantToken(
     override fun toString() = redactedString(this)
 }
 
+// we really don't need to differentitate since they refresh the same way, but to save some mental cycles,
+// treat them as independent so we don't need to worry about intermingling the token/registration combos
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonSubTypes(value = [JsonSubTypes.Type(DeviceGrantAccessTokenCacheKey::class), JsonSubTypes.Type(PKCEAccessTokenCacheKey::class) ])
+sealed interface AccessTokenCacheKey {
+    val scopes: List<String>
+
+    fun withScopes(scopes: List<String>): AccessTokenCacheKey
+}
+
 // diverging from SDK/CLI impl here since they do: sha1sum(sessionName ?: startUrl)
 // which isn't good enough for us
 // only used in scoped case
-data class AccessTokenCacheKey(
+data class DeviceGrantAccessTokenCacheKey(
     val connectionId: String,
     val startUrl: String,
-    val scopes: List<String>
-)
+    override val scopes: List<String>
+) : AccessTokenCacheKey {
+    override fun withScopes(scopes: List<String>) = copy(scopes = scopes)
+}
+
+data class PKCEAccessTokenCacheKey(
+    val issuerUrl: String,
+    val region: String,
+    override val scopes: List<String>
+) : AccessTokenCacheKey {
+    override fun withScopes(scopes: List<String>) = copy(scopes = scopes)
+}
