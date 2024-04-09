@@ -16,7 +16,6 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
@@ -52,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOO
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createPomCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadResultArchive
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findDownloadArtifactStep
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJsonValuesFromManifestFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
@@ -234,13 +234,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         try {
             // 1) We need to call GetTransformationPlan to get artifactId
             val transformationSteps = getTransformationStepsFixture(jobId)
-            val artifactArr = getArtifactIdentifiers(transformationSteps)
+            var hilTransformationStep = findDownloadArtifactStep(transformationSteps)
+
+            if (hilTransformationStep == null) {
+                throw Exception("No HIL Transformation Step found")
+            }
+
+            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep)
+
+            if (downloadArtifact == null) {
+                throw Exception("artifactId or artifactType is undefined")
+            }
 
             // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
             val pomRefArr = downloadResultArchive(
                 jobId,
-                artifactArr[0],
-                artifactArr[1]
+                downloadArtifact
             )
             val manifestFileValues = getJsonValuesFromManifestFile(pomRefArr[0])
 
@@ -322,11 +331,17 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun runModernize(copyResult: MavenCopyCommandsResult): Job? {
+    suspend fun runModernize(copyResult: MavenCopyCommandsResult) {
         initStopParameters()
         val session = codeTransformationSession as CodeModernizerSession
+        val fakeJobId = JobId("test-id")
+        completeHumanInTheLoopWork(fakeJobId, 0)
+        val test = true
+        if (test) {
+            return
+        }
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
-        return launchModernizationJob(session, copyResult)
+        launchModernizationJob(session, copyResult)
     }
 
     private fun initStopParameters() {

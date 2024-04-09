@@ -8,13 +8,16 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.amazon.awssdk.services.codewhispererruntime.model.DownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStepStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -121,6 +124,17 @@ fun getTransformationStepsFixture(
     jobId: JobId
 ): List<TransformationStep> {
     println("In getTransformationStepsFixture $jobId")
+    var progressUpdate = TransformationProgressUpdate.builder()
+        .name("Status step")
+        .status(TransformationStepStatus.FAILED.toString())
+        .description("This step should be hil identifier")
+        .startTime(Instant.now())
+        .endTime(Instant.now())
+
+    val downloadArtifact = DownloadArtifact.builder()
+        .downloadArtifactId("fake-artifact-id")
+        .downloadArtifactType("1p-hil-artifact-type")
+
     val transformationStepBuilder = TransformationStep.builder()
         .id("fake-step-id-1")
         .name("Building Code")
@@ -128,27 +142,31 @@ fun getTransformationStepsFixture(
         .status(TransformationStatus.PAUSED.toString())
         .startTime(Instant.now())
         .endTime(Instant.now())
-
-//    progressUpdates = listOf(
-//        name = "Status step",
-//        status = TransformationStepStatus.FAILED,
-//        description = "This step should be hil identifier",
-//        startTime = Date(),
-//        endTime = Date()
-//    ),
-//            downloadArtifacts = listof(
-//
-//            ),
+        .progressUpdates(progressUpdate.build())
+        .downloadArtifacts(downloadArtifact.build())
 
     return listOf(transformationStepBuilder.build())
 }
 
-fun getArtifactIdentifiers(transformationSteps: List<TransformationStep>): Array<String> {
-    println("In getArtifactIdentifiers $transformationSteps")
-    return arrayOf("fake-artifact-id", "fake-artifact-type")
+fun getArtifactIdentifiers(transformationStep: TransformationStep): DownloadArtifact {
+    println("In getArtifactIdentifiers $transformationStep")
+    return transformationStep.downloadArtifacts().first()
 }
 
-fun downloadResultArchive(jobId: JobId, artifactId: String, artifactType: String): Array<String> {
-    println("In downloadResultArchive $jobId $artifactId $artifactType")
+fun findDownloadArtifactStep(transformationSteps: List<TransformationStep>): TransformationStep? {
+    println("In findDownloadArtifactStep $transformationSteps")
+    for (step in transformationSteps) {
+        val artifactType = step.downloadArtifacts()?.get(0)?.downloadArtifactType()
+        val artifactId = step.downloadArtifacts()?.get(0)?.downloadArtifactId()
+        if (artifactType != null || artifactId != null) {
+            return step
+        }
+    }
+
+    return null
+}
+
+fun downloadResultArchive(jobId: JobId, downloadArtifact: DownloadArtifact): Array<String> {
+    println("In downloadResultArchive $jobId $downloadArtifact")
     return arrayOf("pomFileVirtualRef", "manifestFileVirtualRef")
 }
