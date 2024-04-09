@@ -210,37 +210,27 @@ class FeatureDevController(
 
     override suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked) {
         val fileToUpdate = message.filePath
+        val session = getSessionInfo(message.tabId)
 
-        var session: Session? = null
-        try {
-            session = getSessionInfo(message.tabId)
-            var filePaths: List<NewFileZipInfo> = emptyList()
-            var deletedFiles: List<DeletedFileInfo> = emptyList()
-
-            when (val state = session.sessionState) {
-                is PrepareCodeGenerationState -> {
-                    filePaths = state.filePaths
-                    deletedFiles = state.deletedFiles
-                }
+        var filePaths: List<NewFileZipInfo> = emptyList()
+        var deletedFiles: List<DeletedFileInfo> = emptyList()
+        when (val state = session.sessionState) {
+            is PrepareCodeGenerationState -> {
+                filePaths = state.filePaths
+                deletedFiles = state.deletedFiles
             }
-            filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
-            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
-
-            session.updateFilesPaths(
-                messenger = messenger,
-                tabId = message.tabId,
-                filePaths = filePaths,
-                deletedFiles = deletedFiles
-            )
-        } catch (err: Exception) {
-            val errorMessage = createUserFacingErrorMessage("Failed to process diff tree file clicked: ${err.message}")
-            messenger.sendError(
-                tabId = message.tabId,
-                errMessage = errorMessage ?: message("amazonqFeatureDev.exception.insert_code_failed"),
-                retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
-            )
         }
+
+        // Mark the file as rejected or not depending on the previous state
+        filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+
+        session.updateFilesPaths(
+            messenger = messenger,
+            tabId = message.tabId,
+            filePaths = filePaths,
+            deletedFiles = deletedFiles
+        )
     }
 
     private suspend fun newTabOpened(tabId: String) {
