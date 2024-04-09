@@ -139,7 +139,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             )
             dialog.isModal = true
 
-            telemetry.vcsDiffViewerVisible(jobId)
+            telemetry.vcsDiffViewerVisible(jobId) // download succeeded
             if (dialog.showAndGet()) {
                 telemetry.vcsViewerSubmitted(jobId)
             } else {
