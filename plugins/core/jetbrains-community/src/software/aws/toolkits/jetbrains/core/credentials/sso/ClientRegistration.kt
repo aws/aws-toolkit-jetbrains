@@ -56,6 +56,7 @@ data class PKCEClientRegistration(
 }
 
 sealed interface ClientRegistrationCacheKey
+
 // only applicable in scoped registration path
 // based on internal development branch @da780a4,L2574-2586
 data class DeviceAuthorizationClientRegistrationCacheKey(

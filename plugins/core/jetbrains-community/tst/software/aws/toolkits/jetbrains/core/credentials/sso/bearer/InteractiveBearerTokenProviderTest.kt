@@ -41,10 +41,10 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
-import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistrationCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistration
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistrationCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import java.time.Instant
 import java.time.temporal.ChronoUnit

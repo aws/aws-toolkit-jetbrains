@@ -9,7 +9,6 @@ import com.intellij.util.containers.orNull
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
-import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.core.interceptor.Context
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes

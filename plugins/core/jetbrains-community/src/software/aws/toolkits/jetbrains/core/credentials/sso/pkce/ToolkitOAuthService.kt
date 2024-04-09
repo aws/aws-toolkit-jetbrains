@@ -4,18 +4,14 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso.pkce
 
 import com.intellij.collaboration.auth.OAuthCallbackHandlerBase
-import com.intellij.collaboration.auth.credentials.Credentials
 import com.intellij.collaboration.auth.services.OAuthCredentialsAcquirer
 import com.intellij.collaboration.auth.services.OAuthRequest
 import com.intellij.collaboration.auth.services.OAuthService
 import com.intellij.collaboration.auth.services.OAuthServiceBase
 import com.intellij.collaboration.auth.services.PkceUtils
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.Url
 import com.intellij.util.Urls.newFromEncoded
@@ -25,9 +21,6 @@ import org.jetbrains.ide.BuiltInServerManager
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.endpoints.SsoOidcEndpointParams
 import software.amazon.awssdk.services.ssooidc.endpoints.internal.DefaultSsoOidcEndpointProvider
-import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEClientRegistration
@@ -35,7 +28,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanage
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
-import java.util.concurrent.CompletableFuture
 
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
@@ -45,10 +37,6 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
 
     fun authorize(registration: PKCEClientRegistration) =
         authorize(ToolkitOAuthRequest(registration))
-
-    override fun authorize(request: OAuthRequest<AccessToken>): CompletableFuture<AccessToken> {
-        return super.authorize(request)
-    }
 
     override fun handleOAuthServerCallback(path: String, parameters: Map<String, List<String>>): OAuthService.OAuthResult<AccessToken>? {
         val request = currentRequest.get() ?: return null
@@ -96,19 +84,17 @@ private class ToolkitOAuthRequest(private val registration: PKCEClientRegistrati
     override val credentialsAcquirer: OAuthCredentialsAcquirer<AccessToken> = ToolkitOauthCredentialsAcquirer(registration, codeVerifier, redirectUri)
 
     override val authUrlWithParameters: Url
-        get() {
-            return newFromEncoded(serviceUri.url().resolve("authorize").toString()).addParameters(
-                mapOf(
-                    "response_type" to "code",
-                    "client_id" to registration.clientId,
-                    "redirect_uri" to redirectUri,
-                    "scopes" to registration.scopes.sorted().joinToString(" "),
-                    "state" to csrfToken,
-                    "code_challenge" to codeChallenge,
-                    "code_challenge_method" to "S256"
-                )
+        get() = newFromEncoded(serviceUri.url().resolve("authorize").toString()).addParameters(
+            mapOf(
+                "response_type" to "code",
+                "client_id" to registration.clientId,
+                "redirect_uri" to redirectUri,
+                "scopes" to registration.scopes.sorted().joinToString(" "),
+                "state" to csrfToken,
+                "code_challenge" to codeChallenge,
+                "code_challenge_method" to "S256"
             )
-        }
+        )
 
     private fun randB64url(bits: Int): String = base64Encoder.encodeToString(BigInteger(bits, DigestUtil.random).toByteArray())
 }
