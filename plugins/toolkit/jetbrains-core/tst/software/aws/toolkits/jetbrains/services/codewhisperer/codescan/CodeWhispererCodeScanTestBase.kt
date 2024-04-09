@@ -76,6 +76,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     internal lateinit var fakeCreateCodeScanResponseFailed: CreateCodeScanResponse
     internal lateinit var fakeCreateCodeScanResponsePending: CreateCodeScanResponse
     internal lateinit var fakeListCodeScanFindingsResponse: ListCodeScanFindingsResponse
+    internal lateinit var fakeListCodeScanFindingsOutOfBoundsIndexResponse: ListCodeScanFindingsResponse
     internal lateinit var fakeGetCodeScanResponse: GetCodeScanResponse
     internal lateinit var fakeGetCodeScanResponsePending: GetCodeScanResponse
     internal lateinit var fakeGetCodeScanResponseFailed: GetCodeScanResponse
@@ -157,6 +158,55 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         ]
     """
 
+    private fun setupCodeScanFindingsOutOfBounds(filePath: Path) = """
+        [
+            {
+                "filePath": "${filePath.systemIndependentPath}",
+                "startLine": 99999,
+                "endLine": 99999,
+                "title": "test",
+                "description": {
+                    "text": "global variable",
+                    "markdown": "### global variable"
+                },
+                "detectorId": "detectorId",
+                "detectorName": "detectorName",
+                "findingId": "findingId",
+                "relatedVulnerabilities": [],
+                "severity": "severity",
+                "remediation": {
+                    "recommendation": {
+                        "text": "recommendationText",
+                        "url": "recommendationUrl"
+                    },
+                    "suggestedFixes": []
+                }
+            },
+            {
+                "filePath": "${filePath.systemIndependentPath}",
+                "startLine": 1,
+                "endLine": 2,
+                "title": "test",
+                "description": {
+                    "text": "global variable",
+                    "markdown": "### global variable"
+                },
+                "detectorId": "detectorId",
+                "detectorName": "detectorName",
+                "findingId": "findingId",
+                "relatedVulnerabilities": [],
+                "severity": "severity",
+                "remediation": {
+                    "recommendation": {
+                        "text": "recommendationText",
+                        "url": "recommendationUrl"
+                    },
+                    "suggestedFixes": []
+                }
+            }
+        ]
+    """
+
     protected fun setupResponse(filePath: Path) {
         fakeCreateUploadUrlResponse = CreateUploadUrlResponse.builder()
             .uploadId(UPLOAD_ID)
@@ -184,6 +234,11 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
 
         fakeListCodeScanFindingsResponse = ListCodeScanFindingsResponse.builder()
             .codeScanFindings(setupCodeScanFindings(filePath))
+            .responseMetadata(metadata)
+            .build() as ListCodeScanFindingsResponse
+
+        fakeListCodeScanFindingsOutOfBoundsIndexResponse = ListCodeScanFindingsResponse.builder()
+            .codeScanFindings(setupCodeScanFindingsOutOfBounds(filePath))
             .responseMetadata(metadata)
             .build() as ListCodeScanFindingsResponse
 
