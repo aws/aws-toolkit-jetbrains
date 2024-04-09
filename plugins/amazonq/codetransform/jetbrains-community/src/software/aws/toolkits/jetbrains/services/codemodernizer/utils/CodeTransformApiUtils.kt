@@ -4,24 +4,32 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.amazon.awssdk.services.codewhispererruntime.model.DownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStepStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import java.io.File
 import java.lang.Thread.sleep
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
@@ -113,4 +121,44 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         }
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
+}
+
+fun getTransformationStepsFixture(
+    jobId: JobId
+): List<TransformationStep> {
+    println("In getTransformationStepsFixture $jobId")
+    var progressUpdate = TransformationProgressUpdate.builder()
+        .name("Status step")
+        .status(TransformationStepStatus.FAILED.toString())
+        .description("This step should be hil identifier")
+        .startTime(Instant.now())
+        .endTime(Instant.now())
+
+    val downloadArtifact = DownloadArtifact.builder()
+        .downloadArtifactId("fake-artifact-id")
+        .downloadArtifactType("1p-hil-artifact-type")
+
+    val transformationStepBuilder = TransformationStep.builder()
+        .id("fake-step-id-1")
+        .name("Building Code")
+        .description("Building dependencies")
+        .status(TransformationStatus.PAUSED.toString())
+        .startTime(Instant.now())
+        .endTime(Instant.now())
+        .progressUpdates(progressUpdate.build())
+        .downloadArtifacts(downloadArtifact.build())
+
+    return listOf(transformationStepBuilder.build())
+}
+
+fun downloadResultArchive(jobId: JobId, downloadArtifact: DownloadArtifact): Array<VirtualFile?> {
+    println("In downloadResultArchive $jobId $downloadArtifact")
+    val manifestFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/manifest.json")
+    val pomFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/pom.xml")
+
+    val localFileSystem = LocalFileSystem.getInstance()
+    val manifestFileVirtualFileReference = localFileSystem.findFileByIoFile(manifestFileFileReference)
+    val pomFileVirtualFileReference = localFileSystem.findFileByIoFile(pomFileFileReference)
+
+    return arrayOf(manifestFileVirtualFileReference, pomFileVirtualFileReference)
 }

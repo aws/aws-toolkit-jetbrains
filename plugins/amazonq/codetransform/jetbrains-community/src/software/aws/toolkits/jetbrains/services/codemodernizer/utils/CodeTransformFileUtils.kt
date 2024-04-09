@@ -3,13 +3,19 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.serialization.json.JsonObject
+import org.gradle.internal.impldep.com.google.gson.Gson
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
@@ -75,4 +81,65 @@ fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
             }.toList()
     }
     return true
+}
+
+data class ManifestFile(
+    val hilType: String?,
+    val pomFolderName: String?,
+    val sourcePomVersion: String?
+)
+
+fun getJsonValuesFromManifestFile(manifestFileVirtualFileReference: VirtualFile): ManifestFile {
+    println("Inside getJsonValuesFromManifestFile $manifestFileVirtualFileReference")
+    try {
+        val manifestFileContents = File(manifestFileVirtualFileReference.path).readText()
+        val jsonValues = Gson().fromJson(manifestFileContents, JsonObject::class.java)
+
+        return ManifestFile(
+            hilType = jsonValues?.get("hilType").toString(),
+            pomFolderName = jsonValues?.get("pomFolderName").toString(),
+            sourcePomVersion = jsonValues?.get("sourcePomVersion").toString()
+        )
+    } catch (err: IOException) {
+        println("Error parsing manifest.json file $err")
+        throw err
+    }
+}
+
+fun createPomCopy(
+    dirname: String,
+    pomDownloadedVirtualFile: VirtualFile,
+    fileName: String
+): VirtualFile? {
+    println("In createPomCopy $dirname $pomDownloadedVirtualFile $fileName")
+    try {
+        val newFilePath = Paths.get(dirname, fileName).toString()
+        val dirPath = Paths.get(dirname)
+        if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath)
+        }
+        val pomFileContents = File(pomDownloadedVirtualFile.path).readBytes()
+        Files.write(Paths.get(newFilePath), pomFileContents)
+        return LocalFileSystem.getInstance().findFileByIoFile(File(newFilePath))
+    } catch (err: Exception) {
+        println("Error creating pom copy $err")
+        throw err
+    }
+}
+
+fun replacePomVersion(pomFileVirtualFileReference: VirtualFile, version: String, delimiter: String) {
+    println("In replacePomVersion $pomFileVirtualFileReference $version $delimiter")
+    try {
+        val pomFileText = File(pomFileVirtualFileReference.path).readText()
+        val pomFileTextWithNewVersion = pomFileText.replace(delimiter, version)
+        File(pomFileVirtualFileReference.path).writeText(pomFileTextWithNewVersion)
+    } catch (err: IOException) {
+        println("Error replacing pom version $err")
+        throw err
+    }
+}
+
+fun parseXmlDependenciesReport(pathToXmlDependency: String): Array<String> {
+    println("Inside parseXmlDependenciesReport $pathToXmlDependency")
+    return arrayOf("12.04.1", "12.05.2")
 }
