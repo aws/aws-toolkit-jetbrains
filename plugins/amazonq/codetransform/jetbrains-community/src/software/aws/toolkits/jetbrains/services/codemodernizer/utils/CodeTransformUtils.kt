@@ -51,8 +51,6 @@ const val TROUBLESHOOTING_URL_MAVEN_COMMANDS =
 const val TROUBLESHOOTING_URL_PREREQUISITES =
     "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#prerequisites"
 
-fun calculateTotalLatency(startTime: Instant, endTime: Instant) = (endTime.toEpochMilli() - startTime.toEpochMilli()).toInt()
-
 fun refreshToken(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     val provider = (connection?.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
