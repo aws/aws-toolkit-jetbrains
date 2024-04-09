@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.resources.message
-import java.time.Instant
 
 val STATES_WHERE_PLAN_EXIST = setOf(
     TransformationStatus.PLANNED,

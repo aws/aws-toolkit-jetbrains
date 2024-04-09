@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
 import org.jetbrains.idea.maven.project.MavenProjectsManager
 import org.jetbrains.plugins.gradle.settings.GradleSettings
