@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
@@ -24,6 +26,7 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import java.io.File
 import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.Instant
@@ -148,25 +151,14 @@ fun getTransformationStepsFixture(
     return listOf(transformationStepBuilder.build())
 }
 
-fun getArtifactIdentifiers(transformationStep: TransformationStep): DownloadArtifact {
-    println("In getArtifactIdentifiers $transformationStep")
-    return transformationStep.downloadArtifacts().first()
-}
-
-fun findDownloadArtifactStep(transformationSteps: List<TransformationStep>): TransformationStep? {
-    println("In findDownloadArtifactStep $transformationSteps")
-    for (step in transformationSteps) {
-        val artifactType = step.downloadArtifacts()?.get(0)?.downloadArtifactType()
-        val artifactId = step.downloadArtifacts()?.get(0)?.downloadArtifactId()
-        if (artifactType != null || artifactId != null) {
-            return step
-        }
-    }
-
-    return null
-}
-
-fun downloadResultArchive(jobId: JobId, downloadArtifact: DownloadArtifact): Array<String> {
+fun downloadResultArchive(jobId: JobId, downloadArtifact: DownloadArtifact): Array<VirtualFile?> {
     println("In downloadResultArchive $jobId $downloadArtifact")
-    return arrayOf("pomFileVirtualRef", "manifestFileVirtualRef")
+    val manifestFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/manifest.json")
+    val pomFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/pom.xml")
+
+    val localFileSystem = LocalFileSystem.getInstance()
+    val manifestFileVirtualFileReference = localFileSystem.findFileByIoFile(manifestFileFileReference)
+    val pomFileVirtualFileReference = localFileSystem.findFileByIoFile(pomFileFileReference)
+
+    return arrayOf(manifestFileVirtualFileReference, pomFileVirtualFileReference)
 }

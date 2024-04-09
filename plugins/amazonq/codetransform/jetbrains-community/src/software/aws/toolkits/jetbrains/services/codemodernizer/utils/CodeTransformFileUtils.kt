@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.JsonObject
 import org.gradle.internal.impldep.com.google.gson.Gson
@@ -88,10 +89,10 @@ data class ManifestFile(
     val sourcePomVersion: String?
 )
 
-fun getJsonValuesFromManifestFile(manifestFileVirtualFileReference: String): ManifestFile {
+fun getJsonValuesFromManifestFile(manifestFileVirtualFileReference: VirtualFile): ManifestFile {
     println("Inside getJsonValuesFromManifestFile $manifestFileVirtualFileReference")
     try {
-        val manifestFileContents = File(manifestFileVirtualFileReference).readText()
+        val manifestFileContents = File(manifestFileVirtualFileReference.path).readText()
         val jsonValues = Gson().fromJson(manifestFileContents, JsonObject::class.java)
 
         return ManifestFile(
@@ -107,31 +108,31 @@ fun getJsonValuesFromManifestFile(manifestFileVirtualFileReference: String): Man
 
 fun createPomCopy(
     dirname: String,
-    pomFileVirtualFileReference: String,
+    pomDownloadedVirtualFile: VirtualFile,
     fileName: String
-): String {
-    println("In createPomCopy $dirname $pomFileVirtualFileReference $fileName")
+): VirtualFile? {
+    println("In createPomCopy $dirname $pomDownloadedVirtualFile $fileName")
     try {
         val newFilePath = Paths.get(dirname, fileName).toString()
-        val pomFileContents = Files.readAllBytes(Paths.get(pomFileVirtualFileReference))
         val dirPath = Paths.get(dirname)
         if (!Files.exists(dirPath)) {
             Files.createDirectories(dirPath)
         }
+        val pomFileContents = File(pomDownloadedVirtualFile.path).readBytes()
         Files.write(Paths.get(newFilePath), pomFileContents)
-        return newFilePath
+        return LocalFileSystem.getInstance().findFileByIoFile(File(newFilePath))
     } catch (err: Exception) {
         println("Error creating pom copy $err")
         throw err
     }
 }
 
-fun replacePomVersion(pomFileVirtualFileReference: String, version: String, delimiter: String) {
+fun replacePomVersion(pomFileVirtualFileReference: VirtualFile, version: String, delimiter: String) {
     println("In replacePomVersion $pomFileVirtualFileReference $version $delimiter")
     try {
-        val pomFileText = File(pomFileVirtualFileReference).readText()
+        val pomFileText = File(pomFileVirtualFileReference.path).readText()
         val pomFileTextWithNewVersion = pomFileText.replace(delimiter, version)
-        File(pomFileVirtualFileReference).writeText(pomFileTextWithNewVersion)
+        File(pomFileVirtualFileReference.path).writeText(pomFileTextWithNewVersion)
     } catch (err: IOException) {
         println("Error replacing pom version $err")
         throw err

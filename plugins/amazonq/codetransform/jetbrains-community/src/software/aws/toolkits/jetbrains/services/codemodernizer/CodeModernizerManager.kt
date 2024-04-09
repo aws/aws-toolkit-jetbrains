@@ -40,6 +40,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.findDownloadArtifactStep
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerState
@@ -51,8 +53,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOO
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createPomCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadResultArchive
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findDownloadArtifactStep
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJsonValuesFromManifestFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
@@ -247,18 +247,30 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
 
             // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
-            val pomRefArr = downloadResultArchive(
+            val downloadResultsFileReferences = downloadResultArchive(
                 jobId,
                 downloadArtifact
             )
-            val manifestFileValues = getJsonValuesFromManifestFile(pomRefArr[0])
+            val manifestDownloadedVirtualFile = downloadResultsFileReferences[0]
+            val pomDownloadedVirtualFile = downloadResultsFileReferences[1]
+
+            if (manifestDownloadedVirtualFile == null || pomDownloadedVirtualFile == null) {
+                throw Exception("Issue downloading HIl artifacts")
+            }
+
+            val manifestFileValues = getJsonValuesFromManifestFile(manifestDownloadedVirtualFile)
 
             // 3) We need to replace version in pom.xml
             val newPomFileVirtualFileReference = createPomCopy(
                 tmpDependencyListDir.toString(),
-                "pomFileVirtualFileReference",
+                pomDownloadedVirtualFile,
                 "pom.xml"
             )
+
+            if (newPomFileVirtualFileReference == null) {
+                throw Exception("Issue writing POM file to local filesystem")
+            }
+
             manifestFileValues.sourcePomVersion?.let {
                 replacePomVersion(
                     newPomFileVirtualFileReference,
@@ -289,9 +301,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             // original pom.xml is intact somewhere, and run maven compile
             val userInputPomFileVirtualFileReference = createPomCopy(
                 userDependencyUpdateDir.toString(),
-                "pomFileVirtualFileReference",
+                pomDownloadedVirtualFile,
                 "pom.xml"
             )
+
+            if (userInputPomFileVirtualFileReference == null) {
+                throw Exception("Issue writing POM file to local filesystem")
+            }
+
             replacePomVersion(
                 userInputPomFileVirtualFileReference,
                 getUserInputValue,
