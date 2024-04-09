@@ -219,7 +219,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeModernizerBottomWindowPanelManager.setJobStartingUI()
     }
 
-    suspend fun completeHumanInTheLoopWork(jobId: JobId, userInputRetryCount: Number) {
+    fun completeHumanInTheLoopWork(jobId: JobId, userInputRetryCount: Number) {
         LOG.warn { "Entering completeHumanInTheLoopWork $jobId $userInputRetryCount" }
 
         val pomReplacementDelimiter: String = "*****"
@@ -234,17 +234,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         try {
             // 1) We need to call GetTransformationPlan to get artifactId
             val transformationSteps = getTransformationStepsFixture(jobId)
-            var hilTransformationStep = findDownloadArtifactStep(transformationSteps)
+            val hilTransformationStep = findDownloadArtifactStep(transformationSteps) ?:  throw Exception("No HIL Transformation Step found")
 
-            if (hilTransformationStep == null) {
-                throw Exception("No HIL Transformation Step found")
-            }
-
-            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep)
-
-            if (downloadArtifact == null) {
-                throw Exception("artifactId or artifactType is undefined")
-            }
+            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep) ?: throw Exception("artifactId or artifactType is undefined")
 
             // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
             val downloadResultsFileReferences = downloadResultArchive(
@@ -348,7 +340,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    suspend fun runModernize(copyResult: MavenCopyCommandsResult) {
+    fun runModernize(copyResult: MavenCopyCommandsResult) {
         initStopParameters()
         val session = codeTransformationSession as CodeModernizerSession
         val fakeJobId = JobId("test-id")
