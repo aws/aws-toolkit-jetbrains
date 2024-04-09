@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.RubyCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -26,7 +25,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     private lateinit var helperRuby: VirtualFile
     private lateinit var sampleRuby: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var sessionConfigSpy: RubyCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -35,7 +34,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     override fun setup() {
         super.setup()
         setupRubyProject()
-        sessionConfigSpy = spy(CodeScanSessionConfig.create(testRuby, project, CodeWhispererConstants.SecurityScanType.PROJECT) as RubyCodeScanSessionConfig)
+        sessionConfigSpy = spy(CodeScanSessionConfig.create(testRuby, project, CodeWhispererConstants.SecurityScanType.PROJECT))
         setupResponse(testRuby.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
         mockClient.stub {
@@ -53,7 +52,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         assertThat(payload.context.totalFiles).isEqualTo(5)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(5)
-        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby, readMeMd, sampleRuby)
+        assertThat(payload.context.scannedFiles).containsExactly(testRuby, helperRuby, utilsRuby, readMeMd, sampleRuby)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Ruby)
@@ -73,31 +72,6 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
         getSourceFilesUnderProjectRoot(sessionConfigSpy, testRuby, 5)
-    }
-
-    @Test
-    fun `test parseImport()`() {
-        val testRubyImports = sessionConfigSpy.parseImports(testRuby)
-        assertThat(testRubyImports.size).isEqualTo(3)
-        assertThat(testRubyImports).contains("utils")
-        assertThat(testRubyImports).contains("helpers/helper")
-        assertThat(testRubyImports).contains("helpers")
-
-        val helperRubyImports = sessionConfigSpy.parseImports(helperRuby)
-        assertThat(helperRubyImports.size).isEqualTo(1)
-        assertThat(helperRubyImports).contains("Sample")
-
-        val utilsRubyImports = sessionConfigSpy.parseImports(utilsRuby)
-        assertThat(utilsRubyImports.size).isEqualTo(0)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testRuby, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(2)
-        assertThat(files).contains(utilsRuby.path)
-        assertThat(files).contains(helperRuby.path)
     }
 
     @Test
@@ -127,7 +101,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         assertThat(payload.context.totalFiles).isEqualTo(4)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(4)
-        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testRuby, helperRuby, utilsRuby, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(806)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Ruby)

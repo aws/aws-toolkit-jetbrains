@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.JavaScriptCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -26,7 +25,7 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     internal lateinit var utilsJs: VirtualFile
     internal lateinit var helperJs: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    internal lateinit var sessionConfigSpy: JavaScriptCodeScanSessionConfig
+    internal lateinit var sessionConfigSpy: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -40,7 +39,7 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
                 testJs,
                 project,
                 CodeWhispererConstants.SecurityScanType.PROJECT
-            ) as JavaScriptCodeScanSessionConfig
+            )
         )
         setupResponse(testJs.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
@@ -59,7 +58,7 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         assertThat(payload.context.totalFiles).isEqualTo(4)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(4)
-        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs, helperJs, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testJs, helperJs, utilsJs, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Javascript)
@@ -79,24 +78,6 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
         getSourceFilesUnderProjectRoot(sessionConfigSpy, testJs, 4)
-    }
-
-    @Test
-    fun `test parseImport()`() {
-        val testJsImports = sessionConfigSpy.parseImports(testJs)
-        assertThat(testJsImports.size).isEqualTo(3)
-
-        val helperJsImports = sessionConfigSpy.parseImports(helperJs)
-        assertThat(helperJsImports.size).isEqualTo(1)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testJs, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(2)
-        assertThat(files).contains(utilsJs.path)
-        assertThat(files).contains(helperJs.path)
     }
 
     @Test
@@ -125,11 +106,11 @@ class CodeWhispererJavaScriptCodeScanTest : CodeWhispererCodeScanTestBase(Python
         assertThat(payload.context.totalFiles).isEqualTo(3)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testJs, utilsJs, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testJs, helperJs, readMeMd)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(832)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(529)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Javascript)
-        assertThat(payload.context.totalLines).isEqualTo(32)
+        assertThat(payload.context.totalLines).isEqualTo(28)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())

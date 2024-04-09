@@ -18,9 +18,27 @@ import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CSHARP_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CSHARP_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.GO_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.GO_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JS_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JS_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PYTHON_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PYTHON_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.RUBY_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.RUBY_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TERRAFORM_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ignorePatterns
@@ -32,15 +50,13 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.relativeTo
 
-sealed class CodeScanSessionConfig(
+class CodeScanSessionConfig(
     private val selectedFile: VirtualFile,
     private val project: Project,
     private val scanType: SecurityScanType
 ) {
     var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
         private set
-
-    abstract val sourceExt: List<String>
 
     private var isProjectTruncated = false
 
@@ -49,23 +65,43 @@ sealed class CodeScanSessionConfig(
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    abstract fun overallJobTimeoutInSeconds(): Long
+    private val language = selectedFile.programmingLanguage().toTelemetryType()
 
-    abstract fun getPayloadLimitInBytes(): Int
+    private val languageConfig: Map<CodewhispererLanguage, Pair<Long, Int>> = mapOf(
+        CodewhispererLanguage.Java to Pair(JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS, JAVA_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Python to Pair(PYTHON_CODE_SCAN_TIMEOUT_IN_SECONDS, PYTHON_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Javascript to Pair(JS_CODE_SCAN_TIMEOUT_IN_SECONDS, JS_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Typescript to Pair(JS_CODE_SCAN_TIMEOUT_IN_SECONDS, JS_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Csharp to Pair(CSHARP_CODE_SCAN_TIMEOUT_IN_SECONDS, CSHARP_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Yaml to Pair(CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS, CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Json to Pair(CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS, CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Tf to Pair(TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS, TERRAFORM_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Hcl to Pair(TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS, TERRAFORM_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Go to Pair(GO_CODE_SCAN_TIMEOUT_IN_SECONDS, GO_PAYLOAD_LIMIT_IN_BYTES),
+        CodewhispererLanguage.Ruby to Pair(RUBY_CODE_SCAN_TIMEOUT_IN_SECONDS, RUBY_PAYLOAD_LIMIT_IN_BYTES)
+    )
 
-    open fun getFilePayloadLimitInBytes(): Int = FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+    fun overallJobTimeoutInSeconds(): Long {
+        val (timeoutInSeconds, _) = languageConfig.getOrDefault(language, Pair(DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS, 0))
+        return timeoutInSeconds
+    }
 
-    protected fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
+    fun getPayloadLimitInBytes(): Int {
+        val (_, payloadLimitInBytes) = languageConfig.getOrDefault(language, Pair(0, DEFAULT_PAYLOAD_LIMIT_IN_BYTES))
+        return payloadLimitInBytes
+    }
+
+    fun getFilePayloadLimitInBytes(): Int = FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+
+    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
         val exceedsLimit = currentTotalFileSize > getPayloadLimitInBytes() - currentFileSize
         isProjectTruncated = isProjectTruncated || exceedsLimit
         return exceedsLimit
     }
 
-    open fun getImportedFiles(file: VirtualFile, includedSourceFiles: Set<String>): List<String> = listOf()
+    fun getSelectedFile(): VirtualFile = selectedFile
 
-    open fun getSelectedFile(): VirtualFile = selectedFile
-
-    open fun createPayload(): Payload {
+    fun createPayload(): Payload {
         // Fail fast if the selected file size is greater than the payload limit.
         if (scanType == SecurityScanType.FILE) {
             if (selectedFile.length > getFilePayloadLimitInBytes()) {
@@ -105,7 +141,7 @@ sealed class CodeScanSessionConfig(
         return Payload(payloadContext, srcZip)
     }
 
-    open fun getFilePayloadMetadata(): PayloadMetadata =
+    fun getFilePayloadMetadata(): PayloadMetadata =
         // Handle the case where the selected file is outside the project root.
         PayloadMetadata(
             setOf(selectedFile.path),
@@ -113,7 +149,7 @@ sealed class CodeScanSessionConfig(
             Files.lines(selectedFile.toNioPath()).count().toLong()
         )
 
-    open fun includeDependencies(): PayloadMetadata {
+    fun includeDependencies(): PayloadMetadata {
         val includedSourceFiles = mutableSetOf<String>()
         var currentTotalFileSize = 0L
         var currentTotalLines = 0L
@@ -148,19 +184,6 @@ sealed class CodeScanSessionConfig(
                     currentTotalFileSize += currentFileSize
                     currentTotalLines += Files.lines(currentFile.toNioPath()).count()
                     includedSourceFiles.add(currentFilePath)
-
-                    // Get all imports from the language Type files
-                    if (
-                        currentFilePath.endsWith(sourceExt[0]) ||
-                        (
-                            sourceExt.getOrNull(1) != null &&
-                                currentFilePath.endsWith(sourceExt[1])
-                            )
-                    ) {
-                        getImportedFiles(currentFile, includedSourceFiles).forEach {
-                            if (!includedSourceFiles.contains(it)) queue.addLast(it)
-                        }
-                    }
                 }
             }
         }
@@ -171,19 +194,19 @@ sealed class CodeScanSessionConfig(
     /**
      * Timeout for creating the payload [createPayload]
      */
-    open fun createPayloadTimeoutInSeconds(): Long = CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
+    fun createPayloadTimeoutInSeconds(): Long = CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 
-    open fun getPresentablePayloadLimit(): String = when (getPayloadLimitInBytes() >= TOTAL_BYTES_IN_MB) {
+    fun getPresentablePayloadLimit(): String = when (getPayloadLimitInBytes() >= TOTAL_BYTES_IN_MB) {
         true -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_MB}MB"
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
-    open fun getPresentableFilePayloadLimit(): String = when (getFilePayloadLimitInBytes() >= TOTAL_BYTES_IN_KB) {
+    fun getPresentableFilePayloadLimit(): String = when (getFilePayloadLimitInBytes() >= TOTAL_BYTES_IN_KB) {
         true -> "${getFilePayloadLimitInBytes() / TOTAL_BYTES_IN_MB}MB"
         false -> "${getFilePayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
-    open suspend fun getTotalProjectSizeInBytes(): Long {
+    suspend fun getTotalProjectSizeInBytes(): Long {
         var totalSize = 0L
         try {
             withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
@@ -202,7 +225,7 @@ sealed class CodeScanSessionConfig(
         return totalSize
     }
 
-    protected fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             val relativePath = file.relativeTo(projectRoot.toNioPath())
             LOG.debug { "Selected file for truncation: $file" }
@@ -213,7 +236,7 @@ sealed class CodeScanSessionConfig(
     /**
      * Returns all the source files for a given payload type.
      */
-    open fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile, scanType: SecurityScanType): List<VirtualFile> {
+    fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile, scanType: SecurityScanType): List<VirtualFile> {
         //  Include the current selected file
         val files = mutableListOf(selectedFile)
         //  Include only the file if scan type is file scan.
@@ -232,16 +255,16 @@ sealed class CodeScanSessionConfig(
         }
     }
 
-    open fun isProjectTruncated() = isProjectTruncated
+    fun isProjectTruncated() = isProjectTruncated
 
-    protected fun getPath(root: String, relativePath: String = ""): Path? = try {
+    fun getPath(root: String, relativePath: String = ""): Path? = try {
         Path.of(root, relativePath).normalize()
     } catch (e: Exception) {
         LOG.debug { "Cannot find file at path $relativePath relative to the root $root" }
         null
     }
 
-    protected fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+    fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
         .replace(".", "\\.")
@@ -259,7 +282,7 @@ sealed class CodeScanSessionConfig(
             .map { convertGitIgnorePatternToRegex(it) }
     }
 
-    open fun ignoreFile(file: VirtualFile): Boolean {
+    private fun ignoreFile(file: VirtualFile): Boolean {
         val ignorePatternsWithGitIgnore = ignorePatterns + parsedGitIgnorePatterns.map { Regex(it) }
         return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
     }
@@ -270,17 +293,17 @@ sealed class CodeScanSessionConfig(
         const val FILE_SEPARATOR = '/'
         fun create(file: VirtualFile, project: Project, scanType: SecurityScanType): CodeScanSessionConfig =
             when (file.programmingLanguage().toTelemetryType()) {
-                CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Python -> PythonCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Javascript, scanType)
-                CodewhispererLanguage.Typescript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Typescript, scanType)
-                CodewhispererLanguage.Csharp -> CsharpCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Yaml -> CloudFormationYamlCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Json -> CloudFormationJsonCodeScanSessionConfig(file, project, scanType)
+                CodewhispererLanguage.Java,
+                CodewhispererLanguage.Python,
+                CodewhispererLanguage.Javascript,
+                CodewhispererLanguage.Typescript,
+                CodewhispererLanguage.Csharp,
+                CodewhispererLanguage.Yaml,
+                CodewhispererLanguage.Json,
                 CodewhispererLanguage.Tf,
-                CodewhispererLanguage.Hcl -> TerraformCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Go -> GoCodeScanSessionConfig(file, project, scanType)
-                CodewhispererLanguage.Ruby -> RubyCodeScanSessionConfig(file, project, scanType)
+                CodewhispererLanguage.Hcl,
+                CodewhispererLanguage.Go,
+                CodewhispererLanguage.Ruby -> CodeScanSessionConfig(file, project, scanType)
                 else -> fileFormatNotSupported(file.extension ?: "")
             }
     }

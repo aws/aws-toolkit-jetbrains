@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.TerraformCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -26,7 +25,7 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
     private lateinit var test2Tf: VirtualFile
     private lateinit var test3Tf: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var sessionConfigSpy: TerraformCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -35,7 +34,7 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
     override fun setup() {
         super.setup()
         setupTfProject()
-        sessionConfigSpy = spy(CodeScanSessionConfig.create(testTf, project, CodeWhispererConstants.SecurityScanType.PROJECT) as TerraformCodeScanSessionConfig)
+        sessionConfigSpy = spy(CodeScanSessionConfig.create(testTf, project, CodeWhispererConstants.SecurityScanType.PROJECT))
         setupResponse(testTf.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
         mockClient.stub {
@@ -73,13 +72,6 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
         getSourceFilesUnderProjectRoot(sessionConfigSpy, testTf, 4)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testTf, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(0)
     }
 
     @Test

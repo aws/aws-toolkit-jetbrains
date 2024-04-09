@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CsharpCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -25,8 +24,8 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     private lateinit var utilsCs: VirtualFile
     private lateinit var helperCs: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var sessionConfigSpy: CsharpCodeScanSessionConfig
-    private lateinit var sessionConfigSpy2: CsharpCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
+    private lateinit var sessionConfigSpy2: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -35,10 +34,10 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     override fun setup() {
         super.setup()
         setupCsharpProject()
-        sessionConfigSpy = spy(CodeScanSessionConfig.create(testCs, project, CodeWhispererConstants.SecurityScanType.PROJECT) as CsharpCodeScanSessionConfig)
+        sessionConfigSpy = spy(CodeScanSessionConfig.create(testCs, project, CodeWhispererConstants.SecurityScanType.PROJECT))
         setupResponse(testCs.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
-        sessionConfigSpy2 = spy(CodeScanSessionConfig.create(testCs, project, CodeWhispererConstants.SecurityScanType.FILE) as CsharpCodeScanSessionConfig)
+        sessionConfigSpy2 = spy(CodeScanSessionConfig.create(testCs, project, CodeWhispererConstants.SecurityScanType.FILE))
         setupResponse(testCs.toNioPath().relativeTo(sessionConfigSpy2.projectRoot.toNioPath()))
 
         mockClient.stub {
@@ -56,7 +55,7 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         assertThat(payload.context.totalFiles).isEqualTo(4)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(4)
-        assertThat(payload.context.scannedFiles).containsExactly(testCs, utilsCs, helperCs, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testCs, helperCs, utilsCs, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Csharp)
@@ -84,27 +83,6 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     }
 
     @Test
-    fun `test parseImport()`() {
-        val testCsImports = sessionConfigSpy.parseImports(testCs)
-        assertThat(testCsImports.size).isEqualTo(3)
-
-        val helperCsImports = sessionConfigSpy.parseImports(helperCs)
-        assertThat(helperCsImports.size).isEqualTo(0)
-
-        val utilsCsImports = sessionConfigSpy.parseImports(utilsCs)
-        assertThat(utilsCsImports.size).isEqualTo(0)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testCs, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(2)
-        assertThat(files).contains(utilsCs.path)
-        assertThat(files).contains(helperCs.path)
-    }
-
-    @Test
     fun `test includeDependencies()`() {
         includeDependencies(sessionConfigSpy, 4, totalSize, this.totalLines, 0)
     }
@@ -128,15 +106,15 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
 
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(2)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testCs, utilsCs, readMeMd)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
+        assertThat(payload.context.scannedFiles).containsExactly(testCs, helperCs)
 
         // Adding 16 Bytes for read me Markdown file across all tests.
-        assertThat(payload.context.srcPayloadSize).isEqualTo(447)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(887)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Csharp)
-        assertThat(payload.context.totalLines).isEqualTo(27)
+        assertThat(payload.context.totalLines).isEqualTo(44)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -146,7 +124,7 @@ class CodeWhispererCsharpCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(2)
     }
 
     @Test

@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PythonCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -25,7 +24,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     private lateinit var utilsPy: VirtualFile
     private lateinit var helperPy: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var sessionConfigSpy: PythonCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -34,7 +33,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     override fun setup() {
         super.setup()
         setupPythonProject()
-        sessionConfigSpy = spy(CodeScanSessionConfig.create(testPy, project, CodeWhispererConstants.SecurityScanType.PROJECT) as PythonCodeScanSessionConfig)
+        sessionConfigSpy = spy(CodeScanSessionConfig.create(testPy, project, CodeWhispererConstants.SecurityScanType.PROJECT))
         setupResponse(testPy.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
         mockClient.stub {
@@ -52,7 +51,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
         assertThat(payload.context.totalFiles).isEqualTo(4)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(4)
-        assertThat(payload.context.scannedFiles).containsExactly(testPy, utilsPy, helperPy, readMeMd)
+        assertThat(payload.context.scannedFiles).containsExactly(testPy, helperPy, utilsPy, readMeMd)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Python)
@@ -72,24 +71,6 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
         getSourceFilesUnderProjectRoot(sessionConfigSpy, testPy, 4)
-    }
-
-    @Test
-    fun `test parseImport()`() {
-        val testPyImports = sessionConfigSpy.parseImports(testPy)
-        assertThat(testPyImports.size).isEqualTo(4)
-
-        val helperPyImports = sessionConfigSpy.parseImports(helperPy)
-        assertThat(helperPyImports.size).isEqualTo(1)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testPy, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(2)
-        assertThat(files).contains(utilsPy.path)
-        assertThat(files).contains(helperPy.path)
     }
 
     @Test
@@ -152,7 +133,7 @@ class CodeWhispererPythonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCode
                 fileOutsideProjectPy,
                 project,
                 CodeWhispererConstants.SecurityScanType.PROJECT
-            ) as PythonCodeScanSessionConfig
+            )
         )
 
         val payload = sessionConfigSpy.createPayload()

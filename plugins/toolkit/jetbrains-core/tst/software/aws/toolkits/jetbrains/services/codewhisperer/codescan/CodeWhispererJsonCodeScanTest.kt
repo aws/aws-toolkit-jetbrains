@@ -10,7 +10,6 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CloudFormationJsonCodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
@@ -26,7 +25,7 @@ class CodeWhispererJsonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     private lateinit var test2Json: VirtualFile
     private lateinit var test3Json: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var sessionConfigSpy: CloudFormationJsonCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -40,7 +39,7 @@ class CodeWhispererJsonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
                 testJson,
                 project,
                 CodeWhispererConstants.SecurityScanType.PROJECT
-            ) as CloudFormationJsonCodeScanSessionConfig
+            )
         )
         setupResponse(testJson.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
@@ -79,13 +78,6 @@ class CodeWhispererJsonCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
         getSourceFilesUnderProjectRoot(sessionConfigSpy, testJson, 4)
-    }
-
-    @Test
-    fun `test getImportedFiles()`() {
-        val files = sessionConfigSpy.getImportedFiles(testJson, setOf())
-        assertNotNull(files)
-        assertThat(files).hasSize(0)
     }
 
     @Test
