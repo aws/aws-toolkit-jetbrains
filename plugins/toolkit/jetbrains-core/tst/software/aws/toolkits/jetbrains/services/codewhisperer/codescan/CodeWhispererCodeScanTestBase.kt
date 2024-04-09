@@ -109,101 +109,41 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         )
     }
 
+    private fun setupCodeScanFinding(filePath: Path, startLine: Int, endLine: Int) = """
+        {
+            "filePath": "${filePath.systemIndependentPath}",
+            "startLine": $startLine,
+            "endLine": $endLine,
+            "title": "test",
+            "description": {
+                "text": "global variable",
+                "markdown": "### global variable"
+            },
+            "detectorId": "detectorId",
+            "detectorName": "detectorName",
+            "findingId": "findingId",
+            "relatedVulnerabilities": [],
+            "severity": "severity",
+            "remediation": {
+                "recommendation": {
+                    "text": "recommendationText",
+                    "url": "recommendationUrl"
+                },
+                "suggestedFixes": []
+            }
+        }
+    """.trimIndent()
+
     private fun setupCodeScanFindings(filePath: Path) = """
         [
-            {
-                "filePath": "${filePath.systemIndependentPath}",
-                "startLine": 1,
-                "endLine": 2,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                },
-                "detectorId": "detectorId",
-                "detectorName": "detectorName",
-                "findingId": "findingId",
-                "relatedVulnerabilities": [],
-                "severity": "severity",
-                "remediation": {
-                    "recommendation": {
-                        "text": "recommendationText",
-                        "url": "recommendationUrl"
-                    },
-                    "suggestedFixes": []
-                }
-            },
-            {
-                "filePath": "${filePath.systemIndependentPath}",
-                "startLine": 1,
-                "endLine": 2,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                },
-                "detectorId": "detectorId",
-                "detectorName": "detectorName",
-                "findingId": "findingId",
-                "relatedVulnerabilities": [],
-                "severity": "severity",
-                "remediation": {
-                    "recommendation": {
-                        "text": "recommendationText",
-                        "url": "recommendationUrl"
-                    },
-                    "suggestedFixes": []
-                }
-            }
+            ${setupCodeScanFinding(filePath, 1, 2)},
+            ${setupCodeScanFinding(filePath, 1, 2)}
         ]
     """
 
     private fun setupCodeScanFindingsOutOfBounds(filePath: Path) = """
         [
-            {
-                "filePath": "${filePath.systemIndependentPath}",
-                "startLine": 99999,
-                "endLine": 99999,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                },
-                "detectorId": "detectorId",
-                "detectorName": "detectorName",
-                "findingId": "findingId",
-                "relatedVulnerabilities": [],
-                "severity": "severity",
-                "remediation": {
-                    "recommendation": {
-                        "text": "recommendationText",
-                        "url": "recommendationUrl"
-                    },
-                    "suggestedFixes": []
-                }
-            },
-            {
-                "filePath": "${filePath.systemIndependentPath}",
-                "startLine": 1,
-                "endLine": 2,
-                "title": "test",
-                "description": {
-                    "text": "global variable",
-                    "markdown": "### global variable"
-                },
-                "detectorId": "detectorId",
-                "detectorName": "detectorName",
-                "findingId": "findingId",
-                "relatedVulnerabilities": [],
-                "severity": "severity",
-                "remediation": {
-                    "recommendation": {
-                        "text": "recommendationText",
-                        "url": "recommendationUrl"
-                    },
-                    "suggestedFixes": []
-                }
-            }
+            ${setupCodeScanFinding(filePath, 99999, 99999)}
         ]
     """
 

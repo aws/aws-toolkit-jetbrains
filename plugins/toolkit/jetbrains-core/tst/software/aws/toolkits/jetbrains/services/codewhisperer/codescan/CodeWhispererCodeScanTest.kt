@@ -130,7 +130,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             fakeListCodeScanFindingsOutOfBoundsIndexResponse.codeScanFindings(),
         )
         val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations)
-        assertThat(res).hasSize(2)
+        assertThat(res).hasSize(1)
     }
 
     @Test
