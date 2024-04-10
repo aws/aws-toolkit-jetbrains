@@ -40,6 +40,7 @@
             "output":{"shape":"CreateTaskAssistConversationResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
@@ -56,6 +57,7 @@
             "output":{"shape":"CreateUploadUrlResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -278,6 +280,7 @@
             "output":{"shape":"StartTaskAssistCodeGenerationResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -1995,6 +1998,15 @@
             "sensitive":true
         },
         "ThrottlingException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true,
+            "retryable":{"throttling":true}
+        },
+        "ServiceQuotaExceededException":{
             "type":"structure",
             "required":["message"],
             "members":{
