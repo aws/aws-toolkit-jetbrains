@@ -263,6 +263,46 @@ class DiskCacheTest {
     }
 
     @Test
+    fun `PKCE client registration cache key is not dependent on list order`() {
+        val key1 = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("refresh_token", "authorization_code"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback", "callback2")
+        )
+        val key2 = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("callback2", "http://127.0.0.1/oauth/callback")
+        )
+        sut.saveClientRegistration(
+            key1,
+            PKCEClientRegistration(
+                "DummyId",
+                "DummySecret",
+                Instant.EPOCH,
+                scopes,
+                ssoUrl,
+                ssoRegion,
+                "public",
+                listOf("authorization_code", "refresh_token"),
+                listOf("http://127.0.0.1/oauth/callback", "callback2")
+            )
+        )
+
+        assertThat(sut.loadClientRegistration(key1))
+            .usingRecursiveComparison()
+            .isEqualTo(
+                sut.loadClientRegistration(key2)
+            )
+    }
+
+    @Test
     fun invalidateClientRegistrationDeletesTheFile() {
         val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
@@ -708,6 +748,29 @@ class DiskCacheTest {
                     createdAt = Instant.EPOCH
                 )
             )
+    }
+
+    @Test
+    fun `PKCE access token cache key not dependent on scope order`() {
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        val key1 = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, listOf("scope1", "scope2"))
+        val key2 = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, listOf("scope2", "scope1"))
+        cacheLocation.resolve("e5df41d83e4b011b7b6eedf9cc051db6989a3bca.json").writeText(
+            """
+            {
+              "issuerUrl": "$ssoUrl",
+              "region": "$ssoRegion",
+              "accessToken": "DummyAccessToken",
+              "refreshToken": "RefreshToken",
+              "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}",
+              "createdAt": "1970-01-01T00:00:00Z"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(key1))
+            .usingRecursiveComparison()
+            .isEqualTo(sut.loadAccessToken(key2))
     }
 
     private fun assertPosixPermissions(path: Path, expected: String) {

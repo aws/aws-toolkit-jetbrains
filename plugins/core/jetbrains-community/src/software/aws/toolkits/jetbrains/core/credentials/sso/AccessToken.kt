@@ -76,8 +76,6 @@ data class PKCEAuthorizationGrantToken(
 @JsonSubTypes(value = [JsonSubTypes.Type(DeviceGrantAccessTokenCacheKey::class), JsonSubTypes.Type(PKCEAccessTokenCacheKey::class) ])
 sealed interface AccessTokenCacheKey {
     val scopes: List<String>
-
-    fun withScopes(scopes: List<String>): AccessTokenCacheKey
 }
 
 // diverging from SDK/CLI impl here since they do: sha1sum(sessionName ?: startUrl)
@@ -87,14 +85,10 @@ data class DeviceGrantAccessTokenCacheKey(
     val connectionId: String,
     val startUrl: String,
     override val scopes: List<String>
-) : AccessTokenCacheKey {
-    override fun withScopes(scopes: List<String>) = copy(scopes = scopes)
-}
+) : AccessTokenCacheKey
 
 data class PKCEAccessTokenCacheKey(
     val issuerUrl: String,
     val region: String,
     override val scopes: List<String>
-) : AccessTokenCacheKey {
-    override fun withScopes(scopes: List<String>) = copy(scopes = scopes)
-}
+) : AccessTokenCacheKey

@@ -4,12 +4,19 @@
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.BeanProperty
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer
+import com.fasterxml.jackson.databind.util.Converter
+import com.fasterxml.jackson.databind.util.StdConverter
 import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -57,6 +64,33 @@ class DiskCache(
     // only used for computing cache key names
     private val cacheNameMapper = jacksonObjectMapper()
         .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+        .apply {
+            val defaultSerializers = serializerProviderInstance
+
+            class SortedSerializer : StdConverter<List<Comparable<Any>>, List<Comparable<Any>>>() {
+                override fun convert(list: List<Comparable<Any>>): List<Comparable<Any>> =
+                    list.sorted()
+            }
+
+            class DelegatingSerializer : StdDelegatingSerializer(SortedSerializer()) {
+                override fun withDelegate(
+                    converter: Converter<Any, *>?,
+                    delegateType: JavaType?,
+                    delegateSerializer: JsonSerializer<*>?
+                ): StdDelegatingSerializer =
+                    StdDelegatingSerializer(converter, delegateType, delegateSerializer)
+
+                override fun createContextual(provider: SerializerProvider?, property: BeanProperty?): JsonSerializer<*> =
+                    // break infinite recursion
+                    super.createContextual(defaultSerializers, property)
+            }
+
+            registerModule(
+                SimpleModule().apply {
+                    addSerializer(List::class.java, DelegatingSerializer())
+                }
+            )
+        }
 
     override fun loadClientRegistration(ssoRegion: String): ClientRegistration? {
         LOG.debug { "loadClientRegistration for $ssoRegion" }
@@ -145,7 +179,6 @@ class DiskCache(
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
 
     private fun clientRegistrationCache(cacheKey: ClientRegistrationCacheKey): Path =
-        // TODO: sorted
         cacheNameMapper.valueToTree<ObjectNode>(cacheKey).apply {
             // session is omitted to keep the key deterministic since we attach an epoch
             put("tool", "aws-toolkit-jetbrains")
@@ -163,8 +196,7 @@ class DiskCache(
     }
 
     private fun accessTokenCache(cacheKey: AccessTokenCacheKey): Path {
-        // TODO: sorted
-        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey.withScopes(scopes = cacheKey.scopes.sorted())))}.json"
+        val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey))}.json"
         return cacheDir.resolve(fileName)
     }
 
