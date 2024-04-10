@@ -41,11 +41,13 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sso.AccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistration
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistrationCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -208,10 +210,12 @@ class InteractiveBearerTokenProviderTest {
         verify(diskCache).loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())
 
         // clears out on-disk token
-        verify(diskCache).invalidateAccessToken(
-            argThat<DeviceGrantAccessTokenCacheKey> {
-                val (_, url, scopes) = this
-                url == startUrl && scopes == this.scopes
+        verify(diskCache, times(2)).invalidateAccessToken(
+            argThat<AccessTokenCacheKey> {
+                when (this) {
+                    is DeviceGrantAccessTokenCacheKey -> startUrl == this.startUrl && scopes == this.scopes
+                    is PKCEAccessTokenCacheKey -> startUrl == this.issuerUrl && scopes == this.scopes
+                }
             }
         )
 
