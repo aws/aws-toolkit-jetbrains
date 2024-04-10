@@ -26,6 +26,7 @@ import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.network.CefRequest
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -126,8 +127,8 @@ class WebviewBrowser(val project: Project) {
         CefApp.getInstance()
             .registerSchemeHandlerFactory(
                 "http",
-                "q-webview",
-                MyAssetResourceHandler.MyAssetResourceHandlerFactory(),
+                "webview",
+                WebviewResourceHandlerFactory(),
             )
 
         loadWebView()
@@ -325,38 +326,6 @@ class WebviewBrowser(val project: Project) {
     }
 
     companion object {
-        private const val WEB_SCRIPT_URI = "http://q-webview/js/getStart.js"
-    }
-}
-
-class MyAssetResourceHandler(data: ByteArray) : AssetResourceHandler(data) {
-    class MyAssetResourceHandlerFactory : AssetResourceHandler.AssetResourceHandlerFactory() {
-        override fun create(
-            browser: CefBrowser?,
-            frame: CefFrame?,
-            schemeName: String?,
-            request: CefRequest?,
-        ): MyAssetResourceHandler? {
-            val resourceUri = request?.url ?: return null
-            if (!resourceUri.startsWith(LOCAL_RESOURCE_URL_PREFIX)) return null
-
-            val resource = resourceUri.replace(LOCAL_RESOURCE_URL_PREFIX, "/q-webview/assets/")
-            val resourceInputStream = this.javaClass.getResourceAsStream(resource)
-
-            try {
-                resourceInputStream.use {
-                    if (resourceInputStream != null) {
-                        return MyAssetResourceHandler(resourceInputStream.readAllBytes())
-                    }
-                    return null
-                }
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
-        }
-    }
-
-    companion object {
-        private const val LOCAL_RESOURCE_URL_PREFIX = "http://q-webview/"
+        private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
     }
 }
