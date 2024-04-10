@@ -1,4 +1,4 @@
-// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains
@@ -32,4 +32,9 @@ object AwsToolkit {
     } else {
         DESCRIPTOR?.pluginPath ?: throw RuntimeException("Toolkit root not available")
     }
+}
+
+enum class AwsPlugin {
+    TOOLKIT,
+    Q
 }

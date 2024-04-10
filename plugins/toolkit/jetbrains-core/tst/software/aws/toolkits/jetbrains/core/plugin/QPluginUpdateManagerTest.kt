@@ -27,7 +27,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.AwsToolkit.PLUGIN_ID
-import software.aws.toolkits.jetbrains.services.codewhisperer.startup.QPluginUpdateManager
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 
 class QPluginUpdateManagerTest {
@@ -39,14 +38,14 @@ class QPluginUpdateManagerTest {
     @JvmField
     val disposableRule = DisposableRule()
 
-    private lateinit var sut: QPluginUpdateManager
+    private lateinit var sut: PluginUpdateManager
     private val testIdeaPluginDescriptorToolkit = getPluginDescriptorForIdAndVersion(PLUGIN_ID, "1.84")
     private var isAutoUpdateEnabledDefault: Boolean = false
 
     @Before
     fun setup() {
         assumeTrue("hangs in 2023.2?", ApplicationInfo.getInstance().build.baselineVersion != 232)
-        sut = spy(QPluginUpdateManager.getInstance())
+        sut = spy(PluginUpdateManager.getInstance())
         sut.stub {
             on {
                 getUpdateInfo()
@@ -67,7 +66,7 @@ class QPluginUpdateManagerTest {
             }
         }
         ApplicationManager.getApplication().replaceService(
-            QPluginUpdateManager::class.java,
+            PluginUpdateManager::class.java,
             sut,
             disposableRule.disposable
         )
@@ -105,13 +104,13 @@ class QPluginUpdateManagerTest {
     @Test
     fun `test auto update feature respects user setting`() {
         AwsSettings.getInstance().isAutoUpdateEnabled = false
-        sut.runTask()
+        sut.scheduleAutoUpdate()
         runInEdt {
             verify(sut, never()).checkForUpdates(any())
         }
 
         AwsSettings.getInstance().isAutoUpdateEnabled = true
-        sut.runTask()
+        sut.scheduleAutoUpdate()
         runInEdt {
             verify(sut).checkForUpdates(any())
         }

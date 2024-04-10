@@ -9,9 +9,10 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.jetbrains.settings.PluginSettings
 
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
-class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration> {
+class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration>, PluginSettings {
     private val state = CodeWhispererConfiguration()
 
     fun toggleIncludeCodeWithReference(value: Boolean) {
@@ -51,6 +52,24 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         this.state.value.clear()
         this.state.value.putAll(state.value)
     }
+
+    override var isAutoUpdateEnabled: Boolean
+        get() = state.value[CodeWhispererConfigurationType.IsAutoUpdateEnabled] ?: true
+        set(value) {
+            state.value[CodeWhispererConfigurationType.IsAutoUpdateEnabled] = value
+        }
+
+    override var isAutoUpdateNotificationEnabled: Boolean
+        get() = state.value[CodeWhispererConfigurationType.IsAutoUpdateNotificationEnabled] ?: true
+        set(value) {
+            state.value[CodeWhispererConfigurationType.IsAutoUpdateNotificationEnabled] = value
+        }
+
+    override var isAutoUpdateFeatureNotificationShownOnce: Boolean
+        get() = state.value[CodeWhispererConfigurationType.IsAutoUpdateFeatureNotificationShownOnce] ?: false
+        set(value) {
+            state.value[CodeWhispererConfigurationType.IsAutoUpdateFeatureNotificationShownOnce] = value
+        }
 }
 
 class CodeWhispererConfiguration : BaseState() {
@@ -61,5 +80,8 @@ class CodeWhispererConfiguration : BaseState() {
 enum class CodeWhispererConfigurationType {
     IsIncludeCodeWithReference,
     OptInSendingMetric,
-    IsImportAdderEnabled
+    IsImportAdderEnabled,
+    IsAutoUpdateEnabled,
+    IsAutoUpdateNotificationEnabled,
+    IsAutoUpdateFeatureNotificationShownOnce
 }

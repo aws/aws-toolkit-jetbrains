@@ -13,14 +13,17 @@ import software.aws.toolkits.resources.message
 import java.util.UUID
 import java.util.prefs.Preferences
 
-interface AwsSettings {
+interface PluginSettings {
+    var isAutoUpdateEnabled: Boolean
+    var isAutoUpdateNotificationEnabled: Boolean
+    var isAutoUpdateFeatureNotificationShownOnce: Boolean
+}
+
+interface AwsSettings : PluginSettings {
     var isTelemetryEnabled: Boolean
     var promptedForTelemetry: Boolean
     var useDefaultCredentialRegion: UseAwsCredentialRegion
     var profilesNotification: ProfilesNotification
-    var isAutoUpdateEnabled: Boolean
-    var isAutoUpdateNotificationEnabled: Boolean
-    var isAutoUpdateFeatureNotificationShownOnce: Boolean
     val clientId: UUID
 
     companion object {
