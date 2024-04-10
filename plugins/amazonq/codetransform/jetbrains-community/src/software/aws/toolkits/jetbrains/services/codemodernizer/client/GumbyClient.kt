@@ -42,6 +42,7 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
+import software.aws.toolkits.jetbrains.services.amazonq.MAX_API_RETRIES
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
@@ -106,10 +107,22 @@ class GumbyClient(private val project: Project) {
         val startTime = Instant.now()
         var result: CodeWhispererRuntimeResponse? = null
         try {
-            result = apiCall()
-            return result
+            for (attempt in 0..MAX_API_RETRIES) {
+                try {
+                    LOG.warn("About to call $apiName for try # $attempt")
+                    result = apiCall()
+                    LOG.warn("$apiName succeeded")
+                    break
+                } catch (e: Exception) {
+                    if (attempt == MAX_API_RETRIES) {
+                        throw e
+                    }
+                }
+                Thread.sleep(5000) // prevent ThrottlingException
+            }
+            return result as T
         } catch (e: Exception) {
-            LOG.error(e) { "$apiName failed: ${e.message}" }
+            LOG.error(e) { "$apiName failed after $MAX_API_RETRIES retries: ${e.message}" }
             telemetry.apiError(e.message.toString(), apiName, jobId)
             throw e // pass along error to callee
         } finally {
@@ -123,6 +136,7 @@ class GumbyClient(private val project: Project) {
         }
     }
 
+    // Note: not implementing a retry here for now since users can click "View diff" again to retry
     suspend fun downloadExportResultArchive(jobId: JobId): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,

@@ -18,6 +18,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
+import software.aws.toolkits.jetbrains.services.amazonq.MAX_API_RETRIES
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.AwaitModernizationPlanResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -254,7 +255,7 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        val createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum)
+        var createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum)
 
         LOG.info {
             "Uploading zip with checksum $sha256checksum using uploadId: ${
@@ -265,13 +266,29 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload zip to s3")
         }
         val uploadStartTime = Instant.now()
+        var uploadSucceeded = false
         try {
-            clientAdaptor.uploadArtifactToS3(
-                createUploadUrlResponse.uploadUrl(),
-                payload,
-                sha256checksum,
-                createUploadUrlResponse.kmsKeyArn().orEmpty(),
-            ) { shouldStop.get() }
+            for (attempt in 0..MAX_API_RETRIES) {
+                try {
+                    LOG.warn { "About to call uploadArtifactToS3 for try # $attempt" }
+                    clientAdaptor.uploadArtifactToS3(
+                        createUploadUrlResponse.uploadUrl(),
+                        payload,
+                        sha256checksum,
+                        createUploadUrlResponse.kmsKeyArn().orEmpty(),
+                    ) { shouldStop.get() }
+                    uploadSucceeded = true
+                } catch (e: Exception) {
+                    if (attempt == MAX_API_RETRIES) {
+                        throw e
+                    }
+                    createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum)
+                }
+                if (uploadSucceeded) {
+                    break
+                }
+                Thread.sleep(5000) // prevent ThrottlingException
+            }
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
             LOG.error { errorMessage }
@@ -286,7 +303,7 @@ class CodeModernizerSession(
                 payload.length().toInt(),
                 createUploadUrlResponse.responseMetadata().requestId(),
             )
-            LOG.warn { "Upload complete" }
+            LOG.warn { "Upload to S3 succeeded" }
         }
         return createUploadUrlResponse.uploadId()
     }
