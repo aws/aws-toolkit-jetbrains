@@ -122,8 +122,11 @@ class WebviewBrowser(val project: Project) {
         CefApp.getInstance()
             .registerSchemeHandlerFactory(
                 "http",
-                "webview",
-                WebviewResourceHandlerFactory(),
+                WebviewBrowser.DOMAIN,
+                WebviewResourceHandlerFactory(
+                    domain = "http://${WebviewBrowser.DOMAIN}/",
+                    assetUri = "/webview/assets/"
+                ),
             )
 
         loadWebView()
@@ -322,5 +325,6 @@ class WebviewBrowser(val project: Project) {
 
     companion object {
         private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
+        private const val DOMAIN = "webview"
     }
 }

@@ -16,8 +16,8 @@ import java.io.IOException
 import java.net.URLConnection
 
 class WebviewResourceHandlerFactory(
-    val urlPrefix: String = "http://webview/",
-    val assetUriPrefix: String = "/webview/assets/"
+    val domain: String,
+    val assetUri: String
 ) : CefSchemeHandlerFactory {
     override fun create(
         browser: CefBrowser?,
@@ -26,9 +26,9 @@ class WebviewResourceHandlerFactory(
         request: CefRequest?,
     ): CefResourceHandler? {
         val resourceUri = request?.url ?: return null
-        if (!resourceUri.startsWith(urlPrefix)) return null
+        if (!resourceUri.startsWith(domain)) return null
 
-        val resource = resourceUri.replace(urlPrefix, assetUriPrefix)
+        val resource = resourceUri.replace(domain, assetUri)
         val resourceInputStream = this.javaClass.getResourceAsStream(resource)
 
         try {
