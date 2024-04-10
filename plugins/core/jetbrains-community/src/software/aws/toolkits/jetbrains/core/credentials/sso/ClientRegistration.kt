@@ -70,7 +70,7 @@ data class PKCEClientRegistrationCacheKey(
     val region: String,
     val scopes: List<String>,
     // assume clientType, grantTypes, redirectUris are static, but throw them in just in case
-    val clientType: String = "public",
-    val grantTypes: List<String> = listOf("authorization_code", "refresh_token"),
-    val redirectUris: List<String> = listOf("http://127.0.0.1/oauth/callback")
+    val clientType: String,
+    val grantTypes: List<String>,
+    val redirectUris: List<String>
 ) : ClientRegistrationCacheKey

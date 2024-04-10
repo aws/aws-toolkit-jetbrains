@@ -52,7 +52,10 @@ class SsoAccessTokenProvider(
         PKCEClientRegistrationCacheKey(
             issuerUrl = ssoUrl,
             region = ssoRegion,
-            scopes = scopes
+            scopes = scopes,
+            clientType = PUBLIC_CLIENT_REGISTRATION_TYPE,
+            grantTypes = PKCE_GRANT_TYPES,
+            redirectUris = PKCE_REDIRECT_URIS
         )
     }
 
@@ -122,20 +125,16 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val grantTypes = listOf("authorization_code", "refresh_token")
-        val redirectUris = listOf("http://127.0.0.1/oauth/callback")
-
         if (!ssoUrl.contains("identitycenter")) {
             getLogger<SsoAccessTokenProvider>().warn { "$ssoUrl does not appear to be a valid issuer URL" }
         }
 
         val registerResponse = client.registerClient {
-            // TODO change this
-            it.clientName("AWS Toolkit for JetBrains")
+            it.clientName("AWS IDE extensions for JetBrains")
             it.clientType(PUBLIC_CLIENT_REGISTRATION_TYPE)
             it.scopes(scopes)
-            it.grantTypes(grantTypes)
-            it.redirectUris(redirectUris)
+            it.grantTypes(PKCE_GRANT_TYPES)
+            it.redirectUris(PKCE_REDIRECT_URIS)
             it.issuerUrl(ssoUrl)
         }
 
@@ -147,8 +146,8 @@ class SsoAccessTokenProvider(
             issuerUrl = ssoUrl,
             region = ssoRegion,
             clientType = PUBLIC_CLIENT_REGISTRATION_TYPE,
-            grantTypes = grantTypes,
-            redirectUris = redirectUris
+            grantTypes = PKCE_GRANT_TYPES,
+            redirectUris = PKCE_REDIRECT_URIS
         )
 
         saveClientRegistration(registeredClient)
@@ -358,6 +357,8 @@ class SsoAccessTokenProvider(
         const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
         const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
         const val REFRESH_GRANT_TYPE = "refresh_token"
+        val PKCE_GRANT_TYPES = listOf("authorization_code", "refresh_token")
+        val PKCE_REDIRECT_URIS = listOf("http://127.0.0.1/oauth/callback")
 
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
