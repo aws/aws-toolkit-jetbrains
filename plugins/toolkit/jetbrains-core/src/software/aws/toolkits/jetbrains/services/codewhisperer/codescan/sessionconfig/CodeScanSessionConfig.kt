@@ -18,27 +18,11 @@ import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CSHARP_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CSHARP_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.GO_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.GO_PAYLOAD_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JAVA_PAYLOAD_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JS_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JS_PAYLOAD_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PYTHON_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PYTHON_PAYLOAD_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.RUBY_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.RUBY_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TERRAFORM_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ignorePatterns
@@ -65,31 +49,9 @@ class CodeScanSessionConfig(
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    private val language = selectedFile.programmingLanguage().toTelemetryType()
+    fun overallJobTimeoutInSeconds(): Long = DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 
-    private val languageConfig: Map<CodewhispererLanguage, Pair<Long, Int>> = mapOf(
-        CodewhispererLanguage.Java to Pair(JAVA_CODE_SCAN_TIMEOUT_IN_SECONDS, JAVA_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Python to Pair(PYTHON_CODE_SCAN_TIMEOUT_IN_SECONDS, PYTHON_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Javascript to Pair(JS_CODE_SCAN_TIMEOUT_IN_SECONDS, JS_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Typescript to Pair(JS_CODE_SCAN_TIMEOUT_IN_SECONDS, JS_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Csharp to Pair(CSHARP_CODE_SCAN_TIMEOUT_IN_SECONDS, CSHARP_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Yaml to Pair(CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS, CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Json to Pair(CLOUDFORMATION_CODE_SCAN_TIMEOUT_IN_SECONDS, CLOUDFORMATION_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Tf to Pair(TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS, TERRAFORM_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Hcl to Pair(TERRAFORM_CODE_SCAN_TIMEOUT_IN_SECONDS, TERRAFORM_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Go to Pair(GO_CODE_SCAN_TIMEOUT_IN_SECONDS, GO_PAYLOAD_LIMIT_IN_BYTES),
-        CodewhispererLanguage.Ruby to Pair(RUBY_CODE_SCAN_TIMEOUT_IN_SECONDS, RUBY_PAYLOAD_LIMIT_IN_BYTES)
-    )
-
-    fun overallJobTimeoutInSeconds(): Long {
-        val (timeoutInSeconds, _) = languageConfig.getOrDefault(language, Pair(DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS, 0))
-        return timeoutInSeconds
-    }
-
-    fun getPayloadLimitInBytes(): Int {
-        val (_, payloadLimitInBytes) = languageConfig.getOrDefault(language, Pair(0, DEFAULT_PAYLOAD_LIMIT_IN_BYTES))
-        return payloadLimitInBytes
-    }
+    fun getPayloadLimitInBytes(): Long = DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 
     fun getFilePayloadLimitInBytes(): Int = FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 
@@ -154,36 +116,22 @@ class CodeScanSessionConfig(
         var currentTotalFileSize = 0L
         var currentTotalLines = 0L
         val files = getSourceFilesUnderProjectRoot(selectedFile, scanType)
-        val queue = ArrayDeque<String>()
 
         if (scanType == SecurityScanType.FILE) {
             return getFilePayloadMetadata()
         } else {
-            files.forEach { pivotFile ->
-                val filePath = pivotFile.path
-                queue.addLast(filePath)
-
-                // BFS
-                while (queue.isNotEmpty()) {
-                    if (currentTotalFileSize.equals(getPayloadLimitInBytes())) {
-                        return PayloadMetadata(includedSourceFiles, currentTotalFileSize, currentTotalLines)
+            for (pivotFile in files) {
+                val currentFilePath = pivotFile.path
+                val currentFile = File(currentFilePath).toVirtualFile()
+                if (currentFile != null && !currentFile.isDirectory && !includedSourceFiles.contains(currentFilePath)) {
+                    if (willExceedPayloadLimit(currentTotalFileSize, currentFile.length)) {
+                        // If the payload limit is exceeded, you can break out of the loop
+                        break
+                    } else {
+                        currentTotalFileSize += currentFile.length
+                        currentTotalLines += Files.lines(currentFile.toNioPath()).count()
+                        includedSourceFiles.add(currentFilePath)
                     }
-
-                    val currentFilePath = queue.removeFirst()
-                    val currentFile = File(currentFilePath).toVirtualFile()
-                    if (includedSourceFiles.contains(currentFilePath) ||
-                        currentFile == null ||
-                        willExceedPayloadLimit(currentTotalFileSize, currentFile.length) ||
-                        currentFile.isDirectory
-                    ) {
-                        continue
-                    }
-
-                    val currentFileSize = currentFile.length
-
-                    currentTotalFileSize += currentFileSize
-                    currentTotalLines += Files.lines(currentFile.toNioPath()).count()
-                    includedSourceFiles.add(currentFilePath)
                 }
             }
         }

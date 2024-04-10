@@ -97,14 +97,14 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
-        assertThat(payload.context.totalFiles).isEqualTo(2)
+        assertThat(payload.context.totalFiles).isEqualTo(1)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
-        assertThat(payload.context.scannedFiles).containsExactly(testTf, readMeMd)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(1)
+        assertThat(payload.context.scannedFiles).containsExactly(testTf)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(350)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(334)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Tf)
-        assertThat(payload.context.totalLines).isEqualTo(12)
+        assertThat(payload.context.totalLines).isEqualTo(11)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -114,7 +114,7 @@ class CodeWhispererTfCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsi
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(2)
+        assertThat(filesInZip).isEqualTo(1)
     }
 
     @Test
