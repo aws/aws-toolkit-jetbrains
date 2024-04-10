@@ -57,8 +57,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOr
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTransformationStepsFixture
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
@@ -234,7 +234,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         try {
             // 1) We need to call GetTransformationPlan to get artifactId
             val transformationSteps = getTransformationStepsFixture(jobId)
-            val hilTransformationStep = findDownloadArtifactStep(transformationSteps) ?:  throw Exception("No HIL Transformation Step found")
+            val hilTransformationStep = findDownloadArtifactStep(transformationSteps) ?: throw Exception("No HIL Transformation Step found")
 
             val downloadArtifact = getArtifactIdentifiers(hilTransformationStep) ?: throw Exception("artifactId or artifactType is undefined")
 
