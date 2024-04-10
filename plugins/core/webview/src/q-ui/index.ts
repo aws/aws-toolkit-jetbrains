@@ -5,38 +5,11 @@
 import { createApp } from 'vue'
 import {createStore, Store} from 'vuex'
 import HelloWorld from './components/root.vue'
-import {Region, Stage} from "../model";
+import {IdcInfo, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
-declare global {
-    interface Window {
-        ideApi: { postMessage: (arg: { command: string } & any) => any }
-        ideClient: IdeClient
-        changeTheme: (darkMode: boolean) => void
-    }
-}
-
-export interface IdcInfo {
-    profileName: string,
-    directoryId: string,
-    region: string,
-}
-
-export interface State {
-    stage: Stage,
-    ssoRegions: Region[],
-    authorizationCode: string,
-    lastLoginIdcInfo: IdcInfo
-}
-
-declare module '@vue/runtime-core' {
-    interface ComponentCustomProperties {
-        $store: Store<State>
-    }
-}
-
-const app = createApp(HelloWorld)
+const app = createApp(HelloWorld, { app: 'AMAZONQ' })
 const store = createStore<State>({
     state: {
         stage: 'START' as Stage,
