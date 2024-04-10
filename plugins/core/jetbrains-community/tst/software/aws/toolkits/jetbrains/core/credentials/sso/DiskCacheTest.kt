@@ -207,6 +207,59 @@ class DiskCacheTest {
     }
 
     @Test
+    fun `PKCE client registration loads correctly`() {
+        val key = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback")
+        )
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        cacheLocation.resolve("646d06bb78960f8aea2e8efd07c7655f602e9c62.json")
+            .writeText(
+                """
+                {
+                  "clientId": "DummyId",
+                  "clientSecret": "DummySecret",
+                  "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}",
+                  "scopes": [
+                    "scope1",
+                    "scope2"
+                  ],
+                  "issuerUrl": "$ssoUrl",
+                  "region": "$ssoRegion",
+                  "clientType": "public",
+                  "grantTypes": [
+                    "authorization_code",
+                    "refresh_token"
+                  ],
+                  "redirectUris": [
+                    "http://127.0.0.1/oauth/callback"
+                  ]
+                }
+                """.trimIndent()
+            )
+
+        assertThat(sut.loadClientRegistration(key))
+            .usingRecursiveComparison()
+            .isEqualTo(
+                PKCEClientRegistration(
+                    "DummyId",
+                    "DummySecret",
+                    Instant.from(expirationTime),
+                    scopes,
+                    ssoUrl,
+                    ssoRegion,
+                    "public",
+                    listOf("authorization_code", "refresh_token"),
+                    listOf("http://127.0.0.1/oauth/callback")
+                )
+            )
+    }
+
+    @Test
     fun `PKCE client registration saves correctly`() {
         val key = PKCEClientRegistrationCacheKey(
             issuerUrl = ssoUrl,

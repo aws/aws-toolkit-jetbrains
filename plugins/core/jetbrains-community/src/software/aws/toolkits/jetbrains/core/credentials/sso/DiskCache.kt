@@ -65,6 +65,7 @@ class DiskCache(
     private val cacheNameMapper = jacksonObjectMapper()
         .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
         .apply {
+            // giant dance to automatically sort lists during serialization for deterministic cache keys
             val defaultSerializers = serializerProviderInstance
 
             class SortedSerializer : StdConverter<List<Comparable<Any>>, List<Comparable<Any>>>() {
@@ -81,7 +82,7 @@ class DiskCache(
                     StdDelegatingSerializer(converter, delegateType, delegateSerializer)
 
                 override fun createContextual(provider: SerializerProvider?, property: BeanProperty?): JsonSerializer<*> =
-                    // break infinite recursion
+                    // break infinite recursion so we only apply the SortedSerializer once
                     super.createContextual(defaultSerializers, property)
             }
 

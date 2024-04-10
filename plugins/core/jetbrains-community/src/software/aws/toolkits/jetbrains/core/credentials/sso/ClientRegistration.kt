@@ -45,7 +45,7 @@ data class PKCEClientRegistration(
     override val clientSecret: String,
     override val expiresAt: Instant,
     override val scopes: List<String>,
-    // implied from the key, but trying reverse the key is annoying
+    // fields below are implied from the key, but trying reverse the key is annoying
     val issuerUrl: String,
     val region: String,
     val clientType: String,
