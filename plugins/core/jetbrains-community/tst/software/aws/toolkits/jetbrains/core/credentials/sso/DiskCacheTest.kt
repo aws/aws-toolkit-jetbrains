@@ -207,6 +207,62 @@ class DiskCacheTest {
     }
 
     @Test
+    fun `PKCE client registration saves correctly`() {
+        val key = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback")
+        )
+        val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
+        sut.saveClientRegistration(
+            key,
+            PKCEClientRegistration(
+                "DummyId",
+                "DummySecret",
+                Instant.from(expirationTime),
+                scopes,
+                ssoUrl,
+                ssoRegion,
+                "public",
+                listOf("authorization_code", "refresh_token"),
+                listOf("http://127.0.0.1/oauth/callback")
+            )
+        )
+
+        val clientRegistration = cacheLocation.resolve("646d06bb78960f8aea2e8efd07c7655f602e9c62.json")
+        if (SystemInfo.isUnix) {
+            assertPosixPermissions(clientRegistration, "rw-------")
+        }
+        assertThat(clientRegistration.readText())
+            .isEqualToIgnoringWhitespace(
+                """
+                {
+                  "clientId": "DummyId",
+                  "clientSecret": "DummySecret",
+                  "expiresAt": "2020-04-07T21:31:33Z",
+                  "scopes": [
+                    "scope1",
+                    "scope2"
+                  ],
+                  "issuerUrl": "$ssoUrl",
+                  "region": "$ssoRegion",
+                  "clientType": "public",
+                  "grantTypes": [
+                    "authorization_code",
+                    "refresh_token"
+                  ],
+                  "redirectUris": [
+                    "http://127.0.0.1/oauth/callback"
+                  ]
+                }
+                """.trimIndent()
+            )
+    }
+
+    @Test
     fun invalidateClientRegistrationDeletesTheFile() {
         val expirationTime = now.plus(20, ChronoUnit.MINUTES)
         val cacheFile = cacheLocation.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
@@ -585,6 +641,73 @@ class DiskCacheTest {
         assertThat(sut.loadClientRegistration(ssoRegion)).isNotNull()
 
         assertPosixPermissions(registration, "rw-------")
+    }
+
+    @Test
+    fun `PKCE access token saves correctly`() {
+        val key = PKCEAccessTokenCacheKey(ssoUrl, "us-fake-1", listOf("scope1", "scope2"))
+        val expirationTime = DateTimeFormatter.ISO_INSTANT.parse("2020-04-07T21:31:33Z")
+        sut.saveAccessToken(
+            key,
+            PKCEAuthorizationGrantToken(
+                ssoUrl,
+                ssoRegion,
+                "DummyAccessToken",
+                "RefreshToken",
+                expiresAt = Instant.from(expirationTime),
+                createdAt = Instant.EPOCH
+            )
+        )
+
+        val accessTokenCache = cacheLocation.resolve("e5df41d83e4b011b7b6eedf9cc051db6989a3bca.json")
+        if (SystemInfo.isUnix) {
+            assertPosixPermissions(accessTokenCache, "rw-------")
+        }
+
+        assertThat(accessTokenCache.readText())
+            .isEqualToIgnoringWhitespace(
+                """
+                {
+                  "issuerUrl": "https://123456.awsapps.com/start",
+                  "region": "us-fake-1",
+                  "accessToken": "DummyAccessToken",
+                  "refreshToken": "RefreshToken",
+                  "expiresAt": "2020-04-07T21:31:33Z",
+                  "createdAt": "1970-01-01T00:00:00Z"
+                }
+                """.trimIndent()
+            )
+    }
+
+    @Test
+    fun `PKCE access token returns correctly`() {
+        val expirationTime = now.plus(20, ChronoUnit.MINUTES)
+        val key = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, listOf("scope1", "scope2"))
+        cacheLocation.resolve("e5df41d83e4b011b7b6eedf9cc051db6989a3bca.json").writeText(
+            """
+            {
+              "issuerUrl": "$ssoUrl",
+              "region": "$ssoRegion",
+              "accessToken": "DummyAccessToken",
+              "refreshToken": "RefreshToken",
+              "expiresAt": "${DateTimeFormatter.ISO_INSTANT.format(expirationTime)}",
+              "createdAt": "1970-01-01T00:00:00Z"
+            }
+            """.trimIndent()
+        )
+
+        assertThat(sut.loadAccessToken(key))
+            .usingRecursiveComparison()
+            .isEqualTo(
+                PKCEAuthorizationGrantToken(
+                    ssoUrl,
+                    ssoRegion,
+                    "DummyAccessToken",
+                    "RefreshToken",
+                    expiresAt = Instant.from(expirationTime),
+                    createdAt = Instant.EPOCH
+                )
+            )
     }
 
     private fun assertPosixPermissions(path: Path, expected: String) {

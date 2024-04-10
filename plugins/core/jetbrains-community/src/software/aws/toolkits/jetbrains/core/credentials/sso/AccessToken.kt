@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -21,7 +22,6 @@ import java.util.Optional
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 @JsonSubTypes(value = [JsonSubTypes.Type(DeviceAuthorizationGrantToken::class), JsonSubTypes.Type(PKCEAuthorizationGrantToken::class) ])
 sealed interface AccessToken : SdkToken, Credentials {
-    val ssoUrl: String
     val region: String
 
     @SensitiveField
@@ -37,6 +37,9 @@ sealed interface AccessToken : SdkToken, Credentials {
     override fun token() = accessToken
 
     override fun expirationTime() = Optional.of(expiresAt)
+
+    @get:JsonIgnore
+    val ssoUrl: String
 }
 
 data class DeviceAuthorizationGrantToken(
@@ -57,7 +60,7 @@ data class PKCEAuthorizationGrantToken(
     val issuerUrl: String,
     override val region: String,
     override val accessToken: String,
-    override val refreshToken: String?,
+    override val refreshToken: String,
     override val expiresAt: Instant,
     override val createdAt: Instant
 ) : AccessToken {

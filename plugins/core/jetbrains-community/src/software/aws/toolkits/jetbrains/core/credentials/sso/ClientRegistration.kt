@@ -16,7 +16,7 @@ import java.time.Instant
  *
  * It should be persisted for reuse through many authentication requests.
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, defaultImpl = DeviceAuthorizationClientRegistration::class)
 @JsonSubTypes(value = [JsonSubTypes.Type(DeviceAuthorizationClientRegistration::class), JsonSubTypes.Type(PKCEClientRegistration::class) ])
 sealed interface ClientRegistration {
     @SensitiveField
@@ -44,7 +44,7 @@ data class PKCEClientRegistration(
     override val clientId: String,
     override val clientSecret: String,
     override val expiresAt: Instant,
-    override val scopes: List<String> = emptyList(),
+    override val scopes: List<String>,
     // implied from the key, but trying reverse the key is annoying
     val issuerUrl: String,
     val region: String,

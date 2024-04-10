@@ -145,6 +145,7 @@ class DiskCache(
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
 
     private fun clientRegistrationCache(cacheKey: ClientRegistrationCacheKey): Path =
+        // TODO: sorted
         cacheNameMapper.valueToTree<ObjectNode>(cacheKey).apply {
             // session is omitted to keep the key deterministic since we attach an epoch
             put("tool", "aws-toolkit-jetbrains")
@@ -162,6 +163,7 @@ class DiskCache(
     }
 
     private fun accessTokenCache(cacheKey: AccessTokenCacheKey): Path {
+        // TODO: sorted
         val fileName = "${sha1(cacheNameMapper.writeValueAsString(cacheKey.withScopes(scopes = cacheKey.scopes.sorted())))}.json"
         return cacheDir.resolve(fileName)
     }
