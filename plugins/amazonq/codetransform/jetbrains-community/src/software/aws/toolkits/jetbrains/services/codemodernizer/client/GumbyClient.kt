@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
 import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
+import software.aws.toolkits.jetbrains.services.amazonq.MAX_API_RETRIES
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
@@ -42,13 +43,14 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
-import software.aws.toolkits.jetbrains.services.amazonq.MAX_API_RETRIES
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
-    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        ?: error("Attempted to use connection while one does not exist")
+
+    private fun connection() =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+            ?: error("Attempted to use connection while one does not exist")
 
     private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
 
@@ -56,11 +58,12 @@ class GumbyClient(private val project: Project) {
         get() = AmazonQStreamingClient.getInstance(project)
 
     fun createGumbyUploadUrl(sha256Checksum: String): CreateUploadUrlResponse {
-        val request = CreateUploadUrlRequest.builder()
-            .contentChecksumType(ContentChecksumType.SHA_256)
-            .contentChecksum(sha256Checksum)
-            .uploadIntent(UploadIntent.TRANSFORMATION)
-            .build()
+        val request =
+            CreateUploadUrlRequest.builder()
+                .contentChecksumType(ContentChecksumType.SHA_256)
+                .contentChecksum(sha256Checksum)
+                .uploadIntent(UploadIntent.TRANSFORMATION)
+                .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
     }
 
@@ -72,19 +75,20 @@ class GumbyClient(private val project: Project) {
     fun startCodeModernization(
         uploadId: String,
         sourceLanguage: TransformationLanguage,
-        targetLanguage: TransformationLanguage
+        targetLanguage: TransformationLanguage,
     ): StartTransformationResponse {
-        val request = StartTransformationRequest.builder()
-            .workspaceState { state ->
-                state.programmingLanguage { it.languageName("java") }
-                    .uploadId(uploadId)
-            }
-            .transformationSpec { spec ->
-                spec.transformationType(TransformationType.LANGUAGE_UPGRADE)
-                    .source { it.language(sourceLanguage) }
-                    .target { it.language(targetLanguage) }
-            }
-            .build()
+        val request =
+            StartTransformationRequest.builder()
+                .workspaceState { state ->
+                    state.programmingLanguage { it.languageName("java") }
+                        .uploadId(uploadId)
+                }
+                .transformationSpec { spec ->
+                    spec.transformationType(TransformationType.LANGUAGE_UPGRADE)
+                        .source { it.language(sourceLanguage) }
+                        .target { it.language(targetLanguage) }
+                }
+                .build()
         return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation, uploadId = uploadId)
     }
 
@@ -131,28 +135,35 @@ class GumbyClient(private val project: Project) {
                 startTime,
                 codeTransformUploadId = uploadId,
                 codeTransformJobId = jobId,
-                codeTransformRequestId = result?.responseMetadata()?.requestId()
+                codeTransformRequestId = result?.responseMetadata()?.requestId(),
             )
         }
     }
 
     // Note: not implementing a retry here for now since users can click "View diff" again to retry
-    suspend fun downloadExportResultArchive(jobId: JobId): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
-        jobId.id,
-        ExportIntent.TRANSFORMATION,
-        { e ->
-            LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
-            telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
-        },
-        { startTime ->
-            telemetry.logApiLatency(CodeTransformApiNames.ExportResultArchive, startTime, codeTransformJobId = jobId.id)
-        }
-    )
+    suspend fun downloadExportResultArchive(jobId: JobId): MutableList<ByteArray> =
+        amazonQStreamingClient.exportResultArchive(
+            jobId.id,
+            ExportIntent.TRANSFORMATION,
+            { e ->
+                LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
+                telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
+            },
+            { startTime ->
+                telemetry.logApiLatency(CodeTransformApiNames.ExportResultArchive, startTime, codeTransformJobId = jobId.id)
+            },
+        )
 
     /*
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    fun uploadArtifactToS3(url: String, fileToUpload: File, checksum: String, kmsArn: String, shouldStop: () -> Boolean) {
+    fun uploadArtifactToS3(
+        url: String,
+        fileToUpload: File,
+        checksum: String,
+        kmsArn: String,
+        shouldStop: () -> Boolean,
+    ) {
         HttpRequests.put(url, APPLICATION_ZIP).userAgent(AwsClientManager.userAgent).tuner {
             it.setRequestProperty(CONTENT_SHA256, checksum)
             if (kmsArn.isNotEmpty()) {
