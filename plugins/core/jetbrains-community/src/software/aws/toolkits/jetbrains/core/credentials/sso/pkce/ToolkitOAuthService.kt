@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanage
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
+import java.util.concurrent.CompletableFuture
 
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
@@ -34,8 +35,22 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
 
     fun hasPendingRequest() = currentRequest.get() != null
 
-    fun authorize(registration: PKCEClientRegistration) =
-        authorize(ToolkitOAuthRequest(registration))
+    fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
+        val currentRequest = currentRequest.get()
+        val toolkitRequest = currentRequest?.request as? ToolkitOAuthRequest
+
+        if (toolkitRequest != null) {
+            check(toolkitRequest.registration == registration) {
+                """
+                    Attempting to start a new authorization with a different client registration while one is pending
+                    Current: ${toolkitRequest.registration}
+                    New: $registration
+                """.trimIndent()
+            }
+        }
+
+        return authorize(ToolkitOAuthRequest(registration))
+    }
 
     override fun handleServerCallback(path: String, parameters: Map<String, List<String>>): Boolean {
         val request = currentRequest.get() ?: return false
@@ -59,7 +74,7 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     }
 }
 
-private class ToolkitOAuthRequest(private val registration: PKCEClientRegistration) : OAuthRequest<AccessToken> {
+private class ToolkitOAuthRequest(internal val registration: PKCEClientRegistration) : OAuthRequest<AccessToken> {
     private val port: Int get() = BuiltInServerManager.getInstance().port
     private val base64Encoder = Base64.getUrlEncoder().withoutPadding()
 

@@ -19,7 +19,6 @@ import java.time.Instant
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, defaultImpl = DeviceAuthorizationClientRegistration::class)
 @JsonSubTypes(value = [JsonSubTypes.Type(DeviceAuthorizationClientRegistration::class), JsonSubTypes.Type(PKCEClientRegistration::class) ])
 sealed interface ClientRegistration {
-    @SensitiveField
     val clientId: String
 
     @SensitiveField
