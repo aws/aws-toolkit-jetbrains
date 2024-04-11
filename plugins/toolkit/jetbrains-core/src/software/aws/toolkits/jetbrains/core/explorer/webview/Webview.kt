@@ -91,7 +91,6 @@ class ToolkitWebviewBrowser(val project: Project) {
         query.addHandler(handler)
     }
 
-
     fun component(): JComponent? = jcefBrowser.component
 
     private fun loadWebView() {
