@@ -15,6 +15,7 @@ import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -36,7 +37,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewBrowser
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
@@ -371,9 +371,68 @@ fun reauthenticateWithQ(project: Project) {
     }
 }
 
+// TODO: duplicate code / telemetry
 fun requestCredentialsForExplorer(
     project: Project,
-    browser: ToolkitWebviewBrowser,
+    profileName: String,
+    startUrl: String,
+    region: AwsRegion,
+    scopes: List<String>,
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+    onError: (String) -> Unit,
+    promptForIdcPermissionSet: Boolean = true,
+    initialConnectionCount: Int = getConnectionCount(),
+    initialAuthConnections: String = getEnabledConnections(
+        project
+    ),
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer: Boolean = false
+): Boolean {
+    val configFilesFacade = DefaultConfigFilesFacade()
+    try {
+        configFilesFacade.readSsoSessions()
+    } catch (e: Exception) {
+        return false
+    }
+
+    val profile = UserConfigSsoSessionProfile(
+        configSessionName = profileName,
+        ssoRegion = region.id,
+        startUrl = startUrl,
+        scopes = scopes
+    )
+
+    val connection = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
+
+    if (!promptForIdcPermissionSet) {
+        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+        return true
+    }
+
+    val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+    if (project == null) error("Not allowed")
+
+    val rolePopup = IdcRolePopup(
+        project,
+        region.id,
+        profileName,
+        tokenProvider,
+        IdcRolePopupState(), // TODO: is it correct state ?
+        configFilesFacade = configFilesFacade
+    )
+
+    if (!rolePopup.showAndGet()) {
+        // don't close window if role is needed but was not confirmed
+        // TODO: ??
+        return false
+    }
+
+    return true
+}
+
+fun requestCredentialsForExplorer(
+    project: Project,
     initialConnectionCount: Int = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project

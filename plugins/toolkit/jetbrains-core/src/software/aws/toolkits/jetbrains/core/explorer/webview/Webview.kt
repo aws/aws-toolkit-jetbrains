@@ -7,9 +7,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
@@ -29,16 +31,13 @@ import software.aws.toolkits.jetbrains.core.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.CredentialType
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.*
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
@@ -136,26 +135,44 @@ class ToolkitWebviewBrowser(val project: Project) {
                     val region = jacksonObjectMapper().readTree(it).get("region").asText()
                     val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
 
-                    val scope = IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-                    runInEdt {
-//                        requestCredentialsForQ(
+                    val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+                        projectCoroutineScope(project).launch {
+                            val authorization = pollForAuthorization(provider)
+                            if (authorization != null) {
+                                jcefBrowser.cefBrowser.executeJavaScript(
+                                    "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
+                                    jcefBrowser.cefBrowser.url,
+                                    0
+                                )
+                                currentAuthorization = authorization
+                            }
+                        }
+                    }
+                    val onError: (String) -> Unit = { s ->
+                        Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
+//                        AuthTelemetry.addConnection(
 //                            project,
-//                            Login.IdC(profileName, url, awsRegion, scope) {
-//                                projectCoroutineScope(project).launch {
-//                                    val authorization = pollForAuthorization(it)
-//                                    if (authorization != null) {
-//                                        jcefBrowser.cefBrowser.executeJavaScript(
-//                                            "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
-//                                            jcefBrowser.cefBrowser.url,
-//                                            0
-//                                        )
-//                                        currentAuthorization = authorization
-//                                    }
-//
-//                                    return@launch
-//                                }
-//                            }
+//                            source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
+//                            featureId = featureId,
+//                            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+//                            isAggregated = false,
+//                            attempts = ++attempts,
+//                            result = Result.Failed,
+//                            reason = "ConnectionUnsuccessful"
 //                        )
+                    }
+
+                    val scope = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                    runInEdt {
+                        requestCredentialsForExplorer(
+                            project,
+                            profileName,
+                            url,
+                            awsRegion,
+                            scope,
+                            onPendingToken,
+                            onError
+                        )
                     }
                 }
 
@@ -305,5 +322,9 @@ class ToolkitWebviewPanel(val project: Project) {
                 it.init()
             }
         }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
     }
 }
