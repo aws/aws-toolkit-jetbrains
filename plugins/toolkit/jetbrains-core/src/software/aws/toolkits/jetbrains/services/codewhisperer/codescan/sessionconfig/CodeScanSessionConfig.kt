@@ -6,8 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionc
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VFileProperty
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.time.withTimeout
@@ -15,6 +13,7 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.ProjectFileParsingManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -25,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ignorePatterns
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Files
@@ -44,7 +42,7 @@ class CodeScanSessionConfig(
 
     private var isProjectTruncated = false
 
-    private val parsedGitIgnorePatterns = parseGitIgnore()
+    val projectFileParser = ProjectFileParsingManager.getInstance(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -158,13 +156,10 @@ class CodeScanSessionConfig(
         var totalSize = 0L
         try {
             withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
-                VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                    !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                        !ignoreFile(it)
-                        )
-                }.fold(0L) { acc, next ->
-                    totalSize = acc + next.length
-                    totalSize
+                if (scanType == SecurityScanType.FILE) {
+                    totalSize = selectedFile.length
+                } else {
+                    totalSize = projectFileParser.getProjectSize()
                 }
             }
         } catch (e: TimeoutCancellationException) {
@@ -193,14 +188,10 @@ class CodeScanSessionConfig(
         } else {
             // Include other files only if the current file is in the project.
             if (selectedFile.path.startsWith(projectRoot.path)) {
-                files.addAll(
-                    VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        it != selectedFile && !it.isDirectory && !ignoreFile(it)
-                    }
-                )
+                return projectFileParser.collectProjectFiles(selectedFile)
             }
-            return files
         }
+        return projectFileParser.collectProjectFiles(selectedFile)
     }
 
     fun isProjectTruncated() = isProjectTruncated
@@ -213,27 +204,6 @@ class CodeScanSessionConfig(
     }
 
     fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
-
-    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
-        .replace(".", "\\.")
-        .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it?" else it }
-
-    private fun parseGitIgnore(): List<String> {
-        var gitIgnoreFile = File(projectRoot.path, ".gitignore")
-        if (!gitIgnoreFile.exists()) {
-            return emptyList()
-        }
-        return gitIgnoreFile.readLines()
-            .filterNot { it.isBlank() || it.startsWith("#") }
-            .map { it.trim() }
-            .map { convertGitIgnorePatternToRegex(it) }
-    }
-
-    private fun ignoreFile(file: VirtualFile): Boolean {
-        val ignorePatternsWithGitIgnore = ignorePatterns + parsedGitIgnorePatterns.map { Regex(it) }
-        return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
-    }
 
     companion object {
         private val LOG = getLogger<CodeScanSessionConfig>()
