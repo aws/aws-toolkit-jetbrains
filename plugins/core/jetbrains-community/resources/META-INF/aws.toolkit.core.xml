@@ -55,7 +55,7 @@
                         serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
 
         <registryKey key="aws.dev.pkceAuth" description="True if new authorization requests should be using the PKCE grant flow"
-                     defaultValue="false" restartRequired="true"/>
+                     defaultValue="false" restartRequired="false"/>
         <registryKey key="aws.telemetry.endpoint" description="Endpoint to use for publishing AWS client-side telemetry"
                      defaultValue="https://client-telemetry.us-east-1.amazonaws.com" restartRequired="true"/>
         <registryKey key="aws.telemetry.identityPool" description="Cognito identity pool to use for publishing AWS client-side telemetry"

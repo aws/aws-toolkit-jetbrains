@@ -38,7 +38,8 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
-    private val isNewAuthPkce = Registry.`is`("aws.dev.pkceAuth", false)
+    private val isNewAuthPkce: Boolean
+        get() = Registry.`is`("aws.dev.pkceAuth", false)
 
     private val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
