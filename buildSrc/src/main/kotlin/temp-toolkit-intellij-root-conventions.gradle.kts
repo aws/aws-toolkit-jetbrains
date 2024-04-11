@@ -95,14 +95,17 @@ dependencies {
 }
 
 configurations {
+    all {
+        // IDE provides netty
+        exclude("io.netty")
+    }
+
     // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
     runtimeClasspath {
         exclude(group = "org.slf4j")
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
 
-        // IDE provides netty (need to confirm)
-        exclude("io.netty")
     }
 }
 
