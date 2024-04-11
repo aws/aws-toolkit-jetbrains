@@ -38,17 +38,17 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     fun authorize(registration: PKCEClientRegistration) =
         authorize(ToolkitOAuthRequest(registration))
 
-    override fun handleOAuthServerCallback(path: String, parameters: Map<String, List<String>>): OAuthService.OAuthResult<AccessToken>? {
-        val request = currentRequest.get() ?: return null
-        val toolkitRequest = request.request as? ToolkitOAuthRequest ?: return null
+    override fun handleServerCallback(path: String, parameters: Map<String, List<String>>): Boolean {
+        val request = currentRequest.get() ?: return false
+        val toolkitRequest = request.request as? ToolkitOAuthRequest ?: return false
 
         val callbackState = parameters["state"]?.firstOrNull()
         if (toolkitRequest.csrfToken != callbackState) {
             request.result.completeExceptionally(RuntimeException("Invalid CSRF token"))
-            return OAuthService.OAuthResult(request.request, false)
+            return false
         }
 
-        return super.handleOAuthServerCallback(path, parameters)
+        return super.handleServerCallback(path, parameters)
     }
 
     override fun revokeToken(token: String) {
@@ -134,14 +134,14 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
     override fun oauthService() = ToolkitOAuthService.getInstance()
 
     // on success / fail
-    override fun handleOAuthResult(oAuthResult: OAuthService.OAuthResult<*>): AcceptCodeHandleResult {
+    override fun handleAcceptCode(isAccepted: Boolean): AcceptCodeHandleResult {
         // focus should be on requesting component?
         runInEdt {
             IdeFocusManager.getGlobalInstance().getLastFocusedIdeWindow()?.toFront()
         }
 
         // provide a better page
-        return AcceptCodeHandleResult.Page(if (oAuthResult.isAccepted) "complete" else "error")
+        return AcceptCodeHandleResult.Page(if (isAccepted) "complete" else "error")
     }
 
     override fun isSupported(request: FullHttpRequest): Boolean {
