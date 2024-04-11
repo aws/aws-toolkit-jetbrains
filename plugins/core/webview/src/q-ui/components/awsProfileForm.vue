@@ -47,6 +47,12 @@ export default defineComponent({
     methods: {
         async handleContinueClick() {
             this.$emit('stageChanged', 'AUTHENTICATING')
+            window.ideApi.postMessage({
+                command: 'loginIAM',
+                profileName: this.profileName,
+                accessKey: this.accessKey,
+                secretKey: this.secretKey
+            })
         },
         handleBackButtonClick() {
             this.$emit('backToMenu')

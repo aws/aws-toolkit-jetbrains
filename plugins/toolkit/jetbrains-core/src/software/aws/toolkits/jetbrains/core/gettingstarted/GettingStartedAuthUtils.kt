@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewBrowser
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
@@ -372,6 +373,7 @@ fun reauthenticateWithQ(project: Project) {
 
 fun requestCredentialsForExplorer(
     project: Project,
+    browser: ToolkitWebviewBrowser,
     initialConnectionCount: Int = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
