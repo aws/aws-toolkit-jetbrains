@@ -10,7 +10,6 @@ import com.intellij.ide.plugins.PluginManagerMain
 import com.intellij.ide.plugins.marketplace.MarketplaceRequests
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.options.ShowSettingsUtil

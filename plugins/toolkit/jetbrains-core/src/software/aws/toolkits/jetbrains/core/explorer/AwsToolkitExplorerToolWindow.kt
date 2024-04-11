@@ -18,28 +18,17 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
-import com.intellij.openapi.ui.popup.JBPopup
-import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.openapi.wm.WindowManager
-import com.intellij.openapi.wm.impl.status.IdeStatusBarImpl
-import com.intellij.openapi.wm.impl.status.TextPanel
-import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBTabbedPane
-import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.ui.components.BorderLayoutPanel
-import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.credentials.CredsComboBoxActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CodewhispererQToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CwQTreeStructure
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.isQInstalled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
-import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidget
+import software.aws.toolkits.resources.AwsToolkitBundle
 import software.aws.toolkits.resources.message
 import java.awt.Component
-import java.awt.Dimension
-import java.awt.Point
-import javax.swing.JPanel
 
 class AwsToolkitExplorerToolWindowState : BaseState() {
     var selectedTab by string()
@@ -52,7 +41,11 @@ class AwsToolkitExplorerToolWindow(
     private val tabPane = JBTabbedPane()
 
     // TODO: Should we persist dismissed state as == don't show again?
-    val amazonQTabDismissAction = object: AnAction("Dismiss", null, AllIcons.Windows.CloseActive) {
+    val amazonQTabDismissAction = object : AnAction(
+        message("codewhisperer.explorer.node.dismiss"),
+        null,
+        AllIcons.Windows.CloseActive
+    ) {
         override fun actionPerformed(e: AnActionEvent) {
             val project = e.project ?: return
             tabPane.remove(CodewhispererQToolWindow.getInstance(project))

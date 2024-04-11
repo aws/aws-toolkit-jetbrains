@@ -8,8 +8,9 @@ import com.intellij.ide.plugins.PluginManagerConfigurable
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 
-class InstallAmazonQAction: AnAction("Install the Amazon Q Extension", null, AllIcons.Actions.Install) {
+class InstallAmazonQAction : AnAction(message("codewhisperer.explorer.node.install_q"), null, AllIcons.Actions.Install) {
     override fun actionPerformed(e: AnActionEvent) {
         ShowSettingsUtil.getInstance().showSettingsDialog(
             e.project,

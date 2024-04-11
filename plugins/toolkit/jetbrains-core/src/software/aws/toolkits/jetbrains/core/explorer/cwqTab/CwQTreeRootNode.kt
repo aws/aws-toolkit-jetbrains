@@ -11,8 +11,6 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.ToolkitPlaces
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
 
@@ -32,11 +30,6 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
         )
         return actions.mapNotNull { AnActionTreeNode(project, ToolkitPlaces.CWQ_TOOL_WINDOW, it) }
     }
-
-    private fun otherActiveIdentityConnectionsAvailable() =
-        ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().isNotEmpty()
 }
 
-fun isQInstalled(): Boolean {
-    return PluginManagerCore.isPluginInstalled(PluginId.getId(AwsToolkit.Q_PLUGIN_ID))
-}
+fun isQInstalled(): Boolean = PluginManagerCore.isPluginInstalled(PluginId.getId(AwsToolkit.Q_PLUGIN_ID))
