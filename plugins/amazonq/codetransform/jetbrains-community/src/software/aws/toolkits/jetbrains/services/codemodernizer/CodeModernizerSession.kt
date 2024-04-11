@@ -308,11 +308,14 @@ class CodeModernizerSession(
                     message("codemodernizer.notification.warn.unknown_status_response")
                 )
 
-                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, sessionContext.targetJavaVersion)
+                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(
+                    jobId,
+                    sessionContext.targetJavaVersion
+                )
 
                 result.state == TransformationStatus.FAILED -> {
                     if (!passedStart) {
-                        val failureReason =result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_start_failure")
+                        val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_start_failure")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
                     } else if (!passedBuild) {
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_build_failure")
