@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials.sso.pkce
 import com.intellij.collaboration.auth.OAuthCallbackHandlerBase
 import com.intellij.collaboration.auth.services.OAuthCredentialsAcquirer
 import com.intellij.collaboration.auth.services.OAuthRequest
-import com.intellij.collaboration.auth.services.OAuthService
 import com.intellij.collaboration.auth.services.OAuthServiceBase
 import com.intellij.collaboration.auth.services.PkceUtils
 import com.intellij.openapi.application.runInEdt
