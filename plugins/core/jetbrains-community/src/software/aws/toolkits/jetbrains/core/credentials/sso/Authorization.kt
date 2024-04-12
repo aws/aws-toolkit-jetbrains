@@ -11,6 +11,7 @@ import java.time.Instant
 /**
  * Returned by [SsoOidcClient.startDeviceAuthorization] that contains the required data to construct the user visible SSO login flow.
  */
+@Deprecated("Device authorization grant flow is deprecated")
 data class Authorization(
     @SensitiveField
     val deviceCode: String,
@@ -20,7 +21,6 @@ data class Authorization(
     val expiresAt: Instant,
     val pollInterval: Long,
     val createdAt: Instant,
-    var isCanceled: Boolean
 ) {
     override fun toString(): String = redactedString(this)
 }

@@ -15,7 +15,7 @@ const store = createStore<State>({
     state: {
         stage: 'START' as Stage,
         ssoRegions: [] as Region[],
-        authorizationCode: '',
+        authorizationCode: undefined,
         lastLoginIdcInfo: {
             profileName: '',
             directoryId: '',
@@ -42,7 +42,7 @@ const store = createStore<State>({
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []
-            state.authorizationCode = ''
+            state.authorizationCode = undefined
             state.lastLoginIdcInfo = {
                 profileName: '',
                 directoryId: '',
