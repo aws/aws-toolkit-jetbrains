@@ -10,16 +10,16 @@
             />
         </svg>
     </button>
-    <div class="p">Profile Name</div>
+    <div class="title no-bold">Profile Name</div>
     <div class="hint">The identifier for these credentials</div>
     <input class="iamInput font-amazon" type="text" id="profileName" name="profileName" v-model="profileName"/>
 
     <br/><br/>
-    <div class="p">Access Key</div>
+    <div class="title no-bold">Access Key</div>
     <input class="iamInput font-amazon" type="text" id="accessKey" name="accessKey" v-model="accessKey"/>
 
     <br/><br/>
-    <div class="p">Secret Key</div>
+    <div class="title no-bold">Secret Key</div>
     <input class="iamInput font-amazon" type="text" id="secretKey" name="secretKey" v-model="secretKey"/>
 
     <br/><br/>
@@ -61,7 +61,7 @@ export default defineComponent({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .back-button {
     background: none;
     border: none;
@@ -71,9 +71,10 @@ export default defineComponent({
 }
 
 .hint {
-    color: #948a8a;
+    color: #909090;
     margin-bottom: 5px;
     margin-top: 5px;
+    font-size: 12px;
 }
 
 .iamInput {
