@@ -8,6 +8,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 
 interface ActionProvider<T> {
     val pause: T
@@ -53,10 +54,12 @@ fun<T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvid
     buildList {
         val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
         val manager = CodeWhispererExplorerActionManager.getInstance()
-        if (manager.isAutoEnabledForCodeScan()) {
-            add(actionProvider.pauseAutoScans)
-        } else {
-            add(actionProvider.resumeAutoScans)
+        if (!isUserBuilderId(project)) {
+            if (manager.isAutoEnabledForCodeScan()) {
+                add(actionProvider.pauseAutoScans)
+            } else {
+                add(actionProvider.resumeAutoScans)
+            }
         }
         if (codeScanManager.isCodeScanInProgress()) {
             add(actionProvider.stopScan)
