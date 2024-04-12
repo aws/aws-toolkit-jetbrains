@@ -57,11 +57,12 @@ object CodeWhispererConstants {
 
     // Code scan feature constants
     val ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES = TextAttributes(null, null, JBColor.YELLOW, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
-    const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60
+    const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
     const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 5 * 1024 * 1024 * 1024 // 5 GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
-    const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES = 1024 * 200 // 200KB
+    const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
+    const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
     const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 2
     const val TOTAL_BYTES_IN_KB = 1024
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
@@ -101,30 +102,6 @@ object CodeWhispererConstants {
         FILE,
         PROJECT
     }
-
-    val ignorePatterns = listOf(
-        "\\.aws-sam",
-        "\\.svn",
-        "\\.hg/",
-        "\\.rvm",
-        "\\.git/",
-        "\\.gitignore",
-        "\\.project",
-        "\\.gem",
-        "/\\.idea/",
-        "\\.zip$",
-        "\\.bin$",
-        "\\.png$",
-        "\\.jpg$",
-        "\\.svg$",
-        "\\.pyc$",
-        "/license\\.txt$",
-        "/License\\.txt$",
-        "/LICENSE\\.txt$",
-        "/license\\.md$",
-        "/License\\.md$",
-        "/LICENSE\\.md$",
-    ).map { Regex(it) }
 
     object Config {
         const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
