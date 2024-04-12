@@ -89,7 +89,7 @@ class CodeWhispererTelemetryServiceTest {
         val groupSettings = CodeWhispererUserGroupSettings().apply {
             loadState(
                 CodeWhispererUserGroupStates(
-                    version = AwsToolkit.PLUGIN_VERSION,
+                    version = AwsToolkit.PLUGINS_INFO.getValue(AwsPlugin.TOOLKIT).version,
                     settings = mapOf(CodeWhispererUserGroupSettings.USER_GROUP_KEY to CodeWhispererUserGroup.Control.name)
                 )
             )
