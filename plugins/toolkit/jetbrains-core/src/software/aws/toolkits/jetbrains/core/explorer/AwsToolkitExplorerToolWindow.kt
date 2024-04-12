@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CodewhispererQToolWi
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CwQTreeStructure
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.isQInstalled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
-import software.aws.toolkits.resources.AwsToolkitBundle
 import software.aws.toolkits.resources.message
 import java.awt.Component
 
