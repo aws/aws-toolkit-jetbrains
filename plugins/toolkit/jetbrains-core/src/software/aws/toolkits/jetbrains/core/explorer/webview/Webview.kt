@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.explorer.webview
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -93,6 +94,10 @@ class ToolkitWebviewBrowser(val project: Project) {
 
     fun component(): JComponent? = jcefBrowser.component
 
+    fun resetBrowserState() {
+        jcefBrowser.cefBrowser.executeJavaScript("window.ideClient.reset()", jcefBrowser.cefBrowser.url, 0)
+    }
+
     private fun loadWebView() {
         // load the web app
         jcefBrowser.loadHTML(getWebviewHTML())
@@ -173,5 +178,9 @@ class ToolkitWebviewPanel(val project: Project) {
                 it.init()
             }
         }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
     }
 }
