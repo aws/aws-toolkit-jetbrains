@@ -78,7 +78,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    println("0000000000000000000")
                     toolWindow.reload()
                 }
             }
@@ -88,7 +87,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    println("333333333333333333")
                     toolWindow.reload()
                 }
             }
@@ -99,12 +97,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             CredentialManager.CREDENTIALS_CHANGED,
             object : ToolkitCredentialsChangeListener {
                 override fun providerRemoved(identifier: CredentialIdentifier) {
-                    println("111111111111111111111111")
                     toolWindow.reload()
                 }
 
                 override fun providerModified(identifier: CredentialIdentifier) {
-                    println("22222222222222222222222")
                     toolWindow.reload()
                 }
             }

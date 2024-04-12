@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFileManager
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
@@ -133,6 +134,10 @@ sealed class Login {
                 .build()
 
             configFilesFacade.appendProfileToCredentials(profile)
+
+            // TODO: how to refresh partially?
+            // TODO: should it live in configFileFacade
+            VirtualFileManager.getInstance().refreshWithoutFileWatcher(false)
 
             return true
         }
