@@ -23,21 +23,19 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.cef.CefApp
-import software.aws.toolkits.jetbrains.core.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
+import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.telemetry.*
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -96,7 +94,7 @@ class ToolkitWebviewBrowser(val project: Project) {
             )
 
         loadWebView()
-        var currentAuthorization: Authorization? = null
+        var currentAuthorization: PendingAuthorization? = null
 
         val handler = Function<String, JBCefJSQuery.Response> {
             val command = jacksonObjectMapper().readTree(it).get("command").asText()
@@ -142,7 +140,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                             val authorization = pollForAuthorization(provider)
                             if (authorization != null) {
                                 jcefBrowser.cefBrowser.executeJavaScript(
-                                    "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
+                                    "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
                                     jcefBrowser.cefBrowser.url,
                                     0
                                 )
@@ -207,7 +205,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                     // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
                     // to browser.). The worst case is that the user will see a stale user code displayed, but not
                     // affecting the current login flow.
-                    currentAuthorization?.isCanceled = true
+                    currentAuthorization?.progressIndicator?.cancel()
                 }
 
                 else -> {
@@ -221,6 +219,11 @@ class ToolkitWebviewBrowser(val project: Project) {
         query.addHandler(handler)
     }
 
+    private fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
+        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
+        else -> ""
+    }
+
     private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
         val pattern = "https://(.*?).awsapps.com/start.*".toRegex()
         return pattern.matchEntire(startUrl)?.groupValues?.get(1).orEmpty()
@@ -232,32 +235,7 @@ class ToolkitWebviewBrowser(val project: Project) {
         jcefBrowser.cefBrowser.executeJavaScript("window.ideClient.reset()", jcefBrowser.cefBrowser.url, 0)
     }
 
-    private suspend fun <T> pollFor(func: () -> T): T? {
-        val timeoutMillis = 50000L
-        val factor = 2
-        var nextDelay = 1L
-
-        val result = withTimeoutOrNull(timeoutMillis) {
-            while (true) {
-                val result = func()
-                if (result != null) {
-                    return@withTimeoutOrNull result
-                }
-
-                delay(nextDelay)
-                nextDelay *= factor
-            }
-            null
-        }
-
-        return result
-    }
-
-    private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
-        ToolkitAuthManager.getInstance().getConnection(connectionId)
-    }
-
-    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): Authorization? = pollFor {
+    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
         provider.pendingAuthorization
     }
 

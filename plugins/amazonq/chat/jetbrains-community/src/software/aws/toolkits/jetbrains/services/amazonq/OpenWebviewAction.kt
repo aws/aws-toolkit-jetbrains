@@ -19,13 +19,11 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.cef.CefApp
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -36,10 +34,11 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -126,7 +125,7 @@ class WebviewBrowser(val project: Project) {
                 "http",
                 WebviewBrowser.DOMAIN,
                 WebviewResourceHandlerFactory(
-                    domain = "http://${WebviewBrowser.DOMAIN}/",
+                    domain = "http://$DOMAIN/",
                     assetUri = "/webview/assets/"
                 ),
             )
@@ -164,10 +163,6 @@ class WebviewBrowser(val project: Project) {
                         jcefBrowser.cefBrowser.url,
                         0
                     )
-
-                    // seems we're not able to send the return value back to the JS code
-                    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/16846628651538-idea-plugin-jbCefJSQuery-return-undefined
-//                    return@Function Response(json)
                 }
 
                 "loginBuilderId" -> {
@@ -227,16 +222,7 @@ class WebviewBrowser(val project: Project) {
 
                     val onError: (String) -> Unit = { s ->
                         Messages.showErrorDialog(project, it, "Q Idc Login Failed")
-//                        AuthTelemetry.addConnection(
-//                            project,
-//                            source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-//                            featureId = featureId,
-//                            credentialSourceId = CredentialSourceId.IamIdentityCenter,
-//                            isAggregated = false,
-//                            attempts = ++attempts,
-//                            result = Result.Failed,
-//                            reason = "ConnectionUnsuccessful"
-//                        )
+                        // TODO: AuthTelemetry.addConnection
                     }
                     runInEdt {
                         requestCredentialsForQ(
@@ -247,7 +233,6 @@ class WebviewBrowser(val project: Project) {
                 }
 
                 "cancelLogin" -> {
-                    println("cancel login........")
                     // TODO: BearerToken vs. SsoProfile
                     AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
 
@@ -260,7 +245,7 @@ class WebviewBrowser(val project: Project) {
                 }
 
                 else -> {
-                    println("received unknown command from the browser: $command")
+                    error("received unknown command from Q browser: $command")
                 }
             }
 
@@ -281,24 +266,6 @@ class WebviewBrowser(val project: Project) {
     }
 
     fun component(): JComponent? = jcefBrowser.component
-
-    private suspend fun <T> pollFor(func: () -> T): T? {
-        val timeoutMillis = 50000L
-
-        val result = withTimeoutOrNull(timeoutMillis) {
-            while (true) {
-                val result = func()
-                if (result != null) {
-                    return@withTimeoutOrNull result
-                }
-
-                delay(50L)
-            }
-            null
-        }
-
-        return result
-    }
 
     private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
         ToolkitAuthManager.getInstance().getConnection(connectionId)

@@ -19,8 +19,6 @@ import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
 
-
-
 fun requestCredentialsForQ(
     project: Project,
     login: Login,
