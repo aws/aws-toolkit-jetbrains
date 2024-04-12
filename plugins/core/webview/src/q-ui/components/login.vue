@@ -12,7 +12,7 @@
 
         <LoginOptions :app="app" v-if="stage === 'START'" @stageChanged="mutateStage"/>
         <SsoLoginForm v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
-        <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick"/>
+        <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
 
         <template v-if="stage === 'AUTHENTICATING'">
             <div class="font-amazon">
