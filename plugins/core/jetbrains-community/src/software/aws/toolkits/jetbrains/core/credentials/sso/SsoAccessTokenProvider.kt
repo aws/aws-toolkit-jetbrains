@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.util.ProgressIndicatorUtils
 import com.intellij.openapi.util.registry.Registry
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
@@ -51,7 +50,9 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
-    val authorization = AtomicReference<PendingAuthorization?>()
+    private val _authorization = AtomicReference<PendingAuthorization?>()
+    val authorization: PendingAuthorization?
+        get() = _authorization.get()
 
     private val isNewAuthPkce: Boolean
         get() = Registry.`is`("aws.dev.pkceAuth", false)
@@ -210,7 +211,7 @@ class SsoAccessTokenProvider(
         val authorization = authorizeDAGClient(registration)
 
         progressIndicator.text2 = message("aws.sso.signing.device.waiting", authorization.userCode)
-        this.authorization.set(PendingAuthorization.DAGAuthorization(authorization, progressIndicator))
+        _authorization.set(PendingAuthorization.DAGAuthorization(authorization, progressIndicator))
 
         onPendingToken.tokenPending(authorization)
 
@@ -218,8 +219,8 @@ class SsoAccessTokenProvider(
 
         while (true) {
             try {
-                if (this.authorization.get() == null || progressIndicator.isCanceled()) {
-                    this.authorization.set(null)
+                if (_authorization.get() == null || progressIndicator.isCanceled()) {
+                    _authorization.set(null)
                     throw ProcessCanceledException(IllegalStateException("Login canceled by user"))
                 }
 
@@ -231,7 +232,7 @@ class SsoAccessTokenProvider(
                 }
 
                 onPendingToken.tokenRetrieved()
-                this.authorization.set(null)
+                _authorization.set(null)
 
                 return tokenResponse.toDAGAccessToken(authorization.createdAt)
             } catch (e: SlowDownException) {
@@ -253,7 +254,7 @@ class SsoAccessTokenProvider(
     private fun pollForPkceToken(): AccessToken {
         val future = ToolkitOAuthService.getInstance().authorize(registerPkceClient())
         val progressIndicator = progressIndicator()
-        this.authorization.set(PendingAuthorization.PKCEAuthorization(future, progressIndicator))
+        _authorization.set(PendingAuthorization.PKCEAuthorization(future, progressIndicator))
 
         while (true) {
             if (progressIndicator.isCanceled()) {
