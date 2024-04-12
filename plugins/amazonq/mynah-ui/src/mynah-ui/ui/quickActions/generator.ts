@@ -83,12 +83,12 @@ export class QuickActionGenerator {
                 unavailableItems: ['/dev', '/transform'],
             },
             unknown: {
-                description: "This command isn't available",
-                unavailableItems: ['/dev', '/transform', '/help', '/clear'],
+                description: "",
+                unavailableItems: [],
             },
         }
 
-        return quickActionCommands.map(commandGroup => {
+        return structuredClone(quickActionCommands).map(commandGroup => {
             return {
                 groupName: commandGroup.groupName,
                 commands: commandGroup.commands.map((commandItem: QuickActionCommand) => {
