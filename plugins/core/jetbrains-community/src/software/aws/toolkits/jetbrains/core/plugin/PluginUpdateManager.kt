@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.core.plugin
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.InstalledPluginsState
+import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
-import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -25,45 +25,37 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.settings.PluginSettings
+import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.AwsSettingsCoreConfigurable
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 
-abstract class PluginUpdateManager {
+class PluginUpdateManager {
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD)
-    abstract val awsPlugin: AwsPlugin
-    abstract val settings: PluginSettings
-    abstract val configurableClass: Class<out Configurable>
-    private val pluginId by lazy {
-        if (awsPlugin == AwsPlugin.TOOLKIT) AwsToolkit.PLUGIN_ID else AwsToolkit.Q_PLUGIN_ID
-    }
-    private val pluginDescriptor by lazy {
-        if (awsPlugin == AwsPlugin.TOOLKIT) AwsToolkit.DESCRIPTOR else AwsToolkit.Q_DESCRIPTOR
-    }
-    private val pluginName by lazy {
-        if (awsPlugin == AwsPlugin.TOOLKIT) "AWS Toolkit" else "Amazon Q"
-    }
 
     fun scheduleAutoUpdate() {
         if (alarm.isDisposed) return
         scheduleUpdateTask()
 
-        val enabled = settings.isAutoUpdateEnabled
-        LOG.debug { "$pluginName checking for new updates. Auto update enabled: $enabled" }
+        val enabled = AwsSettings.getInstance().isAutoUpdateEnabled
+        LOG.debug { "AWS plugins checking for new updates. Auto update enabled: $enabled" }
 
         if (!enabled) return
 
         runInEdt {
-            ProgressManager.getInstance().run(
-                object : Task.Backgroundable(null, message("aws.settings.auto_update.progress.message", pluginName)) {
-                    override fun run(indicator: ProgressIndicator) {
-                        checkForUpdates(indicator)
-                    }
+            ProgressManager.getInstance().run(object : Task.Backgroundable(
+                null,
+                message("aws.settings.auto_update.progress.message")
+            ) {
+                override fun run(indicator: ProgressIndicator) {
+                    checkForUpdates(indicator, AwsPlugin.CORE)
+                    checkForUpdates(indicator, AwsPlugin.TOOLKIT)
+                    checkForUpdates(indicator, AwsPlugin.Q)
                 }
-            )
+            })
         }
     }
 
@@ -72,20 +64,29 @@ abstract class PluginUpdateManager {
     }
 
     @RequiresBackgroundThread
-    fun checkForUpdates(progressIndicator: ProgressIndicator) {
+    fun checkForUpdates(progressIndicator: ProgressIndicator, plugin: AwsPlugin) {
+        val pluginInfo = AwsToolkit.PLUGINS_INFO[plugin] ?: return
+        val pluginId = pluginInfo.id
+        val pluginDescriptor = pluginInfo.descriptor as? IdeaPluginDescriptor ?: return
+        val pluginName = pluginInfo.name
         // Note: This will need to handle exceptions and ensure thread-safety
         try {
+            // If plugin is not installed, do not perform auto-update
+            if (!PluginManagerCore.isPluginInstalled(pluginDescriptor.pluginId)) {
+                LOG.debug { "$pluginName is not detected as installed, not performing auto-update" }
+                return
+            }
+
             // wasUpdatedWithRestart means that, it was an update and it needs to restart to apply
             if (InstalledPluginsState.getInstance().wasUpdatedWithRestart(PluginId.getId(pluginId))) {
                 LOG.debug { "$pluginName was recently updated and needed restart, not performing auto-update again" }
                 return
             }
 
-            val pluginDescriptor = pluginDescriptor as IdeaPluginDescriptor? ?: return
-            if (pluginDescriptor.version.contains("SNAPSHOT", ignoreCase = true)) {
-                LOG.debug { "$pluginName is a SNAPSHOT version, not performing auto-update" }
-                return
-            }
+//            if (pluginDescriptor.version.contains("SNAPSHOT", ignoreCase = true)) {
+//                LOG.debug { "$pluginName is a SNAPSHOT version, not performing auto-update" }
+//                return
+//            }
             if (!pluginDescriptor.isEnabled) {
                 LOG.debug { "$pluginName is disabled, not performing auto-update" }
                 return
@@ -135,7 +136,8 @@ abstract class PluginUpdateManager {
             )
             return
         }
-        if (!settings.isAutoUpdateNotificationEnabled) return
+        if (!AwsSettings.getInstance().isAutoUpdateNotificationEnabled) return
+        if (plugin == AwsPlugin.CORE) return
         notifyInfo(
             title = message("aws.notification.auto_update.title", pluginName),
             content = message("aws.settings.auto_update.notification.message"),
@@ -171,7 +173,7 @@ abstract class PluginUpdateManager {
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem
                     )
-                    ShowSettingsUtil.getInstance().showSettingsDialog(null, configurableClass)
+                    ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsCoreConfigurable::class.java)
                 }
             )
         )
@@ -183,17 +185,16 @@ abstract class PluginUpdateManager {
                 compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
         }
 
-    // TODO: Optimize this to only search the result for Aws Toolkit or Amazon Q
+    // TODO: Optimize this to only search the result for AWS plugins
     fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()
 
     fun notifyAutoUpdateFeature(project: Project) {
         notifyInfo(
-            title = message("aws.notification.auto_update.feature_intro.title", pluginName),
+            title = message("aws.notification.auto_update.feature_intro.title"),
             project = project,
             notificationActions = listOf(
                 NotificationAction.createSimpleExpiring(message("aws.notification.auto_update.feature_intro.ok")) {},
                 NotificationAction.createSimple(message("aws.notification.auto_update.settings.title")) {
-                    // TODO: distinguish telemetry
                     ToolkitTelemetry.invokeAction(
                         project = null,
                         result = Result.Succeeded,
@@ -201,7 +202,7 @@ abstract class PluginUpdateManager {
                         source = SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY,
                         component = Component.Filesystem
                     )
-                    ShowSettingsUtil.getInstance().showSettingsDialog(project, configurableClass)
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsCoreConfigurable::class.java)
                 }
             )
         )

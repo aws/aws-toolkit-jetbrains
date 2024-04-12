@@ -1,4 +1,4 @@
-// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.settings
@@ -7,10 +7,8 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.layout.selected
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
@@ -34,7 +32,6 @@ class CodeWhispererConfigurable(private val project: Project) :
     override fun createPanel() = panel {
         val connect = project.messageBus.connect(disposable ?: error("disposable wasn't initialized by framework"))
         val invoke = isCodeWhispererEnabled(project)
-        val autoUpdate = JBCheckBox(message("aws.settings.auto_update.text"))
 
         // TODO: can we remove message bus subscribe and solely use visible(boolean) / enabled(boolean), consider multi project cases
         row {
@@ -118,26 +115,6 @@ class CodeWhispererConfigurable(private val project: Project) :
                     }.apply {
                         enabled(false)
                     }
-                }
-            }
-        }
-
-        group(message("aws.settings.codewhisperer.group.plugin_settings")) {
-            row {
-                cell(autoUpdate).apply {
-                    bindSelected(codeWhispererSettings::isAutoUpdateEnabled, codeWhispererSettings::isAutoUpdateEnabled::set)
-                }
-            }
-
-            indent {
-                row {
-                    checkBox(message("aws.settings.auto_update.notification_enable.text"))
-                        .comment(message("aws.settings.auto_update.notification_enable.tooltip")).apply {
-                            bindSelected(
-                                codeWhispererSettings::isAutoUpdateNotificationEnabled,
-                                codeWhispererSettings::isAutoUpdateNotificationEnabled::set
-                            )
-                        }.enabledIf(autoUpdate.selected)
                 }
             }
         }

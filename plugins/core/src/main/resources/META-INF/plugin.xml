@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
-    <id>core</id>
+    <id>plugin-core</id>
     <name>core</name>
     <description>corecorecorecorecorecorecorecorecorecore</description>
     <vendor email="a@example.com">vendor</vendor>

@@ -11,23 +11,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
-import java.util.concurrent.atomic.AtomicBoolean
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     private var runOnce = false
-    private val autoUpdateRunOnce = AtomicBoolean(false)
 
     /**
      * Should be invoked when
@@ -35,15 +31,6 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
      * (2) existing users open the IDE (automatically triggered)
      */
     override fun runActivity(project: Project) {
-        // We want the auto-update feature to be triggered only once per running application
-        if (!autoUpdateRunOnce.getAndSet(true)) {
-            PluginUpdateManager.getInstance().scheduleAutoUpdate()
-            if (!CodeWhispererSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
-                PluginUpdateManager.getInstance().notifyAutoUpdateFeature(project)
-                CodeWhispererSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce = true
-            }
-        }
-
         if (!isCodeWhispererEnabled(project)) return
         if (runOnce) return
 

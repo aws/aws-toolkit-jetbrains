@@ -254,9 +254,6 @@
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceUpdateManager"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager"/>
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.plugins.ToolkitPluginUpdateManager"/>
-        <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.plugins.ToolkitAutoUpdater"/>
 
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.cloudformation.stack.StackWindowManager"/>
@@ -288,10 +285,10 @@
 
         <!-- plugin configurables -->
         <applicationConfigurable
-            id="aws"
+            id="aws.old"
             groupId="tools"
             bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="aws.settings.title"
+            key="aws.settings.title.old"
             instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"
         />
         <projectConfigurable
