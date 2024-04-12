@@ -83,10 +83,10 @@ class PluginUpdateManager {
                 return
             }
 
-//            if (pluginDescriptor.version.contains("SNAPSHOT", ignoreCase = true)) {
-//                LOG.debug { "$pluginName is a SNAPSHOT version, not performing auto-update" }
-//                return
-//            }
+            if (pluginDescriptor.version.contains("SNAPSHOT", ignoreCase = true)) {
+                LOG.debug { "$pluginName is a SNAPSHOT version, not performing auto-update" }
+                return
+            }
             if (!pluginDescriptor.isEnabled) {
                 LOG.debug { "$pluginName is disabled, not performing auto-update" }
                 return
