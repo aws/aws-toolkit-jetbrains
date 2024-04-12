@@ -91,20 +91,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                 }
             }
         )
-
-        // TODO: not needed?
-        ApplicationManager.getApplication().messageBus.connect(project).subscribe(
-            CredentialManager.CREDENTIALS_CHANGED,
-            object : ToolkitCredentialsChangeListener {
-                override fun providerRemoved(identifier: CredentialIdentifier) {
-                    toolWindow.reload()
-                }
-
-                override fun providerModified(identifier: CredentialIdentifier) {
-                    toolWindow.reload()
-                }
-            }
-        )
     }
 
     override fun init(toolWindow: ToolWindow) {
