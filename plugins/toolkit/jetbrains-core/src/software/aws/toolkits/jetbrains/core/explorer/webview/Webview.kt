@@ -29,6 +29,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.core.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
@@ -119,6 +120,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                         0
                     )
                 }
+
                 "fetchSsoRegion" -> {
                     val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
                     val json = jacksonObjectMapper().writeValueAsString(regions)
@@ -164,7 +166,7 @@ class ToolkitWebviewBrowser(val project: Project) {
 
                     val scope = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                     runInEdt {
-                        requestCredentialsForExplorer(
+                        val success = requestCredentialsForExplorer(
                             project,
                             profileName,
                             url,
@@ -173,13 +175,26 @@ class ToolkitWebviewBrowser(val project: Project) {
                             onPendingToken,
                             onError
                         )
+
+                        if (success) {
+                        }
                     }
                 }
 
                 "loginIAM" -> {
+                    // TODO: not type safe
                     val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
                     val accessKey = jacksonObjectMapper().readTree(it).get("accessKey").asText()
                     val secretKey = jacksonObjectMapper().readTree(it).get("secretKey").asText()
+
+                    // TODO:
+                    runInEdt {
+                        Login.LongLivedIAM(
+                            profileName,
+                            accessKey,
+                            secretKey
+                        ).loginIAM(project, {}, {}, {})
+                    }
                 }
 
                 "cancelLogin" -> {
@@ -196,7 +211,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                 }
 
                 else -> {
-                    println("received unknown command from the browser: $command")
+                    error("received unknown command from Toolkit login browser")
                 }
             }
 
@@ -212,6 +227,10 @@ class ToolkitWebviewBrowser(val project: Project) {
     }
 
     fun component(): JComponent? = jcefBrowser.component
+
+    fun resetBrowserState() {
+        jcefBrowser.cefBrowser.executeJavaScript("window.ideClient.reset()", jcefBrowser.cefBrowser.url, 0)
+    }
 
     private suspend fun <T> pollFor(func: () -> T): T? {
         val timeoutMillis = 50000L

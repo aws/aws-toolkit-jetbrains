@@ -10,6 +10,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
@@ -205,24 +207,39 @@ class WebviewBrowser(val project: Project) {
                     val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
 
                     val scope = CODEWHISPERER_SCOPES + Q_SCOPES
+                    val onPending: (InteractiveBearerTokenProvider) -> Unit = {
+                        projectCoroutineScope(project).launch {
+                            val authorization = pollForAuthorization(it)
+                            if (authorization != null) {
+                                jcefBrowser.cefBrowser.executeJavaScript(
+                                    "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
+                                    jcefBrowser.cefBrowser.url,
+                                    0
+                                )
+                                currentAuthorization = authorization
+                            }
+
+                            return@launch
+                        }
+                    }
+
+                    val onError: (String) -> Unit = { s ->
+                        Messages.showErrorDialog(project, it, "Q Idc Login Failed")
+//                        AuthTelemetry.addConnection(
+//                            project,
+//                            source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
+//                            featureId = featureId,
+//                            credentialSourceId = CredentialSourceId.IamIdentityCenter,
+//                            isAggregated = false,
+//                            attempts = ++attempts,
+//                            result = Result.Failed,
+//                            reason = "ConnectionUnsuccessful"
+//                        )
+                    }
                     runInEdt {
                         requestCredentialsForQ(
                             project,
-                            Login.IdC(profileName, url, awsRegion, scope) {
-                                projectCoroutineScope(project).launch {
-                                    val authorization = pollForAuthorization(it)
-                                    if (authorization != null) {
-                                        jcefBrowser.cefBrowser.executeJavaScript(
-                                            "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
-                                            jcefBrowser.cefBrowser.url,
-                                            0
-                                        )
-                                        currentAuthorization = authorization
-                                    }
-
-                                    return@launch
-                                }
-                            }
+                            Login.IdC(profileName, url, awsRegion, scope, onPending, onError)
                         )
                     }
                 }

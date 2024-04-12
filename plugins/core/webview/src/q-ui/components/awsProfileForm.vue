@@ -12,15 +12,15 @@
     </button>
     <div class="p">Profile Name</div>
     <div class="hint">The identifier for these credentials</div>
-    <input class="iamInput" type="text" id="profileName" name="profileName" v-model="profileName"/>
+    <input class="iamInput font-amazon" type="text" id="profileName" name="profileName" v-model="profileName"/>
 
     <br/><br/>
     <div class="p">Access Key</div>
-    <input class="iamInput" type="text" id="accessKey" name="accessKey" v-model="accessKey"/>
+    <input class="iamInput font-amazon" type="text" id="accessKey" name="accessKey" v-model="accessKey"/>
 
     <br/><br/>
     <div class="p">Secret Key</div>
-    <input class="iamInput" type="text" id="secretKey" name="secretKey" v-model="secretKey"/>
+    <input class="iamInput font-amazon" type="text" id="secretKey" name="secretKey" v-model="secretKey"/>
 
     <br/><br/>
     <button
@@ -79,14 +79,23 @@ export default defineComponent({
 .iamInput {
     background-color: #252526;
     width: 100%;
-    color: white;
+    height: 37px;
+    border-radius: 4px;
 }
 
-body.vscode-dark #logo-text {
-    fill: white;
+/* Theme specific styles */
+body.jb-dark {
+    .iamInput {
+        background-color: #252526;
+        color: white;
+        border: none;
+    }
 }
 
-body.vscode-light #logo-text {
-    fill: #232f3e; /* squid ink */
+body.jb-light {
+    .iamInput {
+        color: black;
+        border: 1px solid #c9ccd6;
+    }
 }
 </style>

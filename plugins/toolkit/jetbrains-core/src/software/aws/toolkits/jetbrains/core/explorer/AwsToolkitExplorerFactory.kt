@@ -6,13 +6,20 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
@@ -58,7 +65,8 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
 
         val contentManager = toolWindow.contentManager
-        val content = contentManager.factory.createContent(AwsToolkitExplorerToolWindow.getInstance(project), null, false).also {
+
+        val content = contentManager.factory.createContent(component(project), null, false).also {
             it.isCloseable = true
             it.isPinnable = true
         }
@@ -70,24 +78,34 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    // TODO: switch between 1. browser login view / 2. explorer tree
-                    val component = if (isToolkitConnected(newConnection)) {
-                        println("ExplorerFactory: toolkit is connected, rendering explorer tree...")
-                        AwsToolkitExplorerToolWindow.getInstance(project)
-                    } else {
-                        println("ExplorerFactory: toolkit is NOT connected, rendering browser view...")
-                        ToolkitWebviewPanel.getInstance(project).component
-                    }
+                    println("0000000000000000000")
+                    toolWindow.reload()
+                }
+            }
+        )
 
-                    val myContent = contentManager.factory.createContent(component, null, false).also {
-                        it.isCloseable = true
-                        it.isPinnable = true
-                    }
+        project.messageBus.connect().subscribe(
+            AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
+            object : ConnectionSettingsStateChangeNotifier {
+                override fun settingsStateChanged(newState: ConnectionState) {
+                    println("333333333333333333")
+                    toolWindow.reload()
+                }
+            }
+        )
 
-                    runInEdt {
-                        contentManager.removeAllContents(true)
-                        contentManager.addContent(myContent)
-                    }
+        // TODO: not needed?
+        ApplicationManager.getApplication().messageBus.connect(project).subscribe(
+            CredentialManager.CREDENTIALS_CHANGED,
+            object : ToolkitCredentialsChangeListener {
+                override fun providerRemoved(identifier: CredentialIdentifier) {
+                    println("111111111111111111111111")
+                    toolWindow.reload()
+                }
+
+                override fun providerModified(identifier: CredentialIdentifier) {
+                    println("22222222222222222222222")
+                    toolWindow.reload()
                 }
             }
         )
@@ -97,12 +115,35 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.stripeTitle = message("aws.notification.title")
     }
 
+    private fun ToolWindow.reload() {
+        val contentManager = this.contentManager
+        val myContent = contentManager.factory.createContent(component(project), null, false).also {
+            it.isCloseable = true
+            it.isPinnable = true
+        }
+
+        runInEdt {
+            contentManager.removeAllContents(true)
+            contentManager.addContent(myContent)
+        }
+    }
+
+    private fun component(project: Project) = if (isToolkitConnected(project)) {
+        AwsToolkitExplorerToolWindow.getInstance(project)
+    } else {
+        ToolkitWebviewPanel.getInstance(project).let {
+            it.browser?.resetBrowserState()
+            it.component
+        }
+    }
+
     companion object {
         const val TOOLWINDOW_ID = "aws.toolkit.explorer"
     }
 }
 
 // TODO: not sure how do we define Toolkit "connected"
-private fun isToolkitConnected(newConnection: ToolkitConnection?): Boolean {
-    return false
+private fun isToolkitConnected(project: Project): Boolean {
+    val isConnected = AwsConnectionManager.getInstance(project).isValidConnectionSettings()
+    return isConnected
 }

@@ -6,15 +6,9 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.profiles.Profile
-import software.amazon.awssdk.profiles.ProfileProperty
-import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
-import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
-import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
@@ -24,9 +18,9 @@ import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
+import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -46,7 +40,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
-import java.io.IOException
 
 private val LOG = LoggerFactory.getLogger("GettingStartedAuthUtils")
 
@@ -413,6 +406,7 @@ fun requestCredentialsForExplorer(
 
     if (project == null) error("Not allowed")
 
+    // TODO: fix, it will get executed before log in flow is complete
     val rolePopup = IdcRolePopup(
         project,
         region.id,
@@ -491,60 +485,6 @@ fun requestCredentialsForExplorer(
         )
     }
     return isAuthSuccessful
-}
-
-internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
-    is IllegalStateException -> e.message ?: message("general.unknown_error")
-    is ProcessCanceledException -> message("codewhisperer.credential.login.dialog.exception.cancel_login")
-    is InvalidGrantException -> message("codewhisperer.credential.login.exception.invalid_grant")
-    is InvalidRequestException -> message("codewhisperer.credential.login.exception.invalid_input")
-    is SsoOidcException -> message("codewhisperer.credential.login.exception.general.oidc")
-    else -> {
-        val baseMessage = when (e) {
-            is IOException -> "codewhisperer.credential.login.exception.io"
-            else -> "codewhisperer.credential.login.exception.general"
-        }
-
-        message(baseMessage, "${e.javaClass.name}: ${e.message}")
-    }
-}
-
-fun authAndUpdateConfig(
-    project: Project?,
-    profile: UserConfigSsoSessionProfile,
-    configFilesFacade: ConfigFilesFacade,
-    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-    onError: (String) -> Unit
-): AwsBearerTokenConnection? {
-    val connection = try {
-        ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(profile) { connection ->
-            (connection.getConnectionSettings().tokenProvider.delegate as? InteractiveBearerTokenProvider)?.let {
-                onPendingToken(it)
-            }
-            reauthConnectionIfNeeded(project, connection)
-        }
-    } catch (e: Exception) {
-        val message = ssoErrorMessageFromException(e)
-
-        onError(message)
-        LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
-        return null
-    }
-
-    configFilesFacade.updateSectionInConfig(
-        SsoSessionConstants.SSO_SESSION_SECTION_NAME,
-        Profile.builder()
-            .name(profile.configSessionName)
-            .properties(
-                mapOf(
-                    ProfileProperty.SSO_START_URL to profile.startUrl,
-                    ProfileProperty.SSO_REGION to profile.ssoRegion,
-                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to profile.scopes.joinToString(",")
-                )
-            ).build()
-    )
-
-    return connection
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
