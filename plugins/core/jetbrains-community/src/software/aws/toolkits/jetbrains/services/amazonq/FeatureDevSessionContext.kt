@@ -81,6 +81,7 @@ class FeatureDevSessionContext(val project: Project) {
             .map { convertGitIgnorePatternToRegex(it) }
     }
 
+    // gitignore patterns are not regex, method update needed.
     private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
         .replace(".", "\\.")
         .replace("*", ".*")
