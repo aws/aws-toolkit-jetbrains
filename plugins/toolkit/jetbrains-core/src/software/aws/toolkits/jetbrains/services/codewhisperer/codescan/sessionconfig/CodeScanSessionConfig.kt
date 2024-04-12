@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionc
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VFileProperty
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.time.withTimeout
@@ -13,7 +15,7 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.ProjectFileParsingManager
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -21,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
@@ -42,16 +45,20 @@ class CodeScanSessionConfig(
 
     private var isProjectTruncated = false
 
-    val projectFileParser = ProjectFileParsingManager.getInstance(project)
+    private val gitIgnoreParser = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    fun overallJobTimeoutInSeconds(): Long = DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+    fun overallJobTimeoutInSeconds(): Long = when (scanType) {
+        SecurityScanType.FILE -> FILE_SCAN_TIMEOUT_IN_SECONDS
+        else -> DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+    }
 
-    fun getPayloadLimitInBytes(): Long = DEFAULT_PAYLOAD_LIMIT_IN_BYTES
-
-    fun getFilePayloadLimitInBytes(): Int = FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+    fun getPayloadLimitInBytes(): Long = when (scanType) {
+        SecurityScanType.FILE -> (FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES)
+        else -> (DEFAULT_PAYLOAD_LIMIT_IN_BYTES)
+    }
 
     private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
         val exceedsLimit = currentTotalFileSize > getPayloadLimitInBytes() - currentFileSize
@@ -63,14 +70,8 @@ class CodeScanSessionConfig(
 
     fun createPayload(): Payload {
         // Fail fast if the selected file size is greater than the payload limit.
-        if (scanType == SecurityScanType.FILE) {
-            if (selectedFile.length > getFilePayloadLimitInBytes()) {
-                fileTooLarge(getPresentableFilePayloadLimit())
-            }
-        } else {
-            if (selectedFile.length > getPayloadLimitInBytes()) {
-                fileTooLarge(getPresentablePayloadLimit())
-            }
+        if (selectedFile.length > getPayloadLimitInBytes()) {
+            fileTooLarge(getPresentablePayloadLimit())
         }
 
         val start = Instant.now().toEpochMilli()
@@ -147,11 +148,6 @@ class CodeScanSessionConfig(
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
     }
 
-    fun getPresentableFilePayloadLimit(): String = when (getFilePayloadLimitInBytes() >= TOTAL_BYTES_IN_KB) {
-        true -> "${getFilePayloadLimitInBytes() / TOTAL_BYTES_IN_MB}MB"
-        false -> "${getFilePayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
-    }
-
     suspend fun getTotalProjectSizeInBytes(): Long {
         var totalSize = 0L
         try {
@@ -159,7 +155,14 @@ class CodeScanSessionConfig(
                 if (scanType == SecurityScanType.FILE) {
                     totalSize = selectedFile.length
                 } else {
-                    totalSize = projectFileParser.getProjectSize()
+                    VfsUtil.collectChildrenRecursively(projectRoot).filter {
+                        !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
+                            !gitIgnoreParser.ignoreFile(it)
+                            )
+                    }.fold(0L) { acc, next ->
+                        totalSize = acc + next.length
+                        totalSize
+                    }
                 }
             }
         } catch (e: TimeoutCancellationException) {
@@ -188,10 +191,14 @@ class CodeScanSessionConfig(
         } else {
             // Include other files only if the current file is in the project.
             if (selectedFile.path.startsWith(projectRoot.path)) {
-                return projectFileParser.collectProjectFiles(selectedFile)
+                files.addAll(
+                    VfsUtil.collectChildrenRecursively(projectRoot).filter {
+                        it != selectedFile && !it.isDirectory && !gitIgnoreParser.ignoreFile(it)
+                    }
+                )
             }
         }
-        return projectFileParser.collectProjectFiles(selectedFile)
+        return files
     }
 
     fun isProjectTruncated() = isProjectTruncated
