@@ -20,34 +20,28 @@ class AwsSettingsCoreConfigurable : BoundConfigurable("AWS"), SearchableConfigur
     override fun createPanel() = panel {
         group(message("aws.settings.global_label")) {
             row {
-                cell(enableTelemetry).apply {
-                    bindSelected(
-                        AwsSettings.getInstance()::isTelemetryEnabled,
-                        AwsSettings.getInstance()::isTelemetryEnabled::set
-                    )
-                }
+                cell(enableTelemetry).bindSelected(
+                    AwsSettings.getInstance()::isTelemetryEnabled,
+                    AwsSettings.getInstance()::isTelemetryEnabled::set
+                )
                 text("<a>${message("general.details")}</a>") {
                     BrowserUtil.open("https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html")
                 }
             }
 
             row {
-                cell(enableAutoUpdate).apply {
-                    bindSelected(
-                        AwsSettings.getInstance()::isAutoUpdateEnabled,
-                        AwsSettings.getInstance()::isAutoUpdateEnabled::set
-                    )
-                }
+                cell(enableAutoUpdate).bindSelected(
+                    AwsSettings.getInstance()::isAutoUpdateEnabled,
+                    AwsSettings.getInstance()::isAutoUpdateEnabled::set
+                )
             }
 
             indent {
                 row {
-                    cell(enableAutoUpdateNotification).apply {
-                        bindSelected(
-                            AwsSettings.getInstance()::isAutoUpdateNotificationEnabled,
-                            AwsSettings.getInstance()::isAutoUpdateNotificationEnabled::set
-                        )
-                    }.enabledIf(enableAutoUpdate.selected)
+                    cell(enableAutoUpdateNotification).bindSelected(
+                        AwsSettings.getInstance()::isAutoUpdateNotificationEnabled,
+                        AwsSettings.getInstance()::isAutoUpdateNotificationEnabled::set
+                    ).enabledIf(enableAutoUpdate.selected)
                         .comment(message("aws.settings.auto_update.notification_enable.tooltip"))
                 }
             }

@@ -67,9 +67,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                 if (isSso) {
                     label(message("aws.settings.codewhisperer.configurable.controlled_by_admin")).applyToComponent {
                         font = font.deriveFont(Font.ITALIC).deriveFont((font.size - 1).toFloat())
-                    }.apply {
-                        enabled(false)
-                    }
+                    }.enabled(false)
                 }
             }
 
@@ -112,9 +110,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                 if (isSso) {
                     label(message("aws.settings.codewhisperer.configurable.controlled_by_admin")).applyToComponent {
                         font = font.deriveFont(Font.ITALIC).deriveFont((font.size - 1).toFloat())
-                    }.apply {
-                        enabled(false)
-                    }
+                    }.enabled(false)
                 }
             }
         }
