@@ -54,7 +54,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     return@onCompletion
                 } // for any other exception, let the `catch` operator handle it.
                 else if (error != null) {
-                    throw error
+                    // smartcast is failing on 2.0: Type mismatch: inferred type is '@R|kotlin/ParameterName|(name = String(cause))  kotlin/Throwable?' but 'kotlin/Throwable' was expected
+                    throw error as Throwable
                 }
 
                 // Send the gathered suggestions in a final answer-part message
