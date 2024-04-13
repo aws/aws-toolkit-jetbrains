@@ -11,21 +11,11 @@ import './assets/common.scss'
 
 const app = createApp(root, { app: 'TOOLKIT' })
 
-// const app = createApp({
-//     data() {
-//         return {
-//             message: 'Hello World!'
-//         }
-//     },
-//     template: '<h1>{{ message }}</h1>'
-//
-// })
-
 const store = createStore<State>({
     state: {
         stage: 'START' as Stage,
         ssoRegions: [] as Region[],
-        authorizationCode: '',
+        authorizationCode: undefined,
         lastLoginIdcInfo: {
             profileName: '',
             directoryId: '',
@@ -52,7 +42,7 @@ const store = createStore<State>({
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []
-            state.authorizationCode = ''
+            state.authorizationCode = undefined
             state.lastLoginIdcInfo = {
                 profileName: '',
                 directoryId: '',
