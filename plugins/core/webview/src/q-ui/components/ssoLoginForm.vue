@@ -11,7 +11,15 @@
         </svg>
     </button>
     <div class="font-amazon" @keydown.enter="handleContinueClick">
-        <div class="title bottom-small-gap">Sign in with SSO:</div>
+        <div class="bottom-small-gap">
+            <div class="title">Sign in with SSO:</div>
+            <div class="code-catalyst-login" v-if="app === 'TOOLKIT'">
+                <div class="hint">
+                    Using CodeCatalyst with AWS Builder ID?
+                    <a href="#" @click="handleCodeCatalystSignin()">Skip to sign-in</a>
+                </div>
+            </div>
+        </div>
         <div>
             <div class="title no-bold">Profile Name</div>
             <div class="hint">User-specified name used to label credentials locally</div>
@@ -78,6 +86,9 @@ import {Region} from "../../model";
 
 export default defineComponent({
     name: "ssoForm",
+    props: {
+        app: String
+    },
     computed: {
         regions(): Region[] {
             return this.$store.state.ssoRegions
@@ -140,6 +151,11 @@ export default defineComponent({
             })
             this.$emit('stageChanged', 'AUTHENTICATING')
         },
+        handleCodeCatalystSignin() { // TODO:
+            window.ideApi.postMessage({
+                command: 'loginCodeCatlystBuilderId'
+            })
+        }
     },
     mounted() {
         document.getElementById("ssoProfile")?.focus()
@@ -186,6 +202,10 @@ export default defineComponent({
 
 .region-select {
     padding-left: 6px;
+}
+
+a {
+    color: #29a7ff;
 }
 
 /* Theme specific styles */
