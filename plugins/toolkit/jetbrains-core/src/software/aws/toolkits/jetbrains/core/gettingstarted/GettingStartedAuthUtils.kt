@@ -406,7 +406,6 @@ fun requestCredentialsForExplorer(
 
     if (project == null) error("Not allowed")
 
-    // TODO: fix, it will get executed before log in flow is complete
     val rolePopup = IdcRolePopup(
         project,
         region.id,

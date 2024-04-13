@@ -150,16 +150,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                     }
                     val onError: (String) -> Unit = { s ->
                         Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
-//                        AuthTelemetry.addConnection(
-//                            project,
-//                            source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-//                            featureId = featureId,
-//                            credentialSourceId = CredentialSourceId.IamIdentityCenter,
-//                            isAggregated = false,
-//                            attempts = ++attempts,
-//                            result = Result.Failed,
-//                            reason = "ConnectionUnsuccessful"
-//                        )
+                        // TODO: AuthTelemetry.addConnection
                     }
 
                     val scope = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)

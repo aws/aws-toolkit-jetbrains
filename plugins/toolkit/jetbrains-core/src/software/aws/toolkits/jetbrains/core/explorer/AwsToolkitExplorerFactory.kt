@@ -16,12 +16,17 @@ import com.intellij.openapi.wm.ex.ToolWindowEx
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitCredentialsChangeListener
 import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
@@ -91,20 +96,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                 }
             }
         )
-
-        // TODO: not needed?
-        ApplicationManager.getApplication().messageBus.connect(project).subscribe(
-            CredentialManager.CREDENTIALS_CHANGED,
-            object : ToolkitCredentialsChangeListener {
-                override fun providerRemoved(identifier: CredentialIdentifier) {
-                    toolWindow.reload()
-                }
-
-                override fun providerModified(identifier: CredentialIdentifier) {
-                    toolWindow.reload()
-                }
-            }
-        )
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -138,8 +129,44 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     }
 }
 
-// TODO: not sure how do we define Toolkit "connected"
+// TODO: should move to somewhere else and public ?
+/**
+ * (1)
+ *     if (there is an IAM profile) {
+ *         // show explorer
+ *     }
+ *
+ * (2)
+ *     else if (there is any IdC SSO session) { // implies no iam profile
+ *        // 2a: has codecatlyst connection pinned
+ *
+ *
+ *        // 2b: user selects desired sso session from list
+ *
+ *        if (session does not have sso:account:access)
+ *            // 2bii: request scope upgrade
+ *        // 2c: request permission set selection
+ *     }
+ */
 private fun isToolkitConnected(project: Project): Boolean {
-    val isConnected = AwsConnectionManager.getInstance(project).isValidConnectionSettings()
-    return isConnected
+    // (1)
+    if (AwsConnectionManager.getInstance(project).isValidConnectionSettings()) {
+        return true
+    }
+
+    val bearerCredsManager = ToolkitConnectionManager.getInstance(project)
+    // (2a) has codecatlyst connection (either pinned or not pinned)
+    if (bearerCredsManager.isFeatureEnabled(CodeCatalystConnection.getInstance())) {
+        return true
+    }
+
+    return bearerCredsManager.activeConnection()?.let { bearerConn ->
+        if (bearerConn is AwsBearerTokenConnection) {
+            bearerConn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+        } else if (bearerConn is AwsConnectionManagerConnection) {
+            true
+        } else {
+            false
+        }
+    } ?: false
 }
