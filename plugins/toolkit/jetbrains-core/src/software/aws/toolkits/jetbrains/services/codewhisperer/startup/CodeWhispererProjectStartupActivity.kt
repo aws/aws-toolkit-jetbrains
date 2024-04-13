@@ -12,7 +12,6 @@ import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -106,9 +105,5 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
                 delay(FEATURE_CONFIG_POLL_INTERVAL_IN_MS)
             }
         }
-    }
-
-    companion object {
-        private val LOG = getLogger<CodeWhispererProjectStartupActivity>()
     }
 }
