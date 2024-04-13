@@ -34,8 +34,9 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
-import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
 import java.time.Duration
 import java.time.Instant
@@ -109,11 +110,11 @@ class InteractiveBearerTokenProvider(
 
     private val supplier = CachedSupplier.builder { refreshToken() }.prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
     private val lastToken = AtomicReference<AccessToken?>()
-    val pendingAuthorization: Authorization?
-        get() = accessTokenProvider.authorization.get()
+    val pendingAuthorization: PendingAuthorization?
+        get() = accessTokenProvider.authorization
 
     init {
-        lastToken.set(cache.loadAccessToken(accessTokenProvider.accessTokenCacheKey))
+        lastToken.set(accessTokenProvider.loadAccessToken())
 
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
@@ -204,7 +205,7 @@ class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: St
     override fun resolveToken(): SdkToken = tokenProvider.value.resolveToken()
 
     override fun currentToken(): AccessToken? = sdkTokenManager.loadToken().orNull()?.let {
-        AccessToken(
+        DeviceAuthorizationGrantToken(
             startUrl = it.startUrl(),
             region = it.region(),
             accessToken = it.token(),
