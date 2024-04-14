@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {Store} from "vuex";
-import {IdcInfo, Region, State} from "./model";
+import {IdcInfo, Region, Stage, State} from "./model";
 
 export class IdeClient {
     constructor(private readonly store: Store<State>) {}
 
-    updateStage(stage: 'START' | 'SSO_FORM' | 'CONNECTED' | 'AUTHENTICATING' | 'AWS_PROFILE') {
+    updateStage(stage: Stage) {
         console.log("update vue State")
         this.store.commit('setStage', stage)
     }

@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
@@ -79,6 +80,71 @@ private class WebviewDialog(private val project: Project) : DialogWrapper(projec
     }
 
     override fun createCenterPanel(): JComponent = ToolkitWebviewPanel(project).component
+}
+
+class ToolkitWebviewPanel(val project: Project) {
+    private val webviewContainer = Wrapper()
+    var browser: ToolkitWebviewBrowser? = null
+        private set
+
+    val component = panel {
+        row {
+            cell(webviewContainer)
+                .horizontalAlign(HorizontalAlign.FILL)
+                .verticalAlign(VerticalAlign.FILL)
+        }.resizableRow()
+
+        row {
+            cell(
+                JButton("Show Web Debugger").apply {
+                    addActionListener(
+                        ActionListener {
+                            browser?.jcefBrowser?.openDevtools()
+                        },
+                    )
+                },
+            )
+                .horizontalAlign(HorizontalAlign.CENTER)
+                .verticalAlign(VerticalAlign.BOTTOM)
+        }
+    }
+
+    init {
+        if (!JBCefApp.isSupported()) {
+            // Fallback to an alternative browser-less solution
+            webviewContainer.add(JBTextArea("JCEF not supported"))
+            browser = null
+        } else {
+            browser = ToolkitWebviewBrowser(project).also {
+                webviewContainer.add(it.component())
+                it.init()
+            }
+        }
+    }
+
+    fun showWebview() {
+        val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
+        val myContent = contentManager.factory.createContent(this.component, null, false).also {
+            it.isCloseable = true
+            it.isPinnable = true
+        }
+
+        runInEdt {
+            contentManager.removeAllContents(true)
+            contentManager.addContent(myContent)
+            browser?.jcefBrowser?.cefBrowser?.let {
+                println("!")
+                it.executeJavaScript("""
+                    console.log('in js code.....................')
+                    window.ideClient.updateStage('TOOLKIT_BEARER')
+                """.trimIndent(), it.url, 0)
+            }
+        }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
+    }
 }
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
@@ -315,52 +381,6 @@ class ToolkitWebviewBrowser(val project: Project) {
         private const val DOMAIN = "webview"
     }
 }
-
-class ToolkitWebviewPanel(val project: Project) {
-    private val webviewContainer = Wrapper()
-    var browser: ToolkitWebviewBrowser? = null
-        private set
-
-    val component = panel {
-        row {
-            cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
-        }.resizableRow()
-
-        row {
-            cell(
-                JButton("Show Web Debugger").apply {
-                    addActionListener(
-                        ActionListener {
-                            browser?.jcefBrowser?.openDevtools()
-                        },
-                    )
-                },
-            )
-                .horizontalAlign(HorizontalAlign.CENTER)
-                .verticalAlign(VerticalAlign.BOTTOM)
-        }
-    }
-
-    init {
-        if (!JBCefApp.isSupported()) {
-            // Fallback to an alternative browser-less solution
-            webviewContainer.add(JBTextArea("JCEF not supported"))
-            browser = null
-        } else {
-            browser = ToolkitWebviewBrowser(project).also {
-                webviewContainer.add(it.component())
-                it.init()
-            }
-        }
-    }
-
-    companion object {
-        fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
-    }
-}
-
 
 // TODO:
 fun requestCredentialsForExplorer(
