@@ -26,18 +26,26 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
 import org.cef.CefApp
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
+import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
+import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
+import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -351,4 +359,63 @@ class ToolkitWebviewPanel(val project: Project) {
     companion object {
         fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
     }
+}
+
+
+// TODO:
+fun requestCredentialsForExplorer(
+    project: Project,
+    profileName: String,
+    startUrl: String,
+    region: AwsRegion,
+    scopes: List<String>,
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+    onError: (String) -> Unit,
+    promptForIdcPermissionSet: Boolean = true,
+    initialConnectionCount: Int = getConnectionCount(),
+    initialAuthConnections: String = getEnabledConnections(
+        project
+    ),
+    isFirstInstance: Boolean = false,
+    connectionInitiatedFromExplorer: Boolean = false
+): Boolean {
+    val configFilesFacade = DefaultConfigFilesFacade()
+    try {
+        configFilesFacade.readSsoSessions()
+    } catch (e: Exception) {
+        return false
+    }
+
+    val profile = UserConfigSsoSessionProfile(
+        configSessionName = profileName,
+        ssoRegion = region.id,
+        startUrl = startUrl,
+        scopes = scopes
+    )
+
+    val connection = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
+    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+
+    if (!promptForIdcPermissionSet) {
+        return true
+    }
+
+    val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+    val rolePopup = IdcRolePopup(
+        project,
+        region.id,
+        profileName,
+        tokenProvider,
+        IdcRolePopupState(), // TODO: is it correct state ?
+        configFilesFacade = configFilesFacade,
+    )
+
+    if (!rolePopup.showAndGet()) {
+        // don't close window if role is needed but was not confirmed
+        // TODO: ??
+        return false
+    }
+
+    return true
 }

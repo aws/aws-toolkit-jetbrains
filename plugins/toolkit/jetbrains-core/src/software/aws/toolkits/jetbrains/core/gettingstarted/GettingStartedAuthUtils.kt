@@ -364,66 +364,6 @@ fun reauthenticateWithQ(project: Project) {
     }
 }
 
-// TODO: duplicate code / telemetry
-fun requestCredentialsForExplorer(
-    project: Project,
-    profileName: String,
-    startUrl: String,
-    region: AwsRegion,
-    scopes: List<String>,
-    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-    onError: (String) -> Unit,
-    promptForIdcPermissionSet: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
-    initialAuthConnections: String = getEnabledConnections(
-        project
-    ),
-    isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
-): Boolean {
-    val configFilesFacade = DefaultConfigFilesFacade()
-    try {
-        configFilesFacade.readSsoSessions()
-    } catch (e: Exception) {
-        return false
-    }
-
-    val profile = UserConfigSsoSessionProfile(
-        configSessionName = profileName,
-        ssoRegion = region.id,
-        startUrl = startUrl,
-        scopes = scopes
-    )
-
-    val connection = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
-
-    if (!promptForIdcPermissionSet) {
-        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-        return true
-    }
-
-    val tokenProvider = connection.getConnectionSettings().tokenProvider
-
-    if (project == null) error("Not allowed")
-
-    val rolePopup = IdcRolePopup(
-        project,
-        region.id,
-        profileName,
-        tokenProvider,
-        IdcRolePopupState(), // TODO: is it correct state ?
-        configFilesFacade = configFilesFacade
-    )
-
-    if (!rolePopup.showAndGet()) {
-        // don't close window if role is needed but was not confirmed
-        // TODO: ??
-        return false
-    }
-
-    return true
-}
-
 fun requestCredentialsForExplorer(
     project: Project,
     initialConnectionCount: Int = getConnectionCount(),
