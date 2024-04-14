@@ -177,8 +177,13 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
 }
 
 @VisibleForTesting
-internal fun reauthConnection(project: Project?, connection: ToolkitConnection): BearerTokenProvider =
-    reauthConnectionIfNeeded(project, connection)
+internal fun reauthConnection(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
+    val provider = reauthConnectionIfNeeded(project, connection)
+
+    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+
+    return provider
+}
 
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {

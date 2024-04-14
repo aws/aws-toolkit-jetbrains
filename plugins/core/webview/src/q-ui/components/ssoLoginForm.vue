@@ -151,9 +151,10 @@ export default defineComponent({
             })
             this.$emit('stageChanged', 'AUTHENTICATING')
         },
-        handleCodeCatalystSignin() { // TODO:
+        handleCodeCatalystSignin() {
+            this.$emit('stageChanged', 'AUTHENTICATING')
             window.ideApi.postMessage({
-                command: 'loginCodeCatlystBuilderId'
+                command: 'loginCodeCatalystBuilderId'
             })
         }
     },

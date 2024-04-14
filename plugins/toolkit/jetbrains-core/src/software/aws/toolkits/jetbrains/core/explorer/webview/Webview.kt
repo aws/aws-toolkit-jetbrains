@@ -25,10 +25,16 @@ import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
 import org.cef.CefApp
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
@@ -129,6 +135,35 @@ class ToolkitWebviewBrowser(val project: Project) {
                     )
                 }
 
+                "loginCodeCatalystBuilderId" -> {
+                    val onPending: () -> Unit = {
+                        projectCoroutineScope(project).launch {
+                            val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
+
+                            conn?.let { c ->
+                                val provider = (c as ManagedBearerSsoConnection).getConnectionSettings().tokenProvider.delegate
+                                val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
+
+                                if (authorization != null) {
+                                    jcefBrowser.cefBrowser.executeJavaScript(
+                                        "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
+                                        jcefBrowser.cefBrowser.url,
+                                        0
+                                    )
+
+                                    currentAuthorization = authorization
+
+                                    return@launch
+                                }
+                            }
+                        }
+                    }
+
+                    runInEdt {
+                        Login.BuilderId(listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE) + CODECATALYST_SCOPES, onPending).loginBuilderId(project)
+                    }
+                }
+
                 "loginIdC" -> {
                     val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
                     val url = jacksonObjectMapper().readTree(it).get("url").asText()
@@ -155,7 +190,7 @@ class ToolkitWebviewBrowser(val project: Project) {
 
                     val scope = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                     runInEdt {
-                        val success = requestCredentialsForExplorer(
+                        requestCredentialsForExplorer(
                             project,
                             profileName,
                             url,
@@ -164,9 +199,6 @@ class ToolkitWebviewBrowser(val project: Project) {
                             onPendingToken,
                             onError
                         )
-
-                        if (success) {
-                        }
                     }
                 }
 
@@ -224,6 +256,10 @@ class ToolkitWebviewBrowser(val project: Project) {
 
     fun resetBrowserState() {
         jcefBrowser.cefBrowser.executeJavaScript("window.ideClient.reset()", jcefBrowser.cefBrowser.url, 0)
+    }
+
+    private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
+        ToolkitAuthManager.getInstance().getConnection(connectionId)
     }
 
     private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
