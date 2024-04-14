@@ -16,12 +16,15 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformat
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.aws.toolkits.core.utils.error
@@ -87,6 +90,17 @@ class GumbyClient(private val project: Project) {
         return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation, uploadId = uploadId)
     }
 
+    fun resumeCodeTransformation(
+        jobId: String,
+        userActionStatus: TransformationUserActionStatus
+    ): ResumeTransformationResponse {
+        val request = ResumeTransformationRequest.builder()
+            .transformationJobId(jobId)
+            .userActionStatus(userActionStatus)
+            .build()
+        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation, jobId = jobId)
+    }
+
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
         val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
         return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan, jobId = jobId.id)
@@ -118,11 +132,12 @@ class GumbyClient(private val project: Project) {
                 startTime,
                 codeTransformUploadId = uploadId,
                 codeTransformJobId = jobId,
-                codeTransformRequestId = result?.responseMetadata()?.requestId()
+                codeTransformRequestId = result?.responseMetadata()?.requestId(),
             )
         }
     }
 
+    // TODO look here for download
     suspend fun downloadExportResultArchive(jobId: JobId): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
@@ -131,7 +146,22 @@ class GumbyClient(private val project: Project) {
             telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
         },
         { startTime ->
+            // TODO need to update telemetry type to include export ID
             telemetry.logApiLatency(CodeTransformApiNames.ExportResultArchive, startTime, codeTransformJobId = jobId.id)
+        }
+    )
+
+    // TODO update telemetry
+    suspend fun downloadExportResultArchive2(exportId: String): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
+        exportId,
+        ExportIntent.TRANSFORMATION,
+        { e ->
+            LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
+            telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, exportId)
+        },
+        { startTime ->
+            // TODO need to update telemetry type to include export ID
+            telemetry.logApiLatency(CodeTransformApiNames.ExportResultArchive, startTime, codeTransformJobId = "")
         }
     )
 

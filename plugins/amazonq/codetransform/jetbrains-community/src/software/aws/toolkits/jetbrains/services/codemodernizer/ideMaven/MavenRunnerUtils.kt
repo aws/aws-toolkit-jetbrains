@@ -13,6 +13,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import java.io.File
 import java.nio.file.Files
@@ -187,4 +188,69 @@ private fun runMavenInstall(
         }
     }
     return installTransformRunnable
+}
+
+private fun runMavenDependencyUpdatesReport(
+    sourceFolder: File,
+    buildlogBuilder: StringBuilder,
+    mvnSettings: MavenRunnerSettings,
+    transformMavenRunner: TransformMavenRunner,
+    logger: Logger,
+    telemetry: CodeTransformTelemetryManager,
+): TransformRunnable {
+    buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven dependency updates report")
+
+    val dependencyUpdatesReportCommandList = listOf(
+        "versions:dependency-updates-aggregate-report",
+        "-DonlyProjectDependencies=true",
+        "-DdependencyUpdatesReportFormats=xml",
+    )
+
+    val params = MavenRunnerParameters(
+        false,
+        sourceFolder.absolutePath,
+        null,
+        dependencyUpdatesReportCommandList,
+        emptyList<String>(),
+        null
+    )
+    val dependencyUpdatesReportRunnable = TransformRunnable()
+    runInEdt {
+        try {
+            transformMavenRunner.run(params, mvnSettings, dependencyUpdatesReportRunnable)
+        } catch (t: Throwable) {
+            val error = "Maven Clean: Unexpected error when executing bundled Maven dependency updates report"
+            dependencyUpdatesReportRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
+            buildlogBuilder.appendLine("IntelliJ bundled Maven dependency updates report failed: ${t.message}")
+            emitMavenFailure(error, logger, telemetry, t)
+        }
+    }
+    return dependencyUpdatesReportRunnable
+}
+
+// TODO rename MavenCopyCommandsResult
+fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
+    val telemetry = CodeTransformTelemetryManager.getInstance(project)
+    logger.info { "Executing IntelliJ bundled Maven" }
+
+    val currentTimestamp = System.currentTimeMillis()
+    val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
+
+    try {
+        val transformMvnRunner = TransformMavenRunner(project)
+        val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+        val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry)
+        runnable.await()
+        buildlogBuilder.appendLine(runnable.getOutput())
+
+        // TODO remove
+        parseXmlDependenciesReport("target/dependency-updates-aggregate-report.xml")
+
+    } catch (t: Throwable) {
+        emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)
+        return MavenCopyCommandsResult.Failure
+    }
+    // When all commands executed successfully, show the transformation hub
+    // TODO remove
+    return MavenCopyCommandsResult.Success(destinationDir.toFile())
 }

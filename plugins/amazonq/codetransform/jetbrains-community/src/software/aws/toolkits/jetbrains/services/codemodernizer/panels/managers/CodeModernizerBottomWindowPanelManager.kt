@@ -191,6 +191,10 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> setJobCompletedSuccessfullyUI()
 
                 is CodeModernizerJobCompletedResult.ManagerDisposed -> return@setUI
+
+                // TODO
+                is CodeModernizerJobCompletedResult.JobPaused,
+
                 is CodeModernizerJobCompletedResult.Stopped,
                 is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> userInitiatedStopCodeModernizationUI()
             }
@@ -232,10 +236,13 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion) = invokeLater {
+        // TODO handle paused case, both the current job panel and history
+
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
                 TransformationStatus.TRANSFORMED,
+                TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
             )

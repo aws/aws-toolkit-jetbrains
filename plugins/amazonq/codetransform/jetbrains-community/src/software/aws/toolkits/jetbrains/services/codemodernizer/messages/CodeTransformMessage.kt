@@ -23,6 +23,7 @@ enum class CodeTransformButtonId(val id: String) {
     OpenMvnBuild("open_mvn_build"),
     ViewDiff("view_diff"),
     ViewSummary("view_summary"),
+    OpenDependencyErrorPom("open_dependency_error_pom"),
 }
 
 enum class CodeTransformFormItemId(val id: String) {

@@ -39,7 +39,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.findDownloadArtifactStep
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -234,9 +233,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         try {
             // 1) We need to call GetTransformationPlan to get artifactId
             val transformationSteps = getTransformationStepsFixture(jobId)
-            val hilTransformationStep = findDownloadArtifactStep(transformationSteps) ?: throw Exception("No HIL Transformation Step found")
+            val hilTransformationStep = (transformationSteps) ?: throw Exception("No HIL Transformation Step found")
 
-            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep) ?: throw Exception("artifactId or artifactType is undefined")
+            // TODO
+            // Actual start from here
+            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep.last()) ?: throw Exception("artifactId or artifactType is undefined")
 
             // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
             val downloadResultsFileReferences = downloadResultArchive(
@@ -343,15 +344,34 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun runModernize(copyResult: MavenCopyCommandsResult) {
         initStopParameters()
         val session = codeTransformationSession as CodeModernizerSession
+        /*
         val fakeJobId = JobId("test-id")
         completeHumanInTheLoopWork(fakeJobId, 0)
         val test = true
         if (test) {
             return
         }
+         */
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         launchModernizationJob(session, copyResult)
     }
+
+    /*
+    fun resumeTransformation(jobId: String) {
+        initStopParameters()
+        val session = codeTransformationSession as CodeModernizerSession
+        /*
+        val fakeJobId = JobId("test-id")
+        completeHumanInTheLoopWork(fakeJobId, 0)
+        val test = true
+        if (test) {
+            return
+        }
+     */
+        initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
+        launchModernizationJob(session, copyResult)
+    }
+     */
 
     private fun initStopParameters() {
         transformationStoppedByUsr.set(false)
@@ -408,6 +428,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun launchModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult) = projectCoroutineScope(project).launch {
         val result = initModernizationJob(session, copyResult)
+
         postModernizationJob(result)
     }
 
@@ -474,12 +495,15 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val session = createCodeModernizerSession(customerSelection, project)
         codeTransformationSession = session
 
+        // TODO
+        /*
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
             isMvnRunning.set(false)
             handleLocalMavenBuildResult(result)
         }
+         */
     }
 
     internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
@@ -521,6 +545,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
+    // TODO handleJobResumed
+    // Update codeModernizerBottomWindowPanelManager with resumed UI
+
     suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
         setJobOngoing(jobId, session.sessionContext)
         // Init the splitter panel to show progress and progress steps
@@ -539,6 +566,25 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
         if (result is CodeModernizerJobCompletedResult.ManagerDisposed) {
             return
+        }
+
+        // TODO handle HIL work
+        if (result is CodeModernizerJobCompletedResult.JobPaused) {
+            // No need to handle failed case here since job would have been FAILED status
+
+            val transformationPlan = result.transformationPlan
+            val relatedStep = transformationPlan.transformationSteps()[1]
+
+            // TODO where is downloadArtifacts
+            // have a status = pause
+            // only one step has pause status
+            // val currentHIL = relatedStep.progressUpdates().last()
+
+            // val artifactId = transformationPlan.transformationSteps()[1].progressUpdates().last().downloadArtifacts().first().downloadArtifactId()
+
+            // TODO set transform hub UI
+            // TODO update chat
+            // TODO HIL
         }
 
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access
@@ -742,6 +788,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 project,
                 listOf(displayFeedbackNotificationAction())
             )
+
+            // TODO
+            is CodeModernizerJobCompletedResult.JobPaused -> notifyStickyInfo(
+                message("codemodernizer.notification.info.transformation_stop.title"),
+                message("codemodernizer.notification.info.transformation_stop.content"),
+                project,
+                listOf(displayFeedbackNotificationAction())
+            )
         }
         telemetry.totalRunTime(result.toString(), jobId)
     }
@@ -855,5 +909,18 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeTransformationSession?.dispose()
         codeModernizerBottomWindowPanelManager.reset()
         isModernizationInProgress.set(false)
+    }
+
+    fun findAlternativeDependencyVersions() {
+        // TODO telemetry
+        // telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
+
+        projectCoroutineScope(project).launch {
+            isMvnRunning.set(true)
+
+            val result = codeTransformationSession?.getDependencyReportUsingMaven()
+
+            isMvnRunning.set(false)
+        }
     }
 }

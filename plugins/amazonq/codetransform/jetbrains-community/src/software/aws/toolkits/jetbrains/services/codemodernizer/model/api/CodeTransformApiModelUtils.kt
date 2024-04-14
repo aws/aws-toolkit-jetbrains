@@ -2,19 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.codemodernizer.model.api
 
-import software.amazon.awssdk.services.codewhispererruntime.model.DownloadArtifact
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 
-fun getArtifactIdentifiers(transformationStep: TransformationStep): DownloadArtifact {
+fun getArtifactIdentifiers(transformationStep: TransformationStep): TransformationDownloadArtifact {
     println("In getArtifactIdentifiers $transformationStep")
-    return transformationStep.downloadArtifacts().first()
+    // TODO
+    return transformationStep.progressUpdates().last().downloadArtifacts().first()
 }
 
 fun findDownloadArtifactStep(transformationSteps: List<TransformationStep>): TransformationStep? {
     println("In findDownloadArtifactStep $transformationSteps")
     for (step in transformationSteps) {
-        val artifactType = step.downloadArtifacts()?.get(0)?.downloadArtifactType()
-        val artifactId = step.downloadArtifacts()?.get(0)?.downloadArtifactId()
+        val artifactType = step.progressUpdates().last().downloadArtifacts().first().downloadArtifactType()
+        val artifactId = step.progressUpdates().last().downloadArtifacts().first().downloadArtifactId()
         if (artifactType != null || artifactId != null) {
             return step
         }

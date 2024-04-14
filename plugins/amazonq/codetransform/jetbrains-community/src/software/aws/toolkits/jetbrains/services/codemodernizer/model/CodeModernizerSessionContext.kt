@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -81,6 +82,14 @@ data class CodeModernizerSessionContext(
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
+
+    fun getDependencyReportUsingMaven(): MavenCopyCommandsResult {
+        val root = configurationFile.parent
+        val sourceFolder = File(root.path)
+        val buildLogBuilder = StringBuilder("Starting Build Log...\n")
+        return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
+    }
+    private fun executeDependencyVersionReportUsingMaven(sourceFolder: File, buildLogBuilder: StringBuilder) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
         val telemetry = CodeTransformTelemetryManager.getInstance(project)

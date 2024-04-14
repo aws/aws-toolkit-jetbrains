@@ -37,6 +37,9 @@ class CodeTransformMessageListener {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.AuthRestored))
     }
 
+    fun onRequestUserInput() {
+    }
+
     // provide singleton access
     companion object {
         val instance = CodeTransformMessageListener()

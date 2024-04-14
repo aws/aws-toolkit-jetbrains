@@ -40,7 +40,6 @@
             "output":{"shape":"CreateTaskAssistConversationResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
-                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
@@ -57,7 +56,6 @@
             "output":{"shape":"CreateUploadUrlResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
-                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -280,7 +278,6 @@
             "output":{"shape":"StartTaskAssistCodeGenerationResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
-                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -495,6 +492,13 @@
         "CodeAnalysisFindingsSchema":{
             "type":"string",
             "enum":["codeanalysis/findings/1.0"]
+        },
+        "CodeAnalysisScope":{
+            "type":"string",
+            "enum":[
+                "FILE",
+                "PROJECT"
+            ]
         },
         "CodeAnalysisStatus":{
             "type":"string",
@@ -889,23 +893,6 @@
             "type":"double",
             "box":true
         },
-        "DownloadArtifact":{
-            "type":"structure",
-            "members":{
-                "downloadArtifactType":{"shape":"DownloadArtifactType"},
-                "downloadArtifactId":{"shape":"ArtifactId"}
-            }
-        },
-        "DownloadArtifactType":{
-            "type":"string",
-            "enum":["UserInstructions"]
-        },
-        "DownloadArtifacts":{
-            "type":"list",
-            "member":{"shape":"DownloadArtifact"},
-            "max":10,
-            "min":0
-        },
         "EditorState":{
             "type":"structure",
             "members":{
@@ -972,7 +959,7 @@
         },
         "EnvironmentVariableValueString":{
             "type":"string",
-            "max":256,
+            "max":1024,
             "min":1,
             "sensitive":true
         },
@@ -1696,7 +1683,8 @@
                 "clientToken":{
                     "shape":"StartCodeAnalysisRequestClientTokenString",
                     "idempotencyToken":true
-                }
+                },
+                "scope":{"shape":"CodeAnalysisScope"}
             }
         },
         "StartCodeAnalysisRequestClientTokenString":{
@@ -2003,15 +1991,6 @@
             "members":{
                 "message":{"shape":"String"}
             },
-            "exception":true,
-            "retryable":{"throttling":true}
-        },
-        "ServiceQuotaExceededException":{
-            "type":"structure",
-            "required":["message"],
-            "members":{
-                "message":{"shape":"String"}
-            },
             "documentation":"<p>This exception is thrown when request was denied due to request throttling.</p>",
             "exception":true,
             "retryable":{"throttling":true}
@@ -2032,6 +2011,7 @@
                 "NET_FRAMEWORK_V_4_7_1",
                 "NET_FRAMEWORK_V_4_7_2",
                 "NET_FRAMEWORK_V_4_8",
+                "NET_FRAMEWORK_V_4_8_1",
                 "NET_CORE_APP_1_0",
                 "NET_CORE_APP_1_1",
                 "NET_CORE_APP_2_0",
@@ -2044,6 +2024,23 @@
                 "NET_7_0",
                 "NET_8_0"
             ]
+        },
+        "TransformationDownloadArtifact":{
+            "type":"structure",
+            "members":{
+                "downloadArtifactType":{"shape":"TransformationDownloadArtifactType"},
+                "downloadArtifactId":{"shape":"ArtifactId"}
+            }
+        },
+        "TransformationDownloadArtifactType":{
+            "type":"string",
+            "enum":["ClientInstructions"]
+        },
+        "TransformationDownloadArtifacts":{
+            "type":"list",
+            "member":{"shape":"TransformationDownloadArtifact"},
+            "max":10,
+            "min":0
         },
         "TransformationJavaRuntimeEnv":{
             "type":"string",
@@ -2078,29 +2075,6 @@
                 "JAVA_8",
                 "JAVA_11",
                 "JAVA_17",
-                "NET_FRAMEWORK_V_3_5",
-                "NET_FRAMEWORK_V_4_0",
-                "NET_FRAMEWORK_V_4_5",
-                "NET_FRAMEWORK_V_4_5_1",
-                "NET_FRAMEWORK_V_4_5_2",
-                "NET_FRAMEWORK_V_4_6",
-                "NET_FRAMEWORK_V_4_6_1",
-                "NET_FRAMEWORK_V_4_6_2",
-                "NET_FRAMEWORK_V_4_7",
-                "NET_FRAMEWORK_V_4_7_1",
-                "NET_FRAMEWORK_V_4_7_2",
-                "NET_FRAMEWORK_V_4_8",
-                "NET_CORE_APP_1_0",
-                "NET_CORE_APP_1_1",
-                "NET_CORE_APP_2_0",
-                "NET_CORE_APP_2_1",
-                "NET_CORE_APP_2_2",
-                "NET_CORE_APP_3_0",
-                "NET_CORE_APP_3_1",
-                "NET_5_0",
-                "NET_6_0",
-                "NET_7_0",
-                "NET_8_0",
                 "C_SHARP"
             ]
         },
@@ -2135,7 +2109,8 @@
                 "status":{"shape":"TransformationProgressUpdateStatus"},
                 "description":{"shape":"String"},
                 "startTime":{"shape":"Timestamp"},
-                "endTime":{"shape":"Timestamp"}
+                "endTime":{"shape":"Timestamp"},
+                "downloadArtifacts":{"shape":"TransformationDownloadArtifacts"}
             }
         },
         "TransformationProgressUpdateStatus":{
@@ -2208,8 +2183,7 @@
                 "status":{"shape":"TransformationStepStatus"},
                 "progressUpdates":{"shape":"ProgressUpdates"},
                 "startTime":{"shape":"Timestamp"},
-                "endTime":{"shape":"Timestamp"},
-                "downloadArtifacts":{"shape":"DownloadArtifacts"}
+                "endTime":{"shape":"Timestamp"}
             }
         },
         "TransformationStepStatus":{
@@ -2219,7 +2193,8 @@
                 "COMPLETED",
                 "PARTIALLY_COMPLETED",
                 "STOPPED",
-                "FAILED"
+                "FAILED",
+                "PAUSED"
             ]
         },
         "TransformationSteps":{
@@ -2230,15 +2205,19 @@
             "type":"string",
             "enum":["LANGUAGE_UPGRADE"]
         },
+        "TransformationUploadArtifactType":{
+            "type":"string",
+            "enum":["Dependencies"]
+        },
         "TransformationUploadContext":{
             "type":"structure",
             "required":[
-                "uploadArtifactId",
+                "jobId",
                 "uploadArtifactType"
             ],
             "members":{
-                "uploadArtifactId":{"shape":"ArtifactId"},
-                "uploadArtifactType":{"shape":"UploadArtifactType"}
+                "jobId":{"shape":"TransformationJobId"},
+                "uploadArtifactType":{"shape":"TransformationUploadArtifactType"}
             }
         },
         "TransformationUserActionStatus":{
@@ -2252,10 +2231,6 @@
             "type":"string",
             "max":36,
             "min":36
-        },
-        "UploadArtifactType":{
-            "type":"string",
-            "enum":["Dependencies"]
         },
         "UploadContext":{
             "type":"structure",
@@ -2276,7 +2251,9 @@
             "documentation":"<p>Upload Intent</p>",
             "enum":[
                 "TRANSFORMATION",
-                "TASK_ASSIST_PLANNING"
+                "TASK_ASSIST_PLANNING",
+                "AUTOMATIC_FILE_SECURITY_SCAN",
+                "FULL_PROJECT_SECURITY_SCAN"
             ]
         },
         "UserContext":{

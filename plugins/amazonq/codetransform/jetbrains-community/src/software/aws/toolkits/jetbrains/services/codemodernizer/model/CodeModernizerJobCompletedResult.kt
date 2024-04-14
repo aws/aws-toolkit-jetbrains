@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 
 sealed class CodeModernizerJobCompletedResult {
     data class RetryableFailure(val jobId: JobId, val failureReason: String) : CodeModernizerJobCompletedResult()
@@ -12,6 +13,9 @@ sealed class CodeModernizerJobCompletedResult {
 
     data class JobCompletedSuccessfully(val jobId: JobId) : CodeModernizerJobCompletedResult()
     data class JobPartiallySucceeded(val jobId: JobId, val targetJavaVersion: JavaSdkVersion) : CodeModernizerJobCompletedResult()
+
+    data class JobPaused(val jobId: JobId, val transformationPlan: TransformationPlan) : CodeModernizerJobCompletedResult()
+
     data class JobFailedInitialBuild(val jobId: JobId, val failureReason: String) : CodeModernizerJobCompletedResult()
     object ManagerDisposed : CodeModernizerJobCompletedResult()
     object Stopped : CodeModernizerJobCompletedResult()

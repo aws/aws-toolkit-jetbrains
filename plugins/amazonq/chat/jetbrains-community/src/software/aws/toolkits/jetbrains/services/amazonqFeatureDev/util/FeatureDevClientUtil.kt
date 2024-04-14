@@ -145,11 +145,10 @@ fun startTaskAssistCodeGeneration(proxyClient: FeatureDevClient, conversationId:
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "StartTaskAssistCodeGeneration failed for request: ${e.requestId()}" }
 
-            if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
-                    e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
-                        "limit for number of iterations on a code generation"
-                    ) == true
-                    )
+            if (
+                e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
+                    "limit for number of iterations on a code generation"
+                ) == true
             ) {
                 throw CodeIterationLimitError(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), e.cause)
             }

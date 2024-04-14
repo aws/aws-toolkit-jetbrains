@@ -29,6 +29,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCo
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformDependencyErrorChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFindingLocalAlternativeDependencyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResumingChatContent
@@ -105,6 +107,8 @@ class CodeTransformChatController(
 
         CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
 
+        // TODO mock zip file and work on file parsing and MVN commands
+
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
         )
@@ -174,7 +178,8 @@ class CodeTransformChatController(
         codeTransformChatHelper.run {
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
 
-            addNewMessage(buildCompileLocalInProgressChatContent())
+            // TODO
+            // addNewMessage(buildCompileLocalInProgressChatContent())
         }
 
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
@@ -187,7 +192,19 @@ class CodeTransformChatController(
             JavaSdkVersion.JDK_17
         )
 
+        // TODO
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
+
+        // TODO
+        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
+
+        delay(3000)
+
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent())
+
+        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+
+        codeModernizerManager.findAlternativeDependencyVersions()
     }
 
     suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
@@ -358,6 +375,16 @@ class CodeTransformChatController(
             }
         }
     }
+
+    /*
+    private suspend fun handleCodeTransformJobAwaitUserInput() {
+        // TODO
+        // codeTransformChatHelper.addNewMessage()
+    }
+    */
+
+
+
 
     companion object {
         private val logger = getLogger<CodeTransformChatController>()

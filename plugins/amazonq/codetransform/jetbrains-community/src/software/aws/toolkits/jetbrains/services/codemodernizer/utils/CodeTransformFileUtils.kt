@@ -96,6 +96,7 @@ fun getJsonValuesFromManifestFile(manifestFileVirtualFileReference: VirtualFile)
         val jsonValues = Gson().fromJson(manifestFileContents, JsonObject::class.java)
 
         return ManifestFile(
+            // TODO check for field names
             hilType = jsonValues?.get("hilType").toString(),
             pomFolderName = jsonValues?.get("pomFolderName").toString(),
             sourcePomVersion = jsonValues?.get("sourcePomVersion").toString()

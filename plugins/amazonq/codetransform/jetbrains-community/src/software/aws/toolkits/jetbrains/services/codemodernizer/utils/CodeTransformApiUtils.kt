@@ -10,10 +10,10 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.DownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
@@ -123,20 +123,23 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
 }
 
+// TODO fix this
 fun getTransformationStepsFixture(
     jobId: JobId
 ): List<TransformationStep> {
     println("In getTransformationStepsFixture $jobId")
+
+    val downloadArtifact = TransformationDownloadArtifact.builder()
+        .downloadArtifactId("fake-artifact-id")
+        .downloadArtifactType("1p-hil-artifact-type")
+
     var progressUpdate = TransformationProgressUpdate.builder()
         .name("Status step")
         .status(TransformationStepStatus.FAILED.toString())
         .description("This step should be hil identifier")
         .startTime(Instant.now())
         .endTime(Instant.now())
-
-    val downloadArtifact = DownloadArtifact.builder()
-        .downloadArtifactId("fake-artifact-id")
-        .downloadArtifactType("1p-hil-artifact-type")
+        .downloadArtifacts(downloadArtifact.build())
 
     val transformationStepBuilder = TransformationStep.builder()
         .id("fake-step-id-1")
@@ -146,13 +149,16 @@ fun getTransformationStepsFixture(
         .startTime(Instant.now())
         .endTime(Instant.now())
         .progressUpdates(progressUpdate.build())
-        .downloadArtifacts(downloadArtifact.build())
 
     return listOf(transformationStepBuilder.build())
 }
 
-fun downloadResultArchive(jobId: JobId, downloadArtifact: DownloadArtifact): Array<VirtualFile?> {
+fun downloadResultArchive(jobId: JobId, downloadArtifact: TransformationDownloadArtifact): Array<VirtualFile?> {
+    // TODO change to logger
     println("In downloadResultArchive $jobId $downloadArtifact")
+
+    // TODO
+
     val manifestFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/manifest.json")
     val pomFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/pom.xml")
 

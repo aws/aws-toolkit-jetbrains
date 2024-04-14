@@ -51,8 +51,8 @@ const val MAX_ZIP_SIZE = 1000000000 // 1GB
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
-    val initialPollingSleepDurationMillis: Long = 2000,
-    val totalPollingSleepDurationMillis: Long = 5000,
+    private val initialPollingSleepDurationMillis: Long = 2000,
+    private val totalPollingSleepDurationMillis: Long = 5000,
 ) : Disposable {
     private val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
     private val state = CodeModernizerSessionState.getInstance(sessionContext.project)
@@ -76,6 +76,8 @@ class CodeModernizerSession(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
+
+    fun getDependencyReportUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependencyReportUsingMaven()
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.
@@ -260,6 +262,7 @@ class CodeModernizerSession(
             val result = jobId.pollTransformationStatusAndPlan(
                 succeedOn = setOf(
                     TransformationStatus.COMPLETED,
+                    TransformationStatus.PAUSED,
                     TransformationStatus.STOPPED,
                     TransformationStatus.PARTIALLY_COMPLETED,
                 ),
@@ -303,6 +306,9 @@ class CodeModernizerSession(
             }
             return when {
                 result.state == TransformationStatus.STOPPED -> CodeModernizerJobCompletedResult.Stopped
+
+                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.transformationPlan as TransformationPlan)
+
                 result.state == TransformationStatus.UNKNOWN_TO_SDK_VERSION -> CodeModernizerJobCompletedResult.JobFailed(
                     jobId,
                     message("codemodernizer.notification.warn.unknown_status_response")

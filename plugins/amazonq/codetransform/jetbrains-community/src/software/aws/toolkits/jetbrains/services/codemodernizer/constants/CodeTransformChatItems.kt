@@ -65,6 +65,13 @@ private val viewSummaryButton = Button(
     keepCardAfterClick = true,
 )
 
+private val openDependencyErrorPomFileButton = Button(
+    id = CodeTransformButtonId.OpenDependencyErrorPom.id,
+    // TODO translate
+    text = "Open file",
+    keepCardAfterClick = true,
+)
+
 private val startNewTransformFollowUp = FollowUp(
     type = FollowUpType.NewCodeTransform,
     pillText = message("codemodernizer.chat.message.follow_up.new_transformation"),
@@ -248,3 +255,72 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         },
     )
 }
+
+/*
+fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
+
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+        message = "TODO",
+        // TODO form and button
+    )
+}
+*/
+
+/*
+fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+        message =
+            "I found 3 other versions of dependency-9 that are higher than the one in your code (1.9.2).\n\nLatest major version: 2.2.0\nLatest minor version: 2.2.2",
+        formItems = listOf(
+            FormItem(
+                id = "todo",
+                title = "Please select the version to use",
+                options = listOf(
+                    FormItemOption("version-0", "version-0"),
+                    FormItemOption("version-1", "version-1"),
+                    FormItemOption("version-2", "version-2"),
+                ),
+            )
+        ),
+        buttons = listOf(
+            Button(id = "todo", text = "Submit", keepCardAfterClick = false),
+            Button(id = "todo2", text = "Cancel Transformation", keepCardAfterClick = false),
+        ),
+    )
+}
+*/
+
+fun buildTransformDependencyErrorChatContent() = CodeTransformChatMessageContent(
+    // TODO string review
+    message = "I ran into a dependency issue and way not able to successfully complete the transformation.\n\nHere is the dependency causing the error:\n\n```xml" +
+        "\n" +
+        "<dependencies>\n" +
+        "  <dependency>\n" +
+        "    <groupId>org.projectlombok</groupId>\n" +
+        "    <artifactId>lombok</artifactId>\n" +
+        "    <version>*****</version>\n" +
+        "  </dependency>\n" +
+        "</dependencies>",
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    buttons = listOf(
+        openDependencyErrorPomFileButton,
+    ),
+)
+
+fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
+    // TODO string review
+    message = "I am searching for other versions available in your Maven repository for this dependency",
+    type = CodeTransformChatMessageType.PendingAnswer,
+)
+
+fun buildTransformResumedChatContent() = CodeTransformChatMessageContent(
+    // TODO string review
+    message = "I resumed your job. You can track detailed progress in the transformation hub.",
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
+)

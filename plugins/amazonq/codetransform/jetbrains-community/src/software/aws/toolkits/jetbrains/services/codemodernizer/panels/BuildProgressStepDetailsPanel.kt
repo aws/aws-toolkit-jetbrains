@@ -85,6 +85,9 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
             val rowIcon = when (it.status) {
                 BuildStepStatus.DONE, BuildStepStatus.ERROR, BuildStepStatus.WARNING -> JBLabel(CodeModernizerUIConstants.getStepIcon())
                 BuildStepStatus.WORKING -> JBLabel(AnimatedIcon.Default.INSTANCE)
+
+                // TODO
+                else -> JBLabel(AnimatedIcon.Default.INSTANCE)
             }
 
             row2Text.apply {
@@ -94,6 +97,9 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
                     BuildStepStatus.ERROR -> setForeground(CodeModernizerUIConstants.getRedThemeFontColor())
                     BuildStepStatus.WARNING -> setForeground(CodeModernizerUIConstants.getRedThemeFontColor())
                     BuildStepStatus.WORKING -> text = null
+
+                    // TODO
+                    else -> text = null
                 }
             }
 
