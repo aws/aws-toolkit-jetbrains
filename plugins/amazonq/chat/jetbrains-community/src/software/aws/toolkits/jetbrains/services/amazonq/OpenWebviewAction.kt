@@ -33,7 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.Authorization
+import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -130,7 +130,7 @@ class WebviewBrowser(val project: Project) {
             )
 
         loadWebView()
-        var currentAuthorization: Authorization? = null
+        var currentAuthorization: PendingAuthorization? = null
 
         val handler = Function<String, JBCefJSQuery.Response> {
             val command = jacksonObjectMapper().readTree(it).get("command").asText()
@@ -142,13 +142,12 @@ class WebviewBrowser(val project: Project) {
 
                     val profileName = lastLoginIdcInfo.profileName
                     val startUrl = lastLoginIdcInfo.startUrl
-                    val directoryId = extractDirectoryIdFromStartUrl(startUrl)
                     val region = lastLoginIdcInfo.region
 
                     jcefBrowser.cefBrowser.executeJavaScript(
                         "window.ideClient.updateLastLoginIdcInfo({" +
                             "profileName: \"$profileName\"," +
-                            "directoryId: \"$directoryId\"," +
+                            "startUrl: \"$startUrl\"," +
                             "region: \"$region\"})",
                         jcefBrowser.cefBrowser.url,
                         0
@@ -183,10 +182,11 @@ class WebviewBrowser(val project: Project) {
 
                                         if (authorization != null) {
                                             jcefBrowser.cefBrowser.executeJavaScript(
-                                                "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
+                                                "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
                                                 jcefBrowser.cefBrowser.url,
                                                 0
                                             )
+
                                             currentAuthorization = authorization
 
                                             return@launch
@@ -213,10 +213,11 @@ class WebviewBrowser(val project: Project) {
                                     val authorization = pollForAuthorization(it)
                                     if (authorization != null) {
                                         jcefBrowser.cefBrowser.executeJavaScript(
-                                            "window.ideClient.updateAuthorization(\"${authorization.userCode}\")",
+                                            "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
                                             jcefBrowser.cefBrowser.url,
                                             0
                                         )
+
                                         currentAuthorization = authorization
                                     }
 
@@ -237,7 +238,7 @@ class WebviewBrowser(val project: Project) {
                     // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
                     // to browser.). The worst case is that the user will see a stale user code displayed, but not
                     // affecting the current login flow.
-                    currentAuthorization?.isCanceled = true
+                    currentAuthorization?.progressIndicator?.cancel()
                 }
 
                 else -> {
@@ -251,17 +252,15 @@ class WebviewBrowser(val project: Project) {
         query.addHandler(handler)
     }
 
-    private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
-        val pattern = "https://(.*?).awsapps.com/start.*".toRegex()
-        return pattern.matchEntire(startUrl)?.groupValues?.get(1).orEmpty()
+    private fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
+        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
+        else -> ""
     }
 
     fun component(): JComponent? = jcefBrowser.component
 
     private suspend fun <T> pollFor(func: () -> T): T? {
         val timeoutMillis = 50000L
-        val factor = 2
-        var nextDelay = 1L
 
         val result = withTimeoutOrNull(timeoutMillis) {
             while (true) {
@@ -270,8 +269,7 @@ class WebviewBrowser(val project: Project) {
                     return@withTimeoutOrNull result
                 }
 
-                delay(nextDelay)
-                nextDelay *= factor
+                delay(50L)
             }
             null
         }
@@ -283,7 +281,7 @@ class WebviewBrowser(val project: Project) {
         ToolkitAuthManager.getInstance().getConnection(connectionId)
     }
 
-    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): Authorization? = pollFor {
+    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
         provider.pendingAuthorization
     }
 

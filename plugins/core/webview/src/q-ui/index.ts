@@ -14,10 +14,10 @@ const store = createStore<State>({
     state: {
         stage: 'START' as Stage,
         ssoRegions: [] as Region[],
-        authorizationCode: '',
+        authorizationCode: undefined,
         lastLoginIdcInfo: {
             profileName: '',
-            directoryId: '',
+            startUrl: '',
             region: '',
         }
     },
@@ -35,16 +35,16 @@ const store = createStore<State>({
         setLastLoginIdcInfo(state: State, idcInfo: IdcInfo) {
             console.log('state idc info is updated')
             state.lastLoginIdcInfo.profileName = idcInfo.profileName
-            state.lastLoginIdcInfo.directoryId = idcInfo.directoryId
+            state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
         },
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []
-            state.authorizationCode = ''
+            state.authorizationCode = undefined
             state.lastLoginIdcInfo = {
                 profileName: '',
-                directoryId: '',
+                startUrl: '',
                 region: ''
             }
         }

@@ -13,13 +13,13 @@ export interface Region {
 
 export interface IdcInfo {
     profileName: string,
-    directoryId: string,
+    startUrl: string,
     region: string,
 }
 
 export interface State {
     stage: Stage,
     ssoRegions: Region[],
-    authorizationCode: string,
+    authorizationCode?: string,
     lastLoginIdcInfo: IdcInfo
 }
