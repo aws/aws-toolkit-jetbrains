@@ -176,14 +176,19 @@ fun showWebview(project: Project) {
         it.isPinnable = true
     }
 
+    ToolkitWebviewPanel.getInstance(project).browser?.resetBrowserState()
     ToolkitWebviewPanel.getInstance(project).browser?.updateState()
 
     runInEdt {
         ToolkitWebviewPanel.getInstance(project).browser?.jcefBrowser?.cefBrowser?.let {
             println("open code catlyst login")
-            it.executeJavaScript("""
+            it.executeJavaScript(
+                """
                     window.ideClient.loginCodeCatalyst()
-                """.trimIndent(), it.url, 0)
+                """.trimIndent(),
+                it.url,
+                0
+            )
         }
 
         contentManager.removeAllContents(true)
