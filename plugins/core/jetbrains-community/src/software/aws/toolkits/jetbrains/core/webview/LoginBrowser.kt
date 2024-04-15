@@ -79,7 +79,7 @@ abstract class LoginBrowser(
         jcefBrowser.loadHTML(getWebviewHTML())
     }
 
-    abstract protected fun getWebviewHTML(): String
+    protected abstract fun getWebviewHTML(): String
 
     protected suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
         ToolkitAuthManager.getInstance().getConnection(connectionId)

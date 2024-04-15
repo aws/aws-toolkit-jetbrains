@@ -197,7 +197,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
         val profileName = lastLoginIdcInfo.profileName
         val startUrl = lastLoginIdcInfo.startUrl
-        val directoryId = extractDirectoryIdFromStartUrl(startUrl)
         val region = lastLoginIdcInfo.region
 
         // available regions
@@ -211,7 +210,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 regions: $regionJson,
                 idcInfo: {
                     profileName: '$profileName',
-                    directoryId: '$directoryId',
+                    startUrl: '$startUrl',
                     region: '$region'
                 },
                 isConnected: $isConnected
