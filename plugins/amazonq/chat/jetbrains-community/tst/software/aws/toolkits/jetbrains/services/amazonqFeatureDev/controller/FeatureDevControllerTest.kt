@@ -25,6 +25,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
@@ -92,12 +93,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         chatSessionStorage = mock()
         projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
         appContext = mock<AmazonQAppInitContext> {
-            on { project }.thenReturn(projectRule.project)
+            on { project }.thenReturn(project)
             on { messagesFromAppToUi }.thenReturn(messenger)
         }
-        authController = mock()
-        whenever(authController.getAuthNeededStates(any())).thenReturn(AuthNeededStates(amazonQ = null))
-        spySession = spy(Session(testTabId, projectRule.project))
+        authController = spy(AuthController())
+        doReturn(AuthNeededStates()).`when`(authController).getAuthNeededStates(any())
+        spySession = spy(Session(testTabId, project))
 
         mockkStatic(
             MessagePublisher::sendAnswer,
@@ -121,12 +122,10 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
     @Test
     fun `test new tab opened`() {
-        authController = spy(AuthController())
-        controller = FeatureDevController(appContext, chatSessionStorage, authController)
-
         val message = IncomingFeatureDevMessage.NewTabCreated("new-tab-created", testTabId)
         spySession = spy(Session("tabId", project))
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+        reset(authController) // needed to have actual logic to test the isAuthenticating later
 
         runTest {
             controller.processNewTabCreatedMessage(message)
@@ -140,8 +139,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     fun `test handle chat for planning phase`() {
         val testAuth = AuthNeededStates(amazonQ = null)
         val message: IncomingFeatureDevMessage.ChatPrompt = IncomingFeatureDevMessage.ChatPrompt(userMessage, "chat-prompt", testTabId)
-        projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
-        spySession = spy(Session("tabId", project))
 
         doReturn(testAuth).`when`(authController).getAuthNeededStates(any())
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
