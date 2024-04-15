@@ -9,7 +9,10 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
 import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -19,10 +22,21 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.credentials.CredentialType
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
+import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
@@ -160,6 +174,32 @@ class IamAuthTest {
             .doesNotStartWith("https://")
     }
 
+    @Test
+    fun `Handle Sso authentication no token present`() {
+        val noTokenCredential = RuleUtils.randomName()
+        credentialManager.addCredentials(ProfileCredentialsIdentifierSso(noTokenCredential, noTokenCredential, "", CredentialType.SsoProfile))
+        credentialManager.addSsoProvider(ProfileSsoSessionIdentifier(noTokenCredential, "", "", setOf("")))
+        val conneciton = buildConnection(hasCredentials = true, credentialId = "profile:" + noTokenCredential)
+        mockkObject(ToolkitAuthManager.Companion)
+        val defaultToolkitAuthManager = mockk<DefaultToolkitAuthManager>()
+        val profileSsoManagedBearerSsoConnection = mockk<ProfileSsoManagedBearerSsoConnection>()
+        every { ToolkitAuthManager.getInstance() } returns defaultToolkitAuthManager
+        every { defaultToolkitAuthManager.getOrCreateSsoConnection(any(UserConfigSsoSessionProfile::class)) } returns profileSsoManagedBearerSsoConnection
+        val bearerTokenProvider = mockk<BearerTokenProvider>()
+        // We don't have the token
+        every { bearerTokenProvider.state() } returns BearerTokenAuthState.NOT_AUTHENTICATED
+        every { bearerTokenProvider.reauthenticate() } returns Unit
+        val toolkitBearerTokenProvider = ToolkitBearerTokenProvider(bearerTokenProvider)
+        every {
+            profileSsoManagedBearerSsoConnection.getConnectionSettings()
+        } returns TokenConnectionSettings(toolkitBearerTokenProvider, AwsRegion("us-east-1", "", ""))
+
+        val connection = iamAuth.handleSsoAuthentication(projectRule.project, conneciton)
+        assertThat(connection).isNotNull
+        // We need to request the browser login once.
+        verify(exactly = 1) { bearerTokenProvider.reauthenticate() }
+    }
+
     private fun buildConnection(
         hasUsername: Boolean = true,
         hasRegion: Boolean = true,
@@ -168,7 +208,8 @@ class IamAuthTest {
         hasCredentials: Boolean = true,
         hasBadHost: Boolean = false,
         hasSslConfig: Boolean = true,
-        dbmsType: Dbms = Dbms.POSTGRES
+        dbmsType: Dbms = Dbms.POSTGRES,
+        credentialId: String = this.credentialId
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn "jdbc:postgresql://$dbHost:$connectionPort/dev"

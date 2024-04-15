@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix AWS SSO connection with RDS using IAM (#4145)"
+}
