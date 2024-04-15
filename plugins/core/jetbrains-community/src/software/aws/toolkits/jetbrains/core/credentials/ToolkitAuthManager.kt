@@ -180,8 +180,13 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
 }
 
 @VisibleForTesting
-internal fun reauthConnection(project: Project?, connection: ToolkitConnection): BearerTokenProvider =
-    reauthConnectionIfNeeded(project, connection)
+internal fun reauthConnection(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
+    val provider = reauthConnectionIfNeeded(project, connection)
+
+    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+
+    return provider
+}
 
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
@@ -219,18 +224,14 @@ fun AwsBearerTokenConnection.lazyIsUnauthedBearerConnection(): Boolean {
 
 fun reauthConnectionIfNeeded(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
-    val needReAuth = maybeReauthProviderIfNeeded(project, tokenProvider) {
-        ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-                tokenProvider.reauthenticate()
-                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-            } catch (e: ProcessCanceledException) {
-                getLogger<ToolkitAuthManager>().debug { "User canceled the login flow" }
-            }
+    return reauthProviderIfNeeded(project, tokenProvider)
+}
+
+fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider): BearerTokenProvider {
+    maybeReauthProviderIfNeeded(project, tokenProvider) {
+        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+            tokenProvider.reauthenticate()
         }
-    }
-    if (!needReAuth) {
-        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
     }
 
     return tokenProvider
