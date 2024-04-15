@@ -32,7 +32,6 @@ import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
@@ -40,16 +39,15 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.isToolkitConnected
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.utils.pollFor
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
@@ -115,7 +113,6 @@ class ToolkitWebviewPanel(val project: Project) {
         } else {
             browser = ToolkitWebviewBrowser(project).also {
                 webviewContainer.add(it.component())
-                it.init()
             }
         }
     }
@@ -126,186 +123,144 @@ class ToolkitWebviewPanel(val project: Project) {
 }
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
-class ToolkitWebviewBrowser(val project: Project) {
-    val jcefBrowser: JBCefBrowserBase
-    val query: JBCefJSQuery
-
-    init {
+class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
+    override val jcefBrowser: JBCefBrowserBase by lazy {
         val client = JBCefApp.getInstance().createClient()
         Disposer.register(project, client)
-        jcefBrowser = JBCefBrowserBuilder()
+        JBCefBrowserBuilder()
             .setClient(client)
             .setOffScreenRendering(true)
             .setCreateImmediately(true)
             .build()
+    }
+    override val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
 
-        query = JBCefJSQuery.create(jcefBrowser as JBCefBrowserBase)
+    override val handler = Function<String, JBCefJSQuery.Response> {
+        val command = jacksonObjectMapper().readTree(it).get("command").asText()
+        println("command received from the browser: $command")
+
+        when (command) {
+            "fetchLastLoginIdcInfo" -> {
+                val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
+
+                val profileName = lastLoginIdcInfo.profileName
+                val startUrl = lastLoginIdcInfo.startUrl
+                val directoryId = extractDirectoryIdFromStartUrl(startUrl)
+                val region = lastLoginIdcInfo.region
+
+                executeJS(
+                    "window.ideClient.updateLastLoginIdcInfo({" +
+                        "profileName: \"$profileName\"," +
+                        "directoryId: \"$directoryId\"," +
+                        "region: \"$region\"})"
+                )
+            }
+
+            "fetchSsoRegion" -> {
+                val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
+                val json = jacksonObjectMapper().writeValueAsString(regions)
+
+                executeJS("window.ideClient.updateSsoRegions($json)")
+            }
+
+            "loginBuilderId" -> {
+                runInEdt {
+                    Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
+                }
+            }
+
+            "loginIdC" -> {
+                val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
+                val url = jacksonObjectMapper().readTree(it).get("url").asText()
+                val region = jacksonObjectMapper().readTree(it).get("region").asText()
+                val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
+
+                val feature: String = jacksonObjectMapper().readTree(it).get("feature").asText()
+
+                val onError: (String) -> Unit = { s ->
+                    Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
+                    // TODO: AuthTelemetry.addConnection
+                }
+
+                val scope = if (feature == "CodeCatalyst") {
+                    CODECATALYST_SCOPES
+                } else {
+                    listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                }
+
+                runInEdt {
+                    requestCredentialsForExplorer(
+                        project,
+                        profileName,
+                        url,
+                        awsRegion,
+                        scope,
+                        onPendingProfile,
+                        onError
+                    )
+                }
+            }
+
+            "loginIAM" -> {
+                // TODO: not type safe
+                val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
+                val accessKey = jacksonObjectMapper().readTree(it).get("accessKey").asText()
+                val secretKey = jacksonObjectMapper().readTree(it).get("secretKey").asText()
+
+                // TODO:
+                runInEdt {
+                    Login.LongLivedIAM(
+                        profileName,
+                        accessKey,
+                        secretKey
+                    ).loginIAM(project, {}, {}, {})
+                }
+            }
+
+            "toggleBrowser" -> {
+                showExplorerTree(project)
+            }
+
+            "cancelLogin" -> {
+                println("cancel login........")
+                // TODO: BearerToken vs. SsoProfile
+//                  TODO:   AwsTelemetry.loginWithBrowser
+
+                // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
+                // status. There might be a risk of race condition here by changing this global, for which effort
+                // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
+                // to browser.). The worst case is that the user will see a stale user code displayed, but not
+                // affecting the current login flow.
+                currentAuthorization?.progressIndicator?.cancel()
+            }
+
+            else -> {
+                error("received unknown command from Toolkit login browser")
+            }
+        }
+
+        null
     }
 
-    fun init() {
+    init {
         CefApp.getInstance()
             .registerSchemeHandlerFactory(
                 "http",
-                ToolkitWebviewBrowser.DOMAIN,
+                domain,
                 WebviewResourceHandlerFactory(
-                    domain = "http://$DOMAIN/",
+                    domain = "http://$domain/",
                     assetUri = "/webview/assets/"
                 ),
             )
 
         loadWebView()
-        var currentAuthorization: PendingAuthorization? = null
-
-        val handler = Function<String, JBCefJSQuery.Response> {
-            val command = jacksonObjectMapper().readTree(it).get("command").asText()
-            println("command received from the browser: $command")
-
-            when (command) {
-                "fetchLastLoginIdcInfo" -> {
-                    val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
-
-                    val profileName = lastLoginIdcInfo.profileName
-                    val startUrl = lastLoginIdcInfo.startUrl
-                    val directoryId = extractDirectoryIdFromStartUrl(startUrl)
-                    val region = lastLoginIdcInfo.region
-
-                    executeJS(
-                        "window.ideClient.updateLastLoginIdcInfo({" +
-                            "profileName: \"$profileName\"," +
-                            "directoryId: \"$directoryId\"," +
-                            "region: \"$region\"})"
-                    )
-                }
-
-                "fetchSsoRegion" -> {
-                    val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
-                    val json = jacksonObjectMapper().writeValueAsString(regions)
-
-                    executeJS("window.ideClient.updateSsoRegions($json)")
-                }
-
-                "loginBuilderId" -> {
-                    val onPending: () -> Unit = {
-                        projectCoroutineScope(project).launch {
-                            val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
-
-                            conn?.let { c ->
-                                val provider = (c as ManagedBearerSsoConnection).getConnectionSettings().tokenProvider.delegate
-                                val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
-
-                                if (authorization != null) {
-                                    executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
-                                    currentAuthorization = authorization
-                                    return@launch
-                                }
-                            }
-                        }
-                    }
-
-                    runInEdt {
-                        Login.BuilderId(CODECATALYST_SCOPES, onPending).loginBuilderId(project)
-                    }
-                }
-
-                "loginIdC" -> {
-                    val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
-                    val url = jacksonObjectMapper().readTree(it).get("url").asText()
-                    val region = jacksonObjectMapper().readTree(it).get("region").asText()
-                    val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
-
-                    val feature: String = jacksonObjectMapper().readTree(it).get("feature").asText()
-
-                    val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
-                        projectCoroutineScope(project).launch {
-                            val authorization = pollForAuthorization(provider)
-                            if (authorization != null) {
-                                executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
-                                currentAuthorization = authorization
-                            }
-                        }
-                    }
-                    val onError: (String) -> Unit = { s ->
-                        Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
-                        // TODO: AuthTelemetry.addConnection
-                    }
-
-                    val scope = if (feature == "CodeCatalyst") {
-                        CODECATALYST_SCOPES
-                    } else {
-                        listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-                    }
-
-                    runInEdt {
-                        requestCredentialsForExplorer(
-                            project,
-                            profileName,
-                            url,
-                            awsRegion,
-                            scope,
-                            onPendingToken,
-                            onError
-                        )
-                    }
-                }
-
-                "loginIAM" -> {
-                    // TODO: not type safe
-                    val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
-                    val accessKey = jacksonObjectMapper().readTree(it).get("accessKey").asText()
-                    val secretKey = jacksonObjectMapper().readTree(it).get("secretKey").asText()
-
-                    // TODO:
-                    runInEdt {
-                        Login.LongLivedIAM(
-                            profileName,
-                            accessKey,
-                            secretKey
-                        ).loginIAM(project, {}, {}, {})
-                    }
-                }
-
-                "toggleBrowser" -> {
-                    showExplorerTree(project)
-                }
-
-                "cancelLogin" -> {
-                    println("cancel login........")
-                    // TODO: BearerToken vs. SsoProfile
-//                  TODO:   AwsTelemetry.loginWithBrowser
-
-                    // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
-                    // status. There might be a risk of race condition here by changing this global, for which effort
-                    // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
-                    // to browser.). The worst case is that the user will see a stale user code displayed, but not
-                    // affecting the current login flow.
-                    currentAuthorization?.progressIndicator?.cancel()
-                }
-
-                else -> {
-                    error("received unknown command from Toolkit login browser")
-                }
-            }
-
-            null
-        }
 
         query.addHandler(handler)
     }
 
-    fun updateState() {
+    override fun updateBrowserState() {
         val isConnected = isToolkitConnected(project)
         executeJS("window.ideClient.updateIsConnected($isConnected)")
-    }
-
-    private fun executeJS(jsScript: String) {
-        this.jcefBrowser.cefBrowser.let {
-            it.executeJavaScript(jsScript, it.url, 0)
-        }
-    }
-
-    private fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
-        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
-        else -> ""
     }
 
     private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
@@ -315,24 +270,8 @@ class ToolkitWebviewBrowser(val project: Project) {
 
     fun component(): JComponent? = jcefBrowser.component
 
-    fun resetBrowserState() {
-        executeJS("window.ideClient.reset()")
-    }
 
-    private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
-        ToolkitAuthManager.getInstance().getConnection(connectionId)
-    }
-
-    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
-        provider.pendingAuthorization
-    }
-
-    private fun loadWebView() {
-        // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML())
-    }
-
-    private fun getWebviewHTML(): String {
+    override fun getWebviewHTML(): String {
         val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
         val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
 
@@ -369,7 +308,6 @@ class ToolkitWebviewBrowser(val project: Project) {
     }
 }
 
-// TODO:
 fun requestCredentialsForExplorer(
     project: Project,
     profileName: String,
