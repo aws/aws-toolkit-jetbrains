@@ -23,22 +23,16 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.launch
 import org.cef.CefApp
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.Login
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.isToolkitConnected
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
@@ -123,7 +117,7 @@ class ToolkitWebviewPanel(val project: Project) {
 }
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
-class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
+class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
     override val jcefBrowser: JBCefBrowserBase by lazy {
         val client = JBCefApp.getInstance().createClient()
         Disposer.register(project, client)
@@ -251,7 +245,6 @@ class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, Toolkit
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = jacksonObjectMapper().writeValueAsString(regions)
 
-
         val isConnected = isToolkitConnected(project)
         val jsonData = """
             {
@@ -274,7 +267,6 @@ class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, Toolkit
     }
 
     fun component(): JComponent? = jcefBrowser.component
-
 
     override fun getWebviewHTML(): String {
         val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
