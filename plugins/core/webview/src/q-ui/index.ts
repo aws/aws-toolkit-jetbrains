@@ -17,7 +17,7 @@ const store = createStore<State>({
         authorizationCode: undefined,
         lastLoginIdcInfo: {
             profileName: '',
-            directoryId: '',
+            startUrl: '',
             region: '',
         },
         feature: 'Q',
@@ -37,7 +37,7 @@ const store = createStore<State>({
         setLastLoginIdcInfo(state: State, idcInfo: IdcInfo) {
             console.log('state idc info is updated')
             state.lastLoginIdcInfo.profileName = idcInfo.profileName
-            state.lastLoginIdcInfo.directoryId = idcInfo.directoryId
+            state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
         },
         reset(state: State) {
@@ -46,7 +46,7 @@ const store = createStore<State>({
             state.authorizationCode = undefined
             state.lastLoginIdcInfo = {
                 profileName: '',
-                directoryId: '',
+                startUrl: '',
                 region: ''
             }
         }

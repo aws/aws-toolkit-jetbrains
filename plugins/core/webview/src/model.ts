@@ -15,7 +15,7 @@ export interface Region {
 
 export interface IdcInfo {
     profileName: string,
-    directoryId: string,
+    startUrl: string,
     region: string,
 }
 

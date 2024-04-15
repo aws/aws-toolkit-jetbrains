@@ -18,7 +18,7 @@ const store = createStore<State>({
         authorizationCode: undefined,
         lastLoginIdcInfo: {
             profileName: '',
-            directoryId: '',
+            startUrl: '',
             region: '',
         },
         feature: 'Explorer',
@@ -40,7 +40,7 @@ const store = createStore<State>({
         },
         setLastLoginIdcInfo(state: State, idcInfo: IdcInfo) {
             state.lastLoginIdcInfo.profileName = idcInfo.profileName
-            state.lastLoginIdcInfo.directoryId = idcInfo.directoryId
+            state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
         },
         setIsConnected(state: State, isConnected: boolean) {
@@ -53,7 +53,7 @@ const store = createStore<State>({
             state.authorizationCode = undefined
             state.lastLoginIdcInfo = {
                 profileName: '',
-                directoryId: '',
+                startUrl: '',
                 region: ''
             }
         }
