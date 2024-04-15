@@ -12,7 +12,7 @@ export class IdeClient {
     prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean }) {
         console.log('prepareUi')
         console.log('state: ', state)
-        // this.updateStage(state.stage)
+        this.updateStage(state.stage)
         this.updateSsoRegions(state.regions)
         this.updateLastLoginIdcInfo(state.idcInfo)
         this.updateIsConnected(state.isConnected)
@@ -51,7 +51,8 @@ export class IdeClient {
     }
 
     cancelLogin(): void {
-        this.reset()
+        // this.reset()
+        this.updateStage('START')
         window.ideApi.postMessage({ command: 'cancelLogin' })
     }
 }

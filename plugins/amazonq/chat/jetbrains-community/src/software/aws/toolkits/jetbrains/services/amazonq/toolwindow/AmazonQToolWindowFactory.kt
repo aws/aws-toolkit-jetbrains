@@ -30,12 +30,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                         it.isPinnable = true
                     }
 
-                    val loginBrowser = AmazonQToolWindow.getInstance(project).loginBrowser
-
-                    if (newConnection == null && loginBrowser != null) {
-                        loginBrowser.executeJavaScript("window.ideClient.reset()", loginBrowser.url, 0)
-                    }
-
                     runInEdt {
                         contentManager.removeAllContents(true)
                         contentManager.addContent(content)

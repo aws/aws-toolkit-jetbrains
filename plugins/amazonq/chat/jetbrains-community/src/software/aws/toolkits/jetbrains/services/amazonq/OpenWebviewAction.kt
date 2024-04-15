@@ -217,6 +217,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 isConnected: $isConnected
             }
         """.trimIndent()
+        println("prepareUi: $jsonData")
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
@@ -225,7 +226,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
 
         val jsScripts = """
-            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
             <script>
                 (function() {
                     window.ideApi = {
@@ -235,6 +235,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 };
                 }())
             </script>
+            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
         """.trimIndent()
 
         return """

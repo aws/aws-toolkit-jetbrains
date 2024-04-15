@@ -273,7 +273,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
 
         val jsScripts = """
-            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
             <script>
                 (function() {
                     window.ideApi = {
@@ -283,6 +282,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 };
                 }())
             </script>
+            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
         """.trimIndent()
 
         return """

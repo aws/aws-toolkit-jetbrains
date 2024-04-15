@@ -125,12 +125,10 @@ export default defineComponent({
     mounted() {
         console.log('login mounted')
         window.changeTheme = this.changeTheme.bind(this)
-        // window.ideApi.postMessage({command: 'prepareUi'})
+        window.ideApi.postMessage({command: 'prepareUi'})
     },
     beforeUpdate() {
         console.log('login beforeUpdate')
-        // TODO: it's supposed to be living in mounted(), but there are some technical issues
-        window.ideApi.postMessage({command: 'prepareUi'})
     }
 })
 </script>
