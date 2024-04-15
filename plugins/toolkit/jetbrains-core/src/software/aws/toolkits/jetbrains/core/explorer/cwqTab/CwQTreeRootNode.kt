@@ -11,13 +11,7 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.ToolkitPlaces
-import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.actions.AnActionTreeNode
-
-// giant hack so we can compile
-class CwQRootNodeProviderImpl : CwQRootNodeProvider {
-    override fun create(project: Project) = CwQTreeRootNode(project)
-}
 
 class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(nodeProject, Object()) {
     override fun update(presentation: PresentationData) {}
@@ -26,8 +20,8 @@ class CwQTreeRootNode(private val nodeProject: Project) : AbstractTreeNode<Any>(
         val actions = listOf(
             ActionManager.getInstance().getAction("aws.toolkit.cwQRootNode.installQ"),
             ActionManager.getInstance().getAction("q.learn.more"),
-            AwsToolkitExplorerToolWindow.getInstance(project).amazonQTabDismissAction
         )
+
         return actions.mapNotNull { AnActionTreeNode(project, ToolkitPlaces.CWQ_TOOL_WINDOW, it) }
     }
 }
