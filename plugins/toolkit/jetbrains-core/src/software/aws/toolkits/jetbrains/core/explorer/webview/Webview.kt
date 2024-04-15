@@ -50,7 +50,6 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.pollFor
-import software.aws.toolkits.telemetry.AwsTelemetry
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
@@ -272,7 +271,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                 "cancelLogin" -> {
                     println("cancel login........")
                     // TODO: BearerToken vs. SsoProfile
-                    AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
+//                  TODO:   AwsTelemetry.loginWithBrowser
 
                     // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
                     // status. There might be a risk of race condition here by changing this global, for which effort
