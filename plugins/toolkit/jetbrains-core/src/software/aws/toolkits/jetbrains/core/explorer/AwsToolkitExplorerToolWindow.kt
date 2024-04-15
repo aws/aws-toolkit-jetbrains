@@ -38,6 +38,7 @@ class AwsToolkitExplorerToolWindow(
 ) : SimpleToolWindowPanel(true, true), PersistentStateComponent<AwsToolkitExplorerToolWindowState> {
     private val tabPane = JBTabbedPane()
 
+    // TODO: Should we persist dismissed state as == don't show again?
     val amazonQTabDismissAction = object : AnAction(
         message("codewhisperer.explorer.node.dismiss"),
         null,
