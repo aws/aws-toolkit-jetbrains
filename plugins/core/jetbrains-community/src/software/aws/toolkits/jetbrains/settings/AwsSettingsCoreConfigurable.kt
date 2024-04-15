@@ -12,7 +12,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.selected
 import software.aws.toolkits.resources.message
 
-// TODO: add more settings telemetry/auto-update
+// TODO: add more settings besides telemetry/auto-update
 class AwsSettingsCoreConfigurable : BoundConfigurable("AWS"), SearchableConfigurable {
     private val enableTelemetry: JBCheckBox = JBCheckBox(message("aws.settings.telemetry.option"))
     private val enableAutoUpdate: JBCheckBox = JBCheckBox(message("aws.settings.auto_update.text"))

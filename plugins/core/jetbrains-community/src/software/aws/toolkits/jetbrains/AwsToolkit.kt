@@ -9,47 +9,38 @@ import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.extensions.PluginId
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.EnumMap
 
 object AwsToolkit {
     const val TOOLKIT_PLUGIN_ID = "aws.toolkit"
+    const val Q_PLUGIN_ID = "amazon.q"
+    const val CORE_PLUGIN_ID = "aws.toolkit.core"
 
-    // TODO: change this to real plugin id
-    const val Q_PLUGIN_ID = "plugin-amazonq"
+    private val TOOLKIT_PLUGIN_INFO = PluginInfo(TOOLKIT_PLUGIN_ID, "AWS Toolkit")
+    private val Q_PLUGIN_INFO = PluginInfo(Q_PLUGIN_ID, "Amazon Q")
+    private val CORE_PLUGIN_INFO = PluginInfo(CORE_PLUGIN_ID, "AWS Plugin Core")
 
-    // TODO: change this
-    const val CORE_PLUGIN_ID = "plugin-core"
-
-    private val TOOLKIT_PLUGIN_INFO = PluginInfo(TOOLKIT_PLUGIN_ID)
-    private val Q_PLUGIN_INFO = PluginInfo(Q_PLUGIN_ID)
-    private val CORE_PLUGIN_INFO = PluginInfo(CORE_PLUGIN_ID)
-
-    val PLUGINS_INFO = mapOf(
-        AwsPlugin.TOOLKIT to TOOLKIT_PLUGIN_INFO,
-        AwsPlugin.Q to Q_PLUGIN_INFO,
-        AwsPlugin.CORE to CORE_PLUGIN_INFO
-    )
+    val PLUGINS_INFO = EnumMap<AwsPlugin, PluginInfo>(AwsPlugin::class.java).apply {
+        put(AwsPlugin.TOOLKIT, TOOLKIT_PLUGIN_INFO)
+        put(AwsPlugin.Q, Q_PLUGIN_INFO)
+        put(AwsPlugin.CORE, CORE_PLUGIN_INFO)
+    }
 
     const val GITHUB_URL = "https://github.com/aws/aws-toolkit-jetbrains"
     const val AWS_DOCS_URL = "https://docs.aws.amazon.com/console/toolkit-for-jetbrains"
-    const val TOOLKIT_PLUGIN_NAME = "AWS Toolkit"
 }
 
-data class PluginInfo(val id: String) {
-    val descriptor: PluginDescriptor? = PluginManagerCore.getPlugin(PluginId.getId(id))
-    val name: String = when (id) {
-        AwsToolkit.TOOLKIT_PLUGIN_ID -> "AWS Toolkit"
-        AwsToolkit.Q_PLUGIN_ID -> "Amazon Q"
-        // TODO: change name
-        AwsToolkit.CORE_PLUGIN_ID -> "AWS Plugin Core"
-        else -> "AWS Toolkit"
-    }
+data class PluginInfo(val id: String, val name: String) {
+    val descriptor: PluginDescriptor?
+        get() = PluginManagerCore.getPlugin(PluginId.getId(id))
     val version: String = descriptor?.version ?: "Unknown"
-    val path: Path? =
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            Paths.get(System.getProperty("plugin.path"))
-        } else {
-            descriptor?.pluginPath
-        }
+    val path: Path?
+        get() =
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                Paths.get(System.getProperty("plugin.path"))
+            } else {
+                descriptor?.pluginPath
+            }
 }
 
 enum class AwsPlugin {
