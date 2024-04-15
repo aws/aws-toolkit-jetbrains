@@ -116,7 +116,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     } else {
         ToolkitWebviewPanel.getInstance(project).let {
             it.browser?.resetBrowserState()
-            it.browser?.updateBrowserState()
+            it.browser?.prepareBrowser()
             it.component
         }
     }
@@ -177,7 +177,7 @@ fun showWebview(project: Project) {
     }
 
     ToolkitWebviewPanel.getInstance(project).browser?.resetBrowserState()
-    ToolkitWebviewPanel.getInstance(project).browser?.updateBrowserState()
+    ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser()
 
     runInEdt {
         ToolkitWebviewPanel.getInstance(project).browser?.jcefBrowser?.cefBrowser?.let {

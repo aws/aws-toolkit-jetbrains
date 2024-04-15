@@ -140,27 +140,8 @@ class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, Toolkit
         println("command received from the browser: $command")
 
         when (command) {
-            "fetchLastLoginIdcInfo" -> {
-                val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
-
-                val profileName = lastLoginIdcInfo.profileName
-                val startUrl = lastLoginIdcInfo.startUrl
-                val directoryId = extractDirectoryIdFromStartUrl(startUrl)
-                val region = lastLoginIdcInfo.region
-
-                executeJS(
-                    "window.ideClient.updateLastLoginIdcInfo({" +
-                        "profileName: \"$profileName\"," +
-                        "directoryId: \"$directoryId\"," +
-                        "region: \"$region\"})"
-                )
-            }
-
-            "fetchSsoRegion" -> {
-                val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
-                val json = jacksonObjectMapper().writeValueAsString(regions)
-
-                executeJS("window.ideClient.updateSsoRegions($json)")
+            "prepareUi" -> {
+                this.prepareBrowser()
             }
 
             "loginBuilderId" -> {
@@ -258,9 +239,33 @@ class ToolkitWebviewBrowser(val project: Project): LoginBrowser(project, Toolkit
         query.addHandler(handler)
     }
 
-    override fun updateBrowserState() {
+    override fun prepareBrowser() {
+        // previous login
+        val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
+        val profileName = lastLoginIdcInfo.profileName
+        val startUrl = lastLoginIdcInfo.startUrl
+        val directoryId = extractDirectoryIdFromStartUrl(startUrl)
+        val region = lastLoginIdcInfo.region
+
+        // available regions
+        val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
+        val regionJson = jacksonObjectMapper().writeValueAsString(regions)
+
+
         val isConnected = isToolkitConnected(project)
-        executeJS("window.ideClient.updateIsConnected($isConnected)")
+        val jsonData = """
+            {
+                stage: 'START',
+                regions: $regionJson,
+                idcInfo: {
+                    profileName: '$profileName',
+                    directoryId: '$directoryId',
+                    region: '$region'
+                },
+                isConnected: $isConnected
+            }
+        """.trimIndent()
+        executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
     private fun extractDirectoryIdFromStartUrl(startUrl: String): String {

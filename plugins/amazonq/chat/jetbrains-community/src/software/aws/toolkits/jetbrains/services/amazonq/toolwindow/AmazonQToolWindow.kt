@@ -49,6 +49,7 @@ class AmazonQToolWindow @NonInjectable constructor(
         get() = if (isQConnected(project)) {
             chatPanel.component
         } else {
+            loginPanel.browser?.prepareBrowser()
             loginPanel.component
         }
 

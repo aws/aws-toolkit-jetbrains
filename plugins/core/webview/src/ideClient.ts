@@ -9,6 +9,15 @@ export class IdeClient {
 
     // TODO: design and improve the API here
 
+    prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean }) {
+        console.log('prepareUi')
+        console.log('state: ', state)
+        // this.updateStage(state.stage)
+        this.updateSsoRegions(state.regions)
+        this.updateLastLoginIdcInfo(state.idcInfo)
+        this.updateIsConnected(state.isConnected)
+    }
+
     updateStage(stage: Stage) {
         this.store.commit('setStage', stage)
     }

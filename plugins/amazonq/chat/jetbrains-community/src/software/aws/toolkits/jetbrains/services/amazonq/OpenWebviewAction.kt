@@ -19,26 +19,18 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.launch
 import org.cef.CefApp
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.Login
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.isQConnected
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -109,155 +101,88 @@ class WebviewPanel(val project: Project) {
         } else {
             browser = WebviewBrowser(project).also {
                 webviewContainer.add(it.component())
-                it.init()
             }
         }
     }
 }
 
-class WebviewBrowser(val project: Project) {
-    val jcefBrowser = createBrowser(project)
-    val query = JBCefJSQuery.create(jcefBrowser)
+class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN) {
+    override val jcefBrowser = createBrowser(project)
+    override val query = JBCefJSQuery.create(jcefBrowser)
 
-    fun init() {
+    override val handler = Function<String, JBCefJSQuery.Response> {
+        val command = jacksonObjectMapper().readTree(it).get("command").asText()
+        println("command received from the browser: $command")
+
+        when (command) {
+            "prepareUi" -> {
+                this.prepareBrowser()
+            }
+
+            "loginBuilderId" -> {
+                val scope = CODEWHISPERER_SCOPES + Q_SCOPES - Q_SCOPES_UNAVAILABLE_BUILDER_ID.toSet()
+                runInEdt {
+                    requestCredentialsForQ(
+                        project,
+                        Login.BuilderId(scope, onPendingAwsId)
+                    )
+                }
+            }
+
+            "loginIdC" -> {
+                val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
+                val url = jacksonObjectMapper().readTree(it).get("url").asText()
+                val region = jacksonObjectMapper().readTree(it).get("region").asText()
+                val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
+
+                val scope = CODEWHISPERER_SCOPES + Q_SCOPES
+
+                val onError: (String) -> Unit = { s ->
+                    Messages.showErrorDialog(project, it, "Q Idc Login Failed")
+                    // TODO: AuthTelemetry.addConnection
+                }
+                runInEdt {
+                    requestCredentialsForQ(
+                        project,
+                        Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
+                    )
+                }
+            }
+
+            "cancelLogin" -> {
+                // TODO: BearerToken vs. SsoProfile
+                AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
+
+                // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
+                // status. There might be a risk of race condition here by changing this global, for which effort
+                // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
+                // to browser.). The worst case is that the user will see a stale user code displayed, but not
+                // affecting the current login flow.
+                currentAuthorization?.progressIndicator?.cancel()
+            }
+
+            else -> {
+                error("received unknown command from Q browser: $command")
+            }
+        }
+
+        null
+    }
+
+    init {
         CefApp.getInstance()
             .registerSchemeHandlerFactory(
                 "http",
-                WebviewBrowser.DOMAIN,
+                domain,
                 WebviewResourceHandlerFactory(
-                    domain = "http://$DOMAIN/",
+                    domain = "http://$domain/",
                     assetUri = "/webview/assets/"
                 ),
             )
 
         loadWebView()
-        var currentAuthorization: PendingAuthorization? = null
-
-        val handler = Function<String, JBCefJSQuery.Response> {
-            val command = jacksonObjectMapper().readTree(it).get("command").asText()
-            println("command received from the browser: $command")
-
-            when (command) {
-                "fetchLastLoginIdcInfo" -> {
-                    val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
-
-                    val profileName = lastLoginIdcInfo.profileName
-                    val startUrl = lastLoginIdcInfo.startUrl
-                    val directoryId = extractDirectoryIdFromStartUrl(startUrl)
-                    val region = lastLoginIdcInfo.region
-
-                    jcefBrowser.cefBrowser.executeJavaScript(
-                        "window.ideClient.updateLastLoginIdcInfo({" +
-                            "profileName: \"$profileName\"," +
-                            "directoryId: \"$directoryId\"," +
-                            "region: \"$region\"})",
-                        jcefBrowser.cefBrowser.url,
-                        0
-                    )
-                }
-                "fetchSsoRegion" -> {
-                    val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
-                    val json = jacksonObjectMapper().writeValueAsString(regions)
-                    jcefBrowser.cefBrowser.executeJavaScript(
-                        "window.ideClient.updateSsoRegions($json)",
-                        jcefBrowser.cefBrowser.url,
-                        0
-                    )
-                }
-
-                "loginBuilderId" -> {
-                    val scope = CODEWHISPERER_SCOPES + Q_SCOPES - Q_SCOPES_UNAVAILABLE_BUILDER_ID.toSet()
-                    runInEdt {
-                        requestCredentialsForQ(
-                            project,
-                            Login.BuilderId(scope) {
-                                projectCoroutineScope(project).launch {
-                                    val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
-
-                                    conn?.let { c ->
-                                        val provider = (c as ManagedBearerSsoConnection).getConnectionSettings().tokenProvider.delegate
-                                        val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
-
-                                        if (authorization != null) {
-                                            jcefBrowser.cefBrowser.executeJavaScript(
-                                                "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
-                                                jcefBrowser.cefBrowser.url,
-                                                0
-                                            )
-
-                                            currentAuthorization = authorization
-
-                                            return@launch
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-
-                "loginIdC" -> {
-                    val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
-                    val url = jacksonObjectMapper().readTree(it).get("url").asText()
-                    val region = jacksonObjectMapper().readTree(it).get("region").asText()
-                    val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
-
-                    val scope = CODEWHISPERER_SCOPES + Q_SCOPES
-                    val onPending: (InteractiveBearerTokenProvider) -> Unit = {
-                        projectCoroutineScope(project).launch {
-                            val authorization = pollForAuthorization(it)
-                            if (authorization != null) {
-                                jcefBrowser.cefBrowser.executeJavaScript(
-                                    "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
-                                    jcefBrowser.cefBrowser.url,
-                                    0
-                                )
-
-                                currentAuthorization = authorization
-                            }
-
-                            return@launch
-                        }
-                    }
-
-                    val onError: (String) -> Unit = { s ->
-                        Messages.showErrorDialog(project, it, "Q Idc Login Failed")
-                        // TODO: AuthTelemetry.addConnection
-                    }
-                    runInEdt {
-                        requestCredentialsForQ(
-                            project,
-                            Login.IdC(profileName, url, awsRegion, scope, onPending, onError)
-                        )
-                    }
-                }
-
-                "cancelLogin" -> {
-                    // TODO: BearerToken vs. SsoProfile
-                    AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
-
-                    // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
-                    // status. There might be a risk of race condition here by changing this global, for which effort
-                    // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
-                    // to browser.). The worst case is that the user will see a stale user code displayed, but not
-                    // affecting the current login flow.
-                    currentAuthorization?.progressIndicator?.cancel()
-                }
-
-                else -> {
-                    error("received unknown command from Q browser: $command")
-                }
-            }
-
-            null
-        }
 
         query.addHandler(handler)
-    }
-
-    private fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
-        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
-        else -> ""
     }
 
     private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
@@ -267,20 +192,35 @@ class WebviewBrowser(val project: Project) {
 
     fun component(): JComponent? = jcefBrowser.component
 
-    private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
-        ToolkitAuthManager.getInstance().getConnection(connectionId)
+    override fun prepareBrowser() {
+        // previous login
+        val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
+        val profileName = lastLoginIdcInfo.profileName
+        val startUrl = lastLoginIdcInfo.startUrl
+        val directoryId = extractDirectoryIdFromStartUrl(startUrl)
+        val region = lastLoginIdcInfo.region
+
+        // available regions
+        val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
+        val regionJson = jacksonObjectMapper().writeValueAsString(regions)
+
+        val isConnected = isQConnected(project)
+        val jsonData = """
+            {
+                stage: 'START',
+                regions: $regionJson,
+                idcInfo: {
+                    profileName: '$profileName',
+                    directoryId: '$directoryId',
+                    region: '$region'
+                },
+                isConnected: $isConnected
+            }
+        """.trimIndent()
+        executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
-    private suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
-        provider.pendingAuthorization
-    }
-
-    private fun loadWebView() {
-        // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML())
-    }
-
-    private fun getWebviewHTML(): String {
+    override fun getWebviewHTML(): String {
         val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
         val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
 

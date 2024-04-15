@@ -22,6 +22,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    println("newConnection: $newConnection")
+                    println("isQConnected: ${isQConnected(project)}")
+                    println("component: ${AmazonQToolWindow.getInstance(project).component}")
                     val content = contentManager.factory.createContent(AmazonQToolWindow.getInstance(project).component, null, false).also {
                         it.isCloseable = true
                         it.isPinnable = true

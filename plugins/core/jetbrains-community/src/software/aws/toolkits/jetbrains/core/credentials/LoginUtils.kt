@@ -75,7 +75,9 @@ sealed class Login {
                 scopes = scopes
             )
 
-            authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
+            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
+            // TODO: if rolePopup needed, don't switch connection immediately
+            ToolkitConnectionManager.getInstance(project).switchConnection(conn)
 
             return true
         }

@@ -164,8 +164,6 @@ export default defineComponent({
     },
     mounted() {
         document.getElementById("ssoProfile")?.focus()
-        window.ideApi.postMessage({ command: 'fetchSsoRegion' })
-        window.ideApi.postMessage({ command: 'fetchLastLoginIdcInfo' })
     }
 })
 </script>

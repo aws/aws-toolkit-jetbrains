@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
-import org.cef.CefApp
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -59,7 +58,7 @@ abstract class LoginBrowser(
         }
     }
 
-    abstract fun updateBrowserState()
+    abstract fun prepareBrowser()
 
     fun executeJS(jsScript: String) {
         this.jcefBrowser.cefBrowser.let {
