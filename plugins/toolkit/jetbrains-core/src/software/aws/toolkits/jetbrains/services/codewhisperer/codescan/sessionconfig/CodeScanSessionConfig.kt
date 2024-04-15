@@ -45,7 +45,7 @@ class CodeScanSessionConfig(
 
     private var isProjectTruncated = false
 
-    private val gitIgnoreParser = FeatureDevSessionContext(project)
+    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -157,7 +157,7 @@ class CodeScanSessionConfig(
                 } else {
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !gitIgnoreParser.ignoreFile(it)
+                            !featureDevSessionContext.ignoreFile(it)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -193,7 +193,7 @@ class CodeScanSessionConfig(
             if (selectedFile.path.startsWith(projectRoot.path)) {
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        it != selectedFile && !it.isDirectory && !gitIgnoreParser.ignoreFile(it)
+                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it)
                     }
                 )
             }
