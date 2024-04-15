@@ -21,8 +21,9 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isQEnabled
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -44,8 +45,8 @@ class QMigrationActivity : StartupActivity.DumbAware {
     private fun displayQMigrationInfo(project: Project) {
         if (AwsSettings.getInstance().isQMigrationNotificationShownOnce) return
 
-        val hasUsedCodeWhisperer = isCodeWhispererEnabled(project)
-        val hasUsedQ = isQEnabled(project)
+        val hasUsedCodeWhisperer = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(CodeWhispererConnection.getInstance())
+        val hasUsedQ = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(QConnection.getInstance())
         if (hasUsedCodeWhisperer || hasUsedQ) {
             // do auto-install
             installQPlugin(project, autoInstall = true)
