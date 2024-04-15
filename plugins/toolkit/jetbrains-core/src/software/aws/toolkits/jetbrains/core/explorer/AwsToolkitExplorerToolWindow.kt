@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.BaseState
@@ -34,6 +37,17 @@ class AwsToolkitExplorerToolWindow(
     private val project: Project
 ) : SimpleToolWindowPanel(true, true), PersistentStateComponent<AwsToolkitExplorerToolWindowState> {
     private val tabPane = JBTabbedPane()
+
+    val amazonQTabDismissAction = object : AnAction(
+        message("codewhisperer.explorer.node.dismiss"),
+        null,
+        AllIcons.Windows.CloseActive
+    ) {
+        override fun actionPerformed(e: AnActionEvent) {
+            val project = e.project ?: return
+            tabPane.remove(CodewhispererQToolWindow.getInstance(project))
+        }
+    }
 
     private val tabComponents = buildMap<String, () -> Component> {
         put(EXPLORER_TAB_ID, { ExplorerToolWindow.getInstance(project) })
