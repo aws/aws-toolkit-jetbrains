@@ -28,7 +28,6 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
-import software.aws.toolkits.jetbrains.services.codemodernizer.auth.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -47,6 +46,17 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.buildState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
