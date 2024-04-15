@@ -3,9 +3,17 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
+        <button v-if="isConnected" class="back-button" @click="handleBackButtonClick" tabindex="-1">
+            <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
+                    fill="#21A2FF"
+                />
+            </svg>
+        </button>
         <div class="title font-amazon bottom-small-gap" v-if="existingLogin.id === -1">Choose a sign-in option:</div>
         <SelectableItem
-            v-if="app === 'AMAZONQ'"
+            v-if="app === 'AMAZONQ' || stage === 'TOOLKIT_BEARER'"
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
@@ -22,7 +30,7 @@
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <SelectableItem
-            v-if="app === 'TOOLKIT'"
+            v-if="app === 'TOOLKIT' &&  stage !== 'TOOLKIT_BEARER'"
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.IAM_CREDENTIAL"
             :itemId="LoginOption.IAM_CREDENTIAL"
@@ -44,6 +52,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
+import {Stage} from "../../model";
 
 enum LoginOption {
     NONE,
@@ -59,6 +68,14 @@ export default defineComponent({
     props: {
         app: String
     },
+    computed: {
+        stage(): Stage {
+            return this.$store.state.stage
+        },
+        isConnected(): boolean {
+            return this.$store.state.isConnected
+        }
+    },
     data() {
         return {
             app: this.app,
@@ -70,6 +87,9 @@ export default defineComponent({
     methods: {
         toggleItemSelection(itemId: number) {
             this.selectedLoginOption = itemId
+        },
+        handleBackButtonClick() {
+            this.$emit('backToMenu')
         },
         async handleContinueClick() {
             if (this.selectedLoginOption === LoginOption.BUILDER_ID) {

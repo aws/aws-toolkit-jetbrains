@@ -5,7 +5,7 @@
 import {createApp} from 'vue'
 import {createStore, Store} from 'vuex'
 import root from './components/root.vue'
-import {IdcInfo, Region, Stage, State} from "../model";
+import {Feature, IdcInfo, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -20,7 +20,9 @@ const store = createStore<State>({
             profileName: '',
             directoryId: '',
             region: '',
-        }
+        },
+        feature: 'Explorer',
+        isConnected: false
     },
     getters: {},
     mutations: {
@@ -33,13 +35,19 @@ const store = createStore<State>({
         setAuthorizationCode(state: State, code: string) {
             state.authorizationCode = code
         },
+        setFeature(state: State, feature: Feature) {
+            state.feature = feature
+        },
         setLastLoginIdcInfo(state: State, idcInfo: IdcInfo) {
-            console.log('state idc info is updated')
             state.lastLoginIdcInfo.profileName = idcInfo.profileName
             state.lastLoginIdcInfo.directoryId = idcInfo.directoryId
             state.lastLoginIdcInfo.region = idcInfo.region
         },
+        setIsConnected(state: State, isConnected: boolean) {
+            state.isConnected = isConnected
+        },
         reset(state: State) {
+            state.feature = 'Explorer'
             state.stage = 'START'
             state.ssoRegions = []
             state.authorizationCode = undefined

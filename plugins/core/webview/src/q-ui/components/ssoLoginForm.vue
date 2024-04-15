@@ -82,7 +82,7 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue'
-import {Region} from "../../model";
+import {Feature, Region} from "../../model";
 
 export default defineComponent({
     name: "ssoForm",
@@ -92,6 +92,9 @@ export default defineComponent({
     computed: {
         regions(): Region[] {
             return this.$store.state.ssoRegions
+        },
+        feature(): Feature {
+            return this.$store.state.feature
         },
         ssoProfile: {
             get() {
@@ -147,14 +150,15 @@ export default defineComponent({
                 command: 'loginIdC',
                 url: startUrl,
                 region: this.selectedRegion,
-                profileName: this.ssoProfile
+                profileName: this.ssoProfile,
+                feature: this.feature
             })
             this.$emit('stageChanged', 'AUTHENTICATING')
         },
         handleCodeCatalystSignin() {
             this.$emit('stageChanged', 'AUTHENTICATING')
             window.ideApi.postMessage({
-                command: 'loginCodeCatalystBuilderId'
+                command: 'loginBuilderId'
             })
         }
     },

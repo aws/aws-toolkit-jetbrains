@@ -67,7 +67,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         val contentManager = toolWindow.contentManager
 
-        val content = contentManager.factory.createContent(component(project), null, false).also {
+        val content = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(project).component, null, false).also {
             it.isCloseable = true
             it.isPinnable = true
         }
@@ -116,6 +116,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     } else {
         ToolkitWebviewPanel.getInstance(project).let {
             it.browser?.resetBrowserState()
+            it.browser?.updateState()
             it.component
         }
     }
@@ -144,7 +145,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
  *        // 2c: request permission set selection
  *     }
  */
-private fun isToolkitConnected(project: Project): Boolean {
+fun isToolkitConnected(project: Project): Boolean {
     // (1)
     if (AwsConnectionManager.getInstance(project).isValidConnectionSettings()) {
         return true
@@ -165,4 +166,41 @@ private fun isToolkitConnected(project: Project): Boolean {
             false
         }
     } ?: false
+}
+
+fun showWebview(project: Project) {
+    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
+
+    val myContent = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(project).component, null, false).also {
+        it.isCloseable = true
+        it.isPinnable = true
+    }
+
+    ToolkitWebviewPanel.getInstance(project).browser?.updateState()
+
+    runInEdt {
+        ToolkitWebviewPanel.getInstance(project).browser?.jcefBrowser?.cefBrowser?.let {
+            println("open code catlyst login")
+            it.executeJavaScript("""
+                    window.ideClient.loginCodeCatalyst()
+                """.trimIndent(), it.url, 0)
+        }
+
+        contentManager.removeAllContents(true)
+        contentManager.addContent(myContent)
+    }
+}
+
+fun showExplorerTree(project: Project) {
+    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
+
+    val myContent = contentManager.factory.createContent(AwsToolkitExplorerToolWindow.getInstance(project), null, false).also {
+        it.isCloseable = true
+        it.isPinnable = true
+    }
+
+    runInEdt {
+        contentManager.removeAllContents(true)
+        contentManager.addContent(myContent)
+    }
 }

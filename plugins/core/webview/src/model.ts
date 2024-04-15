@@ -3,6 +3,8 @@
 
 export type Stage = 'START' | 'SSO_FORM' | 'CONNECTED' | 'AUTHENTICATING' | 'AWS_PROFILE' | 'TOOLKIT_BEARER'
 
+export type Feature = 'Q' | 'CodeCatalyst' | 'Explorer'
+
 export interface Region {
     id: string,
     name: string,
@@ -21,5 +23,7 @@ export interface State {
     stage: Stage,
     ssoRegions: Region[],
     authorizationCode?: string,
-    lastLoginIdcInfo: IdcInfo
+    lastLoginIdcInfo: IdcInfo,
+    feature: Feature,
+    isConnected: boolean
 }

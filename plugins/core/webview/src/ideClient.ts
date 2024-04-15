@@ -7,9 +7,20 @@ import {IdcInfo, Region, Stage, State} from "./model";
 export class IdeClient {
     constructor(private readonly store: Store<State>) {}
 
+    // TODO: design and improve the API here
+
     updateStage(stage: Stage) {
-        console.log("update vue State")
         this.store.commit('setStage', stage)
+    }
+
+    loginCodeCatalyst() {
+        this.updateStage('TOOLKIT_BEARER')
+        console.log('about to set feature to...', 'CodeCatalyst')
+        this.store.commit("setFeature", 'CodeCatalyst')
+    }
+
+    updateIsConnected(isConnected: boolean) {
+        this.store.commit("setIsConnected", isConnected)
     }
 
     updateSsoRegions(regions: Region[]) {

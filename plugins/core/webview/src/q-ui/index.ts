@@ -19,7 +19,9 @@ const store = createStore<State>({
             profileName: '',
             directoryId: '',
             region: '',
-        }
+        },
+        feature: 'Q',
+        isConnected: false
     },
     getters: {},
     mutations: {

@@ -10,8 +10,8 @@
             :is-connected="stage === 'CONNECTED'"
         />
 
-        <LoginOptions :app="app" v-if="stage === 'START'" @stageChanged="mutateStage"/>
-        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM' || stage === 'TOOLKIT_BEARER'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
+        <LoginOptions :app="app" v-if="stage === 'START' || stage === 'TOOLKIT_BEARER'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
+        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
 
         <template v-if="stage === 'AUTHENTICATING'">
@@ -86,6 +86,9 @@ export default defineComponent({
         stage(): Stage {
             return this.$store.state.stage
         },
+        isConnected(): boolean {
+            return this.$store.state.isConnected
+        },
         authorizationCode(): string | undefined {
             return this.$store.state.authorizationCode
         },
@@ -104,6 +107,9 @@ export default defineComponent({
             }
         },
         handleBackButtonClick() {
+            if (this.isConnected) {
+                window.ideApi.postMessage({ command: 'toggleBrowser' })
+            }
             this.mutateStage('START')
         },
         handleCancelButton() {

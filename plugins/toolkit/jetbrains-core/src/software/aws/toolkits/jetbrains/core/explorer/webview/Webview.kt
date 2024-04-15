@@ -28,12 +28,16 @@ import org.cef.CefApp
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
@@ -43,6 +47,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
+import software.aws.toolkits.jetbrains.core.explorer.isToolkitConnected
+import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
@@ -122,25 +128,7 @@ class ToolkitWebviewPanel(val project: Project) {
         }
     }
 
-    fun showWebview() {
-        val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
-        val myContent = contentManager.factory.createContent(this.component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
 
-        runInEdt {
-            contentManager.removeAllContents(true)
-            contentManager.addContent(myContent)
-            browser?.jcefBrowser?.cefBrowser?.let {
-                println("!")
-                it.executeJavaScript("""
-                    console.log('in js code.....................')
-                    window.ideClient.updateStage('TOOLKIT_BEARER')
-                """.trimIndent(), it.url, 0)
-            }
-        }
-    }
 
     companion object {
         fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
@@ -149,18 +137,20 @@ class ToolkitWebviewPanel(val project: Project) {
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
 class ToolkitWebviewBrowser(val project: Project) {
-    val jcefBrowser: JBCefBrowserBase by lazy {
+    val jcefBrowser: JBCefBrowserBase
+    val query: JBCefJSQuery
+
+    init {
         val client = JBCefApp.getInstance().createClient()
-
         Disposer.register(project, client)
-
-        JBCefBrowserBuilder()
+        jcefBrowser = JBCefBrowserBuilder()
             .setClient(client)
             .setOffScreenRendering(true)
+            .setCreateImmediately(true)
             .build()
-    }
 
-    val query = JBCefJSQuery.create(jcefBrowser)
+        query = JBCefJSQuery.create(jcefBrowser as JBCefBrowserBase)
+    }
 
     fun init() {
         CefApp.getInstance()
@@ -189,27 +179,20 @@ class ToolkitWebviewBrowser(val project: Project) {
                     val directoryId = extractDirectoryIdFromStartUrl(startUrl)
                     val region = lastLoginIdcInfo.region
 
-                    jcefBrowser.cefBrowser.executeJavaScript(
-                        "window.ideClient.updateLastLoginIdcInfo({" +
-                            "profileName: \"$profileName\"," +
-                            "directoryId: \"$directoryId\"," +
-                            "region: \"$region\"})",
-                        jcefBrowser.cefBrowser.url,
-                        0
-                    )
+                    executeJS("window.ideClient.updateLastLoginIdcInfo({" +
+                        "profileName: \"$profileName\"," +
+                        "directoryId: \"$directoryId\"," +
+                        "region: \"$region\"})")
                 }
 
                 "fetchSsoRegion" -> {
                     val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
                     val json = jacksonObjectMapper().writeValueAsString(regions)
-                    jcefBrowser.cefBrowser.executeJavaScript(
-                        "window.ideClient.updateSsoRegions($json)",
-                        jcefBrowser.cefBrowser.url,
-                        0
-                    )
+
+                    executeJS("window.ideClient.updateSsoRegions($json)")
                 }
 
-                "loginCodeCatalystBuilderId" -> {
+                "loginBuilderId" -> {
                     val onPending: () -> Unit = {
                         projectCoroutineScope(project).launch {
                             val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
@@ -219,14 +202,8 @@ class ToolkitWebviewBrowser(val project: Project) {
                                 val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
 
                                 if (authorization != null) {
-                                    jcefBrowser.cefBrowser.executeJavaScript(
-                                        "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
-                                        jcefBrowser.cefBrowser.url,
-                                        0
-                                    )
-
+                                    executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
                                     currentAuthorization = authorization
-
                                     return@launch
                                 }
                             }
@@ -234,7 +211,7 @@ class ToolkitWebviewBrowser(val project: Project) {
                     }
 
                     runInEdt {
-                        Login.BuilderId(listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE) + CODECATALYST_SCOPES, onPending).loginBuilderId(project)
+                        Login.BuilderId(CODECATALYST_SCOPES, onPending).loginBuilderId(project)
                     }
                 }
 
@@ -244,15 +221,13 @@ class ToolkitWebviewBrowser(val project: Project) {
                     val region = jacksonObjectMapper().readTree(it).get("region").asText()
                     val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
 
+                    val feature: String = jacksonObjectMapper().readTree(it).get("feature").asText()
+
                     val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
                         projectCoroutineScope(project).launch {
                             val authorization = pollForAuthorization(provider)
                             if (authorization != null) {
-                                jcefBrowser.cefBrowser.executeJavaScript(
-                                    "window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")",
-                                    jcefBrowser.cefBrowser.url,
-                                    0
-                                )
+                                executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
                                 currentAuthorization = authorization
                             }
                         }
@@ -262,7 +237,12 @@ class ToolkitWebviewBrowser(val project: Project) {
                         // TODO: AuthTelemetry.addConnection
                     }
 
-                    val scope = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                    val scope = if (feature == "CodeCatalyst") {
+                        CODECATALYST_SCOPES
+                    } else {
+                        listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                    }
+
                     runInEdt {
                         requestCredentialsForExplorer(
                             project,
@@ -292,6 +272,10 @@ class ToolkitWebviewBrowser(val project: Project) {
                     }
                 }
 
+                "toggleBrowser" -> {
+                    showExplorerTree(project)
+                }
+
                 "cancelLogin" -> {
                     println("cancel login........")
                     // TODO: BearerToken vs. SsoProfile
@@ -316,6 +300,17 @@ class ToolkitWebviewBrowser(val project: Project) {
         query.addHandler(handler)
     }
 
+    fun updateState() {
+        val isConnected = isToolkitConnected(project)
+        executeJS("window.ideClient.updateIsConnected($isConnected)")
+    }
+
+    private fun executeJS(jsScript: String) {
+        this.jcefBrowser.cefBrowser.let {
+            it.executeJavaScript(jsScript, it.url, 0)
+        }
+    }
+
     private fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
         is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
         else -> ""
@@ -329,7 +324,7 @@ class ToolkitWebviewBrowser(val project: Project) {
     fun component(): JComponent? = jcefBrowser.component
 
     fun resetBrowserState() {
-        jcefBrowser.cefBrowser.executeJavaScript("window.ideClient.reset()", jcefBrowser.cefBrowser.url, 0)
+        executeJS("window.ideClient.reset()")
     }
 
     private suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
