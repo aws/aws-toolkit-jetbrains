@@ -58,8 +58,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
             )
         }
 
-        val validationError = if (validationResult.valid) null else
+        val validationError = if (validationResult.valid) {
+            null
+        } else {
             validationResult.invalidTelemetryReason.category ?: CodeTransformPreValidationError.Unknown
+        }
 
         // New projectDetails metric should always be fired whether the project was valid or invalid
         CodetransformTelemetry.projectDetails(
