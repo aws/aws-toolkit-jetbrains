@@ -3,7 +3,10 @@
 
 package software.aws.toolkits.jetbrains.utils
 
+import com.intellij.idea.AppMode
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.extensions.ExtensionNotApplicableException
+import com.intellij.openapi.util.BuildNumber
 import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 
 /**
@@ -21,3 +24,8 @@ fun disableExtensionIfRemoteBackend() {
         throw ExtensionNotApplicableException.create()
     }
 }
+
+// CW can be supported only after at least build 232.9921.47 on remote env
+fun isRunningOnCWNotSupportedRemoteBackend() =
+    ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromStringOrNull("232.9921.47")) < 0 &&
+        AppMode.isRemoteDevHost()

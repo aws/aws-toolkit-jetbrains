@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 
+import com.intellij.codeInsight.inline.completion.render.InlineBlockElementRenderer
+import com.intellij.codeInsight.inline.completion.render.InlineSuffixRenderer
+import com.intellij.idea.AppMode
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
@@ -33,14 +36,24 @@ class CodeWhispererInlayManager {
             otherLines = ""
         }
 
-        val firstLineRenderer = CodeWhispererInlayInlineRenderer(firstLine)
+        val firstLineRenderer =
+            if (!AppMode.isRemoteDevHost()) {
+                CodeWhispererInlayInlineRenderer(firstLine)
+            } else {
+                InlineSuffixRenderer(editor, firstLine)
+            }
         val inlineInlay = editor.inlayModel.addInlineElement(startOffset, true, firstLineRenderer)
         inlineInlay?.let { Disposer.register(popup, it) }
 
         if (otherLines.isEmpty()) {
             return
         }
-        val otherLinesRenderer = CodeWhispererInlayBlockRenderer(otherLines)
+        val otherLinesRenderer =
+            if (!AppMode.isRemoteDevHost()) {
+                CodeWhispererInlayBlockRenderer(otherLines)
+            } else {
+                InlineBlockElementRenderer(editor, otherLines.split("\n"))
+            }
         val blockInlay = editor.inlayModel.addBlockElement(
             startOffset,
             true,
@@ -52,19 +65,36 @@ class CodeWhispererInlayManager {
     }
 
     fun clearInlays(editor: Editor) {
-        editor.inlayModel.getInlineElementsInRange(
-            0,
-            editor.document.textLength,
-            CodeWhispererInlayInlineRenderer::class.java
-        ).forEach { disposable ->
-            Disposer.dispose(disposable)
-        }
-        editor.inlayModel.getBlockElementsInRange(
-            0,
-            editor.document.textLength,
-            CodeWhispererInlayBlockRenderer::class.java
-        ).forEach { disposable ->
-            Disposer.dispose(disposable)
+        if (!AppMode.isRemoteDevHost()) {
+            editor.inlayModel.getInlineElementsInRange(
+                0,
+                editor.document.textLength,
+                CodeWhispererInlayInlineRenderer::class.java
+            ).forEach { disposable ->
+                Disposer.dispose(disposable)
+            }
+            editor.inlayModel.getBlockElementsInRange(
+                0,
+                editor.document.textLength,
+                CodeWhispererInlayBlockRenderer::class.java
+            ).forEach { disposable ->
+                Disposer.dispose(disposable)
+            }
+        } else {
+            editor.inlayModel.getInlineElementsInRange(
+                0,
+                editor.document.textLength,
+                InlineSuffixRenderer::class.java
+            ).forEach { disposable ->
+                Disposer.dispose(disposable)
+            }
+            editor.inlayModel.getBlockElementsInRange(
+                0,
+                editor.document.textLength,
+                InlineBlockElementRenderer::class.java
+            ).forEach { disposable ->
+                Disposer.dispose(disposable)
+            }
         }
     }
 

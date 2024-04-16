@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.idea.AppMode
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -70,7 +71,11 @@ class WebviewPanel(val project: Project) {
     init {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
-            webviewContainer.add(JBTextArea("JCEF not supported"))
+            if (AppMode.isRemoteDevHost()) {
+                webviewContainer.add(JBTextArea("Amazon Q chat is not supported in remote dev environment."))
+            } else {
+                webviewContainer.add(JBTextArea("JCEF not supported"))
+            }
             browser = null
         } else {
             browser = WebviewBrowser(project).also {
