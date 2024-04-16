@@ -122,10 +122,8 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             "loginBuilderId" -> {
                 val scope = CODEWHISPERER_SCOPES + Q_SCOPES - Q_SCOPES_UNAVAILABLE_BUILDER_ID.toSet()
                 runInEdt {
-                    requestCredentialsForQ(
-                        project,
-                        Login.BuilderId(scope, onPendingAwsId)
-                    )
+                    Login.BuilderId(scope, onPendingAwsId).loginBuilderId(project)
+                    // TODO: telemetry
                 }
             }
 
@@ -142,10 +140,8 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                     // TODO: AuthTelemetry.addConnection
                 }
                 runInEdt {
-                    requestCredentialsForQ(
-                        project,
-                        Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
-                    )
+                    Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError).loginIdc(project)
+                    // TODO: telemetry
                 }
             }
 
@@ -183,11 +179,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         loadWebView()
 
         query.addHandler(handler)
-    }
-
-    private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
-        val pattern = "https://(.*?).awsapps.com/start.*".toRegex()
-        return pattern.matchEntire(startUrl)?.groupValues?.get(1).orEmpty()
     }
 
     fun component(): JComponent? = jcefBrowser.component

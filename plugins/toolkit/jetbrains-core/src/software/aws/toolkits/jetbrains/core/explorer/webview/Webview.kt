@@ -152,7 +152,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
                 val feature: String = jacksonObjectMapper().readTree(it).get("feature").asText()
 
-                val onError: (String) -> Unit = { s ->
+                val onError: (String) -> Unit = { _ ->
                     Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
                     // TODO: AuthTelemetry.addConnection
                 }
@@ -163,16 +163,23 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
+                val login = Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
+
                 runInEdt {
-                    requestCredentialsForExplorer(
-                        project,
-                        profileName,
-                        url,
-                        awsRegion,
-                        scope,
-                        onPendingProfile,
-                        onError
-                    )
+                    val connection = login.loginIdc(project)
+                    if (connection != null && scope.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
+                        val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+                        val rolePopup = IdcRolePopup(
+                            project,
+                            awsRegion.id,
+                            profileName,
+                            tokenProvider,
+                            IdcRolePopupState(), // TODO: is it correct <<?
+                        )
+
+                        rolePopup.show()
+                    }
                 }
             }
 
@@ -258,11 +265,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
-    }
-
-    private fun extractDirectoryIdFromStartUrl(startUrl: String): String {
-        val pattern = "https://(.*?).awsapps.com/start.*".toRegex()
-        return pattern.matchEntire(startUrl)?.groupValues?.get(1).orEmpty()
     }
 
     fun component(): JComponent? = jcefBrowser.component

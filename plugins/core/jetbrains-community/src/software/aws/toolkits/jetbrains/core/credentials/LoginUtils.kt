@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -59,13 +60,13 @@ sealed class Login {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
         private val configFilesFacade = DefaultConfigFilesFacade()
 
-        fun loginIdc(project: Project): Boolean {
+        fun loginIdc(project: Project): AwsBearerTokenConnection? {
             // we have this check here so we blow up early if user has an invalid config file
             try {
                 configFilesFacade.readSsoSessions()
             } catch (e: Exception) {
                 println("Failed to read sso sessions file")
-                return false
+                return null
             }
 
             val profile = UserConfigSsoSessionProfile(
@@ -75,11 +76,17 @@ sealed class Login {
                 scopes = scopes
             )
 
-            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
-            // TODO: if rolePopup needed, don't switch connection immediately
+            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return null
+
+            // TODO: delta, make sure we are good to switch immediately
+//            if (!promptForIdcPermissionSet) {
+//                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+//                close(DialogWrapper.OK_EXIT_CODE)
+//                return
+//            }
             ToolkitConnectionManager.getInstance(project).switchConnection(conn)
 
-            return true
+            return conn
         }
     }
 
