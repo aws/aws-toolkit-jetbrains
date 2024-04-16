@@ -190,7 +190,9 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatAcceptedCharactersLength = message.code.length,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project)
+                    credentialStartUrl = getStartUrl(context.project),
+                    cwsprChatCodeBlockIndex = message.codeBlockIndex,
+                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -209,7 +211,9 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatAcceptedCharactersLength = message.code.length,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project)
+                    credentialStartUrl = getStartUrl(context.project),
+                    cwsprChatCodeBlockIndex = message.codeBlockIndex,
+                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
