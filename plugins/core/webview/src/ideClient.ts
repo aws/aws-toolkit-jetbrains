@@ -10,8 +10,7 @@ export class IdeClient {
     // TODO: design and improve the API here
 
     prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean, feature: string }) {
-        console.log('prepareUi')
-        console.log('state: ', state)
+        console.log('browser is preparing UI with state ', state)
         this.updateStage(state.stage)
         this.updateSsoRegions(state.regions)
         this.updateLastLoginIdcInfo(state.idcInfo)
@@ -34,7 +33,6 @@ export class IdeClient {
     }
 
     updateAuthorization(code: string) {
-        console.log('authorization code: ', code)
         this.store.commit('setAuthorizationCode', code)
     }
 

@@ -11,6 +11,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.serviceContainer.NonInjectable
 import kotlinx.coroutines.launch
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -33,7 +35,12 @@ import javax.swing.JComponent
 
 fun isQConnected(project: Project): Boolean {
     val manager = ToolkitConnectionManager.getInstance(project)
-    return manager.isFeatureEnabled(QConnection.getInstance()) && manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
+    val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
+    val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
+    getLogger<AmazonQToolWindow>().debug { "" +
+        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=${isQEnabled}; isFeatureEnabled(CW)=${isCWEnabled}"
+    }
+    return isQEnabled && isCWEnabled
 }
 
 class AmazonQToolWindow @NonInjectable constructor(

@@ -24,6 +24,8 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
@@ -131,7 +133,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
     override val handler = Function<String, JBCefJSQuery.Response> {
         val command = jacksonObjectMapper().readTree(it).get("command").asText()
-        println("command received from the browser: $command")
+        getLogger<ToolkitWebviewBrowser>().debug { "Command received from the browser: $command" }
 
         when (command) {
             "prepareUi" -> {
@@ -204,7 +206,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             }
 
             "cancelLogin" -> {
-                println("cancel login........")
                 // TODO: BearerToken vs. SsoProfile
 //                  TODO:   AwsTelemetry.loginWithBrowser
 

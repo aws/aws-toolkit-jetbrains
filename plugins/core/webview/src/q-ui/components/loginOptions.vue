@@ -96,7 +96,6 @@ export default defineComponent({
         },
         async handleContinueClick() {
             if (this.selectedLoginOption === LoginOption.BUILDER_ID) {
-                console.log('builderId is selected')
                 this.$emit('stageChanged', 'AUTHENTICATING')
                 window.ideApi.postMessage({ command: 'loginBuilderId' })
             } else if (this.selectedLoginOption === LoginOption.ENTERPRISE_SSO) {

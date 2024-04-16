@@ -12,6 +12,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
@@ -79,7 +81,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    println("active connectionchanged, ${isToolkitConnected(project)}")
+                    getLogger<AwsToolkitExplorerFactory>().debug { "activeConnectionChanged: isToolkitConnected=${isToolkitConnected(project)}" }
                     toolWindow.reload()
                 }
             }
@@ -89,7 +91,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    println("settingsStateChanged, ${isToolkitConnected(project)}")
+                    getLogger<AwsToolkitExplorerFactory>().debug { "settingsStateChanged: isToolkitConnected=${isToolkitConnected(project)}" }
                     toolWindow.reload()
                 }
             }
@@ -114,8 +116,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     }
 
     private fun component(project: Project) = if (isToolkitConnected(project)) {
+        getLogger<AwsToolkitExplorerFactory>().debug { "Rendering explorer tree" }
         AwsToolkitExplorerToolWindow.getInstance(project)
     } else {
+        getLogger<AwsToolkitExplorerFactory>().debug { "Rendering signin webview" }
         ToolkitWebviewPanel.getInstance(project).let {
             it.browser?.prepareBrowser(FeatureId.AwsExplorer)
             it.component
@@ -149,19 +153,24 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 fun isToolkitConnected(project: Project): Boolean {
     // (1)
     if (AwsConnectionManager.getInstance(project).isValidConnectionSettings()) {
-        println("isValidConnectionSettings = true")
+        getLogger<AwsToolkitExplorerFactory>().debug {
+            "isToolkitConnected returns true: AwsConnectionManager.getInstance(project).isValidConnectionSettings"
+        }
         return true
     }
 
     val bearerCredsManager = ToolkitConnectionManager.getInstance(project)
     // (2a) has codecatlyst connection (either pinned or not pinned)
     if (bearerCredsManager.isFeatureEnabled(CodeCatalystConnection.getInstance())) {
-        println("isFeatureEnabled: CodeCatalyst")
+        getLogger<AwsToolkitExplorerFactory>().debug {
+            "isToolkitConnected returns true: isFeatureEnabled(CodeCatalyst)"
+        }
         return true
     }
 
     return bearerCredsManager.activeConnection()?.let { bearerConn ->
         if (bearerConn is AwsBearerTokenConnection) {
+            getLogger<AwsToolkitExplorerFactory>().debug { "isToolkitConnected returns true: active IdentityRoleAccess connection" }
             bearerConn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
         } else {
             false

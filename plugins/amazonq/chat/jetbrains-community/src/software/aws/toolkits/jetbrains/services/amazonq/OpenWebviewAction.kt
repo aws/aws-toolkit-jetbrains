@@ -20,6 +20,8 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
@@ -113,7 +115,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
     override val handler = Function<String, JBCefJSQuery.Response> {
         val command = jacksonObjectMapper().readTree(it).get("command").asText()
-        println("command received from the browser: $command")
+        getLogger<WebviewBrowser>().debug { "command received from the browser: $command" }
 
         when (command) {
             "prepareUi" -> {
@@ -208,7 +210,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 isConnected: $isConnected
             }
         """.trimIndent()
-        println("prepareUi: $jsonData")
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 

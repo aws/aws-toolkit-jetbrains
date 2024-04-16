@@ -8,6 +8,8 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
@@ -24,7 +26,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     println("newConnection: $newConnection")
                     println("isQConnected: ${isQConnected(project)}")
-                    println("component: ${AmazonQToolWindow.getInstance(project).component}")
+                    val log = if (newConnection == null) {
+                        "activeConnectionChanged=null; isQConnected=${isQConnected(project)}"
+                    } else {
+                        "activeConnectionChanged=${newConnection.id}; isQConnected=${isQConnected(project)}"
+                    }
+                    getLogger<AmazonQToolWindowFactory>().debug { log }
                     val content = contentManager.factory.createContent(AmazonQToolWindow.getInstance(project).component, null, false).also {
                         it.isCloseable = true
                         it.isPinnable = true
