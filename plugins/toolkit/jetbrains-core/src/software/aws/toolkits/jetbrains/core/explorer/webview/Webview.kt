@@ -24,16 +24,15 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
-import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.isToolkitConnected
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
@@ -42,6 +41,7 @@ import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
@@ -112,7 +112,7 @@ class ToolkitWebviewPanel(val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<ToolkitWebviewPanel>()
+        fun getInstance(project: Project?) = project?.service<ToolkitWebviewPanel>() ?: error("")
     }
 }
 
@@ -135,7 +135,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
         when (command) {
             "prepareUi" -> {
-                this.prepareBrowser()
+                this.prepareBrowser(FeatureId.AwsExplorer)
             }
 
             "loginBuilderId" -> {
@@ -157,7 +157,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     // TODO: AuthTelemetry.addConnection
                 }
 
-                val scope = if (feature == "CodeCatalyst") {
+                val scope = if (feature == FeatureId.Codecatalyst.name) {
                     CODECATALYST_SCOPES
                 } else {
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
@@ -238,9 +238,29 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         loadWebView()
 
         query.addHandler(handler)
+
+        project.messageBus.connect().subscribe(
+            ToolkitConnectionManagerListener.TOPIC,
+            object : ToolkitConnectionManagerListener {
+                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    val isConnected = isToolkitConnected(project)
+                    executeJS("window.ideClient.updateIsConnected($isConnected)")
+                }
+            }
+        )
+
+        project.messageBus.connect().subscribe(
+            AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
+            object : ConnectionSettingsStateChangeNotifier {
+                override fun settingsStateChanged(newState: ConnectionState) {
+                    val isConnected = isToolkitConnected(project)
+                    executeJS("window.ideClient.updateIsConnected($isConnected)")
+                }
+            }
+        )
     }
 
-    override fun prepareBrowser() {
+    override fun prepareBrowser(feature: FeatureId) {
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
         val profileName = lastLoginIdcInfo.profileName
@@ -261,7 +281,8 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     startUrl: '$startUrl',
                     region: '$region'
                 },
-                isConnected: $isConnected
+                isConnected: $isConnected,
+                feature: '$feature'
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
@@ -304,55 +325,4 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }
-}
-
-fun requestCredentialsForExplorer(
-    project: Project,
-    profileName: String,
-    startUrl: String,
-    region: AwsRegion,
-    scopes: List<String>,
-    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-    onError: (String) -> Unit,
-    promptForIdcPermissionSet: Boolean = true,
-): Boolean {
-    val configFilesFacade = DefaultConfigFilesFacade()
-    try {
-        configFilesFacade.readSsoSessions()
-    } catch (e: Exception) {
-        return false
-    }
-
-    val profile = UserConfigSsoSessionProfile(
-        configSessionName = profileName,
-        ssoRegion = region.id,
-        startUrl = startUrl,
-        scopes = scopes
-    )
-
-    val connection = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return false
-    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-
-    if (!promptForIdcPermissionSet) {
-        return true
-    }
-
-    val tokenProvider = connection.getConnectionSettings().tokenProvider
-
-    val rolePopup = IdcRolePopup(
-        project,
-        region.id,
-        profileName,
-        tokenProvider,
-        IdcRolePopupState(), // TODO: is it correct state ?
-        configFilesFacade = configFilesFacade,
-    )
-
-    if (!rolePopup.showAndGet()) {
-        // don't close window if role is needed but was not confirmed
-        // TODO: ??
-        return false
-    }
-
-    return true
 }

@@ -13,7 +13,7 @@
         </button>
         <div class="title font-amazon bottom-small-gap" v-if="existingLogin.id === -1">Choose a sign-in option:</div>
         <SelectableItem
-            v-if="app === 'AMAZONQ' || stage === 'TOOLKIT_BEARER'"
+            v-if="app === 'AMAZONQ' || feature === 'codecatalyst'"
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
@@ -30,7 +30,7 @@
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <SelectableItem
-            v-if="app === 'TOOLKIT' &&  stage !== 'TOOLKIT_BEARER'"
+            v-if="app === 'TOOLKIT' &&  feature === 'awsExplorer'"
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.IAM_CREDENTIAL"
             :itemId="LoginOption.IAM_CREDENTIAL"
@@ -52,7 +52,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {Stage} from "../../model";
+import {Feature, Stage} from "../../model";
 
 enum LoginOption {
     NONE,
@@ -74,6 +74,9 @@ export default defineComponent({
         },
         isConnected(): boolean {
             return this.$store.state.isConnected
+        },
+        feature(): Feature {
+            return this.$store.state.feature
         }
     },
     data() {

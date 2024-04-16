@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapte
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.telemetry.FeatureId
 import javax.swing.JComponent
 
 fun isQConnected(project: Project): Boolean {
@@ -49,7 +50,7 @@ class AmazonQToolWindow @NonInjectable constructor(
         get() = if (isQConnected(project)) {
             chatPanel.component
         } else {
-            loginPanel.browser?.prepareBrowser()
+            loginPanel.browser?.prepareBrowser(FeatureId.Q)
             loginPanel.component
         }
 

@@ -9,23 +9,19 @@ export class IdeClient {
 
     // TODO: design and improve the API here
 
-    prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean }) {
+    prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean, feature: string }) {
         console.log('prepareUi')
         console.log('state: ', state)
         this.updateStage(state.stage)
         this.updateSsoRegions(state.regions)
         this.updateLastLoginIdcInfo(state.idcInfo)
         this.updateIsConnected(state.isConnected)
+
+        this.store.commit("setFeature", state.feature)
     }
 
     updateStage(stage: Stage) {
         this.store.commit('setStage', stage)
-    }
-
-    loginCodeCatalyst() {
-        this.updateStage('TOOLKIT_BEARER')
-        console.log('about to set feature to...', 'CodeCatalyst')
-        this.store.commit("setFeature", 'CodeCatalyst')
     }
 
     updateIsConnected(isConnected: boolean) {

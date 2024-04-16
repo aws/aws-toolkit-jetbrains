@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
@@ -27,6 +28,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.explorer.showWebview
+import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
@@ -274,7 +277,14 @@ fun requestCredentialsForCodeCatalyst(
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
-): Boolean {
+): Boolean? {
+    if (JBCefApp.isSupported() && project != null) {
+        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(FeatureId.Codecatalyst) // TODO: consume data
+        showWebview(project)
+
+        return null
+    }
+
     val authenticationDialog = when (ApplicationInfo.getInstance().build.productCode) {
         "GW" -> {
             GatewaySetupAuthenticationDialog(
@@ -366,7 +376,13 @@ fun requestCredentialsForExplorer(
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
-): Boolean {
+): Boolean? {
+    if (JBCefApp.isSupported()) {
+        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(FeatureId.AwsExplorer) // TODO: consume data
+        showWebview(project)
+        return null
+    }
+
     val authenticationDialog = SetupAuthenticationDialog(
         project,
         tabSettings = mapOf(

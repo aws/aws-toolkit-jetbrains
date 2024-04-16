@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
-import software.aws.toolkits.jetbrains.core.explorer.showWebview
+import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
@@ -27,7 +27,10 @@ class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
                 project.refreshDevToolTree()
             } ?: run {
                 runInEdt {
-                    showWebview(project)
+                    // Start from scratch if no active connection
+                    if (requestCredentialsForCodeCatalyst(project) == true) {
+                        project.refreshDevToolTree()
+                    }
                 }
             }
         }

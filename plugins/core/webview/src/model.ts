@@ -3,7 +3,7 @@
 
 export type Stage = 'START' | 'SSO_FORM' | 'CONNECTED' | 'AUTHENTICATING' | 'AWS_PROFILE' | 'TOOLKIT_BEARER'
 
-export type Feature = 'Q' | 'CodeCatalyst' | 'Explorer'
+export type Feature = 'Q' | 'codecatalyst' | 'awsExplorer'
 
 export interface Region {
     id: string,

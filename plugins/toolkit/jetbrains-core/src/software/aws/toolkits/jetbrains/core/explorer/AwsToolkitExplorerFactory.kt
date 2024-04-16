@@ -15,7 +15,6 @@ import com.intellij.openapi.wm.ex.ToolWindowEx
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -28,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.FeatureId
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -79,6 +79,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                    println("active connectionchanged, ${isToolkitConnected(project)}")
                     toolWindow.reload()
                 }
             }
@@ -88,6 +89,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
+                    println("settingsStateChanged, ${isToolkitConnected(project)}")
                     toolWindow.reload()
                 }
             }
@@ -115,8 +117,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         AwsToolkitExplorerToolWindow.getInstance(project)
     } else {
         ToolkitWebviewPanel.getInstance(project).let {
-            it.browser?.resetBrowserState()
-            it.browser?.prepareBrowser()
+            it.browser?.prepareBrowser(FeatureId.AwsExplorer)
             it.component
         }
     }
@@ -148,20 +149,20 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 fun isToolkitConnected(project: Project): Boolean {
     // (1)
     if (AwsConnectionManager.getInstance(project).isValidConnectionSettings()) {
+        println("isValidConnectionSettings = true")
         return true
     }
 
     val bearerCredsManager = ToolkitConnectionManager.getInstance(project)
     // (2a) has codecatlyst connection (either pinned or not pinned)
     if (bearerCredsManager.isFeatureEnabled(CodeCatalystConnection.getInstance())) {
+        println("isFeatureEnabled: CodeCatalyst")
         return true
     }
 
     return bearerCredsManager.activeConnection()?.let { bearerConn ->
         if (bearerConn is AwsBearerTokenConnection) {
             bearerConn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-        } else if (bearerConn is AwsConnectionManagerConnection) {
-            true
         } else {
             false
         }
@@ -176,21 +177,7 @@ fun showWebview(project: Project) {
         it.isPinnable = true
     }
 
-    ToolkitWebviewPanel.getInstance(project).browser?.resetBrowserState()
-    ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser()
-
     runInEdt {
-        ToolkitWebviewPanel.getInstance(project).browser?.jcefBrowser?.cefBrowser?.let {
-            println("open code catlyst login")
-            it.executeJavaScript(
-                """
-                    window.ideClient.loginCodeCatalyst()
-                """.trimIndent(),
-                it.url,
-                0
-            )
-        }
-
         contentManager.removeAllContents(true)
         contentManager.addContent(myContent)
     }

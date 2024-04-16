@@ -21,7 +21,7 @@ const store = createStore<State>({
             startUrl: '',
             region: '',
         },
-        feature: 'Explorer',
+        feature: 'awsExplorer',
         isConnected: false
     },
     getters: {},
@@ -47,7 +47,6 @@ const store = createStore<State>({
             state.isConnected = isConnected
         },
         reset(state: State) {
-            state.feature = 'Explorer'
             state.stage = 'START'
             state.ssoRegions = []
             state.authorizationCode = undefined

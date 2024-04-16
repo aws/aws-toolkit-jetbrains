@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
+import software.aws.toolkits.telemetry.FeatureId
 import java.util.function.Function
 
 abstract class LoginBrowser(
@@ -58,7 +59,7 @@ abstract class LoginBrowser(
         }
     }
 
-    abstract fun prepareBrowser()
+    abstract fun prepareBrowser(feature: FeatureId)
 
     fun executeJS(jsScript: String) {
         this.jcefBrowser.cefBrowser.let {

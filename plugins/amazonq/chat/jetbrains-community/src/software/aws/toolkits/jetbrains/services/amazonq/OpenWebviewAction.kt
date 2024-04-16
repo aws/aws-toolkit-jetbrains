@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.isQConnected
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
+import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -116,7 +117,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
         when (command) {
             "prepareUi" -> {
-                this.prepareBrowser()
+                this.prepareBrowser(FeatureId.Q)
             }
 
             "loginBuilderId" -> {
@@ -183,7 +184,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
     fun component(): JComponent? = jcefBrowser.component
 
-    override fun prepareBrowser() {
+    override fun prepareBrowser(feature: FeatureId) {
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
         val profileName = lastLoginIdcInfo.profileName
