@@ -28,7 +28,7 @@ class AuthController {
         val connectionState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
         val codeWhispererState = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
 
-        // CW chat is enabled for Builder and IDC users, Amazon Q is only valid for IDC users
+        // CW chat is enabled for Builder and IDC users, same for Amazon Q
         return AuthNeededStates(
             chat = getAuthNeededState(connectionState, codeWhispererState),
             amazonQ = getAuthNeededState(connectionState, codeWhispererState)
