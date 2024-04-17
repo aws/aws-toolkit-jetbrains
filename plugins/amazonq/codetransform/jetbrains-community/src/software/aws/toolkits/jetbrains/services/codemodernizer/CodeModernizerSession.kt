@@ -49,11 +49,15 @@ const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
+const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
-    private val initialPollingSleepDurationMillis: Long = 2000,
-    private val totalPollingSleepDurationMillis: Long = 5000,
+    // TODO change back
+    private val initialPollingSleepDurationMillis: Long = 200,
+    private val totalPollingSleepDurationMillis: Long = 500,
+    //private val initialPollingSleepDurationMillis: Long = 2000,
+    //private val totalPollingSleepDurationMillis: Long = 5000,
 ) : Disposable {
     private val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
     private val state = CodeModernizerSessionState.getInstance(sessionContext.project)
@@ -131,7 +135,8 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            val uploadId = uploadPayload(payload)
+            val uploadId = uploadPayloadMock(payload)
+            //val uploadId = uploadPayload(payload)
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
@@ -179,7 +184,9 @@ class CodeModernizerSession(
             throw RuntimeException("Target language is not supported")
         }
         LOG.info { "Starting job with uploadId [$uploadId] for $sourceLanguage -> $targetLanguage" }
-        return clientAdaptor.startCodeModernization(uploadId, sourceLanguage, targetLanguage)
+        // TODO mock return paused job ID
+        return clientAdaptor.startCodeModernizationMock(uploadId, sourceLanguage, targetLanguage)
+        //return clientAdaptor.startCodeModernization(uploadId, sourceLanguage, targetLanguage)
     }
 
     /**
@@ -200,6 +207,9 @@ class CodeModernizerSession(
      */
     fun resumeJob(startTime: Instant, jobId: JobId) = state.putJobHistory(sessionContext, TransformationStatus.STARTED, jobId.id, startTime)
 
+    fun uploadPayloadMock(payload: File): String {
+        return "upload-ID"
+    }
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
@@ -254,6 +264,8 @@ class CodeModernizerSession(
             state.currentJobId = jobId
 
             // add delay to avoid the throttling error
+            // TODO change back
+            //delay(100)
             delay(1000)
 
             var isTransformationPlanEditorOpened = false

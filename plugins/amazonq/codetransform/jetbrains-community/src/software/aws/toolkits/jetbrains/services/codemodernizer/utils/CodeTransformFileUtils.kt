@@ -66,6 +66,7 @@ fun findBuildFiles(sourceFolder: File, supportedBuildFileNames: List<String>): L
 /**
  * Unzips a zip into a dir. Returns the true when successfully unzips the file pointed to by [zipFilePath] to [destDir]
  */
+// TODO move to common utility file
 fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
     if (!zipFilePath.exists()) return false
     val zipFile = ZipFile(zipFilePath.toFile())

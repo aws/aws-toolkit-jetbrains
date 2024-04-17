@@ -23,14 +23,20 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProjectState
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationSpec
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
+import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationExportContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
@@ -73,6 +79,49 @@ class GumbyClient(private val project: Project) {
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
         val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
         return callApi({ bearerClient().getTransformation(request) }, apiName = CodeTransformApiNames.GetTransformation, jobId = jobId)
+    }
+
+    fun getCodeModernizationJobMock(jobId: String, count: Int): GetTransformationResponse {
+        val statusList: List<TransformationStatus> = listOf(
+            TransformationStatus.STARTED,
+            TransformationStatus.PREPARING,
+            TransformationStatus.PREPARED,
+            TransformationStatus.PLANNING,
+            TransformationStatus.PLANNED,
+            TransformationStatus.TRANSFORMING,
+            TransformationStatus.TRANSFORMING,
+            TransformationStatus.TRANSFORMING,
+            TransformationStatus.PAUSED,
+        )
+
+        val transformJob = TransformationJob
+            .builder()
+            .jobId("b91d4aa3-3353-4741-9f6a-cdd15888c5d8")
+            .creationTime(Instant.parse("2024-04-17T16:37:10.135Z"))
+            .status(statusList[count.coerceAtMost(statusList.lastIndex)])
+            .transformationSpec(
+                TransformationSpec
+                    .builder()
+                    .transformationType(TransformationType.LANGUAGE_UPGRADE)
+                    .source(TransformationProjectState.builder().language(TransformationLanguage.JAVA_8).build())
+                    .target(TransformationProjectState.builder().language(TransformationLanguage.JAVA_17).build())
+                    .build()
+            )
+            .build()
+
+        return GetTransformationResponse
+            .builder()
+            .transformationJob(transformJob)
+            .build()
+    }
+
+    fun startCodeModernizationMock(
+        uploadId: String,
+        sourceLanguage: TransformationLanguage,
+        targetLanguage: TransformationLanguage
+    ): StartTransformationResponse {
+        val jobId = "f96d0e21-0a15-4b12-9ea7-9eec293dbf72"
+        return StartTransformationResponse.builder().transformationJobId(jobId).build()
     }
 
     fun startCodeModernization(
@@ -268,7 +317,7 @@ class GumbyClient(private val project: Project) {
 
         val plans = listOf(plan1, plan2, plan3, plan4)
 
-        return GetTransformationPlanResponse.builder().transformationPlan(plans[count]).build()
+        return GetTransformationPlanResponse.builder().transformationPlan(plans[count.coerceAtMost(plans.lastIndex)]).build()
     }
 
 
@@ -308,6 +357,7 @@ class GumbyClient(private val project: Project) {
     suspend fun downloadExportResultArchive(jobId: JobId): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
+        null,
         { e ->
             LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
             telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
@@ -319,12 +369,13 @@ class GumbyClient(private val project: Project) {
     )
 
     // TODO update telemetry
-    suspend fun downloadExportResultArchive2(exportId: String): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
-        exportId,
+    suspend fun downloadExportResultArchive2(jobId: JobId, downloadArtifactId: String): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
+        jobId.id,
         ExportIntent.TRANSFORMATION,
+        ExportContext.builder().transformationExportContext(TransformationExportContext.builder().downloadArtifactId(downloadArtifactId).downloadArtifactType("ClientInstructions").build()).build(),
         { e ->
             LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
-            telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, exportId)
+            telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
         },
         { startTime ->
             // TODO need to update telemetry type to include export ID

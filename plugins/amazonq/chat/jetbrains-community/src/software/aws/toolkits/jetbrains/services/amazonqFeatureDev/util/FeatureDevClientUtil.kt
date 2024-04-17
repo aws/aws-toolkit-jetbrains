@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistC
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
-import software.amazon.awssdk.services.codewhispererstreaming.model.ServiceQuotaExceededException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -115,7 +114,7 @@ suspend fun generatePlan(
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "Generate plan failed for request: ${e.requestId()}" }
 
-            if (e is ServiceQuotaExceededException ||
+            if(
                 (e is ThrottlingException && e.message?.contains("limit for number of iterations on an implementation plan") == true)
             ) {
                 throw PlanIterationLimitError(message("amazonqFeatureDev.approach_gen.iteration_limit.error_text"), e.cause)

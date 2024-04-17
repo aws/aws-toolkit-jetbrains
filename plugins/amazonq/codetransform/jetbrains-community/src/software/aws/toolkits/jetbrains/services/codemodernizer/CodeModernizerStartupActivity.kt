@@ -15,6 +15,7 @@ class CodeModernizerStartupActivity : StartupActivity.DumbAware {
      */
     override fun runActivity(project: Project) {
         if (!isCodeTransformAvailable(project)) return
-        CodeModernizerManager.getInstance(project).tryResumeJob(true)
+        // TODO need to handle this
+        //CodeModernizerManager.getInstance(project).tryResumeJob(true)
     }
 }

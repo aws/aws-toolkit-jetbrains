@@ -27,6 +27,7 @@ private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeTrans
 fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
     val currentTimestamp = System.currentTimeMillis()
     val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
+    /*
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
     try {
@@ -83,6 +84,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         return MavenCopyCommandsResult.Failure
     }
     // When all commands executed successfully, show the transformation hub
+     */
     return MavenCopyCommandsResult.Success(destinationDir.toFile())
 }
 
@@ -243,8 +245,8 @@ fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuild
         runnable.await()
         buildlogBuilder.appendLine(runnable.getOutput())
 
-        // TODO remove local path
-        parseXmlDependenciesReport("")
+        // TODO remove
+        parseXmlDependenciesReport("~/workplace/ide/test-projects/hil-test-repository/java-8-test-application/target/dependency-updates-aggregate-report.xml")
 
     } catch (t: Throwable) {
         emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)

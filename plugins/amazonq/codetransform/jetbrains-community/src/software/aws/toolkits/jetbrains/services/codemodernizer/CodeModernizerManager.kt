@@ -18,6 +18,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
@@ -557,11 +558,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    suspend fun getArtifactForHil(downloadArtifactId: String) = projectCoroutineScope(project).launch {
+    suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
             // TODO Download zip
             //val artifacts = GumbyClient.getInstance(project).downloadExportResultArchive2(downloadArtifactId)
-            delay(2000)
+            runBlocking {
+                artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
+            }
 
             // TODO parse pom.xml and show that dependency in chat
             CodeTransformMessageListener.instance.onTransformPaused()
@@ -590,8 +593,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // TODO handle HIL work
         if (result is CodeModernizerJobCompletedResult.JobPaused) {
             // No need to handle failed case here since job would have been FAILED status
-            val downloadArtifactId = result.downloadArtifactId
-            getArtifactForHil(downloadArtifactId)
+            val (jobId, downloadArtifactId) = result
+            getArtifactForHil(jobId, downloadArtifactId)
 
             // return early?
             return

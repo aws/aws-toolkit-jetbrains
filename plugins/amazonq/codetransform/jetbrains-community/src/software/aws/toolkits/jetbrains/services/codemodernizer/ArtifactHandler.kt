@@ -20,6 +20,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.summary.CodeModernizerSummaryEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
@@ -59,6 +60,30 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.info.download.started.content"),
             project,
         )
+    }
+
+    // TODO change return type
+    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String) {
+        val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
+
+        val path = Files.createTempFile(null, ".zip")
+        var totalDownloadBytes = 0
+        Files.newOutputStream(path).use {
+            for (bytes in downloadResultsResponse) {
+                it.write(bytes)
+                totalDownloadBytes += bytes.size
+            }
+        }
+        LOG.info { "Successfully converted the download to a zip at ${path.toAbsolutePath()}." }
+        val zipPath = path.toAbsolutePath().toString()
+
+        try {
+            val downloadedArtifact = CodeTransformHilDownloadArtifact.create(zipPath)
+            LOG.info { downloadedArtifact.zipPath }
+
+        } catch (e: Error) {
+            LOG.error { "Wrong " + e.message }
+        }
     }
 
     suspend fun downloadArtifact(job: JobId): DownloadArtifactResult {
