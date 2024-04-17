@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -106,6 +107,10 @@ class WebviewPanel(val project: Project) {
                 webviewContainer.add(it.component())
             }
         }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<WebviewPanel>()
     }
 }
 
