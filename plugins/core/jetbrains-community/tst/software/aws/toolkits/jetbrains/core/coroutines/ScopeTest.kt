@@ -132,9 +132,9 @@ class ScopeTest {
         try {
             assertThat(
                 listOf(
-                    PluginCoroutineScopeTracker.getInstance(),
-                    PluginCoroutineScopeTracker.getInstance(projectRule.project),
-                    PluginCoroutineScopeTracker.getInstance(project2)
+                    ApplicationPluginCoroutineScopeTracker.getInstance(),
+                    ProjectPluginCoroutineScopeTracker.getInstance(projectRule.project),
+                    ProjectPluginCoroutineScopeTracker.getInstance(project2)
                 )
             ).doesNotHaveDuplicates()
         } finally {
@@ -154,8 +154,8 @@ class ScopeTest {
 
     private fun createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication()): Disposable {
         // We can't unload the real plugin in tests, so make another instance of the service and replace it for the tests
-        val tracker = PluginCoroutineScopeTracker()
-        componentManager.replaceService(PluginCoroutineScopeTracker::class.java, tracker, disposableRule.disposable)
+        val tracker = ApplicationPluginCoroutineScopeTracker()
+        componentManager.replaceService(ApplicationPluginCoroutineScopeTracker::class.java, tracker, disposableRule.disposable)
         return tracker
     }
 
