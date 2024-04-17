@@ -39,6 +39,9 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
 
+    // TODO add manifest add pom path
+
+
     private var isCurrentlyDownloading = AtomicBoolean(false)
     internal suspend fun displayDiff(job: JobId) {
         if (isCurrentlyDownloading.get()) return

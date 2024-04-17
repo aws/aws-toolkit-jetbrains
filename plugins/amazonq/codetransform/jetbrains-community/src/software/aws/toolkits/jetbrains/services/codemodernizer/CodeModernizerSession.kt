@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -280,6 +281,15 @@ class CodeModernizerSession(
                 state.currentJobStatus = new
                 state.transformationPlan = plan
                 sessionContext.project.refreshCwQTree()
+
+                // TODO explain the race condition
+                if (state.currentJobStatus == TransformationStatus.PAUSED) {
+                    val pausedUpdate = state.transformationPlan?.transformationSteps()?.flatMap { step -> step.progressUpdates() }?.filter { update -> update.status() == TransformationProgressUpdateStatus.PAUSED }
+                    if (pausedUpdate?.isNotEmpty() == true) {
+                        state.currentHilArtifactId = pausedUpdate[0].downloadArtifacts()[0].downloadArtifactId()
+                    }
+                }
+
                 // Open the transformation plan detail panel once transformation plan is available
                 if (state.transformationPlan != null && !isTransformationPlanEditorOpened) {
                     tryOpenTransformationPlanEditor()
@@ -307,7 +317,7 @@ class CodeModernizerSession(
             return when {
                 result.state == TransformationStatus.STOPPED -> CodeModernizerJobCompletedResult.Stopped
 
-                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.transformationPlan as TransformationPlan)
+                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.currentHilArtifactId as String)
 
                 result.state == TransformationStatus.UNKNOWN_TO_SDK_VERSION -> CodeModernizerJobCompletedResult.JobFailed(
                     jobId,

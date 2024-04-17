@@ -22,7 +22,11 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
@@ -105,6 +109,169 @@ class GumbyClient(private val project: Project) {
         val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
         return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan, jobId = jobId.id)
     }
+    // TODO remove
+    fun getCodeModernizationPlanMock(jobId: JobId, count: Int): GetTransformationPlanResponse {
+        val plan1 = TransformationPlan.builder().transformationSteps(
+            listOf(
+                TransformationStep.builder()
+                    .id("1")
+                    .name("Step 1 - Update dependencies and code")
+                    .description("Q will update mandatory package dependencies and frameworks. Also, where required for compatability with Java 17, it will replace deprecated code with working code.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+                TransformationStep.builder()
+                    .id("2")
+                    .name("Step 2 - Build in Java 17 and fix any issues")
+                    .description("Q will build the upgraded code in Java 17 and iteratively fix any build errors encountered.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+                TransformationStep.builder()
+                    .id("3")
+                    .name("Step 3 - Finalize code changes and generate transformation summary")
+                    .description("Q will generate code changes for you to review and accept. It will also summarize the changes made, and will copy over build logs for future reference and troubleshooting.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+            )
+        ).build()
+
+        val plan2 = TransformationPlan.builder().transformationSteps(
+            listOf(
+                TransformationStep.builder()
+                    .id("1")
+                    .name("Step 1 - Update dependencies and code")
+                    .description("Q will update mandatory package dependencies and frameworks. Also, where required for compatability with Java 17, it will replace deprecated code with working code.")
+                    .status("CREATED")
+                    .progressUpdates(
+                        TransformationProgressUpdate
+                            .builder()
+                            .name("Applying dependencies and code changes")
+                            .status("IN_PROGRESS")
+                            .description("Step started")
+                            .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                            .build()
+                    )
+                    .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                    .build(),
+                TransformationStep.builder()
+                    .id("2")
+                    .name("Step 2 - Build in Java 17 and fix any issues")
+                    .description("Q will build the upgraded code in Java 17 and iteratively fix any build errors encountered.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+                TransformationStep.builder()
+                    .id("3")
+                    .name("Step 3 - Finalize code changes and generate transformation summary")
+                    .description("Q will generate code changes for you to review and accept. It will also summarize the changes made, and will copy over build logs for future reference and troubleshooting.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+            )
+        ).build()
+
+        val plan3 = TransformationPlan.builder().transformationSteps(
+            listOf(
+                TransformationStep.builder()
+                    .id("1")
+                    .name("Step 1 - Update dependencies and code")
+                    .description("Q will update mandatory package dependencies and frameworks. Also, where required for compatability with Java 17, it will replace deprecated code with working code.")
+                    .status("CREATED")
+                    .progressUpdates(
+                        TransformationProgressUpdate
+                            .builder()
+                            .name("Applying dependencies and code changes")
+                            .status("COMPLETED")
+                            .description("Step finished successfully")
+                            .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                            .endTime(Instant.parse("2024-04-16T04:27:23.054Z"))
+                            .build(),
+                        TransformationProgressUpdate
+                            .builder()
+                            .name("Building in Java 17 environment")
+                            .status("IN_PROGRESS")
+                            .description("Migration step started")
+                            .startTime(Instant.parse("2024-04-16T04:27:23.223Z"))
+                            .build()
+                    )
+                    .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                    .build(),
+                TransformationStep.builder()
+                    .id("2")
+                    .name("Step 2 - Build in Java 17 and fix any issues")
+                    .description("Q will build the upgraded code in Java 17 and iteratively fix any build errors encountered.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+                TransformationStep.builder()
+                    .id("3")
+                    .name("Step 3 - Finalize code changes and generate transformation summary")
+                    .description("Q will generate code changes for you to review and accept. It will also summarize the changes made, and will copy over build logs for future reference and troubleshooting.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+            )
+        ).build()
+
+        val plan4 = TransformationPlan.builder().transformationSteps(
+            listOf(
+                TransformationStep.builder()
+                    .id("1")
+                    .name("Step 1 - Update dependencies and code")
+                    .description("Q will update mandatory package dependencies and frameworks. Also, where required for compatability with Java 17, it will replace deprecated code with working code.")
+                    .status("CREATED")
+                    .progressUpdates(
+                        TransformationProgressUpdate
+                            .builder()
+                            .name("Applying dependencies and code changes")
+                            .status("COMPLETED")
+                            .description("Step finished successfully")
+                            .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                            .endTime(Instant.parse("2024-04-16T04:27:23.054Z"))
+                            .build(),
+                        TransformationProgressUpdate
+                            .builder()
+                            .name("Building in Java 17 environment")
+                            .status("PAUSED")
+                            .description("Compile Failed. Error encountered for dependency incompatibility. Paused to get user input.")
+                            .startTime(Instant.parse("2024-04-16T04:27:23.223Z"))
+                            .endTime(Instant.parse("2024-04-16T04:29:53.836Z"))
+                            .downloadArtifacts(listOf(
+                                TransformationDownloadArtifact
+                                    .builder()
+                                    .downloadArtifactType("CLIENT_INSTRUCTIONS")
+                                    .downloadArtifactId("someID")
+                                    .build()
+                            ))
+                            .build()
+                    )
+                    .startTime(Instant.parse("2024-04-16T04:26:51.471Z"))
+                    .build(),
+                TransformationStep.builder()
+                    .id("2")
+                    .name("Step 2 - Build in Java 17 and fix any issues")
+                    .description("Q will build the upgraded code in Java 17 and iteratively fix any build errors encountered.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+                TransformationStep.builder()
+                    .id("3")
+                    .name("Step 3 - Finalize code changes and generate transformation summary")
+                    .description("Q will generate code changes for you to review and accept. It will also summarize the changes made, and will copy over build logs for future reference and troubleshooting.")
+                    .status("CREATED")
+                    .progressUpdates(listOf())
+                    .build(),
+            )
+        ).build()
+
+        val plans = listOf(plan1, plan2, plan3, plan4)
+
+        return GetTransformationPlanResponse.builder().transformationPlan(plans[count]).build()
+    }
+
+
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
         val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()

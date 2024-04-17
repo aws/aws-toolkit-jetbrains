@@ -23,12 +23,14 @@ enum class CodeTransformButtonId(val id: String) {
     OpenMvnBuild("open_mvn_build"),
     ViewDiff("view_diff"),
     ViewSummary("view_summary"),
+    ConfirmHilSelection("confirm_hil_selection"),
     OpenDependencyErrorPom("open_dependency_error_pom"),
 }
 
 enum class CodeTransformFormItemId(val id: String) {
     SelectModule("module"),
-    SelectTargetVersion("target_version"),
+    SelectTargetVersion("targetVersion"),
+    DependencyVersion("dependencyVersion"),
 }
 
 data class Button(
@@ -112,6 +114,11 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         val messageId: String?,
         val link: String,
     ) : IncomingCodeTransformMessage
+
+    data class ConfirmHilSelection(
+        @JsonProperty("tabID") val tabId: String,
+        val version: String,
+    ) : IncomingCodeTransformMessage
 }
 
 // === App -> UI messages ===
@@ -150,6 +157,7 @@ data class CodeTransformChatMessage(
     val formItems: List<FormItem>? = null,
     val followUps: List<FollowUp>? = null,
     val isAddingNewItem: Boolean = true,
+    val isLoading: Boolean = false,
 ) : CodeTransformUiMessage(
     tabId = tabId,
     type = "chatMessage",

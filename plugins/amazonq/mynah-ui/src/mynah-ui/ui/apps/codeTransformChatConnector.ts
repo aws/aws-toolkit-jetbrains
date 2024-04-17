@@ -12,7 +12,7 @@ import { FormButtonIds } from '../forms/constants'
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onCodeTransformChatDisabled: (tabID: string) => void
-    onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => void
+    onCodeTransformMessageReceived: (tabID: string, message: ChatItem, isLoading: boolean) => void
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
@@ -72,13 +72,14 @@ export class CodeTransformChatConnector {
         }
 
         const tabID = messageData.tabID
-        const isAddingNewItem = messageData.isAddingNewItem
+        const isAddingNewItem: boolean = messageData.isAddingNewItem
+        const isLoading = messageData.isLoading
         const type = messageData.messageType
 
         if (isAddingNewItem && type === ChatItemType.ANSWER_PART) {
             this.onCodeTransformMessageReceived(tabID, {
                 type: ChatItemType.ANSWER_STREAM,
-            })
+            }, isLoading)
         }
 
         const chatItem: ChatItem = {
@@ -98,7 +99,7 @@ export class CodeTransformChatConnector {
                       }
                     : undefined,
         }
-        this.onCodeTransformMessageReceived(tabID, chatItem)
+        this.onCodeTransformMessageReceived(tabID, chatItem, isLoading)
     }
 
     private processAuthNeededException = async (messageData: any): Promise<void> => {
@@ -113,7 +114,7 @@ export class CodeTransformChatConnector {
             body: messageData.message,
             followUp: this.followUpGenerator.generateAuthFollowUps('codetransform', messageData.authType),
             canBeVoted: false,
-        })
+        }, false)
 
         return
     }
@@ -198,6 +199,13 @@ export class CodeTransformChatConnector {
                 command: 'codetransform-view-summary',
                 tabID,
                 tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.ConfirmHilSelection) {
+            this.sendMessageToExtension({
+                command: 'codetransform-confirm-hil-selection',
+                tabID,
+                tabType: 'codetransform',
+                version: action.formItemValues?.dependencyVersion,
             })
         }
     }

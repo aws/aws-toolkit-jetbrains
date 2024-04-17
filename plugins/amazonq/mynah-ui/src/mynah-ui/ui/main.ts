@@ -150,7 +150,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 chatItems: [],
             })
         },
-        onCodeTransformMessageReceived: (tabID: string, chatItem: ChatItem) => {
+        onCodeTransformMessageReceived: (tabID: string, chatItem: ChatItem, isLoading: boolean) => {
             if (chatItem.type === ChatItemType.ANSWER_PART) {
                 mynahUI.updateLastChatAnswer(tabID, {
                     ...(chatItem.messageId !== undefined ? { messageId: chatItem.messageId } : {}),
@@ -163,6 +163,12 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                     // For loading animation to work, do not update the chat item type
                     ...(chatItem.followUp !== undefined ? { followUp: chatItem.followUp} : {}),
                 })
+
+                if (!isLoading) {
+                    mynahUI.updateStore(tabID, {
+                        loadingChat: false,
+                    })
+                }
 
                 return
             }

@@ -243,8 +243,8 @@ fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuild
         runnable.await()
         buildlogBuilder.appendLine(runnable.getOutput())
 
-        // TODO remove
-        parseXmlDependenciesReport("target/dependency-updates-aggregate-report.xml")
+        // TODO remove local path
+        parseXmlDependenciesReport("")
 
     } catch (t: Throwable) {
         emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)

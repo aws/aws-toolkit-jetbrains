@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.state
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.jetbrains.services.codemodernizer.TransformationSummary
@@ -24,6 +25,7 @@ class CodeModernizerSessionState {
     var transformationPlan: TransformationPlan? = null
     var transformationSummary: TransformationSummary? = null
     var currentJobId: JobId? = null
+    var currentHilArtifactId: String? = null
 
     companion object {
         fun getInstance(project: Project): CodeModernizerSessionState = project.service()

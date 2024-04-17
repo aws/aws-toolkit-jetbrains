@@ -11,4 +11,7 @@ enum class CodeTransformCommand {
     TransformComplete,
     TransformResuming,
     AuthRestored,
+    Paused,
+    HilArtifactReady,
+    ResumedWithAltVersion,
 }

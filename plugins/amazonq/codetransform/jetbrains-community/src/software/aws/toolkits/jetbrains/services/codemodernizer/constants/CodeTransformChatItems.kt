@@ -65,6 +65,15 @@ private val viewSummaryButton = Button(
     keepCardAfterClick = true,
 )
 
+private val confirmHilSelectionButton = Button(
+    id = CodeTransformButtonId.ConfirmHilSelection.id,
+    text = "Submit",
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+)
+
+// TODO HIL selection cancel button
+
 private val openDependencyErrorPomFileButton = Button(
     id = CodeTransformButtonId.OpenDependencyErrorPom.id,
     // TODO translate
@@ -267,15 +276,15 @@ fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
 }
 */
 
-/*
 fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message =
             "I found 3 other versions of dependency-9 that are higher than the one in your code (1.9.2).\n\nLatest major version: 2.2.0\nLatest minor version: 2.2.2",
         formItems = listOf(
+            // TODO
             FormItem(
-                id = "todo",
+                id = CodeTransformFormItemId.DependencyVersion.id,
                 title = "Please select the version to use",
                 options = listOf(
                     FormItemOption("version-0", "version-0"),
@@ -285,12 +294,11 @@ fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
             )
         ),
         buttons = listOf(
-            Button(id = "todo", text = "Submit", keepCardAfterClick = false),
+            confirmHilSelectionButton,
             Button(id = "todo2", text = "Cancel Transformation", keepCardAfterClick = false),
         ),
     )
 }
-*/
 
 fun buildTransformDependencyErrorChatContent() = CodeTransformChatMessageContent(
     // TODO string review
@@ -298,9 +306,9 @@ fun buildTransformDependencyErrorChatContent() = CodeTransformChatMessageContent
         "\n" +
         "<dependencies>\n" +
         "  <dependency>\n" +
-        "    <groupId>org.projectlombok</groupId>\n" +
-        "    <artifactId>lombok</artifactId>\n" +
-        "    <version>*****</version>\n" +
+        "    <groupId>org.example</groupId>\n" +
+        "    <artifactId>java-8-only-depdendency</artifactId>\n" +
+        "    <version>1.0</version>\n" +
         "  </dependency>\n" +
         "</dependencies>",
     type = CodeTransformChatMessageType.FinalizedAnswer,
@@ -323,4 +331,31 @@ fun buildTransformResumedChatContent() = CodeTransformChatMessageContent(
         openTransformHubButton,
         stopTransformButton,
     ),
+)
+
+// TODO translate
+private fun getUserHilSelectionFormattedMarkdown(version: String): String = """
+        ### ${"Selected version"}
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **${"Version"}**             |   $version |
+""".trimIndent()
+fun buildUserHilSelection(version: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.Prompt,
+    message = getUserHilSelectionFormattedMarkdown(version)
+)
+
+fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = "Compiling with your selected version",
+    buttons = listOf(
+        openMvnBuildButton,
+    ),
+)
+
+fun buildHilResumedContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "I resumed the transformation job with your selection",
 )

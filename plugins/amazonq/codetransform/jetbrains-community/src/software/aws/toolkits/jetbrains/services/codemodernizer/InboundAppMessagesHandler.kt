@@ -34,4 +34,6 @@ interface InboundAppMessagesHandler {
     suspend fun processAuthFollowUpClick(message: IncomingCodeTransformMessage.AuthFollowUpWasClicked)
 
     suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked)
+
+    suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection)
 }

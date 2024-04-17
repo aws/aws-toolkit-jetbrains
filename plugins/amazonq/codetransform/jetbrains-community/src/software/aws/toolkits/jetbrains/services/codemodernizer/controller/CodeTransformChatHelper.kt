@@ -48,7 +48,8 @@ class CodeTransformChatHelper(
                 buttons = content.buttons,
                 formItems = content.formItems,
                 followUps = content.followUps,
-                isAddingNewItem = true
+                isAddingNewItem = true,
+                isLoading = content.type == CodeTransformChatMessageType.PendingAnswer
             )
         )
     }
@@ -67,6 +68,7 @@ class CodeTransformChatHelper(
                 formItems = content.formItems,
                 followUps = content.followUps,
                 isAddingNewItem = false,
+                isLoading = content.type == CodeTransformChatMessageType.PendingAnswer
             )
         )
     }

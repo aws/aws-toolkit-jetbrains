@@ -13,8 +13,20 @@ class CodeTransformMessageListener {
     private val _messages by lazy { MutableSharedFlow<CodeTransformActionMessage>(extraBufferCapacity = 10) }
     val flow = _messages.asSharedFlow()
 
+    // TODO fix parameters
+    fun onHilArtifactReady() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, hilArtifact = HilArtifact(dependencyName = "test-dependency", currentVersion = "1.0", availableVersions = listOf(
+            "1.1", "1.2"
+        ))))
+    }
+
     fun onStopClicked() {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.StopClicked))
+    }
+
+    // TODO fix parameters
+    fun onTransformPaused() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Paused))
     }
 
     fun onTransformStopped() {
@@ -35,6 +47,11 @@ class CodeTransformMessageListener {
 
     fun onAuthRestored() {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.AuthRestored))
+    }
+
+    // TODO fix parameters
+    fun onResumedWithAlternativeVersion() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.ResumedWithAltVersion))
     }
 
     fun onRequestUserInput() {

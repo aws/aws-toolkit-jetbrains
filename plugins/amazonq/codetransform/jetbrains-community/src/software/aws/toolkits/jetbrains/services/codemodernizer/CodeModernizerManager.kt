@@ -495,20 +495,16 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val session = createCodeModernizerSession(customerSelection, project)
         codeTransformationSession = session
 
-        // TODO
-        /*
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
             isMvnRunning.set(false)
             handleLocalMavenBuildResult(result)
         }
-         */
     }
 
     internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
-        val result = session.createModernizationJob(copyResult)
-        return when (result) {
+        return when (val result = session.createModernizationJob(copyResult)) {
             is CodeModernizerStartJobResult.ZipCreationFailed -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
                     message("codemodernizer.notification.warn.zip_creation_failed", result.reason),
@@ -561,7 +557,30 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    internal fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
+    suspend fun getArtifactForHil(downloadArtifactId: String) = projectCoroutineScope(project).launch {
+        try {
+            // TODO Download zip
+            //val artifacts = GumbyClient.getInstance(project).downloadExportResultArchive2(downloadArtifactId)
+            delay(2000)
+
+            // TODO parse pom.xml and show that dependency in chat
+            CodeTransformMessageListener.instance.onTransformPaused()
+
+            // TODO run maven get get dependency report
+            // TODO parse file and find versions
+            findAlternativeDependencyVersions()
+
+            // TODO need to pass the version as params
+            CodeTransformMessageListener.instance.onHilArtifactReady()
+
+        } catch (e: Error) {
+            // TODO error handling
+            // CodeTransformMessageListener.instance.onResult()
+            print(e.message)
+        }
+    }
+
+    suspend fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
         codeTransformationSession?.setLastTransformResult(result)
 
         if (result is CodeModernizerJobCompletedResult.ManagerDisposed) {
@@ -571,24 +590,18 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // TODO handle HIL work
         if (result is CodeModernizerJobCompletedResult.JobPaused) {
             // No need to handle failed case here since job would have been FAILED status
+            val downloadArtifactId = result.downloadArtifactId
+            getArtifactForHil(downloadArtifactId)
 
-            val transformationPlan = result.transformationPlan
-            val relatedStep = transformationPlan.transformationSteps()[1]
-
-            // TODO where is downloadArtifacts
-            // have a status = pause
-            // only one step has pause status
-            // val currentHIL = relatedStep.progressUpdates().last()
-
-            // val artifactId = transformationPlan.transformationSteps()[1].progressUpdates().last().downloadArtifacts().first().downloadArtifactId()
-
-            // TODO set transform hub UI
-            // TODO update chat
-            // TODO HIL
+            // return early?
+            return
         }
+
 
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access
         ApplicationManager.getApplication().invokeLater {
+            // TODO handle paused
+
             setJobNotOngoing()
             project.refreshCwQTree()
             if (!transformationStoppedByUsr.get()) {
@@ -915,12 +928,26 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // TODO telemetry
         // telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
 
-        projectCoroutineScope(project).launch {
-            isMvnRunning.set(true)
+        isMvnRunning.set(true)
 
-            val result = codeTransformationSession?.getDependencyReportUsingMaven()
+        val result = codeTransformationSession?.getDependencyReportUsingMaven()
 
-            isMvnRunning.set(false)
-        }
+        isMvnRunning.set(false)
+    }
+
+    // TODO fix param
+    suspend fun tryResumeWithAlternativeVersion() {
+        // TODO remove
+        delay(3000)
+
+        // TODO change version in downloaded pom.xml
+
+        // run maven locally with updated pom.xml
+        // TODO create upload URL
+        // TODO upload artifact
+        // TODO call resume
+        delay(3000)
+
+        CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
     }
 }

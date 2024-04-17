@@ -23,12 +23,15 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformAwaitUserInputChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformDependencyErrorChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFindingLocalAlternativeDependencyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformInProgressChatContent
@@ -37,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
@@ -178,8 +182,7 @@ class CodeTransformChatController(
         codeTransformChatHelper.run {
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
 
-            // TODO
-            // addNewMessage(buildCompileLocalInProgressChatContent())
+            addNewMessage(buildCompileLocalInProgressChatContent())
         }
 
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
@@ -192,19 +195,7 @@ class CodeTransformChatController(
             JavaSdkVersion.JDK_17
         )
 
-        // TODO
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
-
-        // TODO
-        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
-
-        delay(3000)
-
-        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent())
-
-        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
-
-        codeModernizerManager.findAlternativeDependencyVersions()
     }
 
     suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
@@ -294,6 +285,15 @@ class CodeTransformChatController(
             CodeTransformCommand.TransformResuming -> {
                 handleCodeTransformJobResume()
             }
+            CodeTransformCommand.Paused -> {
+                handleCodeTransformJobPaused()
+            }
+            CodeTransformCommand.HilArtifactReady -> {
+                handleCodeTransformHil()
+            }
+            CodeTransformCommand.ResumedWithAltVersion -> {
+                handleResumedWithAltVersion()
+            }
             else -> {
                 processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = activeTabId))
             }
@@ -376,13 +376,43 @@ class CodeTransformChatController(
         }
     }
 
-    /*
-    private suspend fun handleCodeTransformJobAwaitUserInput() {
-        // TODO
-        // codeTransformChatHelper.addNewMessage()
-    }
-    */
+    // TODO Chat state when progressUpdate return PAUSED, but we still need to
+    // get dependency report via maven and parse file
+    private suspend fun handleCodeTransformJobPaused() {
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent())
 
+        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+    }
+
+    // TODO chat state after we find all available versions, and prompt user for selection
+    private suspend fun handleCodeTransformHil() {
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent())
+    }
+
+    private suspend fun handleResumedWithAltVersion() {
+        codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
+
+        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
+
+        // TODO poll until complete
+    }
+
+    // TODO chat state when user selected a version
+    override suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection) {
+        if (!checkForAuth(message.tabId)) {
+            return
+        }
+
+        val version = message.version
+
+        codeTransformChatHelper.run {
+            addNewMessage(buildUserHilSelection(version))
+
+            addNewMessage(buildCompileHilAlternativeVersionContent())
+        }
+
+        codeModernizerManager.tryResumeWithAlternativeVersion()
+    }
 
 
 

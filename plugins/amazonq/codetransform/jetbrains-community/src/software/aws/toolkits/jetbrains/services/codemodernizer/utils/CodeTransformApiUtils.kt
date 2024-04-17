@@ -157,10 +157,12 @@ fun downloadResultArchive(jobId: JobId, downloadArtifact: TransformationDownload
     // TODO change to logger
     println("In downloadResultArchive $jobId $downloadArtifact")
 
-    // TODO
+    // TODO parse xml to json
+    val manifestFileFilePath = "/src/amazonqGumby/mock/downloadHilZip/manifest.json"
+    val pomFileFilePath = "/src/amazonqGumby/mock/downloadHilZip/pom.xml"
 
-    val manifestFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/manifest.json")
-    val pomFileFileReference = File("/src/amazonqGumby/mock/downloadHilZip/pom.xml")
+    val manifestFileFileReference = File(manifestFileFilePath)
+    val pomFileFileReference = File(pomFileFilePath)
 
     val localFileSystem = LocalFileSystem.getInstance()
     val manifestFileVirtualFileReference = localFileSystem.findFileByIoFile(manifestFileFileReference)
