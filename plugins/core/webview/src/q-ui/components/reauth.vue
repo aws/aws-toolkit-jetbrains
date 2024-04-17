@@ -15,7 +15,7 @@
     </button>
 
     <button
-        class="login-flow-button cancel-button font-amazon"
+        class="login-flow-button font-amazon logout"
         v-on:click="handleCancel()"
     >
         Sign out
@@ -57,5 +57,10 @@ export default defineComponent({
 .centered {
     display: flex;
     justify-content: center;
+}
+
+.logout {
+    color: #3574f0;
+    background: none;
 }
 </style>
