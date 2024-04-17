@@ -122,7 +122,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
     override val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
         val command = jsonTree.get("command").asText()
-        LOG.debug { "Command received from Q browser: $command" }
+        LOG.debug { "Data received from Q browser: ${jsonTree.asText()}" }
 
         when (command) {
             "prepareUi" -> {

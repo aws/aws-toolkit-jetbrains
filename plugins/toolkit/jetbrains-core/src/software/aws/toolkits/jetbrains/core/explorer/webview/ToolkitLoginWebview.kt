@@ -130,7 +130,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
     override val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
         val command = jsonTree.get("command").asText()
-        LOG.debug { "Command received from Toolkit browser: $command" } // TODO: how to log payload
+        LOG.debug { "Data received from Toolkit browser: ${jsonTree.asText()}" }
 
         when (command) {
             // TODO: handler functions could live in parent class
