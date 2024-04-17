@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -45,7 +46,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         val component = if (hasConnection) {
             AmazonQToolWindow.getInstance(project).component
         } else {
-            WebviewPanel.getInstance(project).browser?.prepareBrowser(FeatureId.Q)
+            WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
             WebviewPanel.getInstance(project).component
         }
 
@@ -99,7 +100,10 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             AmazonQToolWindow.getInstance(project).component
         } else {
             getLogger<AmazonQToolWindowFactory>().debug { "returning login window; no Q connection found" }
-            WebviewPanel.getInstance(project).component
+            WebviewPanel.getInstance(project).let {
+                it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
+                it.component
+            }
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {

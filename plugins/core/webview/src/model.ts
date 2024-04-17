@@ -25,5 +25,5 @@ export interface State {
     authorizationCode?: string,
     lastLoginIdcInfo: IdcInfo,
     feature: Feature,
-    isConnected: boolean
+    cancellable: boolean
 }

@@ -21,7 +21,7 @@ const store = createStore<State>({
             region: '',
         },
         feature: 'Q',
-        isConnected: false
+        cancellable: false
     },
     getters: {},
     mutations: {
@@ -30,6 +30,9 @@ const store = createStore<State>({
         },
         setSsoRegions(state: State, regions: Region[]) {
             state.ssoRegions = regions
+        },
+        setCancellable() {
+
         },
         setAuthorizationCode(state: State, code: string) {
             state.authorizationCode = code

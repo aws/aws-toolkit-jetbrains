@@ -86,8 +86,8 @@ export default defineComponent({
         stage(): Stage {
             return this.$store.state.stage
         },
-        isConnected(): boolean {
-            return this.$store.state.isConnected
+        cancellable(): boolean {
+            return this.$store.state.cancellable
         },
         authorizationCode(): string | undefined {
             return this.$store.state.authorizationCode
@@ -107,7 +107,7 @@ export default defineComponent({
             }
         },
         handleBackButtonClick() {
-            if (this.isConnected) {
+            if (this.cancellable && this.stage === 'START') {
                 window.ideApi.postMessage({ command: 'toggleBrowser' })
             }
             this.mutateStage('START')

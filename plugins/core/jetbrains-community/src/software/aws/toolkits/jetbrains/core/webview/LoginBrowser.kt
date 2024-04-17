@@ -20,6 +20,8 @@ import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.function.Function
 
+data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false)
+
 abstract class LoginBrowser(
     private val project: Project,
     val domain: String,
@@ -59,7 +61,7 @@ abstract class LoginBrowser(
         }
     }
 
-    abstract fun prepareBrowser(feature: FeatureId)
+    abstract fun prepareBrowser(state: BrowserState)
 
     fun executeJS(jsScript: String) {
         this.jcefBrowser.cefBrowser.let {

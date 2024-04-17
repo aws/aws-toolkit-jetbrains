@@ -26,20 +26,15 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.explorer.isToolkitConnected
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -137,7 +132,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
         when (command) {
             "prepareUi" -> {
-                this.prepareBrowser(FeatureId.AwsExplorer)
+                this.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
             }
 
             "loginBuilderId" -> {
@@ -241,7 +236,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         query.addHandler(handler)
     }
 
-    override fun prepareBrowser(feature: FeatureId) {
+    override fun prepareBrowser(state: BrowserState) {
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
         val profileName = lastLoginIdcInfo.profileName
@@ -252,7 +247,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = jacksonObjectMapper().writeValueAsString(regions)
 
-        val isConnected = isToolkitConnected(project)
         val jsonData = """
             {
                 stage: 'START',
@@ -262,8 +256,8 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     startUrl: '$startUrl',
                     region: '$region'
                 },
-                isConnected: $isConnected,
-                feature: '$feature'
+                cancellable: ${state.browserCancellable},
+                feature: '${state.feature}'
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")

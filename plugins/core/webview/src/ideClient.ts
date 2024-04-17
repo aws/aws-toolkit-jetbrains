@@ -9,27 +9,13 @@ export class IdeClient {
 
     // TODO: design and improve the API here
 
-    prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, isConnected: boolean, feature: string }) {
+    prepareUi(state: { stage: Stage, regions: Region[], idcInfo: IdcInfo, cancellable: boolean, feature: string }) {
         console.log('browser is preparing UI with state ', state)
-        this.updateStage(state.stage)
-        this.updateSsoRegions(state.regions)
+        this.store.commit('setStage', state.stage)
+        this.store.commit('setSsoRegions', state.regions)
         this.updateLastLoginIdcInfo(state.idcInfo)
-        this.updateIsConnected(state.isConnected)
-
+        this.store.commit("setCancellable", state.cancellable)
         this.store.commit("setFeature", state.feature)
-    }
-
-    updateStage(stage: Stage) {
-        this.store.commit('setStage', stage)
-    }
-
-    updateIsConnected(isConnected: boolean) {
-        this.store.commit("setIsConnected", isConnected)
-    }
-
-    updateSsoRegions(regions: Region[]) {
-        console.log(regions)
-        this.store.commit('setSsoRegions', regions)
     }
 
     updateAuthorization(code: string) {
@@ -46,7 +32,7 @@ export class IdeClient {
 
     cancelLogin(): void {
         // this.reset()
-        this.updateStage('START')
+        this.store.commit('setStage', 'START')
         window.ideApi.postMessage({ command: 'cancelLogin' })
     }
 }

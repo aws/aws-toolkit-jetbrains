@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionC
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
@@ -279,7 +280,7 @@ fun requestCredentialsForCodeCatalyst(
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean? {
     if (JBCefApp.isSupported() && project != null) {
-        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(FeatureId.Codecatalyst) // TODO: consume data
+        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
         showWebview(project)
 
         return null
@@ -297,6 +298,7 @@ fun requestCredentialsForCodeCatalyst(
                 promptForIdcPermissionSet = false
             )
         }
+
         else -> {
             SetupAuthenticationDialog(
                 project,
@@ -378,7 +380,7 @@ fun requestCredentialsForExplorer(
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean? {
     if (JBCefApp.isSupported()) {
-        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(FeatureId.AwsExplorer) // TODO: consume data
+        ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
         showWebview(project)
         return null
     }

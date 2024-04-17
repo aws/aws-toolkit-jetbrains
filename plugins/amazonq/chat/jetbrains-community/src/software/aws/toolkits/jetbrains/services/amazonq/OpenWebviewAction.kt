@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -124,7 +125,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
         when (command) {
             "prepareUi" -> {
-                this.prepareBrowser(FeatureId.Q)
+                this.prepareBrowser(BrowserState(FeatureId.Q, false))
             }
 
             "loginBuilderId" -> {
@@ -191,7 +192,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
     fun component(): JComponent? = jcefBrowser.component
 
-    override fun prepareBrowser(feature: FeatureId) {
+    override fun prepareBrowser(state: BrowserState) {
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
         val profileName = lastLoginIdcInfo.profileName
@@ -202,7 +203,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = jacksonObjectMapper().writeValueAsString(regions)
 
-        val isConnected = isQConnected(project)
         val jsonData = """
             {
                 stage: 'START',
@@ -212,7 +212,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                     startUrl: '$startUrl',
                     region: '$region'
                 },
-                isConnected: $isConnected
+                cancellable: ${state.browserCancellable}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")

@@ -22,7 +22,7 @@ const store = createStore<State>({
             region: '',
         },
         feature: 'awsExplorer',
-        isConnected: false
+        cancellable: false
     },
     getters: {},
     mutations: {
@@ -43,8 +43,8 @@ const store = createStore<State>({
             state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
         },
-        setIsConnected(state: State, isConnected: boolean) {
-            state.isConnected = isConnected
+        setCancellable(state: State, cancellable: boolean) {
+            state.cancellable = cancellable
         },
         reset(state: State) {
             state.stage = 'START'
