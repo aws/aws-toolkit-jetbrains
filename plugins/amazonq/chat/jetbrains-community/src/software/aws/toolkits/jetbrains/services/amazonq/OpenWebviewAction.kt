@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
@@ -202,9 +203,15 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = jacksonObjectMapper().writeValueAsString(regions)
 
+        val stage = if (isCodeWhispererExpired(project)) {
+            "REAUTH"
+        } else {
+            "START"
+        }
+
         val jsonData = """
             {
-                stage: 'START',
+                stage: '$stage',
                 regions: $regionJson,
                 idcInfo: {
                     profileName: '$profileName',

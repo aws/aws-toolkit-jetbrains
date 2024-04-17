@@ -12,7 +12,10 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
@@ -122,4 +125,14 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
     }
+}
+
+private fun isQConnected(project: Project): Boolean {
+    val manager = ToolkitConnectionManager.getInstance(project)
+    val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
+    val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
+    getLogger<AmazonQToolWindow>().debug {
+        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=$isQEnabled; isFeatureEnabled(CW)=$isCWEnabled"
+    }
+    return isQEnabled && isCWEnabled
 }

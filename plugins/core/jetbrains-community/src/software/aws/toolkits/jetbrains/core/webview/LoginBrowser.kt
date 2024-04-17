@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.function.Function
 
-data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false)
+data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val reauth: Boolean = false)
 
 abstract class LoginBrowser(
     private val project: Project,
