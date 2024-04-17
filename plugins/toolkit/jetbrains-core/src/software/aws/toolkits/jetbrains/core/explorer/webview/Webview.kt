@@ -239,26 +239,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         loadWebView()
 
         query.addHandler(handler)
-
-        project.messageBus.connect().subscribe(
-            ToolkitConnectionManagerListener.TOPIC,
-            object : ToolkitConnectionManagerListener {
-                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    val isConnected = isToolkitConnected(project)
-                    executeJS("window.ideClient.updateIsConnected($isConnected)")
-                }
-            }
-        )
-
-        project.messageBus.connect().subscribe(
-            AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
-            object : ConnectionSettingsStateChangeNotifier {
-                override fun settingsStateChanged(newState: ConnectionState) {
-                    val isConnected = isToolkitConnected(project)
-                    executeJS("window.ideClient.updateIsConnected($isConnected)")
-                }
-            }
-        )
     }
 
     override fun prepareBrowser(feature: FeatureId) {
