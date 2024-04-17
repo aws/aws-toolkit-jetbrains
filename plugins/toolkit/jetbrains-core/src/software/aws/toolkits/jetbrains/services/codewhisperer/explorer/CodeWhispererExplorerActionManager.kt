@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.explorer
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.RoamingType
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
@@ -26,7 +28,8 @@ import software.aws.toolkits.telemetry.AwsTelemetry
 import java.time.LocalDateTime
 
 // TODO: refactor this class, now it's managing action and state
-@State(name = "codewhispererStates", storages = [Storage("aws.xml")])
+@Service
+@State(name = "codewhispererStates", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispererExploreActionState> {
     private val actionState = CodeWhispererExploreActionState()
     private val suspendedConnections = mutableSetOf<String>()

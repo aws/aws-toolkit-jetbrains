@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
@@ -10,6 +11,7 @@ import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 
+@Service
 class CodeWhispererInlayManager {
     fun updateInlays(states: InvocationContext, chunks: List<RecommendationChunk>) {
         val editor = states.requestContext.editor

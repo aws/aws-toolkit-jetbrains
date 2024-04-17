@@ -7,28 +7,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.components.service
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import java.util.UUID
 import java.util.prefs.Preferences
-
-interface AwsSettings {
-    var isTelemetryEnabled: Boolean
-    var promptedForTelemetry: Boolean
-    var useDefaultCredentialRegion: UseAwsCredentialRegion
-    var profilesNotification: ProfilesNotification
-    var isAutoUpdateEnabled: Boolean
-    var isAutoUpdateNotificationEnabled: Boolean
-    var isAutoUpdateFeatureNotificationShownOnce: Boolean
-    var isQMigrationNotificationShownOnce: Boolean
-    val clientId: UUID
-
-    companion object {
-        @JvmStatic
-        fun getInstance(): AwsSettings = service()
-    }
-}
 
 enum class ProfilesNotification(private val description: String) {
     Always(message("settings.profiles.always")),
@@ -45,6 +27,8 @@ enum class UseAwsCredentialRegion(private val description: String) {
 
     override fun toString(): String = description
 }
+
+typealias AwsSettings = migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 
 @State(name = "aws", storages = [Storage("aws.xml")])
 class DefaultAwsSettings : PersistentStateComponent<AwsConfiguration>, AwsSettings {

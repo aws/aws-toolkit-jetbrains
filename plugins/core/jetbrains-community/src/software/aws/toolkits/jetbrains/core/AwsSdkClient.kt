@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
@@ -15,12 +16,12 @@ import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.http.apache.ProxyConfiguration
-import software.aws.toolkits.core.clients.SdkClientProvider
 import software.aws.toolkits.core.utils.assertTrue
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 
-class AwsSdkClient : SdkClientProvider, Disposable {
+@Service
+class AwsSdkClient : Disposable {
     private val sdkHttpClient: SdkHttpClient by lazy {
         LOG.info { "Create new Apache client" }
         val httpClientBuilder = ApacheHttpClient.builder()
@@ -37,7 +38,7 @@ class AwsSdkClient : SdkClientProvider, Disposable {
         ValidateCorrectThreadClient(httpClientBuilder.build())
     }
 
-    override fun sharedSdkClient(): SdkHttpClient = sdkHttpClient
+    fun sharedSdkClient(): SdkHttpClient = sdkHttpClient
 
     override fun dispose() {
         sdkHttpClient.close()
@@ -61,6 +62,6 @@ class AwsSdkClient : SdkClientProvider, Disposable {
         private val LOG = getLogger<AwsSdkClient>()
         private const val WRONG_THREAD = "Network calls can't be made inside read/write action"
 
-        fun getInstance(): SdkClientProvider = service()
+        fun getInstance(): AwsSdkClient = service()
     }
 }

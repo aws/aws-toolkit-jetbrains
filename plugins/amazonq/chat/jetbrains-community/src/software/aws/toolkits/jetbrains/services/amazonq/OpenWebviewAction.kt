@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -68,6 +69,7 @@ class QWebviewDialog(private val project: Project) : DialogWrapper(project) {
     override fun createCenterPanel(): JComponent = WebviewPanel(project).component
 }
 
+@Service(Service.Level.PROJECT)
 class WebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
     var browser: WebviewBrowser? = null
