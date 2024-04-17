@@ -20,6 +20,7 @@ import org.junit.Test
 import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
+import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import java.net.URI
 
 class AwsSdkClientTest {
@@ -30,6 +31,10 @@ class AwsSdkClientTest {
     @Rule
     @JvmField
     val wireMock = createSelfSignedServer()
+
+    @Rule
+    @JvmField
+    val environmentVariableHelper = EnvironmentVariableHelper()
 
     @Before
     fun setUp() {
@@ -61,6 +66,42 @@ class AwsSdkClientTest {
 
         assertThat(trustManager.certificates).hasSize(initialSize + 1)
         assertThat(trustManager.containsCertificate("selfsign")).isTrue()
+    }
+
+    @Test
+    fun systemPropertyProxyConfigurationIgnored() {
+        System.setProperty("http.proxyHost", "foo.com")
+        System.setProperty("http.proxyPort", Integer.toString(8888))
+
+        val request = mockSdkRequest("https://localhost:" + wireMock.httpsPort())
+
+        val response = try {
+            AwsSdkClient().sharedSdkClient().prepareRequest(
+                HttpExecuteRequest.builder().request(request).build()
+            ).call()
+        } finally {
+            System.clearProperty("http.proxyHost")
+            System.clearProperty("http.proxyPort")
+        }
+
+        assertThat(response.httpResponse().isSuccessful).isTrue()
+    }
+
+    @Test
+    fun environmentVariableProxyConfigurationIgnored() {
+        environmentVariableHelper.set("HTTP_PROXY", "http://foo.com:8888")
+
+        val request = mockSdkRequest("https://localhost:" + wireMock.httpsPort())
+
+        val response = try {
+            AwsSdkClient().sharedSdkClient().prepareRequest(
+                HttpExecuteRequest.builder().request(request).build()
+            ).call()
+        } finally {
+            environmentVariableHelper.remove("HTTP_PROXY")
+        }
+
+        assertThat(response.httpResponse().isSuccessful).isTrue()
     }
 
     private fun mockSdkRequest(uriString: String): SdkHttpFullRequest? {
