@@ -67,9 +67,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
-
-        LOG.debug { "logout" }
-
         val isQConnection = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = if (it.isSono()) {
