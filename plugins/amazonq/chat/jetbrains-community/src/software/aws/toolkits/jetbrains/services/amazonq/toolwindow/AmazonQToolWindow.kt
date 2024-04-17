@@ -36,8 +36,9 @@ fun isQConnected(project: Project): Boolean {
     val manager = ToolkitConnectionManager.getInstance(project)
     val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
     val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
-    getLogger<AmazonQToolWindow>().debug { "" +
-        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=${isQEnabled}; isFeatureEnabled(CW)=${isCWEnabled}"
+    getLogger<AmazonQToolWindow>().debug {
+        "" +
+            "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=$isQEnabled; isFeatureEnabled(CW)=$isCWEnabled"
     }
     return isQEnabled && isCWEnabled
 }

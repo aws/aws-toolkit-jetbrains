@@ -87,7 +87,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         val conn = activeConnectionForFeature(feature) as? AwsBearerTokenConnection? ?: run {
             getLogger<DefaultToolkitConnectionManager>().debug {
                 """
-                    isFeatureEnabled: Feature ${feature} is not connected
+                    isFeatureEnabled: Feature $feature is not connected
                     ActiveConnectionForFeature=${activeConnectionForFeature(feature)}
                 """.trimIndent()
             }

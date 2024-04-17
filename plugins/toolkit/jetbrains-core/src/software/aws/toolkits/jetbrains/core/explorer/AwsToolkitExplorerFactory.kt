@@ -34,7 +34,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -127,12 +126,16 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     val conn = it.activeConnection()
                     val hasIamConn = if (conn is AwsBearerTokenConnection) {
                         conn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-                    } else false
+                    } else {
+                        false
+                    }
 
                     val cond2 = it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
                     val cond3 = CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()
 
-                    getLogger<AwsToolkitExplorerFactory>().debug { "sign out, checking existing connection(s)... hasIdCPermission=${hasIamConn}; codecatalyst=${cond2}; IAM=${cond3}" }
+                    getLogger<AwsToolkitExplorerFactory>().debug {
+                        "sign out, checking existing connection(s)... hasIdCPermission=$hasIamConn; codecatalyst=$cond2; IAM=$cond3"
+                    }
 
                     it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null ||
                         hasIamConn ||
