@@ -32,7 +32,7 @@ import java.io.IOException
 private val LOG = LoggerFactory.getLogger("LoginUtils")
 
 sealed interface Login {
-    abstract val id: CredentialSourceId
+    val id: CredentialSourceId
 
     data class BuilderId(
         val scopes: List<String>,
