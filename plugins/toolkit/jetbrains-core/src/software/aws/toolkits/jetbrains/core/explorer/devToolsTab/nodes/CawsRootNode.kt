@@ -47,7 +47,7 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
                     ActiveConnectionType.BUILDER_ID -> message("caws.connected.builder_id")
                     else -> message(
                         "caws.connected.identity_center",
-                        connection.activeConnectionBearer?.let { "(${it.sessionName})" } ?: ""
+                        connection.activeConnectionBearer?.let { "(${it.sessionName})" }.orEmpty()
                     )
                 }
             }
