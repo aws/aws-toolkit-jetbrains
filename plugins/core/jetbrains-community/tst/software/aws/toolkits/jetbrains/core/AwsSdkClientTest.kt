@@ -21,6 +21,7 @@ import software.amazon.awssdk.http.HttpExecuteRequest
 import software.amazon.awssdk.http.SdkHttpFullRequest
 import software.amazon.awssdk.http.SdkHttpMethod
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
+import software.aws.toolkits.core.rules.SystemPropertyHelper
 import java.net.URI
 
 class AwsSdkClientTest {
@@ -31,6 +32,10 @@ class AwsSdkClientTest {
     @Rule
     @JvmField
     val wireMock = createSelfSignedServer()
+
+    @Rule
+    @JvmField
+    val sysProps = SystemPropertyHelper()
 
     @Rule
     @JvmField
@@ -75,13 +80,13 @@ class AwsSdkClientTest {
 
         val request = mockSdkRequest("https://localhost:" + wireMock.httpsPort())
 
+        val awsSdkClient = AwsSdkClient()
         val response = try {
-            AwsSdkClient().sharedSdkClient().prepareRequest(
+            awsSdkClient.sharedSdkClient().prepareRequest(
                 HttpExecuteRequest.builder().request(request).build()
             ).call()
         } finally {
-            System.clearProperty("http.proxyHost")
-            System.clearProperty("http.proxyPort")
+            Disposer.dispose(awsSdkClient)
         }
 
         assertThat(response.httpResponse().isSuccessful).isTrue()
@@ -89,16 +94,17 @@ class AwsSdkClientTest {
 
     @Test
     fun environmentVariableProxyConfigurationIgnored() {
-        environmentVariableHelper.set("HTTP_PROXY", "http://foo.com:8888")
+        environmentVariableHelper.set("HTTP_PROXY", "https://foo.com:8888")
 
         val request = mockSdkRequest("https://localhost:" + wireMock.httpsPort())
 
+        val awsSdkClient = AwsSdkClient()
         val response = try {
-            AwsSdkClient().sharedSdkClient().prepareRequest(
+            awsSdkClient.sharedSdkClient().prepareRequest(
                 HttpExecuteRequest.builder().request(request).build()
             ).call()
         } finally {
-            environmentVariableHelper.remove("HTTP_PROXY")
+            Disposer.dispose(awsSdkClient)
         }
 
         assertThat(response.httpResponse().isSuccessful).isTrue()
