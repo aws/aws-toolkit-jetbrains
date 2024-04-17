@@ -134,7 +134,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     val isCodecatalystConn = it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
                     val hasIamCredential = CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()
 
-                    LOG.debug { "sign out, checking existing connection(s)... hasIdCPermission=$hasIdCRoleAccess; codecatalyst=$isCodecatalystConn; IAM=$hasIamCredential" }
+                    LOG.debug {
+                        "sign out, checking existing connection(s)... " +
+                            "hasIdCPermission=$hasIdCRoleAccess; codecatalyst=$isCodecatalystConn; IAM=$hasIamCredential"
+                    }
 
                     it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null ||
                         hasIdCRoleAccess ||
