@@ -177,9 +177,9 @@ class AwsClientManagerTest {
     @Test
     fun clientWithoutBuilderFailsDescriptively() {
         val sut = getClientManager()
+
         assertThatThrownBy { sut.getClient<InvalidServiceClient>(credentialManager.createCredentialProvider(), regionProvider.createAwsRegion()) }
             .isInstanceOf(IllegalArgumentException::class.java)
-
             .hasMessageContaining("builder()")
     }
 
