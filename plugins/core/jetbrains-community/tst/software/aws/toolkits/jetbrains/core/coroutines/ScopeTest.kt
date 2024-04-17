@@ -16,12 +16,17 @@ import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.createTestOpenProjectOptions
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.After
+import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -51,9 +56,21 @@ class ScopeTest {
     @JvmField
     val testName = TestName()
 
+    private lateinit var applicationScopeDisposable: Disposable
+
+    @Before
+    fun setUp() {
+        applicationScopeDisposable = createFakeApplicationProjectScope()
+    }
+
+    @After
+    fun tearDown() {
+        Disposer.dispose(applicationScopeDisposable)
+    }
+
     @Test
     fun `plugin being uploaded cancels application scope`() {
-        val fakePluginScope = createFakePluginScope()
+        val fakePluginScope = createFakeApplicationProjectScope()
 
         assertScopeIsCanceled(applicationCoroutineScope()) {
             Disposer.dispose(fakePluginScope)
@@ -62,7 +79,7 @@ class ScopeTest {
 
     @Test
     fun `plugin being uploaded cancels project scope`() {
-        val fakePluginScope = createFakePluginScope(projectRule.project)
+        val fakePluginScope = createFakePluginProjectScope(projectRule.project)
 
         assertScopeIsCanceled(projectCoroutineScope(projectRule.project)) {
             Disposer.dispose(fakePluginScope)
@@ -71,7 +88,7 @@ class ScopeTest {
 
     @Test
     fun `plugin being uploaded cancels disposable scope`() {
-        val fakePluginScope = createFakePluginScope()
+        val fakePluginScope = createFakeApplicationProjectScope()
 
         // Use fake disposable so we dont accidentally trigger false positive, nor disposable leak detector
         val fakeDisposable = Disposable { }
@@ -152,12 +169,23 @@ class ScopeTest {
         assertThatThrownBy { disposableCoroutineScope(ApplicationManager.getApplication()) }.isInstanceOf<IllegalStateException>()
     }
 
-    private fun createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication()): Disposable {
+    private fun<T : Any> createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication(), tracker: Class<T>): Disposable {
         // We can't unload the real plugin in tests, so make another instance of the service and replace it for the tests
-        val tracker = ApplicationPluginCoroutineScopeTracker()
-        componentManager.replaceService(ApplicationPluginCoroutineScopeTracker::class.java, tracker, disposableRule.disposable)
-        return tracker
+        val disposable = Disposer.newDisposable()
+        val scope = CoroutineScope(Job())
+        Disposer.register(disposable) {
+            scope.cancel(CancellationException("Parent disposable was disposed"))
+        }
+        val trackerInstance = tracker.getConstructor(CoroutineScope::class.java).newInstance(scope)
+        componentManager.replaceService(tracker, trackerInstance, disposableRule.disposable)
+        return disposable
     }
+
+    private fun createFakeApplicationProjectScope(componentManager: ComponentManager = ApplicationManager.getApplication()) =
+        createFakePluginScope(componentManager, ApplicationPluginCoroutineScopeTracker::class.java)
+
+    private fun createFakePluginProjectScope(componentManager: ComponentManager = ApplicationManager.getApplication()) =
+        createFakePluginScope(componentManager, ProjectPluginCoroutineScopeTracker::class.java)
 
     private fun assertScopeIsCorrectThread(scope: CoroutineScope) {
         val ran = AtomicBoolean(false)
@@ -189,7 +217,9 @@ class ScopeTest {
 
         fun computeAsync() = scope.async {
             computationStarted.countDown()
-            cancelFired.await()
+            while (!cancelFired.await(10, TimeUnit.MILLISECONDS)) {
+                yield()
+            }
             doTask()
         }
 
