@@ -79,3 +79,15 @@ tasks.withType<Detekt> {
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
 }
+
+
+
+tasks.test {
+    filter {
+
+        includeTestsMatching("software.aws.toolkits.jetbrains.core.*")
+
+    }
+}
+
+
