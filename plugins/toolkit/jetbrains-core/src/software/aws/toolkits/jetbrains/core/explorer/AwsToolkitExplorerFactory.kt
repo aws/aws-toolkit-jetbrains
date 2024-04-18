@@ -171,6 +171,11 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
     private fun inspectExistingConnection(project: Project): Boolean =
         ToolkitConnectionManager.getInstance(project).let {
+            if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                LOG.debug { "inspecting existing connection and found IAM credentials" }
+                return@let true
+            }
+
             val conn = it.activeConnection()
             val hasIdCRoleAccess = if (conn is AwsBearerTokenConnection) {
                 conn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
@@ -178,23 +183,18 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                 false
             }
 
+            if (hasIdCRoleAccess) {
+                LOG.debug { "inspecting existing connection and found bearer connections with IdCRoleAccess scope" }
+                return@let true
+            }
+
             val isCodecatalystConn = it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
-            val hasIamCredential = CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()
-
-            LOG.debug {
-                "checking existing connection(s)... " +
-                    "hasIdCPermission=$hasIdCRoleAccess; codecatalyst=$isCodecatalystConn; IAM=$hasIamCredential"
+            if (isCodecatalystConn) {
+                LOG.debug { "inspecting existing connection and found active Codecatalyst connection" }
+                return@let true
             }
 
-            return if (it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null) {
-                true
-            } else if (hasIdCRoleAccess) {
-                true
-            } else if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
-                true
-            } else {
-                false
-            }
+            return@let false
         }
 
     companion object {
