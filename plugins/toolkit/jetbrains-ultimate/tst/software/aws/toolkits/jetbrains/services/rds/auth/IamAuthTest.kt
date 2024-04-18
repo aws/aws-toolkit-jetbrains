@@ -30,6 +30,7 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
 import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
@@ -66,6 +67,10 @@ class IamAuthTest {
     @Rule
     @JvmField
     val credentialManager = MockCredentialManagerRule()
+
+    @Rule
+    @JvmField
+    val authManager = MockToolkitAuthManagerRule()
 
     @Before
     fun setUp() {
@@ -181,18 +186,19 @@ class IamAuthTest {
         credentialManager.addSsoProvider(ProfileSsoSessionIdentifier(noTokenCredential, "", "", setOf("")))
         val conneciton = buildConnection(hasCredentials = true, credentialId = "profile:" + noTokenCredential)
         mockkObject(ToolkitAuthManager.Companion)
-        val defaultToolkitAuthManager = mockk<DefaultToolkitAuthManager>()
-        val profileSsoManagedBearerSsoConnection = mockk<ProfileSsoManagedBearerSsoConnection>()
-        every { ToolkitAuthManager.getInstance() } returns defaultToolkitAuthManager
-        every { defaultToolkitAuthManager.getOrCreateSsoConnection(any(UserConfigSsoSessionProfile::class)) } returns profileSsoManagedBearerSsoConnection
+//        val defaultToolkitAuthManager = mockk<DefaultToolkitAuthManager>()
+//        val profileSsoManagedBearerSsoConnection = mockk<ProfileSsoManagedBearerSsoConnection>()
+//        every { ToolkitAuthManager.getInstance() } returns defaultToolkitAuthManager
+        authManager.createConnection(UserConfigSsoSessionProfile(noTokenCredential, "us-east-1", "", listOf("")))
+//        every { defaultToolkitAuthManager.getOrCreateSsoConnection(any(UserConfigSsoSessionProfile::class)) } returns profileSsoManagedBearerSsoConnection
         val bearerTokenProvider = mockk<BearerTokenProvider>()
         // We don't have the token
         every { bearerTokenProvider.state() } returns BearerTokenAuthState.NOT_AUTHENTICATED
         every { bearerTokenProvider.reauthenticate() } returns Unit
         val toolkitBearerTokenProvider = ToolkitBearerTokenProvider(bearerTokenProvider)
-        every {
-            profileSsoManagedBearerSsoConnection.getConnectionSettings()
-        } returns TokenConnectionSettings(toolkitBearerTokenProvider, AwsRegion("us-east-1", "", ""))
+//        every {
+//            profileSsoManagedBearerSsoConnection.getConnectionSettings()
+//        } returns TokenConnectionSettings(toolkitBearerTokenProvider, AwsRegion("us-east-1", "", ""))
 
         val connection = iamAuth.handleSsoAuthentication(projectRule.project, conneciton)
         assertThat(connection).isNotNull

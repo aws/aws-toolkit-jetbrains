@@ -82,6 +82,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
                 val credentials = getCredentials(connection)
                 DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
             } catch (e: Throwable) {
+                result = Result.Failed
                 if (e is IllegalStateException && e.message?.contains("Token refresh started before session initialized") == true) {
                     val simpleErrorInfo = SimpleErrorInfo(
                         message("rds.validation.iam_sso_connection.error_info"),
@@ -90,7 +91,6 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
                     )
                     throw KnownDatabaseException(simpleErrorInfo)
                 } else {
-                    result = Result.Failed
                     throw e
                 }
             } finally {
