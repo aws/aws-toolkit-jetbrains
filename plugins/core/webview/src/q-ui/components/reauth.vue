@@ -11,7 +11,7 @@
         class="login-flow-button continue-button font-amazon"
         v-on:click="handleContinueClick()"
     >
-        Continue
+        Re-authenticate
     </button>
 
     <button
@@ -60,7 +60,7 @@ export default defineComponent({
 }
 
 .logout {
-    color: #3574f0;
+    color: #3574f0 !important;
     background: none;
 }
 </style>
