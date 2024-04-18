@@ -29,14 +29,12 @@
     </extensions>
 
     <actions>
-        <action id="aws.toolkit.open.q.window" class="software.aws.toolkits.jetbrains.services.amazonq.OpenAmazonQAction"/>
-
         <!-- TODO: q.openchat will eventually be in amazonq, aws.toolkit.q.sign.in will eventually be in core. -->
         <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction"/>
 
         <group id="aws.toolkit.q.sign.in">
             <action id="q.sign.in" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
-            <action id="q.learn.more" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.QLearnMoreAction"/>
+            <reference ref="q.learn.more"/>
         </group>
 
         <group
