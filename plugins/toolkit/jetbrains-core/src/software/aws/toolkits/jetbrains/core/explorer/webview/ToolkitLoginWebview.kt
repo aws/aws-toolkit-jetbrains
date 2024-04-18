@@ -3,13 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.explorer.webview
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnActionEvent
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
@@ -43,32 +40,6 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-// TODO: remove by 4/30, only needed for dev purpose, and action registered in plugin.xml
-class OpenToolkitWebviewAction : DumbAwareAction("View Toolkit Webview") {
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-
-        WebviewDialog(project).showAndGet()
-    }
-
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = isDeveloperMode()
-    }
-}
-
-// TODO: remove by 4/30, only needed for dev purpose
-private class WebviewDialog(private val project: Project) : DialogWrapper(project) {
-
-    init {
-        title = "Toolkit-Login-Webview"
-        init()
-    }
-
-    override fun createCenterPanel(): JComponent = ToolkitWebviewPanel(project).component
-}
-
 class ToolkitWebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
     var browser: ToolkitWebviewBrowser? = null
@@ -81,18 +52,20 @@ class ToolkitWebviewPanel(val project: Project) {
                 .verticalAlign(VerticalAlign.FILL)
         }.resizableRow()
 
-        row {
-            cell(
-                JButton("Show Web Debugger").apply {
-                    addActionListener(
-                        ActionListener {
-                            browser?.jcefBrowser?.openDevtools()
-                        },
-                    )
-                },
-            )
-                .horizontalAlign(HorizontalAlign.CENTER)
-                .verticalAlign(VerticalAlign.BOTTOM)
+        if (isDeveloperMode()) {
+            row {
+                cell(
+                    JButton("Show Web Debugger").apply {
+                        addActionListener(
+                            ActionListener {
+                                browser?.jcefBrowser?.openDevtools()
+                            },
+                        )
+                    },
+                )
+                    .horizontalAlign(HorizontalAlign.CENTER)
+                    .verticalAlign(VerticalAlign.BOTTOM)
+            }
         }
     }
 
@@ -126,6 +99,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             .build()
     }
     override val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
+    private val objectMapper = jacksonObjectMapper()
 
     override val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
