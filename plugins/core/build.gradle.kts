@@ -40,5 +40,5 @@ configurations {
 }
 
 tasks.check {
-    dependsOn(":plugin-core:jetbrains-community:check")
+    dependsOn(":plugin-core:*:check")
 }

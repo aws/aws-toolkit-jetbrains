@@ -79,6 +79,3 @@ tasks.withType<Detekt> {
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
 }
-
-
-
