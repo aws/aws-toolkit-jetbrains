@@ -7,7 +7,6 @@ export type Stage =
     'CONNECTED' |
     'AUTHENTICATING' |
     'AWS_PROFILE' |
-    'TOOLKIT_BEARER' |
     'REAUTH'
 
 export type Feature = 'Q' | 'codecatalyst' | 'awsExplorer'

@@ -45,9 +45,11 @@ export default defineComponent({
     methods: {
         handleContinueClick() {
             console.log('reauthenticating.......')
+            // TODO()
         },
         handleCancel() {
             console.log('signout')
+            // TODO()
         }
     }
 })

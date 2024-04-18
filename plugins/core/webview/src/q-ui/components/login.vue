@@ -10,7 +10,7 @@
             :is-connected="stage === 'CONNECTED'"
         />
 
-        <LoginOptions :app="app" v-if="stage === 'START' || stage === 'TOOLKIT_BEARER'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
+        <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
         <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
 
