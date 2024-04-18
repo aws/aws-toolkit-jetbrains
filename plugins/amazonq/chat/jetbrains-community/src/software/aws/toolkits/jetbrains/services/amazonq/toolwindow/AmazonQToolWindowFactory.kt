@@ -21,11 +21,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersio
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
-    private val isConnected = AtomicBoolean()
-
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
 
@@ -38,10 +35,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        val hasConnection = isQConnected(project).also {
-            isConnected.set(it)
-        }
-        val component = if (hasConnection) {
+        val component = if (isQConnected(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
             WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
@@ -75,12 +69,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
-        val isQConnected = (isQConnection || isQConnected(project)).also {
-            val old = isConnected.getAndSet(it)
-            if (old == it) {
-                return
-            }
-        }
+        val isQConnected = (isQConnection || isQConnected(project))
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isQConnected) {
