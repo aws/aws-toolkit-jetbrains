@@ -38,3 +38,7 @@ configurations {
         exclude(group = "org.jetbrains.kotlinx")
     }
 }
+
+tasks.check {
+    dependsOn(":plugin-core:jetbrains-community:check")
+}
