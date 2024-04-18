@@ -106,7 +106,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     }
 
     private fun connectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
-        val isToolkitConnected = when (newConnection) {
+        val isNewConnToolkitConnection = when (newConnection) {
             is AwsConnectionManagerConnection -> {
                 LOG.debug { "IAM connection" }
                 true
@@ -122,14 +122,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     newConnection.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
             }
 
-            null -> {
-                inspectExistingConnection(project)
-            }
-
-            else -> {
-                false
-            }
+            else -> false
         }
+
+        val isToolkitConnected = isNewConnToolkitConnection || inspectExistingConnection(project)
 
         toolWindow.reload(isToolkitConnected)
     }
