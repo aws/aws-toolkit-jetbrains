@@ -186,9 +186,15 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     "hasIdCPermission=$hasIdCRoleAccess; codecatalyst=$isCodecatalystConn; IAM=$hasIamCredential"
             }
 
-            it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null ||
-                hasIdCRoleAccess ||
-                CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()
+            return if (it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null) {
+                true
+            } else if (hasIdCRoleAccess) {
+                true
+            } else if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                true
+            } else {
+                false
+            }
         }
 
     companion object {
