@@ -167,7 +167,9 @@ fun authAndUpdateConfig(
         ToolkitAuthManager.getInstance().getConnection(connId)?.let { existingConn ->
             if (existingConn is AwsBearerTokenConnection) {
                 existingConn.scopes
-            } else null
+            } else {
+                null
+            }
         } ?: emptyList()
     }
 
