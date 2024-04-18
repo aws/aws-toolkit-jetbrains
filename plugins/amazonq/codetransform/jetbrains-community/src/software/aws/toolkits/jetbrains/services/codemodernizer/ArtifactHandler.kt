@@ -63,7 +63,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     // TODO change return type
-    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String) {
+    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String): CodeTransformHilDownloadArtifact? {
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
 
         val path = Files.createTempFile(null, ".zip")
@@ -77,12 +77,12 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         LOG.info { "Successfully converted the download to a zip at ${path.toAbsolutePath()}." }
         val zipPath = path.toAbsolutePath().toString()
 
-        try {
-            val downloadedArtifact = CodeTransformHilDownloadArtifact.create(zipPath)
-            LOG.info { downloadedArtifact.zipPath }
-
+        return try {
+            CodeTransformHilDownloadArtifact.create(zipPath)
         } catch (e: Error) {
+            // TODO error handling
             LOG.error { "Wrong " + e.message }
+            null
         }
     }
 

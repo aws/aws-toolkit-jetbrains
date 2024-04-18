@@ -563,7 +563,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             // TODO Download zip
             //val artifacts = GumbyClient.getInstance(project).downloadExportResultArchive2(downloadArtifactId)
             runBlocking {
-                artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
+                val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
+                if (hilDownloadArtifact != null) {
+                    val pomFile = hilDownloadArtifact.pomFile
+                    // TODO parse pom to get dependency
+                }
             }
 
             // TODO parse pom.xml and show that dependency in chat
