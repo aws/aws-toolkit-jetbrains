@@ -82,12 +82,3 @@ tasks.withType<DetektCreateBaselineTask> {
 
 
 
-tasks.test {
-    filter {
-
-        includeTestsMatching("software.aws.toolkits.jetbrains.core.*")
-
-    }
-}
-
-
