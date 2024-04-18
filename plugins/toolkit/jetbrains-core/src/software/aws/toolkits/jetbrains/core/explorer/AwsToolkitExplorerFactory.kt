@@ -73,8 +73,13 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         val contentManager = toolWindow.contentManager
 
-        // TODO: ideally we should evaluate component by connection states here, fix it
-        val content = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(project).component, null, false).also {
+        val component = if (inspectExistingConnection(project)) {
+            AwsToolkitExplorerToolWindow.getInstance(project)
+        } else {
+            ToolkitWebviewPanel.getInstance(project).component
+        }
+
+        val content = contentManager.factory.createContent(component, null, false).also {
             it.isCloseable = true
             it.isPinnable = true
         }
