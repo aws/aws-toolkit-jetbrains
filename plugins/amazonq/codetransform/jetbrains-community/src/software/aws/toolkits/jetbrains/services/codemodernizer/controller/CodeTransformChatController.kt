@@ -49,6 +49,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -286,7 +287,7 @@ class CodeTransformChatController(
                 handleCodeTransformJobResume()
             }
             CodeTransformCommand.Paused -> {
-                handleCodeTransformJobPaused()
+                handleCodeTransformJobPaused(message.hilDownloadArtifact as CodeTransformHilDownloadArtifact)
             }
             CodeTransformCommand.HilArtifactReady -> {
                 handleCodeTransformHil()
@@ -378,8 +379,8 @@ class CodeTransformChatController(
 
     // TODO Chat state when progressUpdate return PAUSED, but we still need to
     // get dependency report via maven and parse file
-    private suspend fun handleCodeTransformJobPaused() {
-        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent())
+    private suspend fun handleCodeTransformJobPaused(hilDownloadArtifact: CodeTransformHilDownloadArtifact) {
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
 
         codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
     }

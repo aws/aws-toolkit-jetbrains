@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.commands
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 
 class CodeTransformMessageListener {
@@ -15,9 +16,9 @@ class CodeTransformMessageListener {
 
     // TODO fix parameters
     fun onHilArtifactReady() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, hilArtifact = HilArtifact(dependencyName = "test-dependency", currentVersion = "1.0", availableVersions = listOf(
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, hilAvailableVersions = listOf(
             "1.1", "1.2"
-        ))))
+        )))
     }
 
     fun onStopClicked() {
@@ -25,8 +26,8 @@ class CodeTransformMessageListener {
     }
 
     // TODO fix parameters
-    fun onTransformPaused() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Paused))
+    fun onTransformPaused(codeTransformHilDownloadArtifact: CodeTransformHilDownloadArtifact) {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.Paused, hilDownloadArtifact = codeTransformHilDownloadArtifact))
     }
 
     fun onTransformStopped() {

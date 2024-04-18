@@ -55,10 +55,10 @@ open class CodeTransformHilDownloadArtifact(
          * Attempts to extract the manifest from the zip file. Throws an exception if the manifest is not found or cannot be serialized.
          */
         private fun extractManifest(): CodeTransformHilDownloadManifest {
-            val manifestFile = tempDir.listFiles()
-                ?.firstOrNull { Path(it.name).endsWith(MANIFEST_PATH_IN_ZIP) }
-                ?: throw RuntimeException("Could not find manifest")
             try {
+                val manifestFile = tempDir.listFiles()
+                    ?.firstOrNull { Path(it.name).endsWith(MANIFEST_PATH_IN_ZIP) }
+                    ?: throw RuntimeException("Could not find manifest")
                 val manifest = MAPPER.readValue(manifestFile, CodeTransformHilDownloadManifest::class.java)
                 if (
                         // TODO fix type
@@ -66,6 +66,7 @@ open class CodeTransformHilDownloadArtifact(
                         || manifest.pomFolderName == null
                         || manifest.hilCapability == null
                         || manifest.pomGroupId == null
+                        || manifest.sourcePomVersion == null
                     ) {
                     throw RuntimeException(
                         "Unable to deserialize the manifest"

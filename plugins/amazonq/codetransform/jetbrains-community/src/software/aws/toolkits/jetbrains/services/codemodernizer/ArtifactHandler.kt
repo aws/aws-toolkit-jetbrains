@@ -77,6 +77,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         LOG.info { "Successfully converted the download to a zip at ${path.toAbsolutePath()}." }
         val zipPath = path.toAbsolutePath().toString()
 
+        /*
+        // TODO For testing only
+        val zipPath = "your-local-downloaded-zip-path"
+        */
+
         return try {
             CodeTransformHilDownloadArtifact.create(zipPath)
         } catch (e: Error) {

@@ -560,25 +560,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
-            // TODO Download zip
-            //val artifacts = GumbyClient.getInstance(project).downloadExportResultArchive2(downloadArtifactId)
-            runBlocking {
-                val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
-                if (hilDownloadArtifact != null) {
-                    val pomFile = hilDownloadArtifact.pomFile
-                    // TODO parse pom to get dependency
-                }
+            // TODO store in the sessionState?
+            val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
+            if (hilDownloadArtifact != null) {
+                // TODO parse pom to get dependency
+                CodeTransformMessageListener.instance.onTransformPaused(hilDownloadArtifact)
+
+                // TODO run maven get get dependency report
+                // TODO parse file and find versions
+                findAlternativeDependencyVersions()
+
+                // TODO need to pass the version as params
+                CodeTransformMessageListener.instance.onHilArtifactReady()
+
+            } else {
+                // TODO handle error
             }
-
-            // TODO parse pom.xml and show that dependency in chat
-            CodeTransformMessageListener.instance.onTransformPaused()
-
-            // TODO run maven get get dependency report
-            // TODO parse file and find versions
-            findAlternativeDependencyVersions()
-
-            // TODO need to pass the version as params
-            CodeTransformMessageListener.instance.onHilArtifactReady()
 
         } catch (e: Error) {
             // TODO error handling
@@ -954,6 +951,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // TODO upload artifact
         // TODO call resume
         delay(3000)
+
+        val localZipPathForTesting = "your-zip-path"
+        // TODO create upload URL
+        // TODO upload the zip to s3
+        // TODO call resumeTransformation with COMPLETED status
 
         CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
     }

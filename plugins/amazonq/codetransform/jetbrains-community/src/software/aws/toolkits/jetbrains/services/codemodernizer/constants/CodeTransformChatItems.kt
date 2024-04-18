@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItemOption
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
@@ -300,15 +301,15 @@ fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
     )
 }
 
-fun buildTransformDependencyErrorChatContent() = CodeTransformChatMessageContent(
+fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformHilDownloadArtifact) = CodeTransformChatMessageContent(
     // TODO string review
     message = "I ran into a dependency issue and way not able to successfully complete the transformation.\n\nHere is the dependency causing the error:\n\n```xml" +
         "\n" +
         "<dependencies>\n" +
         "  <dependency>\n" +
-        "    <groupId>org.example</groupId>\n" +
-        "    <artifactId>java-8-only-depdendency</artifactId>\n" +
-        "    <version>1.0</version>\n" +
+        "    <groupId>${hilDownloadArtifact.manifest.pomGroupId}</groupId>\n" +
+        "    <artifactId>${hilDownloadArtifact.manifest.pomArtifactId}</artifactId>\n" +
+        "    <version>${hilDownloadArtifact.manifest.sourcePomVersion}</version>\n" +
         "  </dependency>\n" +
         "</dependencies>",
     type = CodeTransformChatMessageType.FinalizedAnswer,

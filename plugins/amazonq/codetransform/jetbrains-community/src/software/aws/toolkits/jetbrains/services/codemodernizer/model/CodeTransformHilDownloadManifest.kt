@@ -26,5 +26,5 @@ data class CodeTransformHilDownloadManifest(
     val pomFolderName: String,
     val hilCapability: String,
     val pomGroupId: String,
-    val sourcePomVersion: String?
+    val sourcePomVersion: String,
 )
