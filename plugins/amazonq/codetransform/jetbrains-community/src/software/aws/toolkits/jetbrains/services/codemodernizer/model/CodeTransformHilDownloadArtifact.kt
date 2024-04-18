@@ -23,7 +23,7 @@ const val MANIFEST_PATH_IN_ZIP = "manifest.json"
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
  */
 open class CodeTransformHilDownloadArtifact(
-    val zipPath: String,
+    val dirPath: String,
     val manifest: CodeTransformHilDownloadManifest,
     val pomFile: VirtualFile,
 ) {
@@ -32,6 +32,8 @@ open class CodeTransformHilDownloadArtifact(
         private val tempDir = createTempDirectory("q-hil-dependency-artifacts", null)
         val LOG = getLogger<CodeTransformHilDownloadArtifact>()
         private val MAPPER = jacksonObjectMapper()
+
+        // TODO store location of tempDir in state?
 
         /**
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeTransformHilDownloadArtifact].
@@ -46,7 +48,7 @@ open class CodeTransformHilDownloadArtifact(
                 }
                 val manifest = extractManifest()
                 val pomFile = extractDependencyPom(manifest.pomFolderName)
-                return CodeTransformHilDownloadArtifact(zipPath, manifest, pomFile)
+                return CodeTransformHilDownloadArtifact(tempDir.absolutePath, manifest, pomFile)
             }
             throw RuntimeException("Could not find artifact")
         }

@@ -13,6 +13,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import java.io.File
@@ -231,7 +232,7 @@ private fun runMavenDependencyUpdatesReport(
 }
 
 // TODO rename MavenCopyCommandsResult
-fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
+fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
 
@@ -246,13 +247,11 @@ fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuild
         buildlogBuilder.appendLine(runnable.getOutput())
 
         // TODO remove
-        parseXmlDependenciesReport("~/workplace/ide/test-projects/hil-test-repository/java-8-test-application/target/dependency-updates-aggregate-report.xml")
+        val report = parseXmlDependenciesReport("~/workplace/ide/test-projects/hil-test-repository/java-8-test-application/target/dependency-updates-aggregate-report.xml")
+        return MavenDependencyReportCommandsResult.Success(report)
 
     } catch (t: Throwable) {
         emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)
-        return MavenCopyCommandsResult.Failure
+        return MavenDependencyReportCommandsResult.Failure
     }
-    // When all commands executed successfully, show the transformation hub
-    // TODO remove
-    return MavenCopyCommandsResult.Success(destinationDir.toFile())
 }

@@ -3,12 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.JsonObject
 import org.gradle.internal.impldep.com.google.gson.Gson
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import java.io.File
 import java.io.FileOutputStream
@@ -141,7 +143,25 @@ fun replacePomVersion(pomFileVirtualFileReference: VirtualFile, version: String,
     }
 }
 
-fun parseXmlDependenciesReport(pathToXmlDependency: String): Array<String> {
+fun parseXmlDependenciesReport(pathToXmlDependency: String): DependencyUpdatesReport {
     println("Inside parseXmlDependenciesReport $pathToXmlDependency")
-    return arrayOf("12.04.1", "12.05.2")
+
+    try {
+        val path = Path("/Users/mkfan/Desktop/report.xml")
+        val reportFile = path.toFile()
+
+        // TODO remove
+        val lines = reportFile.useLines { it.toList() }
+        if (lines.isNotEmpty()) {
+            println("has content")
+        }
+
+        val xmlMapper = XmlMapper()
+        val report = xmlMapper.readValue(reportFile, DependencyUpdatesReport::class.java)
+        println(report.dependencies.isNullOrEmpty())
+        return report
+    } catch (e: Error) {
+        println(e.message)
+        throw e
+    }
 }

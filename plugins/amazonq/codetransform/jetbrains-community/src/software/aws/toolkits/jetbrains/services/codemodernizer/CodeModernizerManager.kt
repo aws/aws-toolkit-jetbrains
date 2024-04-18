@@ -35,10 +35,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
@@ -71,6 +73,7 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
@@ -217,122 +220,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         // Initialize the bottom toolkit window with content
         addCodeModernizeUI(shouldOpenBottomWindowOnStart, moduleOrProjectNameForFile)
         codeModernizerBottomWindowPanelManager.setJobStartingUI()
-    }
-
-    fun completeHumanInTheLoopWork(jobId: JobId, userInputRetryCount: Number) {
-        LOG.warn { "Entering completeHumanInTheLoopWork $jobId $userInputRetryCount" }
-
-        val pomReplacementDelimiter: String = "*****"
-//        val localPathToXmlDependencyList = "/target/dependency-updates-aggregate-report.xml"
-
-        val osTmpDir = Paths.get(System.getProperty("java.io.tmpdir"))
-        val tmpDependencyListFolderName = "q-pom-dependency-list"
-        val userDependencyUpdateFolderName = "q-pom-dependency-update"
-        val tmpDependencyListDir: Path = osTmpDir.resolve(tmpDependencyListFolderName)
-        val userDependencyUpdateDir: Path = osTmpDir.resolve(userDependencyUpdateFolderName)
-
-        try {
-            // 1) We need to call GetTransformationPlan to get artifactId
-            val transformationSteps = getTransformationStepsFixture(jobId)
-            val hilTransformationStep = (transformationSteps) ?: throw Exception("No HIL Transformation Step found")
-
-            // TODO
-            // Actual start from here
-            val downloadArtifact = getArtifactIdentifiers(hilTransformationStep.last()) ?: throw Exception("artifactId or artifactType is undefined")
-
-            // 2) We need to call DownloadResultArchive to get the manifest and pom.xml
-            val downloadResultsFileReferences = downloadResultArchive(
-                jobId,
-                downloadArtifact
-            )
-            val manifestDownloadedVirtualFile = downloadResultsFileReferences[0]
-            val pomDownloadedVirtualFile = downloadResultsFileReferences[1]
-
-            if (manifestDownloadedVirtualFile == null || pomDownloadedVirtualFile == null) {
-                throw Exception("Issue downloading HIl artifacts")
-            }
-
-            val manifestFileValues = getJsonValuesFromManifestFile(manifestDownloadedVirtualFile)
-
-            // 3) We need to replace version in pom.xml
-            val newPomFileVirtualFileReference = createPomCopy(
-                tmpDependencyListDir.toString(),
-                pomDownloadedVirtualFile,
-                "pom.xml"
-            )
-
-            if (newPomFileVirtualFileReference == null) {
-                throw Exception("Issue writing POM file to local filesystem")
-            }
-
-            manifestFileValues.sourcePomVersion?.let {
-                replacePomVersion(
-                    newPomFileVirtualFileReference,
-                    it,
-                    pomReplacementDelimiter
-                )
-            }
-//            await highlightPomIssueInProject(newPomFileVirtualFileReference, manifestFileValues.sourcePomVersion)
-
-            // 4) We need to run maven commands on that pom.xml to get available versions
-//            const compileFolderInfo: FolderInfo = {
-//                    name: tmpDependencyListFolderName,
-//                    path: tmpDependencyListDir,
-//            }
-//            runMavenDependencyUpdateCommands(compileFolderInfo)
-            val dependencyList = parseXmlDependenciesReport(
-                "path.join(tmpDependencyListDir, localPathToXmlDependencyList)"
-            )
-
-            // 5) We need to wait for user input
-            // transformByQState.getChatControllers()?.humanInTheLoopIntervention.fire({
-            //     latestVersion,
-            //     tabID: ChatSessionManager.Instance.getSession().tabID,
-            // })
-            val getUserInputValue = dependencyList[0]
-
-            // 6) We need to add user input to that pom.xml,
-            // original pom.xml is intact somewhere, and run maven compile
-            val userInputPomFileVirtualFileReference = createPomCopy(
-                userDependencyUpdateDir.toString(),
-                pomDownloadedVirtualFile,
-                "pom.xml"
-            )
-
-            if (userInputPomFileVirtualFileReference == null) {
-                throw Exception("Issue writing POM file to local filesystem")
-            }
-
-            replacePomVersion(
-                userInputPomFileVirtualFileReference,
-                getUserInputValue,
-                pomReplacementDelimiter
-            )
-
-            // 7) We need to take that output of maven and use CreateUploadUrl
-//            const uploadFolderInfo: FolderInfo = {
-//                    name: userDependencyUpdateFolderName,
-//                    path: userDependencyUpdateDir,
-//            }
-//            runMavenDependencyBuildCommands(uploadFolderInfo)
-            // TODO modify code to be re-usable with current framework here
-            // TODO Update manifest.json file for upload
-//            const uploadPayloadFilePath = await zipCode(uploadFolderInfo)
-//            const uploadId = await uploadPayload(uploadPayloadFilePath)
-            LOG.warn { "Finished human in the loop work" }
-        } catch (err: Exception) {
-            // Will probably emit different TYPES of errors from the Human in the loop engagement
-            // catch them here and determine what to do with in parent function
-            LOG.warn { "Error in completeHumanInTheLoopWork $err" }
-        } finally {
-            // 1) TODO Always delete items off disk manifest.json and pom.xml
-
-            // Always delete the dependency output
-//            console.log('Deleting temporary dependency output', tmpDependencyListDir)
-//            fs.rmdirSync(tmpDependencyListDir, { recursive: true })
-//            console.log('Deleting temporary dependency output', userDependencyUpdateDir)
-//            fs.rmdirSync(userDependencyUpdateDir, { recursive: true })
-        }
     }
 
     fun stopModernize() {
@@ -560,18 +447,18 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
-            // TODO store in the sessionState?
+
             val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
             if (hilDownloadArtifact != null) {
-                // TODO parse pom to get dependency
+
+                // TODO store path in session
+                codeTransformationSession?.setHilDirectoryPath(hilDownloadArtifact.dirPath)
+
                 CodeTransformMessageListener.instance.onTransformPaused(hilDownloadArtifact)
 
                 // TODO run maven get get dependency report
                 // TODO parse file and find versions
-                findAlternativeDependencyVersions()
-
-                // TODO need to pass the version as params
-                CodeTransformMessageListener.instance.onHilArtifactReady()
+                findAlternativeDependencyVersions(hilDownloadArtifact.manifest.pomGroupId, hilDownloadArtifact.manifest.pomArtifactId)
 
             } else {
                 // TODO handle error
@@ -928,23 +815,44 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         isModernizationInProgress.set(false)
     }
 
-    fun findAlternativeDependencyVersions() {
+    fun findAlternativeDependencyVersions(groupId: String, artifactId: String) {
         // TODO telemetry
         // telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
 
         isMvnRunning.set(true)
 
         val result = codeTransformationSession?.getDependencyReportUsingMaven()
+        var dependency: Dependency? = null
+        if (result is MavenDependencyReportCommandsResult.Success) {
+            dependency = result.report.dependencies?.filter { it.groupId == groupId && it.artifactId == artifactId }?.first()
+        }
+
+        // TODO need to pass the version as params
+        CodeTransformMessageListener.instance.onHilArtifactReady(dependency)
 
         isMvnRunning.set(false)
     }
 
     // TODO fix param
+
+    // TODO lots of code clean up
+
     suspend fun tryResumeWithAlternativeVersion() {
         // TODO remove
         delay(3000)
+        val path = codeTransformationSession?.getHilDirectoryPath()
+        if (path != null) {
+            val file = File(path + "/pomFolder/pom.xml")
+            if (file.exists()) {
+                val existingValue = file.readText()
+                val newValue = existingValue.replace("*****", "2.0")
+                file.writeText(newValue)
+                print(path)
+            }
+        }
 
         // TODO change version in downloaded pom.xml
+
 
         // run maven locally with updated pom.xml
         // TODO create upload URL

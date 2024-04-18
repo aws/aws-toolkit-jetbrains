@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDefaultExecutor
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
@@ -64,18 +65,21 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     // TODO change return type
     suspend fun downloadHilArtifact(jobId: JobId, artifactId: String): CodeTransformHilDownloadArtifact? {
+        // TODO remove 2
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
 
-        val path = Files.createTempFile(null, ".zip")
+        val tempDir = createTempDirectory("q-hil-dependency-artifacts", null)
+
+        val tempZipFile = Files.createTempFile(Path.of(tempDir.path), null, ".zip")
         var totalDownloadBytes = 0
-        Files.newOutputStream(path).use {
+        Files.newOutputStream(tempZipFile).use {
             for (bytes in downloadResultsResponse) {
                 it.write(bytes)
                 totalDownloadBytes += bytes.size
             }
         }
-        LOG.info { "Successfully converted the download to a zip at ${path.toAbsolutePath()}." }
-        val zipPath = path.toAbsolutePath().toString()
+        LOG.info { "Successfully converted the download to a zip at ${tempZipFile.toAbsolutePath()}." }
+        val zipPath = tempZipFile.toAbsolutePath().toString()
 
         /*
         // TODO For testing only

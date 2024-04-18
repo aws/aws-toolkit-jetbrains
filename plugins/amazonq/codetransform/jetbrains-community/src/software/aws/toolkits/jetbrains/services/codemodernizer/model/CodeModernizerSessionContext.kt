@@ -83,7 +83,7 @@ data class CodeModernizerSessionContext(
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
 
-    fun getDependencyReportUsingMaven(): MavenCopyCommandsResult {
+    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")

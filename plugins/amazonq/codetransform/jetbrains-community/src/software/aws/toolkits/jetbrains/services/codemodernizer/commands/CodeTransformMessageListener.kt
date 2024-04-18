@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 
 class CodeTransformMessageListener {
 
@@ -15,10 +17,8 @@ class CodeTransformMessageListener {
     val flow = _messages.asSharedFlow()
 
     // TODO fix parameters
-    fun onHilArtifactReady() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, hilAvailableVersions = listOf(
-            "1.1", "1.2"
-        )))
+    fun onHilArtifactReady(dependency: Dependency?) {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, dependency = dependency))
     }
 
     fun onStopClicked() {

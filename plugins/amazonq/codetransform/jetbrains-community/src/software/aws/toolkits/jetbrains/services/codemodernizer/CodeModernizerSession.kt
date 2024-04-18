@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -68,6 +69,15 @@ class CodeModernizerSession(
     private var mvnBuildResult: MavenCopyCommandsResult? = null
     private var transformResult: CodeModernizerJobCompletedResult? = null
 
+    // TODO code clean up for getter and setter
+    private var hilDirectoryPath: String? = null
+
+    fun getHilDirectoryPath() = hilDirectoryPath
+
+    fun setHilDirectoryPath(path: String) {
+        hilDirectoryPath = path
+    }
+
     fun getLastMvnBuildResult(): MavenCopyCommandsResult? = mvnBuildResult
 
     fun setLastMvnBuildResult(result: MavenCopyCommandsResult) {
@@ -82,7 +92,7 @@ class CodeModernizerSession(
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
-    fun getDependencyReportUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependencyReportUsingMaven()
+    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven()
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.

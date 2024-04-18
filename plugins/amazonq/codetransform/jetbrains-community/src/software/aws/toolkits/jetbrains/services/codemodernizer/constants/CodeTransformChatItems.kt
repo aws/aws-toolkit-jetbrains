@@ -15,6 +15,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItemOption
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
@@ -277,21 +279,21 @@ fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
 }
 */
 
-fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
+fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
+
+    val versionList = (dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()).sorted()
+
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message =
-            "I found 3 other versions of dependency-9 that are higher than the one in your code (1.9.2).\n\nLatest major version: 2.2.0\nLatest minor version: 2.2.2",
+            "I found ${versionList.size} other ${if (versionList.size == 1) "version" else "versions"} of ${dependency.artifactId} that ${if (versionList.size == 1) "is" else "are"} higher than the one in your code (${dependency.currentVersion}).",
+                //"\n\nLatest major version: 2.2.0\nLatest minor version: 2.2.2",
         formItems = listOf(
             // TODO
             FormItem(
                 id = CodeTransformFormItemId.DependencyVersion.id,
                 title = "Please select the version to use",
-                options = listOf(
-                    FormItemOption("version-0", "version-0"),
-                    FormItemOption("version-1", "version-1"),
-                    FormItemOption("version-2", "version-2"),
-                ),
+                options = versionList.map { FormItemOption(it, it) },
             )
         ),
         buttons = listOf(

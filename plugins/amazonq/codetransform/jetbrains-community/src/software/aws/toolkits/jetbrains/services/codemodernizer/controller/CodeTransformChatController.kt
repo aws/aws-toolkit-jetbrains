@@ -51,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Incoming
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
@@ -290,7 +291,7 @@ class CodeTransformChatController(
                 handleCodeTransformJobPaused(message.hilDownloadArtifact as CodeTransformHilDownloadArtifact)
             }
             CodeTransformCommand.HilArtifactReady -> {
-                handleCodeTransformHil()
+                handleCodeTransformHil(message.dependency)
             }
             CodeTransformCommand.ResumedWithAltVersion -> {
                 handleResumedWithAltVersion()
@@ -386,8 +387,19 @@ class CodeTransformChatController(
     }
 
     // TODO chat state after we find all available versions, and prompt user for selection
-    private suspend fun handleCodeTransformHil() {
-        codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent())
+    private suspend fun handleCodeTransformHil(dependency: Dependency?) {
+        // TODO handle failure path
+        if (dependency == null ) {
+            // TODO
+            return
+        }
+
+        val versionList = dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()
+        if (versionList.isNotEmpty()) {
+            codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
+        } else {
+            // TODO handle failure path
+        }
     }
 
     private suspend fun handleResumedWithAltVersion() {
