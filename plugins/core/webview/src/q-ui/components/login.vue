@@ -22,8 +22,8 @@
                 </div>
                 <button
                     class="login-flow-button cancel-button font-amazon"
-                    v-on:click="handleCancelButton()"
-                    :disabled="!isAuthorizationInProgress">Cancel
+                    v-on:click="handleCancelButton()">
+                    Cancel
                 </button>
             </div>
         </template>
