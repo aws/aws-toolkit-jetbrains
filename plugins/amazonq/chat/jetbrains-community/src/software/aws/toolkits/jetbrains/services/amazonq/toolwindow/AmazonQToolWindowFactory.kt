@@ -18,8 +18,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
@@ -70,23 +68,11 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
-
-        getLogger<AmazonQToolWindowFactory>().debug { "logout" }
-
         val isQConnection = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
-                val scopeShouldHave = if (it.isSono()) {
-                    Q_SCOPES + CODEWHISPERER_SCOPES - Q_SCOPES_UNAVAILABLE_BUILDER_ID
-                } else {
-                    Q_SCOPES + CODEWHISPERER_SCOPES
-                }
+                val scopeShouldHave = Q_SCOPES + CODEWHISPERER_SCOPES
 
-                getLogger<AmazonQToolWindowFactory>().debug {
-                    """
-                    newConnection: ${conn.id}; scope: ${conn.scopes},
-                        scope must-have: $scopeShouldHave
-                    """.trimIndent()
-                }
+                LOG.debug { "newConnection: ${conn.id}; scope: ${conn.scopes}; scope must-have: $scopeShouldHave" }
 
                 scopeShouldHave.all { s -> s in conn.scopes }
             } ?: false
@@ -101,10 +87,10 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isQConnected) {
-            getLogger<AmazonQToolWindowFactory>().debug { "returning Q-chat window; isQConnection=$isQConnection; hasPinnedConnection=$isQConnection" }
+            LOG.debug { "returning Q-chat window; isQConnection=$isQConnection; hasPinnedConnection=$isQConnection" }
             AmazonQToolWindow.getInstance(project).component
         } else {
-            getLogger<AmazonQToolWindowFactory>().debug { "returning login window; no Q connection found" }
+            LOG.debug { "returning login window; no Q connection found" }
             WebviewPanel.getInstance(project).let {
                 it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
                 it.component
@@ -123,6 +109,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     }
 
     companion object {
+        private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
     }
 }

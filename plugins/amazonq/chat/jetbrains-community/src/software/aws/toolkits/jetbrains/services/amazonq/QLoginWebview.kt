@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES_UNAVAILABLE_BUILDER_ID
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
@@ -44,7 +43,7 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-// This action is used to open the Q webview  development mode.
+// TODO: remove by 4/30, only needed for dev purpose, and action registered in plugin-chat.xml
 class OpenAmazonQAction : DumbAwareAction("View Q Webview") {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
@@ -59,6 +58,7 @@ class OpenAmazonQAction : DumbAwareAction("View Q Webview") {
     }
 }
 
+// TODO: remove by 4/30, only needed for dev purpose
 class QWebviewDialog(private val project: Project) : DialogWrapper(project) {
 
     init {
@@ -116,12 +116,15 @@ class WebviewPanel(val project: Project) {
 }
 
 class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN) {
+    // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(project)
     override val query = JBCefJSQuery.create(jcefBrowser)
+    private val objectMapper = jacksonObjectMapper()
 
     override val handler = Function<String, JBCefJSQuery.Response> {
-        val command = jacksonObjectMapper().readTree(it).get("command").asText()
-        getLogger<WebviewBrowser>().debug { "command received from the browser: $command" }
+        val jsonTree = objectMapper.readTree(it)
+        val command = jsonTree.get("command").asText()
+        LOG.debug { "Data received from Q browser: ${jsonTree.asText()}" }
 
         when (command) {
             "prepareUi" -> {
@@ -129,7 +132,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             }
 
             "loginBuilderId" -> {
-                val scope = CODEWHISPERER_SCOPES + Q_SCOPES - Q_SCOPES_UNAVAILABLE_BUILDER_ID.toSet()
+                val scope = CODEWHISPERER_SCOPES + Q_SCOPES
                 runInEdt {
                     Login.BuilderId(scope, onPendingAwsId).loginBuilderId(project)
                     // TODO: telemetry
@@ -137,10 +140,11 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             }
 
             "loginIdC" -> {
-                val profileName = jacksonObjectMapper().readTree(it).get("profileName").asText()
-                val url = jacksonObjectMapper().readTree(it).get("url").asText()
-                val region = jacksonObjectMapper().readTree(it).get("region").asText()
-                val awsRegion = AwsRegionProvider.getInstance()[region] ?: return@Function null
+                // TODO: make it type safe, maybe (de)serialize into a data class
+                val profileName = jsonTree.get("profileName").asText()
+                val url = jsonTree.get("url").asText()
+                val region = jsonTree.get("region").asText()
+                val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
                 val scope = CODEWHISPERER_SCOPES + Q_SCOPES
 
@@ -155,7 +159,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             }
 
             "cancelLogin" -> {
-                // TODO: BearerToken vs. SsoProfile
+                // TODO: differentiate BearerToken vs. SsoProfile cred type
                 AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
 
                 // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
@@ -195,13 +199,11 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
     override fun prepareBrowser(state: BrowserState) {
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
-        val profileName = lastLoginIdcInfo.profileName
-        val startUrl = lastLoginIdcInfo.startUrl
-        val region = lastLoginIdcInfo.region
 
         // available regions
-        val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
-        val regionJson = jacksonObjectMapper().writeValueAsString(regions)
+        val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values.let {
+            objectMapper.writeValueAsString(it)
+        }
 
         val stage = if (isCodeWhispererExpired(project)) {
             "REAUTH"
@@ -212,11 +214,11 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         val jsonData = """
             {
                 stage: '$stage',
-                regions: $regionJson,
+                regions: $regions,
                 idcInfo: {
-                    profileName: '$profileName',
-                    startUrl: '$startUrl',
-                    region: '$region'
+                    profileName: '${lastLoginIdcInfo.profileName}',
+                    startUrl: '${lastLoginIdcInfo.startUrl}',
+                    region: '${lastLoginIdcInfo.region}'
                 },
                 cancellable: ${state.browserCancellable}
             }
@@ -256,6 +258,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
     }
 
     companion object {
+        private val LOG = getLogger<WebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
         private const val DOMAIN = "webview"
     }
