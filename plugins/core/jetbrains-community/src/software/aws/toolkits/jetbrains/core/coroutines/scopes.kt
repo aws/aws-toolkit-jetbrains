@@ -5,14 +5,13 @@ package software.aws.toolkits.jetbrains.core.coroutines
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.Application
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.plus
 import java.util.concurrent.CancellationException
 
 /**
@@ -22,7 +21,7 @@ import java.util.concurrent.CancellationException
  */
 @Deprecated("Application x plugin intersection scope should not be used https://plugins.jetbrains.com/docs/intellij/coroutine-scopes.html#use-service-scopes")
 fun applicationCoroutineScope(coroutineName: String): CoroutineScope =
-    ApplicationPluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName)
+    PluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName)
 
 /**
  * Coroutine scope that is tied to a project closing, or plugin unloading. Default to dispatching to background thread pool.
@@ -31,7 +30,7 @@ fun applicationCoroutineScope(coroutineName: String): CoroutineScope =
  */
 @Deprecated("Project x plugin intersection scope should not be used https://plugins.jetbrains.com/docs/intellij/coroutine-scopes.html#use-service-scopes")
 fun projectCoroutineScope(project: Project, coroutineName: String): CoroutineScope =
-    ProjectPluginCoroutineScopeTracker.getInstance(project).applicationThreadPoolScope(coroutineName)
+    PluginCoroutineScopeTracker.getInstance(project).applicationThreadPoolScope(coroutineName)
 
 /**
  * Coroutine scope that is tied to a disposable or a plugin unloading. Default to dispatching to background thread pool.
@@ -46,7 +45,7 @@ fun projectCoroutineScope(project: Project, coroutineName: String): CoroutineSco
 )
 fun disposableCoroutineScope(disposable: Disposable, coroutineName: String): CoroutineScope {
     check(disposable !is Project && disposable !is Application) { "disposable should not be a project or application" }
-    return ApplicationPluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName).also {
+    return PluginCoroutineScopeTracker.getInstance().applicationThreadPoolScope(coroutineName).also {
         Disposer.register(disposable) {
             it.cancel(CancellationException("Parent disposable was disposed"))
         }
@@ -56,37 +55,44 @@ fun disposableCoroutineScope(disposable: Disposable, coroutineName: String): Cor
 /**
  * Version of [applicationCoroutineScope] the class name as the coroutine name.
  */
+@Deprecated("Application x plugin intersection scope should not be used https://plugins.jetbrains.com/docs/intellij/coroutine-scopes.html#use-service-scopes")
 inline fun <reified T : Any> T.applicationCoroutineScope(): CoroutineScope =
     applicationCoroutineScope(T::class.java.name)
 
 /**
  * Version of [projectCoroutineScope] the class name as the coroutine name.
  */
+@Deprecated("Project x plugin intersection scope should not be used https://plugins.jetbrains.com/docs/intellij/coroutine-scopes.html#use-service-scopes")
 inline fun <reified T : Any> T.projectCoroutineScope(project: Project): CoroutineScope =
     projectCoroutineScope(project, T::class.java.name)
 
 /**
  * Version of [disposableCoroutineScope] the class name as the coroutine name.
  */
+@Deprecated(
+    "Coroutine scope should not be shared across entire plugin lifecycle https://plugins.jetbrains.com/docs/intellij/coroutine-scopes.html#use-service-scopes"
+)
 inline fun <reified T : Any> T.disposableCoroutineScope(disposable: Disposable): CoroutineScope =
     disposableCoroutineScope(disposable, T::class.java.name)
 
-@Service(Service.Level.APP)
-class ApplicationPluginCoroutineScopeTracker(private val cs: CoroutineScope) {
+class PluginCoroutineScopeTracker : Disposable {
     @PublishedApi
-    internal fun applicationThreadPoolScope(coroutineName: String): CoroutineScope = cs + CoroutineName(coroutineName) + getCoroutineBgContext()
+    internal fun applicationThreadPoolScope(coroutineName: String): CoroutineScope = BackgroundThreadPoolScope(coroutineName, this)
+
+    override fun dispose() {}
 
     companion object {
-        fun getInstance() = service<ApplicationPluginCoroutineScopeTracker>()
+        fun getInstance() = service<PluginCoroutineScopeTracker>()
+        fun getInstance(project: Project) = project.service<PluginCoroutineScopeTracker>()
     }
 }
 
-@Service(Service.Level.PROJECT)
-class ProjectPluginCoroutineScopeTracker(private val cs: CoroutineScope) {
-    @PublishedApi
-    internal fun applicationThreadPoolScope(coroutineName: String): CoroutineScope = cs + CoroutineName(coroutineName) + getCoroutineBgContext()
+private class BackgroundThreadPoolScope(coroutineName: String, disposable: Disposable) : CoroutineScope {
+    override val coroutineContext = SupervisorJob() + CoroutineName(coroutineName) + getCoroutineBgContext()
 
-    companion object {
-        fun getInstance(project: Project) = project.service<ProjectPluginCoroutineScopeTracker>()
+    init {
+        Disposer.register(disposable) {
+            coroutineContext.cancel(CancellationException("Parent disposable was disposed"))
+        }
     }
 }
