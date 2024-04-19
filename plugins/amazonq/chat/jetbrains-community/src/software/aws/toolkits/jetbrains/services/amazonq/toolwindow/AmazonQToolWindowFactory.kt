@@ -70,7 +70,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         } ?: false
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
-        val component = if ((isNewConnectionForQ || isQConnected(project))) {
+        val component = if (isNewConnectionForQ || isQConnected(project)) {
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
             AmazonQToolWindow.getInstance(project).component
         } else {
