@@ -27,8 +27,10 @@ import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
 import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisUploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.utils.IoUtils
 import software.aws.toolkits.core.utils.Waiters.waitUntil
@@ -105,7 +107,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             currentCoroutineContext.ensureActive()
             LOG.debug { "Uploading source zip located at ${sourceZip.path} to s3" }
             val artifactsUploadStartTime = now()
-            val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode",)
+            val codeScanName = UUID.randomUUID().toString()
+            val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode", codeScanName)
             LOG.debug {
                 "Successfully uploaded source zip to s3: " +
                     "Upload id: ${sourceZipUploadResponse.uploadId()} " +
@@ -122,7 +125,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             currentCoroutineContext.ensureActive()
             LOG.debug { "Requesting security scan for the uploaded artifacts, language: ${payloadContext.language}" }
             val serviceInvocationStartTime = now()
-            val createCodeScanResponse = createCodeScan(payloadContext.language.toString())
+            val createCodeScanResponse = createCodeScan(payloadContext.language.toString(), codeScanName)
             LOG.debug {
                 "Successfully created security scan with " +
                     "status: ${createCodeScanResponse.status()} " +
@@ -210,25 +213,30 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     /**
      * Creates an upload URL and uplaods the zip file to the presigned URL
      */
-    fun createUploadUrlAndUpload(zipFile: File, artifactType: String): CreateUploadUrlResponse = try {
+    fun createUploadUrlAndUpload(zipFile: File, artifactType: String, codeScanName: String): CreateUploadUrlResponse = try {
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
         LOG.debug { "Fetching presigned URL for uploading $artifactType." }
-        val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType)
+        val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, codeScanName)
         LOG.debug { "Successfully fetched presigned URL for uploading $artifactType." }
         val url = createUploadUrlResponse.uploadUrl()
         LOG.debug { "Uploading $artifactType using the presigned URL." }
-        uploadArtifactToS3(url, createUploadUrlResponse.uploadId(), zipFile, fileMd5, createUploadUrlResponse.kmsKeyArn())
+        uploadArtifactToS3(
+            url,
+            zipFile,
+            createUploadUrlResponse.requestHeaders()
+        )
         createUploadUrlResponse
     } catch (e: Exception) {
         LOG.error { "Security scan failed. Something went wrong uploading artifacts: ${e.message}" }
         throw e
     }
 
-    fun createUploadUrl(md5Content: String, artifactType: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
+    fun createUploadUrl(md5Content: String, artifactType: String, codeScanName: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
         CreateUploadUrlRequest.builder()
             .contentMd5(md5Content)
             .artifactType(artifactType)
             .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
+            .uploadContext(UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(codeScanName).build()))
             .build()
     )
 
@@ -238,16 +246,11 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     }
 
     @Throws(IOException::class)
-    fun uploadArtifactToS3(url: String, uploadId: String, fileToUpload: File, md5: String, kmsArn: String?) {
-        val uploadIdJson = """{"uploadId":"$uploadId"}"""
+    fun uploadArtifactToS3(url: String, fileToUpload: File, requestHeaders: Map<String, String>?) {
         HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.userAgent).tuner {
-            it.setRequestProperty(CONTENT_MD5, md5)
-            it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
-            it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
-            if (kmsArn?.isNotEmpty() == true) {
-                it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+            requestHeaders?.forEach { entry ->
+                it.setRequestProperty(entry.key, entry.value)
             }
-            it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
         }.connect {
             val connection = it.connection as HttpURLConnection
             connection.setFixedLengthStreamingMode(fileToUpload.length())
@@ -255,7 +258,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         }
     }
 
-    fun createCodeScan(language: String): CreateCodeScanResponse {
+    fun createCodeScan(language: String, codeScanName: String): CreateCodeScanResponse {
         val artifactsMap = mapOf(
             ArtifactType.SOURCE_CODE to urlResponse[ArtifactType.SOURCE_CODE]?.uploadId(),
             ArtifactType.BUILT_JARS to urlResponse[ArtifactType.BUILT_JARS]?.uploadId()
@@ -268,6 +271,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     .programmingLanguage { it.languageName(language) }
                     .artifacts(artifactsMap)
                     .scope(sessionContext.codeAnalysisScope.value)
+                    .codeScanName(codeScanName)
                     .build()
             )
         } catch (e: Exception) {

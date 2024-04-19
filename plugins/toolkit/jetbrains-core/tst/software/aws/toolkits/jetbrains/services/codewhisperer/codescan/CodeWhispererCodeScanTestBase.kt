@@ -24,7 +24,6 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -85,6 +84,8 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     internal val metadata: DefaultAwsResponseMetadata = DefaultAwsResponseMetadata.create(
         mapOf(ResponseMetadata.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)
     )
+//    internal val requestHeaders: Map<String, String> = mapOf(
+//        "x-amzn-requestid" to CodeWhispererTestUtil.testRequestId)
 
     internal lateinit var scanManagerSpy: CodeWhispererCodeScanManager
     internal lateinit var project: Project
@@ -276,7 +277,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     ) {
         val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
-        doNothing().`when`(sessionMock).uploadArtifactToS3(any(), any(), any(), any(), isNull())
+        doNothing().`when`(sessionMock).uploadArtifactToS3(any(), any(), any())
         doNothing().`when`(sessionMock).sleepThread()
 
         ToolWindowManager.getInstance(project).registerToolWindow(

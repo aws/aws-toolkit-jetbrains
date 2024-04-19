@@ -57,6 +57,7 @@ object CodeWhispererConstants {
 
     // Code scan feature constants
     val ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES = TextAttributes(null, null, JBColor.YELLOW, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+    const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
     const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
     const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 5 * 1024 * 1024 * 1024 // 5 GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1

@@ -91,7 +91,7 @@ class ChatController private constructor(
     init {
         val scope = projectCoroutineScope(context.project)
         context.project.messageBus.connect().subscribe(
-            CodeScanActionsListener.EXPLAIN_CODESCAN_ISSUE_WITH_Q,
+            CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q,
             object : CodeScanActionsListener {
                 override fun sendIssueToQ(issueDescription: String?, issueCode: String?) {
                     scope.launch {
@@ -101,7 +101,7 @@ class ChatController private constructor(
                         val triggerId = UUID.randomUUID().toString()
                         val codeSelection = "\n```\n${issueCode?.trimIndent()?.trim()}\n```\n"
 
-                        val prompt = "Explain the issue ```$issueDescription?``` in my code for me: $codeSelection?"
+                        val prompt = "Explain the issue ```$issueDescription``` in my code: $codeSelection"
 
                         messagePublisher.publish(
                             EditorContextCommandMessage(
@@ -126,6 +126,41 @@ class ChatController private constructor(
                             message = prompt,
                             activeFileContext = fileContext,
                             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
+                            TriggerType.CodeScanButton,
+                        )
+                    }
+                }
+                override fun fixIssueWithQ(issueDescription: String?, issueCode: String?) {
+                    scope.launch {
+                        logger.info { "Code Scan Fix issue with Q message received for issue: $issueDescription" }
+                        // Extract context
+                        val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.CodeScanButton)
+                        val triggerId = UUID.randomUUID().toString()
+                        val codeSelection = "\n```\n${issueCode?.trimIndent()?.trim()}\n```\n"
+
+                        val prompt = "Fix the issue ```$issueDescription``` in my code: $codeSelection"
+
+                        messagePublisher.publish(
+                            EditorContextCommandMessage(
+                                message = prompt,
+                                command = EditorContextCommand.FixCodeScanIssue.actionId,
+                                triggerId = triggerId,
+                            ),
+                        )
+
+                        // Wait for the tab ID to come back
+                        val tabId = waitForTabId(triggerId)
+
+                        if (tabId == NO_TAB_AVAILABLE) {
+                            logger.info { "No tab is available to handle action" }
+                            // exit the function without any further actions
+                        }
+                        handleChat(
+                            tabId = tabId,
+                            triggerId = triggerId,
+                            message = prompt,
+                            activeFileContext = fileContext,
+                            userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.FixCodeScanIssue),
                             TriggerType.CodeScanButton,
                         )
                     }

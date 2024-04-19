@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.CodeScanActionsListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -33,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.applyPatch
 import software.aws.toolkits.jetbrains.utils.convertMarkdownToHTML
@@ -110,6 +110,16 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             </table>
         """.trimIndent()
 
+        // add a link sections
+        val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 110%\">${message(
+            "codewhisperer.codescan.explain_button_label"
+        )}</a>"
+        val fixButton = "<a href=\"amazonq://issue/fix-${issue.title}\" style=\"font-size: 110%\">${message("codewhisperer.codescan.fix_button_label")}</a>"
+        val linksSection = """
+        <br />
+        &nbsp;&bull;$explainButton &nbsp;&bull;$fixButton
+        """.trimIndent()
+
         val suggestedFixSection = if (isFixAvailable) {
             val isFixDescriptionAvailable = issue.suggestedFixes[0].description.isNotBlank() &&
                 issue.suggestedFixes[0].description.trim() != "Suggested remediation:"
@@ -142,6 +152,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         return convertMarkdownToHTML(
             """
             |${issue.recommendation.text}
+            |
+            |$linksSection
             |
             |$detectorSection
             |
@@ -195,7 +207,17 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             isEditable = false
             addHyperlinkListener { he ->
                 if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                    BrowserUtil.browse(he.url)
+                    when {
+                        he.description.startsWith("amazonq://issue/explain-") -> {
+                            explainWithQ(issue)
+                        }
+                        he.description.startsWith("amazonq://issue/fix-") -> {
+                            fixWithQ(issue)
+                        }
+                        else -> {
+                            BrowserUtil.browse(he.url)
+                        }
+                    }
                 }
             }
             editorKit = kit
@@ -207,16 +229,17 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
         }
-        val label = JLabel(issue.title).apply {
+        val label = JLabel(truncateTitle(issue.title)).apply {
             icon = getSeverityIcon(issue)
             horizontalTextPosition = JLabel.LEFT
         }
         val button = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
             toolTipText = message("codewhisperer.codescan.apply_fix_button_tooltip")
-            addActionListener {
-                handleApplyFix(issue)
-            }
             putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        }
+        button.addActionListener {
+            handleApplyFix(issue)
+            button.isVisible = false
         }
         val nextButton = JButton(AllIcons.Actions.ArrowExpand).apply {
             preferredSize = Dimension(30, this.height)
@@ -232,12 +255,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 showPopup(issues, e, (issues.size - (issueIndex + 1)) % issues.size)
             }
         }
-        val explainButton = JButton(message("codewhisperer.codescan.explain_button_label")).apply {
-            addActionListener {
-                explainWithQ(issue)
-            }
-            putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-        }
 
         val titlePane = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -250,7 +267,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 add(JLabel("${issueIndex + 1} of ${issues.size}"))
                 add(nextButton)
             }
-            add(explainButton)
+
             if (issue.suggestedFixes.isNotEmpty()) {
                 add(button)
             }
@@ -403,13 +420,30 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
     private fun explainWithQ(issue: CodeWhispererCodeScanIssue) {
         try {
             // publish a message
-            LOG.info { "publishing message to q chat about issue with description: ${issue.description.markdown} for code block: ${issue.codeText}" }
             project.messageBus.syncPublisher(
-                CodeScanActionsListener.EXPLAIN_CODESCAN_ISSUE_WITH_Q
+                CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q
             ).sendIssueToQ(issue.description.markdown, issue.codeText)
             hidePopup()
         } catch (err: Error) {
-            LOG.error { "Q chat publish failed. $err" }
+            notifyError("Explain With Q failed")
+            LOG.error { "Q chat message publishing failed: $err" }
         }
     }
+
+    private fun fixWithQ(issue: CodeWhispererCodeScanIssue) {
+        try {
+            // publish a message
+            project.messageBus.syncPublisher(
+                CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q
+            ).fixIssueWithQ(issue.description.markdown, issue.codeText)
+            hidePopup()
+        } catch (err: Error) {
+            notifyError("Fix With Q failed")
+            LOG.error { "Q chat message publishing failed: $err" }
+        }
+    }
+
+    private fun truncateTitle(title: String): String = title.takeUnless { it.length <= CODE_SCAN_ISSUE_TITLE_MAX_LENGTH }?.let {
+        it.substring(0, CODE_SCAN_ISSUE_TITLE_MAX_LENGTH - 3) + "..."
+    } ?: title
 }

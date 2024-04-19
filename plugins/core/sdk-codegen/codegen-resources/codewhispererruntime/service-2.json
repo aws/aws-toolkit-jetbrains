@@ -470,6 +470,13 @@
                 "Failed"
             ]
         },
+        "CodeAnalysisUploadContext": {
+            "type": "structure",
+            "required": ["codeScanName"],
+            "members": {
+                "codeScanName": { "shape": "CodeScanName" }
+            }
+        },
         "CodeCoverageEvent":{
             "type":"structure",
             "required":[
@@ -536,6 +543,12 @@
             "type":"string",
             "max":128,
             "min":1
+        },
+        "CodeScanName": {
+            "type": "string",
+            "documentation": "<p>Code analysis scan name</p>",
+            "max": 128,
+            "min": 1
         },
         "CodeScanRemediationsEvent": {
             "type": "structure",
@@ -680,7 +693,8 @@
             "members":{
                 "uploadId":{"shape":"UploadId"},
                 "uploadUrl":{"shape":"PreSignedUrl"},
-                "kmsKeyArn":{"shape":"ResourceArn"}
+                "kmsKeyArn":{"shape":"ResourceArn"},
+                "requestHeaders": {"shape":"RequestHeaders"}
             }
         },
         "CursorState":{
@@ -1250,6 +1264,24 @@
             "max":10,
             "min":0
         },
+        "RequestHeaderKey":{
+            "type":"string",
+            "max":64,
+            "min":1
+        },
+        "RequestHeaderValue":{
+            "type":"string",
+            "max":256,
+            "min":1
+        },
+        "RequestHeaders":{
+            "type":"map",
+            "key":{"shape":"RequestHeaderKey"},
+            "value":{"shape":"RequestHeaderValue"},
+            "max":16,
+            "min":1,
+            "sensitive":true
+        },
         "ResourceArn":{
             "type":"string",
             "max":1224,
@@ -1328,24 +1360,21 @@
             "box":true,
             "min":0
         },
-        "StartCodeAnalysisRequest": {
-            "type": "structure",
-            "required": [
+        "StartCodeAnalysisRequest":{
+            "type":"structure",
+            "required":[
                 "artifacts",
                 "programmingLanguage"
             ],
-            "members": {
-                "artifacts": {
-                    "shape": "ArtifactMap"
+            "members":{
+                "artifacts":{"shape":"ArtifactMap"},
+                "programmingLanguage":{"shape":"ProgrammingLanguage"},
+                "clientToken":{
+                    "shape":"StartCodeAnalysisRequestClientTokenString",
+                    "idempotencyToken":true
                 },
-                "programmingLanguage": {
-                    "shape": "ProgrammingLanguage"
-                },
-                "clientToken": {
-                    "shape": "StartCodeAnalysisRequestClientTokenString",
-                    "idempotencyToken": true
-                },
-                "scope":{"shape": "CodeAnalysisScope"}
+                "scope": {"shape": "CodeAnalysisScope"},
+                "codeScanName":{"shape":"CodeScanName"}
             }
         },
         "StartCodeAnalysisRequestClientTokenString":{
@@ -1720,6 +1749,21 @@
             "type":"string",
             "enum":["LANGUAGE_UPGRADE"]
         },
+        "TransformationUploadArtifactType":{
+            "type":"string",
+            "enum":["Dependencies"]
+        },
+        "TransformationUploadContext":{
+            "type":"structure",
+            "required":[
+                "jobId",
+                "uploadArtifactType"
+            ],
+            "members":{
+                "jobId":{"shape":"TransformationJobId"},
+                "uploadArtifactType":{"shape":"TransformationUploadArtifactType"}
+            }
+        },
         "TaskAssistPlanningUploadContext": {
             "type": "structure",
             "required": ["conversationId"],
@@ -1735,7 +1779,9 @@
         "UploadContext":{
             "type":"structure",
             "members":{
-                "taskAssistPlanningUploadContext": {"shape": "TaskAssistPlanningUploadContext"}
+                "taskAssistPlanningUploadContext":{"shape":"TaskAssistPlanningUploadContext"},
+                "transformationUploadContext":{"shape":"TransformationUploadContext"},
+                "codeAnalysisUploadContext":{"shape":"CodeAnalysisUploadContext"}
             },
             "union":true
         },

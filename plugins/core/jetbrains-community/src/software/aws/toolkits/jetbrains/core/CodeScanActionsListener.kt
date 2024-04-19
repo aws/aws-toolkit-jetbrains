@@ -8,9 +8,10 @@ import java.util.EventListener
 
 interface CodeScanActionsListener : EventListener {
     fun sendIssueToQ(issueDescription: String?, issueCode: String?)
+    fun fixIssueWithQ(issueDescription: String?, issueCode: String?)
 
     companion object {
         @Topic.AppLevel
-        val EXPLAIN_CODESCAN_ISSUE_WITH_Q = Topic.create("Explain Issue with Q ", CodeScanActionsListener::class.java)
+        val SEND_CODESCAN_ISSUE_TO_Q = Topic.create("Explain Issue with Q ", CodeScanActionsListener::class.java)
     }
 }
