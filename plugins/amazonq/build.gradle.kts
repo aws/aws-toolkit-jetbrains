@@ -67,7 +67,7 @@ tasks.check {
     serviceSubdirs.forEach { serviceSubDir ->
         val subDirs = serviceSubDir.subprojects
         subDirs.forEach { insideService->
-            dependsOn(":plugin-amazonq:${serviceSubDir.name}${insideService.name}:check")
+            dependsOn(":plugin-amazonq:${serviceSubDir.name}:${insideService.name}:check")
         }
 
     }
