@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.ComboBox
@@ -44,10 +45,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletionException
-import javax.swing.JComponent
 
 // TODO: pending migration for other non-Q settings
-class ToolkitSettingsConfigurable : SearchableConfigurable {
+class ToolkitSettingsConfigurable :
+    BoundConfigurable(message("aws.settings.toolkit.configurable.title")),
+    SearchableConfigurable {
     private val samExecutableInstance: SamExecutable
         get() = ExecutableType.getExecutable(SamExecutable::class.java)
     val samExecutablePath: TextFieldWithBrowseButton = createCliConfigurationElement(samExecutableInstance, SAM)
@@ -55,7 +57,7 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
     private val defaultRegionHandling: ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
     private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
-    override fun createComponent(): JComponent = panel {
+    override fun createPanel() = panel {
         group(message("aws.settings.global_label")) {
             row {
                 label(message("settings.credentials.prompt_for_default_region_switch.setting_label"))
@@ -83,7 +85,7 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
                 row(toolType.displayName) {
                     textFieldWithBrowseButton(fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor())
                         .bindText(
-                            { ToolSettings.getInstance().getExecutablePath(toolType) ?: "" },
+                            { ToolSettings.getInstance().getExecutablePath(toolType).orEmpty() },
                             { ToolSettings.getInstance().setExecutablePath(toolType, it.takeIf { v -> v.isNotBlank() }) }
                         )
                         .validationOnInput {
@@ -100,7 +102,7 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
             }
         }
         group(message("aws.toolkit.experimental.title")) {
-            row { label(message("aws.toolkit.experimental.description").htmlWrap()).apply { component.icon = AllIcons.General.Warning } }
+            row { label(message("aws.toolkit.experimental.description").htmlWrap()).component.icon = AllIcons.General.Warning }
             ToolkitExperimentManager.visibleExperiments().forEach { toolkitExperiment ->
                 row {
                     checkBox(toolkitExperiment.title()).bindSelected(toolkitExperiment::isEnabled, toolkitExperiment::setState)
@@ -110,10 +112,6 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
         }
     }
 
-    override fun isModified(): Boolean = getSamPathWithoutSpaces() != getSavedExecutablePath(samExecutableInstance, false) ||
-        defaultRegionHandling.selectedItem != AwsSettings.getInstance().useDefaultCredentialRegion ||
-        profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification
-
     override fun apply() {
         validateAndSaveCliSettings(
             samExecutablePath.textField as JBTextField,
@@ -122,6 +120,7 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
             getSavedExecutablePath(samExecutableInstance, false),
             getSamPathWithoutSpaces()
         )
+        super.apply()
     }
 
     override fun reset() {
