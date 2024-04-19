@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanServiceInvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
@@ -103,7 +104,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             currentCoroutineContext.ensureActive()
             LOG.debug { "Uploading source zip located at ${sourceZip.path} to s3" }
             val artifactsUploadStartTime = now()
-            val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode")
+            val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode",)
             LOG.debug {
                 "Successfully uploaded source zip to s3: " +
                     "Upload id: ${sourceZipUploadResponse.uploadId()} " +
@@ -225,9 +226,14 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     fun createUploadUrl(md5Content: String, artifactType: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
         CreateUploadUrlRequest.builder()
             .contentMd5(md5Content)
-            .artifactType(artifactType)
+            .artifactType(artifactType) // .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
             .build()
     )
+//
+//    private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
+//        CodeWhispererConstants.CodeAnalysisScope.FILE -> UploadIntent.AUTOMATIC_FILE_SECURITY_SCAN
+//        CodeWhispererConstants.CodeAnalysisScope.PROJECT -> UploadIntent.FULL_PROJECT_SECURITY_SCAN
+//    }
 
     @Throws(IOException::class)
     fun uploadArtifactToS3(url: String, uploadId: String, fileToUpload: File, md5: String, kmsArn: String?) {
@@ -258,7 +264,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 CreateCodeScanRequest.builder()
                     .clientToken(clientToken.toString())
                     .programmingLanguage { it.languageName(language) }
-                    .artifacts(artifactsMap)
+                    .artifacts(artifactsMap) // .scope(sessionContext.codeAnalysisScope.toString())
                     .build()
             )
         } catch (e: Exception) {
@@ -401,7 +407,8 @@ data class SuggestedFix(val description: String, val code: String)
 
 data class CodeScanSessionContext(
     val project: Project,
-    val sessionConfig: CodeScanSessionConfig
+    val sessionConfig: CodeScanSessionConfig,
+    val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope
 )
 
 internal fun defaultPayloadContext() = PayloadContext(CodewhispererLanguage.Unknown, 0, 0, 0, listOf(), 0, 0)

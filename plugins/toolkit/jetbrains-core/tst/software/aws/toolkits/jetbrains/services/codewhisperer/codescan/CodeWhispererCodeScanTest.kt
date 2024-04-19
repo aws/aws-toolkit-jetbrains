@@ -64,7 +64,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             CodeScanSessionConfig.create(
                 psifile.virtualFile,
                 project,
-                CodeWhispererConstants.SecurityScanType.PROJECT
+                CodeWhispererConstants.CodeAnalysisScope.PROJECT
             )
         )
         setupResponse(psifile.virtualFile.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
@@ -74,7 +74,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         }
 
         // Mock CodeWhispererClient needs to be setup before initializing CodeWhispererCodeScanSession
-        codeScanSessionContext = CodeScanSessionContext(project, sessionConfigSpy)
+        codeScanSessionContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         codeScanSessionSpy = spy(CodeWhispererCodeScanSession(codeScanSessionContext))
         doNothing().`when`(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull())
 

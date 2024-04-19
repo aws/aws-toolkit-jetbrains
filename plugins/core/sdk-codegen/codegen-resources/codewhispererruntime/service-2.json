@@ -455,6 +455,13 @@
             "type":"string",
             "enum":["codeanalysis/findings/1.0"]
         },
+        "CodeAnalysisScope": {
+            "type": "string",
+            "enum": [
+                "FILE",
+                "PROJECT"
+            ]
+        },
         "CodeAnalysisStatus":{
             "type":"string",
             "enum":[
@@ -521,7 +528,8 @@
             "members":{
                 "programmingLanguage":{"shape":"ProgrammingLanguage"},
                 "codeScanJobId":{"shape":"CodeScanJobId"},
-                "timestamp":{"shape":"Timestamp"}
+                "timestamp":{"shape":"Timestamp"},
+                "codeAnalysisScope": {"shape": "CodeAnalysisScope"}
             }
         },
         "CodeScanJobId":{
@@ -1320,18 +1328,22 @@
             "box":true,
             "min":0
         },
-        "StartCodeAnalysisRequest":{
-            "type":"structure",
-            "required":[
+        "StartCodeAnalysisRequest": {
+            "type": "structure",
+            "required": [
                 "artifacts",
                 "programmingLanguage"
             ],
-            "members":{
-                "artifacts":{"shape":"ArtifactMap"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "clientToken":{
-                    "shape":"StartCodeAnalysisRequestClientTokenString",
-                    "idempotencyToken":true
+            "members": {
+                "artifacts": {
+                    "shape": "ArtifactMap"
+                },
+                "programmingLanguage": {
+                    "shape": "ProgrammingLanguage"
+                },
+                "clientToken": {
+                    "shape": "StartCodeAnalysisRequestClientTokenString",
+                    "idempotencyToken": true
                 }
             }
         },
@@ -1735,7 +1747,9 @@
             "type":"string",
             "enum":[
                 "TRANSFORMATION",
-                "TASK_ASSIST_PLANNING"
+                "TASK_ASSIST_PLANNING",
+                "AUTOMATIC_FILE_SECURITY_SCAN",
+                "FULL_PROJECT_SECURITY_SCAN"
             ]
         },
         "UserContext":{

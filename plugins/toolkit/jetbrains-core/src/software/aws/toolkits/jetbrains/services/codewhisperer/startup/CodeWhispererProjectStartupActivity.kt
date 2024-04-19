@@ -92,7 +92,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (isUserBuilderId(project)) {
             CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(project, false)
         } else {
-            CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.SecurityScanType.FILE)
+            CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
             runOnce = true
         }
     }

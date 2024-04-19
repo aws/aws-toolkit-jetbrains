@@ -98,9 +98,9 @@ object CodeWhispererConstants {
         const val DEACTIVATED = "Deactivated"
     }
 
-    enum class SecurityScanType {
-        FILE,
-        PROJECT
+    enum class CodeAnalysisScope(val value: String) {
+        FILE("FILE"),
+        PROJECT("PROJECT")
     }
 
     object Config {

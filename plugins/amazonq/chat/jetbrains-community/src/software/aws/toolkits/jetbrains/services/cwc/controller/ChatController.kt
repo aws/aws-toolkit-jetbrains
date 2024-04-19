@@ -27,12 +27,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.CodeScanActionsListener
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
@@ -85,6 +88,51 @@ class ChatController private constructor(
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
     private val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
 
+    init {
+        val scope = projectCoroutineScope(context.project)
+        context.project.messageBus.connect().subscribe(
+            CodeScanActionsListener.EXPLAIN_CODESCAN_ISSUE_WITH_Q,
+            object : CodeScanActionsListener {
+                override fun sendIssueToQ(issueDescription: String?, issueCode: String?) {
+                    scope.launch {
+                        logger.info { "Code Scan Explain issue with Q message received for issue: $issueDescription" }
+                        // Extract context
+                        val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.CodeScanButton)
+                        val triggerId = UUID.randomUUID().toString()
+                        val codeSelection = "\n```\n${issueCode?.trimIndent()?.trim()}\n```\n"
+
+                        val prompt = "Explain the issue ```$issueDescription?``` in my code for me: $codeSelection?"
+
+                        messagePublisher.publish(
+                            EditorContextCommandMessage(
+                                message = prompt,
+                                command = EditorContextCommand.ExplainCodeScanIssue.actionId,
+                                triggerId = triggerId,
+                            ),
+                        )
+
+                        // Wait for the tab ID to come back
+                        val tabId = waitForTabId(triggerId)
+
+                        if (tabId == NO_TAB_AVAILABLE) {
+                            logger.info { "No tab is available to handle action" }
+                            // exit the function without any further actions
+                            return@launch
+                        }
+
+                        handleChat(
+                            tabId = tabId,
+                            triggerId = triggerId,
+                            message = prompt,
+                            activeFileContext = fileContext,
+                            userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
+                            TriggerType.CodeScanButton,
+                        )
+                    }
+                }
+            }
+        )
+    }
     constructor(
         context: AmazonQAppInitContext,
     ) : this(

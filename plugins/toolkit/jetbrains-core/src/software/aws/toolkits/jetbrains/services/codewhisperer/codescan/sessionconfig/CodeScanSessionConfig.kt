@@ -20,11 +20,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileForma
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SecurityScanType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -38,7 +38,7 @@ import kotlin.io.path.relativeTo
 class CodeScanSessionConfig(
     private val selectedFile: VirtualFile,
     private val project: Project,
-    private val scanType: SecurityScanType
+    private val scope: CodeAnalysisScope
 ) {
     var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
         private set
@@ -50,13 +50,13 @@ class CodeScanSessionConfig(
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    fun overallJobTimeoutInSeconds(): Long = when (scanType) {
-        SecurityScanType.FILE -> FILE_SCAN_TIMEOUT_IN_SECONDS
+    fun overallJobTimeoutInSeconds(): Long = when (scope) {
+        CodeAnalysisScope.FILE -> FILE_SCAN_TIMEOUT_IN_SECONDS
         else -> DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
     }
 
-    fun getPayloadLimitInBytes(): Long = when (scanType) {
-        SecurityScanType.FILE -> (FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES)
+    fun getPayloadLimitInBytes(): Long = when (scope) {
+        CodeAnalysisScope.FILE -> (FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES)
         else -> (DEFAULT_PAYLOAD_LIMIT_IN_BYTES)
     }
 
@@ -114,9 +114,9 @@ class CodeScanSessionConfig(
         val includedSourceFiles = mutableSetOf<String>()
         var currentTotalFileSize = 0L
         var currentTotalLines = 0L
-        val files = getSourceFilesUnderProjectRoot(selectedFile, scanType)
+        val files = getSourceFilesUnderProjectRoot(selectedFile, scope)
 
-        if (scanType == SecurityScanType.FILE) {
+        if (scope == CodeAnalysisScope.FILE) {
             return getFilePayloadMetadata()
         } else {
             for (pivotFile in files) {
@@ -152,12 +152,12 @@ class CodeScanSessionConfig(
         var totalSize = 0L
         try {
             withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
-                if (scanType == SecurityScanType.FILE) {
+                if (scope == CodeAnalysisScope.FILE) {
                     totalSize = selectedFile.length
                 } else {
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !featureDevSessionContext.ignoreFile(it)
+                            !featureDevSessionContext.ignoreFile(it, false)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -182,18 +182,18 @@ class CodeScanSessionConfig(
     /**
      * Returns all the source files for a given payload type.
      */
-    fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile, scanType: SecurityScanType): List<VirtualFile> {
+    fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile, scope: CodeAnalysisScope): List<VirtualFile> {
         //  Include the current selected file
         val files = mutableListOf(selectedFile)
         //  Include only the file if scan type is file scan.
-        if (scanType == SecurityScanType.FILE) {
+        if (scope == CodeAnalysisScope.FILE) {
             return files
         } else {
             // Include other files only if the current file is in the project.
             if (selectedFile.path.startsWith(projectRoot.path)) {
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it)
+                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it, false)
                     }
                 )
             }
@@ -216,7 +216,7 @@ class CodeScanSessionConfig(
         private val LOG = getLogger<CodeScanSessionConfig>()
         private const val TELEMETRY_TIMEOUT_IN_SECONDS: Long = 10
         const val FILE_SEPARATOR = '/'
-        fun create(file: VirtualFile, project: Project, scanType: SecurityScanType): CodeScanSessionConfig =
+        fun create(file: VirtualFile, project: Project, scope: CodeAnalysisScope): CodeScanSessionConfig =
             when (file.programmingLanguage().toTelemetryType()) {
                 CodewhispererLanguage.Java,
                 CodewhispererLanguage.Python,
@@ -228,7 +228,7 @@ class CodeScanSessionConfig(
                 CodewhispererLanguage.Tf,
                 CodewhispererLanguage.Hcl,
                 CodewhispererLanguage.Go,
-                CodewhispererLanguage.Ruby -> CodeScanSessionConfig(file, project, scanType)
+                CodewhispererLanguage.Ruby -> CodeScanSessionConfig(file, project, scope)
                 else -> fileFormatNotSupported(file.extension ?: "")
             }
     }

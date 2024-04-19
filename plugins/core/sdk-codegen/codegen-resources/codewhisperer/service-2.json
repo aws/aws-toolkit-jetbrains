@@ -147,6 +147,13 @@
                 "BuiltJars"
             ]
         },
+        "CodeAnalysisScope":{
+            "type":"string",
+            "enum":[
+                "FILE",
+                "PROJECT"
+            ]
+        },
         "CodeScanFindingsSchema":{
             "type":"string",
             "enum":["codescan/findings/1.0"]

@@ -24,6 +24,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.CodeScanActionsListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -230,6 +232,12 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 showPopup(issues, e, (issues.size - (issueIndex + 1)) % issues.size)
             }
         }
+        val explainButton = JButton(message("codewhisperer.codescan.explain_button_label")).apply {
+            addActionListener {
+                explainWithQ(issue)
+            }
+            putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        }
 
         val titlePane = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -242,7 +250,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 add(JLabel("${issueIndex + 1} of ${issues.size}"))
                 add(nextButton)
             }
-
+            add(explainButton)
             if (issue.suggestedFixes.isNotEmpty()) {
                 add(button)
             }
@@ -389,6 +397,19 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 Result.Failed.toString(),
                 issue.suggestedFixes.isNotEmpty()
             )
+        }
+    }
+
+    private fun explainWithQ(issue: CodeWhispererCodeScanIssue) {
+        try {
+            // publish a message
+            LOG.info { "publishing message to q chat about issue with description: ${issue.description.markdown} for code block: ${issue.codeText}" }
+            project.messageBus.syncPublisher(
+                CodeScanActionsListener.EXPLAIN_CODESCAN_ISSUE_WITH_Q
+            ).sendIssueToQ(issue.description.markdown, issue.codeText)
+            hidePopup()
+        } catch (err: Error) {
+            LOG.error { "Q chat publish failed. $err" }
         }
     }
 }
