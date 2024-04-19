@@ -4,14 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
@@ -41,32 +36,6 @@ import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
-
-// TODO: remove by 4/30, only needed for dev purpose, and action registered in plugin-chat.xml
-class OpenAmazonQAction : DumbAwareAction("View Q Webview") {
-    override fun actionPerformed(e: AnActionEvent) {
-        val project = e.project ?: return
-
-        QWebviewDialog(project).showAndGet()
-    }
-
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = isDeveloperMode()
-    }
-}
-
-// TODO: remove by 4/30, only needed for dev purpose
-class QWebviewDialog(private val project: Project) : DialogWrapper(project) {
-
-    init {
-        title = "Q-Login-Webview"
-        init()
-    }
-
-    override fun createCenterPanel(): JComponent = WebviewPanel(project).component
-}
 
 class WebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
@@ -147,9 +116,8 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
                 val scope = CODEWHISPERER_SCOPES + Q_SCOPES
 
-                val onError: (String) -> Unit = { s ->
-                    Messages.showErrorDialog(project, it, "Q Idc Login Failed")
-                    // TODO: AuthTelemetry.addConnection
+                val onError: (String) -> Unit = { _ ->
+                    // TODO: telemetry
                 }
                 runInEdt {
                     Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError).loginIdc(project)
