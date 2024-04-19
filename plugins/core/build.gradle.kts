@@ -44,5 +44,5 @@ tasks.check {
     coreProject.forEach {
         dependsOn(":plugin-core:${it.name}:check")
     }
-    //dependsOn(":plugin-core:jetbrains-community:check",":plugin-core:jetbrains-ultimate:check")
+
 }
