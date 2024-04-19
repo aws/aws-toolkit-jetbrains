@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
@@ -128,8 +127,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val feature: String = jsonTree.get("feature").asText()
 
                 val onError: (String) -> Unit = { _ ->
-                    Messages.showErrorDialog(project, it, "Toolkit Idc Login Failed")
-                    // TODO: AuthTelemetry.addConnection
+                    // TODO: telemetry
                 }
 
                 val scope = if (feature == FeatureId.Codecatalyst.name) {
@@ -189,6 +187,14 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 currentAuthorization?.progressIndicator?.cancel()
             }
 
+            "signout" -> {
+                // TODO: implementation
+            }
+
+            "reauth" -> {
+                // TODO: implementation
+            }
+
             else -> {
                 error("received unknown command from Toolkit login browser")
             }
@@ -221,9 +227,12 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = objectMapper.writeValueAsString(regions)
 
+        // TODO: if codecatalyst connection expires, set stage to 'REAUTH'
+        val stage = "START"
+
         val jsonData = """
             {
-                stage: 'START',
+                stage: '$stage',
                 regions: $regionJson,
                 idcInfo: {
                     profileName: '${lastLoginIdcInfo.profileName}',

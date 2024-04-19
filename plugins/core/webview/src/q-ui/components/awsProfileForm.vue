@@ -10,16 +10,16 @@
             />
         </svg>
     </button>
-    <div class="title no-bold">Profile Name</div>
-    <div class="hint">The identifier for these credentials</div>
+    <div class="title no-bold font-amazon">Profile Name</div>
+    <div class="hint font-amazon">The identifier for these credentials</div>
     <input class="iamInput font-amazon" type="text" id="profileName" name="profileName" v-model="profileName"/>
 
     <br/><br/>
-    <div class="title no-bold">Access Key</div>
+    <div class="title no-bold font-amazon">Access Key</div>
     <input class="iamInput font-amazon" type="text" id="accessKey" name="accessKey" v-model="accessKey"/>
 
     <br/><br/>
-    <div class="title no-bold">Secret Key</div>
+    <div class="title no-bold font-amazon">Secret Key</div>
     <input class="iamInput font-amazon" type="text" id="secretKey" name="secretKey" v-model="secretKey"/>
 
     <br/><br/>
@@ -34,6 +34,7 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue'
+import {LongLivedIAM} from '../../model'
 
 export default defineComponent({
     name: "awsProfileForm",
@@ -46,7 +47,7 @@ export default defineComponent({
     },
     methods: {
         async handleContinueClick() {
-            this.$emit('stageChanged', 'AUTHENTICATING')
+            this.$emit('stageChanged', 'AUTHENTICATING', new LongLivedIAM(this.profileName, this.accessKey, this.secretKey))
             window.ideApi.postMessage({
                 command: 'loginIAM',
                 profileName: this.profileName,
