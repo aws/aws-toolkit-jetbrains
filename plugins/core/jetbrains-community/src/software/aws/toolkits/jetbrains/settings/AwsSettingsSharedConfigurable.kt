@@ -13,7 +13,7 @@ import com.intellij.ui.layout.selected
 import software.aws.toolkits.resources.message
 
 class AwsSettingsSharedConfigurable : BoundConfigurable("AWS"), SearchableConfigurable {
-    private val enableTelemetry: JBCheckBox = JBCheckBox(message("aws.settings.telemetry.option"))
+    val enableTelemetry: JBCheckBox = JBCheckBox(message("aws.settings.telemetry.option"))
     private val enableAutoUpdate: JBCheckBox = JBCheckBox(message("aws.settings.auto_update.text"))
     private val enableAutoUpdateNotification: JBCheckBox = JBCheckBox(message("aws.settings.auto_update.notification_enable.text"))
     override fun createPanel() = panel {

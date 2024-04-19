@@ -26,9 +26,7 @@ class AwsSettingsConfigurableTest : ExecutableDetectorTestBase() {
 
     @Test
     fun validate_ok_changedTelemetry() {
-        val settings = ToolkitSettingsConfigurable()
-        // explicit call to suppress compiling error
-        settings.samExecutablePath.setText(null)
+        val settings = AwsSettingsSharedConfigurable()
         settings.enableTelemetry.isSelected = true
         settings.apply()
         settings.enableTelemetry.isSelected = false
