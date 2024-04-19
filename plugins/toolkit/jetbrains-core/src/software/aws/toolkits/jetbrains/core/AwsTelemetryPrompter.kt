@@ -9,7 +9,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable
+import software.aws.toolkits.jetbrains.settings.ToolkitSettingsConfigurable
 import software.aws.toolkits.resources.message
 
 class AwsTelemetryPrompter : StartupActivity.Background {
@@ -25,7 +25,7 @@ class AwsTelemetryPrompter : StartupActivity.Background {
             NotificationType.INFORMATION
         ).also {
             it.setListener { notification, _ ->
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsConfigurable::class.java)
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, ToolkitSettingsConfigurable::class.java)
                 notification.expire()
             }
         }

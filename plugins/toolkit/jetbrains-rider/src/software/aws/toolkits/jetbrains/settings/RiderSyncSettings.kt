@@ -14,6 +14,6 @@ import software.aws.toolkits.jetbrains.protocol.awsSettingModel
 class RiderSyncSettings : StartupActivity {
     @Override
     override fun runActivity(project: Project) {
-        project.solution.awsSettingModel.showLambdaGutterMarks.fire(LambdaSettings.getInstance(project).showAllHandlerGutterIcons)
+        project.solution.awsSettingModel.showLambdaGutterMarks.fire(LambdaSettings.getInstance().showAllHandlerGutterIcons)
     }
 }

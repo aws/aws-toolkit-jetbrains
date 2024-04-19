@@ -79,7 +79,7 @@ class LambdaLineMarker : LineMarkerProviderDescriptor() {
 
     private fun shouldShowLineMarker(psiFile: PsiFile, handler: String, runtimeGroup: RuntimeGroup): Boolean {
         val project = psiFile.project
-        return LambdaSettings.getInstance(project).showAllHandlerGutterIcons ||
+        return LambdaSettings.getInstance().showAllHandlerGutterIcons ||
             handlerInTemplate(project, handler, runtimeGroup)
     }
 

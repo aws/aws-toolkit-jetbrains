@@ -3,14 +3,14 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 
 @State(name = "lambda", storages = [Storage("aws.xml")])
-class LambdaSettings(private val project: Project) : PersistentStateComponent<LambdaConfiguration> {
+class LambdaSettings : PersistentStateComponent<LambdaConfiguration> {
     private var state = LambdaConfiguration()
 
     override fun getState(): LambdaConfiguration = state
@@ -23,12 +23,13 @@ class LambdaSettings(private val project: Project) : PersistentStateComponent<La
         get() = state.showAllHandlerGutterIcons
         set(value) {
             state.showAllHandlerGutterIcons = value
-            project.messageBus.syncPublisher(LambdaSettingsChangeListener.TOPIC).samShowAllHandlerGutterIconsSettingsChange(value)
+            ApplicationManager.getApplication().messageBus.syncPublisher(LambdaSettingsChangeListener.TOPIC)
+                .samShowAllHandlerGutterIconsSettingsChange(value)
         }
 
     companion object {
         @JvmStatic
-        fun getInstance(project: Project): LambdaSettings = project.service()
+        fun getInstance(): LambdaSettings = service()
     }
 }
 

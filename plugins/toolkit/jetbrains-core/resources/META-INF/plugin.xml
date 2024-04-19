@@ -223,7 +223,7 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.GettingStartedSettings"/>
 
-        <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.SyncSettings"/>
@@ -286,39 +286,18 @@
 
         <!-- plugin configurables -->
         <applicationConfigurable
-            id="aws.old"
-            groupId="tools"
-            bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="aws.settings.title.old"
-            instance="software.aws.toolkits.jetbrains.settings.AwsSettingsConfigurable"
-        />
-        <projectConfigurable
             parentId="aws"
-            id="aws.lambda"
+            id="aws.toolkit"
             bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="aws.settings.lambda.configurable.title"
-            instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"
+            key="aws.settings.toolkit.configurable.title"
+            instance="software.aws.toolkits.jetbrains.settings.ToolkitSettingsConfigurable"
         />
         <applicationConfigurable
-            parentId="aws"
+            parentId="aws.toolkit"
             id="aws.dynamicresources"
             bundle="software.aws.toolkits.resources.MessagesBundle"
             key="aws.settings.dynamic_resources_configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.DynamicResourcesConfigurable"
-        />
-        <applicationConfigurable
-            parentId="aws"
-            id="aws.experiments"
-            bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="aws.toolkit.experimental.title"
-            instance="software.aws.toolkits.jetbrains.core.experiments.ExperimentConfigurable"
-        />
-        <applicationConfigurable
-            parentId="aws"
-            id="aws.tools"
-            bundle="software.aws.toolkits.resources.MessagesBundle"
-            key="executableCommon.configurable.title"
-            instance="software.aws.toolkits.jetbrains.core.tools.ToolConfigurable"
         />
 
         <programRunner implementation="software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamInvokeRunner"/>

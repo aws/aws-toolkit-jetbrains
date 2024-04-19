@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.ide.BrowserUtil
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -12,19 +12,34 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.layout.selected
+import com.intellij.ui.dsl.builder.toNullableProperty
+import software.aws.toolkits.core.utils.htmlWrap
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance
 import software.aws.toolkits.jetbrains.core.executables.ExecutableInstance.ExecutableWithPath
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.core.executables.ExecutableType
+import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperimentManager
+import software.aws.toolkits.jetbrains.core.experiments.isEnabled
+import software.aws.toolkits.jetbrains.core.experiments.setState
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.tools.AutoDetectableToolType
+import software.aws.toolkits.jetbrains.core.tools.ManagedToolType
+import software.aws.toolkits.jetbrains.core.tools.ToolManager
+import software.aws.toolkits.jetbrains.core.tools.ToolSettings
+import software.aws.toolkits.jetbrains.core.tools.ToolType
+import software.aws.toolkits.jetbrains.core.tools.Version
+import software.aws.toolkits.jetbrains.core.tools.getTool
+import software.aws.toolkits.jetbrains.core.tools.toValidationInfo
+import software.aws.toolkits.jetbrains.core.tools.validateCompatability
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AwsTelemetry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -32,7 +47,7 @@ import java.util.concurrent.CompletionException
 import javax.swing.JComponent
 
 // TODO: pending migration for other non-Q settings
-class AwsSettingsConfigurable : SearchableConfigurable {
+class ToolkitSettingsConfigurable : SearchableConfigurable {
     private val samExecutableInstance: SamExecutable
         get() = ExecutableType.getExecutable(SamExecutable::class.java)
     val samExecutablePath: TextFieldWithBrowseButton = createCliConfigurationElement(samExecutableInstance, SAM)
@@ -40,9 +55,6 @@ class AwsSettingsConfigurable : SearchableConfigurable {
     private val defaultRegionHandling: ComboBox<UseAwsCredentialRegion> = ComboBox(UseAwsCredentialRegion.values())
     private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
-    val enableTelemetry: JBCheckBox = JBCheckBox()
-    private val enableAutoUpdate: JBCheckBox = JBCheckBox()
-    private val enableAutoUpdateNotification: JBCheckBox = JBCheckBox()
     override fun createComponent(): JComponent = panel {
         group(message("aws.settings.serverless_label")) {
             row {
@@ -55,36 +67,53 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         group(message("aws.settings.global_label")) {
             row {
                 label(message("settings.credentials.prompt_for_default_region_switch.setting_label"))
-                cell(defaultRegionHandling).resizableColumn().align(AlignX.FILL).applyToComponent {
-                    this.selectedItem = AwsSettings.getInstance().useDefaultCredentialRegion ?: UseAwsCredentialRegion.Never
-                }
+                cell(defaultRegionHandling).resizableColumn().align(AlignX.FILL).bindItem(
+                    AwsSettings.getInstance()::useDefaultCredentialRegion,
+                    AwsSettings.getInstance()::useDefaultCredentialRegion.toNullableProperty()::set
+                )
             }
             row {
                 label(message("settings.profiles.label"))
-                cell(profilesNotification).resizableColumn().align(AlignX.FILL).applyToComponent {
-                    this.selectedItem = AwsSettings.getInstance().profilesNotification ?: ProfilesNotification.Always
+                cell(profilesNotification).resizableColumn().align(AlignX.FILL).bindItem(
+                    AwsSettings.getInstance()::profilesNotification,
+                    AwsSettings.getInstance()::profilesNotification.toNullableProperty()::set
+                )
+            }
+        }
+        group(message("executableCommon.configurable.title")) {
+            ToolType.EP_NAME.extensionList.forEach { toolType ->
+                row(toolType.displayName) {
+                    textFieldWithBrowseButton(fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor())
+                        .bindText(
+                            { ToolSettings.getInstance().getExecutablePath(toolType) ?: "" },
+                            { ToolSettings.getInstance().setExecutablePath(toolType, it.takeIf { v -> v.isNotBlank() }) }
+                        )
+                        .validationOnInput {
+                            it.textField.text.takeIf { t -> t.isNotBlank() }?.let { path ->
+                                ToolManager.getInstance().validateCompatability(Path.of(path), toolType).toValidationInfo(toolType, component)
+                            }
+                        }.applyToComponent {
+                            setEmptyText(toolType, textField as JBTextField)
+                        }.resizableColumn()
+                        .align(Align.FILL)
+
+                    browserLink(message("aws.settings.learn_more"), toolType.documentationUrl())
                 }
             }
-
+        }
+        group(message("aws.settings.lambda.configurable.title")) {
             row {
-                cell(enableTelemetry).applyToComponent { this.isSelected = AwsSettings.getInstance().isTelemetryEnabled }
-                text(message("aws.settings.telemetry.option") + " <a>${message("general.details")}</a>") {
-                    BrowserUtil.open("https://docs.aws.amazon.com/sdkref/latest/guide/support-maint-idetoolkits.html")
-                }
+                checkBox(message("aws.settings.sam.show_all_gutter_icons"))
+                    .bindSelected(LambdaSettings.getInstance()::showAllHandlerGutterIcons)
+                    .comment(message("aws.settings.sam.show_all_gutter_icons_tooltip"))
             }
-
-            row {
-                cell(enableAutoUpdate).applyToComponent { this.isSelected = AwsSettings.getInstance().isAutoUpdateEnabled }
-                text(message("aws.settings.auto_update.text"))
-            }
-
-            indent {
+        }
+        group(message("aws.toolkit.experimental.title")) {
+            row { label(message("aws.toolkit.experimental.description").htmlWrap()).apply { component.icon = AllIcons.General.Warning } }
+            ToolkitExperimentManager.visibleExperiments().forEach { toolkitExperiment ->
                 row {
-                    cell(enableAutoUpdateNotification).applyToComponent {
-                        this.isSelected = AwsSettings.getInstance().isAutoUpdateNotificationEnabled
-                    }.enabledIf(enableAutoUpdate.selected)
-                    text(message("aws.settings.auto_update.notification_enable.text"))
-                        .comment(message("aws.settings.auto_update.notification_enable.tooltip"))
+                    checkBox(toolkitExperiment.title()).bindSelected(toolkitExperiment::isEnabled, toolkitExperiment::setState)
+                        .comment(toolkitExperiment.description())
                 }
             }
         }
@@ -92,10 +121,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
 
     override fun isModified(): Boolean = getSamPathWithoutSpaces() != getSavedExecutablePath(samExecutableInstance, false) ||
         defaultRegionHandling.selectedItem != AwsSettings.getInstance().useDefaultCredentialRegion ||
-        profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification ||
-        enableTelemetry.isSelected != AwsSettings.getInstance().isTelemetryEnabled ||
-        enableAutoUpdate.isSelected != AwsSettings.getInstance().isAutoUpdateEnabled ||
-        enableAutoUpdateNotification.isSelected != AwsSettings.getInstance().isAutoUpdateNotificationEnabled
+        profilesNotification.selectedItem != AwsSettings.getInstance().profilesNotification
 
     override fun apply() {
         validateAndSaveCliSettings(
@@ -105,20 +131,16 @@ class AwsSettingsConfigurable : SearchableConfigurable {
             getSavedExecutablePath(samExecutableInstance, false),
             getSamPathWithoutSpaces()
         )
-        saveAwsSettings()
     }
 
     override fun reset() {
         val awsSettings = AwsSettings.getInstance()
         samExecutablePath.setText(getSavedExecutablePath(samExecutableInstance, false))
-        enableTelemetry.isSelected = awsSettings.isTelemetryEnabled
         defaultRegionHandling.selectedItem = awsSettings.useDefaultCredentialRegion
         profilesNotification.selectedItem = awsSettings.profilesNotification
-        enableAutoUpdate.isSelected = awsSettings.isAutoUpdateEnabled
-        enableAutoUpdateNotification.isSelected = awsSettings.isAutoUpdateNotificationEnabled
     }
 
-    override fun getDisplayName(): String = message("aws.settings.title.old")
+    override fun getDisplayName(): String = message("aws.settings.toolkit.configurable.title")
 
     override fun getId(): String = "aws.old"
 
@@ -165,6 +187,15 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         null
     }
 
+    private fun setEmptyText(toolType: ToolType<Version>, field: JBTextField) {
+        val resolved = (toolType as? AutoDetectableToolType<*>)?.resolve()
+        field.emptyText.text = when {
+            resolved != null && toolType.getTool()?.path == resolved -> message("executableCommon.auto_resolved", resolved)
+            toolType is ManagedToolType<*> -> message("executableCommon.auto_managed")
+            else -> message("common.none")
+        }
+    }
+
     private fun validateAndSaveCliSettings(
         textField: JBTextField,
         executableName: String,
@@ -195,9 +226,7 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         val path: Path
         try {
             path = Paths.get(currentInput)
-            if (!Files.isExecutable(path) || !path.toFile().exists() || !path.toFile().isFile) {
-                throw IllegalArgumentException("Set file is not an executable")
-            }
+            require(Files.isExecutable(path) && path.toFile().exists() && path.toFile().isFile)
         } catch (e: Exception) {
             throw ConfigurationException(message("aws.settings.executables.executable_invalid", executableName, currentInput))
         }
@@ -209,30 +238,10 @@ class AwsSettingsConfigurable : SearchableConfigurable {
         // We have validated so now we can set
         ExecutableManager.getInstance().setExecutablePath(executableType, path)
     }
-    private fun saveAwsSettings() {
-        val awsSettings = AwsSettings.getInstance()
-        awsSettings.isTelemetryEnabled = enableTelemetry.isSelected
-        awsSettings.useDefaultCredentialRegion = defaultRegionHandling.selectedItem as? UseAwsCredentialRegion ?: UseAwsCredentialRegion.Never
-        awsSettings.profilesNotification = profilesNotification.selectedItem as? ProfilesNotification ?: ProfilesNotification.Always
-
-        // Send telemetry if there's a change
-        if (awsSettings.isAutoUpdateEnabled != enableAutoUpdate.isSelected) {
-            val settingState = if (enableAutoUpdate.isSelected) "OPTIN" else "OPTOUT"
-            AwsTelemetry.modifySetting(project = null, settingId = ID_AUTO_UPDATE, settingState = settingState)
-        }
-        if (awsSettings.isAutoUpdateNotificationEnabled != enableAutoUpdateNotification.isSelected) {
-            val settingsState = if (enableAutoUpdateNotification.isSelected) "OPTIN" else "OPTOUT"
-            AwsTelemetry.modifySetting(project = null, settingId = ID_AUTO_UPDATE_NOTIFY, settingState = settingsState)
-        }
-        awsSettings.isAutoUpdateEnabled = enableAutoUpdate.isSelected
-        awsSettings.isAutoUpdateNotificationEnabled = enableAutoUpdateNotification.isSelected
-    }
 
     private fun getSamPathWithoutSpaces() = StringUtil.nullize(samExecutablePath.text.trim { it <= ' ' })
 
     companion object {
         private const val SAM = "sam"
-        private const val ID_AUTO_UPDATE = "autoUpdate"
-        private const val ID_AUTO_UPDATE_NOTIFY = "autoUpdateNotification"
     }
 }
