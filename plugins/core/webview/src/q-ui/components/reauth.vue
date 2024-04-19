@@ -47,7 +47,7 @@ export default defineComponent({
         handleContinueClick() {
             console.log('reauth button clicked')
             window.ideApi.postMessage({ command: 'reauth' })
-
+            this.$emit('stageChanged', 'AUTHENTICATING')
         },
         handleCancel() {
             console.log('signout button clicked')
