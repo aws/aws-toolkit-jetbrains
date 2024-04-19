@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.ui.feedback
 
 import com.intellij.openapi.project.Project
-import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 
