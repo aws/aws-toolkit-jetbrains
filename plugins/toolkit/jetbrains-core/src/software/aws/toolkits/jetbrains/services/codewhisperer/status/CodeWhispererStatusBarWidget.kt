@@ -18,12 +18,13 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.aggregateQConnectionState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
@@ -82,18 +83,12 @@ class CodeWhispererStatusBarWidget(project: Project) :
 
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 
-    override fun getPopupStep(): ListPopup? =
-        if (isCodeWhispererExpired(project)) {
+    override fun getPopupStep(): ListPopup = when (aggregateQConnectionState(project)) {
+        BearerTokenAuthState.NEEDS_REFRESH -> {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
-        } else if (!isCodeWhispererEnabled(project)) {
-            JBPopupFactory.getInstance().createActionGroupPopup(
-                "Amazon Q",
-                ActionManager.getInstance().getAction(Q_SIGNED_OUT_ACTION_GROUP) as ActionGroup,
-                DataManager.getInstance().getDataContext(myStatusBar?.component),
-                JBPopupFactory.ActionSelectionAid.MNEMONICS,
-                false
-            )
-        } else {
+        }
+
+        BearerTokenAuthState.AUTHORIZED -> {
             JBPopupFactory.getInstance().createActionGroupPopup(
                 "Amazon Q",
                 QStatusBarLoggedInActionGroup(),
@@ -102,6 +97,17 @@ class CodeWhispererStatusBarWidget(project: Project) :
                 false
             )
         }
+
+        BearerTokenAuthState.NOT_AUTHENTICATED -> {
+            JBPopupFactory.getInstance().createActionGroupPopup(
+                "Amazon Q",
+                ActionManager.getInstance().getAction(Q_SIGNED_OUT_ACTION_GROUP) as ActionGroup,
+                DataManager.getInstance().getDataContext(myStatusBar?.component),
+                JBPopupFactory.ActionSelectionAid.MNEMONICS,
+                false
+            )
+        }
+    }
 
     override fun getSelectedValue(): String = CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
         if (it == null) {
