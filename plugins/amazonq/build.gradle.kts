@@ -64,9 +64,12 @@ artifacts {
 
 tasks.check {
     val serviceSubdirs = project(":plugin-amazonq").subprojects
-        .map { it.name }
-    serviceSubdirs.forEach {
-        dependsOn(":plugin-amazonq:$it:check")
+    serviceSubdirs.forEach { serviceSubDir ->
+        val subDirs = serviceSubDir.subprojects
+        subDirs.forEach { insideService->
+            dependsOn(":plugin-amazonq:${serviceSubDir.name}${insideService.name}:check")
+        }
+
     }
 
 }
