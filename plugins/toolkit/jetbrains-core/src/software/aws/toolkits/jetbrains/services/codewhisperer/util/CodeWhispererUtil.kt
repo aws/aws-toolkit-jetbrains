@@ -265,6 +265,7 @@ object CodeWhispererUtil {
             ?.tokenProvider
             ?.delegate as? BearerTokenProvider
 
+    @Deprecated("delete and use Q utils when split is done")
     fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return

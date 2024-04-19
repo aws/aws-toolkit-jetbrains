@@ -45,9 +45,9 @@ class QMigrationActivity : StartupActivity.DumbAware {
     private fun displayQMigrationInfo(project: Project) {
         if (AwsSettings.getInstance().isQMigrationNotificationShownOnce) return
 
-        val hasUsedCodeWhisperer = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(CodeWhispererConnection.getInstance())
-        val hasUsedQ = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(QConnection.getInstance())
-        if (hasUsedCodeWhisperer || hasUsedQ) {
+        val cwConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val qConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+        if (cwConnection != null || qConnection != null) {
             // do auto-install
             installQPlugin(project, autoInstall = true)
         } else {

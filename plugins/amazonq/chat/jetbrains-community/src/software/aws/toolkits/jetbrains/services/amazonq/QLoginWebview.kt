@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -21,6 +23,9 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -28,7 +33,9 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.util.activeConnection
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.services.amazonq.util.reconnect
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
@@ -138,6 +145,35 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 // to browser.). The worst case is that the user will see a stale user code displayed, but not
                 // affecting the current login flow.
                 currentAuthorization?.progressIndicator?.cancel()
+            }
+
+            "signout" -> {
+                project.activeConnection(QConnection.getInstance())?.let { connection ->
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
+                        )
+                    )
+                }
+
+                // TODO: might not need this
+                project.activeConnection(CodeWhispererConnection.getInstance())?.let { connection ->
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
+                        )
+                    )
+                }
+            }
+
+            "reauth" -> {
+                // TODO: reauth should pick up ALL scopes but not subset only
+                project.activeConnection(QConnection.getInstance())?.reconnect()
+                project.activeConnection(CodeWhispererConnection.getInstance())?.reconnect()
             }
 
             else -> {

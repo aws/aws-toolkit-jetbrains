@@ -44,12 +44,13 @@ export default defineComponent({
     },
     methods: {
         handleContinueClick() {
-            console.log('reauthenticating.......')
-            // TODO()
+            console.log('reauth button clicked')
+            window.ideApi.postMessage({ command: 'reauth' })
+
         },
         handleCancel() {
-            console.log('signout')
-            // TODO()
+            console.log('signout button clicked')
+            window.ideApi.postMessage({ command: 'signout' })
         }
     }
 })

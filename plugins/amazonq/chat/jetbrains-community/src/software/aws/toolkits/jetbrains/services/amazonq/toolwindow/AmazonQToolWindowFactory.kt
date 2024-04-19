@@ -12,23 +12,19 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.aggregateQConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
-    private val isConnected = AtomicBoolean()
-
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
 
@@ -41,14 +37,20 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        val hasConnection = isQConnected(project).also {
-            isConnected.set(it)
-        }
-        val component = if (hasConnection) {
+        val qConnState = aggregateQConnectionState(project)
+        val component = if (qConnState == BearerTokenAuthState.AUTHORIZED) {
             AmazonQToolWindow.getInstance(project).component
+        } else if (qConnState == BearerTokenAuthState.NEEDS_REFRESH) {
+            LOG.debug { "returning login window; no Q connection found" }
+            WebviewPanel.getInstance(project).let {
+                it.browser?.prepareBrowser(BrowserState(FeatureId.Q, reauth = true))
+                it.component
+            }
         } else {
-            WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
-            WebviewPanel.getInstance(project).component
+            WebviewPanel.getInstance(project).let {
+                it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
+                it.component
+            }
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
@@ -68,7 +70,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
-        val isQConnection = newConnection?.let {
+        val isNewConnectionQConnection = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = Q_SCOPES + CODEWHISPERER_SCOPES
 
@@ -78,19 +80,18 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
-        val isQConnected = (isQConnection || isQConnected(project)).also {
-            val old = isConnected.getAndSet(it)
-            if (old == it) {
-                return
-            }
-        }
+        val qConnState = aggregateQConnectionState(project)
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
-        val component = if (isQConnected) {
-            LOG.debug { "returning Q-chat window; isQConnection=$isQConnection; hasPinnedConnection=$isQConnection" }
+        val component = if (isNewConnectionQConnection || qConnState == BearerTokenAuthState.AUTHORIZED) {
             AmazonQToolWindow.getInstance(project).component
-        } else {
+        } else if (qConnState == BearerTokenAuthState.NEEDS_REFRESH) {
             LOG.debug { "returning login window; no Q connection found" }
+            WebviewPanel.getInstance(project).let {
+                it.browser?.prepareBrowser(BrowserState(FeatureId.Q, reauth = true))
+                it.component
+            }
+        } else {
             WebviewPanel.getInstance(project).let {
                 it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
                 it.component
@@ -112,14 +113,4 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
     }
-}
-
-private fun isQConnected(project: Project): Boolean {
-    val manager = ToolkitConnectionManager.getInstance(project)
-    val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
-    val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
-    getLogger<AmazonQToolWindow>().debug {
-        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=$isQEnabled; isFeatureEnabled(CW)=$isCWEnabled"
-    }
-    return isQEnabled && isCWEnabled
 }

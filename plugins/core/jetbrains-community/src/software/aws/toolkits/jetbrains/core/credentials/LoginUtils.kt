@@ -17,12 +17,18 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
@@ -203,5 +209,41 @@ internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
         }
 
         message(baseMessage, "${e.javaClass.name}: ${e.message}")
+    }
+}
+
+fun AwsBearerTokenConnection?.connectionState(): BearerTokenAuthState {
+    if (this == null) {
+        return BearerTokenAuthState.NOT_AUTHENTICATED
+    }
+
+    val provider = this.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider ?: run {
+        getLogger<DefaultToolkitConnectionManager>().debug { "isFeatureEnabled: provider can't be cast to BearerTokenProvider" }
+        return BearerTokenAuthState.NOT_AUTHENTICATED
+    }
+    return provider.state()
+}
+
+// TODO: placeholder, need to move to plugin:amazonq when codewhisperer folder is moved
+fun aggregateQConnectionState(project: Project): BearerTokenAuthState {
+    val manager = ToolkitConnectionManager.getInstance(project)
+    val qConnection = manager.activeConnectionForFeature(QConnection.getInstance())
+    val cwConnection = manager.activeConnectionForFeature(CodeWhispererConnection.getInstance())
+
+    val qState = (qConnection as? AwsBearerTokenConnection).connectionState()
+    val cwState = (cwConnection as? AwsBearerTokenConnection).connectionState()
+    LOG.debug {
+        "Q-State=$qState; CW-State=$cwState"
+    }
+
+    return when {
+        qState == BearerTokenAuthState.AUTHORIZED && cwState == BearerTokenAuthState.AUTHORIZED -> BearerTokenAuthState.AUTHORIZED
+
+        qState == BearerTokenAuthState.NOT_AUTHENTICATED || cwState == BearerTokenAuthState.NOT_AUTHENTICATED -> BearerTokenAuthState.NOT_AUTHENTICATED
+
+        // refreshing either connection will force pinning manager to pin the other feature to the newer connection (which is supposed to have all Q scopes)
+        qState == BearerTokenAuthState.NEEDS_REFRESH || cwState == BearerTokenAuthState.NEEDS_REFRESH -> BearerTokenAuthState.NEEDS_REFRESH
+
+        else -> BearerTokenAuthState.NOT_AUTHENTICATED
     }
 }
