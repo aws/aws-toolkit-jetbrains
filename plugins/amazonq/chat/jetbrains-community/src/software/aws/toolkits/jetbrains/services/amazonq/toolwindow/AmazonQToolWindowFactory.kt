@@ -59,7 +59,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
-        val isQConnection = newConnection?.let {
+        val isNewConnectionForQ = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = Q_SCOPES + CODEWHISPERER_SCOPES
 
@@ -69,11 +69,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
-        val isQConnected = (isQConnection || isQConnected(project))
-
         // isQConnected alone is not robust and there is race condition (read/update connection states)
-        val component = if (isQConnected) {
-            LOG.debug { "returning Q-chat window; isQConnection=$isQConnection; hasPinnedConnection=$isQConnection" }
+        val component = if ((isNewConnectionForQ || isQConnected(project))) {
+            LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
             AmazonQToolWindow.getInstance(project).component
         } else {
             LOG.debug { "returning login window; no Q connection found" }
