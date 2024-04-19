@@ -189,6 +189,14 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 currentAuthorization?.progressIndicator?.cancel()
             }
 
+            "signout" -> {
+                // TODO: implementation
+            }
+
+            "reauth" -> {
+                // TODO: implementation
+            }
+
             else -> {
                 error("received unknown command from Toolkit login browser")
             }
