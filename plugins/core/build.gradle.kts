@@ -40,5 +40,9 @@ configurations {
 }
 
 tasks.check {
-    dependsOn(":plugin-core:*:check")
+    val coreProject = project(":plugin-core").subprojects
+    coreProject.forEach {
+        dependsOn(":plugin-core:${it.name}:check")
+    }
+    //dependsOn(":plugin-core:jetbrains-community:check",":plugin-core:jetbrains-ultimate:check")
 }
