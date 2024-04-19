@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsR
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.utils.IoUtils
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
@@ -226,14 +227,15 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     fun createUploadUrl(md5Content: String, artifactType: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
         CreateUploadUrlRequest.builder()
             .contentMd5(md5Content)
-            .artifactType(artifactType) // .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
+            .artifactType(artifactType)
+            .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
             .build()
     )
-//
-//    private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
-//        CodeWhispererConstants.CodeAnalysisScope.FILE -> UploadIntent.AUTOMATIC_FILE_SECURITY_SCAN
-//        CodeWhispererConstants.CodeAnalysisScope.PROJECT -> UploadIntent.FULL_PROJECT_SECURITY_SCAN
-//    }
+
+    private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
+        CodeWhispererConstants.CodeAnalysisScope.FILE -> UploadIntent.AUTOMATIC_FILE_SECURITY_SCAN
+        CodeWhispererConstants.CodeAnalysisScope.PROJECT -> UploadIntent.FULL_PROJECT_SECURITY_SCAN
+    }
 
     @Throws(IOException::class)
     fun uploadArtifactToS3(url: String, uploadId: String, fileToUpload: File, md5: String, kmsArn: String?) {
@@ -264,7 +266,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 CreateCodeScanRequest.builder()
                     .clientToken(clientToken.toString())
                     .programmingLanguage { it.languageName(language) }
-                    .artifacts(artifactsMap) // .scope(sessionContext.codeAnalysisScope.toString())
+                    .artifacts(artifactsMap)
+                    .scope(sessionContext.codeAnalysisScope.value)
                     .build()
             )
         } catch (e: Exception) {

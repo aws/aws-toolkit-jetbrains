@@ -31,7 +31,8 @@ class CodeWhispererSdkMapperUtilTest {
         val expected = CreateCodeScanRequest.builder()
             .programmingLanguage { it.languageName("python") }
             .artifacts(mapOf(ArtifactType.SOURCE_CODE to "1", ArtifactType.BUILT_JARS to "2"))
-            .clientToken("token") // .scope("PROJECT")
+            .clientToken("token")
+            .scope("PROJECT")
             .build()
 
         val actual = expected.transform()

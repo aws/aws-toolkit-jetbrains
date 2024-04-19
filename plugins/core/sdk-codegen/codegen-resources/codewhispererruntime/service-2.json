@@ -1344,7 +1344,8 @@
                 "clientToken": {
                     "shape": "StartCodeAnalysisRequestClientTokenString",
                     "idempotencyToken": true
-                }
+                },
+                "scope":{"shape": "CodeAnalysisScope"}
             }
         },
         "StartCodeAnalysisRequestClientTokenString":{

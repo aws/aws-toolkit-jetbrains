@@ -445,7 +445,7 @@ class CodeWhispererClientAdaptorTest {
                 ProgrammingLanguage.builder()
                     .languageName("python")
                     .build()
-            ) // .scope("PROJECT")
+            ).scope("PROJECT")
             .build()
 
         val createUploadUrlRequest = CreateUploadUrlRequest.builder()

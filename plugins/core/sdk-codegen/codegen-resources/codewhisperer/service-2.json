@@ -186,7 +186,8 @@
                 "clientToken":{
                     "shape":"CreateCodeScanRequestClientTokenString",
                     "idempotencyToken":true
-                }
+                },
+                "scope":{"shape": "CodeAnalysisScope"}
             }
         },
         "CreateCodeScanRequestClientTokenString":{
