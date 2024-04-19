@@ -83,7 +83,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     }
 
     // When Chat API responds to a user message (full response streamed)
-    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int) {
+    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, numberOfCodeBlocks: Int) {
         AmazonqTelemetry.addMessage(
             cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
             cwsprChatMessageId = response.messageId,
@@ -96,7 +96,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatResponseCodeSnippetCount = 0,
             cwsprChatResponseCode = statusCode,
             cwsprChatSourceLinkCount = response.relatedSuggestions?.size,
-            cwsprChatReferencesCount = 0, // TODO
+            cwsprChatReferencesCount = numberOfCodeBlocks,
             cwsprChatFollowUpCount = response.followUps?.size,
             cwsprChatTimeToFirstChunk = getResponseStreamTimeToFirstChunk(response.tabId).toInt(),
             cwsprChatTimeBetweenChunks = "[${getResponseStreamTimeBetweenChunks(response.tabId).joinToString(",")}]",
@@ -122,6 +122,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             (responseStreamTotalTime[response.tabId] ?: 0).toDouble(),
             data.message.length,
             responseLength,
+            numberOfCodeBlocks
         )
     }
 
