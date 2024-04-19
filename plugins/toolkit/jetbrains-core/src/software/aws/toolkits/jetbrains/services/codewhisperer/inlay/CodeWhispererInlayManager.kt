@@ -8,15 +8,18 @@ import com.intellij.codeInsight.inline.completion.render.InlineSuffixRenderer
 import com.intellij.idea.AppMode
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorCustomElementRenderer
+import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 
 class CodeWhispererInlayManager {
+    private val existingInlays = mutableListOf<Inlay<EditorCustomElementRenderer>>()
     fun updateInlays(states: InvocationContext, chunks: List<RecommendationChunk>) {
         val editor = states.requestContext.editor
-        clearInlays(editor)
+        clearInlays()
 
         chunks.forEach { chunk ->
             createCodeWhispererInlays(editor, chunk.inlayOffset, chunk.text, states.popup)
@@ -36,14 +39,19 @@ class CodeWhispererInlayManager {
             otherLines = ""
         }
 
-        val firstLineRenderer =
-            if (!AppMode.isRemoteDevHost()) {
-                CodeWhispererInlayInlineRenderer(firstLine)
-            } else {
-                InlineSuffixRenderer(editor, firstLine)
+        if (firstLine.isNotEmpty()) {
+            val firstLineRenderer =
+                if (!AppMode.isRemoteDevHost()) {
+                    CodeWhispererInlayInlineRenderer(firstLine)
+                } else {
+                    InlineSuffixRenderer(editor, firstLine)
+                }
+            val inlineInlay = editor.inlayModel.addInlineElement(startOffset, true, firstLineRenderer)
+            inlineInlay?.let {
+                existingInlays.add(it)
+                Disposer.register(popup, it)
             }
-        val inlineInlay = editor.inlayModel.addInlineElement(startOffset, true, firstLineRenderer)
-        inlineInlay?.let { Disposer.register(popup, it) }
+        }
 
         if (otherLines.isEmpty()) {
             return
@@ -61,41 +69,17 @@ class CodeWhispererInlayManager {
             0,
             otherLinesRenderer
         )
-        blockInlay?.let { Disposer.register(popup, it) }
+        blockInlay?.let {
+            existingInlays.add(it)
+            Disposer.register(popup, it)
+        }
     }
 
-    fun clearInlays(editor: Editor) {
-        if (!AppMode.isRemoteDevHost()) {
-            editor.inlayModel.getInlineElementsInRange(
-                0,
-                editor.document.textLength,
-                CodeWhispererInlayInlineRenderer::class.java
-            ).forEach { disposable ->
-                Disposer.dispose(disposable)
-            }
-            editor.inlayModel.getBlockElementsInRange(
-                0,
-                editor.document.textLength,
-                CodeWhispererInlayBlockRenderer::class.java
-            ).forEach { disposable ->
-                Disposer.dispose(disposable)
-            }
-        } else {
-            editor.inlayModel.getInlineElementsInRange(
-                0,
-                editor.document.textLength,
-                InlineSuffixRenderer::class.java
-            ).forEach { disposable ->
-                Disposer.dispose(disposable)
-            }
-            editor.inlayModel.getBlockElementsInRange(
-                0,
-                editor.document.textLength,
-                InlineBlockElementRenderer::class.java
-            ).forEach { disposable ->
-                Disposer.dispose(disposable)
-            }
+    fun clearInlays() {
+        existingInlays.forEach {
+            Disposer.dispose(it)
         }
+        existingInlays.clear()
     }
 
     companion object {

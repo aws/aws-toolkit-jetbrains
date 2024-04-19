@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.caws.CawsConstants
 /**
  * @return true if running in any type of remote environment
  */
-fun isRunningOnRemoteBackend() = System.getenv("REMOTE_DEV_LAUNCHER_NAME_FOR_USAGE") != null
+fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
 
 /**
  * @return true if running in a codecatalyst remote environment

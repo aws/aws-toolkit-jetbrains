@@ -116,7 +116,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         if (isCodeWhispererExpired(project)) {
             AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            // AnimatedIcon caan't serialize over remote host
+            // AnimatedIcon can't serialize over remote host
             if (!AppMode.isRemoteDevHost()) {
                 AnimatedIcon.Default()
             } else {

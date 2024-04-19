@@ -328,6 +328,7 @@ class CodeWhispererPopupManager {
 
         // TODO: visibleAreaChanged listener is not getting triggered in remote environment when scrolling
         if (popup.isVisible) {
+            // Changing the position of BackendBeAbstractPopup does not work
             if (!shouldHidePopup && !AppMode.isRemoteDevHost()) {
                 popup.setLocation(relativePopupLocationToEditor.screenPoint)
                 popup.size = popup.preferredContentSize
@@ -343,12 +344,13 @@ class CodeWhispererPopupManager {
             } else {
                 // TODO: For now, the popup will always display below the suggestions, without checking
                 // if the location the popup is about to show at stays in the editor window or not, due to
-                // visibleArea not functioning properly(including its related visibleAreaListeners).
+                // the limitation of BackendBeAbstractPopup
                 val caretVisualPosition = editor.offsetToVisualPosition(editor.caretModel.offset)
 
-                // display popup x lines below the caret where x is # of lines of suggestions
+                // display popup x lines below the caret where x is # of lines of suggestions, since inlays don't
+                // count as visual lines, the final math will always be just increment 1 line.
                 val popupPositionForRemote = VisualPosition(
-                    caretVisualPosition.line + lineCount + additionalLines + userInputLines - overlappingLinesCount,
+                    caretVisualPosition.line + 1,
                     caretVisualPosition.column
                 )
                 editor.putUserData(PopupFactoryImpl.ANCHOR_POPUP_POSITION, popupPositionForRemote)
