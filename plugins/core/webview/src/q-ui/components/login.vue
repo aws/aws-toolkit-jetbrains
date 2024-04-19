@@ -3,8 +3,7 @@
 
 <!-- This Vue File is the login webview of AWS Toolkit and Amazon Q.-->
 <template>
-    <div v-bind:class="[disabled ? 'disabled-form' : '']" class="auth-container" @click="handleDocumentClick">
-
+    <div v-bind:class="[disabled ? 'disabled-form' : '']" class="auth-container">
         <Logo
             :app="app"
             :is-connected="stage === 'CONNECTED'"
@@ -17,18 +16,15 @@
 
         <template v-if="stage === 'AUTHENTICATING'">
             <div class="font-amazon">
-                <div v-if="app === 'TOOLKIT' && profileName.length > 0" class="title">Authenticating...</div>
-                <div v-else>
-                    <div class="title bottom-small-gap">Authenticating in browser...</div>
-                    <div v-if="authorizationCode?.length !== 0" class="confirmation-code-container bottom-small-gap">
-                        <div class="hint">CONFIRMATION CODE</div>
-                        <div class="confirmation-code">{{ this.authorizationCode }}</div>
-                    </div>
+                <div class="title bottom-small-gap">{{ this.authenticatingText }}</div>
+                <div v-if="requireConfirmationCodeOrNot" class="confirmation-code-container bottom-small-gap">
+                    <div class="hint">CONFIRMATION CODE</div>
+                    <div class="confirmation-code">{{ this.authorizationCode }}</div>
                 </div>
                 <button
                     class="login-flow-button cancel-button font-amazon"
-                    v-on:click="handleCancelButton()"
-                    :disabled="!isAuthorizationInProgress">Cancel
+                    v-on:click="handleCancelButton()">
+                    Cancel
                 </button>
             </div>
         </template>
@@ -43,19 +39,8 @@ import SsoLoginForm from "./ssoLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
 import Reauth from "./reauth.vue";
-import {Stage} from "../../model";
+import {LoginIdentifier, LoginOption, Stage} from "../../model";
 
-enum LoginOption {
-    NONE,
-    BUILDER_ID,
-    ENTERPRISE_SSO,
-    IAM_CREDENTIAL,
-    EXISTING_LOGINS,
-}
-
-function isBuilderId(url: string) {
-    return url === 'https://view.awsapps.com/start'
-}
 export default defineComponent({
     name: 'Login',
     components: {
@@ -74,14 +59,13 @@ export default defineComponent({
             type: String,
             default: '',
             required: true,
-        },
+        }
     },
     data() {
         return {
             existingLogin: { id: -1, text: '', title: '' },
-            selectedLoginOption: LoginOption.NONE,
+            selectedLoginOption: undefined as (LoginOption | undefined),
             app: this.app,
-            LoginOption,
             profileName: '',
         }
     },
@@ -92,31 +76,47 @@ export default defineComponent({
         cancellable(): boolean {
             return this.$store.state.cancellable
         },
-        authorizationCode(): string | undefined {
-            return this.$store.state.authorizationCode
+        authorizationCode: {
+            get() {
+                return this.$store.state.authorizationCode
+            },
+            set(value: string | undefined) {
+                this.$store.commit('setAuthorizationCode', value)
+            }
         },
         isAuthorizationInProgress(): boolean {
             return this.authorizationCode !== undefined
+        },
+        authenticatingText(): string {
+            if (this.selectedLoginOption?.id === LoginIdentifier.IAM_CREDENTIAL) {
+                return 'Connecting to IAM...'
+            } else if (this.selectedLoginOption?.id === LoginIdentifier.BUILDER_ID || this.selectedLoginOption?.id === LoginIdentifier.ENTERPRISE_SSO) {
+                return 'Authenticating in browser...'
+            }
+
+            return ''
+        },
+        requireConfirmationCodeOrNot(): boolean {
+            return this.selectedLoginOption?.requiresBrowser() === true && this.authorizationCode?.length !== 0
         }
     },
     methods: {
-        mutateStage(stage: Stage) {
+        mutateStage(stage: Stage, loginOption: LoginOption | undefined) {
+            console.log('mutating stage=', stage)
+            console.log('mutating loginOption=', loginOption)
+            this.selectedLoginOption = loginOption
             this.$store.commit('setStage', stage)
-        },
-        handleDocumentClick(event: any) {
-            const isClickInsideSelectableItems = event.target.closest('.item-container')
-            if (!isClickInsideSelectableItems) {
-                this.selectedLoginOption = 0
-            }
         },
         handleBackButtonClick() {
             if (this.cancellable && this.stage === 'START') {
                 window.ideApi.postMessage({ command: 'toggleBrowser' })
             }
-            this.mutateStage('START')
+            this.mutateStage('START', undefined)
         },
         handleCancelButton() {
             window.ideClient.cancelLogin()
+            this.mutateStage('START', undefined)
+            this.authorizationCode = undefined
         },
         changeTheme(darkMode: boolean) {
             const oldCssId = darkMode ? "jb-light" : "jb-dark"
