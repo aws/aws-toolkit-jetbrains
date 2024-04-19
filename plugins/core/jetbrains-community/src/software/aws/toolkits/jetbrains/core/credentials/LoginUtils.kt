@@ -170,7 +170,7 @@ fun authAndUpdateConfig(
             } else {
                 null
             }
-        } ?: emptyList()
+        }.orEmpty()
     }
 
     // TODO: what if the old scope is deprecated?
