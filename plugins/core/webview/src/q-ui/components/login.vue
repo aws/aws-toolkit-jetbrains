@@ -10,7 +10,8 @@
             :is-connected="stage === 'CONNECTED'"
         />
 
-        <LoginOptions :app="app" v-if="stage === 'START' || stage === 'TOOLKIT_BEARER'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
+        <Reauth v-if="stage === 'REAUTH'" :app="app"/>
+        <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
         <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
 
@@ -41,6 +42,7 @@ import Logo from './logo.vue'
 import SsoLoginForm from "./ssoLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
+import Reauth from "./reauth.vue";
 import {Stage} from "../../model";
 
 enum LoginOption {
@@ -60,7 +62,8 @@ export default defineComponent({
         Logo,
         SsoLoginForm,
         LoginOptions,
-        AwsProfileForm
+        AwsProfileForm,
+        Reauth
     },
     props: {
         disabled: {

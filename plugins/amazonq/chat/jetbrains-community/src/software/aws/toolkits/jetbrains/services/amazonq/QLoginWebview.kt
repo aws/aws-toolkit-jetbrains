@@ -139,6 +139,14 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 currentAuthorization?.progressIndicator?.cancel()
             }
 
+            "signout" -> {
+                // TODO: implementation
+            }
+
+            "reauth" -> {
+                // TODO: implementation
+            }
+
             else -> {
                 error("received unknown command from Q browser: $command")
             }
@@ -174,9 +182,12 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             objectMapper.writeValueAsString(it)
         }
 
+        // TODO: pass "REAUTH" if connection expires
+        val stage = "START"
+
         val jsonData = """
             {
-                stage: 'START',
+                stage: '$stage',
                 regions: $regions,
                 idcInfo: {
                     profileName: '${lastLoginIdcInfo.profileName}',

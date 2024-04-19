@@ -221,9 +221,12 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
         val regionJson = objectMapper.writeValueAsString(regions)
 
+        // TODO: pass "REAUTH" if connection expires
+        val stage = "START"
+
         val jsonData = """
             {
-                stage: 'START',
+                stage: '$stage',
                 regions: $regionJson,
                 idcInfo: {
                     profileName: '${lastLoginIdcInfo.profileName}',
