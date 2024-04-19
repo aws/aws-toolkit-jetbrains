@@ -12,7 +12,7 @@ intellij {
 
 tasks.check {
     val serviceSubdirs = project(":plugin-toolkit").subprojects
-        .map { it.name }.filter { it != "intellij"}
+        .map { it.name }.filter { it != "intellij" }
     serviceSubdirs.forEach {
         dependsOn(":plugin-toolkit:$it:check")
     }
