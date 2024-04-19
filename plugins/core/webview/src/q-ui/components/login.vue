@@ -26,8 +26,8 @@
                 </div>
                 <button
                     class="login-flow-button cancel-button font-amazon"
-                    v-on:click="handleCancelButton()"
-                    :disabled="!isAuthorizationInProgress">Cancel
+                    v-on:click="handleCancelButton()">
+                    Cancel
                 </button>
             </div>
         </template>
@@ -89,8 +89,13 @@ export default defineComponent({
         cancellable(): boolean {
             return this.$store.state.cancellable
         },
-        authorizationCode(): string | undefined {
-            return this.$store.state.authorizationCode
+        authorizationCode: {
+            get() {
+                return this.$store.state.authorizationCode
+            },
+            set(value: string | undefined) {
+                this.$store.commit('setAuthorizationCode', value)
+            }
         },
         isAuthorizationInProgress(): boolean {
             return this.authorizationCode !== undefined
@@ -114,6 +119,8 @@ export default defineComponent({
         },
         handleCancelButton() {
             window.ideClient.cancelLogin()
+            this.mutateStage('START')
+            this.authorizationCode = undefined
         },
         changeTheme(darkMode: boolean) {
             const oldCssId = darkMode ? "jb-light" : "jb-dark"
