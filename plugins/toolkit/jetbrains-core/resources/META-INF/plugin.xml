@@ -223,7 +223,7 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultDynamicResourcesSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.GettingStartedSettings"/>
 
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.settings.LambdaSettings"/>
 
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.DeploySettings"/>
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.SyncSettings"/>
@@ -291,6 +291,13 @@
             bundle="software.aws.toolkits.resources.MessagesBundle"
             key="aws.settings.toolkit.configurable.title"
             instance="software.aws.toolkits.jetbrains.settings.ToolkitSettingsConfigurable"
+        />
+        <projectConfigurable
+            parentId="aws.toolkit"
+            id="aws.lambda"
+            bundle="software.aws.toolkits.resources.MessagesBundle"
+            key="aws.settings.lambda.configurable.title"
+            instance="software.aws.toolkits.jetbrains.services.lambda.settings.LambdaSettingsConfigurable"
         />
         <applicationConfigurable
             parentId="aws.toolkit"

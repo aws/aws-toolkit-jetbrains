@@ -56,14 +56,6 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
     private val profilesNotification: ComboBox<ProfilesNotification> = ComboBox(ProfilesNotification.values())
 
     override fun createComponent(): JComponent = panel {
-        group(message("aws.settings.serverless_label")) {
-            row {
-                label(message("aws.settings.sam.location"))
-                // samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
-                cell(samExecutablePath).align(AlignX.FILL).resizableColumn()
-                browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
-            }
-        }
         group(message("aws.settings.global_label")) {
             row {
                 label(message("settings.credentials.prompt_for_default_region_switch.setting_label"))
@@ -81,6 +73,12 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
             }
         }
         group(message("executableCommon.configurable.title")) {
+            row {
+                label(message("aws.settings.sam.location"))
+                // samExecutablePath = createCliConfigurationElement(samExecutableInstance, SAM)
+                cell(samExecutablePath).align(AlignX.FILL).resizableColumn()
+                browserLink(message("aws.settings.learn_more"), HelpIds.SAM_CLI_INSTALL.url)
+            }
             ToolType.EP_NAME.extensionList.forEach { toolType ->
                 row(toolType.displayName) {
                     textFieldWithBrowseButton(fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor())
@@ -99,13 +97,6 @@ class ToolkitSettingsConfigurable : SearchableConfigurable {
 
                     browserLink(message("aws.settings.learn_more"), toolType.documentationUrl())
                 }
-            }
-        }
-        group(message("aws.settings.lambda.configurable.title")) {
-            row {
-                checkBox(message("aws.settings.sam.show_all_gutter_icons"))
-                    .bindSelected(LambdaSettings.getInstance()::showAllHandlerGutterIcons)
-                    .comment(message("aws.settings.sam.show_all_gutter_icons_tooltip"))
             }
         }
         group(message("aws.toolkit.experimental.title")) {
