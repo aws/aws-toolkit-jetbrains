@@ -164,7 +164,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
             "reauth" -> {
                 // TODO: implementation
-
             }
             else -> {
                 error("received unknown command from Q browser: $command")
