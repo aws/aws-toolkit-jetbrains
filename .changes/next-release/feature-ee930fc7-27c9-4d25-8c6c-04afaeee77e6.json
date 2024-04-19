@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Amazon Q Chat: Added metric parameters to recordAddMessage telemetry event."
+}
