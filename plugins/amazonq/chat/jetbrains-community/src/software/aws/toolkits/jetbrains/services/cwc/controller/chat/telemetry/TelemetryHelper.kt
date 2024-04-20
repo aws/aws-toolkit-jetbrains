@@ -96,7 +96,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatResponseCodeSnippetCount = numberOfCodeBlocks,
             cwsprChatResponseCode = statusCode,
             cwsprChatSourceLinkCount = response.relatedSuggestions?.size,
-            cwsprChatReferencesCount = 0,
+            cwsprChatReferencesCount = 0, // TODO
             cwsprChatFollowUpCount = response.followUps?.size,
             cwsprChatTimeToFirstChunk = getResponseStreamTimeToFirstChunk(response.tabId).toInt(),
             cwsprChatTimeBetweenChunks = "[${getResponseStreamTimeBetweenChunks(response.tabId).joinToString(",")}]",
@@ -106,7 +106,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatConversationType = CwsprChatConversationType.Chat,
             credentialStartUrl = getStartUrl(context.project)
         )
-        val x=numberOfCodeBlocks
+
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
 
