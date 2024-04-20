@@ -93,10 +93,10 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
             cwsprChatActiveEditorTotalCharacters = data.activeFileContext.focusAreaContext?.codeSelection?.length,
             cwsprChatActiveEditorImportCount = data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size,
-            cwsprChatResponseCodeSnippetCount = 0,
+            cwsprChatResponseCodeSnippetCount = numberOfCodeBlocks,
             cwsprChatResponseCode = statusCode,
             cwsprChatSourceLinkCount = response.relatedSuggestions?.size,
-            cwsprChatReferencesCount = numberOfCodeBlocks,
+            cwsprChatReferencesCount = 0, // TODO
             cwsprChatFollowUpCount = response.followUps?.size,
             cwsprChatTimeToFirstChunk = getResponseStreamTimeToFirstChunk(response.tabId).toInt(),
             cwsprChatTimeBetweenChunks = "[${getResponseStreamTimeBetweenChunks(response.tabId).joinToString(",")}]",
