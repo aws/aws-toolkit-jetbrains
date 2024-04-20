@@ -10,8 +10,8 @@
         />
 
         <Reauth v-if="stage === 'REAUTH'" :app="app" @stageChanged="mutateStage"/>
-        <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
-        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
+        <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
+        <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage"/>
 
         <template v-if="stage === 'AUTHENTICATING'">
@@ -39,7 +39,7 @@ import SsoLoginForm from "./ssoLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
 import Reauth from "./reauth.vue";
-import {LoginIdentifier, LoginOption, Stage} from "../../model";
+import {BuilderId, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
 
 export default defineComponent({
     name: 'Login',
@@ -72,6 +72,9 @@ export default defineComponent({
     computed: {
         stage(): Stage {
             return this.$store.state.stage
+        },
+        feature(): Feature {
+            return this.$store.state.feature
         },
         cancellable(): boolean {
             return this.$store.state.cancellable
@@ -124,6 +127,22 @@ export default defineComponent({
             document.body.classList.add(newCssId);
             document.body.classList.remove(oldCssId);
         },
+        login(type: LoginOption) {
+            this.mutateStage('AUTHENTICATING', type)
+            if (type instanceof IdC) {
+                window.ideApi.postMessage({
+                    command: 'loginIdC',
+                    url: type.url,
+                    region: type.region,
+                    profileName: type.profileName,
+                    feature: this.feature
+                })
+            } else if (type instanceof BuilderId) {
+                window.ideApi.postMessage({ command: 'loginBuilderId' })
+            } else if (type instanceof LongLivedIAM) {
+
+            }
+        }
     },
     mounted() {
         console.log('login mounted')
