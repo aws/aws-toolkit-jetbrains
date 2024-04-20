@@ -130,7 +130,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     // TODO: telemetry
                 }
 
-                val scope = if (feature == FeatureId.Codecatalyst.toString()) {
+                val scope = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
                     CODECATALYST_SCOPES
                 } else {
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
