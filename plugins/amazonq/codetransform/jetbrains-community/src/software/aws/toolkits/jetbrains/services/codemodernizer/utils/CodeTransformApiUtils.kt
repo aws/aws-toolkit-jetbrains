@@ -84,15 +84,15 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     didSleepOnce = true
                 }
                 if (isDisposed.get()) throw AlreadyDisposedException("The invoker is disposed.")
-                //transformationResponse = clientAdaptor.getCodeModernizationJobMock(this.id, statusCount)
-                transformationResponse = clientAdaptor.getCodeModernizationJob(this.id)
+                transformationResponse = clientAdaptor.getCodeModernizationJobMock(this.id, statusCount)
+                //transformationResponse = clientAdaptor.getCodeModernizationJob(this.id)
                 statusCount++
                 val newStatus = transformationResponse?.transformationJob()?.status() ?: throw RuntimeException("Unable to get job status")
                 var newPlan: TransformationPlan? = null
                 if (newStatus in STATES_WHERE_PLAN_EXIST) {
                     sleep(sleepDurationMillis)
-                    newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
-                    //newPlan = clientAdaptor.getCodeModernizationPlanMock(this, count).transformationPlan()
+                    //newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
+                    newPlan = clientAdaptor.getCodeModernizationPlanMock(this, count).transformationPlan()
                     count++
                 }
                 if (newStatus != state) {

@@ -15,10 +15,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
@@ -74,10 +74,10 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
-import java.nio.file.Path
-import java.nio.file.Paths
+import java.nio.file.Files
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.io.path.pathString
 
 const val AMAZON_Q_FEEDBACK_DIALOG_KEY = "Amazon Q"
 
@@ -448,11 +448,29 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
 
-            val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId)
+            //val tmpDir = createTempDirectory("", null)
+            val tmpDir = File("/Users/mkfan/Desktop/dependency")
+
+            val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
+
             if (hilDownloadArtifact != null) {
+                codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
+
+                //val tmpDir = createTempDirectory("", null)
+
+                val copyPomDir = createTempDirectory(tmpDir, "dependency-report", null)
+                val copyPomFile = File(copyPomDir, "pom.xml")
+
+                val existingValue = hilDownloadArtifact.pomFile.readText()
+
+                // TODO need to pass user selection version
+                val newValue = existingValue.replace("*****", hilDownloadArtifact.manifest.sourcePomVersion)
+
+                // TODO error handling
+                copyPomFile.writeText(newValue)
+
 
                 // TODO store path in session
-                codeTransformationSession?.setHilDirectoryPath(hilDownloadArtifact.dirPath)
 
                 CodeTransformMessageListener.instance.onTransformPaused(hilDownloadArtifact)
 
@@ -840,14 +858,25 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     suspend fun tryResumeWithAlternativeVersion() {
         // TODO remove
         delay(3000)
-        val path = codeTransformationSession?.getHilDirectoryPath()
+
+        // TODO
+
+        val path = codeTransformationSession?.getHilTempDirectoryPath()
         if (path != null) {
-            val file = File(path + "/pomFolder/pom.xml")
+            // TODO need to handle path better
+            val file = File(path.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
             if (file.exists()) {
                 val existingValue = file.readText()
+
+                // TODO need to pass user selection version
                 val newValue = existingValue.replace("*****", "2.0")
                 file.writeText(newValue)
+
+                // TODO remove
                 print(path)
+
+                // TODO run maven install
+
             }
         }
 

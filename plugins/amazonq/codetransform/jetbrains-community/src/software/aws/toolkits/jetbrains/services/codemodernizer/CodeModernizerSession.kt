@@ -41,10 +41,12 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.nio.file.Path
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.io.path.pathString
 
 const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
@@ -70,14 +72,13 @@ class CodeModernizerSession(
     private var transformResult: CodeModernizerJobCompletedResult? = null
 
     // TODO code clean up for getter and setter
-    private var hilDirectoryPath: String? = null
+    private var hilTempDirectoryPath: Path? = null
 
-    fun getHilDirectoryPath() = hilDirectoryPath
+    fun getHilTempDirectoryPath() = hilTempDirectoryPath
 
-    fun setHilDirectoryPath(path: String) {
-        hilDirectoryPath = path
+    fun setHilTempDirectoryPath(path: Path) {
+        hilTempDirectoryPath = path
     }
-
     fun getLastMvnBuildResult(): MavenCopyCommandsResult? = mvnBuildResult
 
     fun setLastMvnBuildResult(result: MavenCopyCommandsResult) {
@@ -92,7 +93,8 @@ class CodeModernizerSession(
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
-    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven()
+    // TODO path to const
+    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.

@@ -144,10 +144,11 @@ fun replacePomVersion(pomFileVirtualFileReference: VirtualFile, version: String,
 }
 
 fun parseXmlDependenciesReport(pathToXmlDependency: String): DependencyUpdatesReport {
+    // TODO remove
     println("Inside parseXmlDependenciesReport $pathToXmlDependency")
 
     try {
-        val path = Path("/Users/mkfan/Desktop/report.xml")
+        val path = Path(pathToXmlDependency)
         val reportFile = path.toFile()
 
         // TODO remove

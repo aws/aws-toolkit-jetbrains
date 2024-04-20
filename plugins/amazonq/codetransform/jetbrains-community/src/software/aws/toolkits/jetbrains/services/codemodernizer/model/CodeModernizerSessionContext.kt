@@ -30,6 +30,7 @@ import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.Path
+import kotlin.io.path.pathString
 
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
@@ -83,9 +84,8 @@ data class CodeModernizerSessionContext(
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
 
-    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult {
-        val root = configurationFile.parent
-        val sourceFolder = File(root.path)
+    fun getDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
+        val sourceFolder = File(hilTempPomPath.pathString)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }

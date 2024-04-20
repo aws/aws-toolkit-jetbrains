@@ -237,17 +237,17 @@ fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuild
     logger.info { "Executing IntelliJ bundled Maven" }
 
     val currentTimestamp = System.currentTimeMillis()
-    val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
 
     try {
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+
         val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry)
         runnable.await()
         buildlogBuilder.appendLine(runnable.getOutput())
 
         // TODO remove
-        val report = parseXmlDependenciesReport("~/workplace/ide/test-projects/hil-test-repository/java-8-test-application/target/dependency-updates-aggregate-report.xml")
+        val report = parseXmlDependenciesReport("${sourceFolder.absolutePath}/target/dependency-updates-aggregate-report.xml")
         return MavenDependencyReportCommandsResult.Success(report)
 
     } catch (t: Throwable) {

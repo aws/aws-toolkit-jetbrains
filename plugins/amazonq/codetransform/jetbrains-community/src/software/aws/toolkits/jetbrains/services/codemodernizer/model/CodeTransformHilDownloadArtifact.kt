@@ -6,30 +6,29 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
+import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.Path
-import kotlin.io.path.isDirectory
-import kotlin.io.path.walk
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.pathString
 
 const val MANIFEST_PATH_IN_ZIP = "manifest.json"
+const val POM_PATH_IN_ZIP = "pomFolder/pom.xml"
 
 /**
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
  */
 open class CodeTransformHilDownloadArtifact(
-    val dirPath: String,
     val manifest: CodeTransformHilDownloadManifest,
-    val pomFile: VirtualFile,
+    val pomFile: File,
 ) {
 
     companion object {
-        private val tempDir = createTempDirectory("q-hil-dependency-artifacts", null)
         val LOG = getLogger<CodeTransformHilDownloadArtifact>()
         private val MAPPER = jacksonObjectMapper()
 
@@ -39,16 +38,15 @@ open class CodeTransformHilDownloadArtifact(
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeTransformHilDownloadArtifact].
          * If anything goes wrong during this process an exception is thrown.
          */
-        fun create(zipPath: String): CodeTransformHilDownloadArtifact {
-            val path = Path(zipPath)
-            if (path.exists()) {
-                if (!unzipFile(path, tempDir.toPath())) {
+        fun create(zipPath: Path, outputDirPath: Path): CodeTransformHilDownloadArtifact {
+            if (zipPath.exists()) {
+                if (!unzipFile(zipPath, outputDirPath)) {
                     LOG.error { "Could not unzip artifact" }
                     throw RuntimeException("Could not unzip artifact")
                 }
-                val manifest = extractManifest()
-                val pomFile = extractDependencyPom(manifest.pomFolderName)
-                return CodeTransformHilDownloadArtifact(tempDir.absolutePath, manifest, pomFile)
+                val manifest = extractManifest(outputDirPath)
+                val pomFile = extractDependencyPom(outputDirPath)
+                return CodeTransformHilDownloadArtifact(manifest, pomFile)
             }
             throw RuntimeException("Could not find artifact")
         }
@@ -56,11 +54,14 @@ open class CodeTransformHilDownloadArtifact(
         /**
          * Attempts to extract the manifest from the zip file. Throws an exception if the manifest is not found or cannot be serialized.
          */
-        private fun extractManifest(): CodeTransformHilDownloadManifest {
+        private fun extractManifest(dirPath: Path): CodeTransformHilDownloadManifest {
             try {
-                val manifestFile = tempDir.listFiles()
-                    ?.firstOrNull { Path(it.name).endsWith(MANIFEST_PATH_IN_ZIP) }
-                    ?: throw RuntimeException("Could not find manifest")
+                val manifestPath = dirPath.resolve(MANIFEST_PATH_IN_ZIP)
+                if (!manifestPath.exists()) {
+                    throw RuntimeException("Could not find manifest")
+                }
+
+                val manifestFile = File(manifestPath.pathString)
                 val manifest = MAPPER.readValue(manifestFile, CodeTransformHilDownloadManifest::class.java)
                 if (
                         // TODO fix type
@@ -81,17 +82,13 @@ open class CodeTransformHilDownloadArtifact(
         }
 
         @OptIn(ExperimentalPathApi::class)
-        private fun extractDependencyPom(pomFolderName: String): VirtualFile {
-            val fileSystem = LocalFileSystem.getInstance()
-            val pomDir = tempDir.toPath().resolve(pomFolderName)
-
-            if (!pomDir.isDirectory()) {
-                throw RuntimeException("Expected directory for pom was not a directory.")
+        private fun extractDependencyPom(dirPath: Path): File {
+            val pomFilePath = dirPath.resolve(POM_PATH_IN_ZIP)
+            if (!pomFilePath.exists()) {
+                throw RuntimeException("Could not find pom.xml")
             }
-            return pomDir.walk()
-                .map { fileSystem.refreshAndFindFileByNioFile(it) ?: throw RuntimeException("Could not find pom.xml") }
-                .toList()
-                .first()
+
+            return File(pomFilePath.pathString)
         }
     }
 }

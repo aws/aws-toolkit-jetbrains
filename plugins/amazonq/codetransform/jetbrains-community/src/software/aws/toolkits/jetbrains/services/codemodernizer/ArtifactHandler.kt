@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTrouble
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -64,30 +65,29 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     // TODO change return type
-    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String): CodeTransformHilDownloadArtifact? {
+    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
         // TODO remove 2
+        /*
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
 
-        val tempDir = createTempDirectory("q-hil-dependency-artifacts", null)
-
-        val tempZipFile = Files.createTempFile(Path.of(tempDir.path), null, ".zip")
+        val tmpPath = tmpDir.toPath()
+        val downloadZipFile = Files.createTempFile(tmpPath, null, ".zip")
         var totalDownloadBytes = 0
-        Files.newOutputStream(tempZipFile).use {
+        Files.newOutputStream(downloadZipFile).use {
             for (bytes in downloadResultsResponse) {
                 it.write(bytes)
                 totalDownloadBytes += bytes.size
             }
         }
-        LOG.info { "Successfully converted the download to a zip at ${tempZipFile.toAbsolutePath()}." }
-        val zipPath = tempZipFile.toAbsolutePath().toString()
+        LOG.info { "Successfully converted the download to a zip at ${downloadZipFile.toAbsolutePath()}." }
+         */
 
-        /*
         // TODO For testing only
-        val zipPath = "your-local-downloaded-zip-path"
-        */
+        val tmpPath = tmpDir.toPath()
+        val downloadZipFile = File("/Users/mkfan/Desktop/dependency/14472162176195545199.zip")
 
         return try {
-            CodeTransformHilDownloadArtifact.create(zipPath)
+            CodeTransformHilDownloadArtifact.create(downloadZipFile.toPath(), tmpPath.resolve("q-hil-dependency-artifacts"))
         } catch (e: Error) {
             // TODO error handling
             LOG.error { "Wrong " + e.message }
