@@ -42,7 +42,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFI
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.api.getArtifactIdentifiers
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerState
@@ -52,19 +51,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createPomCopy
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadResultArchive
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJsonValuesFromManifestFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTransformationStepsFixture
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.replacePomVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -74,7 +67,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
-import java.nio.file.Files
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.pathString
@@ -242,6 +234,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
          */
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         launchModernizationJob(session, copyResult)
+    }
+
+    suspend fun resumePollingFromHil() {
+        val result = handleJobStarted(managerState.getLatestJobId(), codeTransformationSession!!)
+        postModernizationJob(result)
     }
 
     /*
@@ -448,13 +445,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
 
-            //val tmpDir = createTempDirectory("", null)
-            val tmpDir = File("/Users/mkfan/Desktop/dependency")
+            val tmpDir = createTempDirectory("", null)
+            //val tmpDir = File("/Users/mkfan/Desktop/dependency")
 
             val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
 
             if (hilDownloadArtifact != null) {
                 codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
+                codeTransformationSession?.setHilDependencyManifest(hilDownloadArtifact.manifest)
 
                 //val tmpDir = createTempDirectory("", null)
 
@@ -839,7 +837,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
         isMvnRunning.set(true)
 
-        val result = codeTransformationSession?.getDependencyReportUsingMaven()
+        val result = codeTransformationSession?.getHilDependencyReportUsingMaven()
         var dependency: Dependency? = null
         if (result is MavenDependencyReportCommandsResult.Success) {
             dependency = result.report.dependencies?.filter { it.groupId == groupId && it.artifactId == artifactId }?.first()
@@ -855,44 +853,53 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     // TODO lots of code clean up
 
-    suspend fun tryResumeWithAlternativeVersion() {
+    suspend fun tryResumeWithAlternativeVersion(selectedVersion: String) {
         // TODO remove
         delay(3000)
 
         // TODO
 
         val path = codeTransformationSession?.getHilTempDirectoryPath()
-        if (path != null) {
-            // TODO need to handle path better
-            val file = File(path.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
-            if (file.exists()) {
-                val existingValue = file.readText()
+        if (path == null) {
+            // TODO handle error
+            return
+        }
 
-                // TODO need to pass user selection version
-                val newValue = existingValue.replace("*****", "2.0")
-                file.writeText(newValue)
+        // TODO need to handle path better
+        val file = File(path.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
+        if (!file.exists()) {
+            // TODO handle error
+            return
+        }
+        val existingValue = file.readText()
 
-                // TODO remove
-                print(path)
+        // TODO need to pass user selection version
+        val newValue = existingValue.replace("*****", selectedVersion)
+        file.writeText(newValue)
 
-                // TODO run maven install
+        // TODO remove
+        val installDependencyResult = codeTransformationSession?.getHilDependencyUsingMaven()
+
+        if (installDependencyResult is MavenCopyCommandsResult.Success) {
+            val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
+            if (zipCreationResult?.payload?.exists() == true) {
+
+                try {
+                    val result = codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
+                    LOG.info(result)
+                    delay(500)
+
+                    val result2 = codeTransformationSession?.resumeTransformFromHil()
+                    LOG.info(result2.toString())
+
+                    delay(500)
+                } catch (e: Error) {
+                    LOG.error(e.message)
+                    // TODO error handling
+                }
 
             }
         }
-
-        // TODO change version in downloaded pom.xml
-
-
-        // run maven locally with updated pom.xml
-        // TODO create upload URL
-        // TODO upload artifact
-        // TODO call resume
-        delay(3000)
-
-        val localZipPathForTesting = "your-zip-path"
-        // TODO create upload URL
-        // TODO upload the zip to s3
-        // TODO call resumeTransformation with COMPLETED status
 
         CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
     }

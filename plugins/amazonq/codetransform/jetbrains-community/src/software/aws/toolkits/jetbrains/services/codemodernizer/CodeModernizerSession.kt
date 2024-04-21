@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadManifest
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
@@ -46,7 +48,6 @@ import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.io.path.pathString
 
 const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
@@ -73,6 +74,13 @@ class CodeModernizerSession(
 
     // TODO code clean up for getter and setter
     private var hilTempDirectoryPath: Path? = null
+    private var hilDependencyManifest: CodeTransformHilDownloadManifest? = null
+
+    fun getHilDependencyManifest() = hilDependencyManifest
+
+    fun setHilDependencyManifest(manifest: CodeTransformHilDownloadManifest) {
+        hilDependencyManifest = manifest
+    }
 
     fun getHilTempDirectoryPath() = hilTempDirectoryPath
 
@@ -94,7 +102,11 @@ class CodeModernizerSession(
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
     // TODO path to const
-    fun getDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
+    fun getHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
+
+    fun getHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.getHilDependencyUsingMaven(hilTempDirectoryPath!!)
+
+    fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(hilTempDirectoryPath!!, hilDependencyManifest!!, selectedVersion)
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.
@@ -147,8 +159,8 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            val uploadId = uploadPayloadMock(payload)
-            //val uploadId = uploadPayload(payload)
+            //val uploadId = uploadPayloadMock(payload)
+            val uploadId = uploadPayload(payload)
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
@@ -197,8 +209,8 @@ class CodeModernizerSession(
         }
         LOG.info { "Starting job with uploadId [$uploadId] for $sourceLanguage -> $targetLanguage" }
         // TODO mock return paused job ID
-        return clientAdaptor.startCodeModernizationMock(uploadId, sourceLanguage, targetLanguage)
-        //return clientAdaptor.startCodeModernization(uploadId, sourceLanguage, targetLanguage)
+        //return clientAdaptor.startCodeModernizationMock(uploadId, sourceLanguage, targetLanguage)
+        return clientAdaptor.startCodeModernization(uploadId, sourceLanguage, targetLanguage)
     }
 
     /**
@@ -222,6 +234,56 @@ class CodeModernizerSession(
     fun uploadPayloadMock(payload: File): String {
         return "upload-ID"
     }
+
+    fun resumeTransformFromHil() {
+        val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
+        clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.COMPLETED)
+    }
+
+    fun uploadHilPayload(payload: File): String {
+        val sha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(payload)))
+        if (isDisposed.get()) {
+            throw AlreadyDisposedException("Disposed when about to create upload URL")
+        }
+        val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
+        val createUploadUrlResponse = clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId!!)
+
+        LOG.info {
+            "Uploading zip with checksum $sha256checksum using uploadId: ${
+                createUploadUrlResponse.uploadId()
+            } and size ${(payload.length() / 1000).toInt()}kB"
+        }
+        if (isDisposed.get()) {
+            throw AlreadyDisposedException("Disposed when about to upload zip to s3")
+        }
+        val uploadStartTime = Instant.now()
+        try {
+            clientAdaptor.uploadArtifactToS3(
+                createUploadUrlResponse.uploadUrl(),
+                payload,
+                sha256checksum,
+                createUploadUrlResponse.kmsKeyArn().orEmpty(),
+            ) { shouldStop.get() }
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
+            LOG.error { errorMessage }
+            // emit this metric here manually since we don't use callApi(), which emits its own metric
+            telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
+            throw e // pass along error to callee
+        }
+        // TODO handle stop better
+        if (!shouldStop.get()) {
+            telemetry.logApiLatency(
+                CodeTransformApiNames.UploadZip,
+                uploadStartTime,
+                payload.length().toInt(),
+                createUploadUrlResponse.responseMetadata().requestId(),
+            )
+            LOG.warn { "Upload complete" }
+        }
+        return createUploadUrlResponse.uploadId()
+    }
+
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */

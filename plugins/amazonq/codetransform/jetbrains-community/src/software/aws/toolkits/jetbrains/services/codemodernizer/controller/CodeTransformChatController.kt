@@ -408,6 +408,8 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
 
         // TODO poll until complete
+
+        codeModernizerManager.resumePollingFromHil()
     }
 
     // TODO chat state when user selected a version
@@ -424,7 +426,7 @@ class CodeTransformChatController(
             addNewMessage(buildCompileHilAlternativeVersionContent())
         }
 
-        codeModernizerManager.tryResumeWithAlternativeVersion()
+        codeModernizerManager.tryResumeWithAlternativeVersion(message.version)
     }
 
 

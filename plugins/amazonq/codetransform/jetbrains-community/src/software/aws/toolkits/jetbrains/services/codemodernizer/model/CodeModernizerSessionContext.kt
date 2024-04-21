@@ -17,6 +17,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenInstallDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -29,7 +30,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
+import kotlin.io.path.createTempDirectory
 import kotlin.io.path.pathString
 
 const val MANIFEST_PATH = "manifest.json"
@@ -77,6 +80,19 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
+    fun executeHilMavenInstallDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenInstallDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
+
+    // TODO return type
+    fun getHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
+        val sourceFolder = File(hilTepDirPath.resolve("q-hil-dependency-artifacts/pomFolder").pathString)
+        val destinationFolder = Files.createDirectories(hilTepDirPath.resolve( "dependencies-root")).toFile()
+        val buildLogBuilder = StringBuilder("Starting Build Log...\n")
+
+        // TODO handle cancel
+
+        return executeHilMavenInstallDependency(sourceFolder, destinationFolder, buildLogBuilder)
+    }
+
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
@@ -90,6 +106,54 @@ data class CodeModernizerSessionContext(
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }
     private fun executeDependencyVersionReportUsingMaven(sourceFolder: File, buildLogBuilder: StringBuilder) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
+
+    fun createZipForHilUpload(hilTempPath: Path, manifest:CodeTransformHilDownloadManifest, targetVersion: String): ZipCreationResult {
+        return runReadAction {
+            try {
+                val depRootPath = hilTempPath.resolve("dependencies-root")
+                val depDirectory = File(depRootPath.pathString)
+
+                val dependencyFiles = iterateThroughDependencies(depDirectory)
+
+                val depSources = File("dependenciesRoot")
+
+                val file = Files.createFile(hilTempPath.resolve("hilUpload.zip"))
+                ZipOutputStream(Files.newOutputStream(file)).use { zip ->
+                    mapper.writeValueAsString(CodeTransformHilUploadManifest(
+                        hilInput = HilInput(
+                            dependenciesRoot = "dependenciesRoot/",
+                            pomGroupId = manifest.pomGroupId,
+                            pomArtifactId = manifest.pomArtifactId,
+                            targetPomVersion = targetVersion,
+                        )
+                    ))
+                        .byteInputStream()
+                        .use {
+                            zip.putNextEntry("manifest.json", it)
+                        }
+
+                    // 2) Dependencies
+                    dependencyFiles.forEach { depfile ->
+                        val relativePath = File(depfile.path).relativeTo(depDirectory)
+                        val paddedPath = depSources.resolve(relativePath)
+                        var paddedPathString = paddedPath.toPath().toString()
+                        // Convert Windows file path to work on Linux
+                        if (File.separatorChar != '/') {
+                            paddedPathString = paddedPathString.replace('\\', '/')
+                        }
+                        depfile.inputStream().use {
+                            zip.putNextEntry(paddedPathString, it)
+                        }
+                    }
+                }
+
+                ZipCreationResult.Succeeded(file.toFile())
+            } catch (e: Exception) {
+                LOG.error(e) { e.message.toString() }
+                throw CodeModernizerException("Unknown exception occurred")
+            }
+        }
+    }
 
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
         val telemetry = CodeTransformTelemetryManager.getInstance(project)

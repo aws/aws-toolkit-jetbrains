@@ -32,7 +32,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUploadArtifactType
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
@@ -72,6 +75,27 @@ class GumbyClient(private val project: Project) {
             .contentChecksumType(ContentChecksumType.SHA_256)
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
+            .build()
+        return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
+    }
+
+    fun createHilUploadUrl(sha256Checksum: String, jobId: JobId): CreateUploadUrlResponse {
+        val request = CreateUploadUrlRequest.builder()
+            .contentChecksumType(ContentChecksumType.SHA_256)
+            .contentChecksum(sha256Checksum)
+            .uploadIntent(UploadIntent.TRANSFORMATION)
+            .uploadContext(
+                UploadContext
+                    .builder()
+                    .transformationUploadContext(
+                        TransformationUploadContext
+                            .builder()
+                            .uploadArtifactType(TransformationUploadArtifactType.DEPENDENCIES)
+                            .jobId(jobId.id)
+                            .build()
+                    )
+                    .build()
+            )
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
     }
@@ -121,7 +145,7 @@ class GumbyClient(private val project: Project) {
         targetLanguage: TransformationLanguage
     ): StartTransformationResponse {
         // TODO replace with your job ID
-        val jobId = "79d65cf0-c5a9-437e-ab2f-70e37ce93bf4"
+        val jobId = "0903957f-bb61-4d1a-b6b6-b7a2da7c436a"
         return StartTransformationResponse.builder().transformationJobId(jobId).build()
     }
 
@@ -145,14 +169,15 @@ class GumbyClient(private val project: Project) {
     }
 
     fun resumeCodeTransformation(
-        jobId: String,
+        jobId: JobId,
         userActionStatus: TransformationUserActionStatus
     ): ResumeTransformationResponse {
         val request = ResumeTransformationRequest.builder()
-            .transformationJobId(jobId)
+            .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
             .build()
-        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation, jobId = jobId)
+        // TODO add action to telemetry
+        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation, jobId = jobId.id)
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {

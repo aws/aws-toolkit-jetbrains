@@ -67,27 +67,27 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     // TODO change return type
     suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
         // TODO remove 2
-        /*
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
 
         val tmpPath = tmpDir.toPath()
-        val downloadZipFile = Files.createTempFile(tmpPath, null, ".zip")
+        val downloadZipFilePath = Files.createTempFile(tmpPath, null, ".zip")
         var totalDownloadBytes = 0
-        Files.newOutputStream(downloadZipFile).use {
+        Files.newOutputStream(downloadZipFilePath).use {
             for (bytes in downloadResultsResponse) {
                 it.write(bytes)
                 totalDownloadBytes += bytes.size
             }
         }
-        LOG.info { "Successfully converted the download to a zip at ${downloadZipFile.toAbsolutePath()}." }
-         */
+        LOG.info { "Successfully converted the download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
 
         // TODO For testing only
+        /*
         val tmpPath = tmpDir.toPath()
-        val downloadZipFile = File("/Users/mkfan/Desktop/dependency/14472162176195545199.zip")
+        val downloadZipFile = File("/Users/mkfan/Desktop/dependency/14472162176195545199.zip").toPath()
+        */
 
         return try {
-            CodeTransformHilDownloadArtifact.create(downloadZipFile.toPath(), tmpPath.resolve("q-hil-dependency-artifacts"))
+            CodeTransformHilDownloadArtifact.create(downloadZipFilePath, tmpPath.resolve("q-hil-dependency-artifacts"))
         } catch (e: Error) {
             // TODO error handling
             LOG.error { "Wrong " + e.message }
