@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
+import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 
@@ -74,8 +75,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val contentManager = toolWindow.contentManager
 
         val component = if (inspectExistingConnection(project)) {
+            LOG.debug { "Rendering explorer tree" }
             AwsToolkitExplorerToolWindow.getInstance(project)
         } else {
+            LOG.debug { "Rendering signin webview" }
             ToolkitWebviewPanel.getInstance(project).component
         }
 
@@ -122,6 +125,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                 val hasIdcRoleAccess = newConnection.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
 
                 LOG.debug { "Bearer connection: isCodecatalyst=$hasCodecatalystScope; isIdCRoleAccess=$hasIdcRoleAccess" }
+                println("Bearer connection: isCodecatalyst=$hasCodecatalystScope; isIdCRoleAccess=$hasIdcRoleAccess")
 
                 CODECATALYST_SCOPES.all { it in newConnection.scopes } ||
                     newConnection.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
@@ -151,9 +155,11 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val contentManager = this.contentManager
         val component = if (isConnected) {
             LOG.debug { "Rendering explorer tree" }
+            println("Rendering explorer tree")
             AwsToolkitExplorerToolWindow.getInstance(project)
         } else {
             LOG.debug { "Rendering signin webview" }
+            println("Rendering signin webview")
             ToolkitWebviewPanel.getInstance(project).let {
                 it.browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
                 it.component
@@ -169,34 +175,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             contentManager.addContent(myContent)
         }
     }
-
-    private fun inspectExistingConnection(project: Project): Boolean =
-        ToolkitConnectionManager.getInstance(project).let {
-            if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
-                LOG.debug { "inspecting existing connection and found IAM credentials" }
-                return@let true
-            }
-
-            val conn = it.activeConnection()
-            val hasIdCRoleAccess = if (conn is AwsBearerTokenConnection) {
-                conn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-            } else {
-                false
-            }
-
-            if (hasIdCRoleAccess) {
-                LOG.debug { "inspecting existing connection and found bearer connections with IdCRoleAccess scope" }
-                return@let true
-            }
-
-            val isCodecatalystConn = it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
-            if (isCodecatalystConn) {
-                LOG.debug { "inspecting existing connection and found active Codecatalyst connection" }
-                return@let true
-            }
-
-            return@let false
-        }
 
     companion object {
         private val LOG = getLogger<AwsToolkitExplorerFactory>()

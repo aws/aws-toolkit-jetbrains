@@ -19,12 +19,26 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
+import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
+import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder
+import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
@@ -33,6 +47,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -87,6 +102,17 @@ class ToolkitWebviewPanel(val project: Project) {
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
 class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
+
+    sealed interface SelectionSettings {
+        data class ProfileSelectionSettings(val currentSelection: CredentialIdentifier, val onChange: (CredentialIdentifier) -> Unit) : SelectionSettings
+
+        data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit) :
+            SelectionSettings
+    }
+
+    private val selectionSettings = mutableMapOf<String, SelectionSettings>()
+
+
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser: JBCefBrowserBase by lazy {
         val client = JBCefApp.getInstance().createClient()
@@ -111,10 +137,21 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 this.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
             }
 
-            "loginBuilderId" -> {
-                runInEdt {
-                    Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
+            "selectConnection" -> {
+                val connId = jsonTree.get("connectionId").asText()
+                val settings = this.selectionSettings[connId]
+                if (settings is SelectionSettings.ProfileSelectionSettings) {
+                    settings.onChange(settings.currentSelection)
                 }
+
+                if (settings is SelectionSettings.BearerConnectionSelectionSettings) {
+                    settings.onChange(settings.currentSelection)
+                }
+
+            }
+
+            "loginBuilderId" -> {
+                loginBuilderId()
             }
 
             "loginIdC" -> {
@@ -123,37 +160,14 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
-
                 val feature: String = jsonTree.get("feature").asText()
-
-                val onError: (String) -> Unit = { _ ->
-                    // TODO: telemetry
-                }
-
-                val scope = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
+                val scopes = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
                     CODECATALYST_SCOPES
                 } else {
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
-                val login = Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
-
-                runInEdt {
-                    val connection = login.loginIdc(project)
-                    if (connection != null && scope.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
-                        val tokenProvider = connection.getConnectionSettings().tokenProvider
-
-                        val rolePopup = IdcRolePopup(
-                            project,
-                            awsRegion.id,
-                            profileName,
-                            tokenProvider,
-                            IdcRolePopupState(), // TODO: is it correct <<?
-                        )
-
-                        rolePopup.show()
-                    }
-                }
+                loginIdC(profileName, url, awsRegion, scopes)
             }
 
             "loginIAM" -> {
@@ -161,15 +175,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val profileName = jsonTree.get("profileName").asText()
                 val accessKey = jsonTree.get("accessKey").asText()
                 val secretKey = jsonTree.get("secretKey").asText()
-
-                // TODO: telemetry, callbacks
-                runInEdt {
-                    Login.LongLivedIAM(
-                        profileName,
-                        accessKey,
-                        secretKey
-                    ).loginIAM(project, {}, {}, {})
-                }
+                loginIAM(profileName, accessKey, secretKey)
             }
 
             "toggleBrowser" -> {
@@ -220,6 +226,35 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
     }
 
     override fun prepareBrowser(state: BrowserState) {
+        selectionSettings.clear()
+
+        if (!inspectExistingConnection(project)) {
+            // existing connections
+            val bearerCreds = bearerConnection().associate {
+                it.id to SelectionSettings.BearerConnectionSelectionSettings(it) { conn ->
+                    val connectionManager = ToolkitConnectionManager.getInstance(project)
+                    if (conn.isSono()) {
+                        loginBuilderId()
+                    } else {
+                        // TODO: rewrite scope logic, it's short term solution only
+                        val scopes = if (conn.isSono()) {
+                            CODECATALYST_SCOPES
+                        } else {
+                            listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                        }
+                        AwsRegionProvider.getInstance()[conn.region]?.let { region ->
+                            loginIdC(conn.sessionName, conn.startUrl, region, scopes)
+                        }
+
+                    }
+                }
+            }
+
+            println(bearerCreds)
+
+            selectionSettings.putAll(bearerCreds)
+        }
+
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
 
@@ -240,11 +275,65 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     region: '${lastLoginIdcInfo.region}'
                 },
                 cancellable: ${state.browserCancellable},
-                feature: '${state.feature}'
+                feature: '${state.feature}',
+                existConnections: ${objectMapper.writeValueAsString(selectionSettings.keys.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
+
+    fun loginBuilderId() {
+        runInEdt {
+            Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
+        }
+    }
+
+    fun loginIdC(profileName: String, url: String, region: AwsRegion, scopes: List<String>) {
+        val onError: (String) -> Unit = { _ ->
+            // TODO: telemetry
+        }
+
+        val login = Login.IdC(profileName, url, region, scopes, onPendingProfile, onError)
+
+        runInEdt {
+            val connection = login.loginIdc(project)
+            if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
+                val tokenProvider = connection.getConnectionSettings().tokenProvider
+
+                val rolePopup = IdcRolePopup(
+                    project,
+                    region.id,
+                    profileName,
+                    tokenProvider,
+                    IdcRolePopupState(), // TODO: is it correct <<?
+                )
+
+                rolePopup.show()
+            }
+        }
+    }
+
+    fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
+        // TODO: telemetry, callbacks
+        runInEdt {
+            Login.LongLivedIAM(
+                profileName,
+                accessKey,
+                secretKey
+            ).loginIAM(project, {}, {}, {})
+        }
+    }
+
+    private fun connections(): List<ToolkitConnection> = ToolkitAuthManager.getInstance().listConnections().also {
+        println(it)
+    }
+
+    private fun bearerConnection() = connections()
+        .filterIsInstance<AwsBearerTokenConnection>()
+        .filter { _ ->
+            // filter "active" connection
+            true
+        }
 
     fun component(): JComponent? = jcefBrowser.component
 

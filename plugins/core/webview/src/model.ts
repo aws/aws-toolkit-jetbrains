@@ -1,6 +1,22 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+export type BrowserSetupData = {
+    stage: Stage,
+    regions: Region[],
+    idcInfo: IdcInfo,
+    cancellable: boolean,
+    feature: string,
+    existConnections: string[]
+}
+
+
+
+export interface ToolkitConnection {
+    id: string,
+    label: string
+}
+
 export type Stage =
     'START' |
     'SSO_FORM' |
@@ -31,7 +47,8 @@ export interface State {
     authorizationCode: string | undefined,
     lastLoginIdcInfo: IdcInfo,
     feature: Feature,
-    cancellable: boolean
+    cancellable: boolean,
+    existingConnections: string[]
 }
 
 export enum LoginIdentifier {

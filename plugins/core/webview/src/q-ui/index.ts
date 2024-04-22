@@ -21,7 +21,8 @@ const store = createStore<State>({
             region: '',
         },
         feature: 'Q',
-        cancellable: false
+        cancellable: false,
+        existingConnections: []
     },
     getters: {},
     mutations: {

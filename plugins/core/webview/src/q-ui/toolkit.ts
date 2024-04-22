@@ -22,7 +22,8 @@ const store = createStore<State>({
             region: '',
         },
         feature: 'awsExplorer',
-        cancellable: false
+        cancellable: false,
+        existingConnections: []
     },
     getters: {},
     mutations: {
@@ -45,6 +46,9 @@ const store = createStore<State>({
         },
         setCancellable(state: State, cancellable: boolean) {
             state.cancellable = cancellable
+        },
+        setExistingConnections(state: State, connections: string[]) {
+            state.existingConnections = connections
         },
         reset(state: State) {
             state.stage = 'START'

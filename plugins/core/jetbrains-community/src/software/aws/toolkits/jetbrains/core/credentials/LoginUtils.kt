@@ -163,15 +163,13 @@ fun authAndUpdateConfig(
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()
 
-    val oldScopeOrEmpty = ToolkitBearerTokenProvider.ssoIdentifier(profile.startUrl, profile.ssoRegion).let { connId ->
-        ToolkitAuthManager.getInstance().getConnection(connId)?.let { existingConn ->
-            if (existingConn is AwsBearerTokenConnection) {
-                existingConn.scopes
-            } else {
-                null
-            }
-        }.orEmpty()
-    }
+    val oldScopeOrEmpty = ToolkitAuthManager.getInstance().getConnection(profile.id)?.let { existingConn ->
+        if (existingConn is AwsBearerTokenConnection) {
+            existingConn.scopes
+        } else {
+            null
+        }
+    }.orEmpty()
 
     // TODO: what if the old scope is deprecated?
     if (!oldScopeOrEmpty.all { it in requestedScopes }) {

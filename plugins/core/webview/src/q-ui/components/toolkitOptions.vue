@@ -3,7 +3,21 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
-        <div class="title font-amazon bottom-small-gap" v-if="existingLogin.id === -1">Choose a sign-in option:</div>
+        <div class="font-amazon" v-if="existConnections.length > 0">
+            <div class="title bottom-small-gap">Connect with an existing account:</div>
+            <div v-for="(connId, index) in this.existConnections" :key="index">
+                <SelectableItem
+                    @toggle="toggleItemSelection"
+                    :isSelected="selectedLoginOption === connId"
+                    :itemId="connId"
+                    :itemTitle="connId"
+                    :itemText="'Store keys for use with AWS CLI tools'"
+                    class="bottom-small-gap"
+                ></SelectableItem>
+            </div>
+        </div>
+
+        <div class="title font-amazon bottom-small-gap">Choose a sign-in option:</div>
         <SelectableItem
             v-if="feature === 'codecatalyst'"
             @toggle="toggleItemSelection"
@@ -59,11 +73,13 @@ export default defineComponent({
         },
         feature(): Feature {
             return this.$store.state.feature
+        },
+        existConnections(): string[] {
+            return this.$store.state.existingConnections
         }
     },
     data() {
         return {
-            existingLogin: { id: -1, text: '', title: '' },
             selectedLoginOption: LoginIdentifier.NONE,
             LoginOption: LoginIdentifier
         }
@@ -84,6 +100,9 @@ export default defineComponent({
                 this.$emit('stageChanged', 'START')
             } else if (this.selectedLoginOption === LoginIdentifier.IAM_CREDENTIAL) {
                 this.$emit('stageChanged', 'AWS_PROFILE')
+            } else {
+                // this.$emit('selectConnection', this.existConnections)
+                window.ideApi.postMessage({ command: 'selectConnection', connectionId:  this.selectedLoginOption})
             }
         },
     }
