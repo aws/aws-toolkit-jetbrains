@@ -181,15 +181,6 @@ class PluginUpdateManager {
         )
     }
 
-    fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
-        getUpdateInfo().firstOrNull {
-            it.id == pluginDescriptor.pluginId &&
-                compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
-        }
-
-    // TODO: Optimize this to only search the result for AWS plugins
-    fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()
-
     fun notifyAutoUpdateFeature(project: Project) {
         notifyInfo(
             title = message("aws.notification.auto_update.feature_intro.title"),
@@ -217,5 +208,14 @@ class PluginUpdateManager {
         private const val SOURCE_AUTO_UPDATE_FINISH_NOTIFY = "autoUpdateFinishNotification"
         const val SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY = "autoUpdateFeatureIntroNotification"
         const val ID_ACTION_AUTO_UPDATE_SETTINGS = "autoUpdateActionSettings"
+
+        fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
+            getUpdateInfo().firstOrNull {
+                it.id == pluginDescriptor.pluginId &&
+                    compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
+            }
+
+        // TODO: Optimize this to only search the result for AWS plugins
+        fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()
     }
 }
