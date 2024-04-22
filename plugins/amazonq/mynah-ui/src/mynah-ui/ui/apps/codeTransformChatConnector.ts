@@ -207,6 +207,12 @@ export class CodeTransformChatConnector {
                 tabType: 'codetransform',
                 version: action.formItemValues?.dependencyVersion,
             })
+        } else if (action.id === FormButtonIds.RejectHilSelection) {
+            this.sendMessageToExtension({
+                command: 'codetransform-reject-hil-selection',
+                tabID,
+                tabType: 'codetransform',
+            })
         }
     }
 

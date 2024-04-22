@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
@@ -16,6 +17,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -238,6 +240,11 @@ class CodeModernizerSession(
     fun resumeTransformFromHil() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.COMPLETED)
+    }
+
+    fun rejectHilAndContinue(): ResumeTransformationResponse {
+        val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
+        return clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.REJECTED)
     }
 
     fun uploadHilPayload(payload: File): String {
@@ -522,4 +529,15 @@ class CodeModernizerSession(
 
     fun getActiveJobId() = state.currentJobId
     fun fetchPlan(lastJobId: JobId) = clientAdaptor.getCodeModernizationPlan(lastJobId)
+
+    fun hilTempFilesCleanup() {
+        hilDependencyManifest = null
+        if (hilTempDirectoryPath?.exists() == true) {
+            try {
+                (hilTempDirectoryPath as Path).toFile().deleteRecursively()
+            } catch (e: Error) {
+                // TODO handle error
+            }
+        }
+    }
 }

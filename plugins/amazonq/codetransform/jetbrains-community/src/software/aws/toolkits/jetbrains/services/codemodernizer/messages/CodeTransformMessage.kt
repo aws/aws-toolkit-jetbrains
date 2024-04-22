@@ -24,6 +24,7 @@ enum class CodeTransformButtonId(val id: String) {
     ViewDiff("view_diff"),
     ViewSummary("view_summary"),
     ConfirmHilSelection("confirm_hil_selection"),
+    RejectHilSelection("reject_hil_selection"),
     OpenDependencyErrorPom("open_dependency_error_pom"),
 }
 
@@ -118,6 +119,10 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
     data class ConfirmHilSelection(
         @JsonProperty("tabID") val tabId: String,
         val version: String,
+    ) : IncomingCodeTransformMessage
+
+    data class RejectHilSelection(
+        @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 }
 

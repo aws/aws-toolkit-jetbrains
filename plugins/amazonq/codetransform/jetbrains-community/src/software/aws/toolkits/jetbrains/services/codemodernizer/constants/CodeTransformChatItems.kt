@@ -75,6 +75,13 @@ private val confirmHilSelectionButton = Button(
     waitMandatoryFormItems = true,
 )
 
+private val rejectHilSelectionButton = Button(
+    id = CodeTransformButtonId.RejectHilSelection.id,
+    text = "Continue without selection",
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+)
+
 // TODO HIL selection cancel button
 
 private val openDependencyErrorPomFileButton = Button(
@@ -298,7 +305,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
         ),
         buttons = listOf(
             confirmHilSelectionButton,
-            Button(id = "todo2", text = "Cancel Transformation", keepCardAfterClick = false),
+            rejectHilSelectionButton,
         ),
     )
 }
@@ -361,4 +368,9 @@ fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = "I resumed the transformation job with your selection",
+)
+
+fun buildHilRejectContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "I will continue without the dependency",
 )

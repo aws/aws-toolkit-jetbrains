@@ -38,7 +38,8 @@ private enum class CodeTransformMessageTypes(val type: String) {
     ViewSummary("codetransform-view-summary"),
     AuthFollowUpWasClicked("auth-follow-up-was-clicked"),
     BodyLinkClicked("response-body-link-click"),
-    ConfirmHilSelection("codetransform-confirm-hil-selection")
+    ConfirmHilSelection("codetransform-confirm-hil-selection"),
+    RejectHilSelection("codetransform-reject-hil-selection"),
 }
 
 class CodeTransformChatApp : AmazonQApp {
@@ -65,6 +66,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.AuthFollowUpWasClicked.type to IncomingCodeTransformMessage.AuthFollowUpWasClicked::class,
             CodeTransformMessageTypes.BodyLinkClicked.type to IncomingCodeTransformMessage.BodyLinkClicked::class,
             CodeTransformMessageTypes.ConfirmHilSelection.type to IncomingCodeTransformMessage.ConfirmHilSelection::class,
+            CodeTransformMessageTypes.RejectHilSelection.type to IncomingCodeTransformMessage.RejectHilSelection::class,
         )
 
         scope.launch {
@@ -133,6 +135,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.AuthFollowUpWasClicked -> inboundAppMessagesHandler.processAuthFollowUpClick(message)
             is IncomingCodeTransformMessage.BodyLinkClicked -> inboundAppMessagesHandler.processBodyLinkClicked(message)
             is IncomingCodeTransformMessage.ConfirmHilSelection -> inboundAppMessagesHandler.processConfirmHilSelection(message)
+            is IncomingCodeTransformMessage.RejectHilSelection -> inboundAppMessagesHandler.processRejectHilSelection(message)
             is CodeTransformActionMessage -> inboundAppMessagesHandler.processCodeTransformCommand(message)
         }
     }

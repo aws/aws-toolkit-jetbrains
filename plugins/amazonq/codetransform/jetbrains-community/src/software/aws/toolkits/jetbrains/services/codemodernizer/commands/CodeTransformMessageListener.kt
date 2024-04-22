@@ -20,6 +20,11 @@ class CodeTransformMessageListener {
     fun onHilArtifactReady(dependency: Dependency?) {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, dependency = dependency))
     }
+    /*
+    fun onHilArtifactReady(dependency: Dependency?) {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.HilArtifactReady, dependency = dependency))
+    }
+    */
 
     fun onStopClicked() {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.StopClicked))

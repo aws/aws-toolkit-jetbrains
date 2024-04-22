@@ -444,17 +444,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
         try {
-
             val tmpDir = createTempDirectory("", null)
-            //val tmpDir = File("/Users/mkfan/Desktop/dependency")
 
             val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
 
             if (hilDownloadArtifact != null) {
                 codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
                 codeTransformationSession?.setHilDependencyManifest(hilDownloadArtifact.manifest)
-
-                //val tmpDir = createTempDirectory("", null)
 
                 val copyPomDir = createTempDirectory(tmpDir, "dependency-report", null)
                 val copyPomFile = File(copyPomDir, "pom.xml")
@@ -853,12 +849,23 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     // TODO lots of code clean up
 
+    fun rejectHil() {
+        try {
+            val result = codeTransformationSession?.rejectHilAndContinue()
+            print(result.toString())
+        } catch (e: Error) {
+            // TODO error handling
+            print(e.toString())
+        } finally {
+            // DO file clean up
+            codeTransformationSession?.hilTempFilesCleanup()
+        }
+
+        // TODO rename
+        CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
+    }
+
     suspend fun tryResumeWithAlternativeVersion(selectedVersion: String) {
-        // TODO remove
-        delay(3000)
-
-        // TODO
-
         val path = codeTransformationSession?.getHilTempDirectoryPath()
         if (path == null) {
             // TODO handle error
@@ -877,8 +884,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val newValue = existingValue.replace("*****", selectedVersion)
         file.writeText(newValue)
 
-        // TODO remove
+        isMvnRunning.set(true)
         val installDependencyResult = codeTransformationSession?.getHilDependencyUsingMaven()
+        isMvnRunning.set(false)
 
         if (installDependencyResult is MavenCopyCommandsResult.Success) {
             val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
@@ -896,6 +904,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 } catch (e: Error) {
                     LOG.error(e.message)
                     // TODO error handling
+                } finally {
+                    // DO file clean up
+                    codeTransformationSession?.hilTempFilesCleanup()
                 }
 
             }

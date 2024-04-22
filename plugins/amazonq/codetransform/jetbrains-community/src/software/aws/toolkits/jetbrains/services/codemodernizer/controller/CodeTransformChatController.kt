@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
@@ -400,6 +401,10 @@ class CodeTransformChatController(
         } else {
             // TODO handle failure path
         }
+
+        runInEdt {
+            codeModernizerManager.getBottomToolWindow().show()
+        }
     }
 
     private suspend fun handleResumedWithAltVersion() {
@@ -410,6 +415,9 @@ class CodeTransformChatController(
         // TODO poll until complete
 
         codeModernizerManager.resumePollingFromHil()
+        runInEdt {
+            codeModernizerManager.getBottomToolWindow().show()
+        }
     }
 
     // TODO chat state when user selected a version
@@ -429,6 +437,18 @@ class CodeTransformChatController(
         codeModernizerManager.tryResumeWithAlternativeVersion(message.version)
     }
 
+    override suspend fun processRejectHilSelection(message: IncomingCodeTransformMessage.RejectHilSelection) {
+        if (!checkForAuth(message.tabId)) {
+            return
+        }
+
+        codeTransformChatHelper.run {
+            addNewMessage(buildHilRejectContent())
+            addNewMessage(buildTransformInProgressChatContent())
+        }
+
+        codeModernizerManager.rejectHil()
+    }
 
 
     companion object {

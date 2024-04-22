@@ -12,6 +12,7 @@ export const enum FormButtonIds {
   CodeTransformViewDiff = 'view_diff',
   CodeTransformViewSummary = 'view_summary',
   ConfirmHilSelection = 'confirm_hil_selection',
+  RejectHilSelection = 'reject_hil_selection',
 }
 
 export const isFormButtonCodeTransform = (id: string): boolean => {
@@ -23,6 +24,7 @@ export const isFormButtonCodeTransform = (id: string): boolean => {
     id === FormButtonIds.OpenMvnBuild ||
     id === FormButtonIds.StopTransform ||
     id === FormButtonIds.OpenTransformationHub ||
-    id === FormButtonIds.ConfirmHilSelection
+    id === FormButtonIds.ConfirmHilSelection ||
+    id === FormButtonIds.RejectHilSelection
   )
 }
