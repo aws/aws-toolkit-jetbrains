@@ -32,11 +32,15 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private var requestId: String = ""
     private var statusCode: Int = 0
 
+    companion object {
+        val CODE_BLOCK_REGEX: Regex = Regex("^```", RegexOption.MULTILINE)
+    }
+
     private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
         if (message.isEmpty()) {
             return 0
         }
-        val countOfCodeBlocks = Regex("^```", RegexOption.MULTILINE).findAll(message)
+        val countOfCodeBlocks = CODE_BLOCK_REGEX.findAll(message)
         val numberOfTripleBackTicksInMarkdown = countOfCodeBlocks.count()
         return numberOfTripleBackTicksInMarkdown / 2
     }
