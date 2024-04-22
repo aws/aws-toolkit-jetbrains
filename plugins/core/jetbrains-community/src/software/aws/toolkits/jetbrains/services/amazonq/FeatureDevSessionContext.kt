@@ -26,6 +26,7 @@ class FeatureDevSessionContext(val project: Project) {
         "\\.hg/",
         "\\.rvm",
         "\\.git/",
+        "\\.gitignore",
         "\\.project",
         "\\.gem",
         "/\\.idea/",
@@ -57,18 +58,9 @@ class FeatureDevSessionContext(val project: Project) {
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    fun ignoreFile(file: File, addGitignore: Boolean = true): Boolean {
-        if (addGitignore) {
-            return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
-        } else {
-            if (file.path == gitIgnoreFile.path) {
-                return true
-            }
-        }
-        return ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
-    }
+    fun ignoreFile(file: File): Boolean = ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
 
-    fun ignoreFile(file: VirtualFile, addGitignore: Boolean = true): Boolean = ignoreFile(File(file.path), addGitignore)
+    fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(File(file.path))
 
     private fun zipFiles(projectRoot: VirtualFile): File = createTemporaryZipFile {
         VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->

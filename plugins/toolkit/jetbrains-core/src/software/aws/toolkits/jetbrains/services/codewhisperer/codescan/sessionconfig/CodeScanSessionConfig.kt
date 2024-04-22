@@ -157,7 +157,7 @@ class CodeScanSessionConfig(
                 } else {
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !featureDevSessionContext.ignoreFile(it, false)
+                            !featureDevSessionContext.ignoreFile(it)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -193,7 +193,7 @@ class CodeScanSessionConfig(
             if (selectedFile.path.startsWith(projectRoot.path)) {
                 files.addAll(
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it, false)
+                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it)
                     }
                 )
             }
