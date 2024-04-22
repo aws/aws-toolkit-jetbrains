@@ -101,6 +101,7 @@ export default defineComponent({
             } else if (this.selectedLoginOption === LoginIdentifier.IAM_CREDENTIAL) {
                 this.$emit('stageChanged', 'AWS_PROFILE')
             } else {
+                // TODO: else ... is not precise
                 // this.$emit('selectConnection', this.existConnections)
                 window.ideApi.postMessage({ command: 'selectConnection', connectionId:  this.selectedLoginOption})
             }

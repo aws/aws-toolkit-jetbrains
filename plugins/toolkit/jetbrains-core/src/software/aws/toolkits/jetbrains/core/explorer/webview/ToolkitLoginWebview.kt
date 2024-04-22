@@ -102,11 +102,7 @@ class ToolkitWebviewPanel(val project: Project) {
 }
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
-class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
-    private data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit)
-    private val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
-
-
+class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN, ToolkitWebviewBrowser.WEB_SCRIPT_URI) {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser: JBCefBrowserBase by lazy {
         val client = JBCefApp.getInstance().createClient()
@@ -139,7 +135,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             }
 
             "loginBuilderId" -> {
-                loginBuilderId()
+                loginBuilderId(CODECATALYST_SCOPES)
             }
 
             "loginIdC" -> {
@@ -222,7 +218,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 it.id to BearerConnectionSelectionSettings(it) { conn ->
                     val connectionManager = ToolkitConnectionManager.getInstance(project)
                     if (conn.isSono()) {
-                        loginBuilderId()
+                        loginBuilderId(CODECATALYST_SCOPES)
                     } else {
                         // TODO: rewrite scope logic, it's short term solution only
                         val scopes = if (conn.isSono()) {
@@ -270,13 +266,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
-    fun loginBuilderId() {
-        runInEdt {
-            Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
-        }
-    }
-
-    fun loginIdC(profileName: String, url: String, region: AwsRegion, scopes: List<String>) {
+    override fun loginIdC(profileName: String, url: String, region: AwsRegion, scopes: List<String>) {
         val onError: (String) -> Unit = { _ ->
             // TODO: telemetry
         }
@@ -301,17 +291,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         }
     }
 
-    fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
-        // TODO: telemetry, callbacks
-        runInEdt {
-            Login.LongLivedIAM(
-                profileName,
-                accessKey,
-                secretKey
-            ).loginIAM(project, {}, {}, {})
-        }
-    }
-
     private fun connections(): List<ToolkitConnection> = ToolkitAuthManager.getInstance().listConnections().also {
         println(it)
     }
@@ -321,37 +300,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         .filterIsInstance<AwsBearerTokenConnection>()
 
     fun component(): JComponent? = jcefBrowser.component
-
-    override fun getWebviewHTML(): String {
-        val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
-        val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
-
-        val jsScripts = """
-            <script>
-                (function() {
-                    window.ideApi = {
-                     postMessage: message => {
-                         $postMessageToJavaJsCode
-                     }
-                };
-                }())
-            </script>
-            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
-        """.trimIndent()
-
-        return """
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>AWS Q</title>
-                </head>
-                <body class="$colorMode">
-                    <div id="app"></div>
-                    $jsScripts
-                </body>
-            </html>
-        """.trimIndent()
-    }
 
     companion object {
         private val LOG = getLogger<ToolkitWebviewBrowser>()
