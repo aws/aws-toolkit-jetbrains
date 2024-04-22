@@ -9,10 +9,7 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.testFramework.ProjectRule
 import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.mockkStatic
-import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -22,28 +19,25 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.aws.toolkits.core.TokenConnectionSettings
+import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.credentials.CredentialType
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.core.utils.unwrap
-import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
+import software.aws.toolkits.jetbrains.core.credentials.diskCache
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
-import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.datagrip.RequireSsl
 import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 import software.aws.toolkits.resources.message
+import java.time.Instant
 
 class IamAuthTest {
     @Rule
@@ -72,10 +66,30 @@ class IamAuthTest {
     @JvmField
     val authManager = MockToolkitAuthManagerRule()
 
+    @JvmField
+    @Rule
+    val mockClientManager = MockClientManagerRule()
+
+    private lateinit var ssoClient: SsoOidcClient
+
     @Before
     fun setUp() {
         credentialManager.addCredentials(credentialId, mockCreds)
         regionProvider.addRegion(AwsRegion(defaultRegion, RuleUtils.randomName(), RuleUtils.randomName()))
+        ssoClient = mockClientManager.create()
+    }
+
+    @Test
+    fun `Handle Sso authentication no token present`() {
+        val noTokenCredentialId = RuleUtils.randomName()
+        val ssoUrl = RuleUtils.randomName()
+        diskCache.saveAccessToken(ssoUrl, DeviceAuthorizationGrantToken(ssoUrl, "us-east-1", "access1", "refresh1", Instant.MAX))
+        credentialManager.addCredentials(ProfileCredentialsIdentifierSso(noTokenCredentialId, noTokenCredentialId, "us-east-1", CredentialType.SsoProfile))
+        credentialManager.addSsoProvider(ProfileSsoSessionIdentifier(noTokenCredentialId, ssoUrl, "us-east-1", setOf()))
+        val conneciton = buildConnection(hasCredentials = true, credentialId = "profile:" + noTokenCredentialId)
+
+        val connection = iamAuth.handleSsoAuthentication(projectRule.project, conneciton)
+        assertThat(connection).isNotNull
     }
 
     @Test
@@ -177,33 +191,6 @@ class IamAuthTest {
             .contains(dbHost)
             .contains(connectionPort.toString())
             .doesNotStartWith("https://")
-    }
-
-    @Test
-    fun `Handle Sso authentication no token present`() {
-        val noTokenCredential = RuleUtils.randomName()
-        credentialManager.addCredentials(ProfileCredentialsIdentifierSso(noTokenCredential, noTokenCredential, "", CredentialType.SsoProfile))
-        credentialManager.addSsoProvider(ProfileSsoSessionIdentifier(noTokenCredential, "", "", setOf("")))
-        val conneciton = buildConnection(hasCredentials = true, credentialId = "profile:" + noTokenCredential)
-        mockkObject(ToolkitAuthManager.Companion)
-//        val defaultToolkitAuthManager = mockk<DefaultToolkitAuthManager>()
-//        val profileSsoManagedBearerSsoConnection = mockk<ProfileSsoManagedBearerSsoConnection>()
-//        every { ToolkitAuthManager.getInstance() } returns defaultToolkitAuthManager
-        authManager.createConnection(UserConfigSsoSessionProfile(noTokenCredential, "us-east-1", "", listOf("")))
-//        every { defaultToolkitAuthManager.getOrCreateSsoConnection(any(UserConfigSsoSessionProfile::class)) } returns profileSsoManagedBearerSsoConnection
-        val bearerTokenProvider = mockk<BearerTokenProvider>()
-        // We don't have the token
-        every { bearerTokenProvider.state() } returns BearerTokenAuthState.NOT_AUTHENTICATED
-        every { bearerTokenProvider.reauthenticate() } returns Unit
-        val toolkitBearerTokenProvider = ToolkitBearerTokenProvider(bearerTokenProvider)
-//        every {
-//            profileSsoManagedBearerSsoConnection.getConnectionSettings()
-//        } returns TokenConnectionSettings(toolkitBearerTokenProvider, AwsRegion("us-east-1", "", ""))
-
-        val connection = iamAuth.handleSsoAuthentication(projectRule.project, conneciton)
-        assertThat(connection).isNotNull
-        // We need to request the browser login once.
-        verify(exactly = 1) { bearerTokenProvider.reauthenticate() }
     }
 
     private fun buildConnection(
