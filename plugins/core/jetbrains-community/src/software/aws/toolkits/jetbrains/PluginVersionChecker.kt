@@ -9,6 +9,7 @@ import com.intellij.ide.plugins.PluginEnabler
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.SingletonNotificationManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ex.ApplicationManagerEx
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.core.utils.tryOrNull
@@ -32,7 +33,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
             } ?: false
         }
 
-        if (updated.isNotEmpty()) {
+        if (updated.isNotEmpty() && !ApplicationManager.getApplication().isUnitTestMode) {
             ApplicationManagerEx.getApplicationEx().restart(true)
             return
         }

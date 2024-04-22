@@ -7,6 +7,7 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.InstalledPluginsState
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -18,7 +19,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
-import com.intellij.openapi.updateSettings.impl.PluginDownloader.compareVersionsSkipBrokenAndIncompatible
 import com.intellij.openapi.updateSettings.impl.UpdateChecker
 import com.intellij.util.Alarm
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -35,8 +35,8 @@ import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 
 @Service
-class PluginUpdateManager {
-    private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD)
+class PluginUpdateManager : Disposable {
+    private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
 
     fun scheduleAutoUpdate() {
         if (alarm.isDisposed) return
@@ -201,6 +201,8 @@ class PluginUpdateManager {
         )
     }
 
+    override fun dispose() {}
+
     companion object {
         fun getInstance(): PluginUpdateManager = service()
         private val LOG = getLogger<PluginUpdateManager>()
@@ -212,7 +214,7 @@ class PluginUpdateManager {
         fun getUpdate(pluginDescriptor: IdeaPluginDescriptor): PluginDownloader? =
             getUpdateInfo().firstOrNull {
                 it.id == pluginDescriptor.pluginId &&
-                    compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
+                    PluginDownloader.compareVersionsSkipBrokenAndIncompatible(it.pluginVersion, pluginDescriptor) > 0
             }
 
         // TODO: Optimize this to only search the result for AWS plugins
