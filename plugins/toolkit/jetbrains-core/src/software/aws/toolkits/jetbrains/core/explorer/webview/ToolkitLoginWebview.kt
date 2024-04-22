@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConn
 import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.LastLoginIdcInfo
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -102,15 +103,8 @@ class ToolkitWebviewPanel(val project: Project) {
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
 class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
-
-    sealed interface SelectionSettings {
-        data class ProfileSelectionSettings(val currentSelection: CredentialIdentifier, val onChange: (CredentialIdentifier) -> Unit) : SelectionSettings
-
-        data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit) :
-            SelectionSettings
-    }
-
-    private val selectionSettings = mutableMapOf<String, SelectionSettings>()
+    private data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit)
+    private val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
 
 
     // TODO: confirm if we need such configuration or the default is fine
@@ -139,15 +133,9 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
             "selectConnection" -> {
                 val connId = jsonTree.get("connectionId").asText()
-                val settings = this.selectionSettings[connId]
-                if (settings is SelectionSettings.ProfileSelectionSettings) {
+                this.selectionSettings[connId]?.let { settings ->
                     settings.onChange(settings.currentSelection)
                 }
-
-                if (settings is SelectionSettings.BearerConnectionSelectionSettings) {
-                    settings.onChange(settings.currentSelection)
-                }
-
             }
 
             "loginBuilderId" -> {
@@ -231,7 +219,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         if (!inspectExistingConnection(project)) {
             // existing connections
             val bearerCreds = bearerConnection().associate {
-                it.id to SelectionSettings.BearerConnectionSelectionSettings(it) { conn ->
+                it.id to BearerConnectionSelectionSettings(it) { conn ->
                     val connectionManager = ToolkitConnectionManager.getInstance(project)
                     if (conn.isSono()) {
                         loginBuilderId()
@@ -276,7 +264,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 },
                 cancellable: ${state.browserCancellable},
                 feature: '${state.feature}',
-                existConnections: ${objectMapper.writeValueAsString(selectionSettings.keys.toList())}
+                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
@@ -328,12 +316,9 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         println(it)
     }
 
+    // TODO: filter "active"(state == 'AUTHENTICATED') connection only maybe?
     private fun bearerConnection() = connections()
         .filterIsInstance<AwsBearerTokenConnection>()
-        .filter { _ ->
-            // filter "active" connection
-            true
-        }
 
     fun component(): JComponent? = jcefBrowser.component
 

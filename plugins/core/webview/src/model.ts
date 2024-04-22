@@ -7,15 +7,18 @@ export type BrowserSetupData = {
     idcInfo: IdcInfo,
     cancellable: boolean,
     feature: string,
-    existConnections: string[]
+    existConnections: AwsBearerTokenConnection[]
 }
 
-
-
-export interface ToolkitConnection {
-    id: string,
-    label: string
+// plugin interface [AwsBearerTokenConnection]
+export interface AwsBearerTokenConnection {
+    sessionName: string,
+    startUrl: string,
+    region: string,
+    scopes: string[],
+    id: string
 }
+export const SONO_URL = "https://view.awsapps.com/start"
 
 export type Stage =
     'START' |
@@ -48,7 +51,7 @@ export interface State {
     lastLoginIdcInfo: IdcInfo,
     feature: Feature,
     cancellable: boolean,
-    existingConnections: string[]
+    existingConnections: AwsBearerTokenConnection[]
 }
 
 export enum LoginIdentifier {
@@ -61,6 +64,7 @@ export enum LoginIdentifier {
 
 export interface LoginOption {
     id: LoginIdentifier
+
     requiresBrowser(): boolean
 }
 

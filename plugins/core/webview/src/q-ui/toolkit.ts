@@ -5,7 +5,7 @@
 import {createApp} from 'vue'
 import {createStore, Store} from 'vuex'
 import root from './components/root.vue'
-import {Feature, IdcInfo, Region, Stage, State} from "../model";
+import {AwsBearerTokenConnection, Feature, IdcInfo, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -23,7 +23,7 @@ const store = createStore<State>({
         },
         feature: 'awsExplorer',
         cancellable: false,
-        existingConnections: []
+        existingConnections: [] as AwsBearerTokenConnection[]
     },
     getters: {},
     mutations: {
@@ -47,7 +47,7 @@ const store = createStore<State>({
         setCancellable(state: State, cancellable: boolean) {
             state.cancellable = cancellable
         },
-        setExistingConnections(state: State, connections: string[]) {
+        setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
             state.existingConnections = connections
         },
         reset(state: State) {

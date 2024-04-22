@@ -5,13 +5,13 @@
     <div @keydown.enter="handleContinueClick">
         <div class="font-amazon" v-if="existConnections.length > 0">
             <div class="title bottom-small-gap">Connect with an existing account:</div>
-            <div v-for="(connId, index) in this.existConnections" :key="index">
+            <div v-for="(connection, index) in this.existConnections" :key="index">
                 <SelectableItem
                     @toggle="toggleItemSelection"
-                    :isSelected="selectedLoginOption === connId"
-                    :itemId="connId"
-                    :itemTitle="connId"
-                    :itemText="'Store keys for use with AWS CLI tools'"
+                    :isSelected="selectedLoginOption === connection.id"
+                    :itemId="connection.id"
+                    :itemTitle="this.connectionDisplayedName(connection)"
+                    :itemText="this.connectionTypeDescription(connection)"
                     class="bottom-small-gap"
                 ></SelectableItem>
             </div>
@@ -59,7 +59,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {Feature, Stage, LoginIdentifier, BuilderId} from "../../model";
+import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL} from "../../model";
 
 export default defineComponent({
     name: "loginOptions",
@@ -74,18 +74,18 @@ export default defineComponent({
         feature(): Feature {
             return this.$store.state.feature
         },
-        existConnections(): string[] {
+        existConnections(): AwsBearerTokenConnection[] {
             return this.$store.state.existingConnections
         }
     },
     data() {
         return {
-            selectedLoginOption: LoginIdentifier.NONE,
+            selectedLoginOption: LoginIdentifier.NONE as any,
             LoginOption: LoginIdentifier
         }
     },
     methods: {
-        toggleItemSelection(itemId: number) {
+        toggleItemSelection(itemId: number | string) {
             this.selectedLoginOption = itemId
         },
         handleBackButtonClick() {
@@ -105,6 +105,20 @@ export default defineComponent({
                 window.ideApi.postMessage({ command: 'selectConnection', connectionId:  this.selectedLoginOption})
             }
         },
+        connectionTypeDescription(connection: AwsBearerTokenConnection): string {
+            if (connection.startUrl === SONO_URL) {
+                return 'AWS Builder ID'
+            }
+
+            return 'IAM Identity Center (SSO)'
+        },
+        connectionDisplayedName(connection: AwsBearerTokenConnection): string {
+            if (connection.sessionName.length > 0) {
+                return `Profile: ${connection.sessionName}(${connection.startUrl})`
+            }
+
+            return `${connection.startUrl}`
+        }
     }
 })
 </script>
