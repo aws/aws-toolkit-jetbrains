@@ -17,6 +17,10 @@ import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 
 class PluginVersionChecker : ApplicationInitializedListener {
     override suspend fun execute(asyncScope: CoroutineScope) {
+        if (ApplicationManager.getApplication().isHeadlessEnvironment) {
+            return
+        }
+
         val core = AwsToolkit.PLUGINS_INFO.get(AwsPlugin.TOOLKIT) ?: return
         val mismatch = AwsToolkit.PLUGINS_INFO.values.filter { it.version != core.version }
 
@@ -33,7 +37,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
             } ?: false
         }
 
-        if (updated.isNotEmpty() && !ApplicationManager.getApplication().isUnitTestMode) {
+        if (updated.isNotEmpty()) {
             ApplicationManagerEx.getApplicationEx().restart(true)
             return
         }
