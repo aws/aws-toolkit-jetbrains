@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
-import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
@@ -202,15 +201,6 @@ fun loginSso(
             )
         )
     }
-}
-
-@VisibleForTesting
-internal fun reauthConnection(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
-    val provider = reauthConnectionIfNeeded(project, connection)
-
-    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-
-    return provider
 }
 
 @Suppress("UnusedParameter")
