@@ -163,7 +163,9 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
             IdeFocusManager.getGlobalInstance().getLastFocusedIdeWindow()?.toFront()
         }
 
-        val urlBase = newFromEncoded("http://127.0.0.1:${BuiltInServerManager.getInstance().port}/api/${ToolkitOAuthCallbackResultService.SERVICE_NAME}/index.html")
+        val urlBase = newFromEncoded(
+            "http://127.0.0.1:${BuiltInServerManager.getInstance().port}/api/${ToolkitOAuthCallbackResultService.SERVICE_NAME}/index.html"
+        )
         val params = if (isAccepted) {
             mapOf(
                 "productName" to PKCE_CLIENT_NAME,
