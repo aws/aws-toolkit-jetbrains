@@ -28,7 +28,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilInitialContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedFromRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
@@ -91,7 +93,7 @@ class CodeTransformChatController(
             buildCheckingValidProjectChatContent()
         )
 
-        delay(3000)
+        delay(2000)
 
         val validationResult = codeModernizerManager.validate(context.project)
 
@@ -288,11 +290,8 @@ class CodeTransformChatController(
             CodeTransformCommand.TransformResuming -> {
                 handleCodeTransformJobResume()
             }
-            CodeTransformCommand.Paused -> {
-                handleCodeTransformJobPaused(message.hilDownloadArtifact as CodeTransformHilDownloadArtifact)
-            }
-            CodeTransformCommand.HilArtifactReady -> {
-                handleCodeTransformHil(message.dependency)
+            CodeTransformCommand.StartHil -> {
+                handleHil()
             }
             CodeTransformCommand.ResumedWithAltVersion -> {
                 handleResumedWithAltVersion()
@@ -379,34 +378,6 @@ class CodeTransformChatController(
         }
     }
 
-    // TODO Chat state when progressUpdate return PAUSED, but we still need to
-    // get dependency report via maven and parse file
-    private suspend fun handleCodeTransformJobPaused(hilDownloadArtifact: CodeTransformHilDownloadArtifact) {
-        codeTransformChatHelper.updateLastPendingMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
-
-        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
-    }
-
-    // TODO chat state after we find all available versions, and prompt user for selection
-    private suspend fun handleCodeTransformHil(dependency: Dependency?) {
-        // TODO handle failure path
-        if (dependency == null ) {
-            // TODO
-            return
-        }
-
-        val versionList = dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()
-        if (versionList.isNotEmpty()) {
-            codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
-        } else {
-            // TODO handle failure path
-        }
-
-        runInEdt {
-            codeModernizerManager.getBottomToolWindow().show()
-        }
-    }
-
     private suspend fun handleResumedWithAltVersion() {
         codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
 
@@ -417,6 +388,42 @@ class CodeTransformChatController(
         codeModernizerManager.resumePollingFromHil()
         runInEdt {
             codeModernizerManager.getBottomToolWindow().show()
+        }
+    }
+
+    private suspend fun handleHil() {
+        try {
+            codeTransformChatHelper.updateLastPendingMessage(buildHilInitialContent())
+
+            val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
+            if (hilDownloadArtifact == null) {
+                // TODO show error
+                return
+            }
+
+            codeTransformChatHelper.addNewMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
+
+            codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+
+            val dependency = codeModernizerManager.findAlternativeDependencyVersions(hilDownloadArtifact)
+            if (dependency == null) {
+                // TODO show error
+                return
+            }
+
+            val versionList = dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()
+            if (versionList.isNotEmpty()) {
+                codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
+            } else {
+                // TODO handle failure path
+            }
+
+            runInEdt {
+                codeModernizerManager.getBottomToolWindow().show()
+            }
+
+        } catch (e: Error) {
+            // TODO error handling
         }
     }
 
@@ -434,7 +441,26 @@ class CodeTransformChatController(
             addNewMessage(buildCompileHilAlternativeVersionContent())
         }
 
-        codeModernizerManager.tryResumeWithAlternativeVersion(message.version)
+        try {
+            val copyDependencyResult = codeModernizerManager.copyDependencyForHil(version)
+            if (copyDependencyResult == MavenCopyCommandsResult.Failure) {
+                // TODO handle error
+                return
+            } else if (copyDependencyResult == MavenCopyCommandsResult.Cancelled) {
+                // TODO handle user cancel
+                return
+            }
+            codeModernizerManager.tryResumeWithAlternativeVersion(version)
+
+            codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
+
+            runInEdt {
+                codeModernizerManager.getBottomToolWindow().show()
+            }
+            codeModernizerManager.resumePollingFromHil()
+        } catch (e: Error) {
+            // TODO handle error
+        }
     }
 
     override suspend fun processRejectHilSelection(message: IncomingCodeTransformMessage.RejectHilSelection) {
@@ -444,10 +470,18 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             addNewMessage(buildHilRejectContent())
-            addNewMessage(buildTransformInProgressChatContent())
         }
 
-        codeModernizerManager.rejectHil()
+        try {
+            codeModernizerManager.rejectHil()
+            codeTransformChatHelper.addNewMessage(buildHilResumedFromRejectContent())
+            runInEdt {
+                codeModernizerManager.getBottomToolWindow().show()
+            }
+            codeModernizerManager.resumePollingFromHil()
+        } catch (e: Error) {
+            // TODO error handling
+        }
     }
 
 

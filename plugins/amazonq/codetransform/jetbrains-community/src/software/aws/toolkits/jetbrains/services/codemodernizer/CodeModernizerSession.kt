@@ -75,8 +75,15 @@ class CodeModernizerSession(
     private var transformResult: CodeModernizerJobCompletedResult? = null
 
     // TODO code clean up for getter and setter
+    private var hilDownloadArtifactId: String? = null
     private var hilTempDirectoryPath: Path? = null
     private var hilDependencyManifest: CodeTransformHilDownloadManifest? = null
+
+    fun getHilDownloadArtifactId() = hilDownloadArtifactId
+
+    fun setHilDownloadArtifactId(artifactId: String) {
+        hilDownloadArtifactId = artifactId
+    }
 
     fun getHilDependencyManifest() = hilDependencyManifest
 
@@ -531,12 +538,15 @@ class CodeModernizerSession(
     fun fetchPlan(lastJobId: JobId) = clientAdaptor.getCodeModernizationPlan(lastJobId)
 
     fun hilTempFilesCleanup() {
+        hilDownloadArtifactId = null
         hilDependencyManifest = null
         if (hilTempDirectoryPath?.exists() == true) {
             try {
                 (hilTempDirectoryPath as Path).toFile().deleteRecursively()
             } catch (e: Error) {
                 // TODO handle error
+            } finally {
+                hilTempDirectoryPath = null
             }
         }
     }

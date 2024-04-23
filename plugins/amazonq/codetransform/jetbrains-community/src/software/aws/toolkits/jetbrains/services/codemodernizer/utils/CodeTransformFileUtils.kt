@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.serialization.json.JsonObject
@@ -165,4 +166,25 @@ fun parseXmlDependenciesReport(pathToXmlDependency: String): DependencyUpdatesRe
         println(e.message)
         throw e
     }
+}
+
+fun createFileCopy(originalFile: File, outputPath: Path): File {
+    val outputFile = outputPath.toFile()
+
+    originalFile.inputStream().use { inputStream ->
+        FileUtil.createParentDirs(outputFile)
+
+        FileOutputStream(outputFile).use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
+
+    return outputFile
+}
+
+fun setDependencyVersionInPom(pomFile: File, version: String) {
+    val placeholder = "*****"
+    val existingValue = pomFile.readText()
+    val newValue = existingValue.replace(placeholder, version)
+    pomFile.writeText(newValue)
 }

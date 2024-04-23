@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
@@ -51,6 +52,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
@@ -58,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupporte
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isGradleProject
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.setDependencyVersionInPom
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -240,23 +243,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val result = handleJobStarted(managerState.getLatestJobId(), codeTransformationSession!!)
         postModernizationJob(result)
     }
-
-    /*
-    fun resumeTransformation(jobId: String) {
-        initStopParameters()
-        val session = codeTransformationSession as CodeModernizerSession
-        /*
-        val fakeJobId = JobId("test-id")
-        completeHumanInTheLoopWork(fakeJobId, 0)
-        val test = true
-        if (test) {
-            return
-        }
-     */
-        initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
-        launchModernizationJob(session, copyResult)
-    }
-     */
 
     private fun initStopParameters() {
         transformationStoppedByUsr.set(false)
@@ -442,44 +428,26 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    suspend fun getArtifactForHil(jobId: JobId, downloadArtifactId: String) = projectCoroutineScope(project).launch {
+    suspend fun getArtifactForHil(): CodeTransformHilDownloadArtifact? {
         try {
+            val jobId = codeTransformationSession?.getActiveJobId()!!
+            val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId()!!
             val tmpDir = createTempDirectory("", null)
-
-            val hilDownloadArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
-
-            if (hilDownloadArtifact != null) {
+            val hilArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
+            if (hilArtifact != null) {
                 codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
-                codeTransformationSession?.setHilDependencyManifest(hilDownloadArtifact.manifest)
-
-                val copyPomDir = createTempDirectory(tmpDir, "dependency-report", null)
-                val copyPomFile = File(copyPomDir, "pom.xml")
-
-                val existingValue = hilDownloadArtifact.pomFile.readText()
-
-                // TODO need to pass user selection version
-                val newValue = existingValue.replace("*****", hilDownloadArtifact.manifest.sourcePomVersion)
-
-                // TODO error handling
-                copyPomFile.writeText(newValue)
-
-
-                // TODO store path in session
-
-                CodeTransformMessageListener.instance.onTransformPaused(hilDownloadArtifact)
-
-                // TODO run maven get get dependency report
-                // TODO parse file and find versions
-                findAlternativeDependencyVersions(hilDownloadArtifact.manifest.pomGroupId, hilDownloadArtifact.manifest.pomArtifactId)
-
-            } else {
-                // TODO handle error
+                codeTransformationSession?.setHilDependencyManifest(hilArtifact.manifest)
             }
-
+            return hilArtifact
         } catch (e: Error) {
             // TODO error handling
             // CodeTransformMessageListener.instance.onResult()
             print(e.message)
+
+            // TODO remove tmpDir
+            // TODO clear state variables
+
+            return null
         }
     }
 
@@ -490,13 +458,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return
         }
 
-        // TODO handle HIL work
         if (result is CodeModernizerJobCompletedResult.JobPaused) {
-            // No need to handle failed case here since job would have been FAILED status
-            val (jobId, downloadArtifactId) = result
-            getArtifactForHil(jobId, downloadArtifactId)
+            codeTransformationSession?.setHilDownloadArtifactId(result.downloadArtifactId)
 
-            // return early?
+            //getArtifactForHil(jobId, downloadArtifactId)
+            CodeTransformMessageListener.instance.onStartingHil()
+
+
             return
         }
 
@@ -517,100 +485,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 transformationStoppedByUsr.set(false)
                 CodeTransformMessageListener.instance.onTransformStopped()
             }
-        }
-    }
-
-    fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
-        try {
-            val notYetResumed = isResumingJob.compareAndSet(false, true)
-            // If the job is already running, compareAndSet will return false because the expected
-            // behavior is that the job is not running when trying to resume
-            if (!notYetResumed) {
-                return@launch
-            }
-
-            LOG.info { "Attempting to resume job, current state is: $managerState" }
-            if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
-
-            // Gather project details
-            if (onProjectFirstOpen) {
-                val validationResult = validate(project)
-                telemetry.sendValidationResult(validationResult, onProjectFirstOpen)
-            }
-
-            val context = managerState.toSessionContext(project)
-            val session = CodeModernizerSession(context)
-            val lastJobId = managerState.getLatestJobId()
-            LOG.info { "Attempting to resume job with id $lastJobId" }
-            val result = session.getJobDetails(lastJobId)
-            when (result.status()) {
-                TransformationStatus.COMPLETED -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyStickyInfo(
-                        message("codemodernizer.manager.job_finished_title"),
-                        message("codemodernizer.manager.job_finished_content"),
-                        project,
-                        listOf(
-                            displayDiffNotificationAction(lastJobId),
-                            displaySummaryNotificationAction(lastJobId),
-                            viewTransformationHubAction()
-                        )
-                    )
-                    resumeJob(session, lastJobId, result)
-                    setJobNotOngoing()
-                }
-
-                TransformationStatus.PARTIALLY_COMPLETED -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyStickyInfo(
-                        message("codemodernizer.notification.info.modernize_failed.title"),
-                        message("codemodernizer.manager.job_failed_content", result.reason()),
-                        project,
-                        listOf(
-                            displayDiffNotificationAction(lastJobId),
-                            displaySummaryNotificationAction(lastJobId),
-                            displayFeedbackNotificationAction(),
-                            viewTransformationHubAction()
-                        )
-                    )
-                    resumeJob(session, lastJobId, result)
-                    setJobNotOngoing()
-                }
-
-                TransformationStatus.UNKNOWN_TO_SDK_VERSION -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyStickyInfo(
-                        message("codemodernizer.notification.warn.on_resume.unknown_status_response.title"),
-                        message("codemodernizer.notification.warn.on_resume.unknown_status_response.content"),
-                    )
-                    setJobNotOngoing()
-                }
-
-                TransformationStatus.STOPPED, TransformationStatus.STOPPING -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    setJobNotOngoing()
-                }
-
-                else -> {
-                    isJobSuccessfullyResumed.set(true)
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    resumeJob(session, lastJobId, result)
-                    notifyStickyInfo(
-                        message("codemodernizer.manager.job_ongoing_title"),
-                        message("codemodernizer.manager.job_ongoing_content"),
-                        project,
-                        listOf(resumeJobNotificationAction(session, lastJobId, result)),
-                    )
-                }
-            }
-            telemetry.jobIsResumedAfterIdeClose(lastJobId, result.status())
-        } catch (e: AccessDeniedException) {
-            LOG.error { "Unable to resume job as credentials are invalid" }
-            // User is logged in with old or invalid credentials, nothing to do until they log in with valid credentials
-        } catch (e: Exception) {
-            LOG.error { "Unable to resume job as an unexpected exception occurred ${e.stackTraceToString()}" }
-        } finally {
-            isResumingJob.set(false)
         }
     }
 
@@ -827,22 +701,29 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         isModernizationInProgress.set(false)
     }
 
-    fun findAlternativeDependencyVersions(groupId: String, artifactId: String) {
+    fun findAlternativeDependencyVersions(hilDownloadArtifact: CodeTransformHilDownloadArtifact): Dependency? {
         // TODO telemetry
         // telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
+
+        val tmpDir = codeTransformationSession?.getHilTempDirectoryPath()!!.toFile()
+
+        val copyPomForDependencyReport = createFileCopy(hilDownloadArtifact.pomFile, tmpDir.toPath().resolve("dependency-report/pom.xml"))
+        setDependencyVersionInPom(copyPomForDependencyReport, hilDownloadArtifact.manifest.sourcePomVersion)
 
         isMvnRunning.set(true)
 
         val result = codeTransformationSession?.getHilDependencyReportUsingMaven()
         var dependency: Dependency? = null
         if (result is MavenDependencyReportCommandsResult.Success) {
-            dependency = result.report.dependencies?.filter { it.groupId == groupId && it.artifactId == artifactId }?.first()
+            dependency = result.report.dependencies?.first {
+                it.groupId == hilDownloadArtifact.manifest.pomGroupId
+                    && it.artifactId == hilDownloadArtifact.manifest.pomArtifactId
+            }
         }
 
-        // TODO need to pass the version as params
-        CodeTransformMessageListener.instance.onHilArtifactReady(dependency)
-
         isMvnRunning.set(false)
+
+        return dependency
     }
 
     // TODO fix param
@@ -851,67 +732,57 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun rejectHil() {
         try {
-            val result = codeTransformationSession?.rejectHilAndContinue()
-            print(result.toString())
+            codeTransformationSession?.rejectHilAndContinue()
         } catch (e: Error) {
             // TODO error handling
             print(e.toString())
         } finally {
-            // DO file clean up
+            // DO clean up
             codeTransformationSession?.hilTempFilesCleanup()
         }
-
-        // TODO rename
-        CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
     }
 
-    suspend fun tryResumeWithAlternativeVersion(selectedVersion: String) {
+    fun copyDependencyForHil(selectedVersion: String): MavenCopyCommandsResult {
         val path = codeTransformationSession?.getHilTempDirectoryPath()
         if (path == null) {
             // TODO handle error
-            return
+            return MavenCopyCommandsResult.Failure
         }
 
         // TODO need to handle path better
-        val file = File(path.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
-        if (!file.exists()) {
+        val pomFile = File(path.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
+        if (!pomFile.exists()) {
             // TODO handle error
-            return
+            return MavenCopyCommandsResult.Failure
         }
-        val existingValue = file.readText()
 
-        // TODO need to pass user selection version
-        val newValue = existingValue.replace("*****", selectedVersion)
-        file.writeText(newValue)
+        setDependencyVersionInPom(pomFile, selectedVersion)
 
         isMvnRunning.set(true)
-        val installDependencyResult = codeTransformationSession?.getHilDependencyUsingMaven()
+        val copyDependencyResult = codeTransformationSession?.getHilDependencyUsingMaven()!!
         isMvnRunning.set(false)
+        return copyDependencyResult
+    }
 
-        if (installDependencyResult is MavenCopyCommandsResult.Success) {
-            val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
-            if (zipCreationResult?.payload?.exists() == true) {
-
-                try {
+    suspend fun tryResumeWithAlternativeVersion(selectedVersion: String) {
+            try {
+                val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
+                if (zipCreationResult?.payload?.exists() == true) {
                     val result = codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
                     LOG.info(result)
                     delay(500)
 
                     val result2 = codeTransformationSession?.resumeTransformFromHil()
                     LOG.info(result2.toString())
-
-                    delay(500)
-                } catch (e: Error) {
-                    LOG.error(e.message)
-                    // TODO error handling
-                } finally {
-                    // DO file clean up
-                    codeTransformationSession?.hilTempFilesCleanup()
+                } else {
+                    // TOOD handle error
                 }
-
+            } catch (e: Error) {
+                LOG.error(e.message)
+                // TODO error handling
+            } finally {
+                // DO file clean up
+                codeTransformationSession?.hilTempFilesCleanup()
             }
-        }
-
-        CodeTransformMessageListener.instance.onResumedWithAlternativeVersion()
     }
 }

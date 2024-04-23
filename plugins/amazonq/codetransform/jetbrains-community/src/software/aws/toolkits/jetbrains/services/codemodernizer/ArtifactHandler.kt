@@ -80,12 +80,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
         LOG.info { "Successfully converted the download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
 
-        // TODO For testing only
-        /*
-        val tmpPath = tmpDir.toPath()
-        val downloadZipFile = File("/Users/mkfan/Desktop/dependency/14472162176195545199.zip").toPath()
-        */
-
         return try {
             CodeTransformHilDownloadArtifact.create(downloadZipFilePath, tmpPath.resolve("q-hil-dependency-artifacts"))
         } catch (e: Error) {

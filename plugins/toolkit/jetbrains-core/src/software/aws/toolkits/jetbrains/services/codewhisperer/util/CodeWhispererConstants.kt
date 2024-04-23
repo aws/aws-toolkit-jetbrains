@@ -107,7 +107,7 @@ object CodeWhispererConstants {
     object Config {
         // TODO revert to prod endpoint
         // const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
-        // const val CODEWHISPERER_ENDPOINT = "https://rts.gamma-us-west-2.codewhisperer.ai.aws.dev/"
+        //const val CODEWHISPERER_ENDPOINT = "https://rts.gamma-us-west-2.codewhisperer.ai.aws.dev/"
         const val CODEWHISPERER_ENDPOINT = "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev/"
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
 

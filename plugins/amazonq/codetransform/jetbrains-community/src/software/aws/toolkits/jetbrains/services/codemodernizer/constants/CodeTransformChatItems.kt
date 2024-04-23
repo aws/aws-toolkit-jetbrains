@@ -312,7 +312,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 
 fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformHilDownloadArtifact) = CodeTransformChatMessageContent(
     // TODO string review
-    message = "I ran into a dependency issue and way not able to successfully complete the transformation.\n\nHere is the dependency causing the error:\n\n```xml" +
+    message = "Here is the dependency causing the error:\n\n```xml" +
         "\n" +
         "<dependencies>\n" +
         "  <dependency>\n" +
@@ -322,9 +322,6 @@ fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformH
         "  </dependency>\n" +
         "</dependencies>",
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    buttons = listOf(
-        openDependencyErrorPomFileButton,
-    ),
 )
 
 fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
@@ -359,18 +356,35 @@ fun buildUserHilSelection(version: String) = CodeTransformChatMessageContent(
 
 fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "Compiling with your selected version",
-    buttons = listOf(
-        openMvnBuildButton,
-    ),
+    message = "Trying to resume transformation with your selected version",
 )
 
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "I resumed the transformation job with your selection",
+    type = CodeTransformChatMessageType.PendingAnswer,
+    // TODO complete message
+    message = "I resumed the transformation job with your selection. It may take 10-30 minutes to complete the transformation.",
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
+)
+
+fun buildHilResumedFromRejectContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    // TODO complete message
+    message = "It may take 10-30 minutes to finish the transformation.",
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
 )
 
 fun buildHilRejectContent() = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
+    type = CodeTransformChatMessageType.PendingAnswer,
     message = "I will continue without the dependency",
+)
+
+fun buildHilInitialContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = "I ran into a dependency issue and was not able to succesfully complete the transformation.",
 )
