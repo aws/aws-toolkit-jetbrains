@@ -137,19 +137,24 @@ fun loginSso(
     requestedScopes: List<String>,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
     onError: (String) -> Unit = {}
-): AwsBearerTokenConnection {
-    fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection {
+): AwsBearerTokenConnection? {
+    fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
-        val connection = authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
-            (transientConnection.getConnectionSettings().tokenProvider.delegate as? InteractiveBearerTokenProvider)?.let {
-                onPendingToken(it)
+        val connection = try {
+            authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
+                (transientConnection.getConnectionSettings().tokenProvider.delegate as? InteractiveBearerTokenProvider)?.let {
+                    onPendingToken(it)
+                }
+                reauthConnectionIfNeeded(project, transientConnection)
+
+                // try deleting duplicate connection if any after auth succeeded, transient connection has not been added to the authManager at this point of time
+                authManager.deleteConnection(transientConnection.id)
             }
-            reauthConnectionIfNeeded(project, transientConnection)
+        } catch (e: Exception) {
+            val message = ssoErrorMessageFromException(e)
 
-            // try deleting duplicate connection if any after auth succeeded, transient connection has not been added to the authManager at this point of time
-            authManager.deleteConnection(transientConnection.id)
-
-            ToolkitConnectionManager.getInstance(project).switchConnection(transientConnection)
+            onError(message)
+            null
         }
 
         return connection
