@@ -145,6 +145,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
                 val feature: String = jsonTree.get("feature").asText()
+
                 val scopes = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
                     CODECATALYST_SCOPES
                 } else {

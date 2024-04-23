@@ -81,6 +81,7 @@ export default defineComponent({
     data() {
         return {
             selectedLoginOption: LoginIdentifier.NONE as any,
+            existingLogin: { id: -1, text: '', title: '' },
             LoginOption: LoginIdentifier
         }
     },
