@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
@@ -93,7 +94,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
+        if (isNewConnectionForQ) {
+            openMeetQPage(project)
+        }
+        
         WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+        
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || isQConnected(project)) {
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
