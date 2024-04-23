@@ -6,19 +6,25 @@ package software.aws.toolkits.core.credentials
 import software.aws.toolkits.core.utils.tryOrNull
 import java.net.URI
 
-private const val ISSUER_URL_BASE = "identitycenter.amazonaws.com/"
+private const val CLASSIC_ISSUER_URL = "identitycenter.amazonaws.com/"
+private const val GOVCLOUD_ISSUER_URL = "identitycenter.us-gov.amazonaws.com/"
+private const val CN_ISSUER_URL = "identitycenter.amazonaws.com.cn/"
 private const val CLASSIC_START_URL = ".awsapps.com/start"
 private const val GOVCLOUD_START_URL = "us-gov-home.awsapps.com/directory/"
-private const val CHINA_START_URL = "awsapps.cn/directory/"
+private const val CN_START_URL = "awsapps.cn/directory/"
 
 fun ssoIdentifierFromUrl(url: String): String {
     val base = url.removePrefix("https://")
 
     return when {
-        base.startsWith(ISSUER_URL_BASE) -> base.removePrefix(ISSUER_URL_BASE)
         base.contains(CLASSIC_START_URL) -> base.substringBefore(CLASSIC_START_URL)
+        base.contains(CLASSIC_ISSUER_URL) -> base.substringAfter(CLASSIC_ISSUER_URL)
+
         base.contains(GOVCLOUD_START_URL) -> base.substringAfter(GOVCLOUD_START_URL)
-        base.contains(CHINA_START_URL) -> base.substringAfter(CHINA_START_URL)
+        base.startsWith(GOVCLOUD_ISSUER_URL) -> base.substringAfter(GOVCLOUD_ISSUER_URL)
+
+        base.contains(CN_START_URL) -> base.substringAfter(CN_START_URL)
+        base.startsWith(CN_ISSUER_URL) -> base.substringAfter(CN_ISSUER_URL)
         else -> base
     }
 }
