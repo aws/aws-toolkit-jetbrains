@@ -227,9 +227,13 @@ class CodeModernizerSession(
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
             LOG.error { errorMessage }
+
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            CodeModernizerStartJobResult.UploadArtifactToS3Failure
+
             // emit this metric here manually since we don't use callApi(), which emits its own metric
             telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
-            throw e // pass along error to callee
         }
         if (!shouldStop.get()) {
             telemetry.logApiLatency(

@@ -7,6 +7,7 @@ sealed class CodeModernizerStartJobResult {
     data class ZipCreationFailed(val reason: String) : CodeModernizerStartJobResult()
     data class Started(val jobId: JobId) : CodeModernizerStartJobResult()
     data class UnableToStartJob(val exception: String) : CodeModernizerStartJobResult()
+    object UploadArtifactToS3Failure : CodeModernizerStartJobResult()
     object Cancelled : CodeModernizerStartJobResult()
     object CancelledMissingDependencies : CodeModernizerStartJobResult()
     object CancelledZipTooLarge : CodeModernizerStartJobResult()
