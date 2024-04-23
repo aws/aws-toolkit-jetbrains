@@ -134,7 +134,7 @@ class ToolkitBearerTokenProvider(val delegate: ToolkitBearerTokenProviderDelegat
         fun ssoDisplayName(startUrl: String) = if (startUrl == SONO_URL) {
             message("aws_builder_id.service_name")
         } else {
-            message("iam_identity_center.service_name", ssoIdentifierFromUrl(startUrl) ?: startUrl)
+            message("iam_identity_center.service_name", ssoIdentifierFromUrl(startUrl))
         }
 
         fun diskSessionIdentifier(profileName: String) = "sso-session:$profileName"
