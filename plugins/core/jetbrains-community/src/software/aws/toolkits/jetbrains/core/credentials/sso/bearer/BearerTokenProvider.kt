@@ -127,7 +127,7 @@ class InteractiveBearerTokenProvider(
 
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     newScopes?.let {
-                        if (id == providerId && it.sorted() != scopes.sorted()) {
+                        if (id == providerId && it.toSet() != scopes.toSet()) {
                             invalidate()
                         }
                     }
