@@ -3,13 +3,13 @@
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.junit5.TestApplication
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 @TestApplication
 class PluginLoadTest {
     @Test
     fun `split plugin can load with older plugin without crashing IDE`() {
-        Assertions.assertThat(ApplicationManager.getApplication()).isNotNull()
+        assertThat(ApplicationManager.getApplication()).isNotNull()
     }
 }

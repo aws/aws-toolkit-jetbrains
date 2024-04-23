@@ -18,7 +18,7 @@ intellij {
         listOf(
             project(":plugin-core"),
             project(":plugin-amazonq"),
-            "aws.toolkit:2.19-233"
+            "aws.toolkit:2.19-${ideProfile.shortName}"
         )
     )
 
