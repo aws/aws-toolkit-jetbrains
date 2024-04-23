@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
+import software.aws.toolkits.resources.message
 
 class PluginVersionChecker : ApplicationInitializedListener {
     override suspend fun execute(asyncScope: CoroutineScope) {
@@ -51,13 +52,13 @@ class PluginVersionChecker : ApplicationInitializedListener {
 
         val notificationGroup = SingletonNotificationManager("aws.plugin.version.mismatch", NotificationType.WARNING)
         notificationGroup.notify(
-            "AWS Plugin Incompatibility",
-            "The plugin versions for Amazon Q, AWS Toolkit, and AWS Toolkit Core must match or conflicts may occur.",
+            message("plugin.incompatible.title"),
+            message("plugin.incompatible.message"),
             null
         ) {
             it.isImportant = true
             it.addAction(
-                NotificationAction.createSimpleExpiring("Disable incompatible plugins and restart IDE") {
+                NotificationAction.createSimpleExpiring(message("plugin.incompatible.fix")) {
                     // try update core and disable everything else
                     val coreDescriptor = core.descriptor as? IdeaPluginDescriptor
                     tryOrNull {
