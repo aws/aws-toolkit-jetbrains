@@ -13,6 +13,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationInitializedListener implementation="software.aws.toolkits.jetbrains.PluginVersionChecker"/>
         <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackHandler"/>
+        <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackResultService"/>
 
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.settings.AwsSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"
