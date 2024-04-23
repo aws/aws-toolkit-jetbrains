@@ -42,7 +42,7 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-class WebviewPanel(val project: Project) {
+class QWebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
     var browser: QWebviewBrowser? = null
         private set
@@ -84,7 +84,7 @@ class WebviewPanel(val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<WebviewPanel>()
+        fun getInstance(project: Project) = project.service<QWebviewPanel>()
     }
 }
 
