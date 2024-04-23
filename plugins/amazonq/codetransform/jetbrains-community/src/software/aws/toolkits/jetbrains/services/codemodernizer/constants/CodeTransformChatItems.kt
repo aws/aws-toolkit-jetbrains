@@ -386,5 +386,5 @@ fun buildHilRejectContent() = CodeTransformChatMessageContent(
 
 fun buildHilInitialContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I ran into a dependency issue and was not able to succesfully complete the transformation.",
+    message = "I ran into a dependency issue and was not able to successfully complete the transformation.",
 )
