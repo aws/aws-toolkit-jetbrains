@@ -38,7 +38,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             return 0
         }
         val htmlInString = convertMarkdownToHTML(message.toString())
-        val patternOfCodeBlock = Regex("<pre><code")
+        val patternOfCodeBlock = Regex("<pre>\\s*<code")
         return patternOfCodeBlock.findAll(htmlInString).count()
     }
 
