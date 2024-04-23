@@ -8,7 +8,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -19,27 +18,16 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConnection
-import software.aws.toolkits.jetbrains.core.credentials.ChangeSettingsMode
-import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBuilder
-import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import software.aws.toolkits.jetbrains.core.credentials.LastLoginIdcInfo
 import software.aws.toolkits.jetbrains.core.credentials.Login
-import software.aws.toolkits.jetbrains.core.credentials.ProjectLevelSettingSelector
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
@@ -217,7 +205,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             // existing connections
             val bearerCreds = bearerConnection().associate {
                 it.id to BearerConnectionSelectionSettings(it) { conn ->
-                    val connectionManager = ToolkitConnectionManager.getInstance(project)
                     if (conn.isSono()) {
                         loginBuilderId(CODECATALYST_SCOPES)
                     } else {
@@ -230,7 +217,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                         AwsRegionProvider.getInstance()[conn.region]?.let { region ->
                             loginIdC(conn.sessionName, conn.startUrl, region, scopes)
                         }
-
                     }
                 }
             }

@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -149,14 +148,14 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                        SsoLogoutAction(connection).actionPerformed(
-                            AnActionEvent.createFromDataContext(
-                                "qBrowser",
-                                null,
-                                DataContext.EMPTY_CONTEXT
-                            )
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
                         )
-                    }
+                    )
+                }
             }
 
             "reauth" -> {
@@ -206,7 +205,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                         AwsRegionProvider.getInstance()[conn.region]?.let { region ->
                             loginIdC(conn.sessionName, conn.startUrl, region, scopes)
                         }
-
                     }
                 }
             }

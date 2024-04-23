@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
-import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory
 
 private val LOG = LoggerFactory.getLogger("FunctionUtils")
 
