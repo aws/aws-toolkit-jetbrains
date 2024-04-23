@@ -12,6 +12,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackHandler"/>
+        <httpRequestHandler implementation="software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthCallbackResultService"/>
 
         <applicationService serviceInterface="software.aws.toolkits.jetbrains.settings.AwsSettings"
                             serviceImplementation="software.aws.toolkits.jetbrains.settings.DefaultAwsSettings"
@@ -60,7 +61,7 @@
             groupId="tools"
             bundle="software.aws.toolkits.resources.MessagesBundle"
             key="aws.settings.title"
-            instance="software.aws.toolkits.jetbrains.settings.AwsSettingsCoreConfigurable"
+            instance="software.aws.toolkits.jetbrains.settings.AwsSettingsSharedConfigurable"
         />
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.plugin.PluginAutoUpdater"/>
