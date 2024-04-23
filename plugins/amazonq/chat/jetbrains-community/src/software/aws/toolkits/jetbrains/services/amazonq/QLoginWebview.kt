@@ -6,10 +6,8 @@ package software.aws.toolkits.jetbrains.services.amazonq
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -19,15 +17,17 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactor
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
@@ -90,7 +91,7 @@ class WebviewPanel(val project: Project) {
     }
 }
 
-class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN) {
+class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN, WebviewBrowser.WEB_SCRIPT_URI) {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(project)
     override val query = JBCefJSQuery.create(jcefBrowser)
@@ -107,11 +108,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             }
 
             "loginBuilderId" -> {
-                val scope = CODEWHISPERER_SCOPES + Q_SCOPES
-                runInEdt {
-                    Login.BuilderId(scope, onPendingAwsId).loginBuilderId(project)
-                    // TODO: telemetry
-                }
+                loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
             }
 
             "loginIdC" -> {
@@ -121,15 +118,9 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
-                val scope = CODEWHISPERER_SCOPES + Q_SCOPES
+                val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
 
-                val onError: (String) -> Unit = { _ ->
-                    // TODO: telemetry
-                }
-                runInEdt {
-                    Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError).loginIdc(project)
-                    // TODO: telemetry
-                }
+                loginIdC(profileName, url, awsRegion, scopes)
             }
 
             "cancelLogin" -> {
@@ -163,6 +154,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             "reauth" -> {
                 // TODO: implementation
             }
+
             else -> {
                 error("received unknown command from Q browser: $command")
             }
@@ -220,35 +212,9 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
-    override fun getWebviewHTML(): String {
-        val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
-        val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
-
-        val jsScripts = """
-            <script>
-                (function() {
-                    window.ideApi = {
-                     postMessage: message => {
-                         $postMessageToJavaJsCode
-                     }
-                };
-                }())
-            </script>
-            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
-        """.trimIndent()
-
-        return """
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>AWS Q</title>
-                </head>
-                <body class="$colorMode">
-                    <div id="app"></div>
-                    $jsScripts
-                </body>
-            </html>
-        """.trimIndent()
+    override fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
+        LOG.error { "IAM is not supported by Q" }
+        return
     }
 
     companion object {

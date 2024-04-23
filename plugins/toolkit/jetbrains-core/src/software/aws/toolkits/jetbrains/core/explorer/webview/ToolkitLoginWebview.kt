@@ -8,7 +8,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -19,12 +18,16 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
@@ -33,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -86,7 +90,7 @@ class ToolkitWebviewPanel(val project: Project) {
 }
 
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
-class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN) {
+class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, ToolkitWebviewBrowser.DOMAIN, ToolkitWebviewBrowser.WEB_SCRIPT_URI) {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser: JBCefBrowserBase by lazy {
         val client = JBCefApp.getInstance().createClient()
@@ -112,9 +116,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             }
 
             "loginBuilderId" -> {
-                runInEdt {
-                    Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
-                }
+                loginBuilderId(CODECATALYST_SCOPES)
             }
 
             "loginIdC" -> {
@@ -123,37 +125,15 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
-
                 val feature: String = jsonTree.get("feature").asText()
 
-                val onError: (String) -> Unit = { _ ->
-                    // TODO: telemetry
-                }
-
-                val scope = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
+                val scopes = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
                     CODECATALYST_SCOPES
                 } else {
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
-                val login = Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
-
-                runInEdt {
-                    val connection = login.loginIdc(project)
-                    if (connection != null && scope.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
-                        val tokenProvider = connection.getConnectionSettings().tokenProvider
-
-                        val rolePopup = IdcRolePopup(
-                            project,
-                            awsRegion.id,
-                            profileName,
-                            tokenProvider,
-                            IdcRolePopupState(), // TODO: is it correct <<?
-                        )
-
-                        rolePopup.show()
-                    }
-                }
+                loginIdC(profileName, url, awsRegion, scopes)
             }
 
             "loginIAM" -> {
@@ -161,15 +141,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val profileName = jsonTree.get("profileName").asText()
                 val accessKey = jsonTree.get("accessKey").asText()
                 val secretKey = jsonTree.get("secretKey").asText()
-
-                // TODO: telemetry, callbacks
-                runInEdt {
-                    Login.LongLivedIAM(
-                        profileName,
-                        accessKey,
-                        secretKey
-                    ).loginIAM(project, {}, {}, {})
-                }
+                loginIAM(profileName, accessKey, secretKey)
             }
 
             "toggleBrowser" -> {
@@ -246,38 +218,32 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
-    fun component(): JComponent? = jcefBrowser.component
+    override fun loginIdC(profileName: String, url: String, region: AwsRegion, scopes: List<String>) {
+        val onError: (String) -> Unit = { _ ->
+            // TODO: telemetry
+        }
 
-    override fun getWebviewHTML(): String {
-        val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
-        val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
+        val login = Login.IdC(profileName, url, region, scopes, onPendingProfile, onError)
 
-        val jsScripts = """
-            <script>
-                (function() {
-                    window.ideApi = {
-                     postMessage: message => {
-                         $postMessageToJavaJsCode
-                     }
-                };
-                }())
-            </script>
-            <script type="text/javascript" src="$WEB_SCRIPT_URI"></script>
-        """.trimIndent()
+        runInEdt {
+            val connection = login.loginIdc(project)
+            if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
+                val tokenProvider = connection.getConnectionSettings().tokenProvider
 
-        return """
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>AWS Q</title>
-                </head>
-                <body class="$colorMode">
-                    <div id="app"></div>
-                    $jsScripts
-                </body>
-            </html>
-        """.trimIndent()
+                val rolePopup = IdcRolePopup(
+                    project,
+                    region.id,
+                    profileName,
+                    tokenProvider,
+                    IdcRolePopupState(), // TODO: is it correct <<?
+                )
+
+                rolePopup.show()
+            }
+        }
     }
+
+    fun component(): JComponent? = jcefBrowser.component
 
     companion object {
         private val LOG = getLogger<ToolkitWebviewBrowser>()
