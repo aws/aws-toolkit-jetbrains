@@ -44,7 +44,7 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-class WebviewPanel(val project: Project) {
+class WebviewPanel private constructor(val project: Project) {
     private val webviewContainer = Wrapper()
     var browser: WebviewBrowser? = null
         private set

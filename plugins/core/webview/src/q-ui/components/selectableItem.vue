@@ -5,7 +5,7 @@
     <div class="item-container" :class="{ selected: isSelected }" @click="toggleSelection" @focus="toggleSelection" tabindex="0">
         <div class="icon">
             <svg
-                v-if="itemTitle == 'Personal'"
+                v-if="itemTitle == 'Use for free'"
                 width="20"
                 height="20"
                 viewBox="0 0 16 16"
@@ -20,7 +20,7 @@
                 />
             </svg>
             <svg
-                v-if="itemTitle == 'Workforce'"
+                v-if="itemTitle == 'Use professional license' || itemTitle == 'Workforce'"
                 width="20"
                 height="20"
                 viewBox="0 0 16 16"
@@ -35,7 +35,7 @@
                 />
             </svg>
             <svg
-                v-if="itemTitle == 'IAM Credential'"
+                v-if="itemTitle == 'IAM Credentials'"
                 width="15"
                 height="15"
                 viewBox="0 0 15 15"

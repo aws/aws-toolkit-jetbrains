@@ -39,7 +39,7 @@
             <div class="title no-bold">Start URL</div>
             <div class="hint">URL for your organization, provided by an admin or help desk</div>
             <input
-                class="url-input font-amazon url-part"
+                class="url-input font-amazon"
                 type="text"
                 id="startUrl"
                 name="startUrl"
@@ -177,11 +177,6 @@ export default defineComponent({
 .sso-profile, .url-input {
     padding-left: 10px;
     box-sizing: border-box;
-}
-
-.url-input {
-    margin-left: 3px;
-    margin-right: 3px;
 }
 
 .region-select {

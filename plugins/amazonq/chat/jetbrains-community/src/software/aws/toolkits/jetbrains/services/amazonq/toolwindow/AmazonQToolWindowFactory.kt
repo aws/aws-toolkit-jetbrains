@@ -8,6 +8,9 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -31,6 +34,27 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     onConnectionChanged(project, newConnection, toolWindow)
+                }
+            }
+        )
+
+        project.messageBus.connect().subscribe(
+            ToolWindowManagerListener.TOPIC,
+            object : ToolWindowManagerListener {
+                override fun stateChanged(
+                    toolWindowManager: ToolWindowManager,
+                    toolWindow: ToolWindow,
+                    changeType: ToolWindowManagerListener.ToolWindowManagerEventType
+                ) {
+                    if (changeType == ToolWindowManagerListener.ToolWindowManagerEventType.MovedOrResized) {
+                        val width = toolWindow.component.width
+                        if (width < MINIMUM_TOOLWINDOW_WIDTH) {
+                            LOG.debug {
+                                "Amazon Q Tool window stretched to a width less than the minimum allowed width, resizing to the minimum allowed width"
+                            }
+                            (toolWindow as ToolWindowEx).stretchWidth(MINIMUM_TOOLWINDOW_WIDTH - width)
+                        }
+                    }
                 }
             }
         )
@@ -69,16 +93,14 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
+        WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || isQConnected(project)) {
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
             AmazonQToolWindow.getInstance(project).component
         } else {
             LOG.debug { "returning login window; no Q connection found" }
-            WebviewPanel.getInstance(project).let {
-                it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
-                it.component
-            }
+            WebviewPanel.getInstance(project).component
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
@@ -95,5 +117,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
+        private const val MINIMUM_TOOLWINDOW_WIDTH = 325
     }
 }
