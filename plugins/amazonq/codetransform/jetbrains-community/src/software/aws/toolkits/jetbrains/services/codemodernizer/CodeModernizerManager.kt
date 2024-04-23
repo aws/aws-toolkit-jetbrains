@@ -369,6 +369,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 )
             }
 
+            is CodeModernizerStartJobResult.UploadArtifactToS3Failure -> {
+                CodeModernizerJobCompletedResult.UnableToCreateJob(
+                    message("codemodernizer.notification.warn.unable_to_start_job_due_to_upload_failure"),
+                    false,
+                )
+            }
+
             is CodeModernizerStartJobResult.Started -> {
                 handleJobStarted(result.jobId, session)
             }
