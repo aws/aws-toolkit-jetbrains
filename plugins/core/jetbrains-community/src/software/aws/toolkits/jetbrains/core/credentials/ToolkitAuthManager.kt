@@ -129,7 +129,19 @@ interface ToolkitConnectionManager : Disposable {
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
  */
 @Deprecated("Connections created through this function are not written to the user's ~/.aws/config file")
-fun loginSso(project: Project?, startUrl: String, region: String, requestedScopes: List<String>): BearerTokenProvider {
+fun loginSso(project: Project?, startUrl: String, region: String, requestedScopes: List<String>): AwsBearerTokenConnection {
+    fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection {
+        val authManager = ToolkitAuthManager.getInstance()
+        val connection = authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
+            reauthConnectionIfNeeded(project, transientConnection)
+
+            // try deleting duplicate connection if any, transient connection has not been added to the authManager at this point of time
+            authManager.deleteConnection(transientConnection.id)
+        }
+
+        return connection
+    }
+
     val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
 
     val manager = ToolkitAuthManager.getInstance()
@@ -151,29 +163,28 @@ fun loginSso(project: Project?, startUrl: String, region: String, requestedScope
                     are not a complete subset of current scopes (${connection.scopes})
                 """.trimIndent()
             }
-            logoutFromSsoConnection(project, connection)
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            return@let null
+            return createAndAuthNewConnection(
+                ManagedSsoProfile(
+                    region,
+                    startUrl,
+                    allScopes.toList()
+                )
+            )
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
-        return reauthConnection(project, connection)
+        reauthConnectionIfNeeded(project, connection)
+        return connection
     } ?: run {
         // No existing connection, start from scratch
-        val connection = manager.createConnection(
+        createAndAuthNewConnection(
             ManagedSsoProfile(
                 region,
                 startUrl,
                 allScopes.toList()
             )
         )
-
-        try {
-            reauthConnection(project, connection)
-        } catch (e: Exception) {
-            manager.deleteConnection(connection)
-            throw e
-        }
     }
 }
 
@@ -189,7 +200,7 @@ internal fun reauthConnection(project: Project?, connection: ToolkitConnection):
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
-        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+        ToolkitAuthManager.getInstance().deleteConnection(connection)
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             deleteSsoConnection(connection)
         }
@@ -263,7 +274,9 @@ fun maybeReauthProviderIfNeeded(
             }
         }
 
-        BearerTokenAuthState.AUTHORIZED -> { return false }
+        BearerTokenAuthState.AUTHORIZED -> {
+            return false
+        }
     }
 }
 

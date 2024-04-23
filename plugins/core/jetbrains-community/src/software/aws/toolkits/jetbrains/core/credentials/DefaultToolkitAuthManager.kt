@@ -86,7 +86,12 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
     override fun tryCreateTransientSsoConnection(profile: AuthProfile, callback: (AwsBearerTokenConnection) -> Unit): AwsBearerTokenConnection {
         val connection = (connectionFromProfile(profile) as AwsBearerTokenConnection).also {
             callback(it)
-            transientConnections.add(it)
+
+            if (profile is ManagedSsoProfile) {
+                connections.add(it)
+            } else {
+                transientConnections.add(it)
+            }
         }
 
         return connection
