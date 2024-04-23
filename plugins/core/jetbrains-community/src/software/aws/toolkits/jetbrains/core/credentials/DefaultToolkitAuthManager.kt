@@ -88,6 +88,16 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             callback(it)
 
             if (profile is ManagedSsoProfile) {
+                connections.removeAll { existOldConn ->
+                    (existOldConn.id == it.id).also { isDuplicate ->
+                        if (isDuplicate && existOldConn is Disposable) {
+                            ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+                                .onChange(existOldConn.id)
+                            Disposer.dispose(existOldConn)
+                        }
+                    }
+                }
+
                 connections.add(it)
             } else {
                 transientConnections.add(it)

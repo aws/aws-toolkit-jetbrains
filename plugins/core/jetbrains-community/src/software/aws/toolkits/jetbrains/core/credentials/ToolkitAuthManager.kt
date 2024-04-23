@@ -146,9 +146,6 @@ fun loginSso(
                     onPendingToken(it)
                 }
                 reauthConnectionIfNeeded(project, transientConnection)
-
-                // try deleting duplicate connection if any after auth succeeded, transient connection has not been added to the authManager at this point of time
-                authManager.deleteConnection(transientConnection.id)
             }
         } catch (e: Exception) {
             val message = ssoErrorMessageFromException(e)
