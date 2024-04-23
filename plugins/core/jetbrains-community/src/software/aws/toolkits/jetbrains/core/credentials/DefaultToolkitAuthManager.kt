@@ -88,18 +88,12 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
             callback(it)
 
             if (profile is ManagedSsoProfile) {
-                connections.removeAll { existOldConn ->
-                    (existOldConn.id == it.id).also { isDuplicate ->
-                        if (isDuplicate && existOldConn is Disposable) {
-                            ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                                .onChange(existOldConn.id)
-                            Disposer.dispose(existOldConn)
-                        }
-                    }
-                }
+                disposeStaleConnections(it)
 
                 connections.add(it)
             } else {
+                disposeStaleConnections(it)
+
                 transientConnections.add(it)
             }
         }
@@ -144,6 +138,28 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 
         connections.add(connection)
         return connection
+    }
+
+    private fun disposeStaleConnections(newConnection: AwsBearerTokenConnection) {
+        connections.removeAll { existOldConn ->
+            (existOldConn.id == newConnection.id).also { isDuplicate ->
+                if (isDuplicate && existOldConn is Disposable) {
+                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+                        .onChange(existOldConn.id, newConnection.scopes)
+                    Disposer.dispose(existOldConn)
+                }
+            }
+        }
+
+        transientConnections.removeAll { existOldConn ->
+            (existOldConn.id == newConnection.id).also { isDuplicate ->
+                if (isDuplicate && existOldConn is Disposable) {
+                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+                        .onChange(existOldConn.id, newConnection.scopes)
+                    Disposer.dispose(existOldConn)
+                }
+            }
+        }
     }
 
     private fun deleteConnection(predicate: (ToolkitConnection) -> Boolean) {
