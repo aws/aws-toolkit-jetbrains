@@ -21,6 +21,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.jetbrains.services.cwc.messages.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
+import software.aws.toolkits.jetbrains.utils.convertMarkdownToHTML
 
 class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
 
@@ -32,17 +33,13 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private var requestId: String = ""
     private var statusCode: Int = 0
 
-    companion object {
-        val CODE_BLOCK_REGEX: Regex = Regex("^```", RegexOption.MULTILINE)
-    }
-
     private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
         if (message.isEmpty()) {
             return 0
         }
-        val countOfCodeBlocks = CODE_BLOCK_REGEX.findAll(message)
-        val numberOfTripleBackTicksInMarkdown = countOfCodeBlocks.count()
-        return numberOfTripleBackTicksInMarkdown / 2
+        val htmlInString = convertMarkdownToHTML(message.toString())
+        val patternOfCodeBlock = Regex("<pre><code")
+        return patternOfCodeBlock.findAll(htmlInString).count()
     }
 
     fun handle(
