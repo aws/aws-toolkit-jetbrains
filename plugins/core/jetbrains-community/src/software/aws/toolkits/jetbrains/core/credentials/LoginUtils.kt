@@ -213,9 +213,8 @@ fun authAndUpdateConfig(
 internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
     is IllegalStateException -> e.message ?: message("general.unknown_error")
     is ProcessCanceledException -> message("codewhisperer.credential.login.dialog.exception.cancel_login")
-    is InvalidGrantException -> message("codewhisperer.credential.login.exception.invalid_grant")
+    is InvalidGrantException, is SsoOidcException -> e.message ?: message("codewhisperer.credential.login.exception.invalid_grant")
     is InvalidRequestException -> message("codewhisperer.credential.login.exception.invalid_input")
-    is SsoOidcException -> message("codewhisperer.credential.login.exception.general.oidc")
     else -> {
         val baseMessage = when (e) {
             is IOException -> "codewhisperer.credential.login.exception.io"
