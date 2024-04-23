@@ -36,7 +36,7 @@ import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
 
-const val PKCE_CLIENT_NAME = "AWS IDE extensions for JetBrains"
+const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
