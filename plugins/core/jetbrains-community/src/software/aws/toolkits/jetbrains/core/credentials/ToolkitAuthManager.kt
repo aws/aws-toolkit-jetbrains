@@ -157,6 +157,7 @@ fun loginSso(
             null
         }
 
+        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
         return connection
     }
 
