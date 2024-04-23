@@ -154,7 +154,7 @@ class CodeModernizerSession(
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            CodeModernizerStartJobResult.UploadArtifactToS3Failure(
+            CodeModernizerStartJobResult.UnabletoStartOrUploadJob(
                 "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/security_iam_manage-access-with-policies.html"
             )
         } finally {
@@ -231,7 +231,7 @@ class CodeModernizerSession(
             LOG.error { errorMessage }
             // emit this metric here manually since we don't use callApi(), which emits its own metric
             telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
-            throw e
+            throw e // pass along error to callee
         }
         if (!shouldStop.get()) {
             telemetry.logApiLatency(
