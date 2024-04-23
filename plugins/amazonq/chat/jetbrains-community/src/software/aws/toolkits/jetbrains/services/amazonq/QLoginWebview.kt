@@ -116,7 +116,6 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
 
             "loginIdC" -> {
                 // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
@@ -127,7 +126,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
                     // TODO: telemetry
                 }
                 runInEdt {
-                    Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError).loginIdc(project)
+                    Login.IdC(url, awsRegion, scope, onPendingProfile, onError).loginIdc(project)
                     // TODO: telemetry
                 }
             }

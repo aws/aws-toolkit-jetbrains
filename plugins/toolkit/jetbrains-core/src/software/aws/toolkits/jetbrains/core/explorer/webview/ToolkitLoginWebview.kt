@@ -19,6 +19,7 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.Login
@@ -119,7 +120,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
             "loginIdC" -> {
                 // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
@@ -136,7 +136,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
-                val login = Login.IdC(profileName, url, awsRegion, scope, onPendingProfile, onError)
+                val login = Login.IdC(url, awsRegion, scope, onPendingProfile, onError)
 
                 runInEdt {
                     val connection = login.loginIdc(project)
@@ -146,7 +146,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                         val rolePopup = IdcRolePopup(
                             project,
                             awsRegion.id,
-                            profileName,
+                            validatedSsoIdentifierFromUrl(url),
                             tokenProvider,
                             IdcRolePopupState(), // TODO: is it correct <<?
                         )
