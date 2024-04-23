@@ -33,13 +33,16 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private var requestId: String = ""
     private var statusCode: Int = 0
 
+    companion object {
+        private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
+    }
+
     private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
         if (message.isEmpty()) {
             return 0
         }
         val htmlInString = convertMarkdownToHTML(message.toString())
-        val patternOfCodeBlock = Regex("<pre>\\s*<code")
-        return patternOfCodeBlock.findAll(htmlInString).count()
+        return CODE_BLOCK_PATTERN.findAll(htmlInString).count()
     }
 
     fun handle(
