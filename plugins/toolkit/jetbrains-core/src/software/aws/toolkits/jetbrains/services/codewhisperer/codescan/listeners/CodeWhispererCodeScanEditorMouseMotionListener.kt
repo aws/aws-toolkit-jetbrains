@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.EditorMouseEvent
@@ -209,10 +210,11 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                     when {
                         he.description.startsWith("amazonq://issue/explain-") -> {
-                            explainWithQ(issue)
+//                            ActionManager.getInstance().getAction()
+                            explainWithQ(issue, "Explain")
                         }
                         he.description.startsWith("amazonq://issue/fix-") -> {
-                            fixWithQ(issue)
+                            explainWithQ(issue, "Fix")
                         }
                         else -> {
                             BrowserUtil.browse(he.url)
@@ -387,6 +389,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 )
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)
                 hidePopup()
+                CodeWhispererCodeScanManager.getInstance(issue.project).updateScanNodesForIssuesOutOfTextRange(issue)
             }
             sendCodeRemediationTelemetryToServiceApi(
                 issue.file.programmingLanguage(),
@@ -417,28 +420,15 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         }
     }
 
-    private fun explainWithQ(issue: CodeWhispererCodeScanIssue) {
+    private fun explainWithQ(issue: CodeWhispererCodeScanIssue, command: String) {
         try {
             // publish a message
             project.messageBus.syncPublisher(
                 CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q
-            ).sendIssueToQ(issue.description.markdown, issue.codeText)
+            ).sendIssueToQ(issue.title, issue.description.markdown, issue.codeText, command)
             hidePopup()
         } catch (err: Error) {
             notifyError("Explain With Q failed")
-            LOG.error { "Q chat message publishing failed: $err" }
-        }
-    }
-
-    private fun fixWithQ(issue: CodeWhispererCodeScanIssue) {
-        try {
-            // publish a message
-            project.messageBus.syncPublisher(
-                CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q
-            ).fixIssueWithQ(issue.description.markdown, issue.codeText)
-            hidePopup()
-        } catch (err: Error) {
-            notifyError("Fix With Q failed")
             LOG.error { "Q chat message publishing failed: $err" }
         }
     }

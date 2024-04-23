@@ -17,6 +17,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
@@ -42,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -93,7 +95,8 @@ class ChatController private constructor(
         context.project.messageBus.connect().subscribe(
             CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q,
             object : CodeScanActionsListener {
-                override fun sendIssueToQ(issueDescription: String?, issueCode: String?) {
+                override fun sendIssueToQ(issueTitle: String?, issueDescription: String?, issueCode: String?, command: String?) {
+                    ToolWindowManager.getInstance(context.project).getToolWindow(AMAZON_Q_WINDOW_ID)?.activate(null, true)
                     scope.launch {
                         logger.info { "Code Scan Explain issue with Q message received for issue: $issueDescription" }
                         // Extract context
@@ -101,8 +104,8 @@ class ChatController private constructor(
                         val triggerId = UUID.randomUUID().toString()
                         val codeSelection = "\n```\n${issueCode?.trimIndent()?.trim()}\n```\n"
 
-                        val prompt = "Explain the issue ```$issueDescription``` in my code: $codeSelection"
-
+                        val prompt =
+                            "$command the following part of my code \n\n Issue:    $issueTitle \nDescription:    $issueDescription \nCode:    $codeSelection"
                         messagePublisher.publish(
                             EditorContextCommandMessage(
                                 message = prompt,
@@ -126,41 +129,6 @@ class ChatController private constructor(
                             message = prompt,
                             activeFileContext = fileContext,
                             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
-                            TriggerType.CodeScanButton,
-                        )
-                    }
-                }
-                override fun fixIssueWithQ(issueDescription: String?, issueCode: String?) {
-                    scope.launch {
-                        logger.info { "Code Scan Fix issue with Q message received for issue: $issueDescription" }
-                        // Extract context
-                        val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.CodeScanButton)
-                        val triggerId = UUID.randomUUID().toString()
-                        val codeSelection = "\n```\n${issueCode?.trimIndent()?.trim()}\n```\n"
-
-                        val prompt = "Fix the issue ```$issueDescription``` in my code: $codeSelection"
-
-                        messagePublisher.publish(
-                            EditorContextCommandMessage(
-                                message = prompt,
-                                command = EditorContextCommand.FixCodeScanIssue.actionId,
-                                triggerId = triggerId,
-                            ),
-                        )
-
-                        // Wait for the tab ID to come back
-                        val tabId = waitForTabId(triggerId)
-
-                        if (tabId == NO_TAB_AVAILABLE) {
-                            logger.info { "No tab is available to handle action" }
-                            // exit the function without any further actions
-                        }
-                        handleChat(
-                            tabId = tabId,
-                            triggerId = triggerId,
-                            message = prompt,
-                            activeFileContext = fileContext,
-                            userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.FixCodeScanIssue),
                             TriggerType.CodeScanButton,
                         )
                     }

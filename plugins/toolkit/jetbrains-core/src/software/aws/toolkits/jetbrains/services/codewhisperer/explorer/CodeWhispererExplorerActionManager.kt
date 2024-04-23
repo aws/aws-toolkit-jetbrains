@@ -62,6 +62,12 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.IsAutoCodeScanEnabled] = isAutoEnabledForCodeScan
     }
 
+    fun isMonthlyQuotaForCodeScansExceeded(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsMonthlyQuotaForCodeScansExceeded, false)
+
+    fun setMonthlyQuotaForCodeScansExceeded(isMonthlyQuotaForCodeScansExceeded: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.IsMonthlyQuotaForCodeScansExceeded] = isMonthlyQuotaForCodeScansExceeded
+    }
+
     fun setHasShownNewOnboardingPage(hasShownNewOnboardingPage: Boolean) {
         actionState.value[CodeWhispererExploreStateType.HasShownNewOnboardingPage] = hasShownNewOnboardingPage
     }
@@ -201,6 +207,7 @@ class CodeWhispererExploreActionState : BaseState() {
 enum class CodeWhispererExploreStateType {
     IsAutoEnabled,
     IsAutoCodeScanEnabled,
+    IsMonthlyQuotaForCodeScansExceeded,
     IsManualEnabled,
     HasAcceptedTermsOfServices,
     HasShownHowToUseCodeWhisperer,

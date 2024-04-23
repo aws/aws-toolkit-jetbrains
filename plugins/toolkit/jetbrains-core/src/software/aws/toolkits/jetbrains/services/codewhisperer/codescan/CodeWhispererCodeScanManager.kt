@@ -345,6 +345,27 @@ class CodeWhispererCodeScanManager(val project: Project) {
         } ?: listOf()
     }
 
+    fun updateScanNodesForIssuesOutOfTextRange(fixedIssue: CodeWhispererCodeScanIssue) {
+        val nodes = fixedIssue.textRange?.let { getOverlappingScanNodes(fixedIssue.file, it) }
+        val treeModel = getScanTree().model
+        var fixedNodes = 0
+        val overlappingNodes = nodes?.size
+        nodes?.forEach {
+            val issue = it.userObject as CodeWhispererCodeScanIssue
+            if (issue == fixedIssue) {
+                synchronized(it) {
+                    treeModel.valueForPathChanged(TreePath(it.path), issue.copy(isInvalid = true))
+                }
+                fixedNodes++
+            }
+            if (fixedNodes == overlappingNodes) {
+                issue.rangeHighlighter?.dispose()
+                issue.rangeHighlighter?.textAttributes = null
+            }
+        }
+        updateScanNodes(fixedIssue.file)
+    }
+
     fun getScanTree(): Tree = codeScanResultsPanel.getCodeScanTree()
 
     /**
@@ -526,6 +547,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 mutableListOf()
             }.add(scanNode)
         }
+
+        if (fileNode.childCount == 0) {
+            fileNode.removeFromParent()
+            fileNodeLookup.remove(file)
+        }
+
         // Add document and editor listeners to the documents having scan issues.
         addListeners()
         return codeScanTreeNodeRoot

@@ -7,8 +7,7 @@ import com.intellij.util.messages.Topic
 import java.util.EventListener
 
 interface CodeScanActionsListener : EventListener {
-    fun sendIssueToQ(issueDescription: String?, issueCode: String?)
-    fun fixIssueWithQ(issueDescription: String?, issueCode: String?)
+    fun sendIssueToQ(issueTitle: String?, issueDescription: String?, issueCode: String?, command: String?)
 
     companion object {
         @Topic.AppLevel

@@ -89,8 +89,10 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         showAccountlessNotificationIfNeeded(project)
 
         //  Run Proactive Code File Scan and disabling Auto File Scan for Builder Id Users.
+        val actionManager = CodeWhispererExplorerActionManager.getInstance()
+        actionManager.setMonthlyQuotaForCodeScansExceeded(false)
         if (isUserBuilderId(project)) {
-            CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(project, false)
+            actionManager.setAutoCodeScan(project, false)
         } else {
             CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
             runOnce = true

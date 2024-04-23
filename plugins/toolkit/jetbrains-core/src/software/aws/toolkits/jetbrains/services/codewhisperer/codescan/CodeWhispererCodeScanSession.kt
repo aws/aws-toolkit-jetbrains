@@ -37,17 +37,24 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanServiceInvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCANS_LIMIT_REACHED
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCANS_THROTTLING_MESSAGE
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PROJECT_SCANS_LIMIT_REACHED
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PROJECT_SCANS_THROTTLING_MESSAGE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
@@ -199,6 +206,18 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: Exception) {
             val errorCode = (e as? CodeWhispererException)?.awsErrorDetails()?.errorCode()
             val requestId = if (e is CodeWhispererException) e.requestId() else null
+            val errorMessage = (e as? CodeWhispererException)?.awsErrorDetails()?.errorMessage()
+
+            if (errorCode == "ThrottlingException" && errorMessage != null) {
+                if (errorMessage.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
+                    LOG.info { "Project Scans limit reached" }
+                    notifyError(PROJECT_SCANS_LIMIT_REACHED)
+                } else if (errorMessage.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
+                    LOG.info { "File Scans limit reached" }
+                    CodeWhispererExplorerActionManager.getInstance().setMonthlyQuotaForCodeScansExceeded(true)
+                    notifyError(FILE_SCANS_LIMIT_REACHED)
+                }
+            }
             LOG.error {
                 "Failed to run security scan and display results. Caused by: ${e.message}, status code: $errorCode, " +
                     "exception: ${e::class.simpleName}, request ID: $requestId " +

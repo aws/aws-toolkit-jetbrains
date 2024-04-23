@@ -20,6 +20,7 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.aws.toolkits.core.utils.WaiterTimeoutException
@@ -155,6 +156,39 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         inOrder.verify(codeScanSessionSpy, Times(1)).createCodeScan(eq(CodewhispererLanguage.Python.toString()), anyString())
         inOrder.verify(codeScanSessionSpy, Times(1)).getCodeScan(any())
         inOrder.verify(codeScanSessionSpy, Times(1)).listCodeScanFindings(eq("jobId"))
+    }
+
+    @Test
+    fun `test run() - code scans limit reached`() {
+        assertNotNull(sessionConfigSpy)
+
+        mockClient.stub {
+            onGeneric { codeScanSessionSpy.createUploadUrlAndUpload(any(), any(), any()) }.thenThrow(
+                CodeWhispererException.builder()
+                    .message("Project Scan Monthly Exceeded")
+                    .requestId("abc123")
+                    .statusCode(400)
+                    .cause(RuntimeException("Something went wrong"))
+                    .writableStackTrace(true)
+                    .awsErrorDetails(
+                        AwsErrorDetails.builder()
+                            .errorCode("ThrottlingException")
+                            .errorMessage("Maximum full project scan count reached for this month")
+                            .serviceName("CodeWhispererService")
+                            .build()
+                    )
+                    .build()
+            )
+        }
+        runBlocking {
+            val codeScanResponse = codeScanSessionSpy.run()
+            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+            if (codeScanResponse is CodeScanResponse.Failure) {
+                assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
+                assertThat(codeScanResponse.failureReason.toString()).contains("Project Scan Monthly Exceeded")
+                assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
+            }
+        }
     }
 
     @Test
