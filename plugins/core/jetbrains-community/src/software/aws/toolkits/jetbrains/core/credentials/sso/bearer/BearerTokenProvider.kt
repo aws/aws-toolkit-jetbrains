@@ -125,7 +125,7 @@ class InteractiveBearerTokenProvider(
     }
 
     private fun refreshToken(): RefreshResult<out SdkToken> {
-        val lastToken = lastToken.get() ?: error("Token refresh started before session initialized")
+        val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
         val token = if (Duration.between(Instant.now(), lastToken.expiresAt) > Duration.ofMinutes(30)) {
             lastToken
         } else {
@@ -155,7 +155,7 @@ class InteractiveBearerTokenProvider(
      * Only use if you know what you're doing.
      */
     override fun refresh(): AccessToken {
-        val lastToken = lastToken.get() ?: error("Token refresh started before session initialized")
+        val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
         return accessTokenProvider.refreshToken(lastToken).also {
             this.lastToken.set(it)
         }
@@ -176,6 +176,8 @@ class InteractiveBearerTokenProvider(
         }
     }
 }
+
+class NoTokenInitializedException(message:String): Exception(message)
 
 public enum class BearerTokenAuthState {
     AUTHORIZED,

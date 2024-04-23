@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 import software.aws.toolkits.jetbrains.datagrip.auth.compatability.DatabaseAuthProviderCompatabilityAdapter
 import software.aws.toolkits.jetbrains.datagrip.auth.compatability.project
 import software.aws.toolkits.jetbrains.datagrip.getAwsConnectionSettings
@@ -83,7 +84,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
                 DatabaseCredentialsAuthProvider.applyCredentials(connection, credentials, true)
             } catch (e: Throwable) {
                 result = Result.Failed
-                if (e is IllegalStateException && e.message?.contains("Token refresh started before session initialized") == true) {
+                if (e is NoTokenInitializedException) {
                     val simpleErrorInfo = SimpleErrorInfo(
                         message("rds.validation.iam_sso_connection.error_info"),
                         e,
