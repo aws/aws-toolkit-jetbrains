@@ -24,10 +24,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
@@ -35,7 +33,6 @@ import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactor
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
-import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
@@ -47,7 +44,7 @@ import javax.swing.JComponent
 
 class WebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
-    var browser: WebviewBrowser? = null
+    var browser: QWebviewBrowser? = null
         private set
 
     val component = panel {
@@ -80,7 +77,7 @@ class WebviewPanel(val project: Project) {
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
         } else {
-            browser = WebviewBrowser(project).also {
+            browser = QWebviewBrowser(project).also {
                 webviewContainer.add(it.component())
             }
         }
@@ -91,7 +88,7 @@ class WebviewPanel(val project: Project) {
     }
 }
 
-class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN, WebviewBrowser.WEB_SCRIPT_URI) {
+class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrowser.DOMAIN, QWebviewBrowser.WEB_SCRIPT_URI) {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(project)
     override val query = JBCefJSQuery.create(jcefBrowser)
@@ -218,7 +215,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
     }
 
     companion object {
-        private val LOG = getLogger<WebviewBrowser>()
+        private val LOG = getLogger<QWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
         private const val DOMAIN = "webview"
     }
