@@ -59,7 +59,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL} from "../../model";
+import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL, ExistConnection} from "../../model";
 
 export default defineComponent({
     name: "loginOptions",
@@ -80,13 +80,13 @@ export default defineComponent({
     },
     data() {
         return {
-            selectedLoginOption: LoginIdentifier.NONE as any,
+            selectedLoginOption: LoginIdentifier.NONE as string,
             existingLogin: { id: -1, text: '', title: '' },
             LoginOption: LoginIdentifier
         }
     },
     methods: {
-        toggleItemSelection(itemId: number | string) {
+        toggleItemSelection(itemId: string) {
             this.selectedLoginOption = itemId
         },
         handleBackButtonClick() {
@@ -103,8 +103,8 @@ export default defineComponent({
                 this.$emit('stageChanged', 'AWS_PROFILE')
             } else {
                 // TODO: else ... is not precise
-                // this.$emit('selectConnection', this.existConnections)
-                window.ideApi.postMessage({ command: 'selectConnection', connectionId:  this.selectedLoginOption})
+                // TODO: should pass the entire connection json obj instead of connection id only
+                this.$emit('login', new ExistConnection(this.selectedLoginOption))
             }
         },
         connectionTypeDescription(connection: AwsBearerTokenConnection): string {

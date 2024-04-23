@@ -55,11 +55,11 @@ export interface State {
 }
 
 export enum LoginIdentifier {
-    NONE,
-    BUILDER_ID,
-    ENTERPRISE_SSO,
-    IAM_CREDENTIAL,
-    EXISTING_LOGINS,
+    NONE = 'none',
+    BUILDER_ID = 'builderId',
+    ENTERPRISE_SSO = 'idc',
+    IAM_CREDENTIAL = 'iam',
+    EXISTING_LOGINS = 'existing',
 }
 
 export interface LoginOption {
@@ -93,6 +93,17 @@ export class IdC implements LoginOption {
 export class BuilderId implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.BUILDER_ID
 
+    requiresBrowser(): boolean {
+        return true
+    }
+}
+
+export class ExistConnection implements LoginOption {
+    id: LoginIdentifier = LoginIdentifier.EXISTING_LOGINS
+
+    constructor(readonly pluginConnectionId: string) {}
+
+    // this case only happens for bearer connection for now
     requiresBrowser(): boolean {
         return true
     }
