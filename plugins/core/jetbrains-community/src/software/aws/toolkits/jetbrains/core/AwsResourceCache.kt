@@ -303,7 +303,7 @@ class DefaultAwsResourceCache(
             subscribe(
                 BearerTokenProviderListener.TOPIC,
                 object : BearerTokenProviderListener {
-                    override fun onChange(providerId: String) {
+                    override fun onChange(providerId: String, newScopes: List<String>?) {
                         clearByCredential(providerId)
                     }
                 }

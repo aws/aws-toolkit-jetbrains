@@ -194,12 +194,12 @@ fun authAndUpdateConfig(
     configFilesFacade.updateSectionInConfig(
         SsoSessionConstants.SSO_SESSION_SECTION_NAME,
         Profile.builder()
-            .name(profile.configSessionName)
+            .name(updatedProfile.configSessionName)
             .properties(
                 mapOf(
-                    ProfileProperty.SSO_START_URL to profile.startUrl,
-                    ProfileProperty.SSO_REGION to profile.ssoRegion,
-                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to profile.scopes.joinToString(",")
+                    ProfileProperty.SSO_START_URL to updatedProfile.startUrl,
+                    ProfileProperty.SSO_REGION to updatedProfile.ssoRegion,
+                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to updatedProfile.scopes.joinToString(",")
                 )
             ).build()
     )
