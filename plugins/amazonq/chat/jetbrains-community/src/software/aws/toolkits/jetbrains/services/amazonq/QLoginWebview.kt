@@ -109,7 +109,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
             "loginBuilderId" -> {
                 val scope = CODEWHISPERER_SCOPES + Q_SCOPES
                 runInEdt {
-                    Login.BuilderId(scope, onPendingAwsId).loginBuilderId(project)
+                    Login.BuilderId(scope, onPendingProfile, {}).loginBuilderId(project)
                     // TODO: telemetry
                 }
             }

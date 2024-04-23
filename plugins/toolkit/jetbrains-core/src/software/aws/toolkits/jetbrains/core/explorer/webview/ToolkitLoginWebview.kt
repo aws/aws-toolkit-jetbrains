@@ -113,7 +113,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
             "loginBuilderId" -> {
                 runInEdt {
-                    Login.BuilderId(CODECATALYST_SCOPES, onPendingAwsId).loginBuilderId(project)
+                    Login.BuilderId(CODECATALYST_SCOPES, onPendingProfile, {}).loginBuilderId(project)
                 }
             }
 

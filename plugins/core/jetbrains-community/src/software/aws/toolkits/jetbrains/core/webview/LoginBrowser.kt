@@ -43,6 +43,7 @@ abstract class LoginBrowser(
         }
     }
 
+    // TODO: remove it
     // TODO: figure out a better way to do this UI update
     protected val onPendingAwsId: () -> Unit = {
         projectCoroutineScope(project).launch {

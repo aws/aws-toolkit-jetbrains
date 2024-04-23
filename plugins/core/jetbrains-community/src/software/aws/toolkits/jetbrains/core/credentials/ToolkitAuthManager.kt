@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConst
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 
@@ -129,14 +130,26 @@ interface ToolkitConnectionManager : Disposable {
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
  */
 @Deprecated("Connections created through this function are not written to the user's ~/.aws/config file")
-fun loginSso(project: Project?, startUrl: String, region: String, requestedScopes: List<String>): AwsBearerTokenConnection {
+fun loginSso(
+    project: Project?,
+    startUrl: String,
+    region: String,
+    requestedScopes: List<String>,
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
+    onError: (String) -> Unit = {}
+): AwsBearerTokenConnection {
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
+            (transientConnection.getConnectionSettings().tokenProvider.delegate as? InteractiveBearerTokenProvider)?.let {
+                onPendingToken(it)
+            }
             reauthConnectionIfNeeded(project, transientConnection)
 
-            // try deleting duplicate connection if any, transient connection has not been added to the authManager at this point of time
+            // try deleting duplicate connection if any after auth succeeded, transient connection has not been added to the authManager at this point of time
             authManager.deleteConnection(transientConnection.id)
+
+            ToolkitConnectionManager.getInstance(project).switchConnection(transientConnection)
         }
 
         return connection
