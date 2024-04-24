@@ -18,6 +18,7 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -127,7 +128,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
             "loginIdC" -> {
                 // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
@@ -139,7 +139,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
-                loginIdC(profileName, url, awsRegion, scopes)
+                loginIdC(url, awsRegion, scopes)
             }
 
             "loginIAM" -> {
@@ -252,12 +252,12 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         executeJS("window.ideClient.prepareUi($jsonData)")
     }
 
-    override fun loginIdC(profileName: String, url: String, region: AwsRegion, scopes: List<String>) {
+    override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
         val onError: (String) -> Unit = { _ ->
             // TODO: telemetry
         }
 
-        val login = Login.IdC(profileName, url, region, scopes, onPendingProfile, onError)
+        val login = Login.IdC(url, region, scopes, onPendingProfile, onError)
 
         runInEdt {
             val connection = login.loginIdc(project)
@@ -267,7 +267,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                 val rolePopup = IdcRolePopup(
                     project,
                     region.id,
-                    profileName,
+                    validatedSsoIdentifierFromUrl(url),
                     tokenProvider,
                     IdcRolePopupState(), // TODO: is it correct <<?
                 )
