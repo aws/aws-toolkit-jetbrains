@@ -137,13 +137,17 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         val deleted = mutableListOf<ToolkitConnection>()
         connections.removeAll { connection ->
             predicate(connection).also {
-                deleted.add(connection)
+                if (it) {
+                    deleted.add(connection)
+                }
             }
         }
 
         transientConnections.removeAll { connection ->
             predicate(connection).also {
-                deleted.add(connection)
+                if (it) {
+                    deleted.add(connection)
+                }
             }
         }
 
