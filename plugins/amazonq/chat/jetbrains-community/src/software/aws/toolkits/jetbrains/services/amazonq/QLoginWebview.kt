@@ -204,7 +204,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                         // TODO: rewrite scope logic, it's short term solution only
                         val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
                         AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                            loginIdC(conn.sessionName, conn.startUrl, region, scopes)
+                            loginIdC(conn.startUrl, region, scopes)
                         }
                     }
                 }
