@@ -78,6 +78,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         currentPopupContext?.popup?.cancel()
         currentPopupContext = null
     }
+    private val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
 
     private fun getHtml(issue: CodeWhispererCodeScanIssue): String {
         val isFixAvailable = issue.suggestedFixes.isNotEmpty()
@@ -122,6 +123,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         val linksSection = """
         <br />
         &nbsp;&bull;$explainButton
+        <br />
         """.trimIndent()
 
         val suggestedFixSection = if (isFixAvailable) {
@@ -155,9 +157,9 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
 
         return convertMarkdownToHTML(
             """
-            |${issue.recommendation.text}
-            |
             |$linksSection
+            |
+            |${issue.recommendation.text}
             |
             |$detectorSection
             |
@@ -217,7 +219,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                             issueItemMap["title"] = issue.title
                             issueItemMap["description"] = issue.description.markdown
                             issueItemMap["code"] = issue.codeText
-                            val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
                             val myDataContext = SimpleDataContext.builder().add(issueDataKey, issueItemMap).add(CommonDataKeys.PROJECT, issue.project).build()
                             val actionEvent = AnActionEvent.createFromInputEvent(
                                 he.inputEvent,
@@ -393,7 +394,11 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
                 val documentContent = document.text
-                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: throw Error("Patch apply failed.")
+                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name)
+                if (updatedContent == null) {
+//                    println(applyPatchToContent(issue.suggestedFixes[0].code, documentContent))
+                    throw Error("Patch apply failed.")
+                }
                 document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
                 PsiDocumentManager.getInstance(issue.project).commitDocument(document)
                 notifyInfo(

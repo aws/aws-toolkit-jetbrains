@@ -258,10 +258,14 @@ class ChatController private constructor(
 
         val prompt = "Explain the following part of my code \n\n " +
             "Issue:    \"${message.issue["title"]}\" \n" +
+            "Code:    $codeSelection"
+
+        val modelPrompt = "Explain the following part of my code \n\n " +
+            "Issue:    \"${message.issue["title"]}\" \n" +
             "Description:    ${message.issue["description"]} \n" +
             "Code:    $codeSelection"
 
-        processPromptActions(prompt, ContextMenuActionMessage(message.command), triggerId, fileContext)
+        processPromptActions(prompt, ContextMenuActionMessage(message.command), triggerId, fileContext, modelPrompt)
     }
 
     // JB specific (not in vscode)
@@ -288,7 +292,13 @@ class ChatController private constructor(
         processPromptActions(prompt, message, triggerId, fileContext)
     }
 
-    private suspend fun processPromptActions(prompt: String, message: ContextMenuActionMessage, triggerId: String, fileContext: ActiveFileContext) {
+    private suspend fun processPromptActions(
+        prompt: String,
+        message: ContextMenuActionMessage,
+        triggerId: String,
+        fileContext: ActiveFileContext,
+        modelPrompt: String? = null
+    ) {
         messagePublisher.publish(
             EditorContextCommandMessage(
                 message = prompt,
@@ -306,10 +316,11 @@ class ChatController private constructor(
             return
         }
 
+        val inputPrompt = modelPrompt ?: prompt
         handleChat(
             tabId = tabId,
             triggerId = triggerId,
-            message = prompt,
+            message = inputPrompt,
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
             TriggerType.CodeScanButton,

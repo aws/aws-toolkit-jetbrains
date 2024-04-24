@@ -204,23 +204,22 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             codeScanResponseContext = codeScanResponseContext.copy(reason = "Succeeded")
             return CodeScanResponse.Success(issues, codeScanResponseContext)
         } catch (e: Exception) {
-            val errorCode = (e as? CodeWhispererException)?.awsErrorDetails()?.errorCode()
-            val requestId = if (e is CodeWhispererException) e.requestId() else null
-            val errorMessage = (e as? CodeWhispererException)?.awsErrorDetails()?.errorMessage()
+            val exception = e as? CodeWhispererException
+            val awsError = exception?.awsErrorDetails()
 
-            if (errorCode == "ThrottlingException" && errorMessage != null) {
-                if (errorMessage.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
+            if (awsError?.errorCode() == "ThrottlingException" && awsError?.errorMessage() != null) {
+                if (awsError.errorMessage()!!.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
                     LOG.info { "Project Scans limit reached" }
                     notifyError(PROJECT_SCANS_LIMIT_REACHED)
-                } else if (errorMessage.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
+                } else if (awsError.errorMessage()!!.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
                     LOG.info { "File Scans limit reached" }
                     CodeWhispererExplorerActionManager.getInstance().setMonthlyQuotaForCodeScansExceeded(true)
                     notifyError(FILE_SCANS_LIMIT_REACHED)
                 }
             }
             LOG.error {
-                "Failed to run security scan and display results. Caused by: ${e.message}, status code: $errorCode, " +
-                    "exception: ${e::class.simpleName}, request ID: $requestId " +
+                "Failed to run security scan and display results. Caused by: ${e.message}, status code: ${awsError?.errorCode()}, " +
+                    "exception: ${e::class.simpleName}, request ID: ${exception?.requestId()}" +
                     "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
                     "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
                     "stacktrace: ${e.stackTrace.contentDeepToString()}"

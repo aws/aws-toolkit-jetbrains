@@ -38,7 +38,7 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
         }
         scanManager.updateScanNodes(file)
 
-        if (editedTextRange.getLength() > 0 && !CodeWhispererExplorerActionManager.getInstance().isMonthlyQuotaForCodeScansExceeded()) {
+        if (editedTextRange.length > 0 && !CodeWhispererExplorerActionManager.getInstance().isMonthlyQuotaForCodeScansExceeded()) {
             scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
     }
