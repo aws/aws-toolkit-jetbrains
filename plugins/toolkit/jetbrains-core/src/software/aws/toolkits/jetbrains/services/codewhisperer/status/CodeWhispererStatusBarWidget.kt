@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.status
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
+import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
@@ -49,7 +50,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String) {
+                override fun onChange(providerId: String, newScopes: List<String>?) {
                     statusBar.updateWidget(ID)
                 }
             }
@@ -115,7 +116,12 @@ class CodeWhispererStatusBarWidget(project: Project) :
         if (isCodeWhispererExpired(project)) {
             AllIcons.General.BalloonWarning
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            AnimatedIcon.Default()
+            // AnimatedIcon can't serialize over remote host
+            if (!AppMode.isRemoteDevHost()) {
+                AnimatedIcon.Default()
+            } else {
+                AllIcons.Actions.Download
+            }
         } else {
             AllIcons.General.InspectionsOK
         }
