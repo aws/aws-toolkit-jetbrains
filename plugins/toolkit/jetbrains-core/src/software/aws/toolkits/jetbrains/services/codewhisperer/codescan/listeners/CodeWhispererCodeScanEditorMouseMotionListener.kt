@@ -6,6 +6,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.EditorMouseEvent
@@ -24,6 +29,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -31,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.applyPatch
 import software.aws.toolkits.jetbrains.utils.convertMarkdownToHTML
@@ -108,6 +115,15 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             </table>
         """.trimIndent()
 
+        // add a link sections
+        val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 110%\">${message(
+            "codewhisperer.codescan.explain_button_label"
+        )}</a>"
+        val linksSection = """
+        <br />
+        &nbsp;&bull;$explainButton
+        """.trimIndent()
+
         val suggestedFixSection = if (isFixAvailable) {
             val isFixDescriptionAvailable = issue.suggestedFixes[0].description.isNotBlank() &&
                 issue.suggestedFixes[0].description.trim() != "Suggested remediation:"
@@ -140,6 +156,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         return convertMarkdownToHTML(
             """
             |${issue.recommendation.text}
+            |
+            |$linksSection
             |
             |$detectorSection
             |
@@ -193,7 +211,27 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             isEditable = false
             addHyperlinkListener { he ->
                 if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                    BrowserUtil.browse(he.url)
+                    when {
+                        he.description.startsWith("amazonq://issue/explain-") -> {
+                            val issueItemMap = mutableMapOf<String, String>()
+                            issueItemMap["title"] = issue.title
+                            issueItemMap["description"] = issue.description.markdown
+                            issueItemMap["code"] = issue.codeText
+                            val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
+                            val myDataContext = SimpleDataContext.builder().add(issueDataKey, issueItemMap).add(CommonDataKeys.PROJECT, issue.project).build()
+                            val actionEvent = AnActionEvent.createFromInputEvent(
+                                he.inputEvent,
+                                ToolkitPlaces.EDITOR_PSI_REFERENCE,
+                                null,
+                                myDataContext
+                            )
+                            ActionManager.getInstance().getAction("aws.amazonq.explainCodeScanIssue").actionPerformed(actionEvent)
+                        }
+                        else -> {
+                            BrowserUtil.browse(he.url)
+                        }
+                    }
+                    hidePopup()
                 }
             }
             editorKit = kit
@@ -205,16 +243,17 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
         }
-        val label = JLabel(issue.title).apply {
+        val label = JLabel(truncateTitle(issue.title)).apply {
             icon = getSeverityIcon(issue)
             horizontalTextPosition = JLabel.LEFT
         }
         val button = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
             toolTipText = message("codewhisperer.codescan.apply_fix_button_tooltip")
-            addActionListener {
-                handleApplyFix(issue)
-            }
             putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        }
+        button.addActionListener {
+            handleApplyFix(issue)
+            button.isVisible = false
         }
         val nextButton = JButton(AllIcons.Actions.ArrowExpand).apply {
             preferredSize = Dimension(30, this.height)
@@ -354,7 +393,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
                 val documentContent = document.text
-                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: return@runWriteCommandAction
+                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: throw Error("Patch apply failed.")
                 document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
                 PsiDocumentManager.getInstance(issue.project).commitDocument(document)
                 notifyInfo(
@@ -362,6 +401,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 )
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)
                 hidePopup()
+                CodeWhispererCodeScanManager.getInstance(issue.project).updateScanNodesForIssuesOutOfTextRange(issue)
             }
             sendCodeRemediationTelemetryToServiceApi(
                 issue.file.programmingLanguage(),
@@ -391,4 +431,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             )
         }
     }
+
+    private fun truncateTitle(title: String): String = title.takeUnless { it.length <= CODE_SCAN_ISSUE_TITLE_MAX_LENGTH }?.let {
+        it.substring(0, CODE_SCAN_ISSUE_TITLE_MAX_LENGTH - 3) + "..."
+    } ?: title
 }
