@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
-import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.util.SystemInfo
@@ -11,8 +10,8 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 
 data class ClientMetadata(
-    val productName: AWSProduct = AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
-    val productVersion: String = PluginManager.getPluginByClass(this::class.java)?.version.toString(),
+    val productName: AWSProduct = PluginResolver.getInstance().product,
+    val productVersion: String = PluginResolver.getInstance().version,
     val clientId: String = AwsSettings.getInstance().clientId.toString(),
     val parentProduct: String = ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
     val parentProductVersion: String = ApplicationInfo.getInstance().build.baselineVersion.toString(),
