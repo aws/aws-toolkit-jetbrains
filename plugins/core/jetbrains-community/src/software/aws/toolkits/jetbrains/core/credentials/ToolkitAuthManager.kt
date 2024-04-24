@@ -206,7 +206,7 @@ fun loginSso(
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
-        ToolkitAuthManager.getInstance().deleteConnection(connection)
+        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             deleteSsoConnection(connection)
         }
