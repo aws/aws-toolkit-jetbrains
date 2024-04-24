@@ -16,7 +16,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -26,7 +25,7 @@ import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PythonCodeScanSessionConfig
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
@@ -40,7 +39,7 @@ import kotlin.test.assertNotNull
 class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsightTestFixtureRule()) {
     private lateinit var psifile: PsiFile
     private lateinit var file: File
-    private lateinit var sessionConfigSpy: PythonCodeScanSessionConfig
+    private lateinit var sessionConfigSpy: CodeScanSessionConfig
     private val payloadContext = PayloadContext(CodewhispererLanguage.Python, 1, 1, 10, listOf(), 600, 200)
     private lateinit var codeScanSessionContext: CodeScanSessionContext
     private lateinit var codeScanSessionSpy: CodeWhispererCodeScanSession
@@ -60,7 +59,13 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         )
         file = psifile.virtualFile.toNioPath().toFile()
 
-        sessionConfigSpy = spy(CodeScanSessionConfig.create(psifile.virtualFile, project) as PythonCodeScanSessionConfig)
+        sessionConfigSpy = spy(
+            CodeScanSessionConfig.create(
+                psifile.virtualFile,
+                project,
+                CodeWhispererConstants.SecurityScanType.PROJECT
+            )
+        )
         setupResponse(psifile.virtualFile.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
 
         sessionConfigSpy.stub {
@@ -70,7 +75,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         // Mock CodeWhispererClient needs to be setup before initializing CodeWhispererCodeScanSession
         codeScanSessionContext = CodeScanSessionContext(project, sessionConfigSpy)
         codeScanSessionSpy = spy(CodeWhispererCodeScanSession(codeScanSessionContext))
-        doNothing().`when`(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull())
+        doNothing().`when`(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any())
 
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
@@ -93,11 +98,10 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val inOrder = inOrder(codeScanSessionSpy)
         inOrder.verify(codeScanSessionSpy).createUploadUrl(eq(fileMd5), eq("artifactType"))
         inOrder.verify(codeScanSessionSpy).uploadArtifactToS3(
-            eq(fakeCreateUploadUrlResponse.uploadUrl()),
+            eq(fakeCreateUploadUrlResponse),
             eq(fakeCreateUploadUrlResponse.uploadId()),
             eq(file),
-            eq(fileMd5),
-            eq(null)
+            eq(fileMd5)
         )
     }
 
