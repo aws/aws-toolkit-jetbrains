@@ -97,9 +97,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         if (isNewConnectionForQ) {
             openMeetQPage(project)
         }
-        
+
         WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
-        
+
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || isQConnected(project)) {
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
