@@ -10,6 +10,7 @@
                     @toggle="toggleItemSelection"
                     :isSelected="selectedLoginOption === connection.id"
                     :itemId="connection.id"
+                    :login-type="this.connectionType(connection)"
                     :itemTitle="this.connectionDisplayedName(connection)"
                     :itemText="this.connectionTypeDescription(connection)"
                     class="bottom-small-gap"
@@ -22,6 +23,7 @@
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
+            :login-type="LoginOption.BUILDER_ID"
             :itemTitle="'Use for free'"
             :itemText="'No AWS account required'"
             class="font-amazon bottom-small-gap"
@@ -31,6 +33,7 @@
             @toggle="toggleItemSelection"
             :isSelected="selectedLoginOption === LoginOption.ENTERPRISE_SSO"
             :itemId="LoginOption.ENTERPRISE_SSO"
+            :login-type="LoginOption.ENTERPRISE_SSO"
             :itemTitle="'Use professional license'"
             :itemText="'Sign in to AWS with single sign-on'"
             class="font-amazon bottom-small-gap"
@@ -49,7 +52,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL, ExistConnection} from "../../model";
+import {AwsBearerTokenConnection, BuilderId, ExistConnection, Feature, LoginIdentifier, SONO_URL, Stage} from "../../model";
 
 export default defineComponent({
     name: "loginOptions",
@@ -94,6 +97,15 @@ export default defineComponent({
                 this.$emit('login', new ExistConnection(this.selectedLoginOption))
             }
         },
+        // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface
+        connectionType(connection: AwsBearerTokenConnection): LoginIdentifier {
+            if (connection.startUrl === SONO_URL) {
+                return LoginIdentifier.BUILDER_ID
+            }
+
+            return LoginIdentifier.ENTERPRISE_SSO
+        },
+        // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface
         connectionTypeDescription(connection: AwsBearerTokenConnection): string {
             if (connection.startUrl === SONO_URL) {
                 return 'AWS Builder ID'
@@ -101,11 +113,8 @@ export default defineComponent({
 
             return 'IAM Identity Center (SSO)'
         },
+        // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface
         connectionDisplayedName(connection: AwsBearerTokenConnection): string {
-            if (connection.sessionName.length > 0) {
-                return `Profile: ${connection.sessionName}(${connection.startUrl})`
-            }
-
             return `${connection.startUrl}`
         }
     }
