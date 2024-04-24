@@ -11,6 +11,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ex.ApplicationManagerEx
+import com.intellij.openapi.progress.EmptyProgressIndicator
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -37,11 +38,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
         val updated = mismatch.filter {
             val descriptor = it.descriptor as? IdeaPluginDescriptor ?: return@filter false
 
-            tryOrNull {
-                PluginUpdateManager.getUpdate(descriptor)?.install()
-                LOG.info { "${descriptor.name} updated" }
-                true
-            } ?: false
+            return@filter PluginUpdateManager.updatePlugin(descriptor, EmptyProgressIndicator())
         }
 
         if (updated.isNotEmpty()) {
@@ -62,7 +59,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
                     // try update core and disable everything else
                     val coreDescriptor = core.descriptor as? IdeaPluginDescriptor
                     tryOrNull {
-                        coreDescriptor?.let { descriptor -> PluginUpdateManager.getUpdate(descriptor)?.install() }
+                        coreDescriptor?.let { descriptor -> PluginUpdateManager.updatePlugin(descriptor, EmptyProgressIndicator()) }
                     }
 
                     PluginEnabler.getInstance().disable(
