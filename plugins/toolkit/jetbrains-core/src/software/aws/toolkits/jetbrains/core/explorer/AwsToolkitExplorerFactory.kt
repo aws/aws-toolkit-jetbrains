@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -31,6 +30,7 @@ import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.jetbrains.utils.reloadToolkitToolWindow
 import software.aws.toolkits.resources.message
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -147,34 +147,5 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     companion object {
         private val LOG = getLogger<AwsToolkitExplorerFactory>()
         const val TOOLWINDOW_ID = "aws.toolkit.explorer"
-    }
-}
-
-// TODO: rewrite the 2 functions, duplicate code
-fun showWebview(project: Project) {
-    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
-
-    val myContent = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(project).component, null, false).also {
-        it.isCloseable = true
-        it.isPinnable = true
-    }
-
-    runInEdt {
-        contentManager.removeAllContents(true)
-        contentManager.addContent(myContent)
-    }
-}
-
-fun showExplorerTree(project: Project) {
-    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
-
-    val myContent = contentManager.factory.createContent(AwsToolkitExplorerToolWindow.getInstance(project), null, false).also {
-        it.isCloseable = true
-        it.isPinnable = true
-    }
-
-    runInEdt {
-        contentManager.removeAllContents(true)
-        contentManager.addContent(myContent)
     }
 }

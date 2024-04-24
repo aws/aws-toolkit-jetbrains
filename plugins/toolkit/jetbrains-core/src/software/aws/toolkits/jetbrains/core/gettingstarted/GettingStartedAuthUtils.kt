@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEnt
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
+import software.aws.toolkits.jetbrains.utils.toggleToolkitToolWindow
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -281,7 +282,7 @@ fun requestCredentialsForCodeCatalyst(
 ): Boolean? {
     if (JBCefApp.isSupported() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
-        showWebview(project)
+        project.toggleToolkitToolWindow(isBrowser = true)
 
         return null
     }
@@ -381,7 +382,7 @@ fun requestCredentialsForExplorer(
 ): Boolean? {
     if (JBCefApp.isSupported()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
-        showWebview(project)
+        project.toggleToolkitToolWindow(isBrowser = true)
         return null
     }
 

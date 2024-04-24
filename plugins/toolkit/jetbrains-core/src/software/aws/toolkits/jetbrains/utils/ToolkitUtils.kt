@@ -83,3 +83,23 @@ fun Project.reloadToolkitToolWindow(isToolkitConnected: Boolean?) {
         reloadWindow(toolWindow, inspectExistingConnection(this))
     }
 }
+
+fun Project.toggleToolkitToolWindow(isBrowser: Boolean) {
+    val component = if (isBrowser) {
+        ToolkitWebviewPanel.getInstance(this).component
+    } else {
+        AwsToolkitExplorerToolWindow.getInstance(this)
+    }
+
+    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(this).contentManager
+
+    val myContent = contentManager.factory.createContent(component, null, false).also {
+        it.isCloseable = true
+        it.isPinnable = true
+    }
+
+    runInEdt {
+        contentManager.removeAllContents(true)
+        contentManager.addContent(myContent)
+    }
+}
