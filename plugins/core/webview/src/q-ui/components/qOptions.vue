@@ -53,6 +53,7 @@
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
 import {AwsBearerTokenConnection, BuilderId, ExistConnection, Feature, LoginIdentifier, SONO_URL, Stage} from "../../model";
+import {AWS_BUILDER_ID_NAME, IDENTITY_CENTER_NAME} from "../../constants"
 
 export default defineComponent({
     name: "loginOptions",
@@ -108,10 +109,10 @@ export default defineComponent({
         // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface
         connectionTypeDescription(connection: AwsBearerTokenConnection): string {
             if (connection.startUrl === SONO_URL) {
-                return 'AWS Builder ID'
+                return AWS_BUILDER_ID_NAME
             }
 
-            return 'IAM Identity Center (SSO)'
+            return IDENTITY_CENTER_NAME
         },
         // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface
         connectionDisplayedName(connection: AwsBearerTokenConnection): string {
