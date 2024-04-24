@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
@@ -107,7 +106,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
             }
 
             "loginBuilderId" -> {
-                loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
+                loginBuilderId(Q_SCOPES)
             }
 
             "loginIdC" -> {
@@ -116,7 +115,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
-                val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
+                val scopes = Q_SCOPES
 
                 loginIdC(url, awsRegion, scopes)
             }
