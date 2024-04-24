@@ -8,9 +8,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
-import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowEx
-import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -25,6 +23,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersio
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -35,27 +35,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     onConnectionChanged(project, newConnection, toolWindow)
-                }
-            }
-        )
-
-        project.messageBus.connect().subscribe(
-            ToolWindowManagerListener.TOPIC,
-            object : ToolWindowManagerListener {
-                override fun stateChanged(
-                    toolWindowManager: ToolWindowManager,
-                    toolWindow: ToolWindow,
-                    changeType: ToolWindowManagerListener.ToolWindowManagerEventType
-                ) {
-                    if (changeType == ToolWindowManagerListener.ToolWindowManagerEventType.MovedOrResized) {
-                        val width = toolWindow.component.width
-                        if (width < MINIMUM_TOOLWINDOW_WIDTH) {
-                            LOG.debug {
-                                "Amazon Q Tool window stretched to a width less than the minimum allowed width, resizing to the minimum allowed width"
-                            }
-                            (toolWindow as ToolWindowEx).stretchWidth(MINIMUM_TOOLWINDOW_WIDTH - width)
-                        }
-                    }
                 }
             }
         )
@@ -78,6 +57,18 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun init(toolWindow: ToolWindow) {
         toolWindow.stripeTitle = message("q.window.title")
+        toolWindow.component.addComponentListener(
+            object : ComponentAdapter() {
+                override fun componentResized(e: ComponentEvent) {
+                    val newWidth = e.component.width
+                    if (newWidth >= MINIMUM_TOOLWINDOW_WIDTH) return
+                    LOG.debug {
+                        "Amazon Q Tool window stretched to a width less than the minimum allowed width, resizing to the minimum allowed width"
+                    }
+                    (toolWindow as ToolWindowEx).stretchWidth(MINIMUM_TOOLWINDOW_WIDTH - newWidth)
+                }
+            }
+        )
     }
 
     override fun shouldBeAvailable(project: Project): Boolean = !isRunningOnRemoteBackend() && isQSupportedInThisVersion()
