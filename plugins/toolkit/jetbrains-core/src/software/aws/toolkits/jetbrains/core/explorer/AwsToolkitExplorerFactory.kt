@@ -122,7 +122,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                 val hasIdcRoleAccess = newConnection.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
 
                 LOG.debug { "Bearer connection: isCodecatalyst=$hasCodecatalystScope; isIdCRoleAccess=$hasIdcRoleAccess" }
-                println("Bearer connection: isCodecatalyst=$hasCodecatalystScope; isIdCRoleAccess=$hasIdcRoleAccess")
 
                 CODECATALYST_SCOPES.all { it in newConnection.scopes } ||
                     newConnection.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
@@ -152,11 +151,9 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val contentManager = this.contentManager
         val component = if (isConnected) {
             LOG.debug { "Rendering explorer tree" }
-            println("Rendering explorer tree")
             AwsToolkitExplorerToolWindow.getInstance(project)
         } else {
             LOG.debug { "Rendering signin webview" }
-            println("Rendering signin webview")
             ToolkitWebviewPanel.getInstance(project).let {
                 it.browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
                 it.component

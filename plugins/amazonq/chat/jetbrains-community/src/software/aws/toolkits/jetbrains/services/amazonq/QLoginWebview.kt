@@ -209,8 +209,6 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                 }
             }
 
-            println(bearerCreds)
-
             selectionSettings.putAll(bearerCreds)
         }
 

@@ -24,7 +24,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
@@ -203,25 +202,25 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
         if (!inspectExistingConnection(project)) {
             // existing connections
-            val bearerCreds = bearerConnection().associate {
-                it.id to BearerConnectionSelectionSettings(it) { conn ->
-                    if (conn.isSono()) {
-                        loginBuilderId(CODECATALYST_SCOPES)
-                    } else {
-                        // TODO: rewrite scope logic, it's short term solution only
-                        val scopes = if (conn.isSono()) {
-                            CODECATALYST_SCOPES
+            val bearerCreds = ToolkitAuthManager.getInstance().listConnections()
+                .filterIsInstance<AwsBearerTokenConnection>()
+                .associate {
+                    it.id to BearerConnectionSelectionSettings(it) { conn ->
+                        if (conn.isSono()) {
+                            loginBuilderId(CODECATALYST_SCOPES)
                         } else {
-                            listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-                        }
-                        AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                            loginIdC(conn.sessionName, conn.startUrl, region, scopes)
+                            // TODO: rewrite scope logic, it's short term solution only
+                            val scopes = if (conn.isSono()) {
+                                CODECATALYST_SCOPES
+                            } else {
+                                listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                            }
+                            AwsRegionProvider.getInstance()[conn.region]?.let { region ->
+                                loginIdC(conn.sessionName, conn.startUrl, region, scopes)
+                            }
                         }
                     }
                 }
-            }
-
-            println(bearerCreds)
 
             selectionSettings.putAll(bearerCreds)
         }
@@ -277,14 +276,6 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
             }
         }
     }
-
-    private fun connections(): List<ToolkitConnection> = ToolkitAuthManager.getInstance().listConnections().also {
-        println(it)
-    }
-
-    // TODO: filter "active"(state == 'AUTHENTICATED') connection only maybe?
-    private fun bearerConnection() = connections()
-        .filterIsInstance<AwsBearerTokenConnection>()
 
     fun component(): JComponent? = jcefBrowser.component
 
