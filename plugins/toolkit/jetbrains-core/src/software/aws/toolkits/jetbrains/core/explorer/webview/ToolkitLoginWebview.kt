@@ -36,7 +36,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
+import software.aws.toolkits.jetbrains.utils.inspectExistingConnectionForToolkit
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -200,7 +200,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
     override fun prepareBrowser(state: BrowserState) {
         selectionSettings.clear()
 
-        if (!inspectExistingConnection(project)) {
+        if (!inspectExistingConnectionForToolkit(project)) {
             // existing connections
             val bearerCreds = ToolkitAuthManager.getInstance().listConnections()
                 .filterIsInstance<AwsBearerTokenConnection>()

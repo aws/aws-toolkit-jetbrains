@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
@@ -34,9 +33,9 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.isQConnected
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
-import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
@@ -193,18 +192,17 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
         // TODO: duplicate code in ToolkitLoginWebview
         selectionSettings.clear()
 
-        if (!inspectExistingConnection(project)) {
+        if (!isQConnected(project)) {
             // existing connections
             // TODO: filter "active"(state == 'AUTHENTICATED') connection only maybe?
             val bearerCreds = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().associate {
                 it.id to BearerConnectionSelectionSettings(it) { conn ->
                     if (conn.isSono()) {
-                        loginBuilderId(CODECATALYST_SCOPES)
+                        loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
                     } else {
                         // TODO: rewrite scope logic, it's short term solution only
-                        val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
                         AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                            loginIdC(conn.startUrl, region, scopes)
+                            loginIdC(conn.startUrl, region, CODEWHISPERER_SCOPES + Q_SCOPES)
                         }
                     }
                 }
@@ -237,7 +235,9 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                     startUrl: '${lastLoginIdcInfo.startUrl}',
                     region: '${lastLoginIdcInfo.region}'
                 },
-                cancellable: ${state.browserCancellable}
+                cancellable: ${state.browserCancellable},
+                feature: '${state.feature}',
+                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
