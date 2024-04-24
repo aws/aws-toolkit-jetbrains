@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
 import software.aws.toolkits.jetbrains.utils.reloadToolkitToolWindow
 import software.aws.toolkits.resources.message
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
