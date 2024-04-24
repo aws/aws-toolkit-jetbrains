@@ -27,11 +27,10 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROL
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.inspectExistingConnection
+import software.aws.toolkits.jetbrains.utils.reloadToolkitToolWindow
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.FeatureId
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -130,7 +129,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         val isToolkitConnected = isNewConnToolkitConnection || inspectExistingConnection(project)
 
-        toolWindow.reload(isToolkitConnected)
+        project.reloadToolkitToolWindow(isToolkitConnected)
     }
 
     private fun settingsStateChanged(project: Project, newState: ConnectionState, toolWindow: ToolWindow) {
@@ -142,30 +141,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         LOG.debug { "settingsStateChanged: ${newState::class.simpleName}; isToolkitConnected=$isToolkitConnected" }
 
-        toolWindow.reload(isToolkitConnected)
-    }
-
-    private fun ToolWindow.reload(isConnected: Boolean) {
-        val contentManager = this.contentManager
-        val component = if (isConnected) {
-            LOG.debug { "Rendering explorer tree" }
-            AwsToolkitExplorerToolWindow.getInstance(project)
-        } else {
-            LOG.debug { "Rendering signin webview" }
-            ToolkitWebviewPanel.getInstance(project).let {
-                it.browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-                it.component
-            }
-        }
-        val myContent = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-
-        runInEdt {
-            contentManager.removeAllContents(true)
-            contentManager.addContent(myContent)
-        }
+        project.reloadToolkitToolWindow(isToolkitConnected)
     }
 
     companion object {
