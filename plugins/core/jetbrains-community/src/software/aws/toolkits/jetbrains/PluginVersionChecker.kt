@@ -13,6 +13,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ex.ApplicationManagerEx
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import kotlinx.coroutines.CoroutineScope
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryOrNull
@@ -38,7 +39,12 @@ class PluginVersionChecker : ApplicationInitializedListener {
         val updated = mismatch.filter {
             val descriptor = it.descriptor as? IdeaPluginDescriptor ?: return@filter false
 
-            return@filter PluginUpdateManager.updatePlugin(descriptor, EmptyProgressIndicator())
+            return@filter try {
+                PluginUpdateManager.updatePlugin(descriptor, EmptyProgressIndicator())
+            } catch (e: Exception) {
+                LOG.error(e) { "Failed to update $descriptor" }
+                false
+            }
         }
 
         if (updated.isNotEmpty()) {
