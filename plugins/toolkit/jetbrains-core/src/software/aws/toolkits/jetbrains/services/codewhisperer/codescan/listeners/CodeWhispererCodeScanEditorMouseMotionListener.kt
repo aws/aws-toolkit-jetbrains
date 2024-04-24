@@ -6,6 +6,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.EditorMouseEvent
@@ -24,7 +29,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.CodeScanActionsListener
+import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -114,10 +119,9 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 110%\">${message(
             "codewhisperer.codescan.explain_button_label"
         )}</a>"
-        val fixButton = "<a href=\"amazonq://issue/fix-${issue.title}\" style=\"font-size: 110%\">${message("codewhisperer.codescan.fix_button_label")}</a>"
         val linksSection = """
         <br />
-        &nbsp;&bull;$explainButton &nbsp;&bull;$fixButton
+        &nbsp;&bull;$explainButton
         """.trimIndent()
 
         val suggestedFixSection = if (isFixAvailable) {
@@ -209,16 +213,25 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                     when {
                         he.description.startsWith("amazonq://issue/explain-") -> {
-//                            ActionManager.getInstance().getAction()
-                            explainWithQ(issue, "Explain")
-                        }
-                        he.description.startsWith("amazonq://issue/fix-") -> {
-                            explainWithQ(issue, "Fix")
+                            val issueItemMap = mutableMapOf<String, String>()
+                            issueItemMap["title"] = issue.title
+                            issueItemMap["description"] = issue.description.markdown
+                            issueItemMap["code"] = issue.codeText
+                            val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
+                            val myDataContext = SimpleDataContext.builder().add(issueDataKey, issueItemMap).add(CommonDataKeys.PROJECT, issue.project).build()
+                            val actionEvent = AnActionEvent.createFromInputEvent(
+                                he.inputEvent,
+                                ToolkitPlaces.EDITOR_PSI_REFERENCE,
+                                null,
+                                myDataContext
+                            )
+                            ActionManager.getInstance().getAction("aws.amazonq.explainCodeScanIssue").actionPerformed(actionEvent)
                         }
                         else -> {
                             BrowserUtil.browse(he.url)
                         }
                     }
+                    hidePopup()
                 }
             }
             editorKit = kit
@@ -380,7 +393,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
                 val documentContent = document.text
-                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: return@runWriteCommandAction
+                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: throw Error("Patch apply failed.")
                 document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
                 PsiDocumentManager.getInstance(issue.project).commitDocument(document)
                 notifyInfo(
@@ -416,19 +429,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 Result.Failed.toString(),
                 issue.suggestedFixes.isNotEmpty()
             )
-        }
-    }
-
-    private fun explainWithQ(issue: CodeWhispererCodeScanIssue, command: String) {
-        try {
-            // publish a message
-            project.messageBus.syncPublisher(
-                CodeScanActionsListener.SEND_CODESCAN_ISSUE_TO_Q
-            ).sendIssueToQ(issue.title, issue.description.markdown, issue.codeText, command)
-            hidePopup()
-        } catch (err: Error) {
-            notifyError("Explain With Q failed")
-            LOG.error { "Q chat message publishing failed: $err" }
         }
     }
 

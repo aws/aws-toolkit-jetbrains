@@ -16,6 +16,13 @@ class ActionRegistrar {
         _messages.tryEmit(ContextMenuActionMessage(command))
     }
 
+    private val _scanMessages by lazy { MutableSharedFlow<CodeScanIssueActionMessage>(extraBufferCapacity = 10) }
+    val scanFlow = _scanMessages.asSharedFlow()
+
+    fun reportMessageClick(command: EditorContextCommand, issue: MutableMap<String, String>) {
+        _scanMessages.tryEmit(CodeScanIssueActionMessage(command, issue))
+    }
+
     // provide singleton access
     companion object {
         val instance = ActionRegistrar()

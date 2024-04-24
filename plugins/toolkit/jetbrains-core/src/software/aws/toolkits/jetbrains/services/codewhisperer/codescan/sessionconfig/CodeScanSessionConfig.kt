@@ -128,7 +128,7 @@ class CodeScanSessionConfig(
                         break
                     } else {
                         currentTotalFileSize += currentFile.length
-                        currentTotalLines += Files.lines(currentFile.toNioPath()).count()
+                        currentTotalLines += countLinesInVirtualFile(currentFile)
                         includedSourceFiles.add(currentFilePath)
                     }
                 }
@@ -146,6 +146,11 @@ class CodeScanSessionConfig(
     fun getPresentablePayloadLimit(): String = when (getPayloadLimitInBytes() >= TOTAL_BYTES_IN_MB) {
         true -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_MB}MB"
         false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
+    }
+
+    private fun countLinesInVirtualFile(virtualFile: VirtualFile): Int {
+        val bufferedReader = virtualFile.inputStream.bufferedReader()
+        return bufferedReader.useLines { lines -> lines.count() }
     }
 
     suspend fun getTotalProjectSizeInBytes(): Long {
