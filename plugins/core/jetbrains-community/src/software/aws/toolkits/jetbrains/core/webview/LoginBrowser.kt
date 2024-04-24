@@ -3,12 +3,16 @@
 
 package software.aws.toolkits.jetbrains.core.webview
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
@@ -21,7 +25,9 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
+import java.util.concurrent.Future
 import java.util.function.Function
 
 data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
@@ -85,7 +91,7 @@ abstract class LoginBrowser(
     }
 
     open fun loginBuilderId(scopes: List<String>) {
-        runInEdt {
+        loginWithBackgroundContext {
             Login.BuilderId(scopes, onPendingProfile) {}.loginBuilderId(project)
             // TODO: telemetry
         }
@@ -95,7 +101,7 @@ abstract class LoginBrowser(
         val onError: (String) -> Unit = { _ ->
             // TODO: telemetry
         }
-        runInEdt {
+        loginWithBackgroundContext {
             Login.IdC(url, region, scopes, onPendingProfile, onError).loginIdc(project)
             // TODO: telemetry
         }
@@ -111,6 +117,17 @@ abstract class LoginBrowser(
             ).loginIAM(project, {}, {}, {})
         }
     }
+
+    protected fun<T> loginWithBackgroundContext(action: () -> T) : Future<T> =
+        ApplicationManager.getApplication().executeOnPooledThread<T> {
+            runBlocking {
+                withBackgroundProgress(project, message("credentials.pending.title")) {
+                    blockingContext {
+                        action()
+                    }
+                }
+            }
+        }
 
     protected fun loadWebView() {
         jcefBrowser.loadHTML(getWebviewHTML())

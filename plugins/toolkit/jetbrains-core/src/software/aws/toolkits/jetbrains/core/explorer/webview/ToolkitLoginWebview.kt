@@ -226,7 +226,7 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
 
         val login = Login.IdC(url, region, scopes, onPendingProfile, onError)
 
-        runInEdt {
+        loginWithBackgroundContext {
             val connection = login.loginIdc(project)
             if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
@@ -239,7 +239,9 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                     IdcRolePopupState(), // TODO: is it correct <<?
                 )
 
-                rolePopup.show()
+                runInEdt {
+                    rolePopup.show()
+                }
             }
         }
     }
