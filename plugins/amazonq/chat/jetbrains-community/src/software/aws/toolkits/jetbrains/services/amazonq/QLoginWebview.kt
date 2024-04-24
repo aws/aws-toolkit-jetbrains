@@ -44,7 +44,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
-class QWebviewPanel(val project: Project) {
+class QWebviewPanel private constructor(val project: Project) {
     private val webviewContainer = Wrapper()
     var browser: QWebviewBrowser? = null
         private set
@@ -112,14 +112,13 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
 
             "loginIdC" -> {
                 // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
                 val url = jsonTree.get("url").asText()
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
                 val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
 
-                loginIdC(profileName, url, awsRegion, scopes)
+                loginIdC(url, awsRegion, scopes)
             }
 
             "cancelLogin" -> {

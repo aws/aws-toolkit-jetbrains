@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
+import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
@@ -48,7 +49,6 @@ sealed interface Login {
     }
 
     data class IdC(
-        val profileName: String,
         val startUrl: String,
         val region: AwsRegion,
         val scopes: List<String>,
@@ -68,7 +68,7 @@ sealed interface Login {
             }
 
             val profile = UserConfigSsoSessionProfile(
-                configSessionName = profileName,
+                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
                 ssoRegion = region.id,
                 startUrl = startUrl,
                 scopes = scopes
