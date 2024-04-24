@@ -10,7 +10,6 @@ import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.feedback.sendFeedbackWithExperimentsMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -21,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -83,7 +83,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     }
 
     // When Chat API responds to a user message (full response streamed)
-    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int) {
+    fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, numberOfCodeBlocks: Int) {
         AmazonqTelemetry.addMessage(
             cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
             cwsprChatMessageId = response.messageId,
@@ -93,7 +93,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
             cwsprChatActiveEditorTotalCharacters = data.activeFileContext.focusAreaContext?.codeSelection?.length,
             cwsprChatActiveEditorImportCount = data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size,
-            cwsprChatResponseCodeSnippetCount = 0,
+            cwsprChatResponseCodeSnippetCount = numberOfCodeBlocks,
             cwsprChatResponseCode = statusCode,
             cwsprChatSourceLinkCount = response.relatedSuggestions?.size,
             cwsprChatReferencesCount = 0, // TODO
@@ -122,6 +122,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             (responseStreamTotalTime[response.tabId] ?: 0).toDouble(),
             data.message.length,
             responseLength,
+            numberOfCodeBlocks
         )
     }
 
@@ -190,7 +191,9 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatAcceptedCharactersLength = message.code.length,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project)
+                    credentialStartUrl = getStartUrl(context.project),
+                    cwsprChatCodeBlockIndex = message.codeBlockIndex,
+                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -207,9 +210,12 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatMessageId = message.messageId,
                     cwsprChatInteractionType = CwsprChatInteractionType.InsertAtCursor,
                     cwsprChatAcceptedCharactersLength = message.code.length,
+                    cwsprChatAcceptedNumberOfLines = message.code.lines().size,
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project)
+                    credentialStartUrl = getStartUrl(context.project),
+                    cwsprChatCodeBlockIndex = message.codeBlockIndex,
+                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -217,6 +223,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     interactionType(ChatMessageInteractionType.INSERT_AT_CURSOR)
                     interactionTarget(message.insertionTargetType)
                     acceptedCharacterCount(message.code.length)
+                    acceptedLineCount(message.code.lines().size)
                 }.build()
             }
 
@@ -271,7 +278,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         )
 
         try {
-            sendFeedbackWithExperimentsMetadata(
+            TelemetryService.getInstance().sendFeedback(
                 sentiment = Sentiment.NEGATIVE,
                 comment = ChatController.objectMapper.writeValueAsString(comment),
             )
