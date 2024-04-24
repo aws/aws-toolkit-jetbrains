@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.jetbrains.services.cwc.messages.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
-import software.aws.toolkits.jetbrains.utils.convertMarkdownToHTML
 
 class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
 
