@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.telemetry.FeatureId
 
-private val LOG = LoggerFactory.getLogger("FunctionUtils")
+private val LOG = LoggerFactory.getLogger("ToolkitUtils")
 
 fun inspectExistingConnection(project: Project): Boolean =
     ToolkitConnectionManager.getInstance(project).let {
