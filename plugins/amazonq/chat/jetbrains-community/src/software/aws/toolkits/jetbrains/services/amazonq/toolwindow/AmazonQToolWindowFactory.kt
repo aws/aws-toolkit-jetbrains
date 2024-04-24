@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
+import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -63,8 +63,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         val component = if (isQConnected(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
-            WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
-            WebviewPanel.getInstance(project).component
+            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+            QWebviewPanel.getInstance(project).component
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
@@ -98,7 +98,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             openMeetQPage(project)
         }
 
-        WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+        QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || isQConnected(project)) {
@@ -106,7 +106,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             AmazonQToolWindow.getInstance(project).component
         } else {
             LOG.debug { "returning login window; no Q connection found" }
-            WebviewPanel.getInstance(project).component
+            QWebviewPanel.getInstance(project).component
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {

@@ -165,28 +165,6 @@ export default defineComponent({
     font-size: 12px;
 }
 
-.sso-profile, .url-input, .region-select {
-    height: 37px;
-    border-radius: 4px;
-}
-
-.url-input, .sso-profile, .region-select {
-    width: 100%;
-}
-
-.sso-profile, .url-input {
-    padding-left: 10px;
-    box-sizing: border-box;
-}
-
-.region-select {
-    padding-left: 6px;
-}
-
-a {
-    color: #29a7ff;
-}
-
 /* Theme specific styles */
 body.jb-dark {
     .url-input, .region-select, .sso-profile {
