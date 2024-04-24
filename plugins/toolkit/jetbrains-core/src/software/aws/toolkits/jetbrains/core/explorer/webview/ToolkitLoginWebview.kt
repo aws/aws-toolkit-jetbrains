@@ -210,13 +210,8 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
                             loginBuilderId(CODECATALYST_SCOPES)
                         } else {
                             // TODO: rewrite scope logic, it's short term solution only
-                            val scopes = if (conn.isSono()) {
-                                CODECATALYST_SCOPES
-                            } else {
-                                listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-                            }
                             AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                                loginIdC(conn.startUrl, region, scopes)
+                                loginIdC(conn.startUrl, region, listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE))
                             }
                         }
                     }
