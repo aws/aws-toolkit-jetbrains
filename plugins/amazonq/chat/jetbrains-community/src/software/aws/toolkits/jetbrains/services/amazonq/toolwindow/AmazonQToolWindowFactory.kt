@@ -16,7 +16,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.services.amazonq.WebviewPanel
+import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
@@ -38,8 +39,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         val component = if (isQConnected(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
-            WebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
-            WebviewPanel.getInstance(project).component
+            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+            QWebviewPanel.getInstance(project).component
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
@@ -69,13 +70,17 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             } ?: false
         } ?: false
 
+        if (isNewConnectionForQ) {
+            openMeetQPage(project)
+        }
+
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || isQConnected(project)) {
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
             AmazonQToolWindow.getInstance(project).component
         } else {
             LOG.debug { "returning login window; no Q connection found" }
-            WebviewPanel.getInstance(project).let {
+            QWebviewPanel.getInstance(project).let {
                 it.browser?.prepareBrowser(BrowserState(FeatureId.Q))
                 it.component
             }

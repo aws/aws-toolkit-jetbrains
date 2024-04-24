@@ -45,9 +45,9 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-class WebviewPanel(val project: Project) {
+class QWebviewPanel(val project: Project) {
     private val webviewContainer = Wrapper()
-    var browser: WebviewBrowser? = null
+    var browser: QWebviewBrowser? = null
         private set
 
     val component = panel {
@@ -80,18 +80,18 @@ class WebviewPanel(val project: Project) {
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
         } else {
-            browser = WebviewBrowser(project).also {
+            browser = QWebviewBrowser(project).also {
                 webviewContainer.add(it.component())
             }
         }
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<WebviewPanel>()
+        fun getInstance(project: Project) = project.service<QWebviewPanel>()
     }
 }
 
-class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowser.DOMAIN, WebviewBrowser.WEB_SCRIPT_URI) {
+class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrowser.DOMAIN, QWebviewBrowser.WEB_SCRIPT_URI) {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(project)
     override val query = JBCefJSQuery.create(jcefBrowser)
@@ -250,7 +250,7 @@ class WebviewBrowser(val project: Project) : LoginBrowser(project, WebviewBrowse
     }
 
     companion object {
-        private val LOG = getLogger<WebviewBrowser>()
+        private val LOG = getLogger<QWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/getStart.js"
         private const val DOMAIN = "webview"
     }
