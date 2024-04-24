@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
@@ -150,12 +151,18 @@ class CodeModernizerSession(
                 state.currentJobStatus = TransformationStatus.FAILED
                 CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
             }
+        } catch (e: AwsServiceException) {
+            if (e.statusCode() == 403 && e.awsErrorDetails().serviceName() == "S3") {
+                CodeModernizerStartJobResult.UnabletoUploadJob(
+                    "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/security_iam_manage-access-with-policies.html"
+                )
+            } else {
+                CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
+            }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            CodeModernizerStartJobResult.UnabletoStartOrUploadJob(
-                "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/security_iam_manage-access-with-policies.html"
-            )
+            CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
         } finally {
             deleteUploadArtifact(payload)
         }
