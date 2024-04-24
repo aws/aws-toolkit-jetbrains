@@ -86,7 +86,7 @@ abstract class LoginBrowser(
 
     open fun loginBuilderId(scopes: List<String>) {
         runInEdt {
-            Login.BuilderId(scopes, onPendingProfile, {}).loginBuilderId(project)
+            Login.BuilderId(scopes, onPendingProfile) {}.loginBuilderId(project)
             // TODO: telemetry
         }
     }
