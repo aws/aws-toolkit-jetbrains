@@ -143,6 +143,26 @@ object AwsIcons {
         @JvmField val CHECKMARK_GRAY = load("/icons/resources/codetransform/checkmark.svg")
 
         @JvmField val TIMELINE_STEP = load("/icons/resources/codetransform/transform-timeline-step-done.svg") // 16 * 16
+
+        @JvmField val PLAN_CLOCK_LIGHT = load("/icons/resources/codetransform/transform-clock-light.svg")
+
+        @JvmField val PLAN_CLOCK_DARK = load("/icons/resources/codetransform/transform-clock-dark.svg")
+
+        @JvmField val PLAN_STEP_INTO_LIGHT = load("/icons/resources/codetransform/transform-step-into-light.svg")
+
+        @JvmField val PLAN_STEP_INTO_DARK = load("/icons/resources/codetransform/transform-step-into-dark.svg")
+
+        @JvmField val PLAN_DEPENDENCIES_LIGHT = load("/icons/resources/codetransform/transform-dependencies-light.svg")
+
+        @JvmField val PLAN_DEPENDENCIES_DARK = load("/icons/resources/codetransform/transform-dependencies-dark.svg")
+
+        @JvmField val PLAN_FILE_LIGHT = load("/icons/resources/codetransform/transform-file-light.svg")
+
+        @JvmField val PLAN_FILE_DARK = load("/icons/resources/codetransform/transform-file-dark.svg")
+
+        @JvmField val PLAN_ARROW_LIGHT = load("/icons/resources/codetransform/transform-arrow-light.svg")
+
+        @JvmField val PLAN_ARROW_DARK = load("/icons/resources/codetransform/transform-arrow-dark.svg")
     }
 
     private fun load(path: String): Icon = IconLoader.getIcon(path, AwsIcons::class.java)

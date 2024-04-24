@@ -3,42 +3,54 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.plan
 
-import com.intellij.icons.AllIcons
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
-import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
-import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.JAVA_VERSION
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MODULE_NAME_KEY
-import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
+import java.awt.BorderLayout
+import java.awt.Component
 import java.awt.FlowLayout
+import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.GridLayout
 import java.awt.Panel
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
+import java.util.Vector
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JTable
+import javax.swing.JTextArea
+import javax.swing.SwingUtilities
 import javax.swing.event.HyperlinkEvent
+import javax.swing.table.DefaultTableModel
 
 class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     val plan = virtualFile.getUserData(MIGRATION_PLAN_KEY) ?: throw RuntimeException("Migration plan not found")
     val module = virtualFile.getUserData(MODULE_NAME_KEY) ?: CodeModernizerUIConstants.EMPTY_SPACE_STRING
-    val javaVersion = virtualFile.getUserData(JAVA_VERSION).orEmpty()
+    private val mapper = jacksonObjectMapper()
     private val contentPanel = JPanel(GridBagLayout()).apply {
         add(
             JPanel(GridBagLayout()).apply {
@@ -48,11 +60,12 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                 )
                 add(transformationPlanInfo(plan, module), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
                 add(transformationPlanPanel(plan), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
+                add(transformationPlanAppendix(plan.transformationSteps()[0].progressUpdates()[3]), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
             },
             CodeModernizerUIConstants.transformationPlanPlaneConstraint
         )
         add(Box.createVerticalGlue(), CodeModernizerUIConstants.FILLER_CONSTRAINT)
-        border = planGaps()
+        border = CodeModernizerUIConstants.PLAN_BORDER
     }
 
     private val rootPanel = JBScrollPane(contentPanel).apply {
@@ -83,98 +96,254 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         add(textLabel)
     }
 
+    private fun createScrollPanel(): JPanel {
+        val arrowIcon = if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_ARROW_LIGHT else AwsIcons.CodeTransform.PLAN_ARROW_DARK
+        val scrollPanel = JPanel(BorderLayout())
+        val scrollIcon = JLabel(arrowIcon)
+        val scrollPane = JEditorPane("text/html", message("codemodernizer.migration_plan.body.steps_scroll_top")).apply {
+            addHyperlinkListener { he ->
+                if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                    SwingUtilities.invokeLater { rootPanel.verticalScrollBar.setValue(0) }
+                }
+            }
+            isEditable = false
+            isOpaque = false
+            alignmentX = Component.RIGHT_ALIGNMENT
+        }
+        scrollPanel.add(scrollPane, BorderLayout.CENTER)
+        scrollPanel.add(scrollIcon, BorderLayout.EAST)
+        return scrollPanel
+    }
+
+    // parse the MD string stored in step 0 progress updates from GetPlan response
+    private fun createTable(tableObj: TransformationProgressUpdate): JTable {
+        val stepTable = mapper.readValue(tableObj.description(), PlanTable::class.java)
+        val columns = Vector(stepTable.columns)
+        val data = Vector<Vector<String>>()
+        stepTable.rows.forEach { row ->
+            val rowData = Vector<String>()
+            stepTable.columns.forEach { col ->
+                rowData.add(row.getValueForColumn(col))
+            }
+            data.add(rowData)
+        }
+        val model = object: DefaultTableModel(data, columns) {
+            override fun isCellEditable(row: Int, column: Int): Boolean {
+                return false
+            }
+        }
+        return JTable(model)
+    }
+
     private fun transformationPlanPanel(plan: TransformationPlan) = JPanel(GridBagLayout()).apply {
         val stepsIntroTitle = JLabel(message("codemodernizer.migration_plan.body.steps_intro_title")).apply {
             font = font.deriveFont(
                 CodeModernizerUIConstants.FONT_CONSTRAINTS.BOLD,
-                CodeModernizerUIConstants.PLAN_CONSTRAINTS.TRANSFORMATION_STEP_TITLE_FONT_SIZE
+                CodeModernizerUIConstants.PLAN_CONSTRAINTS.SUBTITLE_FONT_SIZE
             )
-            border = CodeModernizerUIConstants.STEP_INTRO_TITLE_BORDER
+            border = CodeModernizerUIConstants.STEPS_INTRO_TITLE_BORDER
+            alignmentX = Component.LEFT_ALIGNMENT
         }
         val stepsIntro = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            add(stepsIntroTitle, CodeWhispererLayoutConfig.inlineLabelConstraints)
-            border = CodeModernizerUIConstants.STEP_INTRO_BORDER
+            add(stepsIntroTitle)
+            val stepsIntroSubtitle = JEditorPane("text/html", message("codemodernizer.migration_plan.body.steps_intro_subtitle")).apply {
+                addHyperlinkListener { he ->
+                    if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                        BrowserUtil.browse(he.url)
+                    }
+                }
+                isEditable = false
+                isOpaque = false
+                alignmentX = Component.LEFT_ALIGNMENT
+                font = font.deriveFont(
+                    CodeModernizerUIConstants.FONT_CONSTRAINTS.BOLD,
+                    CodeModernizerUIConstants.PLAN_CONSTRAINTS.SUBTITLE_FONT_SIZE
+                )
+            }
+            add(stepsIntroSubtitle)
+            border = CodeModernizerUIConstants.STEPS_INTRO_BORDER
         }
         add(stepsIntro, CodeModernizerUIConstants.transformationPlanPlaneConstraint)
-        plan.transformationSteps().forEachIndexed { step, i ->
-            val row = transformationStepPanel(i)
+        // ignore step 0 since that contains info used to create tables in the plan
+        plan.transformationSteps().drop(1).forEachIndexed { i, step ->
+            val tableObj = plan.transformationSteps()[0].progressUpdates()
+            var row: JPanel? = null
+            row = when (i) {
+                0 -> {
+                    transformationStepPanel(step, tableObj[1]) // add dependency changes table
+                }
+                1 -> {
+                    transformationStepPanel(step, tableObj[2]) // add deprecated code table
+                }
+                else -> {
+                    transformationStepPanel(step) // must be a step with no tables
+                }
+            }
             add(row, CodeModernizerUIConstants.transformationPlanPlaneConstraint)
         }
         border = CodeModernizerUIConstants.TRANSFORMATION_PLAN_PANEL_BORDER
     }
 
-    private fun transformationStepPanel(step: TransformationStep): JPanel {
-        val nameLabel = JLabel(step.name()).apply {
+    private fun transformationPlanAppendix(tableObj: TransformationProgressUpdate): JPanel = JPanel(GridBagLayout()).apply {
+        val constraints = CodeModernizerUIConstants.transformationPlanAppendixConstraint
+        val appendixTitle = JLabel(message("codemodernizer.migration_plan.body.info.appendix_title")).apply {
             font = font.deriveFont(
                 CodeModernizerUIConstants.FONT_CONSTRAINTS.BOLD,
-                CodeModernizerUIConstants.PLAN_CONSTRAINTS.TRANSFORMATION_STEP_TITLE_FONT_SIZE
+                CodeModernizerUIConstants.PLAN_CONSTRAINTS.SUBTITLE_FONT_SIZE
             )
-            border = nameBoarder()
+            border = CodeModernizerUIConstants.APPENDIX_BORDER
         }
-        val descriptionLabel =
-            JLabel(message("codemodernizer.migration_plan.body.steps_step_description", step.description())).apply {
-                font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_FONT_SIZE)
-                border = descriptionBoarder()
-            }
-        val transformationStepPanel = JPanel()
-        transformationStepPanel.add(nameLabel)
-        transformationStepPanel.add(descriptionLabel)
+        add(appendixTitle, constraints)
 
-        return transformationStepPanel.apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            border = CodeModernizerUIConstants.TRANSFORMATION_STEP_PANEL_COMPOUND_BORDER
+        val tableName = JLabel(tableObj.name()).apply {
+            font = font.deriveFont(
+                CodeModernizerUIConstants.FONT_CONSTRAINTS.PLAIN,
+                CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_NAME_FONT_SIZE
+            )
+            border = CodeModernizerUIConstants.TABLE_NAME_BORDER
         }
-    }
+        add(tableName, constraints)
 
-    fun transformationPlanInfo(plan: TransformationPlan, module: String) = JPanel().apply {
-        layout = GridLayout(1, 2)
-        val stepsInfo = JPanel().apply {
-            layout = FlowLayout(FlowLayout.LEFT)
-            add(JLabel(AllIcons.Actions.ListFiles))
-            add(JLabel(message("codemodernizer.migration_plan.body.info", plan.transformationSteps().size)))
-            addHorizontalGlue()
-            border = CodeModernizerUIConstants.TRANSFORMATION_STEPS_INFO_BORDER
-            font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_FONT_SIZE)
+        val renderedAppendixTable = createTable(tableObj).apply {
+            tableHeader.reorderingAllowed = false // so that file click detection works; see below
         }
-        val awsqInfo = JPanel().apply {
-            layout = GridLayout()
-            val qChat = JEditorPane("text/html", message("codemodernizer.migration_plan.header.awsq", javaVersion, module))
-            qChat.isEditable = false
-            qChat.isOpaque = false
-            qChat.addHyperlinkListener {
-                if (it.eventType.equals(HyperlinkEvent.EventType.ACTIVATED)) {
-                    ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)
-                        ?.activate(null, true)
+
+        renderedAppendixTable.addMouseListener(object: MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                val row = renderedAppendixTable.rowAtPoint(e.point)
+                val col = renderedAppendixTable.columnAtPoint(e.point)
+                if (col == 0) { // means a file name was clicked
+                    val fileClicked = LocalFileSystem.getInstance().findFileByPath("${project.basePath}/${renderedAppendixTable.getValueAt(row, col)}")
+                    if (fileClicked != null) {
+                        FileEditorManager.getInstance(project).openFile(fileClicked, true)
+                    }
                 }
             }
-            add(qChat)
-            border = CodeModernizerUIConstants.TRANSFORMATION_STEPS_INFO_AWSQ_BORDER
-            font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_FONT_SIZE)
+        })
+
+        val tablePanel = JPanel().apply {
+            layout = BorderLayout()
+            add(JBScrollPane(renderedAppendixTable), BorderLayout.NORTH)
+            border = tableBorder(renderedAppendixTable.rowCount * renderedAppendixTable.rowHeight)
         }
-        add(awsqInfo)
-        add(stepsInfo)
-        border = CodeModernizerUIConstants.TRANSOFORMATION_PLAN_INFO_BORDER
+        add(tablePanel, constraints.apply {
+            weighty = 1.0
+            fill = GridBagConstraints.BOTH
+        })
     }
 
-    fun planGaps() = BorderFactory.createEmptyBorder(
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.PLAN_PADDING_TOP,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.PLAN_PADDING_LEFT,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.PLAN_PADDING_BOTTOM,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.PLAN_PADDING_RIGHT
-    )
+    private fun transformationStepPanel(step: TransformationStep, tableObj: TransformationProgressUpdate? = null): JPanel {
+        val nameLabel = JLabel(message("codemodernizer.migration_plan.body.steps_name", step.name())).apply {
+            font = font.deriveFont(
+                CodeModernizerUIConstants.FONT_CONSTRAINTS.PLAIN,
+                CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_NAME_FONT_SIZE
+            )
+            border = CodeModernizerUIConstants.NAME_BORDER
+        }
 
-    fun nameBoarder() = BorderFactory.createEmptyBorder(
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.NAME_PADDING_TOP,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.NAME_PADDING_LEFT,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.NAME_PADDING_BOTTOM,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.NAME_PADDING_RIGHT
-    )
+        val scrollPanel = createScrollPanel()
+        val descriptionText =
+            JTextArea(step.description()).apply {
+                font = CodeModernizerUIConstants.DESCRIPTION_FONT
+                isEditable = false
+                wrapStyleWord = true
+                lineWrap = true
+                isOpaque = false
+                border = CodeModernizerUIConstants.DESCRIPTION_BORDER
+            }
 
-    fun descriptionBoarder() = BorderFactory.createEmptyBorder(
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.DESCRP_PADDING_TOP,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.DESCRP_PADDING_LEFT,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.DESCRP_PADDING_BOTTOM,
-        CodeModernizerUIConstants.PLAN_CONSTRAINTS.DESCRP_PADDING_RIGHT
+        var renderedStepTable: JTable? = null
+
+        if (tableObj != null) {
+            renderedStepTable = createTable(tableObj)
+        }
+
+        val descriptionPanel = JPanel(BorderLayout()).apply {
+            add(descriptionText, BorderLayout.NORTH)
+            if (tableObj != null) {
+                val tableName = JLabel(tableObj.name()).apply {
+                    font = font.deriveFont(
+                        CodeModernizerUIConstants.FONT_CONSTRAINTS.PLAIN,
+                        CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_NAME_FONT_SIZE
+                    )
+                    border = CodeModernizerUIConstants.TABLE_NAME_BORDER
+                }
+                add(tableName, BorderLayout.WEST)
+            }
+        }
+
+        val headerPanel = JPanel(GridBagLayout()).apply {
+            val constraints = GridBagConstraints().apply {
+                fill = GridBagConstraints.HORIZONTAL
+                weightx = 1.0
+                anchor = GridBagConstraints.WEST
+            }
+            add(nameLabel, constraints)
+
+            constraints.weightx = 0.0
+            constraints.anchor = GridBagConstraints.EAST
+            add(scrollPanel, constraints)
+        }
+
+        var tablePanel: JPanel? = null
+        if (renderedStepTable != null) {
+            tablePanel = JPanel().apply {
+                layout = BorderLayout()
+                add(JBScrollPane(renderedStepTable), BorderLayout.NORTH)
+                border = tableBorder(renderedStepTable.rowCount * renderedStepTable.rowHeight)
+            }
+        }
+
+        val transformationStepPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(headerPanel)
+            add(descriptionPanel)
+            if (tablePanel != null) {
+                add(tablePanel)
+            }
+            border = CodeModernizerUIConstants.TRANSFORMATION_STEP_PANEL_COMPOUND_BORDER
+        }
+        return transformationStepPanel
+    }
+
+    private fun transformationPlanInfo(plan: TransformationPlan, module: String) = JPanel().apply {
+        layout = GridLayout(1, 2)
+        val jobStatistics = mapper.readValue(plan.transformationSteps()[0].progressUpdates()[0].description(), PlanTable::class.java).rows
+        val clockIcon = if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_CLOCK_LIGHT else AwsIcons.CodeTransform.PLAN_CLOCK_DARK
+        val dependenciesIcon = if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEPENDENCIES_LIGHT else AwsIcons.CodeTransform.PLAN_DEPENDENCIES_DARK
+        val stepIntoIcon = if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_STEP_INTO_LIGHT else AwsIcons.CodeTransform.PLAN_STEP_INTO_DARK
+        val fileIcon = if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_FILE_LIGHT else AwsIcons.CodeTransform.PLAN_FILE_DARK
+
+        val stepsInfo = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JLabel(message("codemodernizer.migration_plan.body.info.lines_of_code_message", jobStatistics[0].value ?: "-"), clockIcon, JLabel.LEFT))
+            add(JLabel(message("codemodernizer.migration_plan.body.info.dependency_replace_message", jobStatistics[1].value ?: "-"), dependenciesIcon, JLabel.LEFT))
+            add(JLabel(message("codemodernizer.migration_plan.body.info.deprecated_code_message", jobStatistics[2].value ?: "-"), stepIntoIcon, JLabel.LEFT))
+            add(JLabel(message("codemodernizer.migration_plan.body.info.files_update_message", jobStatistics[3].value ?: "-"), fileIcon, JLabel.LEFT))
+            addHorizontalGlue()
+            border = CodeModernizerUIConstants.TRANSFORMATION_STEPS_INFO_BORDER
+            font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_INFO_FONT_SIZE)
+        }
+
+        val qctInfo = JPanel().apply {
+            layout = GridLayout()
+            val qctPlanInfo = JEditorPane("text/html", message("codemodernizer.migration_plan.header.awsq"))
+            qctPlanInfo.isEditable = false
+            qctPlanInfo.isOpaque = false
+            add(qctPlanInfo)
+            border = CodeModernizerUIConstants.TRANSFORMATION_STEPS_QCT_INFO_BORDER
+            font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_NAME_FONT_SIZE)
+        }
+        add(qctInfo)
+        add(stepsInfo)
+        border = CodeModernizerUIConstants.TRANSFORMATION_PLAN_INFO_BORDER
+    }
+
+    private fun tableBorder(bottomPadding: Int) = BorderFactory.createEmptyBorder(
+        CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_PADDING_TOP,
+        CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_PADDING_LEFT,
+        bottomPadding,
+        CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_PADDING_RIGHT
     )
 }
