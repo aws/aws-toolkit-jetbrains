@@ -77,6 +77,7 @@ export default defineComponent({
         },
         onClickCancelReauth() {
             this.authenticating = false
+            window.ideApi.postMessage({command: 'cancelLogin'})
         }
     },
     mounted() {
