@@ -49,12 +49,13 @@ export default defineComponent({
         authenticatingText(): string {
             if (this.selectedLoginOption?.id === LoginIdentifier.IAM_CREDENTIAL) {
                 return 'Connecting to IAM...'
-            } else if (this.selectedLoginOption?.id === LoginIdentifier.BUILDER_ID || this.selectedLoginOption?.id === LoginIdentifier.ENTERPRISE_SSO) {
-                return 'Authenticating in browser...'
             }
 
-            return ''
+            return 'Authenticating in browser...'
         }
+    },
+    mounted() {
+        this.authorizationCode = undefined
     }
 })
 </script>

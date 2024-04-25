@@ -210,8 +210,15 @@ fun AwsBearerTokenConnection.lazyIsUnauthedBearerConnection(): Boolean {
     return false
 }
 
-fun reauthConnectionIfNeeded(project: Project?, connection: ToolkitConnection): BearerTokenProvider {
+fun reauthConnectionIfNeeded(
+    project: Project?,
+    connection: ToolkitConnection,
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {}
+): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
+    if (tokenProvider is InteractiveBearerTokenProvider) {
+        onPendingToken(tokenProvider)
+    }
     return reauthProviderIfNeeded(project, tokenProvider)
 }
 

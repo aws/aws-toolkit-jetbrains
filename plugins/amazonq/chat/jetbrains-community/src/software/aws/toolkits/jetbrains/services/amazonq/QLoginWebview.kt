@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -21,6 +22,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
@@ -151,7 +153,11 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
 
             "reauth" -> {
                 ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
-                    reauthConnectionIfNeeded(project, conn)
+                    if (conn is ManagedBearerSsoConnection) {
+                        ApplicationManager.getApplication().executeOnPooledThread {
+                            reauthConnectionIfNeeded(project, conn, onPendingProfile)
+                        }
+                    }
                 }
             }
 

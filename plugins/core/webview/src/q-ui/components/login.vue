@@ -4,11 +4,6 @@
 <!-- This Vue File is the login webview of AWS Toolkit and Amazon Q.-->
 <template>
     <div v-bind:class="[disabled ? 'disabled-form' : '']" class="auth-container">
-        <Logo
-            :app="app"
-            :is-connected="stage === 'CONNECTED'"
-        />
-
         <button v-if="stage !== 'START' || cancellable" class="back-button" @click="handleBackButtonClick" tabindex="-1">
             <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -18,7 +13,6 @@
             </svg>
         </button>
 
-        <Reauth v-if="stage === 'REAUTH'" :app="app" @stageChanged="mutateStage" @signout="signout" @reauth="reauth"/>
         <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
         <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
@@ -29,22 +23,18 @@
 </template>
 <script lang="ts">
 import {defineComponent} from 'vue'
-import Logo from './logo.vue'
 import SsoLoginForm from "./ssoLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
-import Reauth from "./reauth.vue";
 import Authenticating from "./authenticating.vue";
-import {BuilderId, Feature, IdC, LoginOption, LongLivedIAM, Stage} from "../../model";
+import {BuilderId, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
 
 export default defineComponent({
     name: 'Login',
     components: {
-        Logo,
         SsoLoginForm,
         LoginOptions,
         AwsProfileForm,
-        Reauth,
         Authenticating
     },
     props: {
@@ -90,12 +80,6 @@ export default defineComponent({
             window.ideClient.cancelLogin()
             this.mutateStage('START')
         },
-        changeTheme(darkMode: boolean) {
-            const oldCssId = darkMode ? "jb-light" : "jb-dark"
-            const newCssId = darkMode ? "jb-dark" : "jb-light"
-            document.body.classList.add(newCssId);
-            document.body.classList.remove(oldCssId);
-        },
         login(type: LoginOption) {
             this.selectedLoginOption = type
             this.mutateStage('AUTHENTICATING')
@@ -117,23 +101,9 @@ export default defineComponent({
                 })
             }
         },
-        signout() {
-            window.ideApi.postMessage({command: 'signout'})
-        },
-        reauth() {
-            window.ideApi.postMessage({command: 'reauth'})
-            this.mutateStage('AUTHENTICATING')
-            // TODO: what if users cancel re-auth, the view will return to start page, which is incorrect
-        }
     },
-    mounted() {
-        console.log('login mounted')
-        window.changeTheme = this.changeTheme.bind(this)
-        window.ideApi.postMessage({command: 'prepareUi'})
-    },
-    beforeUpdate() {
-        console.log('login beforeUpdate')
-    }
+    mounted() {},
+    beforeUpdate() {}
 })
 </script>
 
