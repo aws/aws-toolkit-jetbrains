@@ -22,7 +22,10 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.Result
 import java.util.function.Function
 
 data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
@@ -77,6 +80,16 @@ abstract class LoginBrowser(
         this.jcefBrowser.cefBrowser.let {
             it.executeJavaScript(jsScript, it.url, 0)
         }
+    }
+
+    protected fun cancelLogin() {
+        // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
+        // status. There might be a risk of race condition here by changing this global, for which effort
+        // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
+        // to browser.). The worst case is that the user will see a stale user code displayed, but not
+        // affecting the current login flow.
+        currentAuthorization?.progressIndicator?.cancel()
+        // TODO: telemetry
     }
 
     fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
