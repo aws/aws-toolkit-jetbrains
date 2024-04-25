@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
+import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
@@ -36,20 +37,18 @@ sealed interface Login {
 
     data class BuilderId(
         val scopes: List<String>,
-        val onPendingToken: () -> Unit
+        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+        val onError: (String) -> Unit
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
         fun loginBuilderId(project: Project): Boolean {
-            onPendingToken()
-
-            loginSso(project, SONO_URL, SONO_REGION, scopes)
+            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError)
             return true
         }
     }
 
     data class IdC(
-        val profileName: String,
         val startUrl: String,
         val region: AwsRegion,
         val scopes: List<String>,
@@ -69,7 +68,7 @@ sealed interface Login {
             }
 
             val profile = UserConfigSsoSessionProfile(
-                configSessionName = profileName,
+                configSessionName = validatedSsoIdentifierFromUrl(startUrl),
                 ssoRegion = region.id,
                 startUrl = startUrl,
                 scopes = scopes
@@ -195,12 +194,12 @@ fun authAndUpdateConfig(
     configFilesFacade.updateSectionInConfig(
         SsoSessionConstants.SSO_SESSION_SECTION_NAME,
         Profile.builder()
-            .name(profile.configSessionName)
+            .name(updatedProfile.configSessionName)
             .properties(
                 mapOf(
-                    ProfileProperty.SSO_START_URL to profile.startUrl,
-                    ProfileProperty.SSO_REGION to profile.ssoRegion,
-                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to profile.scopes.joinToString(",")
+                    ProfileProperty.SSO_START_URL to updatedProfile.startUrl,
+                    ProfileProperty.SSO_REGION to updatedProfile.ssoRegion,
+                    SsoSessionConstants.SSO_REGISTRATION_SCOPES to updatedProfile.scopes.joinToString(",")
                 )
             ).build()
     )
@@ -211,9 +210,8 @@ fun authAndUpdateConfig(
 internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
     is IllegalStateException -> e.message ?: message("general.unknown_error")
     is ProcessCanceledException -> message("codewhisperer.credential.login.dialog.exception.cancel_login")
-    is InvalidGrantException -> message("codewhisperer.credential.login.exception.invalid_grant")
     is InvalidRequestException -> message("codewhisperer.credential.login.exception.invalid_input")
-    is SsoOidcException -> message("codewhisperer.credential.login.exception.general.oidc")
+    is InvalidGrantException, is SsoOidcException -> e.message ?: message("codewhisperer.credential.login.exception.invalid_grant")
     else -> {
         val baseMessage = when (e) {
             is IOException -> "codewhisperer.credential.login.exception.io"

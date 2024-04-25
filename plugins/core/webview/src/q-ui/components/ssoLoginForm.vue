@@ -2,14 +2,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <template>
-    <button class="back-button" @click="handleBackButtonClick" tabindex="-1">
-        <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
-                fill="#21A2FF"
-            />
-        </svg>
-    </button>
     <div class="font-amazon" @keydown.enter="handleContinueClick">
         <div class="bottom-small-gap">
             <div class="title">Sign in with SSO:</div>
@@ -21,25 +13,10 @@
             </div>
         </div>
         <div>
-            <div class="title no-bold">Profile Name</div>
-            <div class="hint">User-specified name used to label credentials locally</div>
-            <input
-                class="sso-profile font-amazon"
-                type="text"
-                id="ssoProfile"
-                name="ssoProfile"
-                v-model="ssoProfile"
-                tabindex="0"
-                v-autofocus
-                spellcheck="false"
-            />
-        </div>
-        <br/>
-        <div>
             <div class="title no-bold">Start URL</div>
             <div class="hint">URL for your organization, provided by an admin or help desk</div>
             <input
-                class="url-input font-amazon url-part"
+                class="url-input font-amazon"
                 type="text"
                 id="startUrl"
                 name="startUrl"
@@ -94,17 +71,6 @@ export default defineComponent({
         feature(): Feature {
             return this.$store.state.feature
         },
-        ssoProfile: {
-            get() {
-                return this.$store.state.lastLoginIdcInfo.profileName;
-            },
-            set(value: string) {
-                window.ideClient.updateLastLoginIdcInfo({
-                    ...this.$store.state.lastLoginIdcInfo,
-                    profileName: value
-                })
-            }
-        },
         startUrl: {
             get() {
                 return this.$store.state.lastLoginIdcInfo.startUrl;
@@ -138,14 +104,11 @@ export default defineComponent({
         handleUrlInput() {
             this.isInputValid = this.startUrl != "" && this.selectedRegion != "";
         },
-        handleBackButtonClick() {
-            this.$emit('backToMenu')
-        },
         async handleContinueClick() {
             if (!this.isInputValid) {
                 return
             }
-            this.$emit('login', new IdC(this.ssoProfile, this.startUrl, this.selectedRegion))
+            this.$emit('login', new IdC(this.startUrl, this.selectedRegion))
         },
         handleCodeCatalystSignin() {
             this.$emit('login', new BuilderId())
