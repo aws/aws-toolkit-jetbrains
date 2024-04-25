@@ -8,11 +8,10 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import org.slf4j.LoggerFactory
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.jetbrains.AwsToolkit
 
-private val LOG = LoggerFactory.getLogger("PluginInstallUtil")
+private val LOG = LoggerFactory.getLogger("software.aws.toolkits.jetbrains.core.startup.PluginInstallUtil")
 
+// can't reference anything not in IDE libraries
 internal fun lookForPluginToInstall(pluginId: PluginId, progressIndicator: ProgressIndicator): Boolean {
     try {
         // MarketplaceRequest class is marked as @ApiStatus.Internal
@@ -23,7 +22,7 @@ internal fun lookForPluginToInstall(pluginId: PluginId, progressIndicator: Progr
         if (!downloader.prepareToInstall(progressIndicator)) return false
         downloader.install()
     } catch (e: Exception) {
-        LOG.error(e) { "Unable to auto-install $pluginId" }
+        LOG.error("Unable to auto-install $pluginId", e)
         return false
     }
     return true

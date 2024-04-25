@@ -11,14 +11,13 @@ import com.intellij.openapi.application.ex.ApplicationManagerEx
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import kotlinx.coroutines.CoroutineScope
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import org.slf4j.LoggerFactory
 
 class PluginCoreEnforcementActivity : ApplicationInitializedListener {
     override suspend fun execute(asyncScope: CoroutineScope) {
-        val log = getLogger<PluginCoreEnforcementActivity>()
+        // can't reference anything in core
+        val log = LoggerFactory.getLogger(this::class.java)
 
-        // can't reference anything in core because it doesn't exist
         val coreId = PluginId.getId("aws.toolkit.core")
         val coreDescriptor = PluginManagerCore.getPlugin(coreId)
         if (coreDescriptor != null) {
@@ -26,17 +25,17 @@ class PluginCoreEnforcementActivity : ApplicationInitializedListener {
             return
         }
 
-        log.info { "Attempting to install $coreId" }
+        log.info("Attempting to install $coreId")
         if (lookForPluginToInstall(coreId, EmptyProgressIndicator())) {
-            log.info { "Successfully installed $coreId, restarting" }
+            log.info("Successfully installed $coreId, restarting")
         } else {
             // missing core and therefore unsafe to continue
             val toolkit = PluginManagerCore.getPlugin(PluginId.getId("aws.toolkit"))
             if (toolkit == null) {
-                log.info { "Core is missing, but descriptor to disable toolkit was not found" }
+                log.info("Core is missing, but descriptor to disable toolkit was not found")
                 return
             }
-            log.info { "Disabling $toolkit due to missing core dependency" }
+            log.info("Disabling $toolkit due to missing core dependency")
             PluginEnabler.getInstance().disable(listOf(toolkit))
         }
 
