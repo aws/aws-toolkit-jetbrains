@@ -265,6 +265,7 @@ class SsoAccessTokenProvider(
 
         while (true) {
             if (future.isDone) {
+                _authorization.set(null)
                 return future.get()
             }
 
