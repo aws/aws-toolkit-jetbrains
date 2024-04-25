@@ -55,6 +55,8 @@ class SsoAccessTokenProviderTest {
     private val applicationRule = ApplicationRule()
     private val ssoCallbackRule = SsoLoginCallbackProviderRule()
 
+    private val cacheExpirationTimeInSec: Long = 92 * 24 * 60 * 60
+
     @JvmField
     @Rule
     val ruleChain = RuleChain(applicationRule, ssoCallbackRule)
@@ -88,7 +90,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun getAccessTokenWithClientRegistrationCache() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
         setupCacheStub(expirationClientRegistration)
 
         ssoOidcClient.stub {
@@ -118,7 +120,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun getAccessTokenWithoutCaches() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
         setupCacheStub(returnValue = null)
 
         ssoOidcClient.stub {
@@ -165,7 +167,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun getAccessTokenWithoutCachesMultiplePolls() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
 
         setupCacheStub(expirationClientRegistration)
 
@@ -207,7 +209,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun `refresh access token updates caches`() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
         setupCacheStub(expirationClientRegistration)
 
         val accessToken = DeviceAuthorizationGrantToken(ssoUrl, ssoRegion, "dummyToken", "refreshToken", clock.instant())
@@ -237,7 +239,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun exceptionStopsPolling() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
 
         setupCacheStub(expirationClientRegistration)
 
@@ -256,7 +258,7 @@ class SsoAccessTokenProviderTest {
 
     @Test
     fun backOffTimeIsRespected() {
-        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        val expirationClientRegistration = clock.instant().plusSeconds(cacheExpirationTimeInSec)
         setupCacheStub(expirationClientRegistration)
 
         ssoOidcClient.stub {
