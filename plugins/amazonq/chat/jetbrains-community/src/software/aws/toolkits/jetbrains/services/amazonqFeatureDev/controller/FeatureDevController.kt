@@ -50,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthenticationInProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendMonthlyLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
@@ -420,7 +421,7 @@ class FeatureDevController(
                     ),
                 )
             } else if (err is MonthlyConversationLimitError) {
-                messenger.sendError(tabId = tabId, errMessage = err.message, retries = 0, monthlyLimitError = true)
+                messenger.sendMonthlyLimitError(tabId = tabId, errMessage = err.message)
             } else if (err is PlanIterationLimitError) {
                 messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
                 messenger.sendSystemPrompt(

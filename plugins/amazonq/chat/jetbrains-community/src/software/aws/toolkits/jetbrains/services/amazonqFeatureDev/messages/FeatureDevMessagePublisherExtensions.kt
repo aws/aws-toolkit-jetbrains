@@ -117,16 +117,7 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null, monthlyLimitError: Boolean? = false) {
-    if (monthlyLimitError == true) {
-        this.sendErrorMessage(
-            tabId = tabId,
-            title = message("amazonqFeatureDev.error_text"),
-            message = errMessage
-        )
-        return
-    }
-
+suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null) {
     if (retries == 0) {
         this.sendErrorMessage(
             tabId = tabId,
@@ -175,6 +166,14 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retrie
                 status = FollowUpStatusType.Warning
             )
         ),
+    )
+}
+
+suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String, errMessage: String) {
+    this.sendErrorMessage(
+        tabId = tabId,
+        title = message("amazonqFeatureDev.error_text"),
+        message = errMessage
     )
 }
 
