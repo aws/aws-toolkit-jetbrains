@@ -37,10 +37,7 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.isQConnected
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
-import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
-import software.aws.toolkits.telemetry.Result
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
