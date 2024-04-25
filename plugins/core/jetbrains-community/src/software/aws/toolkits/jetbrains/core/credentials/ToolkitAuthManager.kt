@@ -114,10 +114,7 @@ fun loginSso(
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
             authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
-                (transientConnection.getConnectionSettings().tokenProvider.delegate as? InteractiveBearerTokenProvider)?.let {
-                    onPendingToken(it)
-                }
-                reauthConnectionIfNeeded(project, transientConnection)
+                reauthConnectionIfNeeded(project, transientConnection, onPendingToken)
             }
         } catch (e: Exception) {
             val message = ssoErrorMessageFromException(e)
