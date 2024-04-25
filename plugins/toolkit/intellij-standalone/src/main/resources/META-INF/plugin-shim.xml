@@ -2,5 +2,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
-    <depends>aws.toolkit.core</depends>
+        <!--  FIX_WHEN_MIN_IS_251 unfortunately, autoupdate did not account for automatically installing new required plugin dependencies  -->
+        <!--  <depends>aws.toolkit.core</depends>  -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationInitializedListener implementation="software.aws.toolkits.jetbrains.core.startup.PluginCoreEnforcementActivity" />
+    </extensions>
 </idea-plugin>

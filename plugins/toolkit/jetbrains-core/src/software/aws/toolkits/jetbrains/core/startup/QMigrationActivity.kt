@@ -85,7 +85,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
             // TODO: change title
             object : Task.Backgroundable(project, "Installing Amazon Q...") {
                 override fun run(indicator: ProgressIndicator) {
-                    val succeeded = lookForPluginToInstall(indicator)
+                    val succeeded = lookForPluginToInstall(PluginId.getId(AwsToolkit.Q_PLUGIN_ID), indicator)
                     if (succeeded) {
                         if (!autoInstall) {
                             PluginManagerMain.notifyPluginsUpdated(project)
@@ -134,24 +134,6 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 }
             }
         )
-    }
-
-    private fun lookForPluginToInstall(progressIndicator: ProgressIndicator): Boolean {
-        try {
-            val qPluginId = PluginId.getId(AwsToolkit.Q_PLUGIN_ID)
-
-            // MarketplaceRequest class is marked as @ApiStatus.Internal
-            val descriptor = MarketplaceRequests.loadLastCompatiblePluginDescriptors(setOf(qPluginId))
-                .find { it.pluginId == qPluginId } ?: return false
-
-            val downloader = PluginDownloader.createDownloader(descriptor)
-            if (!downloader.prepareToInstall(progressIndicator)) return false
-            downloader.install()
-        } catch (e: Exception) {
-            LOG.error(e) { "Unable to auto-install Amazon Q" }
-            return false
-        }
-        return true
     }
 
     companion object {
