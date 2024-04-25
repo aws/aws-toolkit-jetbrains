@@ -181,7 +181,7 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    private val codeWhispererUserContext = ClientMetadata().let {
+    private val codeWhispererUserContext = ClientMetadata.getDefault().let {
         val osForCodeWhisperer: OperatingSystem =
             when {
                 SystemInfo.isWindows -> OperatingSystem.WINDOWS

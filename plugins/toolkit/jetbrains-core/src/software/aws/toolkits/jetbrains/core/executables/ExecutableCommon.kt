@@ -19,7 +19,7 @@ object ExecutableCommon {
         path: String,
         executableName: String,
         executableType: ExecutableType<*>? = null,
-        clientMetadata: ClientMetadata = ClientMetadata.DEFAULT_METADATA
+        clientMetadata: ClientMetadata = ClientMetadata.getDefault()
     ): GeneralCommandLine {
         val sanitizedPath = path.nullize(true)
             ?: throw RuntimeException(message("executableCommon.cli_not_configured", executableName))

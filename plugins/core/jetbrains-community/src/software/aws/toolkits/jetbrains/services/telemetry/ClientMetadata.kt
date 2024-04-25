@@ -10,8 +10,8 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 
 data class ClientMetadata(
-    val productName: AWSProduct = PluginResolver.getInstance().product,
-    val productVersion: String = PluginResolver.getInstance().version,
+    val awsProduct: AWSProduct,
+    val awsVersion: String,
     val clientId: String = AwsSettings.getInstance().clientId.toString(),
     val parentProduct: String = ApplicationNamesInfo.getInstance().fullProductNameWithEdition,
     val parentProductVersion: String = ApplicationInfo.getInstance().build.baselineVersion.toString(),
@@ -19,6 +19,12 @@ data class ClientMetadata(
     val osVersion: String = SystemInfo.OS_VERSION,
 ) {
     companion object {
-        val DEFAULT_METADATA = ClientMetadata()
+        fun getDefault(): ClientMetadata {
+            val pluginResolver = PluginResolver.fromCurrentThread()
+            return ClientMetadata(
+                awsProduct = pluginResolver.product,
+                awsVersion = pluginResolver.version
+            )
+        }
     }
 }

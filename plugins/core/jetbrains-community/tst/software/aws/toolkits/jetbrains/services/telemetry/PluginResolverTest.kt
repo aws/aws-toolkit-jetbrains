@@ -20,15 +20,9 @@ import org.junit.Test
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 
 class PluginResolverTest {
-    private lateinit var mockPluginUtil: PluginUtil
-
     @Before
     fun setup() {
-        mockkStatic(PluginUtil::class, PluginManagerCore::class)
-        mockPluginUtil = mockk<PluginUtil> {
-            every { getCallerPlugin(any()) } returns mockk()
-        }
-        every { PluginUtil.getInstance() } returns mockPluginUtil
+        mockkStatic(PluginManagerCore::class)
     }
 
     @After
@@ -41,9 +35,9 @@ class PluginResolverTest {
         val pluginDescriptor = mockk<IdeaPluginDescriptor> {
             every { name } returns "amazon.q"
         }
-        every { PluginManagerCore.getPlugin(any()) } returns pluginDescriptor
+        every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
-        val pluginResolver = PluginResolver()
+        val pluginResolver = PluginResolver.fromCurrentThread()
 
         assertEquals(AWSProduct.AMAZON_Q_FOR_JET_BRAINS, pluginResolver.product)
     }
@@ -53,9 +47,9 @@ class PluginResolverTest {
         val pluginDescriptor = mockk<IdeaPluginDescriptor> {
             every { name } returns "amazon.foo"
         }
-        every { PluginManagerCore.getPlugin(any()) } returns pluginDescriptor
+        every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
-        val pluginResolver = PluginResolver()
+        val pluginResolver = PluginResolver.fromCurrentThread()
 
         assertEquals(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS, pluginResolver.product)
     }
@@ -65,9 +59,9 @@ class PluginResolverTest {
         val pluginDescriptor = mockk<IdeaPluginDescriptor> {
             every { version } returns "1.2.3"
         }
-        every { PluginManagerCore.getPlugin(any()) } returns pluginDescriptor
+        every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
-        val pluginResolver = PluginResolver()
+        val pluginResolver = PluginResolver.fromCurrentThread()
 
         assertEquals("1.2.3", pluginResolver.version)
     }
@@ -77,9 +71,9 @@ class PluginResolverTest {
         val pluginDescriptor = mockk<IdeaPluginDescriptor> {
             every { version } returns null
         }
-        every { PluginManagerCore.getPlugin(any()) } returns pluginDescriptor
+        every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
-        val pluginResolver = PluginResolver()
+        val pluginResolver = PluginResolver.fromCurrentThread()
 
         assertEquals("unknown", pluginResolver.version)
     }
@@ -100,16 +94,14 @@ class PluginResolverTest {
             every { name } returns "amazon.q"
             every { version } returns "1.2.3"
         }
-        every { PluginManagerCore.getPlugin(any()) } returns pluginDescriptor
-        val pluginResolver = PluginResolver(mockStackTrace)
-        every { mockPluginUtil.getCallerPlugin(2) } returns pluginId
+        val pluginResolver = PluginResolver.fromStackTrace(mockStackTrace)
+        every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
         assertEquals(AWSProduct.AMAZON_Q_FOR_JET_BRAINS, pluginResolver.product)
         assertEquals("1.2.3", pluginResolver.version)
 
         verify {
-            PluginManagerCore.getPlugin(pluginId)
-            mockPluginUtil.getCallerPlugin(2)
+            PluginManagerCore.getPluginDescriptorOrPlatformByClassName("software.aws.toolkits.plugins.amazonq.bar")
         }
     }
 
@@ -119,7 +111,7 @@ class PluginResolverTest {
             StackTraceElement("foo", "mockMethod", "mockFile.kt", 1),
             StackTraceElement("bar", "mockMethod", "mockFile.kt", 1)
         )
-        val pluginResolver = PluginResolver(mockStackTrace)
+        val pluginResolver = PluginResolver.fromStackTrace(mockStackTrace)
 
         assertEquals(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS, pluginResolver.product)
         assertEquals("unknown", pluginResolver.version)

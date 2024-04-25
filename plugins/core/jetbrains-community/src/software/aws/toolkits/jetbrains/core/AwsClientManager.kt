@@ -63,7 +63,7 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
         )
     }
 
-    override val userAgent = AwsClientManager.userAgent
+    override fun userAgent() = getUserAgent()
 
     override fun dispose() {
         shutdown()
@@ -87,13 +87,15 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
         @JvmStatic
         fun getInstance(): ToolkitClientManager = service()
 
-        val userAgent: String by lazy {
-            val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }
-            val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
-            val pluginName = PluginResolver.getInstance().product.toString().replace(" ", "-")
-            val pluginVersion = tryOrNull { PluginResolver.getInstance().version }
-            "$pluginName/$pluginVersion $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
+        fun getUserAgent(): String {
+            val pluginResolver = PluginResolver.fromCurrentThread()
+            val pluginName = pluginResolver.product.toString().replace(" ", "-")
+            val pluginVersion = pluginResolver.version
+            return "$pluginName/$pluginVersion $platformName/$platformVersion ClientId/${AwsSettings.getInstance().clientId}"
         }
+
+        private val platformName = tryOrNull { ApplicationNamesInfo.getInstance().fullProductNameWithEdition.replace(' ', '-') }
+        private val platformVersion = tryOrNull { ApplicationInfoEx.getInstanceEx().fullVersion.replace(' ', '-') }
 
         val CUSTOMIZER_EP = ExtensionPointName<ToolkitClientCustomizer>("aws.toolkit.sdk.clientCustomizer")
     }

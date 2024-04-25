@@ -40,7 +40,7 @@ abstract class ToolkitClientManager {
 
     private val cachedClients = ConcurrentHashMap<AwsClientKey, SdkClient>()
 
-    protected abstract val userAgent: String
+    protected abstract fun userAgent(): String
 
     protected abstract fun sdkHttpClient(): SdkHttpClient
 
@@ -181,7 +181,7 @@ abstract class ToolkitClientManager {
                 }
 
                 clientOverrideConfig.let { configuration ->
-                    configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent)
+                    configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent())
                     configuration.retryPolicy(RetryMode.STANDARD)
                 }
 

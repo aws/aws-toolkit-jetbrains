@@ -4,17 +4,14 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.ide.plugins.PluginUtil
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 
-class PluginResolver(stackTrace: Array<StackTraceElement> = Thread.currentThread().stackTrace) {
+class PluginResolver private constructor(callerStackTrace: Array<StackTraceElement>) {
     private val pluginDescriptor by lazy {
-        val pluginId = stackTrace
-            .withIndex()
+         callerStackTrace
             .reversed()
-            .filter { it.value.className.contains("software.aws.toolkits") }
-            .firstNotNullOfOrNull { PluginUtil.getInstance().getCallerPlugin(it.index) }
-        pluginId?.let { PluginManagerCore.getPlugin(it) }
+            .filter { it.className.startsWith("software.aws.toolkits") }
+            .firstNotNullOfOrNull { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(it.className) }
     }
 
     val product: AWSProduct
@@ -27,8 +24,8 @@ class PluginResolver(stackTrace: Array<StackTraceElement> = Thread.currentThread
         get() = pluginDescriptor?.version ?: "unknown"
 
     companion object {
-        private val instance = PluginResolver()
+        fun fromCurrentThread() = PluginResolver(Thread.currentThread().stackTrace)
 
-        fun getInstance() = instance
+        fun fromStackTrace(stackTrace: Array<StackTraceElement>) = PluginResolver(stackTrace)
     }
 }
