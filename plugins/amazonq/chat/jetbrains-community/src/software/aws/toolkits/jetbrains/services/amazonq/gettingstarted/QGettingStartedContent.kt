@@ -58,10 +58,6 @@ class QGettingStartedContent(val project: Project) : Disposable {
         val handler = Function<String, JBCefJSQuery.Response> {
             val command = jacksonObjectMapper().readTree(it).get("command").asText()
             when (command) {
-                "goToHelp" -> {
-                    UiTelemetry.click(project, "amazonq_tryExamples")
-                    LearnCodeWhispererEditorProvider.openEditor(project)
-                }
                 "sendToQ" -> {
                     UiTelemetry.click(project, "amazonq_meet_askq")
                     AmazonQToolWindow.getStarted(project)
@@ -221,13 +217,7 @@ class QGettingStartedContent(val project: Project) : Disposable {
                     <div class="spacingrow"> </div>
                     <div class="spacingrow"> </div>
                     <!-- end spacing -->
-                    <div id="codewhisperer">
-                        <div id="imageContainer">
-                            <img id="codewhispererLogo"/>
-                        </div>
-                        <div id="textWrapper">
-                            <p>${message("q.onboarding.codewhisperer.description")}<br><a id="goToHelpLink">Try examples</a></p>
-                        </div>
+        
                     </div>
                 </div>
             </div>
@@ -239,11 +229,9 @@ class QGettingStartedContent(val project: Project) : Disposable {
                      }
                 };
                     const sendToQ = () => { window.ideApi.postMessage({ command: "sendToQ" }) }
-                    const goToHelp = () => { window.ideApi.postMessage({ command: "goToHelp" }) }
+                    
                     const sendToQButton = document.getElementById('sendToQButton')
                     sendToQButton.onclick = sendToQ
-                    const goToHelpLink = document.getElementById('goToHelpLink')
-                    goToHelpLink.onclick = goToHelp
                 }())
             </script>
         </body>
