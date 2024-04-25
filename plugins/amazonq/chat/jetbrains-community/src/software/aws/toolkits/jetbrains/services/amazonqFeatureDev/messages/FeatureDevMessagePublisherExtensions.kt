@@ -117,7 +117,16 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null) {
+suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null, monthlyLimitError: Boolean? = false) {
+    if (monthlyLimitError == true) {
+        this.sendErrorMessage(
+            tabId = tabId,
+            title = message("amazonqFeatureDev.error_text"),
+            message = errMessage
+        )
+        return
+    }
+
     if (retries == 0) {
         this.sendErrorMessage(
             tabId = tabId,

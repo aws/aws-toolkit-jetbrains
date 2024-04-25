@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthE
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
@@ -418,6 +419,8 @@ class FeatureDevController(
                         )
                     ),
                 )
+            } else if (err is MonthlyConversationLimitError) {
+                messenger.sendError(tabId = tabId, errMessage = err.message, retries = 0, monthlyLimitError = true)
             } else if (err is PlanIterationLimitError) {
                 messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
                 messenger.sendSystemPrompt(
