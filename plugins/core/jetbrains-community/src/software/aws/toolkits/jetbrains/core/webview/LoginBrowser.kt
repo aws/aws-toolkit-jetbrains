@@ -118,7 +118,7 @@ abstract class LoginBrowser(
         }
     }
 
-    protected fun<T> loginWithBackgroundContext(action: () -> T) : Future<T> =
+    protected fun<T> loginWithBackgroundContext(action: () -> T): Future<T> =
         ApplicationManager.getApplication().executeOnPooledThread<T> {
             runBlocking {
                 withBackgroundProgress(project, message("credentials.pending.title")) {
