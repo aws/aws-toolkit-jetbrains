@@ -18,7 +18,7 @@
             </svg>
         </button>
 
-        <Reauth v-if="stage === 'REAUTH'" :app="app" @stageChanged="mutateStage"/>
+        <Reauth v-if="stage === 'REAUTH'" :app="app" @stageChanged="mutateStage" @signout="signout" @reauth="reauth"/>
         <LoginOptions :app="app" v-if="stage === 'START'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
         <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"/>
@@ -152,6 +152,14 @@ export default defineComponent({
                     secretKey: type.secret
                 })
             }
+        },
+        signout() {
+            window.ideApi.postMessage({ command: 'signout' })
+        },
+        reauth() {
+            window.ideApi.postMessage({ command: 'reauth' })
+            this.mutateStage('AUTHENTICATING')
+            // TODO: what if users cancel re-auth, the view will return to start page, which is incorrect
         }
     },
     mounted() {

@@ -46,12 +46,11 @@ export default defineComponent({
     methods: {
         handleContinueClick() {
             console.log('reauth button clicked')
-            window.ideApi.postMessage({ command: 'reauth' })
-            this.$emit('stageChanged', 'AUTHENTICATING')
+            this.$emit('reauth')
         },
         handleCancel() {
             console.log('signout button clicked')
-            window.ideApi.postMessage({ command: 'signout' })
+            this.$emit('signout')
         }
     }
 })

@@ -87,7 +87,7 @@ interface ToolkitConnectionManager : Disposable {
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
 
-    fun isFeatureEnabled(feature: FeatureWithPinnedConnection): Boolean
+    fun connectionStateForFeature(feature: FeatureWithPinnedConnection): BearerTokenAuthState
 
     fun switchConnection(newConnection: ToolkitConnection?)
 

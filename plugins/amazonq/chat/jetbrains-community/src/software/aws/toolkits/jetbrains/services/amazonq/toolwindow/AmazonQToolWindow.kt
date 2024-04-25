@@ -33,16 +33,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeature
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import javax.swing.JComponent
 
-fun isQConnected(project: Project): Boolean {
-    val manager = ToolkitConnectionManager.getInstance(project)
-    val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
-    val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
-    getLogger<AmazonQToolWindow>().debug {
-        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=$isQEnabled; isFeatureEnabled(CW)=$isCWEnabled"
-    }
-    return isQEnabled && isCWEnabled
-}
-
 @Service(Service.Level.PROJECT)
 class AmazonQToolWindow @NonInjectable constructor(
     private val project: Project,

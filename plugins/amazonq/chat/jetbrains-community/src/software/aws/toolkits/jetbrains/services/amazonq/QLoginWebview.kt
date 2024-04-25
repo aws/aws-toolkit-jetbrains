@@ -24,7 +24,8 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -33,7 +34,7 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
@@ -134,23 +135,24 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
             }
 
             "signout" -> {
-                // TODO: CodeWhispererConnection/QConnection
                 (
                     ToolkitConnectionManager.getInstance(project)
-                        .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
+                        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "qBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
+                        SsoLogoutAction(connection).actionPerformed(
+                            AnActionEvent.createFromDataContext(
+                                "qBrowser",
+                                null,
+                                DataContext.EMPTY_CONTEXT
+                            )
                         )
-                    )
-                }
+                    }
             }
 
             "reauth" -> {
-                // TODO: implementation
+                ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
+                    reauthConnectionIfNeeded(project, conn)
+                }
             }
 
             else -> {
@@ -189,7 +191,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
         }
 
         // TODO: pass "REAUTH" if connection expires
-        val stage = if (isCodeWhispererExpired(project)) {
+        val stage = if (isQExpired(project)) {
             "REAUTH"
         } else {
             "START"
