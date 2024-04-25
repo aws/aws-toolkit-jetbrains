@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilErrorContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilInitialContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedFromRejectContent
@@ -52,11 +53,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -293,9 +293,6 @@ class CodeTransformChatController(
             CodeTransformCommand.StartHil -> {
                 handleHil()
             }
-            CodeTransformCommand.ResumedWithAltVersion -> {
-                handleResumedWithAltVersion()
-            }
             else -> {
                 processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = activeTabId))
             }
@@ -378,52 +375,48 @@ class CodeTransformChatController(
         }
     }
 
-    private suspend fun handleResumedWithAltVersion() {
-        codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
+    private suspend fun hilTryResumeAfterError(errorMessage: String) {
+        codeTransformChatHelper.addNewMessage(buildHilErrorContent(errorMessage))
 
-        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
-
-        // TODO poll until complete
-
-        codeModernizerManager.resumePollingFromHil()
+        // TODO handle error of resumeTransformation
+        codeModernizerManager.rejectHil()
         runInEdt {
             codeModernizerManager.getBottomToolWindow().show()
         }
+
+        delay(3000)
+        codeModernizerManager.resumePollingFromHil()
     }
 
     private suspend fun handleHil() {
-        try {
-            codeTransformChatHelper.updateLastPendingMessage(buildHilInitialContent())
+        codeTransformChatHelper.updateLastPendingMessage(buildHilInitialContent())
 
-            val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
-            if (hilDownloadArtifact == null) {
-                // TODO show error
-                return
-            }
+        val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
 
-            codeTransformChatHelper.addNewMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
+        if (hilDownloadArtifact == null) {
+            hilTryResumeAfterError("Cannot download dependency info.")
+            return
+        }
 
-            codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+        codeTransformChatHelper.addNewMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
+        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+        val createReportResult = codeModernizerManager.createDependencyReport(hilDownloadArtifact)
+        if (createReportResult == MavenDependencyReportCommandsResult.Cancelled) {
+            hilTryResumeAfterError("Cancelled local dependency look up.")
+            return
+        } else if (createReportResult == MavenDependencyReportCommandsResult.Failure) {
+            hilTryResumeAfterError("Cannot find other versions locally for the dependency.")
+            return
+        }
 
-            val dependency = codeModernizerManager.findAlternativeDependencyVersions(hilDownloadArtifact)
-            if (dependency == null) {
-                // TODO show error
-                return
-            }
-
-            val versionList = dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()
-            if (versionList.isNotEmpty()) {
-                codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
-            } else {
-                // TODO handle failure path
-            }
-
-            runInEdt {
-                codeModernizerManager.getBottomToolWindow().show()
-            }
-
-        } catch (e: Error) {
-            // TODO error handling
+        val dependency = codeModernizerManager.findAvailableVersionForDependency(hilDownloadArtifact.manifest.pomGroupId, hilDownloadArtifact.manifest.pomArtifactId)
+        if (dependency == null || (dependency.majors.isNullOrEmpty() && dependency.minors.isNullOrEmpty() && dependency.incrementals.isNullOrEmpty())) {
+            hilTryResumeAfterError("Cannot find other versions locally for the dependency.")
+            return
+        }
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
+        runInEdt {
+            codeModernizerManager.getBottomToolWindow().show()
         }
     }
 
@@ -441,15 +434,16 @@ class CodeTransformChatController(
             addNewMessage(buildCompileHilAlternativeVersionContent())
         }
 
+        val copyDependencyResult = codeModernizerManager.copyDependencyForHil(version)
+        if (copyDependencyResult == MavenCopyCommandsResult.Failure) {
+            hilTryResumeAfterError("I ran into issue uploading your selected dependency version.")
+            return
+        } else if (copyDependencyResult == MavenCopyCommandsResult.Cancelled) {
+            hilTryResumeAfterError("I cancelled dependency upload.")
+            return
+        }
+
         try {
-            val copyDependencyResult = codeModernizerManager.copyDependencyForHil(version)
-            if (copyDependencyResult == MavenCopyCommandsResult.Failure) {
-                // TODO handle error
-                return
-            } else if (copyDependencyResult == MavenCopyCommandsResult.Cancelled) {
-                // TODO handle user cancel
-                return
-            }
             codeModernizerManager.tryResumeWithAlternativeVersion(version)
 
             codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
@@ -458,8 +452,8 @@ class CodeTransformChatController(
                 codeModernizerManager.getBottomToolWindow().show()
             }
             codeModernizerManager.resumePollingFromHil()
-        } catch (e: Error) {
-            // TODO handle error
+        } catch (e: Exception) {
+            hilTryResumeAfterError("I cannot resume transformation with your selected version.")
         }
     }
 
@@ -468,18 +462,15 @@ class CodeTransformChatController(
             return
         }
 
-        codeTransformChatHelper.run {
-            addNewMessage(buildHilRejectContent())
-        }
+        codeTransformChatHelper.addNewMessage(buildHilRejectContent())
 
         try {
             codeModernizerManager.rejectHil()
-            codeTransformChatHelper.addNewMessage(buildHilResumedFromRejectContent())
             runInEdt {
                 codeModernizerManager.getBottomToolWindow().show()
             }
             codeModernizerManager.resumePollingFromHil()
-        } catch (e: Error) {
+        } catch (e: Exception) {
             // TODO error handling
         }
     }

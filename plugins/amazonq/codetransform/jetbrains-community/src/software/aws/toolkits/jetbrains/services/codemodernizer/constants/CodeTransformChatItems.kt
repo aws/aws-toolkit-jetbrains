@@ -286,21 +286,32 @@ fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
 }
 */
 
+// TODO translate
 fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
+    val majors = (dependency.majors ?: listOf()).sorted()
+    val minors = (dependency.minors ?: listOf()).sorted()
+    val incrementals = (dependency.incrementals ?: listOf()).sorted()
+    val total = majors.size + minors.size + incrementals.size
 
-    val versionList = (dependency.majors.orEmpty() + dependency.minors.orEmpty() + dependency.incrementals.orEmpty()).sorted()
+    var message = "I found $total other version of **${dependency.artifactId}** that is higher than the one in your code (${dependency.currentVersion})."
+    if (majors.isNotEmpty()) {
+        message += "\n\nLatest major version: ${majors.last()}"
+    }
+    if (minors.isNotEmpty()) {
+        message += "\n\nLatest minor version: ${minors.last()}"
+    }
+    if (incrementals.isNotEmpty()) {
+        message += "\n\nLatest incremental version: ${incrementals.last()}"
+    }
 
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
-        message =
-            "I found ${versionList.size} other ${if (versionList.size == 1) "version" else "versions"} of ${dependency.artifactId} that ${if (versionList.size == 1) "is" else "are"} higher than the one in your code (${dependency.currentVersion}).",
-                //"\n\nLatest major version: 2.2.0\nLatest minor version: 2.2.2",
+        message = message,
         formItems = listOf(
-            // TODO
             FormItem(
                 id = CodeTransformFormItemId.DependencyVersion.id,
                 title = "Please select the version to use",
-                options = versionList.map { FormItemOption(it, it) },
+                options = (majors + minors + incrementals).map { FormItemOption(it, it) },
             )
         ),
         buttons = listOf(
@@ -340,23 +351,14 @@ fun buildTransformResumedChatContent() = CodeTransformChatMessageContent(
     ),
 )
 
-// TODO translate
-private fun getUserHilSelectionFormattedMarkdown(version: String): String = """
-        ### ${"Selected version"}
-        -------------
-
-        | | |
-        | :------------------- | -------: |
-        | **${"Version"}**             |   $version |
-""".trimIndent()
 fun buildUserHilSelection(version: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
-    message = getUserHilSelectionFormattedMarkdown(version)
+    message = "Update using version $version."
 )
 
 fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "Trying to resume transformation with your selected version",
+    message = "Trying to resume transformation with your selected version.",
 )
 
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
@@ -381,10 +383,23 @@ fun buildHilResumedFromRejectContent() = CodeTransformChatMessageContent(
 
 fun buildHilRejectContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I will continue without the dependency",
+    message = "I will continue without the dependency. It may take 10-30 minutes to complete the transformation.",
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
 )
 
 fun buildHilInitialContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     message = "I ran into a dependency issue and was not able to successfully complete the transformation.",
+)
+
+fun buildHilErrorContent(errorMessage: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = "$errorMessage\n\nI will resume the transformation without the dependency. It may take 10-30 minutes to complete the transformation.",
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
 )

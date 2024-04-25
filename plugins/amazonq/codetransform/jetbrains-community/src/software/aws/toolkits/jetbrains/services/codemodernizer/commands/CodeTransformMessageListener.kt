@@ -33,12 +33,12 @@ class CodeTransformMessageListener {
         _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.TransformComplete, transformResult = result))
     }
 
-    fun onAuthRestored() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.AuthRestored))
+    fun onTransformResuming() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.TransformResuming))
     }
 
-    fun onResumedWithAlternativeVersion() {
-        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.ResumedWithAltVersion))
+    fun onAuthRestored() {
+        _messages.tryEmit(CodeTransformActionMessage(CodeTransformCommand.AuthRestored))
     }
 
     // provide singleton access

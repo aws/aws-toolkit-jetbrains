@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.AlreadyDisposedException
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
@@ -13,23 +11,17 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStepStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import java.io.File
 import java.lang.Thread.sleep
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
@@ -127,52 +119,4 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         }
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
-}
-
-// TODO fix this
-fun getTransformationStepsFixture(
-    jobId: JobId
-): List<TransformationStep> {
-    println("In getTransformationStepsFixture $jobId")
-
-    val downloadArtifact = TransformationDownloadArtifact.builder()
-        .downloadArtifactId("fake-artifact-id")
-        .downloadArtifactType("1p-hil-artifact-type")
-
-    var progressUpdate = TransformationProgressUpdate.builder()
-        .name("Status step")
-        .status(TransformationStepStatus.FAILED.toString())
-        .description("This step should be hil identifier")
-        .startTime(Instant.now())
-        .endTime(Instant.now())
-        .downloadArtifacts(downloadArtifact.build())
-
-    val transformationStepBuilder = TransformationStep.builder()
-        .id("fake-step-id-1")
-        .name("Building Code")
-        .description("Building dependencies")
-        .status(TransformationStatus.PAUSED.toString())
-        .startTime(Instant.now())
-        .endTime(Instant.now())
-        .progressUpdates(progressUpdate.build())
-
-    return listOf(transformationStepBuilder.build())
-}
-
-fun downloadResultArchive(jobId: JobId, downloadArtifact: TransformationDownloadArtifact): Array<VirtualFile?> {
-    // TODO change to logger
-    println("In downloadResultArchive $jobId $downloadArtifact")
-
-    // TODO parse xml to json
-    val manifestFileFilePath = "/src/amazonqGumby/mock/downloadHilZip/manifest.json"
-    val pomFileFilePath = "/src/amazonqGumby/mock/downloadHilZip/pom.xml"
-
-    val manifestFileFileReference = File(manifestFileFilePath)
-    val pomFileFileReference = File(pomFileFilePath)
-
-    val localFileSystem = LocalFileSystem.getInstance()
-    val manifestFileVirtualFileReference = localFileSystem.findFileByIoFile(manifestFileFileReference)
-    val pomFileVirtualFileReference = localFileSystem.findFileByIoFile(pomFileFileReference)
-
-    return arrayOf(manifestFileVirtualFileReference, pomFileVirtualFileReference)
 }

@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.intellij.openapi.util.io.FileUtil.createTempDirectory
-import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -14,7 +12,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 
 const val MANIFEST_PATH_IN_ZIP = "manifest.json"

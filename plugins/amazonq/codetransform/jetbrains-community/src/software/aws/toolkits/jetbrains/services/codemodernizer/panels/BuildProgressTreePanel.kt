@@ -155,6 +155,7 @@ class BuildProgressTreePanel : JPanel(BorderLayout()) {
                         BuildStepStatus.WARNING -> JBLabel(AwsIcons.CodeTransform.CHECKMARK_GRAY)
                         BuildStepStatus.ERROR -> JBLabel(AllIcons.General.Error)
                         BuildStepStatus.WORKING -> JBLabel(AnimatedIcon.Default.INSTANCE)
+                        BuildStepStatus.PAUSED -> JBLabel(AnimatedIcon.Default.INSTANCE)
 
                         // TODO
                         else -> JBLabel(AnimatedIcon.Default.INSTANCE)

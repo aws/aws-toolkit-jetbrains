@@ -17,7 +17,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
-import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenInstallDependency
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenCopyDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -32,7 +32,6 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
-import kotlin.io.path.createTempDirectory
 import kotlin.io.path.pathString
 
 const val MANIFEST_PATH = "manifest.json"
@@ -80,17 +79,17 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    fun executeHilMavenInstallDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenInstallDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
+    fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
 
     // TODO return type
-    fun getHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
+    fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
         val sourceFolder = File(hilTepDirPath.resolve("q-hil-dependency-artifacts/pomFolder").pathString)
         val destinationFolder = Files.createDirectories(hilTepDirPath.resolve( "dependencies-root")).toFile()
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
 
         // TODO handle cancel
 
-        return executeHilMavenInstallDependency(sourceFolder, destinationFolder, buildLogBuilder)
+        return executeHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder)
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
@@ -100,7 +99,7 @@ data class CodeModernizerSessionContext(
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
 
-    fun getDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
+    fun createDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
         val sourceFolder = File(hilTempPomPath.pathString)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)

@@ -25,7 +25,7 @@ private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeTrans
     telemetry.mvnBuildFailed(CodeTransformMavenBuildCommand.IDEBundledMaven, error)
 }
 
-fun runHilMavenInstallDependency(sourceFolder: File, destinationDir: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
+fun runHilMavenCopyDependency(sourceFolder: File, destinationDir: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
     try {
@@ -47,23 +47,6 @@ fun runHilMavenInstallDependency(sourceFolder: File, destinationDir: File, build
         } else {
             emitMavenFailure("Maven Copy: bundled Maven failed: exitCode ${copyDependenciesRunnable.isComplete()}", logger, telemetry)
         }
-
-        // Run install
-        /*
-        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry, destinationDir.toPath())
-        installRunnable.await()
-        buildlogBuilder.appendLine(installRunnable.getOutput())
-        if (installRunnable.isComplete()) {
-            val successMsg = "IntelliJ bundled Maven install executed successfully"
-            logger.info { successMsg }
-            buildlogBuilder.appendLine(successMsg)
-        } else if (installRunnable.isTerminated()) {
-            return MavenCopyCommandsResult.Cancelled
-        } else {
-            emitMavenFailure("Maven Install: bundled Maven failed: exitCode ${installRunnable.isComplete()}", logger, telemetry)
-            return MavenCopyCommandsResult.Failure
-        }
-        */
     } catch (t: Throwable) {
         emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)
         return MavenCopyCommandsResult.Failure
@@ -277,26 +260,30 @@ private fun runMavenDependencyUpdatesReport(
 }
 
 // TODO rename MavenCopyCommandsResult
+
 fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
 
+    // TODO telemetry
     val currentTimestamp = System.currentTimeMillis()
 
-    try {
-        val transformMvnRunner = TransformMavenRunner(project)
-        val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+    val transformMvnRunner = TransformMavenRunner(project)
+    val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
-        val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry)
-        runnable.await()
-        buildlogBuilder.appendLine(runnable.getOutput())
-
-        // TODO remove
-        val report = parseXmlDependenciesReport("${sourceFolder.absolutePath}/target/dependency-updates-aggregate-report.xml")
-        return MavenDependencyReportCommandsResult.Success(report)
-
-    } catch (t: Throwable) {
-        emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)
+    val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry)
+    runnable.await()
+    buildlogBuilder.appendLine(runnable.getOutput())
+    if (runnable.isComplete()) {
+        val successMsg = "IntelliJ bundled Maven dependency report executed successfully"
+        logger.info { successMsg }
+        buildlogBuilder.appendLine(successMsg)
+    } else if (runnable.isTerminated()) {
+        return MavenDependencyReportCommandsResult.Cancelled
+    } else {
+        emitMavenFailure("Maven dependency report: bundled Maven failed: exitCode ${runnable.isComplete()}", logger, telemetry)
         return MavenDependencyReportCommandsResult.Failure
     }
+
+    return MavenDependencyReportCommandsResult.Success
 }

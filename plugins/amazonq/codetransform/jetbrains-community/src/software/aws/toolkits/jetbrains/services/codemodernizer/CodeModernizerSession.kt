@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadManifest
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
@@ -59,11 +59,8 @@ const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
-    // TODO change back
-    private val initialPollingSleepDurationMillis: Long = 200,
-    private val totalPollingSleepDurationMillis: Long = 500,
-    //private val initialPollingSleepDurationMillis: Long = 2000,
-    //private val totalPollingSleepDurationMillis: Long = 5000,
+    private val initialPollingSleepDurationMillis: Long = 2000,
+    private val totalPollingSleepDurationMillis: Long = 5000,
 ) : Disposable {
     private val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
     private val state = CodeModernizerSessionState.getInstance(sessionContext.project)
@@ -77,7 +74,7 @@ class CodeModernizerSession(
     // TODO code clean up for getter and setter
     private var hilDownloadArtifactId: String? = null
     private var hilTempDirectoryPath: Path? = null
-    private var hilDependencyManifest: CodeTransformHilDownloadManifest? = null
+    private var hilDownloadArtifact: CodeTransformHilDownloadArtifact? = null
 
     fun getHilDownloadArtifactId() = hilDownloadArtifactId
 
@@ -85,10 +82,10 @@ class CodeModernizerSession(
         hilDownloadArtifactId = artifactId
     }
 
-    fun getHilDependencyManifest() = hilDependencyManifest
+    fun getHilDownloadArtifact() = hilDownloadArtifact
 
-    fun setHilDependencyManifest(manifest: CodeTransformHilDownloadManifest) {
-        hilDependencyManifest = manifest
+    fun setHilDownloadArtifact(artifact: CodeTransformHilDownloadArtifact) {
+        hilDownloadArtifact = artifact
     }
 
     fun getHilTempDirectoryPath() = hilTempDirectoryPath
@@ -111,11 +108,11 @@ class CodeModernizerSession(
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
     // TODO path to const
-    fun getHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.getDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
+    fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
 
-    fun getHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.getHilDependencyUsingMaven(hilTempDirectoryPath!!)
+    fun copyHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.copyHilDependencyUsingMaven(hilTempDirectoryPath!!)
 
-    fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(hilTempDirectoryPath!!, hilDependencyManifest!!, selectedVersion)
+    fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(hilTempDirectoryPath!!, hilDownloadArtifact!!.manifest, selectedVersion)
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.
@@ -539,11 +536,11 @@ class CodeModernizerSession(
 
     fun hilTempFilesCleanup() {
         hilDownloadArtifactId = null
-        hilDependencyManifest = null
+        hilDownloadArtifact = null
         if (hilTempDirectoryPath?.exists() == true) {
             try {
                 (hilTempDirectoryPath as Path).toFile().deleteRecursively()
-            } catch (e: Error) {
+            } catch (e: Exception) {
                 // TODO handle error
             } finally {
                 hilTempDirectoryPath = null

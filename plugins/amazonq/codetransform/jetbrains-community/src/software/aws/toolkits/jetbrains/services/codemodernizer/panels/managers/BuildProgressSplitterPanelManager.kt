@@ -159,6 +159,20 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
+        if (newState == TransformationStatus.PAUSED) {
+            maybeAdd(ProgressStepId.ACCEPTED, message("codemodernizer.toolwindow.progress.waiting"))
+            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAdd(ProgressStepId.PAUSED, "Paused to resolve dependency")
+        }
+
+        if (newState == TransformationStatus.RESUMED) {
+            maybeAdd(ProgressStepId.ACCEPTED, message("codemodernizer.toolwindow.progress.waiting"))
+            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAdd(ProgressStepId.RESUMED, "Resuming transformation")
+        }
+
         if (newState in setOf(
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED,
@@ -335,6 +349,8 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
         ProgressStepId.BUILDING -> false
         ProgressStepId.PLANNING -> false
         ProgressStepId.TRANSFORMING -> false
+        ProgressStepId.PAUSED -> false
+        ProgressStepId.RESUMED -> false
         ProgressStepId.ROOT_STEP -> false
     }
 
