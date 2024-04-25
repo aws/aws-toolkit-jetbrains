@@ -39,7 +39,6 @@ import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
-
 /**
  * An SPI for caching of AWS clients inside of a toolkit
  */

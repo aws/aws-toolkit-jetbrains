@@ -84,14 +84,24 @@ abstract class FeedbackDialog(
                 row {
                     icon(AllIcons.Toolwindows.ToolWindowDebugger)
                     link(message("feedback.report.issue.link")) {
-                        BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n${getToolkitMetadata()}", Charsets.UTF_8.name())}")
+                        BrowserUtil.browse(
+                            "${GITHUB_LINK_BASE}${URLEncoder.encode(
+                                "${comment.component.text}\n\n${getToolkitMetadata()}",
+                                Charsets.UTF_8.name()
+                            )}"
+                        )
                     }
                 }
                 row {
                     icon(AllIcons.Actions.IntentionBulbGrey)
 
                     link(message("feedback.request.feature.link")) {
-                        BrowserUtil.browse("${GITHUB_LINK_BASE}${URLEncoder.encode("${comment.component.text}\n\n${getToolkitMetadata()}", Charsets.UTF_8.name())}")
+                        BrowserUtil.browse(
+                            "${GITHUB_LINK_BASE}${URLEncoder.encode(
+                                "${comment.component.text}\n\n${getToolkitMetadata()}",
+                                Charsets.UTF_8.name()
+                            )}"
+                        )
                     }
                 }
                 row {
