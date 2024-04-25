@@ -421,7 +421,8 @@ class FeatureDevController(
                     ),
                 )
             } else if (err is MonthlyConversationLimitError) {
-                messenger.sendMonthlyLimitError(tabId = tabId, errMessage = err.message)
+                messenger.sendMonthlyLimitError(tabId = tabId)
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             } else if (err is PlanIterationLimitError) {
                 messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
                 messenger.sendSystemPrompt(

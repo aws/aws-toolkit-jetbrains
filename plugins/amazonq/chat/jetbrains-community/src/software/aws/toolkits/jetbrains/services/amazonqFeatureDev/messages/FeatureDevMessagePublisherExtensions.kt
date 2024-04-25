@@ -169,12 +169,13 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retrie
     )
 }
 
-suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String, errMessage: String) {
-    this.sendErrorMessage(
+suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String) {
+    this.sendAnswer(
         tabId = tabId,
-        title = message("amazonqFeatureDev.error_text"),
-        message = errMessage
+        messageType = FeatureDevMessageType.Answer,
+        message = message("amazonqFeatureDev.exception.monthly_limit_error")
     )
+    this.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
 }
 
 suspend fun MessagePublisher.initialExamples(tabId: String) {
