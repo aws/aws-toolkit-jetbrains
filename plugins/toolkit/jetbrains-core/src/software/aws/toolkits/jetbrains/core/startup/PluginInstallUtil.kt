@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory
 private val LOG = LoggerFactory.getLogger("software.aws.toolkits.jetbrains.core.startup.PluginInstallUtil")
 
 // can't reference anything not in IDE libraries
+@Suppress("LazyLog")
 internal fun lookForPluginToInstall(pluginId: PluginId, progressIndicator: ProgressIndicator): Boolean {
     try {
         // MarketplaceRequest class is marked as @ApiStatus.Internal

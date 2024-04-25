@@ -13,6 +13,8 @@ import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 
 class PluginCoreEnforcementActivity : ApplicationInitializedListener {
+
+    @Suppress("LazyLog")
     override suspend fun execute(asyncScope: CoroutineScope) {
         // can't reference anything in core
         val log = LoggerFactory.getLogger(this::class.java)
