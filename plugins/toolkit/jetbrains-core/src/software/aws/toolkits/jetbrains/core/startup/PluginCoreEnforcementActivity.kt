@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.startup
 
 import com.intellij.ide.ApplicationInitializedListener
-import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginEnabler
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ex.ApplicationManagerEx

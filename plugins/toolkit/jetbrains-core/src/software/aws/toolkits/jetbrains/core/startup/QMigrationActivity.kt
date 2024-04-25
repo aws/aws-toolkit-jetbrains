@@ -7,7 +7,6 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.plugins.PluginManagerConfigurable
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.ide.plugins.PluginManagerMain
-import com.intellij.ide.plugins.marketplace.MarketplaceRequests
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginId
@@ -17,9 +16,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
