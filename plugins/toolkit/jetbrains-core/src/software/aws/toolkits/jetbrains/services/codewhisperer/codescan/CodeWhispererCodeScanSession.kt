@@ -47,14 +47,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResp
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanServiceInvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCANS_LIMIT_REACHED
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCANS_THROTTLING_MESSAGE
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PROJECT_SCANS_LIMIT_REACHED
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PROJECT_SCANS_THROTTLING_MESSAGE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
@@ -211,11 +209,10 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 if (awsError.errorCode() == "ThrottlingException" && awsError.errorMessage() != null) {
                     if (awsError.errorMessage()!!.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
                         LOG.info { "Project Scans limit reached" }
-                        notifyError(PROJECT_SCANS_LIMIT_REACHED)
+                        notifyErrorCodeWhispererUsageLimit(sessionContext.project, true)
                     } else if (awsError.errorMessage()!!.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
                         LOG.info { "File Scans limit reached" }
                         CodeWhispererExplorerActionManager.getInstance().setMonthlyQuotaForCodeScansExceeded(true)
-                        notifyError(FILE_SCANS_LIMIT_REACHED)
                     }
                 }
             }

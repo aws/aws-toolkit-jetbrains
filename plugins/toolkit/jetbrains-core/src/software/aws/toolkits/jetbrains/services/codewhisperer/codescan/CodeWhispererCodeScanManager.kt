@@ -71,7 +71,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -327,7 +326,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
             e.message == CodeWhispererConstants.THROTTLING_MESSAGE
         ) {
             CodeWhispererExplorerActionManager.getInstance().setSuspended(project)
-            CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit(project, isCodeScan = true)
         }
 
         LOG.error {
