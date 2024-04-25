@@ -16,7 +16,7 @@ class PluginResolver private constructor(callerStackTrace: Array<StackTraceEleme
 
     val product: AWSProduct
         get() = when (pluginDescriptor?.name) {
-            AwsToolkit.Q_PLUGIN_ID -> AWSProduct.AMAZON_Q_FOR_JET_BRAINS
+            "amazon.q" -> AWSProduct.AMAZON_Q_FOR_JET_BRAINS
             else -> AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS
         }
 
