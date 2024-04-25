@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import software.aws.toolkits.gradle.intellij.IdeFlavor
-import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
@@ -16,9 +15,8 @@ toolkitIntelliJ.apply {
 }
 
 intellij {
-    val ideProfile = IdeVersions.ideProfile(project)
-    version.set(ideProfile.community.version())
-    localPath.set(ideProfile.community.localPath())
+    version.set(toolkitIntelliJ.version())
+    localPath.set(toolkitIntelliJ.localPath())
     plugins.set(
         listOf(
             project(":plugin-core"),
