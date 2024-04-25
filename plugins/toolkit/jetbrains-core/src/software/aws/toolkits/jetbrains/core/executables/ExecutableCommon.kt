@@ -45,7 +45,7 @@ object ExecutableCommon {
                 // we're not setting PYTHONIOENCODING because we might break SAM on py2.7
             }
             if (executableType is SamExecutable) {
-                this["AWS_TOOLING_USER_AGENT"] = "${clientMetadata.productName}/${clientMetadata.productVersion}"
+                this["AWS_TOOLING_USER_AGENT"] = "${clientMetadata.awsProduct}/${clientMetadata.awsVersion}"
             }
         }
 

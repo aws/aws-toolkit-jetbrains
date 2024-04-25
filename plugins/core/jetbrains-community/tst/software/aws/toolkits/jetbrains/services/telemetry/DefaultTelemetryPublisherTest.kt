@@ -26,7 +26,7 @@ class DefaultTelemetryPublisherTest {
     val projectRule = ProjectRule()
 
     @Test
-    fun testPublish_withNamespace() {
+    fun testPublishWithNamespace() {
         val mockPostMetricsRequestCaptor = argumentCaptor<PostMetricsRequest>()
 
         val mockTelemetryClient = delegateMock<ToolkitTelemetryClient>()
@@ -94,7 +94,7 @@ class DefaultTelemetryPublisherTest {
     }
 
     @Test
-    fun testPublish_withoutNamespace() {
+    fun testPublishWithoutNamespace() {
         val mockPostMetricsRequestCaptor = argumentCaptor<PostMetricsRequest>()
 
         val mockTelemetryClient = delegateMock<ToolkitTelemetryClient>()
@@ -162,7 +162,7 @@ class DefaultTelemetryPublisherTest {
     }
 
     @Test
-    fun testPublish_multipleProductsVersions() {
+    fun testPublishMultipleProductsAndVersions() {
         val mockPostMetricsRequestCaptor = argumentCaptor<PostMetricsRequest>()
 
         val mockTelemetryClient = delegateMock<ToolkitTelemetryClient>()
@@ -262,8 +262,8 @@ class DefaultTelemetryPublisherTest {
 
     private val defaultMetadata = getClientMetadata(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS, "1.0")
 
-    private fun getClientMetadata(product: AWSProduct, version: String): ClientMetadata {
-        return ClientMetadata(
+    private fun getClientMetadata(product: AWSProduct, version: String): ClientMetadata =
+        ClientMetadata(
             awsProduct = product,
             awsVersion = version,
             clientId = "foo",
@@ -272,5 +272,4 @@ class DefaultTelemetryPublisherTest {
             os = "mac",
             osVersion = "1.0"
         )
-    }
 }

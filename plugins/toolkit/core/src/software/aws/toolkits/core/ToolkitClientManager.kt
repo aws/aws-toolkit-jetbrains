@@ -7,13 +7,24 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.auth.token.signer.aws.BearerTokenSigner
+import software.amazon.awssdk.awscore.AwsExecutionAttribute
+import software.amazon.awssdk.awscore.AwsRequest
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
 import software.amazon.awssdk.awscore.client.builder.AwsDefaultClientBuilder
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.core.SdkRequest
 import software.amazon.awssdk.core.client.builder.SdkSyncClientBuilder
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
+import software.amazon.awssdk.core.interceptor.Context
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
+import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute
+import software.amazon.awssdk.core.internal.http.pipeline.stages.ApplyUserAgentStage
+import software.amazon.awssdk.core.internal.http.pipeline.stages.ApplyUserAgentStage.HEADER_USER_AGENT
 import software.amazon.awssdk.core.retry.RetryMode
+import software.amazon.awssdk.core.retry.RetryPolicy
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.utils.SdkAutoCloseable
@@ -27,6 +38,7 @@ import java.lang.reflect.Modifier
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
+
 
 /**
  * An SPI for caching of AWS clients inside of a toolkit
@@ -180,8 +192,51 @@ abstract class ToolkitClientManager {
                     }
                 }
 
+                clientOverrideConfig.addExecutionInterceptor(object : ExecutionInterceptor {
+                    override fun modifyRequest(
+                        context: Context.ModifyRequest,
+                        executionAttributes: ExecutionAttributes
+                    ): SdkRequest {
+                        val request = context.request()
+                        if (request !is AwsRequest) {
+                            return request
+                        }
+
+                        val clientType = executionAttributes.getAttribute(AwsExecutionAttribute.CLIENT_TYPE)
+                        val sdkClient = executionAttributes.getAttribute(SdkInternalExecutionAttribute.SDK_CLIENT)
+                        val serviceClientConfiguration = sdkClient.serviceClientConfiguration()
+                        val retryPolicy: RetryPolicy =
+                            serviceClientConfiguration.overrideConfiguration().retryPolicy().orElse(RetryPolicy.defaultRetryPolicy())
+                        val toolkitUserAgent = userAgent()
+
+                        val requestUserAgent = ApplyUserAgentStage.resolveClientUserAgent(
+                            toolkitUserAgent,
+                            null,
+                            clientType,
+                            null,
+                            null,
+                            retryPolicy
+                        )
+
+                        val overrideConfiguration = request.overrideConfiguration()
+                            .map { config ->
+                                config.toBuilder()
+                                    .putHeader(HEADER_USER_AGENT, requestUserAgent)
+                                    .build()
+                            }
+                            .orElseGet {
+                                AwsRequestOverrideConfiguration.builder()
+                                    .putHeader(HEADER_USER_AGENT, requestUserAgent)
+                                    .build()
+                            }
+
+                        return request.toBuilder()
+                            .overrideConfiguration(overrideConfiguration)
+                            .build()
+                    }
+                })
+
                 clientOverrideConfig.let { configuration ->
-                    configuration.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_PREFIX, userAgent())
                     configuration.retryPolicy(RetryMode.STANDARD)
                 }
 

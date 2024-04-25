@@ -195,7 +195,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             .operatingSystem(osForCodeWhisperer)
             .product(FEATURE_EVALUATION_PRODUCT_NAME)
             .clientId(it.clientId)
-            .ideVersion(it.productVersion)
+            .ideVersion(it.awsVersion)
             .build()
     }
 

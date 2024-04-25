@@ -216,7 +216,7 @@ abstract class FeedbackDialog(
             val metadata = ClientMetadata.getDefault()
             return """
                 ---
-                Toolkit: ${metadata.productName} ${metadata.productVersion}
+                Toolkit: ${metadata.awsProduct} ${metadata.awsVersion}
                 OS: ${metadata.os} ${metadata.osVersion}
                 IDE: ${metadata.parentProduct} ${metadata.parentProductVersion}
             """.trimIndent()

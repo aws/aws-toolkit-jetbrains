@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 
 class PluginResolver private constructor(callerStackTrace: Array<StackTraceElement>) {
     private val pluginDescriptor by lazy {
-         callerStackTrace
+        callerStackTrace
             .reversed()
             .filter { it.className.startsWith("software.aws.toolkits") }
             .firstNotNullOfOrNull { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(it.className) }

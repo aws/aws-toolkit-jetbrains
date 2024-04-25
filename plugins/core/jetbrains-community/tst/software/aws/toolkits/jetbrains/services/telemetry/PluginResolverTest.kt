@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.ide.plugins.PluginUtil
-import com.intellij.openapi.extensions.PluginId
 import io.mockk.called
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -86,9 +84,6 @@ class PluginResolverTest {
             StackTraceElement("software.aws.toolkits.plugins.amazonq.bar", "mockMethod", "mockFile.kt", 1),
             StackTraceElement("bar", "mockMethod", "mockFile.kt", 1)
         )
-        val pluginId = mockk<PluginId> {
-            every { idString } returns "1234"
-        }
 
         val pluginDescriptor = mockk<IdeaPluginDescriptor> {
             every { name } returns "amazon.q"
