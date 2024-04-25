@@ -26,19 +26,9 @@ class NewConnectionAction : DumbAwareAction() {
                     GettingStartedPanel.openPanel(it, connectionInitiatedFromExplorer = true)
                 } else {
                     ToolkitWebviewPanel.getInstance(it).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true))
-                    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(it).contentManager
-
-                    val myContent = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(it).component, null, false).also {
-                        it.isCloseable = true
-                        it.isPinnable = true
-                    }
-
-
-                        contentManager.removeAllContents(true)
-                        contentManager.addContent(myContent)
+                    showWebview(it)
 
                 }
-
                 UiTelemetry.click(e.project, "auth_gettingstarted_explorermenu")
             }
         }
