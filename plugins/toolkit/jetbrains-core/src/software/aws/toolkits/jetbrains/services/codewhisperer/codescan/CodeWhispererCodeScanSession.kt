@@ -207,14 +207,16 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             val exception = e as? CodeWhispererException
             val awsError = exception?.awsErrorDetails()
 
-            if (awsError?.errorCode() == "ThrottlingException" && awsError?.errorMessage() != null) {
-                if (awsError.errorMessage()!!.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
-                    LOG.info { "Project Scans limit reached" }
-                    notifyError(PROJECT_SCANS_LIMIT_REACHED)
-                } else if (awsError.errorMessage()!!.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
-                    LOG.info { "File Scans limit reached" }
-                    CodeWhispererExplorerActionManager.getInstance().setMonthlyQuotaForCodeScansExceeded(true)
-                    notifyError(FILE_SCANS_LIMIT_REACHED)
+            if (awsError != null) {
+                if (awsError.errorCode() == "ThrottlingException" && awsError.errorMessage() != null) {
+                    if (awsError.errorMessage()!!.contains(PROJECT_SCANS_THROTTLING_MESSAGE)) {
+                        LOG.info { "Project Scans limit reached" }
+                        notifyError(PROJECT_SCANS_LIMIT_REACHED)
+                    } else if (awsError.errorMessage()!!.contains(FILE_SCANS_THROTTLING_MESSAGE)) {
+                        LOG.info { "File Scans limit reached" }
+                        CodeWhispererExplorerActionManager.getInstance().setMonthlyQuotaForCodeScansExceeded(true)
+                        notifyError(FILE_SCANS_LIMIT_REACHED)
+                    }
                 }
             }
             LOG.error {
