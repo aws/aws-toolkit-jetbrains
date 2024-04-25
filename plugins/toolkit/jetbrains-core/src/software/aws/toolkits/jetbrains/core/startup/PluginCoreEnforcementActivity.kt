@@ -22,6 +22,10 @@ class PluginCoreEnforcementActivity : ApplicationInitializedListener {
         val coreId = PluginId.getId("aws.toolkit.core")
         val coreDescriptor = PluginManagerCore.getPlugin(coreId)
         if (coreDescriptor != null) {
+            if (!coreDescriptor.isEnabled) {
+                PluginEnabler.getInstance().enable(listOf(coreDescriptor))
+                ApplicationManagerEx.getApplicationEx().restart(true)
+            }
             // already installed
             return
         }
