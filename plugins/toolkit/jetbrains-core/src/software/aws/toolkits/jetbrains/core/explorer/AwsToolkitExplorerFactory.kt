@@ -94,7 +94,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    connectionChanged(project, newConnection, toolWindow)
+                    connectionChanged(project, newConnection)
                 }
             }
         )
@@ -103,7 +103,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    settingsStateChanged(project, newState, toolWindow)
+                    settingsStateChanged(project, newState)
                 }
             }
         )
@@ -126,7 +126,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.stripeTitle = message("aws.notification.title")
     }
 
-    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
+    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?) {
         val isNewConnToolkitConnection = when (newConnection) {
             is AwsConnectionManagerConnection -> {
                 LOG.debug { "IAM connection" }
@@ -155,7 +155,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
     }
 
-    private fun settingsStateChanged(project: Project, newState: ConnectionState, toolWindow: ToolWindow) {
+    private fun settingsStateChanged(project: Project, newState: ConnectionState) {
         val isToolkitConnected = if (newState is ConnectionState.ValidConnection) {
             true
         } else {

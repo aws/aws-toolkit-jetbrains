@@ -44,7 +44,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindFile
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener

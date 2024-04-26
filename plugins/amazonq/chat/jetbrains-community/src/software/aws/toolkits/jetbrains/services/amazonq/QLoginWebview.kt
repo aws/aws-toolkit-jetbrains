@@ -27,8 +27,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnecti
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -157,14 +157,14 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                        SsoLogoutAction(connection).actionPerformed(
-                            AnActionEvent.createFromDataContext(
-                                "qBrowser",
-                                null,
-                                DataContext.EMPTY_CONTEXT
-                            )
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
                         )
-                    }
+                    )
+                }
             }
 
             "reauth" -> {

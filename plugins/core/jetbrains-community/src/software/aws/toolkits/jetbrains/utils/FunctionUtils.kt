@@ -61,6 +61,3 @@ fun isQExpired(project: Project): Boolean {
 
 fun AwsBearerTokenConnection.state(): BearerTokenAuthState =
     (getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider)?.state() ?: BearerTokenAuthState.NOT_AUTHENTICATED
-
-
-
