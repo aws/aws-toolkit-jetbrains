@@ -410,9 +410,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    // TODO handleJobResumed
-    // Update codeModernizerBottomWindowPanelManager with resumed UI
-
     suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
         setJobOngoing(jobId, session.sessionContext)
         // Init the splitter panel to show progress and progress steps
