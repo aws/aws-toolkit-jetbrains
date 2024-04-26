@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <template>
-    <button v-if="this.authenticating" class="back-button" @click="onClickCancelReauth" tabindex="-1">
+    <button v-if="!this.authenticating && this.app === 'TOOLKIT'" class="back-button" @click="onClickCancelReauth" tabindex="-1">
         <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
                 d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
