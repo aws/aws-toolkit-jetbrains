@@ -2,14 +2,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <template>
-    <button class="back-button" @click="handleBackButtonClick" tabindex="-1">
-        <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
-                fill="#21A2FF"
-            />
-        </svg>
-    </button>
     <div class="font-amazon" @keydown.enter="handleContinueClick">
         <div class="bottom-small-gap">
             <div class="title">Sign in with SSO:</div>
@@ -34,6 +26,9 @@
                 spellcheck="false"
             />
         </div>
+        <div>
+            <div class="hint invalid-start-url" v-if="!isInputValid && this.startUrl !== ''">Invalid Start URL format</div>
+        </div>
         <br/>
         <div>
             <div class="title no-bold">Region</div>
@@ -43,7 +38,7 @@
                 id="regions"
                 name="regions"
                 v-model="selectedRegion"
-                @change="handleUrlInput"
+                @change="handleRegionInput"
                 tabindex="0"
             >
                 <option v-for="region in regions" :key="region.id" :value="region.id">
@@ -71,6 +66,12 @@ export default defineComponent({
     name: "ssoForm",
     props: {
         app: String
+    },
+    data() {
+        return {
+            startUrlRegex: /^https:\/\/(([\w-]+(?:\.gamma)?\.awsapps\.com\/start(?:-beta|-alpha)?[\/#]?)|(start\.(?:us-gov-home|us-gov-east-1\.us-gov-home|us-gov-west-1\.us-gov-home)\.awsapps\.com|start\.(?:home|cn-north-1\.home|cn-northwest-1\.home)\.awsapps\.cn)\/directory\/[\w-]+[\/#]?)$/,
+            issueUrlRegex: /^https:\/\/([\w-]+\.)?identitycenter\.(amazonaws\.com|amazonaws\.com\.cn|us-gov\.amazonaws\.com)\/[\w\/-]+[\/#]?$/
+        }
     },
     computed: {
         regions(): Region[] {
@@ -101,25 +102,43 @@ export default defineComponent({
                 })
             }
         },
-        isInputValid:  {
+        isStartUrlValid: {
             get() {
-                return this.startUrl != "" && this.selectedRegion != ""
+                return this.startUrlRegex.test(this.startUrl) || this.issueUrlRegex.test(this.startUrl)
+            },
+            set() {}
+        },
+        isRegionValid: {
+            get() {
+                return this.selectedRegion != "";
+            },
+            set() {}
+        },
+        isInputValid: {
+            get() {
+                return this.isStartUrlValid && this.isRegionValid
             },
             set() {}
         }
     },
     methods: {
         handleUrlInput() {
-            this.isInputValid = this.startUrl != "" && this.selectedRegion != "";
+            this.isStartUrlValid = this.startUrlRegex.test(this.startUrl) || this.issueUrlRegex.test(this.startUrl)
         },
-        handleBackButtonClick() {
-            this.$emit('backToMenu')
+        handleRegionInput() {
+            this.isRegionValid = this.selectedRegion != "";
         },
         async handleContinueClick() {
             if (!this.isInputValid) {
                 return
             }
-            this.$emit('login', new IdC(this.startUrl, this.selectedRegion))
+
+            // To make our lives easier with telemetry processing
+            let processedUrl = this.startUrl;
+            if (processedUrl.endsWith('/') || processedUrl.endsWith('#')) {
+                processedUrl = processedUrl.slice(0, -1);
+            }
+            this.$emit('login', new IdC(processedUrl, this.selectedRegion))
         },
         handleCodeCatalystSignin() {
             this.$emit('login', new BuilderId())
@@ -137,6 +156,11 @@ export default defineComponent({
     margin-bottom: 5px;
     margin-top: 5px;
     font-size: 12px;
+}
+
+.invalid-start-url {
+    color: red !important;
+    margin-left: 3px;
 }
 
 /* Theme specific styles */

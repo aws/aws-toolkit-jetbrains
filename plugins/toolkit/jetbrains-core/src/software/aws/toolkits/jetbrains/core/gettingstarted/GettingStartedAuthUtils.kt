@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.explorer.showWebview
@@ -120,7 +119,7 @@ fun requestCredentialsForCodeWhisperer(
                 )
             )
         ),
-        scopes = CODEWHISPERER_SCOPES + Q_SCOPES,
+        scopes = Q_SCOPES,
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.CODEWHISPERER,
         featureId = FeatureId.Codewhisperer,
@@ -227,7 +226,7 @@ fun requestCredentialsForQ(
                 )
             )
         ),
-        scopes = CODEWHISPERER_SCOPES + Q_SCOPES,
+        scopes = Q_SCOPES,
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.Q,
         featureId = FeatureId.Q, // TODO: Update Q  in common
@@ -439,3 +438,5 @@ fun requestCredentialsForExplorer(
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
+
+fun shouldShowNonWebviewUI(): Boolean = !JBCefApp.isSupported()

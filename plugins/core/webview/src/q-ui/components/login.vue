@@ -9,7 +9,7 @@
             :is-connected="stage === 'CONNECTED'"
         />
 
-        <button v-if="cancellable" class="back-button" @click="handleBackButtonClick" tabindex="-1">
+        <button v-if="stage !== 'START' || cancellable" class="back-button" @click="handleBackButtonClick" tabindex="-1">
             <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                     d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
@@ -48,7 +48,7 @@ import SsoLoginForm from "./ssoLoginForm.vue";
 import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
 import Reauth from "./reauth.vue";
-import {BuilderId, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
+import {BuilderId, ExistConnection, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
 
 export default defineComponent({
     name: 'Login',
@@ -116,7 +116,7 @@ export default defineComponent({
             this.$store.commit('setStage', stage)
         },
         handleBackButtonClick() {
-            if (this.cancellable && this.stage === 'START') {
+            if (this.cancellable) {
                 window.ideApi.postMessage({ command: 'toggleBrowser' })
             }
             this.mutateStage('START')
@@ -151,6 +151,8 @@ export default defineComponent({
                     accessKey: type.accessKey,
                     secretKey: type.secret
                 })
+            } else if (type instanceof ExistConnection) {
+                window.ideApi.postMessage({ command: 'selectConnection', connectionId:  type.pluginConnectionId})
             }
         }
     },

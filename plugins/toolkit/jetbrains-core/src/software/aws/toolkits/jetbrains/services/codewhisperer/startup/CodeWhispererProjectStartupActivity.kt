@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
@@ -12,6 +13,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -64,12 +66,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         project.messageBus.connect().subscribe(CODEWHISPERER_USER_ACTION_PERFORMED, CodeWhispererImportAdderListener)
 
         //  Run Proactive Code File Scan and disabling Auto File Scan for Builder Id Users.
+        val actionManager = CodeWhispererExplorerActionManager.getInstance()
+        actionManager.setMonthlyQuotaForCodeScansExceeded(false)
         if (isUserBuilderId(project)) {
-            CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(project, false)
+            actionManager.setAutoCodeScan(project, false)
         } else {
-            CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.SecurityScanType.FILE)
-            runOnce = true
+            EditorFactory.getInstance().eventMulticaster.addDocumentListener(CodeWhispererCodeScanDocumentListener(project), project)
+            val scanManager = CodeWhispererCodeScanManager.getInstance(project)
+            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
+        runOnce = true
     }
 
     // Start a job that runs every 30 mins
