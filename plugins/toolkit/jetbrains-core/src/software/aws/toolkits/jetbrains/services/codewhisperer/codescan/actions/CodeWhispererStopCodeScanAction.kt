@@ -20,7 +20,7 @@ class CodeWhispererStopCodeScanAction : DumbAwareAction(
     override fun update(event: AnActionEvent) {
         val project = event.project ?: return
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
-        event.presentation.isEnabled = (scanManager.isCodeScanJobActive() && !scanManager.isFileScan())
+        event.presentation.isEnabled = scanManager.isCodeScanJobActive()
     }
 
     override fun actionPerformed(event: AnActionEvent) {
