@@ -107,8 +107,8 @@ fun loginSso(
     startUrl: String,
     region: String,
     requestedScopes: List<String>,
-    onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
+    onError: (String) -> Unit
 ): AwsBearerTokenConnection? {
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
@@ -175,6 +175,14 @@ fun loginSso(
         )
     }
 }
+
+fun loginSso(
+    project: Project?,
+    startUrl: String,
+    region: String,
+    requestedScopes: List<String>
+): AwsBearerTokenConnection? = loginSso(project, startUrl, region, requestedScopes, {}, {})
+
 
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
