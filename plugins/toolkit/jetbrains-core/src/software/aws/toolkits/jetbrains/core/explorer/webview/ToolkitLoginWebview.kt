@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.isToolkitExpired
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ActionListener
 import java.util.function.Function
@@ -199,6 +200,8 @@ class ToolkitWebviewBrowser(val project: Project) : LoginBrowser(project, Toolki
         // TODO: make these strings type safe
         val stage = if (state.feature == FeatureId.Codecatalyst) {
             "SSO_FORM"
+        } else if (isToolkitExpired(project)) {
+            "REAUTH"
         } else {
             "START"
         }

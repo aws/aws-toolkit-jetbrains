@@ -11,10 +11,12 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 
 private val LOG = LoggerFactory.getLogger("ToolkitUtils")
 
-fun inspectExistingConnection(project: Project): Boolean =
+fun isTookitConnected(project: Project): Boolean =
     ToolkitConnectionManager.getInstance(project).let {
         if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
             LOG.debug { "inspecting existing connection and found IAM credentials" }
@@ -41,3 +43,15 @@ fun inspectExistingConnection(project: Project): Boolean =
 
         return@let false
     }
+
+fun isToolkitExpired(project: Project) = ToolkitConnectionManager.getInstance(project).let {
+    val codecatalystRequiresReauth = it.connectionStateForFeature(CodeCatalystConnection.getInstance()) == BearerTokenAuthState.NEEDS_REFRESH
+    val activeConnectionRequiresReauth = it.activeConnection()?.let { conn ->
+        if (conn is AwsBearerTokenConnection && conn.scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
+            ((conn.getConnectionSettings().tokenProvider.delegate) as BearerTokenProvider).state() == BearerTokenAuthState.NEEDS_REFRESH
+        } else false
+    } ?: false
+
+    CredentialManager.getInstance().getCredentialIdentifiers().isEmpty() && (codecatalystRequiresReauth || activeConnectionRequiresReauth)
+}
+
