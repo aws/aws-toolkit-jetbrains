@@ -185,7 +185,6 @@ fun loginSso(
     (it.getConnectionSettings().tokenProvider.delegate) as BearerTokenProvider
 } ?: InteractiveBearerTokenProvider(startUrl, region, requestedScopes, "").also { it.dispose() }
 
-
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
