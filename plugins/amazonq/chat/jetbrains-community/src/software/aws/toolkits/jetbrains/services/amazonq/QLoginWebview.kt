@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -121,7 +120,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             }
 
             "loginBuilderId" -> {
-                loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
+                loginBuilderId(Q_SCOPES)
             }
 
             "loginIdC" -> {
@@ -130,7 +129,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
-                val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
+                val scopes = Q_SCOPES
 
                 loginIdC(url, awsRegion, scopes)
             }
@@ -195,11 +194,11 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             val bearerCreds = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().associate {
                 it.id to BearerConnectionSelectionSettings(it) { conn ->
                     if (conn.isSono()) {
-                        loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
+                        loginBuilderId(Q_SCOPES)
                     } else {
                         // TODO: rewrite scope logic, it's short term solution only
                         AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                            loginIdC(conn.startUrl, region, CODEWHISPERER_SCOPES + Q_SCOPES)
+                            loginIdC(conn.startUrl, region, Q_SCOPES)
                         }
                     }
                 }
