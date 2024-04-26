@@ -112,6 +112,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private val editorMouseListener = CodeWhispererCodeScanEditorMouseMotionListener(project)
 
     private val isCodeScanInProgress = AtomicBoolean(false)
+    private val isFileScan = AtomicBoolean(true)
 
     private lateinit var codeScanJob: Job
 
@@ -121,16 +122,18 @@ class CodeWhispererCodeScanManager(val project: Project) {
      */
     fun isCodeScanInProgress(): Boolean = isCodeScanInProgress.get()
 
+    fun isFileScan(): Boolean = isFileScan.get()
+
     /**
      * Code scan job is active when the [Job] is started and is in active state.
      */
     fun isCodeScanJobActive(): Boolean = this::codeScanJob.isInitialized && codeScanJob.isActive
 
-    fun getRunActionButtonIcon(): Icon = if (isCodeScanInProgress()) AllIcons.Process.Step_1 else AllIcons.Actions.Execute
+    fun getRunActionButtonIcon(): Icon = if (isCodeScanInProgress() && !isFileScan()) AllIcons.Process.Step_1 else AllIcons.Actions.Execute
 
-    fun getActionButtonIconForExplorerNode(): Icon = if (isCodeScanInProgress()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
+    fun getActionButtonIconForExplorerNode(): Icon = if (isCodeScanInProgress() && !isFileScan()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
 
-    fun getActionButtonText(): String = if (!isCodeScanInProgress()) message("codewhisperer.codescan.run_scan") else message("codewhisperer.codescan.stop_scan")
+    fun getActionButtonText(): String = if (!isCodeScanInProgress() && !isFileScan()) message("codewhisperer.codescan.run_scan") else message("codewhisperer.codescan.stop_scan")
 
     /**
      * Triggers a code scan and displays results in the new tab in problems view panel.
@@ -139,18 +142,26 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!isCodeWhispererEnabled(project)) return
 
         // Return if a scan is already in progress.
-        if (isCodeScanInProgress.getAndSet(true)) return
+        if (isCodeScanInProgress() && !isFileScan()) return
         if (promptReAuth(project)) {
             isCodeScanInProgress.set(false)
             return
         }
         //  If scope is project
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+            if (isCodeScanInProgress() && isFileScan()){
+                stopFileScan()
+            }
+            isCodeScanInProgress.set(true)
             // Prepare for a project code scan
             beforeCodeScan()
             // launch code scan coroutine
             codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         } else {
+            if (isCodeScanInProgress() && isFileScan()) {return} else {
+                isCodeScanInProgress.set(true)
+                isFileScan.set(true)
+            }
             if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() and !isUserBuilderId(project)) {
                 //  Add File Scan
                 codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.FILE)
@@ -191,6 +202,15 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
+    private fun stopFileScan() {
+        // Return if code scan job is not active.
+        if (!codeScanJob.isActive) return
+        LOG.info { "File scan stopped due to project scan..." }
+        if (codeScanJob.isActive) {
+            codeScanJob.cancel()
+        }
+    }
+
     private fun confirmCancelCodeScan(): Boolean = MessageDialogBuilder
         .okCancel(message("codewhisperer.codescan.stop_scan"), message("codewhisperer.codescan.stop_scan_confirm_message"))
         .yesText(message("codewhisperer.codescan.stop_scan_confirm_button"))
@@ -224,6 +244,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             ) {
                 LOG.info { "Language is unknown or plaintext, skipping code scan." }
                 isCodeScanInProgress.set(false)
+                isFileScan.set(false)
                 codeScanStatus = Result.Cancelled
                 return@launch
             } else {
@@ -263,10 +284,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
             }
         } catch (e: Error) {
             isCodeScanInProgress.set(false)
+            isFileScan.set(false)
             val errorMessage = handleError(coroutineContext, e)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } catch (e: Exception) {
             isCodeScanInProgress.set(false)
+            isFileScan.set(false)
             val errorMessage = handleException(coroutineContext, e)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } finally {
@@ -473,6 +496,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun afterCodeScan() {
         isCodeScanInProgress.set(false)
+        isFileScan.set(false)
     }
 
     private fun sendCodeScanTelemetryToServiceAPI(
