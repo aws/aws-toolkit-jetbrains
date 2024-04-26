@@ -157,10 +157,10 @@ class SsoAccessTokenProvider(
         }
 
         val registeredClient = PKCEClientRegistration(
-            registerResponse.clientId(),
-            registerResponse.clientSecret(),
-            Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt()),
-            scopes,
+            clientId = registerResponse.clientId(),
+            clientSecret = registerResponse.clientSecret(),
+            expiresAt = Instant.ofEpochSecond(registerResponse.clientSecretExpiresAt()),
+            scopes = scopes,
             issuerUrl = ssoUrl,
             region = ssoRegion,
             clientType = PUBLIC_CLIENT_REGISTRATION_TYPE,
@@ -258,16 +258,16 @@ class SsoAccessTokenProvider(
         _authorization.set(PendingAuthorization.PKCEAuthorization(future, progressIndicator))
 
         while (true) {
-            if (progressIndicator.isCanceled()) {
-                future.cancel(true)
-                throw ProcessCanceledException(IllegalStateException("Login canceled by user"))
-            }
-
             if (future.isDone) {
                 return future.get()
             }
 
-            sleepWithCancellation(Duration.ofMillis(100), progressIndicator)
+            try {
+                sleepWithCancellation(Duration.ofMillis(100), progressIndicator)
+            } catch (e: ProcessCanceledException) {
+                future.cancel(true)
+                throw ProcessCanceledException(IllegalStateException("Login canceled by user"))
+            }
         }
     }
 

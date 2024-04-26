@@ -75,6 +75,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val component = if (isTookitConnected(project) && !isToolkitExpired(project)) {
             AwsToolkitExplorerToolWindow.getInstance(project)
         } else {
+            LOG.debug { "Rendering signin webview" }
             ToolkitWebviewPanel.getInstance(project).component
         }
 
