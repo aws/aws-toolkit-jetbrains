@@ -102,6 +102,7 @@ interface ToolkitConnectionManager : Disposable {
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
  */
 @Deprecated("Connections created through this function are not written to the user's ~/.aws/config file")
+@JvmOverloads
 fun loginSso(
     project: Project?,
     startUrl: String,
