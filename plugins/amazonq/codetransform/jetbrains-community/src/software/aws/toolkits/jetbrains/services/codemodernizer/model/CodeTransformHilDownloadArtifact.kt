@@ -61,7 +61,6 @@ open class CodeTransformHilDownloadArtifact(
                 val manifestFile = File(manifestPath.pathString)
                 val manifest = MAPPER.readValue(manifestFile, CodeTransformHilDownloadManifest::class.java)
                 if (
-                        // TODO fix type
                         manifest.pomArtifactId == null
                         || manifest.pomFolderName == null
                         || manifest.hilCapability == null

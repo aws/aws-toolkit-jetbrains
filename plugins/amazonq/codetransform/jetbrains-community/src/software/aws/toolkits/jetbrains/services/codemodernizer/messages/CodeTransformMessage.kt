@@ -25,7 +25,6 @@ enum class CodeTransformButtonId(val id: String) {
     ViewSummary("view_summary"),
     ConfirmHilSelection("confirm_hil_selection"),
     RejectHilSelection("reject_hil_selection"),
-    OpenDependencyErrorPom("open_dependency_error_pom"),
 }
 
 enum class CodeTransformFormItemId(val id: String) {

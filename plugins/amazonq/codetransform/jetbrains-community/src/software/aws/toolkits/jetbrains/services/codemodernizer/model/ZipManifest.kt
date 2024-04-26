@@ -13,5 +13,7 @@ data class ZipManifest(
     val dependenciesRoot: String? = null,
     val buildLogs: String = BUILD_LOG_PATH,
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION.toString(),
+
+    // TODO decide to include or not
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
 )

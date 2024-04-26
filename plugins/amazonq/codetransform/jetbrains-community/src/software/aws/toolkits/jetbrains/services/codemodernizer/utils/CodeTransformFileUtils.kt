@@ -8,6 +8,14 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_DIR_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_POMFOLDER_DIR_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCY_REPORT_DIR_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCY_REPORT_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCY_ROOT_DIR_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_VERSION_PLACEHOLDER
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPLOAD_ZIP_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import java.io.File
@@ -63,7 +71,6 @@ fun findBuildFiles(sourceFolder: File, supportedBuildFileNames: List<String>): L
 /**
  * Unzips a zip into a dir. Returns the true when successfully unzips the file pointed to by [zipFilePath] to [destDir]
  */
-// TODO move to common utility file
 fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
     if (!zipFilePath.exists()) return false
     val zipFile = ZipFile(zipFilePath.toFile())
@@ -103,8 +110,21 @@ fun createFileCopy(originalFile: File, outputPath: Path): File {
 }
 
 fun setDependencyVersionInPom(pomFile: File, version: String) {
-    val placeholder = "*****"
     val existingValue = pomFile.readText()
-    val newValue = existingValue.replace(placeholder, version)
+    val newValue = existingValue.replace(HIL_POM_VERSION_PLACEHOLDER, version)
     pomFile.writeText(newValue)
 }
+
+fun getPathToHilArtifactDir(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_ARTIFACT_DIR_NAME)
+
+fun getPathToHilArtifactPomFolder(tmpDirPath: Path): Path = getPathToHilArtifactDir(tmpDirPath).resolve(HIL_ARTIFACT_POMFOLDER_DIR_NAME)
+
+fun getPathToHilArtifactPomFile(tmpDirPath: Path): Path = getPathToHilArtifactPomFolder(tmpDirPath).resolve(HIL_POM_FILE_NAME)
+
+fun getPathToHilDependencyReportDir(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_DEPENDENCY_REPORT_DIR_NAME)
+
+fun getPathToHilDependencyReport(tmpDirPath: Path): Path = getPathToHilDependencyReportDir(tmpDirPath).resolve("target/$HIL_DEPENDENCY_REPORT_FILE_NAME")
+
+fun getPathToHilDependenciesRootDir(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_DEPENDENCY_ROOT_DIR_NAME)
+
+fun getPathToHilUploadZip(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_UPLOAD_ZIP_NAME)

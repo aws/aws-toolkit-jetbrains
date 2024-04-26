@@ -16,11 +16,16 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenCopyDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -79,15 +84,12 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
+    private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
 
-    // TODO return type
     fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
-        val sourceFolder = File(hilTepDirPath.resolve("q-hil-dependency-artifacts/pomFolder").pathString)
-        val destinationFolder = Files.createDirectories(hilTepDirPath.resolve( "dependencies-root")).toFile()
+        val sourceFolder = File(getPathToHilArtifactPomFolder(hilTepDirPath).pathString)
+        val destinationFolder = Files.createDirectories(getPathToHilDependenciesRootDir(hilTepDirPath)).toFile()
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
-
-        // TODO handle cancel
 
         return executeHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder)
     }
@@ -109,18 +111,19 @@ data class CodeModernizerSessionContext(
     fun createZipForHilUpload(hilTempPath: Path, manifest:CodeTransformHilDownloadManifest, targetVersion: String): ZipCreationResult {
         return runReadAction {
             try {
-                val depRootPath = hilTempPath.resolve("dependencies-root")
+                val depRootPath = getPathToHilDependenciesRootDir(hilTempPath)
                 val depDirectory = File(depRootPath.pathString)
 
                 val dependencyFiles = iterateThroughDependencies(depDirectory)
 
-                val depSources = File("dependenciesRoot")
+                val depSources = File(HIL_DEPENDENCIES_ROOT_NAME)
 
-                val file = Files.createFile(hilTempPath.resolve("hilUpload.zip"))
+                val file = Files.createFile(getPathToHilUploadZip(hilTempPath))
                 ZipOutputStream(Files.newOutputStream(file)).use { zip ->
+                    // 1) manifest.json
                     mapper.writeValueAsString(CodeTransformHilUploadManifest(
                         hilInput = HilInput(
-                            dependenciesRoot = "dependenciesRoot/",
+                            dependenciesRoot = "$HIL_DEPENDENCIES_ROOT_NAME/",
                             pomGroupId = manifest.pomGroupId,
                             pomArtifactId = manifest.pomArtifactId,
                             targetPomVersion = targetVersion,
@@ -128,19 +131,19 @@ data class CodeModernizerSessionContext(
                     ))
                         .byteInputStream()
                         .use {
-                            zip.putNextEntry("manifest.json", it)
+                            zip.putNextEntry(HIL_MANIFEST_FILE_NAME, it)
                         }
 
                     // 2) Dependencies
-                    dependencyFiles.forEach { depfile ->
-                        val relativePath = File(depfile.path).relativeTo(depDirectory)
+                    dependencyFiles.forEach { depFile ->
+                        val relativePath = File(depFile.path).relativeTo(depDirectory)
                         val paddedPath = depSources.resolve(relativePath)
                         var paddedPathString = paddedPath.toPath().toString()
                         // Convert Windows file path to work on Linux
                         if (File.separatorChar != '/') {
                             paddedPathString = paddedPathString.replace('\\', '/')
                         }
-                        depfile.inputStream().use {
+                        depFile.inputStream().use {
                             zip.putNextEntry(paddedPathString, it)
                         }
                     }
@@ -241,7 +244,7 @@ data class CodeModernizerSessionContext(
     private fun Path.isIgnoredDependency() = this.toFile().extension in ignoredDependencyFileExtensions
 
     fun iterateThroughDependencies(depDirectory: File): MutableList<File> {
-        val dependencyfiles = mutableListOf<File>()
+        val dependencyFiles = mutableListOf<File>()
         Files.walkFileTree(
             depDirectory.toPath(),
             setOf(FileVisitOption.FOLLOW_LINKS),
@@ -249,7 +252,7 @@ data class CodeModernizerSessionContext(
             object : SimpleFileVisitor<Path>() {
                 override fun visitFile(path: Path, attrs: BasicFileAttributes?): FileVisitResult {
                     if (!path.isIgnoredDependency()) {
-                        dependencyfiles.add(path.toFile())
+                        dependencyFiles.add(path.toFile())
                     }
                     return FileVisitResult.CONTINUE
                 }
@@ -258,7 +261,7 @@ data class CodeModernizerSessionContext(
                     FileVisitResult.CONTINUE
             }
         )
-        return dependencyfiles
+        return dependencyFiles
     }
 
     fun showTransformationHub() = runInEdt {

@@ -236,8 +236,6 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion) = invokeLater {
-        // TODO handle paused case, both the current job panel and history
-
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,

@@ -6,29 +6,33 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDefaultExecutor
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerSession.Companion
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.summary.CodeModernizerSummaryEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -41,9 +45,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
-
-    // TODO add manifest add pom path
-
 
     private var isCurrentlyDownloading = AtomicBoolean(false)
     internal suspend fun displayDiff(job: JobId) {
@@ -64,27 +65,46 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         )
     }
 
-    // TODO change return type
-    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
-        // TODO remove 2
-        return try {
-            val downloadResultsResponse = clientAdaptor.downloadExportResultArchive2(jobId, artifactId)
-
-            val tmpPath = tmpDir.toPath()
-            val downloadZipFilePath = Files.createTempFile(tmpPath, null, ".zip")
-            var totalDownloadBytes = 0
-            Files.newOutputStream(downloadZipFilePath).use {
-                for (bytes in downloadResultsResponse) {
-                    it.write(bytes)
-                    totalDownloadBytes += bytes.size
-                }
+    private suspend fun unzipToPath(byteArrayList: MutableList<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
+        val zipFilePath = withContext(Dispatchers.IO) {
+            if (outputDirPath == null) {
+                Files.createTempFile(null, ".zip")
+            } else {
+                Files.createTempFile(outputDirPath, null, ".zip")
             }
-            LOG.info { "Successfully converted the download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
+        }
+        var totalDownloadBytes = 0
+        withContext(Dispatchers.IO) {
+            Files.newOutputStream(zipFilePath)
+        }.use {
+            for (bytes in byteArrayList) {
+                it.write(bytes)
+                totalDownloadBytes += bytes.size
+            }
+        }
+        return zipFilePath to totalDownloadBytes
+    }
 
-            return CodeTransformHilDownloadArtifact.create(downloadZipFilePath, tmpPath.resolve("q-hil-dependency-artifacts"))
+    suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
+        val downloadResultsResponse = try {
+            clientAdaptor.downloadExportResultArchive(jobId, artifactId)
         } catch (e: Exception) {
-            // TODO error handling
-            LOG.error { "Wrong " + e.message }
+            val errorMessage = "Unexpected error when downloading hil artifact: ${e.localizedMessage}"
+            LOG.error { errorMessage }
+            telemetry.apiError(errorMessage, CodeTransformApiNames.ExportResultArchive, jobId = jobId.id)
+            throw e
+        }
+
+        return try {
+            val tmpPath = tmpDir.toPath()
+            val downloadZipFilePath = unzipToPath(downloadResultsResponse, tmpPath).first
+            LOG.info { "Successfully converted the hil artifact download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
+            CodeTransformHilDownloadArtifact.create(downloadZipFilePath, getPathToHilArtifactDir(tmpPath))
+        } catch (e: Exception) {
+            // In case if unzip or file operations fail
+            val errorMessage = "Unexpected error when saving downloaded hil artifact: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error { errorMessage }
             null
         }
     }
@@ -114,16 +134,10 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             // 3. Convert to zip
             LOG.info { "Downloaded the export result archive, about to transform to zip" }
-            val path = Files.createTempFile(null, ".zip")
-            var totalDownloadBytes = 0
-            Files.newOutputStream(path).use {
-                for (bytes in downloadResultsResponse) {
-                    it.write(bytes)
-                    totalDownloadBytes += bytes.size
-                }
-            }
-            LOG.info { "Successfully converted the download to a zip at ${path.toAbsolutePath()}." }
+
+            val (path, totalDownloadBytes) = unzipToPath(downloadResultsResponse)
             val zipPath = path.toAbsolutePath().toString()
+            LOG.info { "Successfully converted the download to a zip at $zipPath." }
 
             // 4. Deserialize zip to CodeModernizerArtifact
             var telemetryErrorMessage: String? = null

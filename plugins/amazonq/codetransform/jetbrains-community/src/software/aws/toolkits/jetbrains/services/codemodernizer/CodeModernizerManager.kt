@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -30,6 +31,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
@@ -54,6 +56,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOO
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReport
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedBuildFilesWithSupportedJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedJavaMappings
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getSupportedModules
@@ -429,22 +434,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    suspend fun getArtifactForHil(): CodeTransformHilDownloadArtifact? {
-        try {
-            val jobId = codeTransformationSession?.getActiveJobId()!!
-            val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId()!!
-            val tmpDir = createTempDirectory("", null)
-            val hilArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
-            if (hilArtifact != null) {
-                codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
-                codeTransformationSession?.setHilDownloadArtifact(hilArtifact)
-            }
-            return hilArtifact
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
     fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
         codeTransformationSession?.setLastTransformResult(result)
 
@@ -463,8 +452,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access
         ApplicationManager.getApplication().invokeLater {
-            // TODO handle paused
-
             setJobNotOngoing()
             project.refreshCwQTree()
             if (!transformationStoppedByUsr.get()) {
@@ -772,65 +759,93 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         isModernizationInProgress.set(false)
     }
 
-    // TODO change to run dependency report
-    // TODO add a separate parse report function
+    suspend fun getArtifactForHil(): CodeTransformHilDownloadArtifact? {
+        val jobId = codeTransformationSession?.getActiveJobId()!!
+        val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId()!!
 
-    fun createDependencyReport(hilDownloadArtifact: CodeTransformHilDownloadArtifact): MavenDependencyReportCommandsResult {
-        // TODO telemetry
-        // telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
-        try {
-            val tmpDir = codeTransformationSession?.getHilTempDirectoryPath()!!.toFile()
-
-            val copyPomForDependencyReport = createFileCopy(hilDownloadArtifact.pomFile, tmpDir.toPath().resolve("dependency-report/pom.xml"))
-            setDependencyVersionInPom(copyPomForDependencyReport, hilDownloadArtifact.manifest.sourcePomVersion)
-            return codeTransformationSession?.createHilDependencyReportUsingMaven()!!
+        val tmpDir = try {
+            createTempDirectory("", null)
         } catch (e: Exception) {
-            // TODO log error
-            return MavenDependencyReportCommandsResult.Failure
+            val errorMessage = "Unexpected error when creating tmp dir for HIL: ${e.localizedMessage}"
+            LOG.error(errorMessage)
+            throw e
         }
-    }
-
-    fun findAvailableVersionForDependency(pomGroupId: String, pomArtifactId: String): Dependency? {
         try {
-            val report = parseXmlDependenciesReport(codeTransformationSession?.getHilTempDirectoryPath()!!.resolve("dependency-report/target/dependency-updates-aggregate-report.xml"))
-            return report.dependencies?.first {
-                it.groupId == pomGroupId
-                    && it.artifactId == pomArtifactId
+            val hilArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)
+            if (hilArtifact != null) {
+                codeTransformationSession?.setHilTempDirectoryPath(tmpDir.toPath())
+                codeTransformationSession?.setHilDownloadArtifact(hilArtifact)
             }
+            return hilArtifact
         } catch (e: Exception) {
-            // TODO log error
             return null
         }
     }
 
-    // TODO lots of code clean up
+    fun createDependencyReport(hilDownloadArtifact: CodeTransformHilDownloadArtifact): MavenDependencyReportCommandsResult {
+        val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath()!!
+
+        try {
+            val copyPomForDependencyReport = createFileCopy(hilDownloadArtifact.pomFile, getPathToHilDependencyReportDir(tmpDirPath).resolve(HIL_POM_FILE_NAME))
+            setDependencyVersionInPom(copyPomForDependencyReport, hilDownloadArtifact.manifest.sourcePomVersion)
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when preparing for HIL dependency report: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error(errorMessage)
+            return MavenDependencyReportCommandsResult.Failure
+        }
+
+        return codeTransformationSession?.createHilDependencyReportUsingMaven()!!
+    }
+
+    fun findAvailableVersionForDependency(pomGroupId: String, pomArtifactId: String): Dependency? {
+        try {
+            val report = parseXmlDependenciesReport(
+                getPathToHilDependencyReport(codeTransformationSession?.getHilTempDirectoryPath()!!)
+            )
+            return report.dependencies?.first {
+                it.groupId == pomGroupId
+                    && it.artifactId == pomArtifactId
+            }
+        } catch (e: NoSuchElementException) {
+            return null
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when parsing HIL dependency report: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error(errorMessage)
+            return null
+        }
+    }
 
     fun rejectHil() {
         try {
             codeTransformationSession?.rejectHilAndContinue()
         } catch (e: Exception) {
-            // TODO error handling
-            print(e.toString())
+            throw e
         } finally {
             // DO clean up
-            codeTransformationSession?.hilTempFilesCleanup()
+            codeTransformationSession?.hilCleanup()
         }
     }
 
     fun copyDependencyForHil(selectedVersion: String): MavenCopyCommandsResult {
         try {
-            val path = codeTransformationSession?.getHilTempDirectoryPath()
-            // TODO need to handle path better
-            val pomFile = File(path!!.resolve("q-hil-dependency-artifacts/pomFolder/pom.xml").pathString)
-            if (!pomFile.exists()) {
-                // TODO handle error
+            val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath()!!
+
+            val downloadedPomPath = getPathToHilArtifactPomFile(tmpDirPath)
+            if (!downloadedPomPath.exists()) {
                 return MavenCopyCommandsResult.Failure
             }
-            setDependencyVersionInPom(pomFile, selectedVersion)
+
+            val downloadedPomFile = File(downloadedPomPath.pathString)
+            setDependencyVersionInPom(downloadedPomFile, selectedVersion)
 
             val copyDependencyResult = codeTransformationSession?.copyHilDependencyUsingMaven()!!
             return copyDependencyResult
         } catch (e: Exception) {
+            val errorMessage = "Unexpected error when getting HIL dependency for upload: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error(errorMessage)
             return MavenCopyCommandsResult.Failure
         }
     }
@@ -839,21 +854,20 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             try {
                 val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
                 if (zipCreationResult?.payload?.exists() == true) {
-                    val result = codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
-                    LOG.info(result)
+                    codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
                     delay(500)
 
-                    val result2 = codeTransformationSession?.resumeTransformFromHil()
-                    LOG.info(result2.toString())
+                    codeTransformationSession?.resumeTransformFromHil()
                 } else {
-                    // TOOD handle error
+                    throw CodeModernizerException("Cannot create dependency zip for HIL")
                 }
             } catch (e: Exception) {
-                LOG.error(e.message)
-                // TODO error handling
+                val errorMessage = "Unexpected error when resuming HIL: ${e.localizedMessage}"
+                telemetry.error(errorMessage)
+                LOG.error(errorMessage)
             } finally {
                 // DO file clean up
-                codeTransformationSession?.hilTempFilesCleanup()
+                codeTransformationSession?.hilCleanup()
             }
     }
 }

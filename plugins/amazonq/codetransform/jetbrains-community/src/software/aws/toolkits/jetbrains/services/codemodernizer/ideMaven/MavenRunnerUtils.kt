@@ -259,14 +259,9 @@ private fun runMavenDependencyUpdatesReport(
     return dependencyUpdatesReportRunnable
 }
 
-// TODO rename MavenCopyCommandsResult
-
 fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
-
-    // TODO telemetry
-    val currentTimestamp = System.currentTimeMillis()
 
     val transformMvnRunner = TransformMavenRunner(project)
     val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings

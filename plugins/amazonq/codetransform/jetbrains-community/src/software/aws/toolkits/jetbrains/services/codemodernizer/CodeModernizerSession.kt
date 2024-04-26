@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_INITIAL_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_STARTED
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
@@ -107,8 +108,7 @@ class CodeModernizerSession(
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
-    // TODO path to const
-    fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(hilTempDirectoryPath!!.resolve("dependency-report"))
+    fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(getPathToHilDependencyReportDir(hilTempDirectoryPath!!))
 
     fun copyHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.copyHilDependencyUsingMaven(hilTempDirectoryPath!!)
 
@@ -237,18 +237,28 @@ class CodeModernizerSession(
      */
     fun resumeJob(startTime: Instant, jobId: JobId) = state.putJobHistory(sessionContext, TransformationStatus.STARTED, jobId.id, startTime)
 
-    fun uploadPayloadMock(payload: File): String {
-        return "upload-ID"
-    }
-
     fun resumeTransformFromHil() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.COMPLETED)
+        try {
+            clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.COMPLETED)
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
+            LOG.error { errorMessage }
+            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId!!.id)
+            throw e
+        }
     }
 
     fun rejectHilAndContinue(): ResumeTransformationResponse {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        return clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.REJECTED)
+        return try {
+            clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.REJECTED)
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
+            LOG.error { errorMessage }
+            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId!!.id)
+            throw e
+        }
     }
 
     fun uploadHilPayload(payload: File): String {
@@ -257,7 +267,14 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        val createUploadUrlResponse = clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId!!)
+        val createUploadUrlResponse = try {
+            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId!!)
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when creating upload url for HIL: ${e.localizedMessage}"
+            LOG.error { errorMessage }
+            telemetry.apiError(errorMessage, CodeTransformApiNames.CreateUploadUrl, jobId = state.currentJobId!!.id)
+            throw e
+        }
 
         LOG.info {
             "Uploading zip with checksum $sha256checksum using uploadId: ${
@@ -276,13 +293,11 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
+            val errorMessage = "Unexpected error when uploading hil artifact to S3: ${e.localizedMessage}"
             LOG.error { errorMessage }
-            // emit this metric here manually since we don't use callApi(), which emits its own metric
             telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
-            throw e // pass along error to callee
+            throw e
         }
-        // TODO handle stop better
         if (!shouldStop.get()) {
             telemetry.logApiLatency(
                 CodeTransformApiNames.UploadZip,
@@ -290,7 +305,7 @@ class CodeModernizerSession(
                 payload.length().toInt(),
                 createUploadUrlResponse.responseMetadata().requestId(),
             )
-            LOG.warn { "Upload complete" }
+            LOG.warn { "Upload hil artifact complete" }
         }
         return createUploadUrlResponse.uploadId()
     }
@@ -349,8 +364,6 @@ class CodeModernizerSession(
             state.currentJobId = jobId
 
             // add delay to avoid the throttling error
-            // TODO change back
-            //delay(100)
             delay(1000)
 
             var isTransformationPlanEditorOpened = false
@@ -379,7 +392,6 @@ class CodeModernizerSession(
                 state.transformationPlan = plan
                 sessionContext.project.refreshCwQTree()
 
-                // TODO explain the race condition
                 if (state.currentJobStatus == TransformationStatus.PAUSED) {
                     val pausedUpdate = state.transformationPlan?.transformationSteps()?.flatMap { step -> step.progressUpdates() }?.filter { update -> update.status() == TransformationProgressUpdateStatus.PAUSED }
                     if (pausedUpdate?.isNotEmpty() == true) {
@@ -534,14 +546,17 @@ class CodeModernizerSession(
     fun getActiveJobId() = state.currentJobId
     fun fetchPlan(lastJobId: JobId) = clientAdaptor.getCodeModernizationPlan(lastJobId)
 
-    fun hilTempFilesCleanup() {
+    fun hilCleanup() {
         hilDownloadArtifactId = null
         hilDownloadArtifact = null
         if (hilTempDirectoryPath?.exists() == true) {
             try {
                 (hilTempDirectoryPath as Path).toFile().deleteRecursively()
             } catch (e: Exception) {
-                // TODO handle error
+                val errorMessage = "Unexpected error when cleaning up HIL files: ${e.localizedMessage}"
+                LOG.error { errorMessage }
+                telemetry.error(errorMessage)
+                return
             } finally {
                 hilTempDirectoryPath = null
             }

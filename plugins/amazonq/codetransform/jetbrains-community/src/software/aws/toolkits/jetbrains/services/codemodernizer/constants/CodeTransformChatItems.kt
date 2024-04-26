@@ -16,12 +16,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
 private val cancelUserSelectionButton = Button(
@@ -80,15 +79,6 @@ private val rejectHilSelectionButton = Button(
     text = "Continue without selection",
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
-)
-
-// TODO HIL selection cancel button
-
-private val openDependencyErrorPomFileButton = Button(
-    id = CodeTransformButtonId.OpenDependencyErrorPom.id,
-    // TODO translate
-    text = "Open file",
-    keepCardAfterClick = true,
 )
 
 private val startNewTransformFollowUp = FollowUp(
@@ -225,9 +215,14 @@ fun buildCompileLocalSuccessChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.local_build_success"),
 )
 
-fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
+fun buildTransformBeginChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     message = message("codemodernizer.chat.message.transform_begin"),
+)
+
+fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.transform_in_progress"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -237,10 +232,6 @@ fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
 fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.resume_ongoing"),
     type = CodeTransformChatMessageType.PendingAnswer,
-    buttons = listOf(
-        openTransformHubButton,
-        stopTransformButton,
-    ),
 )
 
 fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
@@ -275,17 +266,6 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
     )
 }
 
-/*
-fun buildTransformAwaitUserInputChatContent(): CodeTransformChatMessageContent {
-
-    return CodeTransformChatMessageContent(
-        type = CodeTransformChatMessageType.FinalizedAnswer,
-        message = "TODO",
-        // TODO form and button
-    )
-}
-*/
-
 // TODO translate
 fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
     val majors = (dependency.majors ?: listOf()).sorted()
@@ -293,7 +273,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
     val incrementals = (dependency.incrementals ?: listOf()).sorted()
     val total = majors.size + minors.size + incrementals.size
 
-    var message = "I found $total other version of **${dependency.artifactId}** that is higher than the one in your code (${dependency.currentVersion})."
+    var message = "I found $total other dependency versions that are more recent than the dependency in your code that's causing an error (${dependency.currentVersion})."
     if (majors.isNotEmpty()) {
         message += "\n\nLatest major version: ${majors.last()}"
     }
@@ -310,7 +290,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
         formItems = listOf(
             FormItem(
                 id = CodeTransformFormItemId.DependencyVersion.id,
-                title = "Please select the version to use",
+                title = "I can replace this dependency with a newer version. Choose which version I should use:",
                 options = (majors + minors + incrementals).map { FormItemOption(it, it) },
             )
         ),
@@ -323,7 +303,8 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 
 fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformHilDownloadArtifact) = CodeTransformChatMessageContent(
     // TODO string review
-    message = "Here is the dependency causing the error:\n\n```xml" +
+    message = "Here is the dependency causing the issue:" +
+        "\n\n```xml" +
         "\n" +
         "<dependencies>\n" +
         "  <dependency>\n" +
@@ -337,18 +318,8 @@ fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformH
 
 fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
     // TODO string review
-    message = "I am searching for other versions available in your Maven repository for this dependency",
+    message = "I’m searching for other dependency versions available in your Maven repository...",
     type = CodeTransformChatMessageType.PendingAnswer,
-)
-
-fun buildTransformResumedChatContent() = CodeTransformChatMessageContent(
-    // TODO string review
-    message = "I resumed your job. You can track detailed progress in the transformation hub.",
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    buttons = listOf(
-        openTransformHubButton,
-        stopTransformButton,
-    ),
 )
 
 fun buildUserHilSelection(version: String) = CodeTransformChatMessageContent(
@@ -364,17 +335,7 @@ fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     // TODO complete message
-    message = "I resumed the transformation job with your selection. It may take 10-30 minutes to complete the transformation.",
-    buttons = listOf(
-        openTransformHubButton,
-        stopTransformButton,
-    ),
-)
-
-fun buildHilResumedFromRejectContent() = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.PendingAnswer,
-    // TODO complete message
-    message = "It may take 10-30 minutes to finish the transformation.",
+    message = "I received your target version dependency. I'll continue transforming your code. You can monitor progress in the Transformation Hub.",
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -383,7 +344,7 @@ fun buildHilResumedFromRejectContent() = CodeTransformChatMessageContent(
 
 fun buildHilRejectContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I will continue without the dependency. It may take 10-30 minutes to complete the transformation.",
+    message = "I'll continue upgrading your module. When I'm done, you can review the dependency error in the Transformation summary.",
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -392,14 +353,27 @@ fun buildHilRejectContent() = CodeTransformChatMessageContent(
 
 fun buildHilInitialContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I ran into a dependency issue and was not able to successfully complete the transformation.",
+    message = "I was not able to upgrade all dependencies. To resolve it, I'll try to find an updated dependency in your local Maven repository. I'll need additional information from you to continue.",
 )
 
 fun buildHilErrorContent(errorMessage: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "$errorMessage\n\nI will resume the transformation without the dependency. It may take 10-30 minutes to complete the transformation.",
+    message = errorMessage,
+)
+
+fun buildHilResumeWithErrorContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = "I'll continue upgrading your module. When I'm done, you can review the dependency error in the Transformation summary.",
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
+    ),
+)
+
+fun buildHilCannotResumeContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "I ran into an issue trying to resume your transformation.",
+    followUps = listOf(
+        startNewTransformFollowUp
     ),
 )
