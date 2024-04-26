@@ -15,7 +15,6 @@ fun createBrowser(parent: Disposable): JBCefBrowserBase {
         setProperty(JBCefClient.Properties.JS_QUERY_POOL_SIZE, 5)
     }
 
-
     Disposer.register(parent, client)
 
     return JBCefBrowserBuilder()
