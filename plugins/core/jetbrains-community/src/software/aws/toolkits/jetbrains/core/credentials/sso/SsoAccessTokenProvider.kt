@@ -254,7 +254,6 @@ class SsoAccessTokenProvider(
                 _authorization.set(null)
                 throw ProcessCanceledException(IllegalStateException("Login canceled by user"))
             }
-            
         }
     }
 
