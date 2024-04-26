@@ -17,6 +17,8 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
@@ -36,10 +38,10 @@ abstract class LoginBrowser(
     protected var currentAuthorization: PendingAuthorization? = null
 
     protected data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit)
+
     protected val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
 
-    // TODO: figure out a better way to do this UI update
-    protected val onPendingProfile: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+    protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -72,13 +74,9 @@ abstract class LoginBrowser(
         else -> ""
     }
 
-    fun resetBrowserState() {
-        executeJS("window.ideClient.reset()")
-    }
-
     open fun loginBuilderId(scopes: List<String>) {
         loginWithBackgroundContext {
-            Login.BuilderId(scopes, onPendingProfile) {}.loginBuilderId(project)
+            Login.BuilderId(scopes, onPendingToken) {}.loginBuilderId(project)
             // TODO: telemetry
         }
     }
@@ -88,7 +86,7 @@ abstract class LoginBrowser(
             // TODO: telemetry
         }
         loginWithBackgroundContext {
-            Login.IdC(url, region, scopes, onPendingProfile, onError).loginIdc(project)
+            Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
             // TODO: telemetry
         }
     }
@@ -104,7 +102,7 @@ abstract class LoginBrowser(
         }
     }
 
-    protected fun<T> loginWithBackgroundContext(action: () -> T): Future<T> =
+    protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> =
         ApplicationManager.getApplication().executeOnPooledThread<T> {
             runBlocking {
                 withBackgroundProgress(project, message("credentials.pending.title")) {
@@ -119,6 +117,14 @@ abstract class LoginBrowser(
 
     protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
         provider.pendingAuthorization
+    }
+
+    protected fun reauth(connection: ToolkitConnection?) {
+        if (connection is AwsBearerTokenConnection) {
+            loginWithBackgroundContext {
+                reauthConnectionIfNeeded(project, connection, onPendingToken)
+            }
+        }
     }
 
     companion object {
