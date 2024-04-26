@@ -183,7 +183,7 @@ fun loginSso(
     requestedScopes: List<String>
 ): BearerTokenProvider = loginSso(project, startUrl, region, requestedScopes, {}, {})?.let {
     (it.getConnectionSettings().tokenProvider.delegate) as BearerTokenProvider
-} ?: InteractiveBearerTokenProvider(startUrl, region, requestedScopes, "")
+} ?: InteractiveBearerTokenProvider(startUrl, region, requestedScopes, "").also { it.dispose() }
 
 
 @Suppress("UnusedParameter")
