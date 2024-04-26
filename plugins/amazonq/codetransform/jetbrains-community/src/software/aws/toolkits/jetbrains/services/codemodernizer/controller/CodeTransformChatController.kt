@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
@@ -77,6 +78,7 @@ class CodeTransformChatController(
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
+    private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
         if (!checkForAuth(message.tabId)) {
@@ -456,6 +458,15 @@ class CodeTransformChatController(
         try {
             codeModernizerManager.tryResumeWithAlternativeVersion(selectedVersion)
 
+            telemetry.logHil(
+                CodeModernizerSessionState.getInstance(context.project).currentJobId!!.id,
+                HilTelemetryMetaData(
+                    versionSelected = selectedVersion,
+                    reason = "User selected version",
+                    result = "SUCCESS",
+                )
+            )
+
             codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
 
             runInEdt {
@@ -476,6 +487,16 @@ class CodeTransformChatController(
 
         try {
             codeModernizerManager.rejectHil()
+
+            telemetry.logHil(
+                CodeModernizerSessionState.getInstance(context.project).currentJobId!!.id,
+                HilTelemetryMetaData(
+                    cancelledFromChat = true,
+                    reason = "User cancelled",
+                    result = "FAILURE",
+                )
+            )
+
             runInEdt {
                 codeModernizerManager.getBottomToolWindow().show()
             }
