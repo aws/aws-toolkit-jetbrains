@@ -105,7 +105,6 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
         JBCefBrowserBuilder()
             .setClient(client)
             .setOffScreenRendering(true)
-            .setCreateImmediately(true)
             .build()
     }
     override val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
