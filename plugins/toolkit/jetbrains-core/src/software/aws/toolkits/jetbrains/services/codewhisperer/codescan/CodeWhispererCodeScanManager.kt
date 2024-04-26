@@ -122,6 +122,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
      */
     fun isCodeScanInProgress(): Boolean = isCodeScanInProgress.get()
 
+    /**
+     * Returns true if the file scan is in progress.
+     * This function will return true for a cancelled file scan job which is in cancellation state.
+     */
     fun isFileScan(): Boolean = isFileScan.get()
 
     /**
@@ -133,7 +137,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     fun getActionButtonIconForExplorerNode(): Icon = if (isCodeScanInProgress() && !isFileScan()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
 
-    fun getActionButtonText(): String = if (!isCodeScanInProgress() && !isFileScan()) message("codewhisperer.codescan.run_scan") else message("codewhisperer.codescan.stop_scan")
+    fun getActionButtonText(): String = if (!isCodeScanInProgress() && !isFileScan()) {
+        message(
+            "codewhisperer.codescan.run_scan"
+        )
+    } else {
+        message("codewhisperer.codescan.stop_scan")
+    }
 
     /**
      * Triggers a code scan and displays results in the new tab in problems view panel.
@@ -149,7 +159,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
         //  If scope is project
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            if (isCodeScanInProgress() && isFileScan()){
+            if (isCodeScanInProgress() && isFileScan()) {
                 stopFileScan()
             }
             isCodeScanInProgress.set(true)
@@ -158,7 +168,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             // launch code scan coroutine
             codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         } else {
-            if (isCodeScanInProgress() && isFileScan()) {return} else {
+            if (isCodeScanInProgress() && isFileScan()) { return } else {
                 isCodeScanInProgress.set(true)
                 isFileScan.set(true)
             }
