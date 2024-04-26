@@ -277,9 +277,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun launchModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult) = projectCoroutineScope(project).launch {
-        // TO-DO: uncomment these out, this just for testing
-        // val result = initModernizationJob(session, copyResult)
-        // postModernizationJob(result)
+        val result = initModernizationJob(session, copyResult)
+        postModernizationJob(result)
     }
 
     fun resumeJob(session: CodeModernizerSession, lastJobId: JobId, currentJobResult: TransformationJob) = projectCoroutineScope(project).launch {
@@ -344,9 +343,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeTransformationSession = null
         val session = createCodeModernizerSession(customerSelection, project)
         codeTransformationSession = session
-
-        // TO-DO: remove, just for testing
-        showTransformationPlan()
 
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)

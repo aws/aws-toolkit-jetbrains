@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDefaultExecutor
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.error
@@ -190,8 +192,13 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         runReadAction {
             projectCoroutineScope(project).launch {
                 val result = downloadArtifact(job)
-                val summary = result.artifact?.summary ?: return@launch notifyUnableToShowSummary()
-                runInEdt { CodeModernizerSummaryEditorProvider.openEditor(project, summary) }
+                val summary = result.artifact?.summaryMarkdownFile ?: return@launch notifyUnableToShowSummary()
+                val summaryMarkdownVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(summary)
+                if (summaryMarkdownVirtualFile != null) {
+                    runInEdt {
+                        FileEditorManager.getInstance(project).openFile(summaryMarkdownVirtualFile, true)
+                    }
+                }
             }
         }
     }

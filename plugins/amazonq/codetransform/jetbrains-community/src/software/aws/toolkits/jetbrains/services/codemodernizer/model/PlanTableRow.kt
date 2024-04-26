@@ -8,38 +8,35 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class PlanTableRow(
-    @JsonProperty("Name")
+    @JsonProperty("name")
     val name: String?,
-    @JsonProperty("Value")
+    @JsonProperty("value")
     val value: String?,
-    @JsonProperty("Dependency")
+    @JsonProperty("dependencyName")
     val dependency: String?,
-    @JsonProperty("Action")
+    @JsonProperty("action")
     val action: String?,
-    @JsonProperty("Current version")
+    @JsonProperty("currentVersion")
     val currentVersion: String?,
-    @JsonProperty("Target version")
+    @JsonProperty("targetVersion")
     val targetVersion: String?,
-    @JsonProperty("Deprecated code")
+    @JsonProperty("apiFullyQualifiedName")
     val deprecatedCode: String?,
-    @JsonProperty("Suggested replacement")
-    val suggestedReplacement: String?,
-    @JsonProperty("Files to be changed")
+    @JsonProperty("numChangedFiles")
     val filesToBeChanged: String?,
-    @JsonProperty("File name")
-    val fileName: String?
+    @JsonProperty("relativePath")
+    val filePath: String?
 ) {
     fun getValueForColumn(col: String): String? {
         // do not need "name" and "value" here since they are not used to display our tables
         return when (col) {
-            "Dependency" -> dependency
-            "Action" -> action
-            "Current version" -> currentVersion
-            "Target version" -> targetVersion
-            "Deprecated code" -> deprecatedCode
-            "Suggested replacement" -> suggestedReplacement
-            "Files to be changed" -> filesToBeChanged
-            "File name" -> fileName
+            "dependencyName" -> dependency
+            "action" -> action
+            "currentVersion" -> currentVersion
+            "targetVersion" -> targetVersion
+            "apiFullyQualifiedName" -> deprecatedCode
+            "numChangedFiles" -> filesToBeChanged
+            "relativePath" -> filePath
             else -> "-"
         }
     }

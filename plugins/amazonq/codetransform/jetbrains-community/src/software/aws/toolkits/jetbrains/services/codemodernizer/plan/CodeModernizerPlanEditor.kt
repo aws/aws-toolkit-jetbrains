@@ -25,8 +25,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModerniz
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Component
 import java.awt.FlowLayout
+import java.awt.Font
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.GridLayout
@@ -45,6 +47,7 @@ import javax.swing.JTable
 import javax.swing.JTextArea
 import javax.swing.SwingUtilities
 import javax.swing.event.HyperlinkEvent
+import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
 class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
@@ -60,7 +63,10 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                 )
                 add(transformationPlanInfo(plan, module), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
                 add(transformationPlanPanel(plan), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
-                add(transformationPlanAppendix(plan.transformationSteps()[0].progressUpdates()[3]), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
+                // make sure Appendix table is present before adding it
+                if (!plan.transformationSteps()[0].progressUpdates()[3].description().isNullOrEmpty()) {
+                    add(transformationPlanAppendix(plan.transformationSteps()[0].progressUpdates()[3]), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
+                }
             },
             CodeModernizerUIConstants.transformationPlanPlaneConstraint
         )
@@ -115,10 +121,26 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         return scrollPanel
     }
 
+    private fun getFormattedColumnName(columnName: String): String {
+        return when (columnName) {
+            "dependencyName" -> "Dependency"
+            "action" -> "Action"
+            "currentVersion" -> "Current version"
+            "targetVersion" -> "Target version"
+            "relativePath" -> "File"
+            "apiFullyQualifiedName" -> "Deprecated code"
+            "numChangedFiles" -> "Files to be changed"
+            else -> "Column"
+        }
+    }
+
     // parse the MD string stored in step 0 progress updates from GetPlan response
     private fun createTable(tableObj: TransformationProgressUpdate): JTable {
         val stepTable = mapper.readValue(tableObj.description(), PlanTable::class.java)
-        val columns = Vector(stepTable.columns)
+        val columnsVector = Vector(stepTable.columns)
+        columnsVector.forEachIndexed { index, columnName ->
+            columnsVector[index] = getFormattedColumnName(columnName)
+        }
         val data = Vector<Vector<String>>()
         stepTable.rows.forEach { row ->
             val rowData = Vector<String>()
@@ -127,12 +149,25 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             }
             data.add(rowData)
         }
-        val model = object: DefaultTableModel(data, columns) {
+        val model = object: DefaultTableModel(data, columnsVector) {
             override fun isCellEditable(row: Int, column: Int): Boolean {
                 return false
             }
         }
-        return JTable(model)
+        // left-align and bold the column names
+        val cellRenderer = object: DefaultTableCellRenderer() {
+            override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): JLabel {
+                val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
+                label.horizontalAlignment = JLabel.LEFT
+                label.font = Font(label.font.name, Font.BOLD, label.font.size)
+                return label
+            }
+        }
+        val table = JTable(model).apply {
+            rowHeight = CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_ROW_HEIGHT
+            tableHeader.defaultRenderer = cellRenderer
+        }
+        return table
     }
 
     private fun transformationPlanPanel(plan: TransformationPlan) = JPanel(GridBagLayout()).apply {
@@ -209,6 +244,18 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             tableHeader.reorderingAllowed = false // so that file click detection works; see below
         }
 
+        // make file paths blue
+        val cellRenderer = object: DefaultTableCellRenderer() {
+            override fun getTableCellRendererComponent(table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): JLabel {
+                val label = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JLabel
+                label.foreground = Color(89, 157, 246)
+                return label
+            }
+        }
+
+        // file paths will be in leftmost column
+        renderedAppendixTable.columnModel.getColumn(0).cellRenderer = cellRenderer
+
         renderedAppendixTable.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val row = renderedAppendixTable.rowAtPoint(e.point)
@@ -255,14 +302,15 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
 
         var renderedStepTable: JTable? = null
 
-        if (tableObj != null) {
+        // means that this step has a table associated with it and that table contains data
+        if (tableObj != null && !tableObj.description().isNullOrEmpty()) {
             renderedStepTable = createTable(tableObj)
         }
 
         val descriptionPanel = JPanel(BorderLayout()).apply {
             add(descriptionText, BorderLayout.NORTH)
-            if (tableObj != null) {
-                val tableName = JLabel(tableObj.name()).apply {
+            if (renderedStepTable != null) {
+                val tableName = JLabel(tableObj?.name()).apply {
                     font = font.deriveFont(
                         CodeModernizerUIConstants.FONT_CONSTRAINTS.PLAIN,
                         CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_NAME_FONT_SIZE
@@ -320,7 +368,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             add(JLabel(message("codemodernizer.migration_plan.body.info.lines_of_code_message", jobStatistics[0].value ?: "-"), clockIcon, JLabel.LEFT))
             add(JLabel(message("codemodernizer.migration_plan.body.info.dependency_replace_message", jobStatistics[1].value ?: "-"), dependenciesIcon, JLabel.LEFT))
             add(JLabel(message("codemodernizer.migration_plan.body.info.deprecated_code_message", jobStatistics[2].value ?: "-"), stepIntoIcon, JLabel.LEFT))
-            add(JLabel(message("codemodernizer.migration_plan.body.info.files_update_message", jobStatistics[3].value ?: "-"), fileIcon, JLabel.LEFT))
+            add(JLabel(message("codemodernizer.migration_plan.body.info.files_changed_message", jobStatistics[3].value ?: "-"), fileIcon, JLabel.LEFT))
             addHorizontalGlue()
             border = CodeModernizerUIConstants.TRANSFORMATION_STEPS_INFO_BORDER
             font = font.deriveFont(CodeModernizerUIConstants.PLAN_CONSTRAINTS.STEP_INFO_FONT_SIZE)

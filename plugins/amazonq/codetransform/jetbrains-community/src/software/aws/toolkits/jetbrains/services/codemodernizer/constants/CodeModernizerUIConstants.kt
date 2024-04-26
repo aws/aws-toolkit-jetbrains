@@ -62,6 +62,8 @@ class CodeModernizerUIConstants {
         const val TABLE_NAME_PADDING_LEFT = 10
         const val TABLE_NAME_PADDING_BOTTOM = 0
         const val TABLE_NAME_PADDING_RIGHT = 0
+
+        const val TABLE_ROW_HEIGHT = 25
     }
 
     object FONT_CONSTRAINTS {
