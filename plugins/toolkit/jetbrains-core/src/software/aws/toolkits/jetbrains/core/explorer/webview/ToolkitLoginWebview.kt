@@ -112,10 +112,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             .setCreateImmediately(true)
             .build()
     }
-    override val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
+    private val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
     private val objectMapper = jacksonObjectMapper()
 
-    override val handler = Function<String, JBCefJSQuery.Response> {
+    private val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
         val command = jsonTree.get("command").asText()
         LOG.debug { "Data received from Toolkit browser: ${jsonTree.toPrettyString()}" }
@@ -196,7 +196,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 ),
             )
 
-        loadWebView()
+        loadWebView(query)
 
         query.addHandler(handler)
     }
@@ -281,6 +281,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 }
             }
         }
+    }
+
+    override fun loadWebView(query: JBCefJSQuery) {
+        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
     }
 
     fun component(): JComponent? = jcefBrowser.component

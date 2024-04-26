@@ -13,23 +13,16 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.concurrent.Future
-import java.util.function.Function
 
 data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
 
@@ -39,8 +32,6 @@ abstract class LoginBrowser(
     val webScriptUri: String
 ) {
     abstract val jcefBrowser: JBCefBrowserBase
-    abstract val query: JBCefJSQuery
-    abstract val handler: Function<String, JBCefJSQuery.Response>
 
     protected var currentAuthorization: PendingAuthorization? = null
 
@@ -54,25 +45,6 @@ abstract class LoginBrowser(
             if (authorization != null) {
                 executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
                 currentAuthorization = authorization
-            }
-        }
-    }
-
-    // TODO: remove it
-    // TODO: figure out a better way to do this UI update
-    protected val onPendingAwsId: () -> Unit = {
-        projectCoroutineScope(project).launch {
-            val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
-
-            conn?.let { c ->
-                val provider = (c as ManagedBearerSsoConnection).getConnectionSettings().tokenProvider.delegate
-                val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
-
-                if (authorization != null) {
-                    executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
-                    currentAuthorization = authorization
-                    return@launch
-                }
             }
         }
     }
@@ -143,15 +115,18 @@ abstract class LoginBrowser(
             }
         }
 
-    protected fun loadWebView() {
-        jcefBrowser.loadHTML(getWebviewHTML())
+    abstract fun loadWebView(query: JBCefJSQuery)
+
+    protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
+        provider.pendingAuthorization
     }
 
-    protected fun getWebviewHTML(): String {
-        val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
-        val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
+    companion object {
+        fun getWebviewHTML(webScriptUri: String, query: JBCefJSQuery): String {
+            val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
+            val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
 
-        val jsScripts = """
+            val jsScripts = """
             <script>
                 (function() {
                     window.ideApi = {
@@ -164,7 +139,7 @@ abstract class LoginBrowser(
             <script type="text/javascript" src="$webScriptUri"></script>
         """.trimIndent()
 
-        return """
+            return """
             <!DOCTYPE html>
             <html>
                 <head>
@@ -176,13 +151,6 @@ abstract class LoginBrowser(
                 </body>
             </html>
         """.trimIndent()
-    }
-
-    protected suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
-        ToolkitAuthManager.getInstance().getConnection(connectionId)
-    }
-
-    protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
-        provider.pendingAuthorization
+        }
     }
 }
