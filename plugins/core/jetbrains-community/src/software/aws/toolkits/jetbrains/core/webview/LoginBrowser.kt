@@ -143,7 +143,7 @@ abstract class LoginBrowser(
                 }())
             </script>
             <script type="text/javascript" src="$webScriptUri"></script>
-        """.trimIndent()
+            """.trimIndent()
 
             return """
             <!DOCTYPE html>
@@ -156,7 +156,7 @@ abstract class LoginBrowser(
                     $jsScripts
                 </body>
             </html>
-        """.trimIndent()
+            """.trimIndent()
         }
     }
 }
