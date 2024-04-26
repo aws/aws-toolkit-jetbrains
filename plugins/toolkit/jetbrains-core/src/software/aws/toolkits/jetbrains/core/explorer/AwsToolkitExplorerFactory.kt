@@ -33,9 +33,11 @@ import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.FeatureId
 import javax.swing.JComponent
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
@@ -149,6 +151,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         if (isNewConnToolkitConnection) {
             showExplorerTree(project)
         } else if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
+            ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
             showWebview(project)
         } else {
             showExplorerTree(project)
@@ -165,6 +168,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         LOG.debug { "settingsStateChanged: ${newState::class.simpleName}; isToolkitConnected=$isToolkitConnected" }
 
         if (!isToolkitConnected || shouldPromptToolkitReauth(project)) {
+            ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
             showWebview(project)
         } else {
             showExplorerTree(project)
