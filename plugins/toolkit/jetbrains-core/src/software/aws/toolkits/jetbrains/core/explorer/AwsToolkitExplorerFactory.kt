@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -110,7 +109,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        project.messageBus.connect().subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {

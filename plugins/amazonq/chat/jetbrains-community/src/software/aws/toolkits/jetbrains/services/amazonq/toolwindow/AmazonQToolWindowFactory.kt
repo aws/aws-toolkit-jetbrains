@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -45,8 +44,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
-            BearerTokenProviderListener.TOPIC,
+        project.messageBus.connect().subscribe(BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
@@ -61,8 +59,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                         }
                     }
                 }
-            }
-        )
+            })
 
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
