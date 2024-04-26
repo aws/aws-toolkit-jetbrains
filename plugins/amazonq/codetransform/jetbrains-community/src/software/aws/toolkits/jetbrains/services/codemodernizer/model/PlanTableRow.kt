@@ -25,11 +25,11 @@ data class PlanTableRow(
     @JsonProperty("numChangedFiles")
     val filesToBeChanged: String?,
     @JsonProperty("relativePath")
-    val filePath: String?
+    val filePath: String?,
 ) {
-    fun getValueForColumn(col: String): String? {
-        // do not need "name" and "value" here since they are not used to display our tables
-        return when (col) {
+    fun getValueForColumn(col: String): String? =
+        // do not need "name" and "value" here since they are not used to display tables
+        when (col) {
             "dependencyName" -> dependency
             "action" -> action
             "currentVersion" -> currentVersion
@@ -39,5 +39,4 @@ data class PlanTableRow(
             "relativePath" -> filePath
             else -> "-"
         }
-    }
 }

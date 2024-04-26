@@ -28,7 +28,7 @@ open class CodeModernizerArtifact(
     val manifest: CodeModernizerManifest,
     private val patches: List<VirtualFile>,
     val summary: TransformationSummary,
-    val summaryMarkdownFile: File
+    val summaryMarkdownFile: File,
 ) {
     val patch: VirtualFile
         get() = patches.first()
@@ -74,22 +74,21 @@ open class CodeModernizerArtifact(
             return TransformationSummary(summaryFile.readText())
         }
 
-        private fun getSummaryFile(manifest: CodeModernizerManifest): File {
-            return tempDir.toPath().resolve(manifest.summaryRoot).resolve(summaryNameInZip).toFile()
-        }
+        private fun getSummaryFile(manifest: CodeModernizerManifest) = tempDir.toPath().resolve(manifest.summaryRoot).resolve(summaryNameInZip).toFile()
 
         /**
          * Attempts to load the manifest from the zip file. Throws an exception if the manifest is not found or cannot be serialized.
          */
         private fun loadManifest(): CodeModernizerManifest {
-            val manifestFile = tempDir.listFiles()
-                ?.firstOrNull { Path(it.name).endsWith(manifestPathInZip) }
-                ?: throw RuntimeException("Could not find manifest")
+            val manifestFile =
+                tempDir.listFiles()
+                    ?.firstOrNull { Path(it.name).endsWith(manifestPathInZip) }
+                    ?: throw RuntimeException("Could not find manifest")
             try {
                 val manifest = MAPPER.readValue(manifestFile, CodeModernizerManifest::class.java)
                 if (manifest.version == 0.0F || manifest.patchesRoot == null || manifest.summaryRoot == null) {
                     throw RuntimeException(
-                        "Unable to deserialize the manifest"
+                        "Unable to deserialize the manifest",
                     )
                 }
                 return manifest
