@@ -14,6 +14,4 @@ data class CodeTransformActionMessage(
     val mavenBuildResult: MavenCopyCommandsResult? = null,
     val transformResult: CodeModernizerJobCompletedResult? = null,
     val hilDownloadArtifact: CodeTransformHilDownloadArtifact? = null,
-    // TODO
-    val dependency: Dependency? = null
 ) : AmazonQMessage

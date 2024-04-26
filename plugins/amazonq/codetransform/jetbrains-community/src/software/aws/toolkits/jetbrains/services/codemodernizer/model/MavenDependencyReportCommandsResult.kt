@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-// TODO rename
 sealed class MavenDependencyReportCommandsResult {
     object Success : MavenDependencyReportCommandsResult()
     object Failure : MavenDependencyReportCommandsResult()

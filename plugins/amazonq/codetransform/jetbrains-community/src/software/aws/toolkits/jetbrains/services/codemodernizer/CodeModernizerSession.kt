@@ -72,7 +72,6 @@ class CodeModernizerSession(
     private var mvnBuildResult: MavenCopyCommandsResult? = null
     private var transformResult: CodeModernizerJobCompletedResult? = null
 
-    // TODO code clean up for getter and setter
     private var hilDownloadArtifactId: String? = null
     private var hilTempDirectoryPath: Path? = null
     private var hilDownloadArtifact: CodeTransformHilDownloadArtifact? = null
@@ -214,8 +213,6 @@ class CodeModernizerSession(
             throw RuntimeException("Target language is not supported")
         }
         LOG.info { "Starting job with uploadId [$uploadId] for $sourceLanguage -> $targetLanguage" }
-        // TODO mock return paused job ID
-        //return clientAdaptor.startCodeModernizationMock(uploadId, sourceLanguage, targetLanguage)
         return clientAdaptor.startCodeModernization(uploadId, sourceLanguage, targetLanguage)
     }
 

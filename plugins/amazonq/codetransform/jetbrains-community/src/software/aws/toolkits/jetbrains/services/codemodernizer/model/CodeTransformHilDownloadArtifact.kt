@@ -29,8 +29,6 @@ open class CodeTransformHilDownloadArtifact(
         val LOG = getLogger<CodeTransformHilDownloadArtifact>()
         private val MAPPER = jacksonObjectMapper()
 
-        // TODO store location of tempDir in state?
-
         /**
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeTransformHilDownloadArtifact].
          * If anything goes wrong during this process an exception is thrown.

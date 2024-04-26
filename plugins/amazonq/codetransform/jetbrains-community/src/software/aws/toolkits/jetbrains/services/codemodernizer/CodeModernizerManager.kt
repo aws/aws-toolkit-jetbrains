@@ -234,14 +234,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun runModernize(copyResult: MavenCopyCommandsResult) {
         initStopParameters()
         val session = codeTransformationSession as CodeModernizerSession
-        /*
-        val fakeJobId = JobId("test-id")
-        completeHumanInTheLoopWork(fakeJobId, 0)
-        val test = true
-        if (test) {
-            return
-        }
-         */
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         launchModernizationJob(session, copyResult)
     }
@@ -649,13 +641,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 listOf(displayFeedbackNotificationAction())
             )
 
-            // TODO
-            is CodeModernizerJobCompletedResult.JobPaused -> notifyStickyInfo(
-                message("codemodernizer.notification.info.transformation_stop.title"),
-                message("codemodernizer.notification.info.transformation_stop.content"),
-                project,
-                listOf(displayFeedbackNotificationAction())
-            )
+            is CodeModernizerJobCompletedResult.JobPaused -> return
         }
         telemetry.totalRunTime(result.toString(), jobId)
     }

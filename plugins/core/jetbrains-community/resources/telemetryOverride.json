@@ -1,21 +1,6 @@
 {
     "types": [
         {
-            "name": "codeTransformApiNames",
-            "type": "string",
-            "description": "Names of allowed API calls",
-            "allowedValues": [
-                "StartTransformation",
-                "StopTransformation",
-                "GetTransformation",
-                "GetTransformationPlan",
-                "UploadZip",
-                "CreateUploadUrl",
-                "ExportResultArchive",
-                "ResumeTransformation"
-            ]
-        },
-        {
             "name": "codecatalyst_createDevEnvironmentRepoType",
             "type": "string",
             "description": "Type of Git repository provided to the Amazon CodeCatalyst dev environment create wizard",

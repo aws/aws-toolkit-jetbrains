@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import java.io.File
 
-// TODO rename
 sealed class MavenCopyCommandsResult {
     data class Success(val dependencyDirectory: File) : MavenCopyCommandsResult()
     object Failure : MavenCopyCommandsResult()
