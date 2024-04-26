@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -21,18 +22,21 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManagerConn
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsStateChangeNotifier
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
+import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
-import software.aws.toolkits.jetbrains.utils.isToolkitExpired
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.FeatureId
+import javax.swing.JComponent
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -72,11 +76,10 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         val contentManager = toolWindow.contentManager
 
-        val component = if (isTookitConnected(project) && !isToolkitExpired(project)) {
-            AwsToolkitExplorerToolWindow.getInstance(project)
-        } else {
-            LOG.debug { "Rendering signin webview" }
+        val component = if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).component
+        } else {
+            AwsToolkitExplorerToolWindow.getInstance(project)
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
@@ -101,6 +104,19 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
                     settingsStateChanged(project, newState, toolWindow)
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String, newScopes: List<String>?) {
+                    if (ToolkitConnectionManager.getInstance(project)
+                            .connectionStateForFeature(CodeCatalystConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED
+                    ) {
+                        showExplorerTree(project)
+                    }
                 }
             }
         )
@@ -130,43 +146,28 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             else -> false
         }
 
-        val isToolkitConnected = isNewConnToolkitConnection || isTookitConnected(project)
-
-        toolWindow.reload(isToolkitConnected)
+        if (isNewConnToolkitConnection) {
+            showExplorerTree(project)
+        } else if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
+            showWebview(project)
+        } else {
+            showExplorerTree(project)
+        }
     }
 
     private fun settingsStateChanged(project: Project, newState: ConnectionState, toolWindow: ToolWindow) {
         val isToolkitConnected = if (newState is ConnectionState.ValidConnection) {
             true
         } else {
-            isTookitConnected(project)
+            isTookitConnected(project) && !shouldPromptToolkitReauth(project)
         }
 
         LOG.debug { "settingsStateChanged: ${newState::class.simpleName}; isToolkitConnected=$isToolkitConnected" }
 
-        toolWindow.reload(isToolkitConnected)
-    }
-
-    private fun ToolWindow.reload(isConnected: Boolean) {
-        val contentManager = this.contentManager
-        val component = if (isConnected) {
-            LOG.debug { "Rendering explorer tree" }
-            AwsToolkitExplorerToolWindow.getInstance(project)
+        if (!isToolkitConnected || shouldPromptToolkitReauth(project)) {
+            showWebview(project)
         } else {
-            LOG.debug { "Rendering signin webview" }
-            ToolkitWebviewPanel.getInstance(project).let {
-                it.browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-                it.component
-            }
-        }
-        val myContent = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-
-        runInEdt {
-            contentManager.removeAllContents(true)
-            contentManager.addContent(myContent)
+            showExplorerTree(project)
         }
     }
 
@@ -176,31 +177,22 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
     }
 }
 
-// TODO: rewrite the 2 functions, duplicate code
 fun showWebview(project: Project) {
-    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
-
-    val myContent = contentManager.factory.createContent(ToolkitWebviewPanel.getInstance(project).component, null, false).also {
-        it.isCloseable = true
-        it.isPinnable = true
-    }
-
-    runInEdt {
-        contentManager.removeAllContents(true)
-        contentManager.addContent(myContent)
-    }
+    AwsToolkitExplorerToolWindow.toolWindow(project).loadContent(ToolkitWebviewPanel.getInstance(project).component)
 }
 
 fun showExplorerTree(project: Project) {
-    val contentManager = AwsToolkitExplorerToolWindow.toolWindow(project).contentManager
+    AwsToolkitExplorerToolWindow.toolWindow(project).loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+}
 
-    val myContent = contentManager.factory.createContent(AwsToolkitExplorerToolWindow.getInstance(project), null, false).also {
+private fun ToolWindow.loadContent(component: JComponent) {
+    val content = contentManager.factory.createContent(component, null, false).also {
         it.isCloseable = true
         it.isPinnable = true
     }
 
     runInEdt {
         contentManager.removeAllContents(true)
-        contentManager.addContent(myContent)
+        contentManager.addContent(content)
     }
 }

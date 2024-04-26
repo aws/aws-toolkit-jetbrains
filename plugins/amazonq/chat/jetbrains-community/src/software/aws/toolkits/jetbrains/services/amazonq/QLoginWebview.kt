@@ -171,7 +171,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
                     if (conn is ManagedBearerSsoConnection) {
                         ApplicationManager.getApplication().executeOnPooledThread {
-                            reauthConnectionIfNeeded(project, conn, onPendingProfile)
+                            reauthConnectionIfNeeded(project, conn, onPendingToken)
                         }
                     }
                 }

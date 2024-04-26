@@ -8,10 +8,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 
 private val LOG = LoggerFactory.getLogger("FunctionUtils")
 
@@ -56,5 +58,9 @@ fun isQExpired(project: Project): Boolean {
     }
     return qState == BearerTokenAuthState.NEEDS_REFRESH || cwState == BearerTokenAuthState.NEEDS_REFRESH
 }
+
+fun AwsBearerTokenConnection.state(): BearerTokenAuthState =
+    (getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider)?.state() ?: BearerTokenAuthState.NOT_AUTHENTICATED
+
 
 
