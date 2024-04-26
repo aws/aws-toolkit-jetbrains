@@ -30,8 +30,6 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
@@ -118,9 +116,6 @@ class SsoAccessTokenProvider(
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
         loadDagClientRegistration()?.let {
-            // TODO: remove this logic after TARGET_SAFE_CLIENT_NAME_DATE
-            // client registration was created before 4/30
-            if (it.expiresAt.isBefore(TARGET_SAFE_CLIENT_NAME_DATE)) return@let
             return it
         }
 
@@ -419,8 +414,5 @@ class SsoAccessTokenProvider(
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
-
-        // This is 91 days after April 30, 2024, 1 more day than the 90 days of client registration valid period just for extra safety.
-        val TARGET_SAFE_CLIENT_NAME_DATE: Instant = LocalDate.of(2024, 4, 30).plusDays(91).atStartOfDay().toInstant(ZoneOffset.UTC)
     }
 }
