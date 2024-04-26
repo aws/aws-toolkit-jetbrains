@@ -44,7 +44,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(BearerTokenProviderListener.TOPIC,
+        project.messageBus.connect().subscribe(
+            BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
@@ -59,7 +60,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                         }
                     }
                 }
-            })
+            }
+        )
 
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
