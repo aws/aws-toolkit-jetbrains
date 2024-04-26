@@ -709,6 +709,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun getLastTransformResult(): CodeModernizerJobCompletedResult? = codeTransformationSession?.getLastTransformResult()
 
+    fun getCurrentHilArtifact(): CodeTransformHilDownloadArtifact? = codeTransformationSession?.getHilDownloadArtifact()
+
     fun getBottomToolWindow() = ToolWindowManager.getInstance(project).getToolWindow(CodeModernizerBottomToolWindowFactory.id)
         ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
 

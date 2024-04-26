@@ -66,7 +66,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOr
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -117,8 +117,6 @@ class CodeTransformChatController(
         delay(500)
 
         CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
-
-        // TODO mock zip file and work on file parsing and MVN commands
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
@@ -207,7 +205,7 @@ class CodeTransformChatController(
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
     }
 
-    suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
+    private suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
         if (mavenBuildResult == MavenCopyCommandsResult.Cancelled) {
             codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
             codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
@@ -403,7 +401,7 @@ class CodeTransformChatController(
         val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
 
         if (hilDownloadArtifact == null) {
-            hilTryResumeAfterError("I ran into an error trying to download the dependency information.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cannot_download_artifact"))
             return
         }
 
@@ -411,16 +409,16 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
         val createReportResult = codeModernizerManager.createDependencyReport(hilDownloadArtifact)
         if (createReportResult == MavenDependencyReportCommandsResult.Cancelled) {
-            hilTryResumeAfterError("I cancelled the local dependency search.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cancel_dependency_search"))
             return
         } else if (createReportResult == MavenDependencyReportCommandsResult.Failure) {
-            hilTryResumeAfterError("I couldn't find any other versions of this dependency in your local Maven repository. Try transforming the **${hilDownloadArtifact.manifest.pomArtifactId}** dependency to make it compatible with Java 17, and then try transforming this module again.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.no_other_versions_found", hilDownloadArtifact.manifest.pomArtifactId))
             return
         }
 
         val dependency = codeModernizerManager.findAvailableVersionForDependency(hilDownloadArtifact.manifest.pomGroupId, hilDownloadArtifact.manifest.pomArtifactId)
         if (dependency == null || (dependency.majors.isNullOrEmpty() && dependency.minors.isNullOrEmpty() && dependency.incrementals.isNullOrEmpty())) {
-            hilTryResumeAfterError("I couldn't find any other versions of this dependency in your local Maven repository. Try transforming the **${hilDownloadArtifact.manifest.pomArtifactId}** dependency to make it compatible with Java 17, and then try transforming this module again.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.no_other_versions_found", hilDownloadArtifact.manifest.pomArtifactId))
             return
         }
         codeTransformChatHelper.updateLastPendingMessage(buildTransformAwaitUserInputChatContent(dependency))
@@ -434,25 +432,26 @@ class CodeTransformChatController(
             return
         }
 
-        val version = message.version
+        val selectedVersion = message.version
+        val artifact = codeModernizerManager.getCurrentHilArtifact()!!
 
         codeTransformChatHelper.run {
-            addNewMessage(buildUserHilSelection(version))
+            addNewMessage(buildUserHilSelection(artifact.manifest.pomArtifactId, artifact.manifest.sourcePomVersion, selectedVersion))
 
             addNewMessage(buildCompileHilAlternativeVersionContent())
         }
 
-        val copyDependencyResult = codeModernizerManager.copyDependencyForHil(version)
+        val copyDependencyResult = codeModernizerManager.copyDependencyForHil(selectedVersion)
         if (copyDependencyResult == MavenCopyCommandsResult.Failure) {
-            hilTryResumeAfterError("I’m sorry, I wasn't able to upload the dependency you chose.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cannot_upload"))
             return
         } else if (copyDependencyResult == MavenCopyCommandsResult.Cancelled) {
-            hilTryResumeAfterError("I cancelled the dependency upload.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cancel_upload"))
             return
         }
 
         try {
-            codeModernizerManager.tryResumeWithAlternativeVersion(version)
+            codeModernizerManager.tryResumeWithAlternativeVersion(selectedVersion)
 
             codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
 
@@ -461,7 +460,7 @@ class CodeTransformChatController(
             }
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
-            hilTryResumeAfterError("I’m sorry, I wasn't able to upload the dependency you chose.")
+            hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cannot_upload"))
         }
     }
 

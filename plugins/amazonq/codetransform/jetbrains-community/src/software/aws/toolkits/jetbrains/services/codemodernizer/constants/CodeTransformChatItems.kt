@@ -69,14 +69,14 @@ private val viewSummaryButton = Button(
 
 private val confirmHilSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmHilSelection.id,
-    text = "Submit",
+    text = message("codemodernizer.chat.message.button.hil_submit"),
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
 )
 
 private val rejectHilSelectionButton = Button(
     id = CodeTransformButtonId.RejectHilSelection.id,
-    text = "Continue without selection",
+    text = message("codemodernizer.chat.message.button.hil_cancel"),
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
 )
@@ -119,6 +119,17 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         | :------------------- | -------: |
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
+""".trimIndent()
+
+private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
+        ### ${message("codemodernizer.chat.prompt.title.dependency_details")}
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **${message("codemodernizer.chat.prompt.label.dependency_name")}**             |   $dependencyName   |
+        | **${message("codemodernizer.chat.prompt.label.dependency_current_version")}**             |   $currentVersion |
+        | **${message("codemodernizer.chat.prompt.label.dependency_selected_version")}**             |   $selectedVersion |
 """.trimIndent()
 
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
@@ -266,22 +277,22 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
     )
 }
 
-// TODO translate
 fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
     val majors = (dependency.majors ?: listOf()).sorted()
     val minors = (dependency.minors ?: listOf()).sorted()
     val incrementals = (dependency.incrementals ?: listOf()).sorted()
     val total = majors.size + minors.size + incrementals.size
 
-    var message = "I found $total other dependency versions that are more recent than the dependency in your code that's causing an error (${dependency.currentVersion})."
+    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion!!)
+
     if (majors.isNotEmpty()) {
-        message += "\n\nLatest major version: ${majors.last()}"
+        message += message("codemodernizer.chat.message.hil.dependency_latest_major", majors.last())
     }
     if (minors.isNotEmpty()) {
-        message += "\n\nLatest minor version: ${minors.last()}"
+        message += message("codemodernizer.chat.message.hil.dependency_latest_minor", minors.last())
     }
     if (incrementals.isNotEmpty()) {
-        message += "\n\nLatest incremental version: ${incrementals.last()}"
+        message += message("codemodernizer.chat.message.hil.dependency_latest_incremental", incrementals.last())
     }
 
     return CodeTransformChatMessageContent(
@@ -290,7 +301,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
         formItems = listOf(
             FormItem(
                 id = CodeTransformFormItemId.DependencyVersion.id,
-                title = "I can replace this dependency with a newer version. Choose which version I should use:",
+                title = message("codemodernizer.chat.message.hil.dependency_choose_version"),
                 options = (majors + minors + incrementals).map { FormItemOption(it, it) },
             )
         ),
@@ -302,8 +313,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 }
 
 fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformHilDownloadArtifact) = CodeTransformChatMessageContent(
-    // TODO string review
-    message = "Here is the dependency causing the issue:" +
+    message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
         "\n\n```xml" +
         "\n" +
         "<dependencies>\n" +
@@ -317,25 +327,23 @@ fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformH
 )
 
 fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
-    // TODO string review
-    message = "I’m searching for other dependency versions available in your Maven repository...",
+    message = message("codemodernizer.chat.message.hil.searching"),
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildUserHilSelection(version: String) = CodeTransformChatMessageContent(
+fun buildUserHilSelection(dependencyName: String, currentVersion: String, selectedVersion: String) = CodeTransformChatMessageContent(
+    message = getUserHilSelectionMarkdown(dependencyName, currentVersion, selectedVersion),
     type = CodeTransformChatMessageType.Prompt,
-    message = "Update using version $version."
 )
 
 fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "Trying to resume transformation with your selected version.",
+    message = message("codemodernizer.chat.message.hil.trying_resume"),
 )
 
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    // TODO complete message
-    message = "I received your target version dependency. I'll continue transforming your code. You can monitor progress in the Transformation Hub.",
+    message = message("codemodernizer.chat.message.hill.resumed"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -344,7 +352,7 @@ fun buildHilResumedContent() = CodeTransformChatMessageContent(
 
 fun buildHilRejectContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I'll continue upgrading your module. When I'm done, you can review the dependency error in the Transformation summary.",
+    message = message("codemodernizer.chat.message.hil.user_rejected"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -353,7 +361,7 @@ fun buildHilRejectContent() = CodeTransformChatMessageContent(
 
 fun buildHilInitialContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I was not able to upgrade all dependencies. To resolve it, I'll try to find an updated dependency in your local Maven repository. I'll need additional information from you to continue.",
+    message = message("codemodernizer.chat.message.hil.start_message"),
 )
 
 fun buildHilErrorContent(errorMessage: String) = CodeTransformChatMessageContent(
@@ -363,7 +371,7 @@ fun buildHilErrorContent(errorMessage: String) = CodeTransformChatMessageContent
 
 fun buildHilResumeWithErrorContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = "I'll continue upgrading your module. When I'm done, you can review the dependency error in the Transformation summary.",
+    message = message("codemodernizer.chat.message.hil.continue_after_error"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -372,7 +380,7 @@ fun buildHilResumeWithErrorContent() = CodeTransformChatMessageContent(
 
 fun buildHilCannotResumeContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "I ran into an issue trying to resume your transformation.",
+    message = message("codemodernizer.chat.message.hil.cannot_resume"),
     followUps = listOf(
         startNewTransformFollowUp
     ),
