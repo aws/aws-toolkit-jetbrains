@@ -29,8 +29,8 @@ enum class StaticTextResponse(
             - What is the syntax of declaring a variable in TypeScript?
             ### Special Commands
             - /clear - Clear the conversation.
-            - /dev - Get code suggestions across files in your current project. Provide a brief prompt, such as "Implement a GET API."<strong> Only available through CodeWhisperer Professional Tier.</strong>
-            - /transform - Transform your code. Use to upgrade Java code versions. <strong>Only available through CodeWhisperer Professional Tier.</strong>
+            - /dev - Get code suggestions across files in your current project. Provide a brief prompt, such as "Implement a GET API."
+            - /transform - Transform your code. Use to upgrade Java code versions.
             - /help - View chat topics and commands.
             ### Things to note:
             - I may not always provide completely accurate or current information.

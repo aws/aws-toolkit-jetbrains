@@ -217,18 +217,6 @@ class QGettingStartedContent(val project: Project) : Disposable {
                     <div id="buttonContainer">
                         <button id="sendToQButton">${message("q.onboarding.button.text")}</button>
                     </div>
-                    <!-- spacing -->
-                    <div class="spacingrow"> </div>
-                    <div class="spacingrow"> </div>
-                    <!-- end spacing -->
-                    <div id="codewhisperer">
-                        <div id="imageContainer">
-                            <img id="codewhispererLogo"/>
-                        </div>
-                        <div id="textWrapper">
-                            <p>${message("q.onboarding.codewhisperer.description")}<br><a id="goToHelpLink">Try examples</a></p>
-                        </div>
-                    </div>
                 </div>
             </div>
             <script>

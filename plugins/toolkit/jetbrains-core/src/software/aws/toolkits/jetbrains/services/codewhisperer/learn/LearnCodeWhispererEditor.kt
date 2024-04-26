@@ -31,7 +31,7 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
             panel {
                 customize(Gaps(20, 50, 0, 0))
                 row {
-                    icon(AwsIcons.Logos.CODEWHISPERER_LARGE)
+                    icon(AwsIcons.Logos.AWS_Q_GRADIENT)
 
                     panel {
                         title(message("codewhisperer.learn_page.header.title"))
