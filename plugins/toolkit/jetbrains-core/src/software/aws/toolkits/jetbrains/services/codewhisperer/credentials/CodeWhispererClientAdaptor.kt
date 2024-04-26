@@ -464,7 +464,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.fullResponselatency(fullResponselatency)
                 it.requestLength(requestLength)
                 it.responseLength(responseLength)
-                //it.numberOfCodeBlocks(numberOfCodeBlocks)
+                // it.numberOfCodeBlocks(numberOfCodeBlocks)
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

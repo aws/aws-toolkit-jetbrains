@@ -107,11 +107,17 @@ class CodeModernizerSession(
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
-    fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(getPathToHilDependencyReportDir(hilTempDirectoryPath!!))
+    fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(
+        getPathToHilDependencyReportDir(hilTempDirectoryPath!!)
+    )
 
     fun copyHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.copyHilDependencyUsingMaven(hilTempDirectoryPath!!)
 
-    fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(hilTempDirectoryPath!!, hilDownloadArtifact!!.manifest, selectedVersion)
+    fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(
+        hilTempDirectoryPath!!,
+        hilDownloadArtifact!!.manifest,
+        selectedVersion
+    )
 
     /**
      * Note that this function makes network calls and needs to be run from a background thread.
@@ -164,7 +170,7 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            //val uploadId = uploadPayloadMock(payload)
+            // val uploadId = uploadPayloadMock(payload)
             val uploadId = uploadPayload(payload)
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
@@ -390,7 +396,11 @@ class CodeModernizerSession(
                 sessionContext.project.refreshCwQTree()
 
                 if (state.currentJobStatus == TransformationStatus.PAUSED) {
-                    val pausedUpdate = state.transformationPlan?.transformationSteps()?.flatMap { step -> step.progressUpdates() }?.filter { update -> update.status() == TransformationProgressUpdateStatus.PAUSED }
+                    val pausedUpdate =
+                        state.transformationPlan
+                            ?.transformationSteps()
+                            ?.flatMap { step -> step.progressUpdates() }
+                            ?.filter { update -> update.status() == TransformationProgressUpdateStatus.PAUSED }
                     if (pausedUpdate?.isNotEmpty() == true) {
                         state.currentHilArtifactId = pausedUpdate[0].downloadArtifacts()[0].downloadArtifactId()
                     }

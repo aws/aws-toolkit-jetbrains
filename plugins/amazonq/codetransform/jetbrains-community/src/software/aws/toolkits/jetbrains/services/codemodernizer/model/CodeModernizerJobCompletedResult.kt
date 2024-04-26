@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.intellij.openapi.projectRoots.JavaSdkVersion
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 
 sealed class CodeModernizerJobCompletedResult {
     data class RetryableFailure(val jobId: JobId, val failureReason: String) : CodeModernizerJobCompletedResult()

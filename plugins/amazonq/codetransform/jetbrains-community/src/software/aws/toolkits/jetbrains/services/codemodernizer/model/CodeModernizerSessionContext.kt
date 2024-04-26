@@ -84,7 +84,13 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(sourceFolder, destinationFolder, buildLogBuilder, LOG, project)
+    private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
+        sourceFolder,
+        destinationFolder,
+        buildLogBuilder,
+        LOG,
+        project
+    )
 
     fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
         val sourceFolder = File(getPathToHilArtifactPomFolder(hilTepDirPath).pathString)
@@ -106,10 +112,13 @@ data class CodeModernizerSessionContext(
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }
-    private fun executeDependencyVersionReportUsingMaven(sourceFolder: File, buildLogBuilder: StringBuilder) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
+    private fun executeDependencyVersionReportUsingMaven(
+        sourceFolder: File,
+        buildLogBuilder: StringBuilder
+    ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    fun createZipForHilUpload(hilTempPath: Path, manifest:CodeTransformHilDownloadManifest, targetVersion: String): ZipCreationResult {
-        return runReadAction {
+    fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest, targetVersion: String): ZipCreationResult =
+        runReadAction {
             try {
                 val depRootPath = getPathToHilDependenciesRootDir(hilTempPath)
                 val depDirectory = File(depRootPath.pathString)
@@ -121,14 +130,16 @@ data class CodeModernizerSessionContext(
                 val file = Files.createFile(getPathToHilUploadZip(hilTempPath))
                 ZipOutputStream(Files.newOutputStream(file)).use { zip ->
                     // 1) manifest.json
-                    mapper.writeValueAsString(CodeTransformHilUploadManifest(
-                        hilInput = HilInput(
-                            dependenciesRoot = "$HIL_DEPENDENCIES_ROOT_NAME/",
-                            pomGroupId = manifest.pomGroupId,
-                            pomArtifactId = manifest.pomArtifactId,
-                            targetPomVersion = targetVersion,
+                    mapper.writeValueAsString(
+                        CodeTransformHilUploadManifest(
+                            hilInput = HilInput(
+                                dependenciesRoot = "$HIL_DEPENDENCIES_ROOT_NAME/",
+                                pomGroupId = manifest.pomGroupId,
+                                pomArtifactId = manifest.pomArtifactId,
+                                targetPomVersion = targetVersion,
+                            )
                         )
-                    ))
+                    )
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(HIL_MANIFEST_FILE_NAME, it)
@@ -155,7 +166,6 @@ data class CodeModernizerSessionContext(
                 throw CodeModernizerException("Unknown exception occurred")
             }
         }
-    }
 
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
         val telemetry = CodeTransformTelemetryManager.getInstance(project)

@@ -343,7 +343,7 @@ fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent
 
 fun buildHilResumedContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
-    message = message("codemodernizer.chat.message.hill.resumed"),
+    message = message("codemodernizer.chat.message.hil.resumed"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,

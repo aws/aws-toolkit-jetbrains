@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
@@ -33,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilInitialContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumeWithErrorContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
@@ -416,7 +416,10 @@ class CodeTransformChatController(
             return
         }
 
-        val dependency = codeModernizerManager.findAvailableVersionForDependency(hilDownloadArtifact.manifest.pomGroupId, hilDownloadArtifact.manifest.pomArtifactId)
+        val dependency = codeModernizerManager.findAvailableVersionForDependency(
+            hilDownloadArtifact.manifest.pomGroupId,
+            hilDownloadArtifact.manifest.pomArtifactId
+        )
         if (dependency == null || (dependency.majors.isNullOrEmpty() && dependency.minors.isNullOrEmpty() && dependency.incrementals.isNullOrEmpty())) {
             hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.no_other_versions_found", hilDownloadArtifact.manifest.pomArtifactId))
             return
@@ -481,7 +484,6 @@ class CodeTransformChatController(
             codeTransformChatHelper.updateLastPendingMessage(buildHilCannotResumeContent())
         }
     }
-
 
     companion object {
         private val logger = getLogger<CodeTransformChatController>()

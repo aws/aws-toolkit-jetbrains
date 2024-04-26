@@ -163,7 +163,10 @@ class GumbyClient(private val project: Project) {
         }
     }
 
-    suspend fun downloadExportResultArchive(jobId: JobId, hilDownloadArtifactId: String? = null): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
+    suspend fun downloadExportResultArchive(
+        jobId: JobId,
+        hilDownloadArtifactId: String? = null
+    ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
         if (hilDownloadArtifactId == null) {

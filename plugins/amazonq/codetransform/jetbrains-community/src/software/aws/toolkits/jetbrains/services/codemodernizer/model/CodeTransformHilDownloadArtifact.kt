@@ -59,12 +59,12 @@ open class CodeTransformHilDownloadArtifact(
                 val manifestFile = File(manifestPath.pathString)
                 val manifest = MAPPER.readValue(manifestFile, CodeTransformHilDownloadManifest::class.java)
                 if (
-                        manifest.pomArtifactId == null
-                        || manifest.pomFolderName == null
-                        || manifest.hilCapability == null
-                        || manifest.pomGroupId == null
-                        || manifest.sourcePomVersion == null
-                    ) {
+                    manifest.pomArtifactId == null ||
+                    manifest.pomFolderName == null ||
+                    manifest.hilCapability == null ||
+                    manifest.pomGroupId == null ||
+                    manifest.sourcePomVersion == null
+                ) {
                     throw RuntimeException(
                         "Unable to deserialize the manifest"
                     )

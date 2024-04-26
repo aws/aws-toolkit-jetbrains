@@ -114,7 +114,7 @@ suspend fun generatePlan(
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "Generate plan failed for request: ${e.requestId()}" }
 
-            if(
+            if (
                 (e is ThrottlingException && e.message?.contains("limit for number of iterations on an implementation plan") == true)
             ) {
                 throw PlanIterationLimitError(message("amazonqFeatureDev.approach_gen.iteration_limit.error_text"), e.cause)

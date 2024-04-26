@@ -14,7 +14,6 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseXmlDependenciesReport
 import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import java.io.File
 import java.nio.file.Files
@@ -25,7 +24,13 @@ private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeTrans
     telemetry.mvnBuildFailed(CodeTransformMavenBuildCommand.IDEBundledMaven, error)
 }
 
-fun runHilMavenCopyDependency(sourceFolder: File, destinationDir: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
+fun runHilMavenCopyDependency(
+    sourceFolder: File,
+    destinationDir: File,
+    buildlogBuilder: StringBuilder,
+    logger: Logger,
+    project: Project
+): MavenCopyCommandsResult {
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
     try {

@@ -12,15 +12,14 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerSession.Companion
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
@@ -66,7 +65,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     private suspend fun unzipToPath(byteArrayList: MutableList<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
-        val zipFilePath = withContext(Dispatchers.IO) {
+        val zipFilePath = withContext(getCoroutineBgContext()) {
             if (outputDirPath == null) {
                 Files.createTempFile(null, ".zip")
             } else {
@@ -74,7 +73,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             }
         }
         var totalDownloadBytes = 0
-        withContext(Dispatchers.IO) {
+        withContext(getCoroutineBgContext()) {
             Files.newOutputStream(zipFilePath)
         }.use {
             for (bytes in byteArrayList) {

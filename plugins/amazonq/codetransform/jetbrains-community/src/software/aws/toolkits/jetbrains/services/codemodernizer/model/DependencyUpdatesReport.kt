@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Dependency (
+data class Dependency(
     val groupId: String? = null,
     val artifactId: String? = null,
     val currentVersion: String? = null,
@@ -20,7 +20,7 @@ data class Dependency (
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class DependencyUpdatesReport (
+data class DependencyUpdatesReport(
     @JacksonXmlElementWrapper(localName = "dependencies")
     val dependencies: List<Dependency>? = null,
 )

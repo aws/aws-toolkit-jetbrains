@@ -103,7 +103,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private val isResumingJob = AtomicBoolean(false)
     private val isMvnRunning = AtomicBoolean(false)
     private val isJobSuccessfullyResumed = AtomicBoolean(false)
-    private val isHilInProgress = AtomicBoolean(false)
 
     private val transformationStoppedByUsr = AtomicBoolean(false)
     private var codeTransformationSession: CodeModernizerSession? = null
@@ -372,8 +371,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult {
-        return when (val result = session.createModernizationJob(copyResult)) {
+    internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult =
+        when (val result = session.createModernizationJob(copyResult)) {
             is CodeModernizerStartJobResult.ZipCreationFailed -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
                     message("codemodernizer.notification.warn.zip_creation_failed", result.reason),
@@ -408,7 +407,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 CodeModernizerJobCompletedResult.JobAbortedZipTooLarge
             }
         }
-    }
 
     suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
         setJobOngoing(jobId, session.sessionContext)
@@ -437,7 +435,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             return
         }
-
 
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access
         ApplicationManager.getApplication().invokeLater {
@@ -789,8 +786,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 getPathToHilDependencyReport(codeTransformationSession?.getHilTempDirectoryPath()!!)
             )
             return report.dependencies?.first {
-                it.groupId == pomGroupId
-                    && it.artifactId == pomArtifactId
+                it.groupId == pomGroupId &&
+                    it.artifactId == pomArtifactId
             }
         } catch (e: NoSuchElementException) {
             return null
@@ -836,23 +833,23 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun tryResumeWithAlternativeVersion(selectedVersion: String) {
-            try {
-                val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
-                if (zipCreationResult?.payload?.exists() == true) {
-                    codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
-                    delay(500)
+        try {
+            val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
+            if (zipCreationResult?.payload?.exists() == true) {
+                codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
+                delay(500)
 
-                    codeTransformationSession?.resumeTransformFromHil()
-                } else {
-                    throw CodeModernizerException("Cannot create dependency zip for HIL")
-                }
-            } catch (e: Exception) {
-                val errorMessage = "Unexpected error when resuming HIL: ${e.localizedMessage}"
-                telemetry.error(errorMessage)
-                LOG.error(errorMessage)
-            } finally {
-                // DO file clean up
-                codeTransformationSession?.hilCleanup()
+                codeTransformationSession?.resumeTransformFromHil()
+            } else {
+                throw CodeModernizerException("Cannot create dependency zip for HIL")
             }
+        } catch (e: Exception) {
+            val errorMessage = "Unexpected error when resuming HIL: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error(errorMessage)
+        } finally {
+            // DO file clean up
+            codeTransformationSession?.hilCleanup()
+        }
     }
 }

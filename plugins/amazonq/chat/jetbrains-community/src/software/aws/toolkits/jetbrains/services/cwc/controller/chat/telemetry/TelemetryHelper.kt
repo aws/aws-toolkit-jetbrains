@@ -223,7 +223,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     interactionType(ChatMessageInteractionType.INSERT_AT_CURSOR)
                     interactionTarget(message.insertionTargetType)
                     acceptedCharacterCount(message.code.length)
-                    //acceptedLineCount(message.code.lines().size)
+                    // acceptedLineCount(message.code.lines().size)
                 }.build()
             }
 
