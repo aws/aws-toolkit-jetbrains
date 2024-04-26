@@ -17,6 +17,7 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
+import com.intellij.ui.jcef.JBCefClient
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
@@ -99,8 +100,11 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     ToolkitWebviewBrowser.WEB_SCRIPT_URI
 ) {
     // TODO: confirm if we need such configuration or the default is fine
+    // TODO: move JcefBrowserUtils to core
     override val jcefBrowser: JBCefBrowserBase by lazy {
-        val client = JBCefApp.getInstance().createClient()
+        val client = JBCefApp.getInstance().createClient().apply {
+            setProperty(JBCefClient.Properties.JS_QUERY_POOL_SIZE, 5)
+        }
         Disposer.register(parentDisposable, client)
         JBCefBrowserBuilder()
             .setClient(client)
