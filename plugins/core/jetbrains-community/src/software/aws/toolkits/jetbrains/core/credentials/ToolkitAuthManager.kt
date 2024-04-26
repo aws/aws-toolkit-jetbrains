@@ -181,7 +181,9 @@ fun loginSso(
     startUrl: String,
     region: String,
     requestedScopes: List<String>
-): AwsBearerTokenConnection? = loginSso(project, startUrl, region, requestedScopes, {}, {})
+): BearerTokenProvider = loginSso(project, startUrl, region, requestedScopes, {}, {})?.let {
+    (it.getConnectionSettings().tokenProvider.delegate) as BearerTokenProvider
+} ?: InteractiveBearerTokenProvider(startUrl, region, requestedScopes, "")
 
 
 @Suppress("UnusedParameter")
