@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
+import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -33,16 +34,15 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private var statusCode: Int = 0
 
     companion object {
-        val CODE_BLOCK_REGEX: Regex = Regex("^```", RegexOption.MULTILINE)
+        private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
     }
 
     private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
         if (message.isEmpty()) {
             return 0
         }
-        val countOfCodeBlocks = CODE_BLOCK_REGEX.findAll(message)
-        val numberOfTripleBackTicksInMarkdown = countOfCodeBlocks.count()
-        return numberOfTripleBackTicksInMarkdown / 2
+        val htmlInString = convertMarkdownToHTML(message.toString())
+        return CODE_BLOCK_PATTERN.findAll(htmlInString).count()
     }
 
     fun handle(
