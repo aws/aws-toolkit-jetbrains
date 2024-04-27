@@ -13,6 +13,7 @@ export const enum FormButtonIds {
   CodeTransformViewSummary = 'view_summary',
   ConfirmHilSelection = 'confirm_hil_selection',
   RejectHilSelection = 'reject_hil_selection',
+  OpenDependencyErrorPom = "open_dependency_error_pom",
 }
 
 export const isFormButtonCodeTransform = (id: string): boolean => {
@@ -25,6 +26,7 @@ export const isFormButtonCodeTransform = (id: string): boolean => {
     id === FormButtonIds.StopTransform ||
     id === FormButtonIds.OpenTransformationHub ||
     id === FormButtonIds.ConfirmHilSelection ||
-    id === FormButtonIds.RejectHilSelection
+    id === FormButtonIds.RejectHilSelection ||
+    id === FormButtonIds.OpenDependencyErrorPom
   )
 }

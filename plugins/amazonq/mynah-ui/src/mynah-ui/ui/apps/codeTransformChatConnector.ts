@@ -213,6 +213,12 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
+        } else if (action.id === FormButtonIds.OpenDependencyErrorPom) {
+            this.sendMessageToExtension({
+                command: 'codetransform-pom-file-open-click',
+                tabID,
+                tabType: 'codetransform',
+            })
         }
     }
 

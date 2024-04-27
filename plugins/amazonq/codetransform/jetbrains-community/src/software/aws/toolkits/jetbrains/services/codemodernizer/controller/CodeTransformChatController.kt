@@ -506,6 +506,21 @@ class CodeTransformChatController(
         }
     }
 
+    override suspend fun processOpenPomFileHilClicked(message: IncomingCodeTransformMessage.OpenPomFileHilClicked) {
+        if (!checkForAuth(message.tabId)) {
+            return
+        }
+
+        try {
+            val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
+            if (hilDownloadArtifact != null) {
+                codeModernizerManager.showHilPomFileAnnotation(hilDownloadArtifact.pomFile, hilDownloadArtifact.manifest.sourcePomVersion)
+            }
+        } catch (e: Exception) {
+            telemetry.error("Unknown exception when trying to open hil pom file: ${e.localizedMessage}")
+        }
+    }
+
     companion object {
         private val logger = getLogger<CodeTransformChatController>()
     }

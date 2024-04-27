@@ -38,4 +38,6 @@ interface InboundAppMessagesHandler {
     suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection)
 
     suspend fun processRejectHilSelection(message: IncomingCodeTransformMessage.RejectHilSelection)
+
+    suspend fun processOpenPomFileHilClicked(message: IncomingCodeTransformMessage.OpenPomFileHilClicked)
 }

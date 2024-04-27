@@ -40,6 +40,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
     BodyLinkClicked("response-body-link-click"),
     ConfirmHilSelection("codetransform-confirm-hil-selection"),
     RejectHilSelection("codetransform-reject-hil-selection"),
+    OpenPomFileHilClicked("codetransform-pom-file-open-click"),
 }
 
 class CodeTransformChatApp : AmazonQApp {
@@ -67,6 +68,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.BodyLinkClicked.type to IncomingCodeTransformMessage.BodyLinkClicked::class,
             CodeTransformMessageTypes.ConfirmHilSelection.type to IncomingCodeTransformMessage.ConfirmHilSelection::class,
             CodeTransformMessageTypes.RejectHilSelection.type to IncomingCodeTransformMessage.RejectHilSelection::class,
+            CodeTransformMessageTypes.OpenPomFileHilClicked.type to IncomingCodeTransformMessage.OpenPomFileHilClicked::class,
         )
 
         scope.launch {
@@ -137,6 +139,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.ConfirmHilSelection -> inboundAppMessagesHandler.processConfirmHilSelection(message)
             is IncomingCodeTransformMessage.RejectHilSelection -> inboundAppMessagesHandler.processRejectHilSelection(message)
             is CodeTransformActionMessage -> inboundAppMessagesHandler.processCodeTransformCommand(message)
+            is IncomingCodeTransformMessage.OpenPomFileHilClicked -> inboundAppMessagesHandler.processOpenPomFileHilClicked(message)
         }
     }
 
