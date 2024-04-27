@@ -170,7 +170,6 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            // val uploadId = uploadPayloadMock(payload)
             val uploadId = uploadPayload(payload)
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
