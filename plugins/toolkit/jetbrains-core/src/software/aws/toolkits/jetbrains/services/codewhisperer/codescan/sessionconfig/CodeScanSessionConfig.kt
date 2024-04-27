@@ -93,7 +93,7 @@ class CodeScanSessionConfig(
         // Copy all the included source files to the source zip
         val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
-            payloadMetadata.language,
+            selectedFile.programmingLanguage().toTelemetryType(),
             payloadMetadata.linesScanned,
             payloadMetadata.sourceFiles.size,
             Instant.now().toEpochMilli() - start,
@@ -110,8 +110,7 @@ class CodeScanSessionConfig(
         PayloadMetadata(
             setOf(selectedFile.path),
             selectedFile.length,
-            Files.lines(selectedFile.toNioPath()).count().toLong(),
-            selectedFile.programmingLanguage().toTelemetryType()
+            Files.lines(selectedFile.toNioPath()).count().toLong()
         )
 
     /**
@@ -165,7 +164,6 @@ class CodeScanSessionConfig(
         val stack = Stack<VirtualFile>()
         var currentTotalFileSize = 0L
         var currentTotalLines = 0L
-        val languageCounts = mutableMapOf<CodewhispererLanguage, Int>()
 
         stack.push(projectRoot)
         while (stack.isNotEmpty()) {
@@ -176,11 +174,6 @@ class CodeScanSessionConfig(
                     if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                         break
                     } else {
-                        val language = current.programmingLanguage().toTelemetryType()
-                        if (language != CodewhispererLanguage.Plaintext && language != CodewhispererLanguage.Unknown) {
-                            languageCounts[language] = (languageCounts[language] ?: 0) + 1
-                        }
-
                         files.add(current.path)
                         currentTotalFileSize += current.length
                         currentTotalLines += countLinesInVirtualFile(current)
@@ -195,13 +188,7 @@ class CodeScanSessionConfig(
                 }
             }
         }
-        val maxCount = languageCounts.maxByOrNull { it.value }?.value ?: 0
-        val maxCountLanguage = languageCounts.filter { it.value == maxCount }.keys.firstOrNull()
-
-        if (maxCountLanguage == null) {
-            return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, CodewhispererLanguage.Unknown)
-        }
-        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage)
+        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines)
     }
 
     fun isProjectTruncated() = isProjectTruncated
@@ -242,5 +229,5 @@ data class PayloadMetadata(
     val sourceFiles: Set<String>,
     val payloadSize: Long,
     val linesScanned: Long,
-    val language: CodewhispererLanguage
+    val buildPaths: Set<String> = setOf()
 )

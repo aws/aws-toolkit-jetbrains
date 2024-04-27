@@ -43,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.nio.file.Path
 import kotlin.test.assertNotNull
 
@@ -244,16 +243,16 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         includedSourceFilesSize: Long,
         totalSize: Long,
         expectedTotalLines: Long,
-        payloadLanguage: CodewhispererLanguage
+        expectedBuilds: Int
     ) {
         val payloadMetadata = sessionConfigSpy.getProjectPayloadMetadata()
         assertNotNull(payloadMetadata)
-        val (includedSourceFiles, srcPayloadSize, totalLines, language) = payloadMetadata
+        val (includedSourceFiles, srcPayloadSize, totalLines) = payloadMetadata
         assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)
         assertThat(srcPayloadSize).isEqualTo(totalSize)
         assertThat(totalLines).isEqualTo(expectedTotalLines)
         assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        assertThat(payloadMetadata.language).isEqualTo(payloadLanguage)
+        assertThat(payloadMetadata.buildPaths).hasSize(expectedBuilds)
     }
 
     internal fun assertE2ERunsSuccessfully(
