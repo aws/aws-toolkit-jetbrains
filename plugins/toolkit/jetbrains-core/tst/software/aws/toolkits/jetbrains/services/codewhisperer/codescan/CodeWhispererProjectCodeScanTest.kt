@@ -81,7 +81,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
     @Test
     fun `getProjectPayloadMetadata()`() {
-        getProjectPayloadMetadata(sessionConfigSpy, 10, totalSize, this.totalLines, 0)
+        getProjectPayloadMetadata(sessionConfigSpy, 10, totalSize, this.totalLines, CodewhispererLanguage.Csharp)
     }
 
     @Test
