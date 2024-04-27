@@ -291,9 +291,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            when (scope) {
-                CodeWhispererConstants.CodeAnalysisScope.PROJECT -> codeScanResultsPanel.showError(errorMessage)
-                else -> codeScanResultsPanel.setDefaultUI()
+            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+                codeScanResultsPanel.showError(errorMessage)
             }
         }
 
@@ -315,9 +314,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            when (scope) {
-                CodeWhispererConstants.CodeAnalysisScope.PROJECT -> codeScanResultsPanel.showError(errorMessage)
-                else -> codeScanResultsPanel.setDefaultUI()
+            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+                codeScanResultsPanel.showError(errorMessage)
             }
         }
 
