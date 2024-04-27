@@ -252,7 +252,10 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         }
         uploadArtifactToS3(
             url,
+            createUploadUrlResponse.uploadId(),
             zipFile,
+            fileMd5,
+            createUploadUrlResponse.kmsKeyArn(),
             createUploadUrlResponse.requestHeaders()
         )
         createUploadUrlResponse
@@ -276,10 +279,21 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     }
 
     @Throws(IOException::class)
-    fun uploadArtifactToS3(url: String, fileToUpload: File, requestHeaders: Map<String, String>?) {
+    fun uploadArtifactToS3(url: String, uploadId: String, fileToUpload: File, md5: String, kmsArn: String?, requestHeaders: Map<String, String>?) {
+        val uploadIdJson = """{"uploadId":"$uploadId"}"""
         HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
-            requestHeaders?.forEach { entry ->
-                it.setRequestProperty(entry.key, entry.value)
+            if (requestHeaders.isNullOrEmpty()) {
+                it.setRequestProperty(CONTENT_MD5, md5)
+                it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
+                it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
+                if (kmsArn?.isNotEmpty() == true) {
+                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+                }
+                it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
+            } else {
+                requestHeaders.forEach { entry ->
+                    it.setRequestProperty(entry.key, entry.value)
+                }
             }
         }.connect {
             val connection = it.connection as HttpURLConnection
