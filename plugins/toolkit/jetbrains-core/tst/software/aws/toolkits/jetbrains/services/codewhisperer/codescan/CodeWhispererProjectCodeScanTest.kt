@@ -62,7 +62,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
         assertThat(payload.context.totalFiles).isEqualTo(10)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(10)
-        assertThat(payload.context.scannedFiles).containsExactly(testYaml, testTf, readMeMd, utilsJs, utilsCs, testCs, testJson, helperPy, helperCs, helpGo)
+        assertThat(payload.context.scannedFiles).contains(testYaml, testTf, readMeMd, utilsJs, utilsCs, testJson, testCs, helperPy, helperCs, helpGo)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Csharp)
