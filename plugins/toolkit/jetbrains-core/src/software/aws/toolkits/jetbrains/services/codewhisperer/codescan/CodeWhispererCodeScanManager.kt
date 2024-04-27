@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanFileListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.overlaps
@@ -110,6 +111,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private val documentListener = CodeWhispererCodeScanDocumentListener(project)
     private val editorMouseListener = CodeWhispererCodeScanEditorMouseMotionListener(project)
+    private val fileListener = CodeWhispererCodeScanFileListener(project)
 
     private val isCodeScanInProgress = AtomicBoolean(false)
 
@@ -449,7 +451,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     fun setEditorListeners() {
         runInEdt {
-            EditorFactory.getInstance().eventMulticaster.addDocumentListener(documentListener, project)
+            val editorFactory = EditorFactory.getInstance()
+            editorFactory.eventMulticaster.addDocumentListener(documentListener, project)
+            editorFactory.addEditorFactoryListener(fileListener, project)
         }
     }
 
