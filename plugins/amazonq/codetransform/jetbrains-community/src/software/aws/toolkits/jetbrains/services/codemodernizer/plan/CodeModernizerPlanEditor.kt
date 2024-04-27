@@ -150,23 +150,27 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         return scrollPanel
     }
 
-    private fun getFormattedColumnName(columnName: String) =
-        when (columnName) {
-            "dependencyName" -> "Dependency"
-            "action" -> "Action"
-            "currentVersion" -> "Current version"
-            "targetVersion" -> "Target version"
-            "relativePath" -> "File"
-            "apiFullyQualifiedName" -> "Deprecated code"
-            "numChangedFiles" -> "Files to be changed"
-            else -> "Column"
+    private fun getFormattedString(s: String) =
+        when (s) {
+            "linesOfCode" -> message("codemodernizer.migration_plan.body.info.lines_of_code_message")
+            "plannedDependencyChanges" -> message("codemodernizer.migration_plan.body.info.dependency_replace_message")
+            "plannedDeprecatedApiChanges" -> message("codemodernizer.migration_plan.body.info.deprecated_code_message")
+            "plannedFileChanges" -> message("codemodernizer.migration_plan.body.info.files_changed_message")
+            "dependencyName" -> message("codemodernizer.migration_plan.body.info.dependency_name_column")
+            "action" -> message("codemodernizer.migration_plan.body.info.action_column")
+            "currentVersion" -> message("codemodernizer.migration_plan.body.info.current_version_column")
+            "targetVersion" -> message("codemodernizer.migration_plan.body.info.target_version_column")
+            "relativePath" -> message("codemodernizer.migration_plan.body.info.file_column")
+            "apiFullyQualifiedName" -> message("codemodernizer.migration_plan.body.info.deprecated_code_column")
+            "numChangedFiles" -> message("codemodernizer.migration_plan.body.info.changed_files_column")
+            else -> s
         }
 
     // use parsed MD string stored in step 0 progress updates from GetPlan response to create table
     private fun createTable(stepTable: PlanTable): JTable {
         val columnsVector = Vector(stepTable.columns)
         columnsVector.forEachIndexed { index, columnName ->
-            columnsVector[index] = getFormattedColumnName(columnName)
+            columnsVector[index] = getFormattedString(columnName)
         }
         val data = Vector<Vector<String>>()
         stepTable.rows.forEach { row ->
@@ -430,13 +434,13 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
 
     private fun getTransformationIcon(name: String?): Icon =
         when (name) {
-            message("codemodernizer.migration_plan.body.info.lines_of_code_message") ->
+            "linesOfCode" ->
                 if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_CLOCK_LIGHT else AwsIcons.CodeTransform.PLAN_CLOCK_DARK
-            message("codemodernizer.migration_plan.body.info.dependency_replace_message") ->
+            "plannedDependencyChanges" ->
                 if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEPENDENCIES_LIGHT else AwsIcons.CodeTransform.PLAN_DEPENDENCIES_DARK
-            message("codemodernizer.migration_plan.body.info.deprecated_code_message") ->
+            "plannedDeprecatedApiChanges" ->
                 if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_STEP_INTO_LIGHT else AwsIcons.CodeTransform.PLAN_STEP_INTO_DARK
-            message("codemodernizer.migration_plan.body.info.files_changed_message") ->
+            "plannedFileChanges" ->
                 if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_FILE_LIGHT else AwsIcons.CodeTransform.PLAN_FILE_DARK
             else -> if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEFAULT_LIGHT else AwsIcons.CodeTransform.PLAN_DEFAULT_DARK
         }
@@ -450,9 +454,10 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     jobStatistics.forEach { stat ->
                         if (!stat.name.isNullOrEmpty() && !stat.value.isNullOrEmpty()) {
+                            val formattedStatName = getFormattedString(stat.name)
                             add(
                                 JLabel(
-                                    message("codemodernizer.migration_plan.body.info.job_statistic_message", stat.name, stat.value),
+                                    message("codemodernizer.migration_plan.body.info.job_statistic_message", formattedStatName, stat.value),
                                     getTransformationIcon(stat.name),
                                     JLabel.LEFT,
                                 ),
