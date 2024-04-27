@@ -116,7 +116,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         """.trimIndent()
 
         // add a link sections
-        val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 110%\">${message(
+        val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 120%\">${message(
             "codewhisperer.codescan.explain_button_label"
         )}</a>"
         val linksSection = """

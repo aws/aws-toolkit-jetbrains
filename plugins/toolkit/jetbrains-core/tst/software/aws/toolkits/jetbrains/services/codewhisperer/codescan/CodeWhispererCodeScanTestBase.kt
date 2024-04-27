@@ -8,7 +8,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ApplicationRule
@@ -224,16 +223,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             }
         ]                
     """
-    internal fun getSourceFilesUnderProjectRoot(sessionConfigSpy: CodeScanSessionConfig, testFile: VirtualFile, size: Int) = assertThat(
-        sessionConfigSpy.getSourceFilesUnderProjectRoot(testFile, CodeWhispererConstants.CodeAnalysisScope.PROJECT).size
-    ).isEqualTo(size)
-
-    internal fun getSourceFilesUnderProjectRootForFileScan(
-        sessionConfigSpy: CodeScanSessionConfig,
-        testFile: VirtualFile
-    ) = assertThat(
-        sessionConfigSpy.getSourceFilesUnderProjectRoot(testFile, CodeWhispererConstants.CodeAnalysisScope.FILE).size
-    ).isEqualTo(1)
 
     internal fun getTotalProjectSizeInBytes(sessionConfigSpy: CodeScanSessionConfig, totalSize: Long) = runBlocking {
         assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
@@ -248,14 +237,14 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         }
     }
 
-    internal fun includeDependencies(
+    internal fun getProjectPayloadMetadata(
         sessionConfigSpy: CodeScanSessionConfig,
         includedSourceFilesSize: Long,
         totalSize: Long,
         expectedTotalLines: Long,
         expectedBuilds: Int
     ) {
-        val payloadMetadata = sessionConfigSpy.includeDependencies()
+        val payloadMetadata = sessionConfigSpy.getProjectPayloadMetadata()
         assertNotNull(payloadMetadata)
         val (includedSourceFiles, srcPayloadSize, totalLines) = payloadMetadata
         assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)

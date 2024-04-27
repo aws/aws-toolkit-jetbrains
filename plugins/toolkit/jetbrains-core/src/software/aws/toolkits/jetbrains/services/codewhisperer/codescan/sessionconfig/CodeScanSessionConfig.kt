@@ -32,6 +32,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import java.util.Stack
 import kotlin.io.path.relativeTo
 
 class CodeScanSessionConfig(
@@ -78,7 +79,10 @@ class CodeScanSessionConfig(
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${selectedFile.path}" }
 
         val payloadMetadata = when (selectedFile.path.startsWith(projectRoot.path)) {
-            true -> includeDependencies()
+            true -> when (scope) {
+                CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
+                CodeAnalysisScope.FILE -> getFilePayloadMetadata()
+            }
             false -> {
                 // Set project root as the parent of the selected file.
                 projectRoot = selectedFile.parent
@@ -108,34 +112,6 @@ class CodeScanSessionConfig(
             selectedFile.length,
             Files.lines(selectedFile.toNioPath()).count().toLong()
         )
-
-    fun includeDependencies(): PayloadMetadata {
-        val includedSourceFiles = mutableSetOf<String>()
-        var currentTotalFileSize = 0L
-        var currentTotalLines = 0L
-        val files = getSourceFilesUnderProjectRoot(selectedFile, scope)
-
-        if (scope == CodeAnalysisScope.FILE) {
-            return getFilePayloadMetadata()
-        } else {
-            for (pivotFile in files) {
-                val currentFilePath = pivotFile.path
-                val currentFile = File(currentFilePath).toVirtualFile()
-                if (currentFile != null && !currentFile.isDirectory && !includedSourceFiles.contains(currentFilePath)) {
-                    if (willExceedPayloadLimit(currentTotalFileSize, currentFile.length)) {
-                        // If the payload limit is exceeded, you can break out of the loop
-                        break
-                    } else {
-                        currentTotalFileSize += currentFile.length
-                        currentTotalLines += countLinesInVirtualFile(currentFile)
-                        includedSourceFiles.add(currentFilePath)
-                    }
-                }
-            }
-        }
-
-        return PayloadMetadata(includedSourceFiles, currentTotalFileSize, currentTotalLines)
-    }
 
     /**
      * Timeout for creating the payload [createPayload]
@@ -183,26 +159,36 @@ class CodeScanSessionConfig(
         }
     }.toFile()
 
-    /**
-     * Returns all the source files for a given payload type.
-     */
-    fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile, scope: CodeAnalysisScope): List<VirtualFile> {
-        //  Include the current selected file
-        val files = mutableListOf(selectedFile)
-        //  Include only the file if scan type is file scan.
-        if (scope == CodeAnalysisScope.FILE) {
-            return files
-        } else {
-            // Include other files only if the current file is in the project.
-            if (selectedFile.path.startsWith(projectRoot.path)) {
-                files.addAll(
-                    VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        it != selectedFile && !it.isDirectory && !featureDevSessionContext.ignoreFile(it)
+    fun getProjectPayloadMetadata(): PayloadMetadata {
+        val files = mutableSetOf<String>()
+        val stack = Stack<VirtualFile>()
+        var currentTotalFileSize = 0L
+        var currentTotalLines = 0L
+
+        stack.push(projectRoot)
+        while (stack.isNotEmpty()) {
+            val current = stack.pop()
+
+            if (!current.isDirectory) {
+                if (!featureDevSessionContext.ignoreFile(current)) {
+                    if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
+                        break
+                    } else {
+                        files.add(current.path)
+                        currentTotalFileSize += current.length
+                        currentTotalLines += countLinesInVirtualFile(current)
                     }
-                )
+                }
+            } else {
+                // Directory case: only traverse if not ignored
+                if (!featureDevSessionContext.ignoreFile(current)) {
+                    for (child in current.children) {
+                        stack.push(child)
+                    }
+                }
             }
         }
-        return files
+        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines)
     }
 
     fun isProjectTruncated() = isProjectTruncated

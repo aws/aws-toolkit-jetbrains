@@ -212,24 +212,18 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     FileEditorManager.getInstance(project).selectedEditor?.file
                 }
                     ?: noFileOpenError()
-            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                LOG.info { "Starting security scan on package ${project.name}..." }
-            } else {
-                LOG.info { "Starting file scan on file ${file.path}..." }
-            }
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
             language = codeScanSessionConfig.getSelectedFile().programmingLanguage()
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
                 (language == CodeWhispererUnknownLanguage.INSTANCE || language.toTelemetryType() == CodewhispererLanguage.Plaintext)
             ) {
-                LOG.info { "Language is unknown or plaintext, skipping code scan." }
+                LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 isCodeScanInProgress.set(false)
                 codeScanStatus = Result.Cancelled
                 return@launch
             } else {
                 withTimeout(Duration.ofSeconds(codeScanSessionConfig.overallJobTimeoutInSeconds())) {
                     // 1. Generate truncation (zip files) based on the current editor.
-                    LOG.debug { "Creating context truncation for file ${file.path}" }
                     val sessionContext = CodeScanSessionContext(project, codeScanSessionConfig, scope)
                     val session = CodeWhispererCodeScanSession(sessionContext)
                     val codeScanResponse = session.run()
@@ -263,11 +257,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
             }
         } catch (e: Error) {
             isCodeScanInProgress.set(false)
-            val errorMessage = handleError(coroutineContext, e)
+            val errorMessage = handleError(coroutineContext, e, scope)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } catch (e: Exception) {
             isCodeScanInProgress.set(false)
-            val errorMessage = handleException(coroutineContext, e)
+            val errorMessage = handleException(coroutineContext, e, scope)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } finally {
             // After code scan
@@ -282,7 +276,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    fun handleError(coroutineContext: CoroutineContext, e: Error): String {
+    fun handleError(coroutineContext: CoroutineContext, e: Error, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
             is NoClassDefFoundError -> {
                 if (e.cause?.message?.contains("com.intellij.openapi.compiler.CompilerPaths") == true) {
@@ -297,13 +291,16 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            codeScanResultsPanel.showError(errorMessage)
+            when (scope) {
+                CodeWhispererConstants.CodeAnalysisScope.PROJECT -> codeScanResultsPanel.showError(errorMessage)
+                else -> codeScanResultsPanel.setDefaultUI()
+            }
         }
 
         return errorMessage
     }
 
-    fun handleException(coroutineContext: CoroutineContext, e: Exception): String {
+    fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
             is CodeWhispererCodeScanException -> e.message
@@ -318,7 +315,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            codeScanResultsPanel.showError(errorMessage)
+            when (scope) {
+                CodeWhispererConstants.CodeAnalysisScope.PROJECT -> codeScanResultsPanel.showError(errorMessage)
+                else -> codeScanResultsPanel.setDefaultUI()
+            }
         }
 
         if (
@@ -328,12 +328,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
             CodeWhispererExplorerActionManager.getInstance().setSuspended(project)
         }
 
-        LOG.error {
-            "Failed to run security scan and display results. Caused by: $errorMessage, status code: $errorCode, " +
-                "exception: ${e::class.simpleName}, request ID: $requestId " +
-                "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
-                "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
-                "stacktrace: ${e.stackTrace.contentDeepToString()}"
+        if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+            LOG.error {
+                "Failed to run security scan and display results. Caused by: $errorMessage, status code: $errorCode, " +
+                    "exception: ${e::class.simpleName}, request ID: $requestId " +
+                    "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
+                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
+                    "stacktrace: ${e.stackTrace.contentDeepToString()}"
+            }
         }
         return errorMessage
     }
