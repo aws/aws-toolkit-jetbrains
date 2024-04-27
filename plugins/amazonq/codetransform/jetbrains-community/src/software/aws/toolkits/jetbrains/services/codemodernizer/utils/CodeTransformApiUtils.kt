@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.InternalServer
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
@@ -113,4 +114,13 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         }
     }
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
+}
+
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): HashMap<String, String> {
+    val tableMapping = HashMap<String, String>()
+    stepZeroProgressUpdates.forEach { update ->
+        // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
+        tableMapping[update.name()] = update.description()
+    }
+    return tableMapping
 }

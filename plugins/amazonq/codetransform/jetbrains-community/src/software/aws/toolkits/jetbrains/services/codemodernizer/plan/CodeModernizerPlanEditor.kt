@@ -16,11 +16,11 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
@@ -113,15 +113,6 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
     override fun addPropertyChangeListener(listener: PropertyChangeListener) {}
 
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
-
-    private fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): HashMap<String, String> {
-        val tableMapping = HashMap<String, String>()
-        stepZeroProgressUpdates.forEach { update ->
-            // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-            tableMapping[update.name()] = update.description()
-        }
-        return tableMapping
-    }
 
     private fun title(text: String) =
         Panel().apply {
@@ -437,19 +428,18 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         return transformationStepPanel
     }
 
-    private fun getTransformationIcon(name: String?): Icon {
-        return if (name == message("codemodernizer.migration_plan.body.info.lines_of_code_message")) {
-            if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_CLOCK_LIGHT else AwsIcons.CodeTransform.PLAN_CLOCK_DARK
-        } else if (name == message("codemodernizer.migration_plan.body.info.dependency_replace_message")) {
-            if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEPENDENCIES_LIGHT else AwsIcons.CodeTransform.PLAN_DEPENDENCIES_DARK
-        } else if (name == message("codemodernizer.migration_plan.body.info.deprecated_code_message")) {
-            if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_STEP_INTO_LIGHT else AwsIcons.CodeTransform.PLAN_STEP_INTO_DARK
-        } else if (name == message("codemodernizer.migration_plan.body.info.files_changed_message")) {
-            if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_FILE_LIGHT else AwsIcons.CodeTransform.PLAN_FILE_DARK
-        } else {
-            if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEFAULT_LIGHT else AwsIcons.CodeTransform.PLAN_DEFAULT_DARK
+    private fun getTransformationIcon(name: String?): Icon =
+        when (name) {
+            message("codemodernizer.migration_plan.body.info.lines_of_code_message") ->
+                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_CLOCK_LIGHT else AwsIcons.CodeTransform.PLAN_CLOCK_DARK
+            message("codemodernizer.migration_plan.body.info.dependency_replace_message") ->
+                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEPENDENCIES_LIGHT else AwsIcons.CodeTransform.PLAN_DEPENDENCIES_DARK
+            message("codemodernizer.migration_plan.body.info.deprecated_code_message") ->
+                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_STEP_INTO_LIGHT else AwsIcons.CodeTransform.PLAN_STEP_INTO_DARK
+            message("codemodernizer.migration_plan.body.info.files_changed_message") ->
+                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_FILE_LIGHT else AwsIcons.CodeTransform.PLAN_FILE_DARK
+            else -> if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEFAULT_LIGHT else AwsIcons.CodeTransform.PLAN_DEFAULT_DARK
         }
-    }
 
     private fun transformationPlanInfo(table: PlanTable) =
         JPanel().apply {
