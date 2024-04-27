@@ -447,6 +447,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
+    fun setEditorListeners() {
+        runInEdt {
+            EditorFactory.getInstance().eventMulticaster.addDocumentListener(documentListener, project)
+        }
+    }
+
     private fun addListeners() {
         fileNodeLookup.keys.forEach { file ->
             runInEdt {
@@ -455,9 +461,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     LOG.error { message("codewhisperer.codescan.file_not_found", file.path) }
                     return@runInEdt
                 }
+                document.removeDocumentListener(documentListener)
                 document.addDocumentListener(documentListener, codeScanIssuesContent)
             }
         }
+        EditorFactory.getInstance().eventMulticaster.removeEditorMouseMotionListener(editorMouseListener)
         EditorFactory.getInstance().eventMulticaster.addEditorMouseMotionListener(
             editorMouseListener,
             codeScanIssuesContent
