@@ -28,8 +28,9 @@ data class PlanTableRow(
     val filePath: String?,
 ) {
     fun getValueForColumn(col: String): String? =
-        // do not need "name" and "value" here since they are not used to display tables
         when (col) {
+            "name" -> name
+            "value" -> value
             "dependencyName" -> dependency
             "action" -> action
             "currentVersion" -> currentVersion

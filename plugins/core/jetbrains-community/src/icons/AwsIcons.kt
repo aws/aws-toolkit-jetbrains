@@ -163,6 +163,10 @@ object AwsIcons {
         @JvmField val PLAN_ARROW_LIGHT = load("/icons/resources/codetransform/transform-arrow-light.svg")
 
         @JvmField val PLAN_ARROW_DARK = load("/icons/resources/codetransform/transform-arrow-dark.svg")
+
+        @JvmField val PLAN_DEFAULT_LIGHT = load("/icons/resources/codetransform/transform-default-light.svg")
+
+        @JvmField val PLAN_DEFAULT_DARK = load("/icons/resources/codetransform/transform-default-dark.svg")
     }
 
     private fun load(path: String): Icon = IconLoader.getIcon(path, AwsIcons::class.java)

@@ -86,7 +86,7 @@ open class CodeModernizerArtifact(
                     ?: throw RuntimeException("Could not find manifest")
             try {
                 val manifest = MAPPER.readValue(manifestFile, CodeModernizerManifest::class.java)
-                if (manifest.version == 0.0F || manifest.patchesRoot == null || manifest.summaryRoot == null) {
+                if (manifest.version == 0.0F) {
                     throw RuntimeException(
                         "Unable to deserialize the manifest",
                     )
