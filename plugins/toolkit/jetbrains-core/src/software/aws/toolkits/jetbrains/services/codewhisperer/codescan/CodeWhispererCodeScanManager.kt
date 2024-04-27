@@ -461,7 +461,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     LOG.error { message("codewhisperer.codescan.file_not_found", file.path) }
                     return@runInEdt
                 }
-                document.removeDocumentListener(documentListener)
                 document.addDocumentListener(documentListener, codeScanIssuesContent)
             }
         }
