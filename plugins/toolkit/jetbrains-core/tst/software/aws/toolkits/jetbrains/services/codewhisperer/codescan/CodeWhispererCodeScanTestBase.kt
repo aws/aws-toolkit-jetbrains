@@ -248,12 +248,15 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     ) {
         val payloadMetadata = sessionConfigSpy.getProjectPayloadMetadata()
         assertNotNull(payloadMetadata)
-        val (includedSourceFiles, srcPayloadSize, totalLines, language) = payloadMetadata
+        val includedSourceFiles = payloadMetadata.sourceFiles
+        val srcPayloadSize = payloadMetadata.payloadSize
+        val totalLines = payloadMetadata.linesScanned
+        val maxCountLanguage = payloadMetadata.language
         assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)
         assertThat(srcPayloadSize).isEqualTo(totalSize)
         assertThat(totalLines).isEqualTo(expectedTotalLines)
         assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
-        assertThat(payloadMetadata.language).isEqualTo(payloadLanguage)
+        assertThat(maxCountLanguage).isEqualTo(payloadLanguage)
     }
 
     internal fun assertE2ERunsSuccessfully(
