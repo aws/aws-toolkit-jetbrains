@@ -560,6 +560,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
         // Remove the old scan nodes from the file node.
         fileNode.removeAllChildren()
+        // Remove the entry for the file from the scan nodes lookup.
+        scanNodesLookup.remove(file)
+
 
         // Add new issues to the file node.
         newIssues.forEach { issue ->
