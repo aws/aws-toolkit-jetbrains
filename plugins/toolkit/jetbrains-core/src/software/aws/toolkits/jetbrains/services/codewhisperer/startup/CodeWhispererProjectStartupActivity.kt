@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
@@ -12,10 +13,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
@@ -24,6 +24,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.utils.isQConnected
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
@@ -38,7 +40,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
      * (2) existing users open the IDE (automatically triggered)
      */
     override fun runActivity(project: Project) {
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isQConnected(project)) return
 
         // ---- Everything below will be triggered only when CW is enabled, everything above will be triggered once per project ----
 
@@ -48,7 +50,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
 
         // Reconnect CodeWhisperer on startup
         promptReAuth(project, isPluginStarting = true)
-        if (isCodeWhispererExpired(project)) return
+        if (isQExpired(project)) return
 
         // Init featureConfig job
         initFeatureConfigPollingJob(project)
@@ -64,12 +66,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         project.messageBus.connect().subscribe(CODEWHISPERER_USER_ACTION_PERFORMED, CodeWhispererImportAdderListener)
 
         //  Run Proactive Code File Scan and disabling Auto File Scan for Builder Id Users.
+        val actionManager = CodeWhispererExplorerActionManager.getInstance()
+        actionManager.setMonthlyQuotaForCodeScansExceeded(false)
         if (isUserBuilderId(project)) {
-            CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(project, false)
+            actionManager.setAutoCodeScan(project, false)
         } else {
-            CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.SecurityScanType.FILE)
-            runOnce = true
+            EditorFactory.getInstance().eventMulticaster.addDocumentListener(CodeWhispererCodeScanDocumentListener(project), project)
+            val scanManager = CodeWhispererCodeScanManager.getInstance(project)
+            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
+        runOnce = true
     }
 
     // Start a job that runs every 30 mins

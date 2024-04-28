@@ -10,14 +10,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.serviceContainer.NonInjectable
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
@@ -33,39 +27,20 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeature
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import javax.swing.JComponent
 
-fun isQConnected(project: Project): Boolean {
-    val manager = ToolkitConnectionManager.getInstance(project)
-    val isQEnabled = manager.isFeatureEnabled(QConnection.getInstance())
-    val isCWEnabled = manager.isFeatureEnabled(CodeWhispererConnection.getInstance())
-    getLogger<AmazonQToolWindow>().debug {
-        "isQConnected return ${isQEnabled && isCWEnabled}; isFeatureEnabled(Q)=$isQEnabled; isFeatureEnabled(CW)=$isCWEnabled"
-    }
-    return isQEnabled && isCWEnabled
-}
-
 @Service(Service.Level.PROJECT)
-class AmazonQToolWindow @NonInjectable constructor(
+class AmazonQToolWindow private constructor(
     private val project: Project,
-    private val appSource: AppSource,
-    private val browserConnector: BrowserConnector,
-    private val editorThemeAdapter: EditorThemeAdapter,
+    private val scope: CoroutineScope
 ) : Disposable {
+    private val appSource = AppSource()
+    private val browserConnector = BrowserConnector()
+    private val editorThemeAdapter = EditorThemeAdapter()
 
     private val chatPanel = AmazonQPanel(parent = this)
-    private val loginPanel = QWebviewPanel.getInstance(project)
 
     val component: JComponent = chatPanel.component
 
     private val appConnections = mutableListOf<AppConnection>()
-
-    private val scope = disposableCoroutineScope(this)
-
-    constructor(project: Project) : this(
-        project = project,
-        appSource = AppSource(),
-        browserConnector = BrowserConnector(),
-        editorThemeAdapter = EditorThemeAdapter(),
-    )
 
     init {
         initConnections()
@@ -115,7 +90,7 @@ class AmazonQToolWindow @NonInjectable constructor(
 
     private fun connectUi() {
         val chatBrowser = chatPanel.browser ?: return
-        val loginBrowser = loginPanel.browser ?: return
+        val loginBrowser = QWebviewPanel.getInstance(project).browser ?: return
 
         chatBrowser.init(
             isCodeTransformAvailable = isCodeTransformAvailable(project),

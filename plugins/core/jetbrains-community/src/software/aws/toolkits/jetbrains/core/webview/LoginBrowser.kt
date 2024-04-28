@@ -3,26 +3,28 @@
 
 package software.aws.toolkits.jetbrains.core.webview
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
-import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
-import java.util.function.Function
+import java.util.concurrent.Future
 
 data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
 
@@ -32,37 +34,19 @@ abstract class LoginBrowser(
     val webScriptUri: String
 ) {
     abstract val jcefBrowser: JBCefBrowserBase
-    abstract val query: JBCefJSQuery
-    abstract val handler: Function<String, JBCefJSQuery.Response>
 
     protected var currentAuthorization: PendingAuthorization? = null
 
-    // TODO: figure out a better way to do this UI update
-    protected val onPendingProfile: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+    protected data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit)
+
+    protected val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
+
+    protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
                 executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
                 currentAuthorization = authorization
-            }
-        }
-    }
-
-    // TODO: remove it
-    // TODO: figure out a better way to do this UI update
-    protected val onPendingAwsId: () -> Unit = {
-        projectCoroutineScope(project).launch {
-            val conn = pollForConnection(ToolkitBearerTokenProvider.ssoIdentifier(SONO_URL, SONO_REGION))
-
-            conn?.let { c ->
-                val provider = (c as ManagedBearerSsoConnection).getConnectionSettings().tokenProvider.delegate
-                val authorization = pollForAuthorization(provider as InteractiveBearerTokenProvider)
-
-                if (authorization != null) {
-                    executeJS("window.ideClient.updateAuthorization(\"${userCodeFromAuthorization(authorization)}\")")
-                    currentAuthorization = authorization
-                    return@launch
-                }
             }
         }
     }
@@ -75,18 +59,24 @@ abstract class LoginBrowser(
         }
     }
 
+    protected fun cancelLogin() {
+        // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
+        // status. There might be a risk of race condition here by changing this global, for which effort
+        // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
+        // to browser.). The worst case is that the user will see a stale user code displayed, but not
+        // affecting the current login flow.
+        currentAuthorization?.progressIndicator?.cancel()
+        // TODO: telemetry
+    }
+
     fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
         is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
         else -> ""
     }
 
-    fun resetBrowserState() {
-        executeJS("window.ideClient.reset()")
-    }
-
     open fun loginBuilderId(scopes: List<String>) {
-        runInEdt {
-            Login.BuilderId(scopes, onPendingProfile) {}.loginBuilderId(project)
+        loginWithBackgroundContext {
+            Login.BuilderId(scopes, onPendingToken) {}.loginBuilderId(project)
             // TODO: telemetry
         }
     }
@@ -95,8 +85,8 @@ abstract class LoginBrowser(
         val onError: (String) -> Unit = { _ ->
             // TODO: telemetry
         }
-        runInEdt {
-            Login.IdC(url, region, scopes, onPendingProfile, onError).loginIdc(project)
+        loginWithBackgroundContext {
+            Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
             // TODO: telemetry
         }
     }
@@ -112,15 +102,37 @@ abstract class LoginBrowser(
         }
     }
 
-    protected fun loadWebView() {
-        jcefBrowser.loadHTML(getWebviewHTML())
+    protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> =
+        ApplicationManager.getApplication().executeOnPooledThread<T> {
+            runBlocking {
+                withBackgroundProgress(project, message("credentials.pending.title")) {
+                    blockingContext {
+                        action()
+                    }
+                }
+            }
+        }
+
+    abstract fun loadWebView(query: JBCefJSQuery)
+
+    protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
+        provider.pendingAuthorization
     }
 
-    protected fun getWebviewHTML(): String {
-        val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
-        val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
+    protected fun reauth(connection: ToolkitConnection?) {
+        if (connection is AwsBearerTokenConnection) {
+            loginWithBackgroundContext {
+                reauthConnectionIfNeeded(project, connection, onPendingToken)
+            }
+        }
+    }
 
-        val jsScripts = """
+    companion object {
+        fun getWebviewHTML(webScriptUri: String, query: JBCefJSQuery): String {
+            val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
+            val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
+
+            val jsScripts = """
             <script>
                 (function() {
                     window.ideApi = {
@@ -131,9 +143,9 @@ abstract class LoginBrowser(
                 }())
             </script>
             <script type="text/javascript" src="$webScriptUri"></script>
-        """.trimIndent()
+            """.trimIndent()
 
-        return """
+            return """
             <!DOCTYPE html>
             <html>
                 <head>
@@ -144,14 +156,7 @@ abstract class LoginBrowser(
                     $jsScripts
                 </body>
             </html>
-        """.trimIndent()
-    }
-
-    protected suspend fun pollForConnection(connectionId: String): ToolkitConnection? = pollFor {
-        ToolkitAuthManager.getInstance().getConnection(connectionId)
-    }
-
-    protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
-        provider.pendingAuthorization
+            """.trimIndent()
+        }
     }
 }

@@ -7,7 +7,6 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.plugins.PluginManagerConfigurable
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.ide.plugins.PluginManagerMain
-import com.intellij.ide.plugins.marketplace.MarketplaceRequests
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginId
@@ -17,9 +16,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -49,8 +46,8 @@ class QMigrationActivity : StartupActivity.DumbAware {
     private fun displayQMigrationInfo(project: Project) {
         if (AwsSettings.getInstance().isQMigrationNotificationShownOnce) return
 
-        val hasUsedCodeWhisperer = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(CodeWhispererConnection.getInstance())
-        val hasUsedQ = ToolkitConnectionManager.getInstance(project).isFeatureEnabled(QConnection.getInstance())
+        val hasUsedCodeWhisperer = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance()) != null
+        val hasUsedQ = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
         if (hasUsedCodeWhisperer || hasUsedQ) {
             // do auto-install
             installQPlugin(project, autoInstall = true)
@@ -62,11 +59,11 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 content = message("aws.q.migration.new_users.notify.message"),
                 project = project,
                 notificationActions = listOf(
-                    NotificationAction.createSimpleExpiring(message("aws.q.migration.action.read_more.text")) {
-                        installQPlugin(project, autoInstall = false)
-                    },
-                    NotificationAction.createSimple(message("aws.q.migration.action.install.text")) {
+                    NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
                         // TODO: open url
+                    },
+                    NotificationAction.createSimpleExpiring(message("aws.q.migration.action.install.text")) {
+                        installQPlugin(project, autoInstall = false)
                     }
                 )
             )
@@ -85,7 +82,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
             // TODO: change title
             object : Task.Backgroundable(project, "Installing Amazon Q...") {
                 override fun run(indicator: ProgressIndicator) {
-                    val succeeded = lookForPluginToInstall(indicator)
+                    val succeeded = lookForPluginToInstall(PluginId.getId(AwsToolkit.Q_PLUGIN_ID), indicator)
                     if (succeeded) {
                         if (!autoInstall) {
                             PluginManagerMain.notifyPluginsUpdated(project)
@@ -97,8 +94,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
                                 // TODO: change text
                                 notificationActions = listOf(
                                     NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
-                                        // TODO: change this
-                                        BrowserUtil.browse(URI(CodeWhispererConstants.CODEWHISPERER_LEARN_MORE_URI))
+                                        BrowserUtil.browse(URI(CodeWhispererConstants.Q_MARKETPLACE_URI))
                                     },
                                     NotificationAction.createSimple(message("aws.q.migration.action.manage_plugins.text")) {
                                         ShowSettingsUtil.getInstance().showSettingsDialog(
@@ -134,24 +130,6 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 }
             }
         )
-    }
-
-    private fun lookForPluginToInstall(progressIndicator: ProgressIndicator): Boolean {
-        try {
-            val qPluginId = PluginId.getId(AwsToolkit.Q_PLUGIN_ID)
-
-            // MarketplaceRequest class is marked as @ApiStatus.Internal
-            val descriptor = MarketplaceRequests.loadLastCompatiblePluginDescriptors(setOf(qPluginId))
-                .find { it.pluginId == qPluginId } ?: return false
-
-            val downloader = PluginDownloader.createDownloader(descriptor)
-            if (!downloader.prepareToInstall(progressIndicator)) return false
-            downloader.install()
-        } catch (e: Exception) {
-            LOG.error(e) { "Unable to auto-install Amazon Q" }
-            return false
-        }
-        return true
     }
 
     companion object {

@@ -28,12 +28,12 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -169,7 +169,7 @@ object CodeWhispererUtil {
     //   for example, when user performs security scan or fetch code completion for the first time
     // Return true if need to re-auth, false otherwise
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
-        if (!isCodeWhispererExpired(project)) return false
+        if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return maybeReauthProviderIfNeeded(project, tokenProvider) {
             runInEdt {
@@ -192,13 +192,11 @@ object CodeWhispererUtil {
             message("toolkit.sso_expire.dialog_message"),
             project,
             listOf(
-                NotificationAction.create(message("toolkit.sso_expire.dialog.yes_button")) { _, notification ->
+                NotificationAction.createSimpleExpiring(message("toolkit.sso_expire.dialog.yes_button")) {
                     reconnectCodeWhisperer(project)
-                    notification.expire()
                 },
-                NotificationAction.create(message("toolkit.sso_expire.dialog.no_button")) { _, notification ->
+                NotificationAction.createSimpleExpiring(message("toolkit.sso_expire.dialog.no_button")) {
                     CodeWhispererExplorerActionManager.getInstance().setConnectionExpiredDoNotShowAgain(true)
-                    notification.expire()
                 }
             )
         )

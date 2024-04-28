@@ -27,7 +27,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
-        <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager"/>
 
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
@@ -96,5 +95,12 @@
 
         <group id="aws.toolkit.jetbrains.core.services.codewhisperer.suggestions"
                class="software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup" />
+
+        <group id = "aws.toolkit.explorer.codewhisperer.codescan">
+            <action
+                id="aws.amazonq.explainCodeScanIssue"
+                class= "software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.ExplainCodeIssueAction"/>
+        </group>
+
     </actions>
 </idea-plugin>

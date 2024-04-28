@@ -39,26 +39,22 @@ object CodeWhispererConstants {
     // avoid ThrottlingException as much as possible.
     const val INVOCATION_INTERVAL: Long = 2050
 
-    const val CODEWHISPERER_LEARN_MORE_URI = "https://aws.amazon.com/codewhisperer"
-    const val CODEWHISPERER_SSO_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisperer-auth.html"
+    const val Q_MARKETPLACE_URI = "https://aws.amazon.com/q/developer/"
 
-    // update link in HelpIds
-    const val CODEWHISPERER_LOGIN_LEARN_MORE_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/codewhisper-setup-general.html"
     const val CODEWHISPERER_LOGIN_HELP_URI = "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
-    const val CODEWHISPERER_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/customizations.html"
-    const val CODEWHISPERER_WORKSHOP_URI =
-        "https://catalog.us-east-1.prod.workshops.aws/workshops/6838a1a5-4516-4153-90ce-ac49ca8e1357/03-getting-started/03-02-prompts"
-    const val CODEWHISPERER_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/language-ide-support.html"
+    const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
+    const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
     const val CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/features.html"
-    const val CODEWHISPERER_GITHUB_URI = "https://github.com/aws/aws-toolkit-jetbrains/issues"
+    const val Q_GITHUB_URI = "https://github.com/aws/aws-toolkit-jetbrains/issues"
 
     const val THROTTLING_MESSAGE = "Maximum recommendation count reached for this month."
 
     // Code scan feature constants
     val ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES = TextAttributes(null, null, JBColor.YELLOW, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
+    const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
     const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
-    const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 5 * 1024 * 1024 * 1024 // 5 GB
+    const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 500 * 1024 * 1024 // 500 MB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
     const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
@@ -80,6 +76,11 @@ object CodeWhispererConstants {
     const val EXTEND: String = "extend"
     const val AS: String = " as "
 
+    const val FILE_SCANS_LIMIT_REACHED = "You have reached the monthly quota of auto-scans."
+    const val PROJECT_SCANS_LIMIT_REACHED = "You have reached the monthly quota of project scans."
+    const val FILE_SCANS_THROTTLING_MESSAGE = "Maximum auto-scans count reached for this month"
+    const val PROJECT_SCANS_THROTTLING_MESSAGE = "Maximum project scan count reached for this month"
+
     // Date when Accountless is not supported
     val EXPIRE_DATE = SimpleDateFormat("yyyy-MM-dd").parse("2023-01-31")
 
@@ -98,9 +99,9 @@ object CodeWhispererConstants {
         const val DEACTIVATED = "Deactivated"
     }
 
-    enum class SecurityScanType {
-        FILE,
-        PROJECT
+    enum class CodeAnalysisScope(val value: String) {
+        FILE("FILE"),
+        PROJECT("PROJECT")
     }
 
     object Config {
@@ -176,7 +177,7 @@ public class S3Uploader {
 }"""
 
         private const val UNIT_TEST_CONTENT_JAVA =
-"""// TODO: Ask CodeWhisperer to write unit tests.
+"""// TODO: Ask Amazon Q to write unit tests.
 
 // Write a test case for the sum function.
 

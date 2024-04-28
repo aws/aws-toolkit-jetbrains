@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -21,30 +23,30 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
-import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.CredentialType
+import software.aws.toolkits.jetbrains.utils.isQConnected
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.telemetry.FeatureId
-import software.aws.toolkits.telemetry.Result
 import java.awt.event.ActionListener
 import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
-class QWebviewPanel private constructor(val project: Project) {
+class QWebviewPanel private constructor(val project: Project) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: QWebviewBrowser? = null
         private set
@@ -79,7 +81,7 @@ class QWebviewPanel private constructor(val project: Project) {
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
         } else {
-            browser = QWebviewBrowser(project).also {
+            browser = QWebviewBrowser(project, this).also {
                 webviewContainer.add(it.component())
             }
         }
@@ -88,15 +90,22 @@ class QWebviewPanel private constructor(val project: Project) {
     companion object {
         fun getInstance(project: Project) = project.service<QWebviewPanel>()
     }
+
+    override fun dispose() {
+    }
 }
 
-class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrowser.DOMAIN, QWebviewBrowser.WEB_SCRIPT_URI) {
+class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : LoginBrowser(
+    project,
+    QWebviewBrowser.DOMAIN,
+    QWebviewBrowser.WEB_SCRIPT_URI
+) {
     // TODO: confirm if we need such configuration or the default is fine
-    override val jcefBrowser = createBrowser(project)
-    override val query = JBCefJSQuery.create(jcefBrowser)
+    override val jcefBrowser = createBrowser(parentDisposable)
+    private val query = JBCefJSQuery.create(jcefBrowser)
     private val objectMapper = jacksonObjectMapper()
 
-    override val handler = Function<String, JBCefJSQuery.Response> {
+    private val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
         val command = jsonTree.get("command").asText()
         LOG.debug { "Data received from Q browser: ${jsonTree.asText()}" }
@@ -106,8 +115,15 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                 this.prepareBrowser(BrowserState(FeatureId.Q, false))
             }
 
+            "selectConnection" -> {
+                val connId = jsonTree.get("connectionId").asText()
+                this.selectionSettings[connId]?.let { settings ->
+                    settings.onChange(settings.currentSelection)
+                }
+            }
+
             "loginBuilderId" -> {
-                loginBuilderId(CODEWHISPERER_SCOPES + Q_SCOPES)
+                loginBuilderId(Q_SCOPES)
             }
 
             "loginIdC" -> {
@@ -116,28 +132,19 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                 val region = jsonTree.get("region").asText()
                 val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
 
-                val scopes = CODEWHISPERER_SCOPES + Q_SCOPES
+                val scopes = Q_SCOPES
 
                 loginIdC(url, awsRegion, scopes)
             }
 
             "cancelLogin" -> {
-                // TODO: differentiate BearerToken vs. SsoProfile cred type
-                AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
-
-                // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
-                // status. There might be a risk of race condition here by changing this global, for which effort
-                // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
-                // to browser.). The worst case is that the user will see a stale user code displayed, but not
-                // affecting the current login flow.
-                currentAuthorization?.progressIndicator?.cancel()
+                cancelLogin()
             }
 
             "signout" -> {
-                // TODO: CodeWhispererConnection/QConnection
                 (
                     ToolkitConnectionManager.getInstance(project)
-                        .activeConnectionForFeature(CodeWhispererConnection.getInstance()) as? AwsBearerTokenConnection
+                        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
                     SsoLogoutAction(connection).actionPerformed(
                         AnActionEvent.createFromDataContext(
@@ -150,7 +157,13 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
             }
 
             "reauth" -> {
-                // TODO: implementation
+                ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
+                    if (conn is ManagedBearerSsoConnection) {
+                        ApplicationManager.getApplication().executeOnPooledThread {
+                            reauthConnectionIfNeeded(project, conn, onPendingToken)
+                        }
+                    }
+                }
             }
 
             else -> {
@@ -172,7 +185,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                 ),
             )
 
-        loadWebView()
+        loadWebView(query)
 
         query.addHandler(handler)
     }
@@ -180,6 +193,28 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
     fun component(): JComponent? = jcefBrowser.component
 
     override fun prepareBrowser(state: BrowserState) {
+        // TODO: duplicate code in ToolkitLoginWebview
+        selectionSettings.clear()
+
+        if (!isQConnected(project)) {
+            // existing connections
+            // TODO: filter "active"(state == 'AUTHENTICATED') connection only maybe?
+            val bearerCreds = ToolkitAuthManager.getInstance().listConnections().filterIsInstance<AwsBearerTokenConnection>().associate {
+                it.id to BearerConnectionSelectionSettings(it) { conn ->
+                    if (conn.isSono()) {
+                        loginBuilderId(Q_SCOPES)
+                    } else {
+                        // TODO: rewrite scope logic, it's short term solution only
+                        AwsRegionProvider.getInstance()[conn.region]?.let { region ->
+                            loginIdC(conn.startUrl, region, Q_SCOPES)
+                        }
+                    }
+                }
+            }
+
+            selectionSettings.putAll(bearerCreds)
+        }
+
         // previous login
         val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
 
@@ -189,7 +224,7 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
         }
 
         // TODO: pass "REAUTH" if connection expires
-        val stage = if (isCodeWhispererExpired(project)) {
+        val stage = if (isQExpired(project)) {
             "REAUTH"
         } else {
             "START"
@@ -204,7 +239,9 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
                     startUrl: '${lastLoginIdcInfo.startUrl}',
                     region: '${lastLoginIdcInfo.region}'
                 },
-                cancellable: ${state.browserCancellable}
+                cancellable: ${state.browserCancellable},
+                feature: '${state.feature}',
+                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
@@ -213,6 +250,10 @@ class QWebviewBrowser(val project: Project) : LoginBrowser(project, QWebviewBrow
     override fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
         LOG.error { "IAM is not supported by Q" }
         return
+    }
+
+    override fun loadWebView(query: JBCefJSQuery) {
+        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
     }
 
     companion object {

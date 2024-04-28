@@ -60,6 +60,12 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.IsAutoCodeScanEnabled] = isAutoEnabledForCodeScan
     }
 
+    fun isMonthlyQuotaForCodeScansExceeded(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsMonthlyQuotaForCodeScansExceeded, false)
+
+    fun setMonthlyQuotaForCodeScansExceeded(isMonthlyQuotaForCodeScansExceeded: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.IsMonthlyQuotaForCodeScansExceeded] = isMonthlyQuotaForCodeScansExceeded
+    }
+
     fun setHasShownNewOnboardingPage(hasShownNewOnboardingPage: Boolean) {
         actionState.value[CodeWhispererExploreStateType.HasShownNewOnboardingPage] = hasShownNewOnboardingPage
     }
@@ -111,6 +117,12 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         setAutoEnabledForCodeScan(isAutoEnabledForCodeScan)
         val autoCodeScanState = if (isAutoEnabledForCodeScan) CodeWhispererConstants.AutoCodeScan.ACTIVATED else CodeWhispererConstants.AutoCodeScan.DEACTIVATED
         AwsTelemetry.modifySetting(project, settingId = CodeWhispererConstants.AutoCodeScan.SETTING_ID, settingState = autoCodeScanState)
+    }
+
+    fun getIsFirstRestartAfterQInstall(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsFirstRestartAfterQInstall, true)
+
+    fun setIsFirstRestartAfterQInstall(isFirstRestartAfterQInstall: Boolean) {
+        actionState.value[CodeWhispererExploreStateType.IsFirstRestartAfterQInstall] = isFirstRestartAfterQInstall
     }
 
     @Deprecated("Accountless credential will be removed soon")
