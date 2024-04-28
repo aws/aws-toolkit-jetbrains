@@ -435,7 +435,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
     private fun getTransformationIcon(name: String?): Icon =
         when (name) {
             "linesOfCode" ->
-                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_CLOCK_LIGHT else AwsIcons.CodeTransform.PLAN_CLOCK_DARK
+                if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_VARIABLES_LIGHT else AwsIcons.CodeTransform.PLAN_VARIABLES_DARK
             "plannedDependencyChanges" ->
                 if (JBColor.isBright()) AwsIcons.CodeTransform.PLAN_DEPENDENCIES_LIGHT else AwsIcons.CodeTransform.PLAN_DEPENDENCIES_DARK
             "plannedDeprecatedApiChanges" ->

@@ -144,9 +144,9 @@ object AwsIcons {
 
         @JvmField val TIMELINE_STEP = load("/icons/resources/codetransform/transform-timeline-step-done.svg") // 16 * 16
 
-        @JvmField val PLAN_CLOCK_LIGHT = load("/icons/resources/codetransform/transform-clock-light.svg")
+        @JvmField val PLAN_VARIABLES_LIGHT = load("/icons/resources/codetransform/transform-variables-light.svg")
 
-        @JvmField val PLAN_CLOCK_DARK = load("/icons/resources/codetransform/transform-clock-dark.svg")
+        @JvmField val PLAN_VARIABLES_DARK = load("/icons/resources/codetransform/transform-variables-dark.svg")
 
         @JvmField val PLAN_STEP_INTO_LIGHT = load("/icons/resources/codetransform/transform-step-into-light.svg")
 
