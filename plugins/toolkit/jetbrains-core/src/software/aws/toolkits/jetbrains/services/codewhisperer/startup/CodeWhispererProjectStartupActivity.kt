@@ -54,7 +54,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
 
-        // ---- Everything above will be triggered once per project and everything below will be triggered once after startup ----
+        // ---- Everything below will be triggered once after startup ----
 
         if (runOnce) return
 
