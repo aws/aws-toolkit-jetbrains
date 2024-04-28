@@ -110,7 +110,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         // Adding 16 Bytes for read me Markdown file across all tests.
         assertThat(payload.context.srcPayloadSize).isEqualTo(651)
-        assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Csharp)
+        assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Yaml)
         assertThat(payload.context.totalLines).isEqualTo(29)
         assertNotNull(payload.srcZip)
 
