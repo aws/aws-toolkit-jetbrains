@@ -40,6 +40,8 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     override fun runActivity(project: Project) {
         if (!isQConnected(project)) return
 
+        // ---- Everything below will be triggered only when CW is enabled ----
+
         val actionManager = CodeWhispererExplorerActionManager.getInstance()
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         actionManager.setMonthlyQuotaForCodeScansExceeded(false)
@@ -52,7 +54,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
 
-        // ---- Everything below will be triggered only when CW is enabled, everything above will be triggered once per project ----
+        // ---- Everything above will be triggered once per project and everything below will be triggered once after startup ----
 
         if (runOnce) return
 
