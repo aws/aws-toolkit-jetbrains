@@ -1,20 +1,19 @@
 <!-- Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" require-restart="true">
     <id>amazon.q</id>
+    <name>Amazon Q</name>
+    <description>
+        Amazon Q is an interactive, generative AI-powered assistant that gives you expert guidance when building, troubleshooting, and transforming applications on AWS.
+    </description>
     <version>1.0</version>
     <vendor email="aws-toolkit-jetbrains@amazon.com" url="https://github.com/aws/aws-toolkit-jetbrains">AWS</vendor>
-    <idea-version since-build="231" />
+    <idea-version since-build="232" />
     <depends>com.intellij.modules.platform</depends>
+    <depends optional="true">org.jetbrains.idea.maven</depends>
     <resource-bundle>software.aws.toolkits.resources.MessagesBundle</resource-bundle>
 
     <depends>aws.toolkit.core</depends>
     <xi:include href="/META-INF/module-amazonq.xml" />
-
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- each plugin needs its own instance of these -->
-<!--        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>-->
-<!--        <projectService serviceImplementation="software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>-->
-    </extensions>
 </idea-plugin>
