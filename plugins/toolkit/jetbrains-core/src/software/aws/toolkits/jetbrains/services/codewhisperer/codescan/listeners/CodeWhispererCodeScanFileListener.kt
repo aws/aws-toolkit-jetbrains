@@ -11,11 +11,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 
 internal class CodeWhispererCodeScanFileListener(val project: Project) : EditorFactoryListener {
-    val scanManager = CodeWhispererCodeScanManager.getInstance(project)
     override fun editorCreated(event: EditorFactoryEvent) {
-        scanManager.addListeners()
         if (!CodeWhispererExplorerActionManager.getInstance().isMonthlyQuotaForCodeScansExceeded()) {
-            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
+            CodeWhispererCodeScanManager.getInstance(project).debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
     }
 }
