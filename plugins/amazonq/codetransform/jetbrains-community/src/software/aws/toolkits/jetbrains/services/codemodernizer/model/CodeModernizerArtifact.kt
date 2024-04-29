@@ -91,7 +91,6 @@ open class CodeModernizerArtifact(
             }
         }
 
-        // TODO read on file operations
         @OptIn(ExperimentalPathApi::class)
         private fun extractPatches(manifest: CodeModernizerManifest): List<VirtualFile> {
             val fileSystem = LocalFileSystem.getInstance()
