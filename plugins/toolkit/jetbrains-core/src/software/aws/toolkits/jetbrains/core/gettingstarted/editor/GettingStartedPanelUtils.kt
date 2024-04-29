@@ -115,6 +115,30 @@ fun checkIamConnectionValidity(project: Project): ActiveConnection {
     }
 }
 
+fun checkConnectionValidity(project: Project): ActiveConnection {
+    val tokenFeatureSets = listOf(
+        BearerTokenFeatureSet.CODECATALYST,
+        BearerTokenFeatureSet.Q,
+        BearerTokenFeatureSet.CODEWHISPERER
+    )
+    var result = checkIamConnectionValidity(project)
+
+    if (result !is ActiveConnection.ValidIam) {
+        for (featureSet in tokenFeatureSets) {
+            when (val bearerConnectionStatus = checkBearerConnectionValidity(project, featureSet)) {
+                is ActiveConnection.ExpiredBearer -> result = bearerConnectionStatus
+                is ActiveConnection.ValidBearer -> {
+                    result = bearerConnectionStatus
+                    return result
+                }
+                else -> continue
+            }
+        }
+    }
+
+    return result
+}
+
 fun isCredentialSso(providerId: String): ActiveConnectionType {
     val profileName = providerId.split("-").first()
     val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map {

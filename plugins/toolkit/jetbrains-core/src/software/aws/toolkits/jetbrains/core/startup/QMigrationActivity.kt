@@ -27,6 +27,9 @@ import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsToolkitBundle.message
+import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.net.URI
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -60,12 +63,27 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 project = project,
                 notificationActions = listOf(
                     NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
-                        // TODO: open url
+                        BrowserUtil.browse(URI(CodeWhispererConstants.Q_MARKETPLACE_URI))
+                        ToolkitTelemetry.showNotification(
+                            id = Q_STANDALONE_CHANGE_ID,
+                            component = Component.ReadMore,
+                            result = Result.Succeeded
+                        )
                     },
                     NotificationAction.createSimpleExpiring(message("aws.q.migration.action.install.text")) {
                         installQPlugin(project, autoInstall = false)
+                        ToolkitTelemetry.showNotification(
+                            id = Q_STANDALONE_CHANGE_ID,
+                            component = Component.Install,
+                            result = Result.Succeeded
+                        )
                     }
                 )
+            )
+            ToolkitTelemetry.showNotification(
+                id = Q_STANDALONE_CHANGE_ID,
+                component = Component.Unknown,
+                result = Result.Succeeded
             )
         }
         AwsSettings.getInstance().isQMigrationNotificationShownOnce = true
@@ -95,6 +113,11 @@ class QMigrationActivity : StartupActivity.DumbAware {
                                 notificationActions = listOf(
                                     NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
                                         BrowserUtil.browse(URI(CodeWhispererConstants.Q_MARKETPLACE_URI))
+                                        ToolkitTelemetry.showNotification(
+                                            id = Q_STANDALONE_INSTALLED_ID,
+                                            component = Component.ReadMore,
+                                            result = Result.Succeeded
+                                        )
                                     },
                                     NotificationAction.createSimple(message("aws.q.migration.action.manage_plugins.text")) {
                                         ShowSettingsUtil.getInstance().showSettingsDialog(
@@ -103,11 +126,26 @@ class QMigrationActivity : StartupActivity.DumbAware {
                                         ) { configurable: PluginManagerConfigurable ->
                                             configurable.openMarketplaceTab("Amazon Q")
                                         }
+                                        ToolkitTelemetry.showNotification(
+                                            id = Q_STANDALONE_INSTALLED_ID,
+                                            component = Component.ManageExtensions,
+                                            result = Result.Succeeded
+                                        )
                                     },
                                     NotificationAction.createSimpleExpiring(message("aws.q.migration.action.restart.text")) {
+                                        ToolkitTelemetry.showNotification(
+                                            id = Q_STANDALONE_INSTALLED_ID,
+                                            component = Component.GotIt,
+                                            result = Result.Succeeded
+                                        )
                                         ApplicationManager.getApplication().restart()
                                     },
                                 )
+                            )
+                            ToolkitTelemetry.showNotification(
+                                id = Q_STANDALONE_INSTALLED_ID,
+                                component = Component.Unknown,
+                                result = Result.Succeeded
                             )
                         }
                     } else {
@@ -123,8 +161,18 @@ class QMigrationActivity : StartupActivity.DumbAware {
                                     ) { configurable: PluginManagerConfigurable ->
                                         configurable.openMarketplaceTab("Amazon Q")
                                     }
+                                    ToolkitTelemetry.showNotification(
+                                        id = Q_STANDALONE_INSTALLED_ID,
+                                        component = Component.ManageExtensions,
+                                        result = Result.Failed
+                                    )
                                 }
                             )
+                        )
+                        ToolkitTelemetry.showNotification(
+                            id = Q_STANDALONE_INSTALLED_ID,
+                            component = Component.Unknown,
+                            result = Result.Failed
                         )
                     }
                 }
@@ -134,5 +182,8 @@ class QMigrationActivity : StartupActivity.DumbAware {
 
     companion object {
         private val LOG = getLogger<QMigrationActivity>()
+
+        private const val Q_STANDALONE_INSTALLED_ID = "amazonQStandaloneInstalled"
+        private const val Q_STANDALONE_CHANGE_ID = "amazonQStandaloneChange"
     }
 }

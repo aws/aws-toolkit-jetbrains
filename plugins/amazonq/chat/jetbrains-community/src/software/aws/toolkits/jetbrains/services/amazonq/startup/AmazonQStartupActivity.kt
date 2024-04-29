@@ -7,11 +7,14 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.ToolWindowManager
+import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 
 class AmazonQStartupActivity : ProjectActivity {
+    private var runOnce = false
+
     override suspend fun execute(project: Project) {
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)
@@ -23,5 +26,9 @@ class AmazonQStartupActivity : ProjectActivity {
                 CodeWhispererExplorerActionManager.getInstance().setIsFirstRestartAfterQInstall(false)
             }
         }
+
+        if (runOnce) return
+        emitUserState(project)
+        runOnce = true
     }
 }
