@@ -68,6 +68,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                         CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                     )
                     // key "0" reserved for job statistics table
+                    // comes from "name" field of each progressUpdate in step zero of plan
                     if ("0" in tableMapping) {
                         add(
                             transformationPlanInfo(mapper.readValue(tableMapping["0"], PlanTable::class.java)),
