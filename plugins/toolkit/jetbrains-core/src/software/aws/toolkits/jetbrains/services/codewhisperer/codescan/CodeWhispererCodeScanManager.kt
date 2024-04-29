@@ -436,7 +436,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun reset() = runInEdt {
         // clear the codeScanTreeNodeRoot
-        codeScanTreeNodeRoot.removeAllChildren()
+        synchronized(codeScanTreeNodeRoot) {
+            codeScanTreeNodeRoot.removeAllChildren()
+        }
         // Remove previous document listeners before starting a new scan.
         fileNodeLookup.clear()
         // Erase all range highlighter before cleaning up.
@@ -506,10 +508,16 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private fun createCodeScanIssuesTree(codeScanIssues: List<CodeWhispererCodeScanIssue>): DefaultMutableTreeNode {
         LOG.debug { "Rendering response from the scan API" }
 
-        codeScanTreeNodeRoot.removeAllChildren()
+        synchronized(codeScanTreeNodeRoot) {
+            codeScanTreeNodeRoot.removeAllChildren()
+        }
         // clear file node lookup and scan node lookup
-        fileNodeLookup.clear()
-        scanNodesLookup.clear()
+        synchronized(fileNodeLookup) {
+            fileNodeLookup.clear()
+        }
+        synchronized(scanNodesLookup) {
+            scanNodesLookup.clear()
+        }
 
         codeScanIssues.forEach { issue ->
             val fileNode = synchronized(fileNodeLookup) {
@@ -549,10 +557,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
             }
         }
         // Remove the old scan nodes from the file node.
-        fileNode.removeAllChildren()
+        synchronized(fileNode) {
+            fileNode.removeAllChildren()
+        }
         // Remove the entry for the file from the scan nodes lookup.
-        if (scanNodesLookup.containsKey(file)) {
-            scanNodesLookup.remove(file)
+        synchronized(scanNodesLookup) {
+            if (scanNodesLookup.containsKey(file)) {
+                scanNodesLookup.remove(file)
+            }
         }
 
         // Add new issues to the file node.
