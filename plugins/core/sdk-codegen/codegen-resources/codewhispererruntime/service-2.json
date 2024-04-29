@@ -1696,7 +1696,8 @@
             "enum":[
                 "IN_PROGRESS",
                 "COMPLETED",
-                "FAILED"
+                "FAILED",
+                "PAUSED"
             ]
         },
         "TransformationProjectState":{
