@@ -115,6 +115,13 @@ fun checkIamConnectionValidity(project: Project): ActiveConnection {
     }
 }
 
+/**
+ * Finds the first valid [ActiveConnection] and returns it.
+ *
+ * Inspects IAM connection first and subsequently traverses all bearer connection types.
+ * If a valid connection is not found, an expired state will be returned if at least one
+ * connection resolved to expired. Otherwise [ActiveConnection.NotConnected] is returned.
+ */
 fun checkConnectionValidity(project: Project): ActiveConnection {
     val tokenFeatureSets = listOf(
         BearerTokenFeatureSet.CODECATALYST,

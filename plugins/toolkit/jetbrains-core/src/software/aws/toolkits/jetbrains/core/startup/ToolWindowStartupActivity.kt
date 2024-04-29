@@ -10,7 +10,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ToolWindowStartupActivity : ProjectActivity {
-    private var runOnce = AtomicBoolean(false)
+    private val runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
         // initialize html contents in BGT so users don't have to wait when they open the tool window
