@@ -4,13 +4,17 @@
 package software.aws.toolkits.jetbrains.core.explorer.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -19,12 +23,20 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
+import com.intellij.ui.jcef.JBCefClient
 import com.intellij.ui.jcef.JBCefJSQuery
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import migration.software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import org.cef.CefApp
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
@@ -51,7 +63,8 @@ import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
-class ToolkitWebviewPanel(val project: Project) : Disposable {
+@Service(Service.Level.PROJECT)
+class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: ToolkitWebviewBrowser? = null
         private set
@@ -80,6 +93,24 @@ class ToolkitWebviewPanel(val project: Project) : Disposable {
         }
     }
 
+    // TODO: A simplified version of theme flow that only listen for LAF dark mode changes, will refactor later
+    private val lafFlow = callbackFlow {
+        val connection = ApplicationManager.getApplication().messageBus.connect()
+        connection.subscribe(
+            LafManagerListener.TOPIC,
+            LafManagerListener {
+                try {
+                    trySend(!JBColor.isBright())
+                } catch (e: Exception) {
+                    LOG.error(e) { "Cannot send dark mode status" }
+                }
+            }
+        )
+
+        send(!JBColor.isBright())
+        awaitClose { connection.disconnect() }
+    }
+
     init {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
@@ -90,10 +121,19 @@ class ToolkitWebviewPanel(val project: Project) : Disposable {
                 webviewContainer.add(it.component())
             }
         }
+
+        lafFlow
+            .distinctUntilChanged()
+            .onEach {
+                val cefBrowser = browser?.jcefBrowser?.cefBrowser ?: return@onEach
+                cefBrowser.executeJavaScript("window.changeTheme($it)", cefBrowser.url, 0)
+            }
+            .launchIn(scope)
     }
 
     companion object {
         fun getInstance(project: Project?) = project?.service<ToolkitWebviewPanel>() ?: error("")
+        private val LOG = getLogger<ToolkitWebviewPanel>()
     }
 
     override fun dispose() {}
@@ -106,19 +146,21 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     ToolkitWebviewBrowser.WEB_SCRIPT_URI
 ) {
     // TODO: confirm if we need such configuration or the default is fine
+    // TODO: move JcefBrowserUtils to core
     override val jcefBrowser: JBCefBrowserBase by lazy {
-        val client = JBCefApp.getInstance().createClient()
+        val client = JBCefApp.getInstance().createClient().apply {
+            setProperty(JBCefClient.Properties.JS_QUERY_POOL_SIZE, 5)
+        }
         Disposer.register(parentDisposable, client)
         JBCefBrowserBuilder()
             .setClient(client)
             .setOffScreenRendering(true)
-            .setCreateImmediately(true)
             .build()
     }
-    override val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
+    private val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
     private val objectMapper = jacksonObjectMapper()
 
-    override val handler = Function<String, JBCefJSQuery.Response> {
+    private val handler = Function<String, JBCefJSQuery.Response> {
         val jsonTree = objectMapper.readTree(it)
         val command = jsonTree.get("command").asText()
         LOG.debug { "Data received from Toolkit browser: ${jsonTree.toPrettyString()}" }
@@ -208,7 +250,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 ),
             )
 
-        loadWebView()
+        loadWebView(query)
 
         query.addHandler(handler)
     }
@@ -295,6 +337,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 }
             }
         }
+    }
+
+    override fun loadWebView(query: JBCefJSQuery) {
+        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
     }
 
     fun component(): JComponent? = jcefBrowser.component
