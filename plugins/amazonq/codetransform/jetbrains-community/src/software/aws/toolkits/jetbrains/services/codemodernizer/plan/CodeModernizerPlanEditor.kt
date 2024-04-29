@@ -59,6 +59,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             throw RuntimeException("GetPlan response missing step 0 progress updates with table data")
         }
     private val mapper = jacksonObjectMapper()
+
     // to-do: convert to UI DSL
     private val contentPanel =
         JPanel(GridBagLayout()).apply {
