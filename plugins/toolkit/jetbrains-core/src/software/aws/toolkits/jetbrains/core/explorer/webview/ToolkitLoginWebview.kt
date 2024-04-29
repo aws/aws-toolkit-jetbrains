@@ -169,7 +169,8 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
         when (command) {
             // TODO: handler functions could live in parent class
             "prepareUi" -> {
-                this.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
+                val cancellable = isTookitConnected(project)
+                this.prepareBrowser(BrowserState(FeatureId.AwsExplorer, browserCancellable = cancellable))
             }
 
             "selectConnection" -> {
