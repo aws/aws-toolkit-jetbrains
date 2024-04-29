@@ -9,8 +9,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.GutterIconRenderer
@@ -34,29 +32,21 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
     private lateinit var markupModel: MarkupModel
 
     val emptyAction: AnAction = object : AnAction() {
-        override fun actionPerformed(e: AnActionEvent) {
-            // No action performed
-            return
-        }
+        override fun actionPerformed(e: AnActionEvent) = Unit
 
-        override fun update(e: AnActionEvent) {
-            // No update logic
-            return
-        }
+        override fun update(e: AnActionEvent) = Unit
     }
 
     fun showCustomEditor() {
         runInEdt {
-            val isReadOnlyFile = true
             val document = FileDocumentManager.getInstance().getDocument(virtualFile) ?: throw Error("No document found")
-            val editor = EditorFactory.getInstance().createEditor(document, project, virtualFile, isReadOnlyFile)
             markupModel = DocumentMarkupModel.forDocument(document, project, false)
 
             // We open the file for the user to see
             openVirtualFile()
 
             // We apply the editor changes to file
-            addGutterIconToLine(editor, document, lineNumberToHighlight ?: 0)
+            addGutterIconToLine(document, lineNumberToHighlight ?: 0)
         }
     }
 
@@ -66,7 +56,7 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
         fileEditorManager.openTextEditor(openFileDescription, true)
     }
 
-    fun addGutterIconToLine(editor: Editor, document: Document, lineNumberToHighlight: Int) {
+    fun addGutterIconToLine(document: Document, lineNumberToHighlight: Int) {
         val gutterIconRenderer = object : GutterIconRenderer() {
             override fun equals(other: Any?): Boolean = true
 
