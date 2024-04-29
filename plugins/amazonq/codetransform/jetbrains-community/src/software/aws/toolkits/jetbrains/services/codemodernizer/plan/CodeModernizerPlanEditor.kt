@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.plan
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -371,7 +372,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         val table = tableMapping[step.id()]
 
         val parsedTable = table?.let {
-            mapper.readValue(it, PlanTable::class.java)
+            mapper.readValue<PlanTable>(it)
         }
 
         val renderedStepTable = parsedTable?.let {
