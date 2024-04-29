@@ -27,7 +27,9 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.Result
 import java.io.IOException
 
 private val LOG = LoggerFactory.getLogger("LoginUtils")
@@ -185,8 +187,20 @@ fun authAndUpdateConfig(
 
         onError(message)
         LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
+        AuthTelemetry.addConnection(
+            project,
+            credentialSourceId = CredentialSourceId.SharedCredentials,
+            credentialStartUrl = updatedProfile.startUrl,
+            result = Result.Failed
+        )
         return null
     }
+    AuthTelemetry.addConnection(
+        project,
+        credentialSourceId = CredentialSourceId.SharedCredentials,
+        credentialStartUrl = updatedProfile.startUrl,
+        result = Result.Succeeded
+    )
 
     configFilesFacade.updateSectionInConfig(
         SsoSessionConstants.SSO_SESSION_SECTION_NAME,

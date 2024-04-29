@@ -11,9 +11,10 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AmazonQStartupActivity : ProjectActivity {
-    private var runOnce = false
+    private var runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
         // initialize html contents in BGT so users don't have to wait when they open the tool window
@@ -27,8 +28,8 @@ class AmazonQStartupActivity : ProjectActivity {
             }
         }
 
-        if (runOnce) return
+        if (runOnce.get()) return
         emitUserState(project)
-        runOnce = true
+        runOnce.set(true)
     }
 }

@@ -7,16 +7,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ToolWindowStartupActivity : ProjectActivity {
-    private var runOnce = false
+    private var runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         ToolkitWebviewPanel.getInstance(project)
 
-        if (runOnce) return
+        if (runOnce.get()) return
         emitUserState(project)
-        runOnce = true
+        runOnce.set(true)
     }
 }

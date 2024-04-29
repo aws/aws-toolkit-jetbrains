@@ -19,11 +19,16 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.Result
 import java.util.concurrent.Future
 
 data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
@@ -75,30 +80,85 @@ abstract class LoginBrowser(
     }
 
     open fun loginBuilderId(scopes: List<String>) {
+        val onError: (String) -> Unit = { errorReason ->
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = SONO_URL,
+                result = Result.Failed,
+                reason = errorReason,
+                credentialSourceId = CredentialSourceId.AwsId
+            )
+        }
         loginWithBackgroundContext {
-            Login.BuilderId(scopes, onPendingToken) {}.loginBuilderId(project)
-            // TODO: telemetry
+            Login.BuilderId(scopes, onPendingToken, onError).loginBuilderId(project)
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = SONO_URL,
+                result = Result.Succeeded,
+                credentialSourceId = CredentialSourceId.AwsId
+            )
         }
     }
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onError: (String) -> Unit = { _ ->
-            // TODO: telemetry
+        val onError: (String) -> Unit = { errorReason ->
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = url,
+                result = Result.Failed,
+                reason = errorReason,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter
+            )
         }
         loginWithBackgroundContext {
             Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
-            // TODO: telemetry
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = url,
+                result = Result.Succeeded,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter
+            )
         }
     }
 
     open fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
-        // TODO: telemetry, callbacks
         runInEdt {
             Login.LongLivedIAM(
                 profileName,
                 accessKey,
                 secretKey
-            ).loginIAM(project, {}, {}, {})
+            ).loginIAM(
+                project,
+                { error ->
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        result = Result.Failed,
+                        reason = error.message,
+                        credentialType = CredentialType.StaticProfile
+                    )
+                },
+                {
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        result = Result.Failed,
+                        reason = "Profile already exists",
+                        credentialType = CredentialType.StaticProfile
+                    )
+                },
+                {
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        result = Result.Failed,
+                        reason = "Connection validation error",
+                        credentialType = CredentialType.StaticProfile
+                    )
+                }
+            )
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                result = Result.Succeeded,
+                credentialType = CredentialType.StaticProfile
+            )
         }
     }
 
@@ -123,6 +183,13 @@ abstract class LoginBrowser(
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, onPendingToken)
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    isReAuth = true,
+                    result = Result.Succeeded,
+                    credentialStartUrl = connection.startUrl,
+                    credentialType = CredentialType.BearerToken
+                )
             }
         }
     }
