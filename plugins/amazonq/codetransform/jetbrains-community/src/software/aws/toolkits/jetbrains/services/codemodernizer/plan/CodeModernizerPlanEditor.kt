@@ -59,6 +59,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             throw RuntimeException("GetPlan response missing step 0 progress updates with table data")
         }
     private val mapper = jacksonObjectMapper()
+    // to-do: convert to UI DSL
     private val contentPanel =
         JPanel(GridBagLayout()).apply {
             add(
@@ -151,8 +152,8 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
         return scrollPanel
     }
 
-    private fun getFormattedString(s: String) =
-        when (s) {
+    private fun getFormattedString(actionString: String) =
+        when (actionString) {
             "linesOfCode" -> message("codemodernizer.migration_plan.body.info.lines_of_code_message")
             "plannedDependencyChanges" -> message("codemodernizer.migration_plan.body.info.dependency_replace_message")
             "plannedDeprecatedApiChanges" -> message("codemodernizer.migration_plan.body.info.deprecated_code_message")
@@ -164,7 +165,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             "relativePath" -> message("codemodernizer.migration_plan.body.info.file_column")
             "apiFullyQualifiedName" -> message("codemodernizer.migration_plan.body.info.deprecated_code_column")
             "numChangedFiles" -> message("codemodernizer.migration_plan.body.info.changed_files_column")
-            else -> s
+            else -> actionString
         }
 
     // use parsed MD string stored in step 0 progress updates from GetPlan response to create table
