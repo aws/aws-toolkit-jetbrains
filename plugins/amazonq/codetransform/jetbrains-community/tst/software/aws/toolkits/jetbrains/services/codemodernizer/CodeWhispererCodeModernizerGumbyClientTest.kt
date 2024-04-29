@@ -170,7 +170,15 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
 
     @Test
     fun `check downloadExportResultArchive`() = runTest {
-        whenever(amazonQStreamingClient.exportResultArchive(any<String>(), any<ExportIntent>(), eq(null), any(), any())) doReturn exampleExportResultArchiveResponse
+        whenever(
+            amazonQStreamingClient.exportResultArchive(
+                any<String>(),
+                any<ExportIntent>(),
+                eq(null),
+                any(),
+                any()
+            )
+        ) doReturn exampleExportResultArchiveResponse
 
         val actual = gumbyClient.downloadExportResultArchive(jobId)
 
