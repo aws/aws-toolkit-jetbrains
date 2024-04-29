@@ -25,8 +25,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.refactoring.suggested.range
+import com.intellij.testFramework.utils.vfs.getDocument
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.treeStructure.Tree
@@ -78,6 +80,7 @@ import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -454,21 +457,31 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val editorFactory = EditorFactory.getInstance()
             editorFactory.eventMulticaster.addDocumentListener(documentListener, project)
             editorFactory.addEditorFactoryListener(fileListener, project)
+
+            // Add document listeners to all files under project root for files of supported languages.
+            addListeners()
         }
     }
 
     private fun addListeners() {
-        fileNodeLookup.keys.forEach { file ->
+        val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()
+        val files = projectRoot?.listFiles()
+        val localFileSystem = LocalFileSystem.getInstance()
+        files?.forEach { file ->
             runInEdt {
-                val document = FileDocumentManager.getInstance().getDocument(file)
-                if (document == null) {
-                    LOG.error { message("codewhisperer.codescan.file_not_found", file.path) }
-                    return@runInEdt
+                try {
+                    localFileSystem.findFileByIoFile(file)?.let { virtualFile ->
+                        if (!virtualFile.isDirectory && virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Unknown &&
+                            virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Plaintext
+                        ) {
+                            virtualFile.getDocument().addDocumentListener(documentListener, project)
+                        }
+                    }
+                } catch (e: Exception) {
+                    LOG.debug(e) { "Failed to add document listener to file: $file" }
                 }
-                document.addDocumentListener(documentListener, codeScanIssuesContent)
             }
         }
-        EditorFactory.getInstance().eventMulticaster.removeEditorMouseMotionListener(editorMouseListener)
         EditorFactory.getInstance().eventMulticaster.addEditorMouseMotionListener(
             editorMouseListener,
             codeScanIssuesContent
@@ -536,8 +549,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 mutableListOf()
             }.add(scanNode)
         }
-        // Add document and editor listeners to the documents having scan issues.
-        addListeners()
         return codeScanTreeNodeRoot
     }
 
@@ -579,8 +590,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
             fileNodeLookup.remove(file)
         }
 
-        // Add document and editor listeners to the documents having scan issues.
-        addListeners()
         return codeScanTreeNodeRoot
     }
 
