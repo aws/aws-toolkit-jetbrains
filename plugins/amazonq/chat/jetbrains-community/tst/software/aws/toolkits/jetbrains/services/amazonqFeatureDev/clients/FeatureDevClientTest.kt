@@ -153,7 +153,15 @@ class FeatureDevClientTest : FeatureDevTestBase() {
 
     @Test
     fun `check exportTaskAssistResultArchive`() = runTest {
-        whenever(amazonQStreamingClient.exportResultArchive(any<String>(), any<ExportIntent>(), eq(null), any(), any())) doReturn exampleExportResultArchiveResponse
+        whenever(
+            amazonQStreamingClient.exportResultArchive(
+                any<String>(),
+                any<ExportIntent>(),
+                eq(null),
+                any(),
+                any()
+            )
+        ) doReturn exampleExportResultArchiveResponse
 
         val actual = featureDevClient.exportTaskAssistResultArchive("1234")
 
