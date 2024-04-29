@@ -438,6 +438,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
         ?: error(message("codewhisperer.codescan.problems_window_not_found"))
 
     private fun reset() = runInEdt {
+        // clear the codeScanTreeNodeRoot
+        codeScanTreeNodeRoot.removeAllChildren()
         // Remove previous document listeners before starting a new scan.
         fileNodeLookup.clear()
         // Erase all range highlighter before cleaning up.
@@ -532,6 +534,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
         LOG.debug { "Rendering response from the scan API" }
 
         codeScanTreeNodeRoot.removeAllChildren()
+        // clear file node lookup and scan node lookup
+        fileNodeLookup.clear()
+        scanNodesLookup.clear()
+
         codeScanIssues.forEach { issue ->
             val fileNode = synchronized(fileNodeLookup) {
                 fileNodeLookup.getOrPut(issue.file) {
