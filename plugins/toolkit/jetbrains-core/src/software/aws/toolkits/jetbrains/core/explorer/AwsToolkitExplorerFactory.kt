@@ -80,10 +80,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val component = if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).component
         } else {
-            // TODO: it's a hack to prevent ToolkitBrowser.prepareUi not working before the browser is rendered on the UI
-            // i.e. root cause is because the JS script is not loaded until the
-            //            AwsToolkitExplorerToolWindow.getInstance(project)
-            ToolkitWebviewPanel.getInstance(project).component
+            AwsToolkitExplorerToolWindow.getInstance(project)
         }
 
         val content = contentManager.factory.createContent(component, null, false).also {
