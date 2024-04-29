@@ -28,7 +28,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.refactoring.suggested.range
-import com.intellij.testFramework.utils.vfs.getDocument
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.treeStructure.Tree
@@ -476,7 +475,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
                         if (!virtualFile.isDirectory && virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Unknown &&
                             virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Plaintext
                         ) {
-                            virtualFile.getDocument().addDocumentListener(documentListener, project)
+                            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
+                            document?.addDocumentListener(documentListener, project)
                         }
                     }
                 } catch (e: Exception) {
