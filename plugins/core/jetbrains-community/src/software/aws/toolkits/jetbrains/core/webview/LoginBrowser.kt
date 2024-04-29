@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.webview
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
 import com.intellij.platform.ide.progress.withBackgroundProgress
@@ -14,7 +15,11 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -22,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
@@ -80,12 +86,13 @@ abstract class LoginBrowser(
     }
 
     open fun loginBuilderId(scopes: List<String>) {
-        val onError: (String) -> Unit = { errorReason ->
+        val onError: (Exception) -> Unit = { e ->
+            tryHandleUserCanceledLogin(e)
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = SONO_URL,
                 result = Result.Failed,
-                reason = errorReason,
+                reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId
             )
         }
@@ -101,12 +108,16 @@ abstract class LoginBrowser(
     }
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onError: (String) -> Unit = { errorReason ->
+        val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
+            val message = ssoErrorMessageFromException(e)
+            if (!tryHandleUserCanceledLogin(e)) {
+                LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
+            }
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = url,
                 result = Result.Failed,
-                reason = errorReason,
+                reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
         }
@@ -183,18 +194,23 @@ abstract class LoginBrowser(
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, onPendingToken)
-                AwsTelemetry.loginWithBrowser(
-                    project = null,
-                    isReAuth = true,
-                    result = Result.Succeeded,
-                    credentialStartUrl = connection.startUrl,
-                    credentialType = CredentialType.BearerToken
-                )
             }
         }
     }
 
+    private fun tryHandleUserCanceledLogin(e: Exception): Boolean {
+        if (e !is ProcessCanceledException ||
+            e.cause !is IllegalStateException ||
+            e.message?.contains(message("credentials.pending.user_cancel.message")) == false
+        ) {
+            return false
+        }
+        LOG.debug(e) { "User canceled login" }
+        return true
+    }
+
     companion object {
+        private val LOG = getLogger<LoginBrowser>()
         fun getWebviewHTML(webScriptUri: String, query: JBCefJSQuery): String {
             val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
             val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")
