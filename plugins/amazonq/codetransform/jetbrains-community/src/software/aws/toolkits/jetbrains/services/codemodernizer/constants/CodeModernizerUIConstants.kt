@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.ui.JBColor
+import com.intellij.util.ui.JBFont
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil
 import java.awt.Color
@@ -91,7 +92,7 @@ class CodeModernizerUIConstants {
             insets = Insets(5, 5, 5, 5)
         }
 
-        val DESCRIPTION_FONT = Font("Arial", Font.PLAIN, PLAN_CONSTRAINTS.STEP_DESCRIPTION_FONT_SIZE)
+        val DESCRIPTION_FONT = JBFont.create(Font("Arial", Font.PLAIN, PLAN_CONSTRAINTS.STEP_DESCRIPTION_FONT_SIZE))
 
         val PLAN_BORDER = BorderFactory.createEmptyBorder(
             PLAN_CONSTRAINTS.PLAN_PADDING_TOP,

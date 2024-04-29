@@ -116,11 +116,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     return PollingResult(true, transformationResponse?.transformationJob(), state, transformationPlan)
 }
 
-fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): HashMap<String, String> {
-    val tableMapping = HashMap<String, String>()
-    stepZeroProgressUpdates.forEach { update ->
-        // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-        tableMapping[update.name()] = update.description()
-    }
-    return tableMapping
+// "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>) = stepZeroProgressUpdates.associate {
+    it.name() to it.description()
 }

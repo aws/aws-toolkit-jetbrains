@@ -370,13 +370,12 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
 
         val table = tableMapping[step.id()]
 
-        val parsedTable = if (table != null) mapper.readValue(table, PlanTable::class.java) else null
+        val parsedTable = table?.let {
+            mapper.readValue(it, PlanTable::class.java)
+        }
 
-        var renderedStepTable: JTable? = null
-
-        // means that this step has a table associated with it and that table contains data
-        if (parsedTable != null) {
-            renderedStepTable = createTable(parsedTable)
+        val renderedStepTable = parsedTable?.let {
+            createTable(it)
         }
 
         val descriptionPanel =
@@ -411,15 +410,12 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                 add(scrollPanel, constraints)
             }
 
-        var tablePanel: JPanel? = null
-
-        if (renderedStepTable != null) {
-            tablePanel =
-                JPanel().apply {
-                    layout = BorderLayout()
-                    add(JBScrollPane(renderedStepTable), BorderLayout.NORTH)
-                    border = tableBorder(renderedStepTable.rowCount * renderedStepTable.rowHeight)
-                }
+        val tablePanel = renderedStepTable?.let {
+            JPanel().apply {
+                layout = BorderLayout()
+                add(JBScrollPane(it), BorderLayout.NORTH)
+                border = tableBorder(it.rowCount * it.rowHeight)
+            }
         }
 
         val transformationStepPanel =

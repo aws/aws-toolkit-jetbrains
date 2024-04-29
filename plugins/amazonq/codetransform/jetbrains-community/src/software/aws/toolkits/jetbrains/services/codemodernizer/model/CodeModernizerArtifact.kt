@@ -82,7 +82,7 @@ open class CodeModernizerArtifact(
         private fun loadManifest(): CodeModernizerManifest {
             val manifestFile =
                 tempDir.listFiles()
-                    ?.firstOrNull { Path(it.name).endsWith(manifestPathInZip) }
+                    ?.firstOrNull { it.name.endsWith(manifestPathInZip) }
                     ?: throw RuntimeException("Could not find manifest")
             try {
                 val manifest = MAPPER.readValue(manifestFile, CodeModernizerManifest::class.java)
