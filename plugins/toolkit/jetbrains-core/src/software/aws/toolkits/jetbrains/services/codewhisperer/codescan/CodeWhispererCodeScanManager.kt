@@ -25,7 +25,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.refactoring.suggested.range
 import com.intellij.ui.content.ContentManagerEvent
@@ -79,7 +78,6 @@ import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.Result
-import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -458,36 +456,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val editorFactory = EditorFactory.getInstance()
             editorFactory.eventMulticaster.addDocumentListener(documentListener, project)
             editorFactory.addEditorFactoryListener(fileListener, project)
-
-            // Add document listeners to all files under project root for files of supported languages.
-            addListeners()
+            EditorFactory.getInstance().eventMulticaster.addEditorMouseMotionListener(
+                editorMouseListener,
+                codeScanIssuesContent
+            )
         }
-    }
-
-    private fun addListeners() {
-        val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()
-        val files = projectRoot?.listFiles()
-        val localFileSystem = LocalFileSystem.getInstance()
-        files?.forEach { file ->
-            runInEdt {
-                try {
-                    localFileSystem.findFileByIoFile(file)?.let { virtualFile ->
-                        if (!virtualFile.isDirectory && virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Unknown &&
-                            virtualFile.programmingLanguage().toTelemetryType() != CodewhispererLanguage.Plaintext
-                        ) {
-                            val document = FileDocumentManager.getInstance().getDocument(virtualFile)
-                            document?.addDocumentListener(documentListener, project)
-                        }
-                    }
-                } catch (e: Exception) {
-                    LOG.debug(e) { "Failed to add document listener to file: $file" }
-                }
-            }
-        }
-        EditorFactory.getInstance().eventMulticaster.addEditorMouseMotionListener(
-            editorMouseListener,
-            codeScanIssuesContent
-        )
     }
 
     private fun beforeCodeScan() {
