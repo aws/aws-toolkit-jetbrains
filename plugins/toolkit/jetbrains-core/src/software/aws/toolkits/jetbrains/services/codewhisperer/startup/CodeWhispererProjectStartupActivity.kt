@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
@@ -13,7 +12,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanDocumentListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
@@ -42,7 +40,21 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
     override fun runActivity(project: Project) {
         if (!isQConnected(project)) return
 
-        // ---- Everything below will be triggered only when CW is enabled, everything above will be triggered once per project ----
+        // ---- Everything below will be triggered only when CW is enabled ----
+
+        val actionManager = CodeWhispererExplorerActionManager.getInstance()
+        val scanManager = CodeWhispererCodeScanManager.getInstance(project)
+        actionManager.setMonthlyQuotaForCodeScansExceeded(false)
+        //  Run Proactive Code File Scan and disabling Auto File Scan for Builder ID Users.
+        if (isUserBuilderId(project)) {
+            actionManager.setAutoCodeScan(project, false)
+        } else {
+            // Setting up listeners for Auto File Code Scan triggers.
+            scanManager.setEditorListeners()
+            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
+        }
+
+        // ---- Everything below will be triggered once after startup ----
 
         if (runOnce) return
 
@@ -65,16 +77,6 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         project.messageBus.connect().subscribe(LookupManagerListener.TOPIC, CodeWhispererIntelliSenseAutoTriggerListener)
         project.messageBus.connect().subscribe(CODEWHISPERER_USER_ACTION_PERFORMED, CodeWhispererImportAdderListener)
 
-        //  Run Proactive Code File Scan and disabling Auto File Scan for Builder Id Users.
-        val actionManager = CodeWhispererExplorerActionManager.getInstance()
-        actionManager.setMonthlyQuotaForCodeScansExceeded(false)
-        if (isUserBuilderId(project)) {
-            actionManager.setAutoCodeScan(project, false)
-        } else {
-            EditorFactory.getInstance().eventMulticaster.addDocumentListener(CodeWhispererCodeScanDocumentListener(project), project)
-            val scanManager = CodeWhispererCodeScanManager.getInstance(project)
-            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
-        }
         runOnce = true
     }
 
