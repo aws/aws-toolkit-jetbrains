@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistC
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
+import software.amazon.awssdk.services.codewhispererstreaming.model.ServiceQuotaExceededException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -18,7 +19,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.apiError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
@@ -50,10 +50,6 @@ fun createConversation(proxyClient: FeatureDevClient): String {
         if (e is CodeWhispererRuntimeException) {
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "Start conversation failed for request: ${e.requestId()}" }
-
-            if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException) {
-                throw MonthlyConversationLimitError(errMssg, e.cause)
-            }
         }
         apiError(errMssg, e.cause)
     }
@@ -119,7 +115,7 @@ suspend fun generatePlan(
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "Generate plan failed for request: ${e.requestId()}" }
 
-            if (
+            if (e is ServiceQuotaExceededException ||
                 (e is ThrottlingException && e.message?.contains("limit for number of iterations on an implementation plan") == true)
             ) {
                 throw PlanIterationLimitError(message("amazonqFeatureDev.approach_gen.iteration_limit.error_text"), e.cause)
@@ -149,10 +145,11 @@ fun startTaskAssistCodeGeneration(proxyClient: FeatureDevClient, conversationId:
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "StartTaskAssistCodeGeneration failed for request: ${e.requestId()}" }
 
-            if (
-                e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
-                    "limit for number of iterations on a code generation"
-                ) == true
+            if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
+                    e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
+                        "limit for number of iterations on a code generation"
+                    ) == true
+                    )
             ) {
                 throw CodeIterationLimitError(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), e.cause)
             }
