@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadManifest
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
@@ -108,14 +109,14 @@ class CodeModernizerSession(
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult = sessionContext.getDependenciesUsingMaven()
 
     fun createHilDependencyReportUsingMaven(): MavenDependencyReportCommandsResult = sessionContext.createDependencyReportUsingMaven(
-        getPathToHilDependencyReportDir(hilTempDirectoryPath!!)
+        getPathToHilDependencyReportDir(hilTempDirectoryPath as Path)
     )
 
-    fun copyHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.copyHilDependencyUsingMaven(hilTempDirectoryPath!!)
+    fun copyHilDependencyUsingMaven(): MavenCopyCommandsResult = sessionContext.copyHilDependencyUsingMaven(hilTempDirectoryPath as Path)
 
     fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(
-        hilTempDirectoryPath!!,
-        hilDownloadArtifact!!.manifest,
+        hilTempDirectoryPath as Path,
+        hilDownloadArtifact?.manifest as CodeTransformHilDownloadManifest,
         selectedVersion
     )
 
@@ -242,11 +243,11 @@ class CodeModernizerSession(
     fun resumeTransformFromHil() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         try {
-            clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.COMPLETED)
+            clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.COMPLETED)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
             LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId!!.id)
+            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId?.id)
             throw e
         }
     }
@@ -254,11 +255,11 @@ class CodeModernizerSession(
     fun rejectHilAndContinue(): ResumeTransformationResponse {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         return try {
-            clientAdaptor.resumeCodeTransformation(state.currentJobId!!, TransformationUserActionStatus.REJECTED)
+            clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.REJECTED)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
             LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId!!.id)
+            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId?.id)
             throw e
         }
     }
@@ -270,11 +271,11 @@ class CodeModernizerSession(
         }
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         val createUploadUrlResponse = try {
-            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId!!)
+            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId as JobId)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when creating upload url for HIL: ${e.localizedMessage}"
             LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.CreateUploadUrl, jobId = state.currentJobId!!.id)
+            telemetry.apiError(errorMessage, CodeTransformApiNames.CreateUploadUrl, jobId = state.currentJobId?.id)
             throw e
         }
 

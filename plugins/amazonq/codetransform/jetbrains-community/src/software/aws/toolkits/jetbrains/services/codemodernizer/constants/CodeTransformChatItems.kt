@@ -284,12 +284,12 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
 }
 
 fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
-    val majors = (dependency.majors ?: listOf()).sorted()
-    val minors = (dependency.minors ?: listOf()).sorted()
-    val incrementals = (dependency.incrementals ?: listOf()).sorted()
+    val majors = (dependency.majors.orEmpty()).sorted()
+    val minors = (dependency.minors.orEmpty()).sorted()
+    val incrementals = (dependency.incrementals.orEmpty()).sorted()
     val total = majors.size + minors.size + incrementals.size
 
-    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion!!)
+    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion as String)
 
     if (majors.isNotEmpty()) {
         message += message("codemodernizer.chat.message.hil.dependency_latest_major", majors.last())

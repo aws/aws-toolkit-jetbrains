@@ -56,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -438,7 +439,7 @@ class CodeTransformChatController(
         }
 
         val selectedVersion = message.version
-        val artifact = codeModernizerManager.getCurrentHilArtifact()!!
+        val artifact = codeModernizerManager.getCurrentHilArtifact() as CodeTransformHilDownloadArtifact
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserHilSelection(artifact.manifest.pomArtifactId, artifact.manifest.sourcePomVersion, selectedVersion))
@@ -459,7 +460,7 @@ class CodeTransformChatController(
             codeModernizerManager.tryResumeWithAlternativeVersion(selectedVersion)
 
             telemetry.logHil(
-                CodeModernizerSessionState.getInstance(context.project).currentJobId!!.id,
+                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
                 HilTelemetryMetaData(
                     versionSelected = selectedVersion,
                     reason = "User selected version",
@@ -489,7 +490,7 @@ class CodeTransformChatController(
             codeModernizerManager.rejectHil()
 
             telemetry.logHil(
-                CodeModernizerSessionState.getInstance(context.project).currentJobId!!.id,
+                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
                 HilTelemetryMetaData(
                     cancelledFromChat = true,
                     reason = "User cancelled",

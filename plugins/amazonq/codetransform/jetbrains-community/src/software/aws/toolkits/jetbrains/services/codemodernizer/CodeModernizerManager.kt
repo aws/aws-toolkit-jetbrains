@@ -79,6 +79,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
+import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.pathString
@@ -241,7 +242,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun resumePollingFromHil() {
-        val result = handleJobStarted(managerState.getLatestJobId(), codeTransformationSession!!)
+        val result = handleJobStarted(managerState.getLatestJobId(), codeTransformationSession as CodeModernizerSession)
         postModernizationJob(result)
     }
 
@@ -745,14 +746,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun getArtifactForHil(): CodeTransformHilDownloadArtifact? {
-        val jobId = codeTransformationSession?.getActiveJobId()!!
-        val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId()!!
+        val jobId = codeTransformationSession?.getActiveJobId() as JobId
+        val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId() as String
 
         val tmpDir = try {
             createTempDirectory("", null)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when creating tmp dir for HIL: ${e.localizedMessage}"
-            LOG.error(errorMessage)
+            LOG.error { errorMessage }
             throw e
         }
         try {
@@ -768,7 +769,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun createDependencyReport(hilDownloadArtifact: CodeTransformHilDownloadArtifact): MavenDependencyReportCommandsResult {
-        val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath()!!
+        val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath() as Path
 
         try {
             val copyPomForDependencyReport = createFileCopy(hilDownloadArtifact.pomFile, getPathToHilDependencyReportDir(tmpDirPath).resolve(HIL_POM_FILE_NAME))
@@ -776,17 +777,17 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when preparing for HIL dependency report: ${e.localizedMessage}"
             telemetry.error(errorMessage)
-            LOG.error(errorMessage)
+            LOG.error { errorMessage }
             return MavenDependencyReportCommandsResult.Failure
         }
 
-        return codeTransformationSession?.createHilDependencyReportUsingMaven()!!
+        return codeTransformationSession?.createHilDependencyReportUsingMaven() as MavenDependencyReportCommandsResult
     }
 
     fun findAvailableVersionForDependency(pomGroupId: String, pomArtifactId: String): Dependency? {
         try {
             val report = parseXmlDependenciesReport(
-                getPathToHilDependencyReport(codeTransformationSession?.getHilTempDirectoryPath()!!)
+                getPathToHilDependencyReport(codeTransformationSession?.getHilTempDirectoryPath() as Path)
             )
             return report.dependencies?.first {
                 it.groupId == pomGroupId &&
@@ -797,7 +798,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when parsing HIL dependency report: ${e.localizedMessage}"
             telemetry.error(errorMessage)
-            LOG.error(errorMessage)
+            LOG.error { errorMessage }
             return null
         }
     }
@@ -815,7 +816,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun copyDependencyForHil(selectedVersion: String): MavenCopyCommandsResult {
         try {
-            val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath()!!
+            val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath() as Path
 
             val downloadedPomPath = getPathToHilArtifactPomFile(tmpDirPath)
             if (!downloadedPomPath.exists()) {
@@ -825,12 +826,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val downloadedPomFile = File(downloadedPomPath.pathString)
             setDependencyVersionInPom(downloadedPomFile, selectedVersion)
 
-            val copyDependencyResult = codeTransformationSession?.copyHilDependencyUsingMaven()!!
+            val copyDependencyResult = codeTransformationSession?.copyHilDependencyUsingMaven() as MavenCopyCommandsResult
             return copyDependencyResult
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when getting HIL dependency for upload: ${e.localizedMessage}"
             telemetry.error(errorMessage)
-            LOG.error(errorMessage)
+            LOG.error { errorMessage }
             return MavenCopyCommandsResult.Failure
         }
     }
@@ -849,7 +850,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when resuming HIL: ${e.localizedMessage}"
             telemetry.error(errorMessage)
-            LOG.error(errorMessage)
+            LOG.error { errorMessage }
         } finally {
             // DO file clean up
             codeTransformationSession?.hilCleanup()
@@ -867,7 +868,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 return false
             }
         } catch (e: Exception) {
-            LOG.error(e.message)
+            LOG.error { e.localizedMessage }
             return false
         }
 
