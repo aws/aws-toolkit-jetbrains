@@ -110,7 +110,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private val fileNodeLookup = mutableMapOf<VirtualFile, DefaultMutableTreeNode>()
     private val scanNodesLookup = mutableMapOf<VirtualFile, MutableList<DefaultMutableTreeNode>>()
 
-    val fileListenerLookup = mutableSetOf<VirtualFile>()
+    private val fileListenerLookup = mutableSetOf<VirtualFile>()
 
     private val documentListener = CodeWhispererCodeScanDocumentListener(project)
     private val editorMouseListener = CodeWhispererCodeScanEditorMouseMotionListener(project)
