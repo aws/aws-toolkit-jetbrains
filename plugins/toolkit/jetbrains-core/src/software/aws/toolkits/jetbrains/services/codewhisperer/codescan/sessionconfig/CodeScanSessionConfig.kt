@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VFileProperty
 import com.intellij.openapi.vfs.VfsUtil
@@ -40,8 +40,8 @@ class CodeScanSessionConfig(
     private val project: Project,
     private val scope: CodeAnalysisScope
 ) {
-    private val projectFileIndex = ProjectFileIndex.getInstance(project)
-    var projectRoot = projectFileIndex.getContentRootForFile(selectedFile) ?: error("Cannot guess base directory for project ${project.name}")
+    var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+        private set
 
     private var isProjectTruncated = false
 
