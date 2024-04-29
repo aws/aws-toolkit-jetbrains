@@ -39,6 +39,7 @@
             "output":{"shape":"CreateUploadUrlResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -62,6 +63,9 @@
             "errors": [
                 {
                     "shape": "ThrottlingException"
+                },
+                {
+                    "shape": "ServiceQuotaExceededException"
                 },
                 {
                     "shape": "InternalServerException"
@@ -258,6 +262,7 @@
             "output":{"shape":"StartTaskAssistCodeGenerationResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -365,7 +370,8 @@
                 "timeBetweenChunks": { "shape": "TimeBetweenChunks" },
                 "fullResponselatency": { "shape": "Double" },
                 "requestLength": { "shape": "Integer" },
-                "responseLength": { "shape": "Integer" }
+                "responseLength": { "shape": "Integer" },
+                "numberOfCodeBlocks": { "shape": "Integer" }
             }
         },
         "ChatHistory":{
@@ -383,6 +389,7 @@
                 "interactionType": { "shape": "ChatMessageInteractionType" },
                 "interactionTarget": { "shape": "String" },
                 "acceptedCharacterCount": { "shape": "Integer" },
+                "acceptedLineCount": { "shape": "Integer" },
                 "acceptedSnippetHasReference": { "shape": "Boolean" }
             }
         },
@@ -448,6 +455,13 @@
             "type":"string",
             "enum":["codeanalysis/findings/1.0"]
         },
+        "CodeAnalysisScope": {
+            "type": "string",
+            "enum": [
+                "FILE",
+                "PROJECT"
+            ]
+        },
         "CodeAnalysisStatus":{
             "type":"string",
             "enum":[
@@ -455,6 +469,13 @@
                 "Pending",
                 "Failed"
             ]
+        },
+        "CodeAnalysisUploadContext": {
+            "type": "structure",
+            "required": ["codeScanName"],
+            "members": {
+                "codeScanName": { "shape": "CodeScanName" }
+            }
         },
         "CodeCoverageEvent":{
             "type":"structure",
@@ -514,13 +535,60 @@
             "members":{
                 "programmingLanguage":{"shape":"ProgrammingLanguage"},
                 "codeScanJobId":{"shape":"CodeScanJobId"},
-                "timestamp":{"shape":"Timestamp"}
+                "timestamp":{"shape":"Timestamp"},
+                "codeAnalysisScope": {"shape": "CodeAnalysisScope"}
             }
         },
         "CodeScanJobId":{
             "type":"string",
             "max":128,
             "min":1
+        },
+        "CodeScanName": {
+            "type": "string",
+            "documentation": "<p>Code analysis scan name</p>",
+            "max": 128,
+            "min": 1
+        },
+        "CodeScanRemediationsEvent": {
+            "type": "structure",
+            "members": {
+                "programmingLanguage": {
+                    "shape": "ProgrammingLanguage"
+                },
+                "CodeScanRemediationsEventType": {
+                    "shape": "CodeScanRemediationsEventType"
+                },
+                "timestamp": {
+                    "shape": "Timestamp"
+                },
+                "detectorId": {
+                    "shape": "String"
+                },
+                "findingId": {
+                    "shape": "String"
+                },
+                "ruleId": {
+                    "shape": "String"
+                },
+                "component": {
+                    "shape": "String"
+                },
+                "reason": {
+                    "shape": "String"
+                },
+                "result": {
+                    "shape": "String"
+                },
+                "includesFix": {
+                    "shape": "Boolean"
+                }
+            }
+        },
+        "CodeScanRemediationsEventType": {
+            "type": "string",
+            "documentation": "<p>Code Scan Remediations Interaction Type</p>",
+            "enum": ["CODESCAN_ISSUE_HOVER", "CODESCAN_ISSUE_APPLY_FIX", "CODESCAN_ISSUE_VIEW_DETAILS"]
         },
         "Completion":{
             "type":"structure",
@@ -625,7 +693,10 @@
             "members":{
                 "uploadId":{"shape":"UploadId"},
                 "uploadUrl":{"shape":"PreSignedUrl"},
-                "kmsKeyArn":{"shape":"ResourceArn"}
+                "kmsKeyArn":{"shape":"ResourceArn"},
+                "requestHeaders": {
+                    "shape": "RequestHeaders"
+                }
             }
         },
         "CursorState":{
@@ -1201,6 +1272,27 @@
             "min":0,
             "pattern":"arn:([-.a-z0-9]{1,63}:){2}([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
         },
+        "RequestHeaderKey": {
+            "type": "string",
+            "max": 64,
+            "min": 1
+        },
+        "RequestHeaderValue": {
+            "type": "string",
+            "max": 256,
+            "min": 1
+        },
+        "RequestHeaders": {
+            "type": "map",
+            "key": {
+                "shape": "RequestHeaderKey"
+            },
+            "value": {
+                "shape": "RequestHeaderValue"
+            },
+            "max": 16,
+            "min": 1
+        },
         "ResourceNotFoundException":{
             "type":"structure",
             "required":["message"],
@@ -1285,7 +1377,9 @@
                 "clientToken":{
                     "shape":"StartCodeAnalysisRequestClientTokenString",
                     "idempotencyToken":true
-                }
+                },
+                "scope": {"shape": "CodeAnalysisScope"},
+                "codeScanName":{"shape":"CodeScanName"}
             }
         },
         "StartCodeAnalysisRequestClientTokenString":{
@@ -1458,6 +1552,7 @@
                 "codeCoverageEvent":{"shape":"CodeCoverageEvent"},
                 "userModificationEvent":{"shape":"UserModificationEvent"},
                 "codeScanEvent":{"shape":"CodeScanEvent"},
+                "codeScanRemediationsEvent": { "shape": "CodeScanRemediationsEvent" },
                 "metricData":{"shape":"MetricData"},
                 "chatAddMessageEvent": { "shape": "ChatAddMessageEvent" },
                 "chatInteractWithMessageEvent": { "shape": "ChatInteractWithMessageEvent" },
@@ -1511,6 +1606,15 @@
             "sensitive":true
         },
         "ThrottlingException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true,
+            "retryable":{"throttling":true}
+        },
+        "ServiceQuotaExceededException":{
             "type":"structure",
             "required":["message"],
             "members":{
@@ -1650,6 +1754,21 @@
             "type":"string",
             "enum":["LANGUAGE_UPGRADE"]
         },
+        "TransformationUploadArtifactType":{
+            "type":"string",
+            "enum":["Dependencies"]
+        },
+        "TransformationUploadContext":{
+            "type":"structure",
+            "required":[
+                "jobId",
+                "uploadArtifactType"
+            ],
+            "members":{
+                "jobId":{"shape":"TransformationJobId"},
+                "uploadArtifactType":{"shape":"TransformationUploadArtifactType"}
+            }
+        },
         "TaskAssistPlanningUploadContext": {
             "type": "structure",
             "required": ["conversationId"],
@@ -1665,7 +1784,9 @@
         "UploadContext":{
             "type":"structure",
             "members":{
-                "taskAssistPlanningUploadContext": {"shape": "TaskAssistPlanningUploadContext"}
+                "taskAssistPlanningUploadContext":{"shape":"TaskAssistPlanningUploadContext"},
+                "transformationUploadContext":{"shape":"TransformationUploadContext"},
+                "codeAnalysisUploadContext":{"shape":"CodeAnalysisUploadContext"}
             },
             "union":true
         },
@@ -1678,7 +1799,9 @@
             "type":"string",
             "enum":[
                 "TRANSFORMATION",
-                "TASK_ASSIST_PLANNING"
+                "TASK_ASSIST_PLANNING",
+                "AUTOMATIC_FILE_SECURITY_SCAN",
+                "FULL_PROJECT_SECURITY_SCAN"
             ]
         },
         "UserContext":{

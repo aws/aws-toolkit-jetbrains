@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 class CwQTreeStructure(project: Project) : AbstractTreeStructureBase(project) {
     override fun getRootElement() = CwQTreeRootNode(myProject)
 
-    override fun getProviders(): List<TreeStructureProvider>? = CwQTreeStructureProvider.EP_NAME.extensionList
+    override fun getProviders(): List<TreeStructureProvider>? = null
 
     override fun commit() {}
 

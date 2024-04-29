@@ -13,20 +13,17 @@ import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
+import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 import software.aws.toolkits.gradle.isCi
 
-val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
-
 val ideProfile = IdeVersions.ideProfile(project)
-val toolkitVersion: String by project
-
-// please check changelog generation logic if this format is changed
-version = "$toolkitVersion-${ideProfile.shortName}"
 
 plugins {
+    id("toolkit-intellij-plugin")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
     id("org.jetbrains.intellij")
+    id("toolkit-patch-plugin-xml-conventions")
 }
 
 // TODO: https://github.com/gradle/gradle/issues/15383
@@ -50,17 +47,12 @@ configurations {
         exclude(group = "org.slf4j")
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
-
-        // Exclude dependencies we don't use to make plugin smaller
-        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
-    }
-
-    testRuntimeClasspath {
-        // Conflicts with CRT in test classpath
-        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
     }
 
     all {
+        // IDE provides netty
+        exclude("io.netty")
+
         if (name.startsWith("detekt")) {
             return@all
         }
@@ -84,6 +76,11 @@ tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
+tasks.processTestResources {
+    // TODO how can we remove this
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
 intellij {
     // find the name of first subproject depth, or root if not applied to a subproject hierarchy
@@ -102,23 +99,6 @@ intellij {
 tasks.jar {
     // :plugin-toolkit:jetbrains-community results in: --plugin-toolkit-jetbrains-community-IC-<version>.jar
     archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "${project.buildTreePath.replace(':', '-')}-$it" })
-}
-
-tasks.withType<PatchPluginXmlTask>().all {
-    sinceBuild.set(toolkitIntelliJ.ideProfile().map { it.sinceVersion })
-    untilBuild.set(toolkitIntelliJ.ideProfile().map { it.untilVersion })
-}
-
-// attach the current commit hash on local builds
-if (!project.isCi()){
-    val buildMetadata = buildMetadata()
-    tasks.withType<PatchPluginXmlTask>().all {
-        version.set("${project.version}+$buildMetadata")
-    }
-
-    tasks.buildPlugin {
-        archiveClassifier.set(buildMetadata)
-    }
 }
 
 // Disable building the settings search cache since it 1. fails the build, 2. gets run on the final packaged plugin
@@ -193,36 +173,32 @@ tasks.runIde {
     }
 }
 
-configurations.instrumentedJar.configure {
-    // when the "instrumentedJar" configuration is selected, gradle is unable to resolve configurations needed by jacoco
-    // to calculate coverage, so we declare these as seconary artifacts on the primary "instrumentedJar" implicit variant
-    outgoing.variants {
-        create("instrumentedClasses") {
-            attributes {
-                attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-                attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
-                attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.CLASSES))
-            }
+// rewrite `runtimeElements` to use the `instrumentedJar` variant
+// there should never be a reason to use the default artifact at runtime, but `testFixturesRuntimeElements` pulls in `runtimeElements`
+// which is causing conflict between the `runtimeElements` and `instrumentedJar` variants
+// additionally more cleanly solves another headache from the IDE defaulting to instrumented classes while navigating between modules
+configurations.runtimeElements {
+    // remove the default artifact and replace with the instrumented jar
+    outgoing.artifacts.clear()
+    outgoing.artifacts(configurations.instrumentedJar.map { it.artifacts })
 
+    // replace default classes with instrumented classes
+    outgoing.variants {
+        get("classes").apply {
+            artifacts.clear()
             artifact(tasks.instrumentCode) {
                 type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
             }
         }
-
-        listOf("coverageDataElements", "mainSourceElements").forEach { implicitVariant ->
-            val configuration = configurations.getByName(implicitVariant)
-            create(implicitVariant) {
-                attributes {
-                    configuration.attributes.keySet().forEach {
-                        attribute(it as Attribute<Any>, configuration.attributes.getAttribute(it)!!)
-                    }
-                }
-
-                configuration.artifacts.forEach {
-                    artifact(it)
-                }
-            }
-        }
     }
+}
+
+// 1.x declares dependsOn, but we want mustRunAfter
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/47e2de88e86ffdefd3f6f45c2bb3181366ee4fa4/src/main/kotlin/org/jetbrains/intellij/IntelliJPlugin.kt#L1702
+tasks.classpathIndexCleanup {
+    dependsOn.clear()
+
+    project.tasks
+        .runCatching { named("compileTestKotlin") }
+        .onSuccess { mustRunAfter(it) }
 }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItem, ChatItemAction, FeedbackPayload, Engagement } from '@aws/mynah-ui-chat'
+import { ChatItem, ChatItemAction, FeedbackPayload, Engagement, NotificationType } from '@aws/mynah-ui-chat'
 import { Connector as CWChatConnector } from './apps/cwChatConnector'
 import { Connector as FeatureDevChatConnector } from './apps/featureDevChatConnector'
 import { Connector as AmazonQCommonsConnector } from './apps/amazonqCommonsConnector'
@@ -11,6 +11,9 @@ import { ExtensionMessage } from './commands'
 import { TabType, TabsStorage } from './storages/tabsStorage'
 import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
 import { AuthFollowUpType } from './followUps/generator'
+import { CodeTransformChatConnector } from "./apps/codeTransformChatConnector";
+import { isFormButtonCodeTransform } from './forms/constants'
+import {DiffTreeFileInfo} from "./diffTree/types";
 
 export interface CodeReference {
     licenseName?: string
@@ -31,16 +34,23 @@ export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    onCodeTransformChatDisabled: (tabID: string) => void
+    onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
     onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined) => void
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
     onCWCOnboardingPageInteractionMessage: (message: ChatItem) => string | undefined
     onError: (tabID: string, message: string, title: string) => void
     onWarning: (tabID: string, message: string, title: string) => void
+    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[]) => void
     onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onChatInputEnabled: (tabID: string, enabled: boolean) => void
-    onUpdateAuthentication: (featureDevEnabled: boolean, gumbyEnabled: boolean, authenticatingTabIDs: string[]) => void
+    onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     onNewTab: (tabType: TabType) => void
+    onStartNewTransform: (tabID: string) => void
+    onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
+    onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
+    onFileActionClick: (tabID: string, messageId: string, filePath: string, actionName: string) => void
     tabsStorage: TabsStorage
 }
 
@@ -49,6 +59,7 @@ export class Connector {
     private readonly onMessageReceived
     private readonly cwChatConnector
     private readonly featureDevChatConnector
+    private readonly codeTransformChatConnector: CodeTransformChatConnector
     private readonly tabsStorage
     private readonly amazonqCommonsConnector: AmazonQCommonsConnector
 
@@ -59,6 +70,7 @@ export class Connector {
         this.onMessageReceived = props.onMessageReceived
         this.cwChatConnector = new CWChatConnector(props as ConnectorProps)
         this.featureDevChatConnector = new FeatureDevChatConnector(props)
+        this.codeTransformChatConnector = new CodeTransformChatConnector(props)
         this.amazonqCommonsConnector = new AmazonQCommonsConnector({
             sendMessageToExtension: this.sendMessageToExtension,
             onWelcomeFollowUpClicked: props.onWelcomeFollowUpClicked,
@@ -81,6 +93,9 @@ export class Connector {
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onResponseBodyLinkClick(tabID, messageId, link)
+                break
+            case 'codetransform':
+                this.codeTransformChatConnector.onResponseBodyLinkClick(tabID, messageId, link)
                 break
         }
     }
@@ -131,12 +146,13 @@ export class Connector {
     transform = (tabID: string): void => {
         switch (this.tabsStorage.getTab(tabID)?.type) {
             default:
-                this.cwChatConnector.transform(tabID)
+                this.codeTransformChatConnector.transform(tabID)
                 break
         }
     }
 
     handleMessageReceive = async (message: MessageEvent): Promise<void> => {
+
         if (message.data === undefined) {
             return
         }
@@ -149,9 +165,11 @@ export class Connector {
         }
 
         if (messageData.sender === 'CWChat') {
-            this.cwChatConnector.handleMessageReceive(messageData)
+            void this.cwChatConnector.handleMessageReceive(messageData)
         } else if (messageData.sender === 'featureDevChat') {
-            this.featureDevChatConnector.handleMessageReceive(messageData)
+            void this.featureDevChatConnector.handleMessageReceive(messageData)
+        } else if (messageData.sender === 'codetransform') {
+            void this.codeTransformChatConnector.handleMessageReceive(messageData)
         }
     }
 
@@ -178,6 +196,9 @@ export class Connector {
             case 'featuredev':
                 this.featureDevChatConnector.onTabOpen(tabID)
                 break
+            case 'codetransform':
+                this.codeTransformChatConnector.onTabOpen(tabID)
+                break
         }
     }
 
@@ -191,11 +212,14 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         switch (this.tabsStorage.getTab(tabID)?.type) {
             case 'cwc':
-                this.cwChatConnector.onCodeInsertToCursorPosition(tabID, messageId, code, type, codeReference)
+                this.cwChatConnector.onCodeInsertToCursorPosition(tabID, messageId, code, type, codeReference, eventId, codeBlockIndex, totalCodeBlocks)
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onCodeInsertToCursorPosition(tabID, code, type, codeReference)
@@ -208,11 +232,14 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         switch (this.tabsStorage.getTab(tabID)?.type) {
             case 'cwc':
-                this.cwChatConnector.onCopyCodeToClipboard(tabID, messageId, code, type, codeReference)
+                this.cwChatConnector.onCopyCodeToClipboard(tabID, messageId, code, type, codeReference, eventId, codeBlockIndex, totalCodeBlocks)
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onCopyCodeToClipboard(tabID, code, type, codeReference)
@@ -229,6 +256,9 @@ export class Connector {
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onTabRemove(tabID)
+                break
+            case 'codetransform':
+                this.codeTransformChatConnector.onTabRemove(tabID)
                 break
         }
     }
@@ -277,6 +307,7 @@ export class Connector {
     onAuthFollowUpClicked = (tabID: string, authType: AuthFollowUpType) => {
         const tabType = this.tabsStorage.getTab(tabID)?.type
         switch (tabType) {
+            case 'codetransform':
             case 'cwc':
             case 'featuredev':
                 this.amazonqCommonsConnector.authFollowUpClicked(tabID, tabType, authType)
@@ -294,8 +325,19 @@ export class Connector {
             case 'featuredev':
                 this.featureDevChatConnector.followUpClicked(tabID, followUp)
                 break
+            case 'codetransform':
+                this.codeTransformChatConnector.followUpClicked(tabID, followUp)
+                break
             default:
                 this.cwChatConnector.followUpClicked(tabID, messageId, followUp)
+                break
+        }
+    }
+
+    onFileActionClick = (tabID: string, messageId: string, filePath: string, actionName: string): void => {
+        switch (this.tabsStorage.getTab(tabID)?.type) {
+            case 'featuredev':
+                this.featureDevChatConnector.onFileActionClick(tabID, messageId, filePath, actionName)
                 break
         }
     }
@@ -340,4 +382,19 @@ export class Connector {
                 break
         }
     }
+
+    onFormButtonClick = (
+        tabId: string,
+        messageId: string,
+        action: {
+            id: string
+            text?: string
+            formItemValues?: Record<string, string>
+        }
+    ) => {
+        if (isFormButtonCodeTransform(action.id)) {
+            this.codeTransformChatConnector.onFormButtonClick(tabId, action)
+        }
+    }
+
 }
