@@ -144,7 +144,7 @@ abstract class LoginBrowser(
     private fun tryHandleUserCanceledLogin(e: Exception): Boolean {
         if (e !is ProcessCanceledException ||
             e.cause !is IllegalStateException ||
-            e.message != message("credentials.pending.user_cancel.message")
+            e.message?.contains(message("credentials.pending.user_cancel.message")) == false
         ) {
             return false
         }
