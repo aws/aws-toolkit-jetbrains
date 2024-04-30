@@ -12,10 +12,7 @@ import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -97,7 +94,7 @@ class FeatureDevSessionContext(val project: Project) {
         val files = mutableListOf<VirtualFile>()
         VfsUtil.visitChildrenRecursively(
             projectRoot,
-            object : VirtualFileVisitor<Void?>() {
+            object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
                     if (file.isFile) {
                         files.add(file)
@@ -115,7 +112,7 @@ class FeatureDevSessionContext(val project: Project) {
             // chunk with some reasonable number because we don't actually need a new job for each file
             files.chunked(50).forEach { chunk ->
                 launch {
-                    for(file in chunk) {
+                    for (file in chunk) {
                         if (file.isFile && !ignoreFile(file, this)) {
                             send(file)
                         }
