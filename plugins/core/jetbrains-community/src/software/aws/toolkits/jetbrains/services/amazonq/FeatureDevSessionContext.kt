@@ -14,6 +14,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
@@ -108,19 +111,21 @@ class FeatureDevSessionContext(val project: Project) {
         )
 
         // Process files in parallel
-        val filesToInclude = mutableListOf<VirtualFile>()
-        coroutineScope {
-            files.map { file ->
-                async {
-                    if (file.isFile && !ignoreFile(file, this)) {
-                        filesToInclude.add(file)
+        val filesToIncludeFlow = channelFlow {
+            // chunk with some reasonable number because we don't actually need a new job for each file
+            files.chunked(50).forEach { chunk ->
+                launch {
+                    for(file in chunk) {
+                        if (file.isFile && !ignoreFile(file, this)) {
+                            send(file)
+                        }
                     }
                 }
-            }.awaitAll()
+            }
         }
 
         createTemporaryZipFileAsync { zipOutput ->
-            filesToInclude.forEach { file ->
+            filesToIncludeFlow.collect { file ->
                 val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
                 zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
             }
