@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Point help icon to https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/auth-access.html"
+  "description" : "Fix help icon in the AWS Explorer pointing to the wrong auth instructions page"
 }
