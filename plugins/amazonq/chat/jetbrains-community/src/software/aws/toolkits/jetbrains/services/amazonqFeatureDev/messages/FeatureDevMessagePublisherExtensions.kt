@@ -194,20 +194,17 @@ suspend fun MessagePublisher.sendCodeResult(
     deletedFiles: List<DeletedFileInfo>,
     references: List<CodeReferenceGenerated>
 ) {
-    val refs = mutableListOf<CodeReference>()
-    if (references.isNotEmpty()) {
-        refs += references.map { ref ->
-            CodeReference(
-                licenseName = ref.licenseName,
-                repository = ref.repository,
-                url = ref.url,
-                recommendationContentSpan = RecommendationContentSpan(
-                    ref.recommendationContentSpan?.start ?: 0,
-                    ref.recommendationContentSpan?.end ?: 0,
-                ),
-                information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})"
-            )
-        }
+    val refs = references.map { ref ->
+        CodeReference(
+            licenseName = ref.licenseName,
+            repository = ref.repository,
+            url = ref.url,
+            recommendationContentSpan = RecommendationContentSpan(
+                ref.recommendationContentSpan?.start ?: 0,
+                ref.recommendationContentSpan?.end ?: 0,
+            ),
+            information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})"
+        )
     }
 
     this.publish(
