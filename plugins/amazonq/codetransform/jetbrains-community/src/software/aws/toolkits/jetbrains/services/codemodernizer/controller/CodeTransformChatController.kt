@@ -423,6 +423,9 @@ class CodeTransformChatController(
             hilDownloadArtifact.manifest.pomGroupId,
             hilDownloadArtifact.manifest.pomArtifactId
         )
+
+        // TODO update chat item to show button
+
         if (dependency == null || (dependency.majors.isNullOrEmpty() && dependency.minors.isNullOrEmpty() && dependency.incrementals.isNullOrEmpty())) {
             hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.no_other_versions_found", hilDownloadArtifact.manifest.pomArtifactId))
             return
@@ -513,10 +516,7 @@ class CodeTransformChatController(
         }
 
         try {
-            val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
-            if (hilDownloadArtifact != null) {
-                codeModernizerManager.showHilPomFileAnnotation(hilDownloadArtifact.pomFile, hilDownloadArtifact.manifest.sourcePomVersion)
-            }
+            codeModernizerManager.showHilPomFileAnnotation()
         } catch (e: Exception) {
             telemetry.error("Unknown exception when trying to open hil pom file: ${e.localizedMessage}")
         }

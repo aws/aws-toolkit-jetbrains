@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.impl.DocumentMarkupModel
+import com.intellij.openapi.editor.impl.DocumentMarkupModel.forDocument
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.editor.markup.HighlighterLayer
@@ -23,30 +23,30 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants.Companion.getLightYellowThemeBackgroundColor
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.Color
 import java.awt.Font
 import javax.swing.Icon
 
 class PomFileAnnotator(private val project: Project, private var virtualFile: VirtualFile, private var lineNumberToHighlight: Int?) {
-    private lateinit var markupModel: MarkupModel
-
     val emptyAction: AnAction = object : AnAction() {
         override fun actionPerformed(e: AnActionEvent) = Unit
-
         override fun update(e: AnActionEvent) = Unit
     }
 
     fun showCustomEditor() {
         runInEdt {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile) ?: throw Error("No document found")
-            markupModel = DocumentMarkupModel.forDocument(document, project, false)
-
-            // We open the file for the user to see
-            openVirtualFile()
-
-            // We apply the editor changes to file
-            addGutterIconToLine(document, lineNumberToHighlight ?: 0)
+            try {
+                val document = FileDocumentManager.getInstance().getDocument(virtualFile) ?: throw Error("No document found")
+                val markupModel = forDocument(document, project, false) ?: forDocument(document, project, true)
+                markupModel.removeAllHighlighters()
+                openVirtualFile()
+                // We apply the editor changes to file
+                addGutterIconToLine(markupModel, document, lineNumberToHighlight ?: 1)
+            } catch (e: Exception) {
+                // TODO error logging
+                print(e.localizedMessage)
+            }
         }
     }
 
@@ -56,7 +56,7 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
         fileEditorManager.openTextEditor(openFileDescription, true)
     }
 
-    fun addGutterIconToLine(document: Document, lineNumberToHighlight: Int) {
+    fun addGutterIconToLine(markupModel: MarkupModel, document: Document,lineNumberToHighlight: Int) {
         val gutterIconRenderer = object : GutterIconRenderer() {
             override fun equals(other: Any?): Boolean = true
 
@@ -87,8 +87,8 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
         )
 
         // Define your action availability hint
-        val startOffset = document.getLineStartOffset(lineNumberToHighlight - 1)
-        val endOffset = document.getLineEndOffset(lineNumberToHighlight - 1)
+        val startOffset = document.getLineStartOffset(lineNumberToHighlight)
+        val endOffset = document.getLineEndOffset(lineNumberToHighlight)
 
         markupModel.apply {
             val highlighter = addRangeHighlighter(

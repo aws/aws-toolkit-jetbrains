@@ -746,6 +746,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun getArtifactForHil(): CodeTransformHilDownloadArtifact? {
+        if (codeTransformationSession?.getHilDownloadArtifact() != null) {
+            return codeTransformationSession?.getHilDownloadArtifact()
+        }
+
         val jobId = codeTransformationSession?.getActiveJobId() as JobId
         val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId() as String
 
@@ -857,11 +861,14 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun showHilPomFileAnnotation(file: File, currentDependencyVersion: String): Boolean {
+    fun showHilPomFileAnnotation(): Boolean {
+        val sourceVersion = codeTransformationSession?.getHilDownloadArtifact()?.manifest?.sourcePomVersion as String
+        val dependencyReportDirPath = getPathToHilDependencyReportDir(codeTransformationSession?.getHilTempDirectoryPath() as Path)
+
         try {
-            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(file)
+            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(dependencyReportDirPath.resolve("pom.xml").toFile())
             if (virtualFile != null) {
-                val lineNumberToHighlight = findLineNumberByString(virtualFile, "<version>$currentDependencyVersion</version>")
+                val lineNumberToHighlight = findLineNumberByString(virtualFile, "<version>$sourceVersion</version>")
                 val pomFileAnnotator = PomFileAnnotator(project, virtualFile, lineNumberToHighlight)
                 pomFileAnnotator.showCustomEditor() // opens editor using Edt thread
             } else {
