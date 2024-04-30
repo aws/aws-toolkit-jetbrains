@@ -147,7 +147,7 @@ tasks.processTestResources {
 
     // delete when fully split
     // pull in shim to make tests pass
-    from(project(":plugin-toolkit:intellij").file("src/main/resources"))
+    from(project(":plugin-toolkit:intellij-standalone").file("src/main/resources"))
 }
 
 dependencies {
