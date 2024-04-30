@@ -55,7 +55,7 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("testDataPath", project.rootDir.resolve("testdata").toString())
     systemProperty("testReportPath", project.buildDir.resolve("reports").resolve("tests").resolve("testRecordings").toString())
 
-    systemProperty("GRADLE_PROJECT", ":sandbox-all")
+    systemProperty("GRADLE_PROJECT", "sandbox-all")
     useJUnitPlatform {
         includeTags("core")
     }
