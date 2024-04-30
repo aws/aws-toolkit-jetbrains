@@ -3,24 +3,34 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
+import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
-import software.aws.toolkits.core.utils.createTemporaryZipFile
+import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.putNextEntry
 import java.io.File
 import java.io.FileInputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Base64
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
 class FeatureDevSessionContext(val project: Project) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
-    private val ignorePatterns = listOf(
+    private val ignorePatterns = setOf(
         "\\.aws-sam",
         "\\.svn",
         "\\.hg/",
@@ -49,40 +59,75 @@ class FeatureDevSessionContext(val project: Project) {
     private val gitIgnoreFile = File(projectRoot.path, ".gitignore")
 
     init {
-        ignorePatternsWithGitIgnore = ignorePatterns + parseGitIgnore().map { Regex(it) }
+        ignorePatternsWithGitIgnore = (ignorePatterns + parseGitIgnore().map { Regex(it) }).toList()
     }
 
     fun getProjectZip(): ZipCreationResult {
-        val zippedProject = runReadAction { zipFiles(projectRoot) }
+        val zippedProject = runBlocking { zipFiles(projectRoot) }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    fun ignoreFile(file: File): Boolean = try {
-        ignorePatternsWithGitIgnore.any { p -> p.containsMatchIn(file.path) }
-    } catch (e: Exception) {
-        true
+    private suspend fun ignoreFile(file: File): Boolean = coroutineScope {
+        val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
+            async {
+                pattern.containsMatchIn(file.path)
+            }
+        }
+        deferredResults.any { it.await() }
     }
 
-    fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(File(file.path))
+    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(File(file.path))
 
-    private fun zipFiles(projectRoot: VirtualFile): File = createTemporaryZipFile {
-        VfsUtil.collectChildrenRecursively(projectRoot).map { virtualFile -> File(virtualFile.path) }.forEach { file ->
-            if (file.isFile() && !ignoreFile(file)) {
+    suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(Dispatchers.Default) {
+        val files = mutableListOf<VirtualFile>()
+        VfsUtil.visitChildrenRecursively(projectRoot, object : VirtualFileVisitor<Void?>() {
+            override fun visitFile(file: VirtualFile): Boolean {
+                if (file.isFile) {
+                    files.add(file)
+                    return true
+                }
+                return runBlocking {
+                    !ignoreFile(file)
+                }
+            }
+        })
+
+        // Process files in parallel
+        val nonMatchingFiles = mutableListOf<VirtualFile>()
+        coroutineScope {
+            files.map { file ->
+                async {
+                    if (file.isFile && !ignoreFile(file)) {
+                        nonMatchingFiles.add(file)
+                    }
+                }
+            }.awaitAll()
+        }
+
+        createTemporaryZipFileAsync { zipOutput ->
+            nonMatchingFiles.forEach { file ->
                 val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                it.putNextEntry(relativePath.toString(), Path(file.path))
+                zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
             }
         }
     }.toFile()
 
-    private fun parseGitIgnore(): List<String> {
+    private suspend fun createTemporaryZipFileAsync(block: suspend (ZipOutputStream) -> Unit): Path = withContext(Dispatchers.IO) {
+        val file = Files.createTempFile(null, ".zip")
+        ZipOutputStream(file.outputStream()).use { zipOutput -> block(zipOutput) }
+        file
+    }
+
+    private fun parseGitIgnore(): Set<String> {
         if (!gitIgnoreFile.exists()) {
-            return emptyList()
+            return emptySet()
         }
         return gitIgnoreFile.readLines()
             .filterNot { it.isBlank() || it.startsWith("#") }
             .map { it.trim() }
             .map { convertGitIgnorePatternToRegex(it) }
+            .toSet()
     }
 
     // gitignore patterns are not regex, method update needed.
