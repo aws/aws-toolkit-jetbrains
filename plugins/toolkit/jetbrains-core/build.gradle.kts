@@ -26,6 +26,10 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
+intellij {
+    plugins.add(project(":plugin-core"))
+}
+
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
     changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
