@@ -58,7 +58,7 @@ dependencies {
 
 tasks.register("runIde") {
     doFirst {
-        throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij:runIde")
+        throw GradleException("Use project specific runIde command, i.e. :plugin-toolkit:intellij-standalone:runIde")
     }
 }
 
