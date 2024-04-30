@@ -9,7 +9,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -18,6 +17,8 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
@@ -79,19 +80,22 @@ class FeatureDevSessionContext(val project: Project) {
 
     suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(File(file.path))
 
-    suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(Dispatchers.Default) {
+    suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
-        VfsUtil.visitChildrenRecursively(projectRoot, object : VirtualFileVisitor<Void?>() {
-            override fun visitFile(file: VirtualFile): Boolean {
-                if (file.isFile) {
-                    files.add(file)
-                    return true
-                }
-                return runBlocking {
-                    !ignoreFile(file)
+        VfsUtil.visitChildrenRecursively(
+            projectRoot,
+            object : VirtualFileVisitor<Void?>() {
+                override fun visitFile(file: VirtualFile): Boolean {
+                    if (file.isFile) {
+                        files.add(file)
+                        return true
+                    }
+                    return runBlocking {
+                        !ignoreFile(file)
+                    }
                 }
             }
-        })
+        )
 
         // Process files in parallel
         val nonMatchingFiles = mutableListOf<VirtualFile>()
@@ -113,7 +117,7 @@ class FeatureDevSessionContext(val project: Project) {
         }
     }.toFile()
 
-    private suspend fun createTemporaryZipFileAsync(block: suspend (ZipOutputStream) -> Unit): Path = withContext(Dispatchers.IO) {
+    private suspend fun createTemporaryZipFileAsync(block: suspend (ZipOutputStream) -> Unit): Path = withContext(EDT) {
         val file = Files.createTempFile(null, ".zip")
         ZipOutputStream(file.outputStream()).use { zipOutput -> block(zipOutput) }
         file
