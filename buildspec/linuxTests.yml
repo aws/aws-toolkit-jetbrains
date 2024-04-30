@@ -50,7 +50,7 @@ phases:
       - rsync -rmq --include='*/' --include '**/build/idea-sandbox/system*/log/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/build/reports/**' --exclude='*' . $TEST_ARTIFACTS/ || true
       - rsync -rmq --include='*/' --include '**/test-results/**/*.xml' --exclude='*' . $TEST_ARTIFACTS/test-reports || true
-      - cp -r ./plugins/toolkit/intellij/build/distributions/*.zip $BUILD_ARTIFACTS/ || touch $BUILD_ARTIFACTS/build_failed
+      - cp -r ./plugins/**/build/distributions/*.zip $BUILD_ARTIFACTS/ || touch $BUILD_ARTIFACTS/build_failed
 
 reports:
   unit-test:
@@ -68,4 +68,4 @@ artifacts:
       files:
         - /tmp/buildArtifacts/*
       discard-paths: yes
-      name: plugin.zip
+      name: plugins.zip
