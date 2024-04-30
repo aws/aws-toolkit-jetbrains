@@ -21,7 +21,6 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.explorer.refreshCwQTree
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
@@ -58,6 +57,7 @@ const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
+const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -393,7 +393,6 @@ class CodeModernizerSession(
                 // Always refresh the dev tool tree so status will be up-to-date
                 state.currentJobStatus = new
                 state.transformationPlan = plan
-                sessionContext.project.refreshCwQTree()
 
                 if (state.currentJobStatus == TransformationStatus.PAUSED) {
                     val pausedUpdate =
