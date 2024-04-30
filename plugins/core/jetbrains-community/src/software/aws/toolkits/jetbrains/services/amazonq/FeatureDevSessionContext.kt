@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -19,6 +20,7 @@ import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
@@ -64,7 +66,11 @@ class FeatureDevSessionContext(val project: Project) {
     }
 
     fun getProjectZip(): ZipCreationResult {
-        val zippedProject = runBlocking { zipFiles(projectRoot) }
+        val zippedProject = runBlocking {
+            withBackgroundProgress(project, message("amazonqFeatureDev.create_plan.background_progress_title")) {
+                zipFiles(projectRoot)
+            }
+        }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
@@ -98,19 +104,19 @@ class FeatureDevSessionContext(val project: Project) {
         )
 
         // Process files in parallel
-        val nonMatchingFiles = mutableListOf<VirtualFile>()
+        val filesToInclude = mutableListOf<VirtualFile>()
         coroutineScope {
             files.map { file ->
                 async {
                     if (file.isFile && !ignoreFile(file)) {
-                        nonMatchingFiles.add(file)
+                        filesToInclude.add(file)
                     }
                 }
             }.awaitAll()
         }
 
         createTemporaryZipFileAsync { zipOutput ->
-            nonMatchingFiles.forEach { file ->
+            filesToInclude.forEach { file ->
                 val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
                 zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
             }
