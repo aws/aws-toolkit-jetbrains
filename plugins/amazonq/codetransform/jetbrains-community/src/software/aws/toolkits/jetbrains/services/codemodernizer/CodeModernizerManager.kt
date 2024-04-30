@@ -861,17 +861,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val sourceVersion = codeTransformationSession?.getHilDownloadArtifact()?.manifest?.sourcePomVersion as String
         val dependencyReportDirPath = getPathToHilDependencyReportDir(codeTransformationSession?.getHilTempDirectoryPath() as Path)
 
-        try {
-            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(dependencyReportDirPath.resolve("pom.xml").toFile())
-            if (virtualFile != null) {
-                val lineNumberToHighlight = findLineNumberByString(virtualFile, "<version>$sourceVersion</version>")
-                val pomFileAnnotator = PomFileAnnotator(project, virtualFile, lineNumberToHighlight)
-                pomFileAnnotator.showCustomEditor() // opens editor using Edt thread
-            } else {
-                return false
-            }
-        } catch (e: Exception) {
-            LOG.error { e.localizedMessage }
+        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(dependencyReportDirPath.resolve("pom.xml").toFile())
+        if (virtualFile != null) {
+            val lineNumberToHighlight = findLineNumberByString(virtualFile, "<version>$sourceVersion</version>")
+            val pomFileAnnotator = PomFileAnnotator(project, virtualFile, lineNumberToHighlight)
+            pomFileAnnotator.showCustomEditor() // opens editor using Edt thread
+        } else {
             return false
         }
 

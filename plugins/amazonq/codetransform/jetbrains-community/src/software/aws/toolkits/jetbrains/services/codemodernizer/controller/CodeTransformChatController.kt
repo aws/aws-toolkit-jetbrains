@@ -519,6 +519,7 @@ class CodeTransformChatController(
             codeModernizerManager.showHilPomFileAnnotation()
         } catch (e: Exception) {
             telemetry.error("Unknown exception when trying to open hil pom file: ${e.localizedMessage}")
+            logger.error("Unknown exception when trying to open file: ${e.localizedMessage}")
         }
     }
 

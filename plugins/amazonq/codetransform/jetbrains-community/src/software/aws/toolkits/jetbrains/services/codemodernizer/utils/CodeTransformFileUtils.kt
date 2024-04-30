@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -131,7 +132,9 @@ fun getPathToHilDependenciesRootDir(tmpDirPath: Path): Path = tmpDirPath.resolve
 fun getPathToHilUploadZip(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_UPLOAD_ZIP_NAME)
 
 fun findLineNumberByString(virtualFile: VirtualFile, searchString: String): Int? {
-    val document = FileDocumentManager.getInstance().getDocument(virtualFile) ?: return null
+    val document = runReadAction {
+        FileDocumentManager.getInstance().getDocument(virtualFile)
+    } ?: return null
 
     val text = document.text
     var lineNumber = 0
