@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -55,6 +56,9 @@ class FeatureDevSessionContext(val project: Project) {
         "/license\\.md$",
         "/License\\.md$",
         "/LICENSE\\.md$",
+        "node_modules/",
+        "build/",
+        "dist/"
     ).map { Regex(it) }
 
     private var _projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
@@ -75,7 +79,7 @@ class FeatureDevSessionContext(val project: Project) {
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    private suspend fun ignoreFile(file: File): Boolean = coroutineScope {
+    private suspend fun ignoreFile(file: File, scope: CoroutineScope): Boolean = with(scope) {
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             async {
                 pattern.containsMatchIn(file.path)
@@ -84,7 +88,7 @@ class FeatureDevSessionContext(val project: Project) {
         deferredResults.any { it.await() }
     }
 
-    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(File(file.path))
+    suspend fun ignoreFile(file: VirtualFile, scope: CoroutineScope): Boolean = ignoreFile(File(file.path), scope)
 
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
@@ -97,7 +101,7 @@ class FeatureDevSessionContext(val project: Project) {
                         return true
                     }
                     return runBlocking {
-                        !ignoreFile(file)
+                        !ignoreFile(file, this)
                     }
                 }
             }
@@ -108,7 +112,7 @@ class FeatureDevSessionContext(val project: Project) {
         coroutineScope {
             files.map { file ->
                 async {
-                    if (file.isFile && !ignoreFile(file)) {
+                    if (file.isFile && !ignoreFile(file, this)) {
                         filesToInclude.add(file)
                     }
                 }

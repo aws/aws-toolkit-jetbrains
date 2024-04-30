@@ -141,7 +141,7 @@ class CodeScanSessionConfig(
                 } else {
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !featureDevSessionContext.ignoreFile(it)
+                            !featureDevSessionContext.ignoreFile(it, this)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -175,7 +175,7 @@ class CodeScanSessionConfig(
             val current = stack.pop()
 
             if (!current.isDirectory) {
-                if (runBlocking { !featureDevSessionContext.ignoreFile(current) }) {
+                if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }) {
                     if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                         break
                     } else {
@@ -191,7 +191,7 @@ class CodeScanSessionConfig(
                 }
             } else {
                 // Directory case: only traverse if not ignored
-                if (runBlocking { !featureDevSessionContext.ignoreFile(current) }) {
+                if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }) {
                     for (child in current.children) {
                         stack.push(child)
                     }
