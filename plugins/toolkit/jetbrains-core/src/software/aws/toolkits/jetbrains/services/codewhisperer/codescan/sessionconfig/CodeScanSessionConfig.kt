@@ -40,9 +40,7 @@ class CodeScanSessionConfig(
     private val project: Project,
     private val scope: CodeAnalysisScope
 ) {
-    var projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
-        project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
-    }
+    var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
         private set
 
     private var isProjectTruncated = false

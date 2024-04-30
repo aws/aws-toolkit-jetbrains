@@ -260,7 +260,7 @@ class ChatController private constructor(
             "Issue:    \"${message.issue["title"]}\" \n" +
             "Code:    $codeSelection"
 
-        val modelPrompt = "Explain the following part of my code \n\n " +
+        val modelPrompt = "Explain the following part of my code and provide a fix for it \n\n " +
             "Issue:    \"${message.issue["title"]}\" \n" +
             "Description:    ${message.issue["description"]} \n" +
             "Code:    $codeSelection"
