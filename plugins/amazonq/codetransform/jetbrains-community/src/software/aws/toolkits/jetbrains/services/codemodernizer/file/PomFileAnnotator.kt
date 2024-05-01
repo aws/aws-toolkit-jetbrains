@@ -23,8 +23,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants.Companion.getLightYellowThemeBackgroundColor
 import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.awt.Color
@@ -37,10 +35,9 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
         override fun update(e: AnActionEvent) = Unit
     }
 
-    private fun getMarkupModelForDocument(document: Document): MarkupModel {
-        // If corresponding model doesn't exist, create it for that document
-        return forDocument(document, project, false) ?: forDocument(document, project, true)
-    }
+    // If corresponding model doesn't exist, create it for that document
+    private fun getMarkupModelForDocument(document: Document): MarkupModel =
+        forDocument(document, project, false) ?: forDocument(document, project, true)
 
     private fun openVirtualFile() {
         val fileEditorManager = FileEditorManager.getInstance(project)
@@ -48,7 +45,7 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
         fileEditorManager.openTextEditor(openFileDescription, true)
     }
 
-    private fun addGutterIconToLine(markupModel: MarkupModel, document: Document,lineNumberToHighlight: Int) {
+    private fun addGutterIconToLine(markupModel: MarkupModel, document: Document, lineNumberToHighlight: Int) {
         val gutterIconRenderer = object : GutterIconRenderer() {
             override fun equals(other: Any?): Boolean = true
 

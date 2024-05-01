@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -519,7 +520,7 @@ class CodeTransformChatController(
             codeModernizerManager.showHilPomFileAnnotation()
         } catch (e: Exception) {
             telemetry.error("Unknown exception when trying to open hil pom file: ${e.localizedMessage}")
-            logger.error("Unknown exception when trying to open file: ${e.localizedMessage}")
+            logger.error { "Unknown exception when trying to open file: ${e.localizedMessage}" }
         }
     }
 
