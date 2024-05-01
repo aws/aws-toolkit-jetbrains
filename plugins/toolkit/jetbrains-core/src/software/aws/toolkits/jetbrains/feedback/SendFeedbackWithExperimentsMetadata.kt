@@ -12,5 +12,3 @@ suspend fun sendFeedbackWithExperimentsMetadata(sentiment: Sentiment, comment: S
     val experiments = ToolkitExperimentManager.enabledExperiments().joinToString(",") { it.id }
     TelemetryService.getInstance().sendFeedback(sentiment, comment, metadata + (ENABLED_EXPERIMENTS to experiments))
 }
-
-
