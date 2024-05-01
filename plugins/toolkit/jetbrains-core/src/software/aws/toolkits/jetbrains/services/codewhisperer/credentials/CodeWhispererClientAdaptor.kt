@@ -119,7 +119,8 @@ interface CodeWhispererClientAdaptor : Disposable {
 
     fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
-        codeScanJobId: String?
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope
     ): SendTelemetryEventResponse
 
     fun sendCodeScanRemediationTelemetry(
@@ -181,7 +182,7 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    private val codeWhispererUserContext = ClientMetadata().let {
+    private val codeWhispererUserContext = ClientMetadata.getDefault().let {
         val osForCodeWhisperer: OperatingSystem =
             when {
                 SystemInfo.isWindows -> OperatingSystem.WINDOWS
@@ -195,7 +196,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             .operatingSystem(osForCodeWhisperer)
             .product(FEATURE_EVALUATION_PRODUCT_NAME)
             .clientId(it.clientId)
-            .ideVersion(it.productVersion)
+            .ideVersion(it.awsVersion)
             .build()
     }
 
@@ -374,7 +375,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
 
     override fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
-        codeScanJobId: String?
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanEvent {
@@ -383,6 +385,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
                 it.codeScanJobId(if (codeScanJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODESCANJOBID else codeScanJobId)
                 it.timestamp(Instant.now())
+                it.codeAnalysisScope(scope.value)
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

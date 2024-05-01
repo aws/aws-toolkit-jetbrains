@@ -14,11 +14,13 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispere
 import software.amazon.awssdk.services.codewhispererstreaming.model.ServiceQuotaExceededException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.apiError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
@@ -50,6 +52,10 @@ fun createConversation(proxyClient: FeatureDevClient): String {
         if (e is CodeWhispererRuntimeException) {
             errMssg = e.awsErrorDetails().errorMessage()
             logger.warn(e) { "Start conversation failed for request: ${e.requestId()}" }
+
+            if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException) {
+                throw MonthlyConversationLimitError(errMssg, e.cause)
+            }
         }
         apiError(errMssg, e.cause)
     }
@@ -202,6 +208,7 @@ suspend fun exportTaskAssistArchiveResult(proxyClient: FeatureDevClient, convers
         val result = exportResponse.reduce { acc, next -> acc + next } // To map the result it is needed to combine the  full byte array
         parsedResult = jacksonObjectMapper().readValue(result)
     } catch (e: Exception) {
+        logger.error(e) { "Failed to parse downloaded code results" }
         exportParseError()
     }
 

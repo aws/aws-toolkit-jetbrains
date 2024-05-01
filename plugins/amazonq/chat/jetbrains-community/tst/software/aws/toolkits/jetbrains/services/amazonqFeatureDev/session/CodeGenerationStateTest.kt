@@ -20,6 +20,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
@@ -28,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.exportTaskAssistArchiveResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getTaskAssistCodeGeneration
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.startTaskAssistCodeGeneration
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.resources.message
 
 class CodeGenerationStateTest : FeatureDevTestBase() {
@@ -155,7 +155,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             val nextState = actual.nextState as PrepareCodeGenerationState
             assertThat(nextState.filePaths).isEqualTo(emptyList<NewFileZipInfo>())
             assertThat(nextState.deletedFiles).isEqualTo(emptyList<String>())
-            assertThat(nextState.references).isEqualTo(emptyList<CodeReference>())
+            assertThat(nextState.references).isEqualTo(emptyList<CodeReferenceGenerated>())
             assertThat(actual.interaction.interactionSucceeded).isEqualTo(true)
             assertThat(actual.interaction.content).isEqualTo("")
         }
