@@ -172,6 +172,7 @@ class CodeWhispererExplorerActionManagerTest {
         assertThat(ConnectionPinningManager.getInstance().isFeaturePinned(CodeWhispererConnection.getInstance())).isFalse
     }
 
+    @SuppressWarnings("UnusedParameter")
     private fun assertConnectionState(
         startUrl: String,
         refreshToken: String?,
