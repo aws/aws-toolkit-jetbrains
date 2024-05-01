@@ -34,8 +34,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.utils.isQConnected
-import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -95,14 +93,9 @@ class CodeWhispererExplorerActionManagerTest {
         whenever(mockConnectionManager.activeConnectionForFeature(any())).thenReturn(null)
         project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, disposableRule.disposable)
 
-        val d = isQConnected(project)
-        val e = isQExpired(project)
-
-
         val actual = mockManager.checkActiveCodeWhispererConnectionType(project)
         assertThat(actual).isEqualTo(CodeWhispererLoginType.Logout)
-        assertThat(isQConnected(project)).isFalse
-        assertThat(isQExpired(project)).isFalse
+        assertThat(isCodeWhispererEnabled(project)).isFalse
     }
 
     /**
