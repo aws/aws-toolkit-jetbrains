@@ -148,10 +148,24 @@ tasks.processTestResources {
     // TODO how can we remove this. Fails due to:
     // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
 
-    // delete when fully split
-    // pull in shim to make tests pass
-    from(project(":plugin-toolkit:intellij-standalone").file("src/main/resources"))
+// delete when fully split
+// pull in shim to make tests pass
+val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
+    archiveFileName.set("dummy.jar")
+
+    from(project.file("test-plugin-shim.xml")) {
+        rename { "plugin-shim.xml" }
+        into("META-INF")
+    }
+}
+
+tasks.prepareTestingSandbox {
+    dependsOn(dummyPluginJar)
+
+    intoChild(pluginName.map { "$it/lib" })
+        .from(dummyPluginJar)
 }
 
 dependencies {
@@ -200,6 +214,5 @@ dependencies {
     testRuntimeOnly(libs.slf4j.jdk14)
 
     // delete when fully split
-    testRuntimeOnly(project(":plugin-core:jetbrains-community"))
     testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }
