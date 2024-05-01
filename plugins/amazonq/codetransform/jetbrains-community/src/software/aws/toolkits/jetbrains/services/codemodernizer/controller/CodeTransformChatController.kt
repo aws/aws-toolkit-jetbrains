@@ -425,8 +425,6 @@ class CodeTransformChatController(
             hilDownloadArtifact.manifest.pomArtifactId
         )
 
-        // TODO update chat item to show button
-
         if (dependency == null || (dependency.majors.isNullOrEmpty() && dependency.minors.isNullOrEmpty() && dependency.incrementals.isNullOrEmpty())) {
             hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.no_other_versions_found", hilDownloadArtifact.manifest.pomArtifactId))
             return
