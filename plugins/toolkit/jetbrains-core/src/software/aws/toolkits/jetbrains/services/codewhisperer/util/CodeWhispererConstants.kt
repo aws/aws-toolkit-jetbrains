@@ -10,7 +10,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.awt.Font
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
@@ -81,27 +80,6 @@ object CodeWhispererConstants {
     const val PROJECT_SCANS_LIMIT_REACHED = "You have reached the monthly quota of project scans."
     const val FILE_SCANS_THROTTLING_MESSAGE = "Maximum auto-scans count reached for this month"
     const val PROJECT_SCANS_THROTTLING_MESSAGE = "Maximum project scan count reached for this month"
-
-    // List of Auot File Scan supported languages
-    val AUTO_FILE_SCAN_SUPPORTED_LANGUAGES = listOf(
-        CodewhispererLanguage.Java,
-        CodewhispererLanguage.Python,
-        CodewhispererLanguage.Javascript,
-        CodewhispererLanguage.Typescript,
-        CodewhispererLanguage.C,
-        CodewhispererLanguage.Cpp,
-        CodewhispererLanguage.Csharp,
-        CodewhispererLanguage.Go,
-        CodewhispererLanguage.Php,
-        CodewhispererLanguage.Ruby,
-        CodewhispererLanguage.Yaml,
-        CodewhispererLanguage.Yml,
-        CodewhispererLanguage.Tf,
-        CodewhispererLanguage.Hcl,
-        CodewhispererLanguage.Jsonc,
-        CodewhispererLanguage.Json,
-        CodewhispererLanguage.Plaintext
-    )
 
     // Date when Accountless is not supported
     val EXPIRE_DATE = SimpleDateFormat("yyyy-MM-dd").parse("2023-01-31")

@@ -18,6 +18,8 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun isCodeScanSupported(): Boolean = true
 
+    override fun isFileScanSupported(): Boolean = true
+
     override fun isImportAdderSupported(): Boolean = true
 
     override fun isUTGSupported() = true

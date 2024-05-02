@@ -70,7 +70,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTele
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.AUTO_FILE_SCAN_SUPPORTED_LANGUAGES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
@@ -217,7 +216,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
             language = codeScanSessionConfig.getSelectedFile().programmingLanguage()
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
-                !AUTO_FILE_SCAN_SUPPORTED_LANGUAGES.contains(language.toTelemetryType())
+                !language.isFileScanSupported()
             ) {
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 isCodeScanInProgress.set(false)
