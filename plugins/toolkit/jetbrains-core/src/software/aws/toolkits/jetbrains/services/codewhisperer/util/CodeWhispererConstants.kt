@@ -82,7 +82,7 @@ object CodeWhispererConstants {
     const val FILE_SCANS_THROTTLING_MESSAGE = "Maximum auto-scans count reached for this month"
     const val PROJECT_SCANS_THROTTLING_MESSAGE = "Maximum project scan count reached for this month"
 
-    // create list of Auot File Scan supported languages
+    // List of Auot File Scan supported languages
     val AUTO_FILE_SCAN_SUPPORTED_LANGUAGES = listOf(
         CodewhispererLanguage.Java,
         CodewhispererLanguage.Python,
