@@ -138,7 +138,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * Triggers a code scan and displays results in the new tab in problems view panel.
      */
     fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope) {
-        if (isQConnected(project)) return
+        if (!isQConnected(project)) return
 
         // Return if a scan is already in progress.
         if (isCodeScanInProgress.getAndSet(scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT)) return
