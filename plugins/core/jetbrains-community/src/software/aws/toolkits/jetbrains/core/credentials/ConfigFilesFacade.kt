@@ -289,6 +289,8 @@ class DefaultConfigFilesFacade(
             appendText(body)
         }
 
-        VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
+
+        // not sure why VirtualFileManager.getInstance().refreshAndFindFileByNioPath() not work as this
+        VirtualFileManager.getInstance().findFileByNioPath(path)?.let { it.refresh(false, false) }
     }
 }
