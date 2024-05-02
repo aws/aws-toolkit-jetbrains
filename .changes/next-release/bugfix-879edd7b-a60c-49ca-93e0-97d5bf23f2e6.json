@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix to reduce getCodeScan API calls by increasing Intervals and latest file scan kills old running file scans."
+}

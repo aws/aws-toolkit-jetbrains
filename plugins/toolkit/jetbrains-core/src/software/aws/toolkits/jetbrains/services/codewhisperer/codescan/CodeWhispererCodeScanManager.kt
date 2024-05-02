@@ -154,6 +154,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
             codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         } else {
             if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() and !isUserBuilderId(project)) {
+                // cancel if a file scan is running.
+                if (!isCodeScanInProgress() && this::codeScanJob.isInitialized && codeScanJob.isActive) {
+                    codeScanJob.cancel()
+                }
                 //  Add File Scan
                 codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.FILE)
             }
@@ -220,7 +224,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 (language == CodeWhispererUnknownLanguage.INSTANCE || language.toTelemetryType() == CodewhispererLanguage.Plaintext)
             ) {
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
-                isCodeScanInProgress.set(false)
                 codeScanStatus = Result.Cancelled
                 return@launch
             } else {
