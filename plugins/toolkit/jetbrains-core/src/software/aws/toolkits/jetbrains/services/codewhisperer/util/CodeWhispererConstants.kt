@@ -86,10 +86,8 @@ object CodeWhispererConstants {
     val AUTO_FILE_SCAN_SUPPORTED_LANGUAGES = listOf(
         CodewhispererLanguage.Java,
         CodewhispererLanguage.Python,
-        CodewhispererLanguage.Jsx,
         CodewhispererLanguage.Javascript,
         CodewhispererLanguage.Typescript,
-        CodewhispererLanguage.Tsx,
         CodewhispererLanguage.C,
         CodewhispererLanguage.Cpp,
         CodewhispererLanguage.Csharp,
