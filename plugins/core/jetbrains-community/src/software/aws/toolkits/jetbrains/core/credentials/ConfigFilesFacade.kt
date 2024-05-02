@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.vfs.VirtualFileManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
@@ -287,5 +288,7 @@ class DefaultConfigFilesFacade(
             touch(restrictToOwner = true)
             appendText(body)
         }
+
+        VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
     }
 }

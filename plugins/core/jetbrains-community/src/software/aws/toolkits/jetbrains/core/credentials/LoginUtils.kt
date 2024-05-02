@@ -140,10 +140,6 @@ sealed interface Login {
 
             configFilesFacade.appendProfileToCredentials(profile)
 
-            // TODO: how to refresh partially?
-            // TODO: should it live in configFileFacade
-            VirtualFileManager.getInstance().refreshWithoutFileWatcher(false)
-
             return true
         }
     }
