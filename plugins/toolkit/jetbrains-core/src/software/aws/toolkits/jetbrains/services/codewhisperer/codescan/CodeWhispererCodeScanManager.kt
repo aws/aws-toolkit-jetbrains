@@ -132,7 +132,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     fun getActionButtonIconForExplorerNode(): Icon = if (isProjectScanInProgress()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
 
-    fun getActionButtonText(): String = if (!isProjectScanInProgress()) message("codewhisperer.codescan.run_scan") else message("codewhisperer.codescan.stop_scan")
+    fun getActionButtonText(): String = if (!isProjectScanInProgress()) {
+        message(
+            "codewhisperer.codescan.run_scan"
+        )
+    } else {
+        message("codewhisperer.codescan.stop_scan")
+    }
 
     /**
      * Triggers a code scan and displays results in the new tab in problems view panel.
@@ -482,8 +488,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private fun afterCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope) {
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                isProjectScanInProgress.set(false)
-            }
+            isProjectScanInProgress.set(false)
+        }
     }
 
     private fun sendCodeScanTelemetryToServiceAPI(
