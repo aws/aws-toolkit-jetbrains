@@ -223,7 +223,6 @@ class CodeWhispererUtilTest {
             """.trimMargin()
         )
         assertThat(result[2].path).isEqualTo("fake/path")
-
     }
 
     @Test
