@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Bug Fix for Project Scan Code Scan Issues list to avoid duplication and missing issues."
+  "description" : "Amazon Q: Fix issue where items listed by Amazon Q Code Scan were duplicated or missing"
 }
