@@ -291,6 +291,9 @@ class DefaultConfigFilesFacade(
 
 
         // not sure why VirtualFileManager.getInstance().refreshAndFindFileByNioPath() not work as this
-        VirtualFileManager.getInstance().findFileByNioPath(path)?.let { it.refresh(false, false) }
+        VirtualFileManager.getInstance().findFileByNioPath(path)?.let {
+            println("ConfigFilesFacade:: refreshing virtual file ${it.name}")
+            it.refresh(false, false)
+        }
     }
 }

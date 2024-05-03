@@ -45,6 +45,7 @@ abstract class CredentialManager : SimpleModificationTracker() {
         providerIds[identifier.id] = identifier
 
         incModificationCount()
+        println("CredentialManager:: addProvider and is publishing CREDENTIALS_CHANGED event")
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerAdded(identifier)
     }
 
@@ -53,6 +54,7 @@ abstract class CredentialManager : SimpleModificationTracker() {
         providerIds[identifier.id] = identifier
 
         incModificationCount()
+        println("CredentialManager:: modifyProvider")
         ApplicationManager.getApplication().messageBus.syncPublisher(CREDENTIALS_CHANGED).providerModified(identifier)
     }
 

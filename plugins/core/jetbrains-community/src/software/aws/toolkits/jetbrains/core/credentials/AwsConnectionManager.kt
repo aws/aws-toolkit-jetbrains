@@ -41,10 +41,12 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
     @Volatile
     var connectionState: ConnectionState = ConnectionState.InitializingToolkit
         internal set(value) {
+            println("AwsConnectionManager:: connectionState setter: set value to be ${value}")
             field = value
             incModificationCount()
 
             AppUIExecutor.onWriteThread(ModalityState.any()).expireWith(this).execute {
+                println("AwsConnectionManager:: publishing AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED")
                 project.messageBus.syncPublisher(CONNECTION_SETTINGS_STATE_CHANGED).settingsStateChanged(value)
             }
         }
@@ -64,6 +66,11 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
             .subscribe(
                 CredentialManager.CREDENTIALS_CHANGED,
                 object : ToolkitCredentialsChangeListener {
+                    override fun providerAdded(identifier: CredentialIdentifier) {
+                        println("AwsConnectionManager:: receives CredentialManager.CREDENTIALS_CHANGED topic")
+                        changeCredentialProvider(identifier)
+                    }
+
                     override fun providerRemoved(identifier: CredentialIdentifier) {
                         if (selectedCredentialIdentifier == identifier) {
                             changeConnectionSettings(null, selectedRegion)
@@ -90,6 +97,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
      * Re-trigger validation of the current connection
      */
     fun refreshConnectionState() {
+        println("AwsConnectionManager:: refreshConnectionState")
         changeFieldsAndNotify { }
     }
 
@@ -98,6 +106,7 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
      */
     protected fun changeConnectionSettings(identifier: CredentialIdentifier?, region: AwsRegion?) {
         changeFieldsAndNotify {
+            println("AwsConnectionManager:: changeConnectionSettings")
             identifier?.let {
                 recentlyUsedProfiles.add(it.id)
             }
@@ -115,8 +124,10 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
      * Changes the credentials and then validates them. Notifies listeners of results
      */
     fun changeCredentialProvider(identifier: CredentialIdentifier, passive: Boolean = false) {
+        println("AwsConnectionManager:: changeCredentialProvider")
         changeFieldsAndNotify {
             recentlyUsedProfiles.add(identifier.id)
+            println("AwsConnectionManager:: changeCredentialProvider: setting credential being used to ${identifier.id}")
 
             selectedCredentialIdentifier = identifier
 
@@ -145,18 +156,22 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
     @Synchronized
     private fun changeFieldsAndNotify(fieldUpdateBlock: () -> Unit) {
+        println("AwsConnectionManager:: changeFieldsAndNotify")
         val isInitial = connectionState is ConnectionState.InitializingToolkit
         connectionState = ConnectionState.ValidatingConnection
 
         // Grab the current state stamp
         val modificationStamp = this.modificationCount
 
+        println("AwsConnectionManager:: changeFieldsAndNotify: before updating fields")
         fieldUpdateBlock()
+        println("AwsConnectionManager:: changeFieldsAndNotify: done updating fields")
 
         val validateCredentialsResult = validateCredentials(selectedCredentialIdentifier, selectedRegion, isInitial)
         validationJob.getAndSet(validateCredentialsResult)?.cancel()
 
         validateCredentialsResult.onSuccess {
+            println("AwsConnectionManager:: changeFieldsAndNotify : validateOnSuccess")
             // Validate we are still operating in the latest view of the world
             if (modificationStamp == this.modificationCount) {
                 connectionState = it
@@ -168,25 +183,31 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
     private fun validateCredentials(credentialsIdentifier: CredentialIdentifier?, region: AwsRegion?, isInitial: Boolean): AsyncPromise<ConnectionState> {
         val promise = AsyncPromise<ConnectionState>()
+        println("AwsConnectionManager:: validateCredentials: start validation in background thread")
         ApplicationManager.getApplication().executeOnPooledThread {
             if (credentialsIdentifier == null || region == null) {
                 promise.setResult(ConnectionState.IncompleteConfiguration(credentialsIdentifier, region))
+                println("AwsConnectionManager:: validateCredentials: return @ 1")
                 return@executeOnPooledThread
             }
 
             if (isInitial && credentialsIdentifier is InteractiveCredential && credentialsIdentifier.userActionRequired()) {
                 promise.setResult(ConnectionState.RequiresUserAction(credentialsIdentifier))
+                println("AwsConnectionManager:: validateCredentials: return @ 2")
                 return@executeOnPooledThread
             }
 
             var success = true
+            println("AwsConnectionManager:: Before validating credential...")
             try {
                 val credentialsProvider = CredentialManager.getInstance().getAwsCredentialProvider(credentialsIdentifier, region)
 
                 validate(credentialsProvider, region)
 
+                println("AwsConnectionManager:: Done validating credential")
                 promise.setResult(ConnectionState.ValidConnection(credentialsProvider, region))
             } catch (e: Exception) {
+                println("AwsConnectionManager:: Failed to switch to profile ${credentialsIdentifier.displayName}")
                 LOGGER.warn(e) { message("credentials.profile.validation_error", credentialsIdentifier.displayName) }
                 val result = if (credentialsIdentifier is PostValidateInteractiveCredential) {
                     try {

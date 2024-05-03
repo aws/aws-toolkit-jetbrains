@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -124,6 +125,7 @@ sealed interface Login {
             }
 
             if (callerIdentity == null) {
+                println("LoginUtil:: callerIdentity is null, return")
                 onConnectionValidationError()
                 return false
             }
@@ -138,7 +140,9 @@ sealed interface Login {
                 )
                 .build()
 
+            println("LoginUtil:: before appendProfileToCredentials")
             configFilesFacade.appendProfileToCredentials(profile)
+            println("LoginUtil:: after appendProfileToCredentials")
 
             return true
         }

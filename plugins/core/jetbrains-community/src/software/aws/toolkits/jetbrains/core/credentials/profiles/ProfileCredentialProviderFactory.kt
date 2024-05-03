@@ -125,7 +125,7 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
     }
 
     // true exception could be further up the chain
-    private inline fun<reified T : Throwable> findUpException(e: Throwable?): Boolean {
+    private inline fun <reified T : Throwable> findUpException(e: Throwable?): Boolean {
         // inline fun can't use recursion
         var throwable = e
         while (throwable != null) {
@@ -156,6 +156,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         loadProfiles(credentialLoadCallback, true)
 
         ProfileWatcher.getInstance().addListener {
+            println("ProfileWatcher:: loadProfiles...")
             loadProfiles(credentialLoadCallback, false)
         }
     }
@@ -181,6 +182,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             val previousProfile = currentConfig.profiles.remove(it.key)
             if (previousProfile == null) {
                 // It was not in the snapshot, so it must be new
+                println("ProfileCredentialProviderFactory:: loadProfiles: adding profile ${it.value.name()} to profilesAdded")
                 profilesAdded.add(it.value.asId(newProfiles.validProfiles))
             } else {
                 // If the profile was modified, notify listeners, else do nothing
@@ -243,7 +245,14 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
         credentialLoadCallback(CredentialsChangeEvent(profilesAdded, profilesModified, profilesRemoved, ssoAdded, ssoModified, ssoRemoved))
 
         notifyUserOfResult(newProfiles, initialLoad)
+        println("ProfileCredentialProviderFactory:: notifyUserResult")
+
+        println("ProfileCredentialProviderFactory:: profilesAdded.isNotEmpty()=${profilesAdded.isNotEmpty()}; profilesAdded=${profilesAdded.map { it.profileName }}")
+        println("ProfileCredentialProviderFactory:: newProfiles.validProfiles.size=${newProfiles.validProfiles.size}; newProfiles.validProfiles=${newProfiles.validProfiles.values.map { it.name() }}")
+        println("ProfileCredentialProviderFactory:: newProfiles.invalidProfiles.size=${newProfiles.invalidProfiles.size}")
+
         if (profilesAdded.isNotEmpty() && newProfiles.validProfiles.size == 1) {
+            println("ProfileCredentialProviderFactory:: send message NEW_PROFILE_ADDED")
             ApplicationManager.getApplication().messageBus.syncPublisher(NEW_PROFILE_ADDED).changeConnection(profilesAdded.first())
         }
     }
@@ -352,10 +361,12 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                     ?: throw IllegalStateException("Profile $sourceProfileName looks to have been removed")
                 createAwsCredentialProvider(sourceProfile, region)
             }
+
             credentialSource.isPresent -> {
                 // Can we parse the credential_source
                 credentialSourceCredentialProvider(CredentialSourceType.parse(credentialSource.get()), profile)
             }
+
             else -> {
                 throw IllegalArgumentException(message("credentials.profile.assume_role.missing_source", profile.name()))
             }
@@ -373,6 +384,7 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                     .endpoint(profile.getEc2MedataEndpoint())
                     .build()
             }
+
             CredentialSourceType.ENVIRONMENT -> AwsCredentialsProviderChain.builder()
                 .addCredentialsProvider(SystemPropertyCredentialsProvider.create())
                 .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())
@@ -411,12 +423,14 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
                 this.traverseCredentialChain(profiles).map { it.property(ProfileProperty.SSO_START_URL) }.first { it.isPresent }.get(),
                 requestedProfileType
             )
+
             this.requiresSso() -> ProfileCredentialsIdentifierSso(
                 name,
                 requiredProperty(SsoSessionConstants.PROFILE_SSO_SESSION_PROPERTY),
                 defaultRegion,
                 requestedProfileType
             )
+
             else -> ProfileCredentialsIdentifier(name, defaultRegion, requestedProfileType)
         }
     }
@@ -456,6 +470,7 @@ private fun Profile.toCredentialType(): CredentialType? = when {
             CredentialType.AssumeRoleProfile
         }
     }
+
     this.propertyExists(ProfileProperty.AWS_SESSION_TOKEN) -> CredentialType.StaticSessionProfile
     this.propertyExists(ProfileProperty.AWS_ACCESS_KEY_ID) -> CredentialType.StaticProfile
     this.propertyExists(ProfileProperty.CREDENTIAL_PROCESS) -> CredentialType.CredentialProcessProfile
