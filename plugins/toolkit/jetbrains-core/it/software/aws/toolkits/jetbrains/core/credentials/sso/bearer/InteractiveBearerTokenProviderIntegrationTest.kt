@@ -28,8 +28,6 @@ import java.time.Instant
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("codecatalyst-test-account")
-@DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
-@Disabled("Login Lambda is broken")
 class InteractiveBearerTokenProviderIntegrationTest {
     companion object {
         @JvmStatic
