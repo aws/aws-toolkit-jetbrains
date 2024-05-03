@@ -132,7 +132,6 @@ class CodeWhispererProgrammingLanguageTest {
     fun `test language isSupport`() {
         EP_NAME.extensionList.forEach { language ->
             val telemetryType = language.toTelemetryType()
-            println(telemetryType)
             val shouldSupportAutoCompletion = true
 
             val shouldSupportSecurityScan = when (telemetryType) {

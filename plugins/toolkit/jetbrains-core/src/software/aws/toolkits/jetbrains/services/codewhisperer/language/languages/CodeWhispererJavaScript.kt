@@ -18,7 +18,7 @@ class CodeWhispererJavaScript private constructor() : CodeWhispererProgrammingLa
 
     override fun isCodeScanSupported(): Boolean = true
 
-    override fun isFileScanSupported(): Boolean = true
+    override fun isAutoFileScanSupported(): Boolean = true
 
     override fun isImportAdderSupported(): Boolean = true
 

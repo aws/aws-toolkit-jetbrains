@@ -15,7 +15,7 @@ class CodeWhispererPhp private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun isCodeScanSupported(): Boolean = true
 
-    override fun isFileScanSupported(): Boolean = true
+    override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {
         const val ID = "php"
