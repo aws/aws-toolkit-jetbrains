@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix to reduce getCodeScan API calls by increasing Intervals and latest file scan kills old running file scans."
+  "description" : "Amazon Q: Reduce frequency of automated code scans and terminate superseded file scans."
 }
