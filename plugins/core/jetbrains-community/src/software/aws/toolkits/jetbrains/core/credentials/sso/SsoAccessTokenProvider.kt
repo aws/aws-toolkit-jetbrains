@@ -52,6 +52,7 @@ class SsoAccessTokenProvider(
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
     private val _authorization = AtomicReference<PendingAuthorization?>()
+    private val log = getLogger<SsoAccessTokenProvider>()
     val authorization: PendingAuthorization?
         get() = _authorization.get()
 
@@ -245,6 +246,10 @@ class SsoAccessTokenProvider(
                 throw e
             } catch (e: Exception) {
                 onPendingToken.tokenRetrievalFailure(e)
+                log.info("Device Code ${authorization.deviceCode}")
+                log.info("User Code ${authorization.userCode}")
+                log.info("Verification Uri ${authorization.verificationUri}")
+                log.info("Verification Uri Complete ${authorization.verificationUriComplete}")
                 throw e
             }
 
