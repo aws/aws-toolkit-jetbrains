@@ -75,10 +75,10 @@ class CodeWhispererFileContextProviderTest {
         ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, userGroupSetting, disposableRule.disposable)
 
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.Control)
-        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
+        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(200)
 
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
-        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
+        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(200)
     }
 
     @Test
@@ -245,7 +245,7 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `test extractCodeChunksFromFiles should read files from file producers to get 60 chunks`() {
+    fun `test extractCodeChunksFromFiles should read files from file producers to get 200 chunks`() {
         val psiFiles = setupFixture(fixture)
         val virtualFiles = psiFiles.mapNotNull { it.virtualFile }
         val javaMainPsiFile = psiFiles.first()
@@ -266,7 +266,11 @@ class CodeWhispererFileContextProviderTest {
             """public class UtilClass {
             |    public static int util() {};
             |    public static String util2() {};
-            """.trimMargin()
+            |    private static void helper() {};
+            |    public static final int constant1;
+            |    public static final int constant2;
+            |    public static final int constant3;
+            |}""".trimMargin()
         )
 
         assertThat(result[1].content).isEqualTo(
@@ -284,8 +288,8 @@ class CodeWhispererFileContextProviderTest {
         assertThat(result[2].content).isEqualTo(
             """public class MyController {
             |    @Get
-            |    public Response getRecommendation(Request: req) {}
-            """.trimMargin()
+            |    public Response getRecommendation(Request: req) {}            
+            |}""".trimMargin()
         )
 
         assertThat(result[3].content).isEqualTo(
