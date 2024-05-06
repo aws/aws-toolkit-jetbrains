@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "check for stopping Auto-scans for unsupported languages."
+  "description" : "Amazon Q: Support disabling auto-scan for unsupported languages."
 }
