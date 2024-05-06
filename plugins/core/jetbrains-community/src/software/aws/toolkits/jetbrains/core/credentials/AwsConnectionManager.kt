@@ -64,6 +64,10 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
             .subscribe(
                 CredentialManager.CREDENTIALS_CHANGED,
                 object : ToolkitCredentialsChangeListener {
+                    override fun providerAdded(identifier: CredentialIdentifier) {
+                        changeCredentialProvider(identifier)
+                    }
+
                     override fun providerRemoved(identifier: CredentialIdentifier) {
                         if (selectedCredentialIdentifier == identifier) {
                             changeConnectionSettings(null, selectedRegion)
