@@ -31,13 +31,13 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeRe
 import software.aws.toolkits.resources.message
 import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException as StreamingThrottlingException
 
-class FeatureDevClientUtilTest : FeatureDevTestBase() {
+class FeatureDevServiceTest : FeatureDevTestBase() {
     @Rule
     @JvmField
     val ruleChain = RuleChain(projectRule, disposableRule)
 
     private lateinit var featureDevClient: FeatureDevClient
-    private lateinit var featureDevClientUtil: FeatureDevClientUtil
+    private lateinit var featureDevService: FeatureDevService
 
     private val cwExceptionMsg = "CWException"
     private val otherExceptionMsg = "otherException"
@@ -46,13 +46,13 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     override fun setup() {
         featureDevClient = mock()
         projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
-        featureDevClientUtil = FeatureDevClientUtil(featureDevClient, projectRule.project)
+        featureDevService = FeatureDevService(featureDevClient, projectRule.project)
     }
 
     @Test
     fun `test createConversation`() {
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        val actual = featureDevClientUtil.createConversation()
+        val actual = featureDevService.createConversation()
         assertThat(actual).isEqualTo(exampleCreateTaskAssistConversationResponse.conversationId())
     }
 
@@ -60,7 +60,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test createConversation with error`() {
         whenever(featureDevClient.createTaskAssistConversation()).thenThrow(RuntimeException())
         assertThatThrownBy {
-            featureDevClientUtil.createConversation()
+            featureDevService.createConversation()
         }.isInstanceOf(FeatureDevException::class.java)
     }
 
@@ -68,7 +68,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test createUploadUrl`() {
         whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenReturn(exampleCreateUploadUrlResponse)
 
-        val actual = featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+        val actual = featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
         assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
         assertThat(actual).usingRecursiveComparison().comparingOnlyFields("uploadUrl", "uploadId", "kmsKeyArn")
             .isEqualTo(exampleCreateUploadUrlResponse)
@@ -78,7 +78,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test createUploadUrl with error`() {
         whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenThrow(RuntimeException())
         assertThatThrownBy {
-            featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
         }.isInstanceOf(FeatureDevException::class.java)
     }
 
@@ -93,7 +93,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         )
 
         assertThatThrownBy {
-            featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
         }.isInstanceOf(ContentLengthError::class.java).hasMessage(message("amazonqFeatureDev.content_length.error_text"))
     }
 
@@ -101,7 +101,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test generatePlan`() = runTest {
         whenever(featureDevClient.generateTaskAssistPlan(testConversationId, testUploadId, userMessage)).thenReturn(exampleGenerateTaskAssistPlanResult)
 
-        val actual = featureDevClientUtil.generatePlan(testConversationId, testUploadId, userMessage, 0)
+        val actual = featureDevService.generatePlan(testConversationId, testUploadId, userMessage, 0)
         assertThat(actual).isInstanceOf(GenerateTaskAssistPlanResult::class.java)
         assertThat(actual.approach).isEqualTo("Generated approach for plan")
     }
@@ -110,7 +110,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test generatePlan with error`() = runTest {
         whenever(featureDevClient.generateTaskAssistPlan(testConversationId, testUploadId, userMessage)).thenThrow(RuntimeException())
 
-        featureDevClientUtil.generatePlan(testConversationId, testUploadId, userMessage, 0)
+        featureDevService.generatePlan(testConversationId, testUploadId, userMessage, 0)
     }
 
     @Test
@@ -124,7 +124,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         )
         var caughtException: Throwable? = null
         try {
-            featureDevClientUtil.generatePlan(testConversationId, testUploadId, userMessage, 0)
+            featureDevService.generatePlan(testConversationId, testUploadId, userMessage, 0)
         } catch (e: Throwable) {
             caughtException = e
         }
@@ -136,7 +136,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
     fun `test getTaskAssistCodeGeneration success`() {
         whenever(featureDevClient.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)).thenReturn(exampleGetTaskAssistConversationResponse)
 
-        val actual = featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
+        val actual = featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
 
         assertThat(actual).isEqualTo(exampleGetTaskAssistConversationResponse)
     }
@@ -149,7 +149,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
+            featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
     }
 
@@ -159,7 +159,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)).thenThrow(exampleOtherException)
 
         assertThatThrownBy {
-            featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
+            featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId)
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
     }
 
@@ -169,7 +169,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
             featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
         ).thenReturn(exampleStartTaskAssistConversationResponse)
 
-        val actual = featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+        val actual = featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
 
         assertThat(actual).isEqualTo(exampleStartTaskAssistConversationResponse)
     }
@@ -182,7 +182,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
         }.isExactlyInstanceOf(CodeIterationLimitError::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
@@ -196,7 +196,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
         }.isExactlyInstanceOf(CodeIterationLimitError::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
@@ -210,7 +210,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
     }
 
@@ -220,7 +220,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleOtherException)
 
         assertThatThrownBy {
-            featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
     }
 
@@ -233,7 +233,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         assertThatThrownBy {
             runTest {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenThrow(exampleCWException)
-                featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId)
+                featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
     }
@@ -245,7 +245,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         assertThatThrownBy {
             runTest {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenThrow(exampleOtherException)
-                featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId)
+                featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
     }
@@ -255,7 +255,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
         assertThatThrownBy {
             runTest {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenReturn(mutableListOf(byteArrayOf(0, 1, 2)))
-                featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId)
+                featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
         }.isExactlyInstanceOf(FeatureDevException::class.java)
     }
@@ -266,7 +266,7 @@ class FeatureDevClientUtilTest : FeatureDevTestBase() {
             val codeGenerationJson = "{\"code_generation_result\":{\"new_file_contents\":{\"test.ts\":\"contents\"},\"deleted_files\":[],\"references\":[]}}"
             whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenReturn(mutableListOf(codeGenerationJson.toByteArray()))
 
-            val actual = featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId)
+            val actual = featureDevService.exportTaskAssistArchiveResult(testConversationId)
             assertThat(actual).isInstanceOf(CodeGenerationStreamResult::class.java)
             assertThat(actual.new_file_contents).isEqualTo(mapOf(Pair("test.ts", "contents")))
             assertThat(actual.deleted_files).isEqualTo(emptyList<String>())

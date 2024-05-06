@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -17,7 +17,6 @@ private val logger = getLogger<PrepareCodeGenerationState>()
 class PrepareRefinementState(
     override var approach: String,
     override var tabID: String,
-    override val featureDevClientUtil: FeatureDevClientUtil,
     var config: SessionStateConfig
 ) : SessionState {
     override val phase = SessionStatePhase.APPROACH
@@ -32,7 +31,7 @@ class PrepareRefinementState(
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
 
-            val uploadUrlResponse = featureDevClientUtil.createUploadUrl(
+            val uploadUrlResponse = config.featureDevService.createUploadUrl(
                 config.conversationId,
                 zipFileChecksum,
                 zipFileLength
@@ -42,7 +41,7 @@ class PrepareRefinementState(
 
             deleteUploadArtifact(fileToUpload)
 
-            val nextState = RefinementState(approach, tabID, featureDevClientUtil, config, uploadUrlResponse.uploadId(), 0)
+            val nextState = RefinementState(approach, tabID, config, uploadUrlResponse.uploadId(), 0)
             return nextState.interact(action)
         } catch (e: Exception) {
             result = Result.Failed
@@ -57,7 +56,7 @@ class PrepareRefinementState(
                 result = result,
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(featureDevClientUtil.project)
+                credentialStartUrl = getStartUrl(config.featureDevService.project)
             )
         }
     }

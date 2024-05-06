@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -22,7 +21,6 @@ private val logger = getLogger<CodeGenerationState>()
 class CodeGenerationState(
     override val tabID: String,
     override var approach: String,
-    override val featureDevClientUtil: FeatureDevClientUtil,
     val config: SessionStateConfig,
     val uploadId: String,
     val currentIteration: Int,
@@ -39,7 +37,7 @@ class CodeGenerationState(
         var numberOfReferencesGenerated: Int? = null
         var numberOfFilesGenerated: Int? = null
         try {
-            val response = featureDevClientUtil.startTaskAssistCodeGeneration(
+            val response = config.featureDevService.startTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
                 uploadId = uploadId,
                 message = action.msg
@@ -57,7 +55,6 @@ class CodeGenerationState(
             val nextState = PrepareCodeGenerationState(
                 tabID = tabID,
                 approach = approach,
-                featureDevClientUtil = featureDevClientUtil,
                 config = config,
                 filePaths = codeGenerationResult.newFiles,
                 deletedFiles = codeGenerationResult.deletedFiles,
@@ -93,7 +90,7 @@ class CodeGenerationState(
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
                 requestServiceType = "amazoncodewhispererservice",
-                credentialStartUrl = getStartUrl(featureDevClientUtil.project)
+                credentialStartUrl = getStartUrl(config.featureDevService.project)
             )
         }
     }
@@ -104,14 +101,14 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
     val requestDelay = 10000L
 
     repeat(pollCount) {
-        val codeGenerationResultState = featureDevClientUtil.getTaskAssistCodeGeneration(
+        val codeGenerationResultState = config.featureDevService.getTaskAssistCodeGeneration(
             conversationId = config.conversationId,
             codeGenerationId = codeGenerationId,
         )
 
         when (codeGenerationResultState.codeGenerationStatus().status()) {
             CodeGenerationWorkflowStatus.COMPLETE -> {
-                val codeGenerationStreamResult = featureDevClientUtil.exportTaskAssistArchiveResult(
+                val codeGenerationStreamResult = config.featureDevService.exportTaskAssistArchiveResult(
                     conversationId = config.conversationId
                 )
 

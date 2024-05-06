@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 
 data class SessionStateAction(
@@ -33,6 +34,7 @@ enum class SessionStatePhase(
 data class SessionStateConfig(
     val conversationId: String,
     val repoContext: FeatureDevSessionContext,
+    val featureDevService: FeatureDevService
 )
 
 data class NewFileZipInfo(

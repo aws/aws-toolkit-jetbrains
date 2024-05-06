@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.resources.message
 
@@ -38,20 +38,19 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
     private lateinit var codeGenerationState: CodeGenerationState
     private lateinit var messenger: MessagePublisher
     private val action = SessionStateAction("test-task", userMessage)
-    private lateinit var featureDevClientUtil: FeatureDevClientUtil
+    private lateinit var featureDevService: FeatureDevService
 
     @Before
     override fun setup() {
-        featureDevClientUtil = mockk<FeatureDevClientUtil>()
-        every { featureDevClientUtil.project } returns projectRule.project
+        featureDevService = mockk<FeatureDevService>()
+        every { featureDevService.project } returns projectRule.project
         messenger = mock()
         val repoContext = mock<FeatureDevSessionContext>()
-        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext)
+        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
 
         codeGenerationState = CodeGenerationState(
             testTabId,
             "",
-            featureDevClientUtil,
             sessionStateConfig,
             testUploadId,
             0,
@@ -71,9 +70,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
     @Test
     fun `test code generated is complete`() {
         val action = SessionStateAction("test-task", userMessage)
-        every { featureDevClientUtil.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
-        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        coEvery { featureDevClientUtil.exportTaskAssistArchiveResult(any()) } returns
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        coEvery { featureDevService.exportTaskAssistArchiveResult(any()) } returns
             CodeGenerationStreamResult(testFilePaths, testDeletedFiles, testReferences)
 
         runTest {
@@ -94,27 +93,27 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(codeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
-        verify(exactly = 1) { featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 1) { featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
-        coVerify(exactly = 1) { featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId) }
+        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
     @Test(expected = FeatureDevException::class)
     fun `test code generation failed`() = runTest {
-        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        every { featureDevClientUtil.getTaskAssistCodeGeneration(any(), any()) } returns exampleFailedGetTaskAssistCodeGenerationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleFailedGetTaskAssistCodeGenerationResponse
 
         codeGenerationState.interact(action)
 
-        verify(exactly = 1) { featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 1) { featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
-        coVerify(exactly = 0) { featureDevClientUtil.exportTaskAssistArchiveResult(any()) }
+        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
 
     @Test
     fun `test code generation returns any other handled status`() {
-        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        every { featureDevClientUtil.getTaskAssistCodeGeneration(any(), any()) } returns exampleOtherGetTaskAssistCodeGenerationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleOtherGetTaskAssistCodeGenerationResponse
 
         assertThatThrownBy {
             runTest {
@@ -122,32 +121,32 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             }
         }.isExactlyInstanceOf(IllegalStateException::class.java).withFailMessage("Unknown status: $otherStatus")
 
-        verify(exactly = 1) { featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 1) { featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
-        coVerify(exactly = 0) { featureDevClientUtil.exportTaskAssistArchiveResult(any()) }
+        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
 
     @Test
     fun `test code generation returns in progress at least once`() {
-        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
         every {
-            featureDevClientUtil.getTaskAssistCodeGeneration(any(), any())
+            featureDevService.getTaskAssistCodeGeneration(any(), any())
         } returnsMany listOf(exampleGetTaskAssistConversationResponse, exampleCompleteGetTaskAssistCodeGenerationResponse)
-        coEvery { featureDevClientUtil.exportTaskAssistArchiveResult(any()) } returns CodeGenerationStreamResult(emptyMap(), emptyList(), emptyList())
+        coEvery { featureDevService.exportTaskAssistArchiveResult(any()) } returns CodeGenerationStreamResult(emptyMap(), emptyList(), emptyList())
 
         runTest {
             codeGenerationState.interact(action)
         }
 
-        verify(exactly = 1) { featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 2) { featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
-        coVerify(exactly = 1) { featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId) }
+        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
+        verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
     @Test
     fun `test using all polling count`() {
-        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        every { featureDevClientUtil.getTaskAssistCodeGeneration(any(), any()) } returns exampleGetTaskAssistConversationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleGetTaskAssistConversationResponse
 
         runTest {
             val actual = codeGenerationState.interact(action)
@@ -160,8 +159,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             assertThat(actual.interaction.content).isEqualTo("")
         }
 
-        verify(exactly = 1) { featureDevClientUtil.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 180) { featureDevClientUtil.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
-        coVerify(exactly = 0) { featureDevClientUtil.exportTaskAssistArchiveResult(testConversationId) }
+        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
+        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 }

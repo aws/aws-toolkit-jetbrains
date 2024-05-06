@@ -36,7 +36,7 @@ import software.aws.toolkits.telemetry.Result
 
 private val logger = getLogger<FeatureDevClient>()
 
-class FeatureDevClientUtil(val proxyClient: FeatureDevClient, val project: Project) {
+class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project) {
     fun createConversation(): String {
         val startTime = System.currentTimeMillis()
         var failureReason: String? = null

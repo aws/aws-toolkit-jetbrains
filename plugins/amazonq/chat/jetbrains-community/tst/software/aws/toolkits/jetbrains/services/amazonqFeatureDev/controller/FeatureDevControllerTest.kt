@@ -55,7 +55,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Refine
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.resources.message
@@ -74,7 +74,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     private lateinit var authController: AuthController
     private lateinit var spySession: Session
     private lateinit var featureDevClient: FeatureDevClient
-    private lateinit var featureDevClientUtil: FeatureDevClientUtil
 
     private val newFileContents = listOf(
         NewFileZipInfo("test.ts", "This is a comment", false),
@@ -92,7 +91,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         messenger = mock()
         chatSessionStorage = mock()
         projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
-        featureDevClientUtil = FeatureDevClientUtil(featureDevClient, projectRule.project)
         appContext = mock<AmazonQAppInitContext> {
             on { project }.thenReturn(project)
             on { messagesFromAppToUi }.thenReturn(messenger)
@@ -247,7 +245,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
         whenever(spySession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", featureDevClientUtil, mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
+                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
             )
         )
         doNothing().`when`(spySession).insertChanges(any(), any(), any())
@@ -287,7 +285,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
         whenever(mockSession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", mock(), mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
+                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
             )
         )
 
@@ -333,7 +331,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
         whenever(mockSession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", featureDevClientUtil, mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
+                testTabId, "", mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
             )
         )
         whenever(mockSession.retries).thenReturn(3)
@@ -361,7 +359,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
         whenever(mockSession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", featureDevClientUtil, mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
+                testTabId, "", mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
             )
         )
         whenever(mockSession.retries).thenReturn(0)
@@ -383,7 +381,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
         whenever(spySession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", featureDevClientUtil, mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
+                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
             )
         )
 

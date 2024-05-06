@@ -8,7 +8,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -22,7 +21,6 @@ private val logger = getLogger<PrepareCodeGenerationState>()
 class PrepareCodeGenerationState(
     override var tabID: String,
     override var approach: String,
-    override val featureDevClientUtil: FeatureDevClientUtil,
     private var config: SessionStateConfig,
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
@@ -44,7 +42,7 @@ class PrepareCodeGenerationState(
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
 
-            val uploadUrlResponse = featureDevClientUtil.createUploadUrl(
+            val uploadUrlResponse = config.featureDevService.createUploadUrl(
                 config.conversationId,
                 zipFileChecksum,
                 zipFileLength
@@ -57,7 +55,6 @@ class PrepareCodeGenerationState(
             val nextState = CodeGenerationState(
                 tabID = this.tabID,
                 approach = "", // No approach needed,
-                featureDevClientUtil = featureDevClientUtil,
                 config = this.config,
                 uploadId = this.uploadId,
                 currentIteration = this.currentIteration,
@@ -80,7 +77,7 @@ class PrepareCodeGenerationState(
                 result = result,
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(featureDevClientUtil.project)
+                credentialStartUrl = getStartUrl(config.featureDevService.project)
             )
         }
     }

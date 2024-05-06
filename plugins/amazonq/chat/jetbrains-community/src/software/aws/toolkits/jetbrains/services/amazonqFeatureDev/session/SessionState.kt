@@ -3,13 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
-
 interface SessionState {
     val tabID: String
     val phase: SessionStatePhase?
     var approach: String
-    val featureDevClientUtil: FeatureDevClientUtil
-
     suspend fun interact(action: SessionStateAction): SessionStateInteraction
 }
