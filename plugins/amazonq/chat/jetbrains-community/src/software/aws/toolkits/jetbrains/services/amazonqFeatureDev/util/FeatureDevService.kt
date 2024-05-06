@@ -110,8 +110,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
 
     suspend fun generatePlan(
         conversationId: String,
-        uploadId:
-        String,
+        uploadId: String,
         message: String,
         currentIteration: Int
     ): GenerateTaskAssistPlanResult {

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
