@@ -33,7 +33,6 @@ enum class SessionStatePhase(
 
 data class SessionStateConfig(
     val conversationId: String,
-    val proxyClient: FeatureDevClient,
     val repoContext: FeatureDevSessionContext,
 )
 

@@ -7,6 +7,7 @@ import com.intellij.testFramework.RuleChain
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.unmockkAll
@@ -16,7 +17,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -27,10 +27,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.exportTaskAssistArchiveResult
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getTaskAssistCodeGeneration
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.startTaskAssistCodeGeneration
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import java.io.File
 
@@ -42,18 +40,20 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
     private lateinit var prepareCodeGenerationState: PrepareCodeGenerationState
     private lateinit var repoContext: FeatureDevSessionContext
     private lateinit var sessionStateConfig: SessionStateConfig
-    private lateinit var featureDevClient: FeatureDevClient
     private lateinit var messenger: MessagePublisher
+    private lateinit var featureDevClientUtil: FeatureDevClientUtil
 
     @Before
     override fun setup() {
         repoContext = mock()
-        featureDevClient = mock()
+        featureDevClientUtil = mockk<FeatureDevClientUtil>()
+        every { featureDevClientUtil.project } returns projectRule.project
         messenger = mock()
-        sessionStateConfig = SessionStateConfig(testConversationId, featureDevClient, repoContext)
+        sessionStateConfig = SessionStateConfig(testConversationId, repoContext)
         prepareCodeGenerationState = PrepareCodeGenerationState(
             "",
             "tabId",
+            featureDevClientUtil,
             sessionStateConfig,
             emptyList(),
             emptyList(),
@@ -67,10 +67,9 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         every { uploadArtifactToS3(any(), any(), any(), any(), any()) } just runs
         every { deleteUploadArtifact(any()) } just runs
 
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtilKt")
-        every { getTaskAssistCodeGeneration(any(), any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
-        every { startTaskAssistCodeGeneration(any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        coEvery { exportTaskAssistArchiveResult(any(), any()) } returns exampleExportTaskAssistResultArchiveResponse
+        every { featureDevClientUtil.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
+        every { featureDevClientUtil.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        coEvery { featureDevClientUtil.exportTaskAssistArchiveResult(any()) } returns exampleExportTaskAssistResultArchiveResponse
 
         mockkStatic(MessagePublisher::sendAnswerPart)
         coEvery { messenger.sendAnswerPart(any(), any()) } just runs
@@ -88,7 +87,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         val action = SessionStateAction("test-task", userMessage)
 
         whenever(repoContext.getProjectZip()).thenReturn(repoZipResult)
-        whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenReturn(exampleCreateUploadUrlResponse)
+        every { featureDevClientUtil.createUploadUrl(any(), any(), any()) } returns exampleCreateUploadUrlResponse
 
         runTest {
             val actual = prepareCodeGenerationState.interact(action)
@@ -97,6 +96,6 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(prepareCodeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         verify(repoContext, times(1)).getProjectZip()
-        verify(featureDevClient, times(1)).createTaskAssistUploadUrl(any(), any(), any())
+        io.mockk.verify(exactly = 1) { featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength)}
     }
 }
