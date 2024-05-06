@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 
 data class SessionStateAction(

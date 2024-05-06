@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.intellij.testFramework.RuleChain
-import io.mockk.every
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -64,7 +63,7 @@ class RefinementStateTest : FeatureDevTestBase() {
         assertThat(actual.nextState).isInstanceOf(RefinementState::class.java)
         assertThat(actual.interaction.interactionSucceeded).isTrue()
 
-        verify(featureDevClientUtil, times(1)).generatePlan(any(), any(), any(),any())
+        verify(featureDevClientUtil, times(1)).generatePlan(any(), any(), any(), any())
         assertThat(refinementState.phase).isEqualTo(SessionStatePhase.APPROACH)
         assertThat(refinementState.approach).isEqualTo(exampleGenerateTaskAssistPlanResult.approach)
     }

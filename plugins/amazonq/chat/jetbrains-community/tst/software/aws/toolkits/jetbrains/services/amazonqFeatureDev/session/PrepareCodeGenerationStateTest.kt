@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevClientUtil
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
@@ -96,6 +95,6 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(prepareCodeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         verify(repoContext, times(1)).getProjectZip()
-        io.mockk.verify(exactly = 1) { featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength)}
+        io.mockk.verify(exactly = 1) { featureDevClientUtil.createUploadUrl(testConversationId, testChecksumSha, testContentLength) }
     }
 }
