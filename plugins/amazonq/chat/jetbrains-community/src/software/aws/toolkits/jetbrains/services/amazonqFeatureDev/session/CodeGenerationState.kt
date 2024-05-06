@@ -76,7 +76,7 @@ class CodeGenerationState(
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
             result = Result.Failed
-            failureReason = e.message
+            failureReason = e.javaClass.simpleName
             codeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.FAILED
 
             throw e

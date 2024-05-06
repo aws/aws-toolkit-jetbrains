@@ -128,7 +128,7 @@ class FeatureDevClientUtil(val proxyClient: FeatureDevClient, val project: Proje
             return generatePlanResult
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Failed to execute planning : ${e.message}" }
-            failureReason = e.message
+            failureReason = e.javaClass.simpleName
             result = Result.Failed
             var errMssg = e.message
             if (e is CodeWhispererStreamingException) {

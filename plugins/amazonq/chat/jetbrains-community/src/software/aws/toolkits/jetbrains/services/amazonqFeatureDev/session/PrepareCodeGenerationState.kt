@@ -69,7 +69,7 @@ class PrepareCodeGenerationState(
             return nextState.interact(action)
         } catch (e: Exception) {
             result = Result.Failed
-            failureReason = e.message
+            failureReason = e.javaClass.simpleName
             logger.warn(e) { "$FEATURE_NAME: Code uploading failed: ${e.message}" }
             throw e
         } finally {
