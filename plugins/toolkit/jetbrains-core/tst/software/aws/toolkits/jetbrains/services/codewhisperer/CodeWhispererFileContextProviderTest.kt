@@ -270,7 +270,8 @@ class CodeWhispererFileContextProviderTest {
             |    public static final int constant1;
             |    public static final int constant2;
             |    public static final int constant3;
-            |}""".trimMargin()
+            |}
+            """.trimMargin()
         )
 
         assertThat(result[1].content).isEqualTo(
@@ -289,7 +290,8 @@ class CodeWhispererFileContextProviderTest {
             """public class MyController {
             |    @Get
             |    public Response getRecommendation(Request: req) {}            
-            |}""".trimMargin()
+            |}
+            """.trimMargin()
         )
 
         assertThat(result[3].content).isEqualTo(
