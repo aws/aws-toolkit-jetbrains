@@ -12,7 +12,9 @@ intellijToolkit {
 }
 
 dependencies {
-    implementation(project(":plugin-amazonq:shared:jetbrains-community"))
-
     compileOnly(project(":plugin-core:jetbrains-community"))
+
+    implementation(project(":plugin-amazonq:shared:jetbrains-community"))
+    // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
+    implementation(libs.commons.collections)
 }

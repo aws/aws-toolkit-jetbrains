@@ -37,27 +37,15 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
-// delete when fully split
-val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
-    archiveFileName.set("dummy.jar")
-
-    from(project(":plugin-core").file("src/main/resources"))
-}
-
-tasks.prepareTestingSandbox {
-    dependsOn(dummyPluginJar)
-
-    intoChild(pluginName.map { "$it/lib" })
-        .from(dummyPluginJar)
-}
-
 dependencies {
+    compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(project(":plugin-core:sdk-codegen"))
     compileOnlyApi(libs.aws.apacheClient)
+    compileOnlyApi(libs.aws.nettyClient)
 
     api(libs.aws.iam)
 
-    testFixturesApi(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
+    testFixturesApi(project(path = ":plugin-core:core", configuration = "testArtifacts"))
     testFixturesApi(libs.mockk)
     testFixturesApi(libs.kotlin.coroutinesTest)
     testFixturesApi(libs.kotlin.coroutinesDebug)
@@ -65,10 +53,6 @@ dependencies {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
     }
-
-    // delete when fully split
-    compileOnlyApi(project(":plugin-toolkit:core"))
-    runtimeOnly(project(":plugin-toolkit:core"))
 }
 
 // fix implicit dependency on generated source
