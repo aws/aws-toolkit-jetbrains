@@ -89,7 +89,6 @@ class CodeGenerationState(
                 result = result,
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
-                requestServiceType = "amazoncodewhispererservice",
                 credentialStartUrl = getStartUrl(config.featureDevService.project)
             )
         }

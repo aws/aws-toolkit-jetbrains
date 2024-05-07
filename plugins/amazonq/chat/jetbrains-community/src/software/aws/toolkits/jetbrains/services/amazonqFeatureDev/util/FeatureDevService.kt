@@ -74,7 +74,6 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
                 credentialStartUrl = getStartUrl(project = this.project),
-                requestServiceType = "amazoncodewhispererservice"
             )
         }
     }
@@ -149,8 +148,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 result = result,
                 reason = failureReason,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(project = this.project),
-                requestServiceType = "amazoncodewhispererstreamingservice"
+                credentialStartUrl = getStartUrl(project = this.project)
             )
         }
     }
