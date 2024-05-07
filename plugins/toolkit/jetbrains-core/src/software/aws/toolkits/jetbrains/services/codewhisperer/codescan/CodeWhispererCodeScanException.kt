@@ -25,5 +25,14 @@ internal fun fileFormatNotSupported(format: String): Nothing =
 internal fun fileTooLarge(presentableSize: String): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_too_large", presentableSize))
 
-internal fun uploadArtifactFailedError(): Nothing =
+internal fun uploadArtifactToS3FailedError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.upload_to_s3_failed"))
+
+internal fun createUploadUrlFailedError(): Nothing =
+    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.create_upload_url_failure"))
+
+internal fun invalidSourceZipError(): Nothing =
+    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.invalid_source_zip"))
+
+internal fun createCodeScanFailedError(): Nothing =
+    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.create_codescan_failure"))

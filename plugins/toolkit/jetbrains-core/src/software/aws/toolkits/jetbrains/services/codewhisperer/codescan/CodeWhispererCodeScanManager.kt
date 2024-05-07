@@ -290,6 +290,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
             else -> null
         } ?: message("codewhisperer.codescan.run_scan_error")
 
+        val telemetryErrorMessage = when (errorMessage) {
+            message("codewhisperer.codescan.service_error") -> message("codewhisperer.codescan.service_error_telemetry")
+            else -> errorMessage
+        }
+
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
@@ -298,7 +303,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             }
         }
 
-        return errorMessage
+        return telemetryErrorMessage
     }
 
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
@@ -306,7 +311,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
             is CodeWhispererCodeScanException -> e.message
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
-            is CancellationException -> "Code scan job cancelled by user."
+            is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> null
         } ?: message("codewhisperer.codescan.run_scan_error")
 
@@ -337,7 +342,30 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     "stacktrace: ${e.stackTrace.contentDeepToString()}"
             }
         }
-        return errorMessage
+
+        val telemetryErrorMessage = when (e) {
+            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
+            is CodeWhispererCodeScanException -> {
+                when (e.message) {
+                    message("codewhisperer.codescan.no_file_open") -> message("codewhisperer.codescan.no_file_open_telemetry")
+                    message("codewhisperer.codescan.invalid_source_zip") -> message("codewhisperer.codescan.invalid_source_zip_telemetry")
+                    message("codewhisperer.codescan.create_upload_url_failure") -> message("codewhisperer.codescan.create_upload_url_failure_telemetry")
+                    message("codewhisperer.codescan.upload_to_s3_failed") -> message("codewhisperer.codescan.upload_to_s3_failed_telemetry")
+                    message("codewhisperer.codescan.service_error") -> message("codewhisperer.codescan.service_error_telemetry")
+                    message("codewhisperer.codescan.create_codescan_failure") -> message("codewhisperer.codescan.create_codescan_failure_telemetry")
+                    else -> if (e.message?.startsWith("Amazon Q: Selected file is larger than") == true) {
+                        message("codewhisperer.codescan.file_too_large_telemetry")
+                    } else {
+                        e.message
+                    }
+                }
+            }
+            is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
+            is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
+            else -> null
+        } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+
+        return telemetryErrorMessage
     }
 
     /**

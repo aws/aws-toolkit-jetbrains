@@ -244,6 +244,10 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
      * Creates an upload URL and uplaods the zip file to the presigned URL
      */
     fun createUploadUrlAndUpload(zipFile: File, artifactType: String, codeScanName: String): CreateUploadUrlResponse = try {
+        // Throw error if zipFile is invalid.
+        if (zipFile.path == "") {
+            invalidSourceZipError()
+        }
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
         val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, codeScanName)
         val url = createUploadUrlResponse.uploadUrl()
@@ -261,17 +265,22 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         createUploadUrlResponse
     } catch (e: Exception) {
         LOG.error { "Security scan failed. Something went wrong uploading artifacts: ${e.message}" }
-        uploadArtifactFailedError()
+        throw e
     }
 
-    fun createUploadUrl(md5Content: String, artifactType: String, codeScanName: String): CreateUploadUrlResponse = clientAdaptor.createUploadUrl(
-        CreateUploadUrlRequest.builder()
-            .contentMd5(md5Content)
-            .artifactType(artifactType)
-            .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
-            .uploadContext(UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(codeScanName).build()))
-            .build()
-    )
+    fun createUploadUrl(md5Content: String, artifactType: String, codeScanName: String): CreateUploadUrlResponse = try {
+        clientAdaptor.createUploadUrl(
+            CreateUploadUrlRequest.builder()
+                .contentMd5(md5Content)
+                .artifactType(artifactType)
+                .uploadIntent(getUploadIntent(sessionContext.codeAnalysisScope))
+                .uploadContext(UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(codeScanName).build()))
+                .build()
+        )
+    } catch (e: Exception) {
+        LOG.error { "Security scan failed. Error creating upload URL: ${e.message}" }
+        createUploadUrlFailedError()
+    }
 
     private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
         CodeWhispererConstants.CodeAnalysisScope.FILE -> UploadIntent.AUTOMATIC_FILE_SECURITY_SCAN
@@ -280,25 +289,33 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 
     @Throws(IOException::class)
     fun uploadArtifactToS3(url: String, uploadId: String, fileToUpload: File, md5: String, kmsArn: String?, requestHeaders: Map<String, String>?) {
-        val uploadIdJson = """{"uploadId":"$uploadId"}"""
-        HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
-            if (requestHeaders.isNullOrEmpty()) {
-                it.setRequestProperty(CONTENT_MD5, md5)
-                it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
-                it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
-                if (kmsArn?.isNotEmpty() == true) {
-                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+        try {
+            val uploadIdJson = """{"uploadId":"$uploadId"}"""
+            HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
+                if (requestHeaders.isNullOrEmpty()) {
+                    it.setRequestProperty(CONTENT_MD5, md5)
+                    it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
+                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
+                    if (kmsArn?.isNotEmpty() == true) {
+                        it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+                    }
+                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
+                } else {
+                    requestHeaders.forEach { entry ->
+                        it.setRequestProperty(entry.key, entry.value)
+                    }
                 }
-                it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
-            } else {
-                requestHeaders.forEach { entry ->
-                    it.setRequestProperty(entry.key, entry.value)
-                }
+            }.connect {
+                val connection = it.connection as HttpURLConnection
+                connection.setFixedLengthStreamingMode(fileToUpload.length())
+                IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
             }
-        }.connect {
-            val connection = it.connection as HttpURLConnection
-            connection.setFixedLengthStreamingMode(fileToUpload.length())
-            IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
+        } catch (e: IOException) {
+            LOG.error { "Security scan failed. Error uploading artifact to S3: ${e.message}" }
+            throw e
+        } catch (e: Exception) {
+            LOG.error { "Security scan failed. Error uploading artifact to S3: ${e.message}" }
+            uploadArtifactToS3FailedError()
         }
     }
 
@@ -320,7 +337,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             )
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
-            throw e
+            createCodeScanFailedError()
         }
     }
 
