@@ -189,7 +189,7 @@ class InteractiveBearerTokenProvider(
     }
 }
 
-class NoTokenInitializedException(message:String): Exception(message)
+class NoTokenInitializedException(message: String) : Exception(message)
 
 public enum class BearerTokenAuthState {
     AUTHORIZED,
