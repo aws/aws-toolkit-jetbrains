@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
@@ -12,6 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.jetbrains.annotations.TestOnly
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisScope
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -32,11 +34,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getGettingStartedTaskType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -50,6 +54,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Queue
 
+@Service
 class CodeWhispererTelemetryService {
     // store previous 5 userTrigger decisions
     private val previousUserTriggerDecisions = CircularFifoQueue<CodewhispererPreviousSuggestionState>(5)
@@ -288,6 +293,8 @@ class CodeWhispererTelemetryService {
         val issuesWithFixes = codeScanEvent.codeScanResponseContext.codeScanIssuesWithFixes
         val reason = codeScanEvent.codeScanResponseContext.reason
         val startUrl = getConnectionStartUrl(codeScanEvent.connection)
+        val codeAnalysisScope = codeScanEvent.codeAnalysisScope
+        val passive = codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE
 
         LOG.debug {
             "Recording code security scan event. \n" +
@@ -303,7 +310,9 @@ class CodeWhispererTelemetryService {
                 "Artifacts upload duration in milliseconds: ${serviceInvocationContext.artifactsUploadDuration}, \n" +
                 "Service invocation duration in milliseconds: ${serviceInvocationContext.serviceInvocationDuration}, \n" +
                 "Total number of lines scanned: ${payloadContext.totalLines}, \n" +
-                "Reason: $reason \n"
+                "Reason: $reason \n" +
+                "Scope: ${codeAnalysisScope.value} \n" +
+                "Passive: $passive \n"
         }
         CodewhispererTelemetry.securityScan(
             project = project,
@@ -322,7 +331,9 @@ class CodeWhispererTelemetryService {
             codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration.toInt(),
             reason = reason,
             result = codeScanEvent.result,
-            credentialStartUrl = startUrl
+            credentialStartUrl = startUrl,
+            codewhispererCodeScanScope = CodewhispererCodeScanScope.from(codeAnalysisScope.value),
+            passive = passive
         )
     }
 

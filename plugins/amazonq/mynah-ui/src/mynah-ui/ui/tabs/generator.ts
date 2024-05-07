@@ -27,7 +27,7 @@ export class TabDataGenerator {
     private tabInputPlaceholder: Map<TabType, string> = new Map([
         ['unknown', 'Ask a question or enter "/" for quick commands'],
         ['cwc', 'Ask a question or enter "/" for quick commands'],
-        ['featuredev', 'Briefly describe a task or issue'],
+        ['featuredev', 'Describe your task or issue in as much detail as possible'],
     ])
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
@@ -39,17 +39,17 @@ export class TabDataGenerator {
         ],
         [
             'cwc',
-            `Hi, I'm Amazon Q (Preview). I can answer your software development questions. 
+            `Hi, I'm Amazon Q. I can answer your software development questions.
         Ask me to explain, debug, or optimize your code. 
         You can enter \`/\` to see a list of quick actions.`,
         ],
         [
             'featuredev',
-            `Welcome to /dev. 
+            `Welcome to feature development.
 
-Here I can provide code suggestions across files in your current project.
+I can generate code to implement new functionality across your workspace. We'll start by discussing an implementation plan, and then we can review and regenerate code based on your feedback. 
 
-Before I begin generating code, let's agree on an implementation plan. What change would you like to make?
+To get started, describe the task you are trying to accomplish.
 `,
         ],
         [

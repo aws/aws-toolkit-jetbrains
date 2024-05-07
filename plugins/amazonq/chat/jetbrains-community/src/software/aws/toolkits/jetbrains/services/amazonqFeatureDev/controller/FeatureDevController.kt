@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthE
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
@@ -49,9 +50,11 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthenticationInProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendMonthlyLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
@@ -59,7 +62,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -277,7 +279,7 @@ class FeatureDevController(
 
             var filePaths: List<NewFileZipInfo> = emptyList()
             var deletedFiles: List<DeletedFileInfo> = emptyList()
-            var references: List<CodeReference> = emptyList()
+            var references: List<CodeReferenceGenerated> = emptyList()
 
             when (val state = session.sessionState) {
                 is PrepareCodeGenerationState -> {
@@ -418,6 +420,9 @@ class FeatureDevController(
                         )
                     ),
                 )
+            } else if (err is MonthlyConversationLimitError) {
+                messenger.sendMonthlyLimitError(tabId = tabId)
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             } else if (err is PlanIterationLimitError) {
                 messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
                 messenger.sendSystemPrompt(
@@ -469,6 +474,8 @@ class FeatureDevController(
      */
     private suspend fun onApproachGeneration(session: Session, message: String, tabId: String) {
         session.preloader(message, messenger)
+
+        logger.info { "Q - Dev chat conversation id: ${session.conversationId}" }
 
         messenger.sendAnswer(
             tabId = tabId,

@@ -5,11 +5,12 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages
 
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.licenseText
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.resources.message
 import java.util.UUID
 
@@ -169,6 +170,15 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retrie
     )
 }
 
+suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String) {
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = FeatureDevMessageType.Answer,
+        message = message("amazonqFeatureDev.exception.monthly_limit_error")
+    )
+    this.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
+}
+
 suspend fun MessagePublisher.initialExamples(tabId: String) {
     this.sendAnswer(
         tabId = tabId,
@@ -182,11 +192,19 @@ suspend fun MessagePublisher.sendCodeResult(
     uploadId: String,
     filePaths: List<NewFileZipInfo>,
     deletedFiles: List<DeletedFileInfo>,
-    references: List<CodeReference>
+    references: List<CodeReferenceGenerated>
 ) {
-    // It is being done this mapping as featureDev currently doesn't support fully references.
-    val refs = references.filter { it.licenseName != null && it.url != null && it.repository != null }.map {
-        ReducedCodeReference(information = it.licenseText())
+    val refs = references.map { ref ->
+        CodeReference(
+            licenseName = ref.licenseName,
+            repository = ref.repository,
+            url = ref.url,
+            recommendationContentSpan = RecommendationContentSpan(
+                ref.recommendationContentSpan?.start ?: 0,
+                ref.recommendationContentSpan?.end ?: 0,
+            ),
+            information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})"
+        )
     }
 
     this.publish(

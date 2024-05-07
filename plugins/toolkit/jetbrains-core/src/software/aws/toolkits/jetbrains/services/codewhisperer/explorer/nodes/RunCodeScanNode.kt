@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes
 
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.awt.event.MouseEvent
 
 class RunCodeScanNode(nodeProject: Project) : CodeWhispererActionNode(
@@ -17,10 +18,10 @@ class RunCodeScanNode(nodeProject: Project) : CodeWhispererActionNode(
     private val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
 
     override fun onDoubleClick(event: MouseEvent) {
-        if (codeScanManager.isCodeScanInProgress()) {
+        if (codeScanManager.isProjectScanInProgress()) {
             codeScanManager.stopCodeScan()
         } else {
-            codeScanManager.runCodeScan()
+            codeScanManager.runCodeScan(CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         }
     }
 }

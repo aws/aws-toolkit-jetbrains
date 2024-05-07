@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
+import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -31,6 +32,18 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
+
+    companion object {
+        private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
+    }
+
+    private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
+        if (message.isEmpty()) {
+            return 0
+        }
+        val htmlInString = convertMarkdownToHTML(message.toString())
+        return CODE_BLOCK_PATTERN.findAll(htmlInString).count()
+    }
 
     fun handle(
         tabId: String,
@@ -75,7 +88,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
 
                 telemetryHelper.setResponseStreamTotalTime(tabId)
-                telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode)
+                telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
             }
             .catch { exception ->
