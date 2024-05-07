@@ -409,10 +409,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
         }
 
-    private suspend fun handleJobResumedFromHil(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
-        return session.pollUntilJobCompletion(jobId) { new, plan ->
-            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion)
-        }
+    private suspend fun handleJobResumedFromHil(
+        jobId: JobId,
+        session: CodeModernizerSession
+    ): CodeModernizerJobCompletedResult = session.pollUntilJobCompletion(
+        jobId
+    ) { new, plan ->
+        codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion)
     }
 
     private suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
