@@ -304,5 +304,5 @@ data class ToolkitAuthManagerState(
 data class LastLoginIdcInfo(
     var profileName: String = "",
     var startUrl: String = "",
-    var region: String = AwsRegionProvider.getInstance().defaultRegion()
+    var region: String = AwsRegionProvider.getInstance().defaultRegion().id
 )
