@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
+import java.util.UUID
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatUpdateMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformNotificationMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -16,11 +18,20 @@ class CodeTransformChatHelper(
     private val chatSessionStorage: ChatSessionStorage
 ) {
     private var activeCodeTransformTabId: String? = null
+    private var hilPomItemId: String? = null
+
     fun setActiveCodeTransformTabId(tabId: String) {
         activeCodeTransformTabId = tabId
     }
 
     fun getActiveCodeTransformTabId(): String? = activeCodeTransformTabId
+
+    fun generateHilPomItemId(): String {
+        hilPomItemId = UUID.randomUUID().toString()
+        return hilPomItemId as String
+    }
+
+    fun getHilPomItemId(): String? = hilPomItemId
 
     suspend fun showChatNotification(title: String, content: String) {
         messagePublisher.publish(
@@ -31,7 +42,11 @@ class CodeTransformChatHelper(
         )
     }
 
-    suspend fun addNewMessage(content: CodeTransformChatMessageContent) {
+    suspend fun addNewMessage(
+        content: CodeTransformChatMessageContent,
+        messageIdOverride: String? = null,
+        clearPreviousItemButtons: Boolean? = true
+    ) {
         if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId as String).isAuthenticating) {
             return
         }
@@ -39,6 +54,7 @@ class CodeTransformChatHelper(
         messagePublisher.publish(
             CodeTransformChatMessage(
                 tabId = activeCodeTransformTabId as String,
+                messageId = messageIdOverride ?: UUID.randomUUID().toString(),
                 messageType = when (content.type) {
                     CodeTransformChatMessageType.PendingAnswer -> ChatMessageType.AnswerPart
                     CodeTransformChatMessageType.FinalizedAnswer -> ChatMessageType.Answer
@@ -49,7 +65,8 @@ class CodeTransformChatHelper(
                 formItems = content.formItems,
                 followUps = content.followUps,
                 isAddingNewItem = true,
-                isLoading = content.type == CodeTransformChatMessageType.PendingAnswer
+                isLoading = content.type == CodeTransformChatMessageType.PendingAnswer,
+                clearPreviousItemButtons = clearPreviousItemButtons as Boolean
             )
         )
     }
@@ -69,6 +86,22 @@ class CodeTransformChatHelper(
                 followUps = content.followUps,
                 isAddingNewItem = false,
                 isLoading = content.type == CodeTransformChatMessageType.PendingAnswer
+            )
+        )
+    }
+
+    suspend fun updateExistingMessage(
+        targetMessageId: String,
+        content: CodeTransformChatMessageContent
+    ) {
+        messagePublisher.publish(
+            CodeTransformChatUpdateMessage(
+                tabId = activeCodeTransformTabId as String,
+                targetMessageId = targetMessageId,
+                message = content.message,
+                buttons = content.buttons,
+                formItems = content.formItems,
+                followUps = content.followUps,
             )
         )
     }

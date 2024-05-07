@@ -12,7 +12,8 @@ import { FormButtonIds } from '../forms/constants'
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onCodeTransformChatDisabled: (tabID: string) => void
-    onCodeTransformMessageReceived: (tabID: string, message: ChatItem, isLoading: boolean) => void
+    onCodeTransformMessageReceived: (tabID: string, message: ChatItem, isLoading: boolean, clearPreviousItemButtons?: boolean) => void
+    onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
@@ -24,6 +25,7 @@ export class CodeTransformChatConnector {
     private readonly sendMessageToExtension
     private readonly onCodeTransformChatDisabled
     private readonly onCodeTransformMessageReceived
+    private readonly onCodeTransformMessageUpdated
     private readonly onCodeTransformCommandMessageReceived
     private readonly onNotification
     private readonly onStartNewTransform
@@ -36,6 +38,7 @@ export class CodeTransformChatConnector {
         this.onStartNewTransform = props.onStartNewTransform
         this.onCodeTransformChatDisabled = props.onCodeTransformChatDisabled
         this.onCodeTransformMessageReceived = props.onCodeTransformMessageReceived
+        this.onCodeTransformMessageUpdated = props.onCodeTransformMessageUpdate
         this.onCodeTransformCommandMessageReceived = props.onCodeTransformCommandMessageReceived
         this.onNotification = props.onNotification
         this.onUpdateAuthentication = props.onUpdateAuthentication
@@ -73,7 +76,8 @@ export class CodeTransformChatConnector {
 
         const tabID = messageData.tabID
         const isAddingNewItem: boolean = messageData.isAddingNewItem
-        const isLoading = messageData.isLoading
+        const isLoading: boolean = messageData.isLoading
+        const clearPreviousItemButtons: boolean = messageData.clearPreviousItemButtons
         const type = messageData.messageType
 
         if (isAddingNewItem && type === ChatItemType.ANSWER_PART) {
@@ -99,7 +103,33 @@ export class CodeTransformChatConnector {
                       }
                     : undefined,
         }
-        this.onCodeTransformMessageReceived(tabID, chatItem, isLoading)
+        this.onCodeTransformMessageReceived(tabID, chatItem, isLoading, clearPreviousItemButtons)
+    }
+
+    private processChatUpdateMessage = (messageData: any): void => {
+        if (this.onCodeTransformMessageUpdated === undefined) {
+            return
+        }
+
+        const tabID = messageData.tabID
+        const targetMessageId = messageData.targetMessageId
+
+        const updatedItem: Partial<ChatItem> = {
+            body: messageData.message ?? undefined,
+            relatedContent: undefined,
+            canBeVoted: messageData.canBeVoted,
+            formItems: messageData.formItems,
+            buttons:
+                messageData.buttons !== undefined && messageData.buttons.length > 0 ? messageData.buttons : undefined,
+            followUp:
+                messageData.followUps !== undefined && messageData.followUps.length > 0
+                    ? {
+                          text: '',
+                          options: messageData.followUps,
+                      }
+                    : undefined,
+        }
+        this.onCodeTransformMessageUpdated(tabID, targetMessageId, updatedItem)
     }
 
     private processAuthNeededException = async (messageData: any): Promise<void> => {
@@ -142,6 +172,11 @@ export class CodeTransformChatConnector {
 
         if (messageData.type === 'authenticationUpdateMessage') {
             this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
+            return
+        }
+
+        if (messageData.type === 'codeTransformChatUpdateMessage') {
+            this.processChatUpdateMessage(messageData)
             return
         }
     }

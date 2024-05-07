@@ -409,8 +409,8 @@ class CodeTransformChatController(
             return
         }
 
-        codeTransformChatHelper.addNewMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact))
-        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent())
+        codeTransformChatHelper.addNewMessage(buildTransformDependencyErrorChatContent(hilDownloadArtifact), codeTransformChatHelper.generateHilPomItemId())
+        codeTransformChatHelper.addNewMessage(buildTransformFindingLocalAlternativeDependencyChatContent(), clearPreviousItemButtons = false)
         val createReportResult = codeModernizerManager.createDependencyReport(hilDownloadArtifact)
         if (createReportResult == MavenDependencyReportCommandsResult.Cancelled) {
             hilTryResumeAfterError(message("codemodernizer.chat.message.hil.error.cancel_dependency_search"))
@@ -435,10 +435,21 @@ class CodeTransformChatController(
         }
     }
 
+    // Remove open file button after pom.xml is deleted
+    private suspend fun updatePomPreviewItem() {
+        val hilDownloadArtifact = codeModernizerManager.getArtifactForHil() as CodeTransformHilDownloadArtifact
+        codeTransformChatHelper.updateExistingMessage(
+            codeTransformChatHelper.getHilPomItemId() as String,
+            buildTransformDependencyErrorChatContent(hilDownloadArtifact, false)
+        )
+    }
+
     override suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection) {
         if (!checkForAuth(message.tabId)) {
             return
         }
+
+        updatePomPreviewItem()
 
         val selectedVersion = message.version
         val artifact = codeModernizerManager.getCurrentHilArtifact() as CodeTransformHilDownloadArtifact
@@ -487,6 +498,8 @@ class CodeTransformChatController(
         }
 
         codeTransformChatHelper.addNewMessage(buildHilRejectContent())
+
+        updatePomPreviewItem()
 
         try {
             codeModernizerManager.rejectHil()

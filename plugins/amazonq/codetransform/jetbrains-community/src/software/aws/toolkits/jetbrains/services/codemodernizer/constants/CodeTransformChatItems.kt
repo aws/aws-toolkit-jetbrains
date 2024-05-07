@@ -318,7 +318,10 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
     )
 }
 
-fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformHilDownloadArtifact) = CodeTransformChatMessageContent(
+fun buildTransformDependencyErrorChatContent(
+    hilDownloadArtifact: CodeTransformHilDownloadArtifact,
+    showButton: Boolean = true
+) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
         "\n\n```xml" +
         "\n" +
@@ -329,8 +332,13 @@ fun buildTransformDependencyErrorChatContent(hilDownloadArtifact: CodeTransformH
         "    <version>${hilDownloadArtifact.manifest.sourcePomVersion}</version>\n" +
         "  </dependency>\n" +
         "</dependencies>",
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    buttons = listOf(openDependencyErrorPomFileButton),
+    type = CodeTransformChatMessageType.PendingAnswer,
+    buttons = if (showButton) {
+        listOf(openDependencyErrorPomFileButton)
+    } else {
+        listOf()
+    },
+
 )
 
 fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
