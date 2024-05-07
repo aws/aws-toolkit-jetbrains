@@ -239,7 +239,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun resumePollingFromHil() {
-        val result = handleJobStarted(managerState.getLatestJobId(), codeTransformationSession as CodeModernizerSession)
+        val result = handleJobResumedFromHil(managerState.getLatestJobId(), codeTransformationSession as CodeModernizerSession)
         postModernizationJob(result)
     }
 
@@ -409,7 +409,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
         }
 
-    suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
+    private suspend fun handleJobResumedFromHil(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
+        return session.pollUntilJobCompletion(jobId) { new, plan ->
+            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion)
+        }
+    }
+
+    private suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
         setJobOngoing(jobId, session.sessionContext)
         // Init the splitter panel to show progress and progress steps
         // https://plugins.jetbrains.com/docs/intellij/general-threading-rules.html#write-access

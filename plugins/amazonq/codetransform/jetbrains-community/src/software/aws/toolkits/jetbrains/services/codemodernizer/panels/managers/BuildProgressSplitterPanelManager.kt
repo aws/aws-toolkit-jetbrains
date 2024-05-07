@@ -243,6 +243,16 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.PLANNING)
             }
 
+            TransformationStatus.PAUSED -> {
+                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                statuses.update(BuildStepStatus.DONE, ProgressStepId.PLANNING)
+            }
+
+            TransformationStatus.RESUMED -> {
+                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                statuses.update(BuildStepStatus.DONE, ProgressStepId.PLANNING)
+            }
+
             TransformationStatus.TRANSFORMED -> {
                 loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.transforming")
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.TRANSFORMING)
