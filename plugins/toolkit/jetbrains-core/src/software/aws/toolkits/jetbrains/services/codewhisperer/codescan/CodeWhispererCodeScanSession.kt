@@ -286,7 +286,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.error { "Security scan failed. Error creating upload URL: ${e.message}" }
-        createUploadUrlFailedError()
+        throw e
     }
 
     private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
@@ -322,7 +322,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             throw e
         } catch (e: Exception) {
             LOG.error { "Security scan failed. Error uploading artifact to S3: ${e.message}" }
-            uploadArtifactToS3FailedError()
+            throw e
         }
     }
 
@@ -344,7 +344,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             )
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
-            createCodeScanFailedError()
+            throw e
         }
     }
 
