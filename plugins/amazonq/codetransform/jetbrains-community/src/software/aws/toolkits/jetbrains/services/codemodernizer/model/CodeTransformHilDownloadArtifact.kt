@@ -24,7 +24,6 @@ open class CodeTransformHilDownloadArtifact(
     val manifest: CodeTransformHilDownloadManifest,
     val pomFile: File,
 ) {
-
     companion object {
         val LOG = getLogger<CodeTransformHilDownloadArtifact>()
         private val MAPPER = jacksonObjectMapper()
