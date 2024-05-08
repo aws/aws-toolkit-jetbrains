@@ -152,7 +152,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                             "Status: ${createCodeScanResponse.status()} for request id: ${createCodeScanResponse.responseMetadata().requestId()}"
                     }
                 }
-                codeScanFailed()
+                codeScanFailed(createCodeScanResponse.errorMessage())
             }
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
@@ -188,7 +188,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                                 "Status: ${getCodeScanResponse.status()} for request id: ${getCodeScanResponse.responseMetadata().requestId()}"
                         }
                     }
-                    codeScanFailed()
+                    codeScanFailed(getCodeScanResponse.errorMessage())
                 }
             }
 

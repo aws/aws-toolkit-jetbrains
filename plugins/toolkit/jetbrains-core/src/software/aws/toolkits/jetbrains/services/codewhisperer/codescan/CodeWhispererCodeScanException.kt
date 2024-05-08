@@ -10,8 +10,8 @@ open class CodeWhispererCodeScanException(override val message: String?) : Runti
 internal fun noFileOpenError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.no_file_open"))
 
-internal fun codeScanFailed(): Nothing =
-    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.run_scan_error"))
+internal fun codeScanFailed(errorMessage: String): Nothing =
+    throw Exception(errorMessage)
 
 internal fun cannotFindFile(file: String?): Nothing =
     error(message("codewhisperer.codescan.file_not_found", file ?: ""))
@@ -22,8 +22,8 @@ internal fun cannotFindBuildArtifacts(): Nothing =
 internal fun fileFormatNotSupported(format: String): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_ext_not_supported", format))
 
-internal fun fileTooLarge(presentableSize: String): Nothing =
-    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_too_large", presentableSize))
+internal fun fileTooLarge(): Nothing =
+    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_too_large"))
 
 internal fun invalidSourceZipError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.invalid_source_zip_telemetry"))

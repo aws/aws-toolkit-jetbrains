@@ -357,14 +357,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error_telemetry")
             is CodeWhispererCodeScanException -> when (e.message) {
                 message("codewhisperer.codescan.no_file_open") -> message("codewhisperer.codescan.no_file_open_telemetry")
-                message("codewhisperer.codescan.run_scan_error") -> message("codewhisperer.codescan.create_codescan_failure_telemetry")
-                else -> e.message?.let { msg ->
-                    if (msg.startsWith("Amazon Q: The selected file is larger than")) {
-                        message("codewhisperer.codescan.file_too_large_telemetry")
-                    } else {
-                        msg
-                    }
-                }
+                message("codewhisperer.codescan.unsupported_language_error") -> message("codewhisperer.codescan.unsupported_language_error_telemetry")
+                message("codewhisperer.codescan.file_too_large") -> message("codewhisperer.codescan.file_too_large_telemetry")
+                else -> e.message
             }
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
