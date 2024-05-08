@@ -27,3 +27,6 @@ internal fun fileTooLarge(presentableSize: String): Nothing =
 
 internal fun invalidSourceZipError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.invalid_source_zip_telemetry"))
+
+internal fun noSupportedFilesError(): Nothing =
+    throw CodeWhispererCodeScanException(message("codewhisperer.codescan.unsupported_language_error"))
