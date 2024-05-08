@@ -65,7 +65,8 @@ tasks.withType<Test>().all {
 
     ciOnly {
         retry {
-            failOnPassedAfterRetry.set(false)
+            // set as true, because fail build if flaky test detected
+            failOnPassedAfterRetry.set(true)
             maxFailures.set(5)
             maxRetries.set(2)
         }
