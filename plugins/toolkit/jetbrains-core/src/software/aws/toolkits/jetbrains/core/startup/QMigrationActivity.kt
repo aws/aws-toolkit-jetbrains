@@ -63,7 +63,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 project = project,
                 notificationActions = listOf(
                     NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
-                        BrowserUtil.browse(" https://plugins.jetbrains.com/plugin/24267-amazon-q")
+                        BrowserUtil.browse("https://plugins.jetbrains.com/plugin/24267-amazon-q")
                         ToolkitTelemetry.showNotification(
                             id = Q_STANDALONE_CHANGE_ID,
                             component = Component.ReadMore,
