@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
-import java.util.UUID
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
@@ -12,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformNotificationMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import java.util.UUID
 
 class CodeTransformChatHelper(
     private val messagePublisher: MessagePublisher,
