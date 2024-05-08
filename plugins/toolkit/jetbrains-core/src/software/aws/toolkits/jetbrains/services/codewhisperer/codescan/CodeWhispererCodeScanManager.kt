@@ -223,9 +223,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 } else {
                     FileEditorManager.getInstance(project).selectedEditor?.file
                 }
-                    ?: noFileOpenError()
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
-            language = codeScanSessionConfig.getSelectedFile().programmingLanguage()
+            language = codeScanSessionConfig.getSelectedFile()?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
                 (language == CodeWhispererUnknownLanguage.INSTANCE || language.toTelemetryType() == CodewhispererLanguage.Plaintext)
             ) {
@@ -238,6 +237,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     val sessionContext = CodeScanSessionContext(project, codeScanSessionConfig, scope)
                     val session = CodeWhispererCodeScanSession(sessionContext)
                     val codeScanResponse = session.run()
+                    language = codeScanSessionConfig.getProgrammingLanguage()
                     codeScanResponseContext = codeScanResponse.responseContext
                     codeScanJobId = codeScanResponseContext.codeScanJobId
                     when (codeScanResponse) {
