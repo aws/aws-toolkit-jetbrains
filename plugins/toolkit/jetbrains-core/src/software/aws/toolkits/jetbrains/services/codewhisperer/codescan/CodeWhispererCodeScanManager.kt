@@ -143,12 +143,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
     /**
      * Triggers a code scan and displays results in the new tab in problems view panel.
      */
-    fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope) {
+    fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope, isPluginStarting: Boolean = false) {
         if (!isCodeWhispererEnabled(project)) return
 
         // Return if a scan is already in progress.
         if (isProjectScanInProgress() && scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) return
-        if (promptReAuth(project)) {
+        if (promptReAuth(project, isPluginStarting)) {
             isProjectScanInProgress.set(false)
             return
         }
@@ -179,7 +179,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             debounceJob?.cancel()
             debounceJob = coroutineScope.launch {
                 delay(waitMs)
-                runCodeScan(param)
+                runCodeScan(param, true)
             }
         }
     }
