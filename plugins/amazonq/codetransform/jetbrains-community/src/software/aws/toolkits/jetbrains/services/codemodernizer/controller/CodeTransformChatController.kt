@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.HilResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
@@ -99,7 +100,7 @@ class CodeTransformChatController(
             buildCheckingValidProjectChatContent()
         )
 
-        delay(2000)
+        codeTransformChatHelper.chatDelayLong()
 
         val validationResult = codeModernizerManager.validate(context.project)
 
@@ -118,7 +119,7 @@ class CodeTransformChatController(
             buildProjectValidChatContent(validationResult)
         )
 
-        delay(500)
+        codeTransformChatHelper.chatDelayShort()
 
         CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
 
@@ -133,6 +134,7 @@ class CodeTransformChatController(
         val isTransformationResuming = codeModernizerManager.isModernizationJobResuming()
 
         while (isTransformationResuming) {
+            // Poll until transformation is resumed
             delay(50)
         }
 
@@ -395,7 +397,8 @@ class CodeTransformChatController(
                 codeModernizerManager.getBottomToolWindow().show()
             }
 
-            delay(3000)
+            codeTransformChatHelper.chatDelayLong()
+
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
             codeTransformChatHelper.updateLastPendingMessage(buildHilCannotResumeContent())
@@ -484,7 +487,7 @@ class CodeTransformChatController(
                 HilTelemetryMetaData(
                     versionSelected = selectedVersion,
                     reason = "User selected version",
-                    result = "SUCCESS",
+                    result = HilResult.SUCCESS.result,
                 )
             )
 
@@ -516,7 +519,7 @@ class CodeTransformChatController(
                 HilTelemetryMetaData(
                     cancelledFromChat = true,
                     reason = "User cancelled",
-                    result = "FAILURE",
+                    result = HilResult.FAILURE.result,
                 )
             )
 

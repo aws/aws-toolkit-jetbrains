@@ -854,6 +854,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val zipCreationResult = codeTransformationSession?.createHilUploadZip(selectedVersion)
             if (zipCreationResult?.payload?.exists() == true) {
                 codeTransformationSession?.uploadHilPayload(zipCreationResult.payload)
+
+                // Add delay between upload complete and trying to resume
                 delay(500)
 
                 codeTransformationSession?.resumeTransformFromHil()

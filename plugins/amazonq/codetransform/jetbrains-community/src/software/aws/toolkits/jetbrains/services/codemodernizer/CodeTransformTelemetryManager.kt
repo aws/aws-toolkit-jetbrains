@@ -217,6 +217,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
     }
 }
 
+enum class HilResult(val result: String) {
+    SUCCESS("SUCCESS"),
+    FAILURE("FAILURE"),
+}
+
 data class HilTelemetryMetaData(
     val versionSelected: String? = null,
     val cancelledFromChat: Boolean = false,

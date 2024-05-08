@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
+import kotlinx.coroutines.delay
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
@@ -108,5 +109,13 @@ class CodeTransformChatHelper(
                 followUps = content.followUps,
             )
         )
+    }
+
+    suspend fun chatDelayShort() {
+        delay(500)
+    }
+
+    suspend fun chatDelayLong() {
+        delay(2000)
     }
 }
