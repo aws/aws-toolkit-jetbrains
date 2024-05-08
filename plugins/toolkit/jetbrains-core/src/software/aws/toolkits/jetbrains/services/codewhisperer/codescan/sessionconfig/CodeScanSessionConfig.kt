@@ -73,7 +73,6 @@ class CodeScanSessionConfig(
 
     fun createPayload(): Payload {
         // Fail fast if the selected file size is greater than the payload limit.
-//        fileTooLarge(getPresentablePayloadLimit())
         if (selectedFile.length > getPayloadLimitInBytes()) {
             fileTooLarge(getPresentablePayloadLimit())
         }

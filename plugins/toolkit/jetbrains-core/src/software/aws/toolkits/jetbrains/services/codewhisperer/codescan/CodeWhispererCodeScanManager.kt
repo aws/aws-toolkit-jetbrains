@@ -297,7 +297,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 if (e.cause?.message?.contains("com.intellij.openapi.compiler.CompilerPaths") == true) {
                     message("codewhisperer.codescan.java_module_not_found")
                 } else {
-                    message("codewhisperer.codescan.service_error")
+                    null
                 }
             }
             else -> null
@@ -310,12 +310,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 codeScanResultsPanel.showError(errorMessage)
             }
         }
-        return errorMessage // TODO
+
+        return errorMessage
     }
 
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
-            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
+            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
             is CodeWhispererCodeScanException -> when (e.message) {
                 message("codewhisperer.codescan.invalid_source_zip_telemetry") -> message("codewhisperer.codescan.run_scan_error")
                 else -> e.message
@@ -354,7 +355,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
 
         val telemetryErrorMessage = when (e) {
-            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
+            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error_telemetry")
             is CodeWhispererCodeScanException -> when (e.message) {
                 message("codewhisperer.codescan.no_file_open") -> message("codewhisperer.codescan.no_file_open_telemetry")
                 message("codewhisperer.codescan.run_scan_error") -> message("codewhisperer.codescan.create_codescan_failure_telemetry")
