@@ -65,7 +65,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         )
     }
 
-    private suspend fun unzipToPath(byteArrayList: MutableList<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
+    private suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
         val zipFilePath = withContext(getCoroutineBgContext()) {
             if (outputDirPath == null) {
                 Files.createTempFile(null, ".zip")
