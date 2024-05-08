@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -57,7 +58,7 @@ open class CodeTransformHilDownloadArtifact(
                 }
 
                 val manifestFile = File(manifestPath.pathString)
-                val manifest = MAPPER.readValue(manifestFile, CodeTransformHilDownloadManifest::class.java)
+                val manifest = MAPPER.readValue<CodeTransformHilDownloadManifest>(manifestFile)
                 if (
                     manifest.pomArtifactId == null ||
                     manifest.pomFolderName == null ||

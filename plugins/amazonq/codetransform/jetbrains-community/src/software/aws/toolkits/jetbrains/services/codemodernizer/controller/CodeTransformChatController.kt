@@ -236,6 +236,9 @@ class CodeTransformChatController(
         if (!checkForAuth(tabId)) {
             return
         }
+
+        updatePomPreviewItem()
+
         codeTransformChatHelper.run {
             addNewMessage(buildUserStopTransformChatContent())
 
@@ -437,11 +440,15 @@ class CodeTransformChatController(
 
     // Remove open file button after pom.xml is deleted
     private suspend fun updatePomPreviewItem() {
-        val hilDownloadArtifact = codeModernizerManager.getArtifactForHil() as CodeTransformHilDownloadArtifact
-        codeTransformChatHelper.updateExistingMessage(
-            codeTransformChatHelper.getHilPomItemId() as String,
-            buildTransformDependencyErrorChatContent(hilDownloadArtifact, false)
-        )
+        val hilPomItemId = codeTransformChatHelper.getHilPomItemId() ?: return
+        val hilDownloadArtifact = codeModernizerManager.getArtifactForHil()
+        if (hilDownloadArtifact != null) {
+            codeTransformChatHelper.updateExistingMessage(
+                hilPomItemId,
+                buildTransformDependencyErrorChatContent(hilDownloadArtifact, false)
+            )
+        }
+        codeTransformChatHelper.clearHilPomItemId()
     }
 
     override suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection) {

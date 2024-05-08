@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-sealed class MavenDependencyReportCommandsResult {
-    object Success : MavenDependencyReportCommandsResult()
-    object Failure : MavenDependencyReportCommandsResult()
-    object Cancelled : MavenDependencyReportCommandsResult()
+sealed interface MavenDependencyReportCommandsResult {
+    object Success : MavenDependencyReportCommandsResult
+    object Failure : MavenDependencyReportCommandsResult
+    object Cancelled : MavenDependencyReportCommandsResult
 }

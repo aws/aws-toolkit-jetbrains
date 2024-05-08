@@ -31,6 +31,10 @@ class CodeTransformChatHelper(
         return hilPomItemId as String
     }
 
+    fun clearHilPomItemId() {
+        hilPomItemId = null
+    }
+
     fun getHilPomItemId(): String? = hilPomItemId
 
     suspend fun showChatNotification(title: String, content: String) {

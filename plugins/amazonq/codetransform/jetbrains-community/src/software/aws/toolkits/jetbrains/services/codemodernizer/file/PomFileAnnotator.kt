@@ -89,7 +89,7 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
             )
 
             // Optionally, you can customize the range highlighter further
-            highlighter.errorStripeMarkColor = JBColor(JBColor.RED, Color.RED)
+            highlighter.errorStripeMarkColor = JBColor.RED
             highlighter.errorStripeTooltip = message("codemodernizer.file.invalid_pom_version")
             highlighter.gutterIconRenderer = gutterIconRenderer
         }

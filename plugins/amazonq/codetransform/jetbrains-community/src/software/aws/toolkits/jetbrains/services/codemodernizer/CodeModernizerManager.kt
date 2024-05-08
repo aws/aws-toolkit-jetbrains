@@ -666,6 +666,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun userInitiatedStopCodeModernization() {
         notifyTransformationStartStopping()
+        codeTransformationSession?.hilCleanup()
         if (transformationStoppedByUsr.getAndSet(true)) return
         val currentId = codeTransformationSession?.getActiveJobId()
         projectCoroutineScope(project).launch {
@@ -803,6 +804,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     it.artifactId == pomArtifactId
             }
         } catch (e: NoSuchElementException) {
+            val errorMessage = "No available versions found when parsing HIL dependency report: ${e.localizedMessage}"
+            telemetry.error(errorMessage)
+            LOG.error { errorMessage }
             return null
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when parsing HIL dependency report: ${e.localizedMessage}"

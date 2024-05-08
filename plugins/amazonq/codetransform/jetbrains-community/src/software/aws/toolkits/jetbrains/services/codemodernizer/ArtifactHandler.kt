@@ -75,11 +75,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
         var totalDownloadBytes = 0
         withContext(getCoroutineBgContext()) {
-            Files.newOutputStream(zipFilePath)
-        }.use {
-            for (bytes in byteArrayList) {
-                it.write(bytes)
-                totalDownloadBytes += bytes.size
+            Files.newOutputStream(zipFilePath).use {
+                for (bytes in byteArrayList) {
+                    it.write(bytes)
+                    totalDownloadBytes += bytes.size
+                }
             }
         }
         return zipFilePath to totalDownloadBytes
@@ -97,7 +97,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
         return try {
             val tmpPath = tmpDir.toPath()
-            val downloadZipFilePath = unzipToPath(downloadResultsResponse, tmpPath).first
+            val (downloadZipFilePath, _) = unzipToPath(downloadResultsResponse, tmpPath)
             LOG.info { "Successfully converted the hil artifact download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
             CodeTransformHilDownloadArtifact.create(downloadZipFilePath, getPathToHilArtifactDir(tmpPath))
         } catch (e: Exception) {

@@ -255,7 +255,7 @@ private fun runMavenDependencyUpdatesReport(
         try {
             transformMavenRunner.run(params, mvnSettings, dependencyUpdatesReportRunnable)
         } catch (t: Throwable) {
-            val error = "Maven Clean: Unexpected error when executing bundled Maven dependency updates report"
+            val error = "Maven dependency report: Unexpected error when executing bundled Maven dependency updates report"
             dependencyUpdatesReportRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven dependency updates report failed: ${t.message}")
             emitMavenFailure(error, logger, telemetry, t)
