@@ -132,19 +132,16 @@ fun getPathToHilDependenciesRootDir(tmpDirPath: Path): Path = tmpDirPath.resolve
 fun getPathToHilUploadZip(tmpDirPath: Path): Path = tmpDirPath.resolve(HIL_UPLOAD_ZIP_NAME)
 
 fun findLineNumberByString(virtualFile: VirtualFile, searchString: String): Int? {
-    val document = runReadAction {
-        FileDocumentManager.getInstance().getDocument(virtualFile)
+    val text = runReadAction {
+        FileDocumentManager.getInstance().getDocument(virtualFile)?.text
     } ?: return null
 
-    val text = document.text
-    var lineNumber = 0
     val lines = text.split("\n")
 
-    for (line in lines) {
+    for ((lineNumber, line) in lines.withIndex()) {
         if (line.contains(searchString)) {
             return lineNumber
         }
-        lineNumber++
     }
 
     return null
