@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
@@ -96,16 +97,9 @@ class CodeScanSessionConfig(
 
         val payloadMetadata = when (selectedFile) {
             null -> getProjectPayloadMetadata()
-            else -> when (selectedFile.path.startsWith(projectRoot.path)) {
-                true -> when (scope) {
-                    CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                    CodeAnalysisScope.FILE -> getFilePayloadMetadata(selectedFile)
-                }
-                false -> {
-                    // Set project root as the parent of the selected file.
-                    projectRoot = selectedFile.parent
-                    getFilePayloadMetadata(selectedFile)
-                }
+            else -> when (scope) {
+                CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
+                CodeAnalysisScope.FILE -> getFilePayloadMetadata(selectedFile)
             }
         }
 
@@ -219,7 +213,7 @@ class CodeScanSessionConfig(
 
         if (maxCountLanguage == null) {
             programmingLanguage = CodeWhispererUnknownLanguage.INSTANCE
-            return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, CodewhispererLanguage.Unknown)
+            noSupportedFilesError()
         }
         programmingLanguage = maxCountLanguage
         return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
