@@ -7,15 +7,10 @@ import com.intellij.testFramework.assertEqualsToFile
 import com.intellij.util.io.delete
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
-import java.nio.file.Paths
-import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
-import kotlin.io.path.deleteRecursively
 
 class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     @Before

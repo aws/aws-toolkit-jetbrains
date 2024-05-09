@@ -11,7 +11,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.testFramework.assertEqualsToFile
 import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
@@ -66,7 +65,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.assertNull
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
-    fun addFilesToProjectModule(vararg path: String) {
+    private fun addFilesToProjectModule(vararg path: String) {
         val module = projectRule.module
         path.forEach { projectRule.fixture.addFileToModule(module, it, it) }
     }
