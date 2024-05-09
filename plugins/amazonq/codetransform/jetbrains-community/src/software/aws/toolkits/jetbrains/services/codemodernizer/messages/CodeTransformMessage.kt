@@ -53,7 +53,7 @@ data class FormItem(
     val type: String = "select",
     val title: String,
     val mandatory: Boolean = true,
-    val options: List<FormItemOption> = listOf(),
+    val options: List<FormItemOption> = emptyList(),
 )
 
 // === UI -> App Messages ===

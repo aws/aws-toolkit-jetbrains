@@ -44,7 +44,7 @@ fun runHilMavenCopyDependency(
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
-            val successMsg = "IntelliJ bundled Maven copy-dependencies executed successfully"
+            val successMsg = "IntelliJ IDEA bundled Maven copy-dependencies executed successfully"
             logger.info { successMsg }
             buildlogBuilder.appendLine(successMsg)
         } else if (copyDependenciesRunnable.isTerminated()) {
@@ -76,7 +76,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
-            val successMsg = "IntelliJ bundled Maven copy-dependencies executed successfully"
+            val successMsg = "IntelliJ IDEA bundled Maven copy-dependencies executed successfully"
             logger.info { successMsg }
             buildlogBuilder.appendLine(successMsg)
         } else if (copyDependenciesRunnable.isTerminated()) {
@@ -131,7 +131,7 @@ private fun runMavenCopyDependencies(
     logger: Logger,
     telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
-    buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven dependency:copy-dependencies")
+    buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven dependency:copy-dependencies")
     val copyCommandList = listOf(
         "dependency:copy-dependencies",
         "-DoutputDirectory=$destinationDir",
@@ -171,7 +171,7 @@ private fun runMavenClean(
     telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
-    buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven clean")
+    buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven clean")
     val cleanParams = MavenRunnerParameters(
         false,
         sourceFolder.absolutePath,
@@ -203,7 +203,7 @@ private fun runMavenInstall(
     telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
-    buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven install")
+    buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven install")
     val installParams = MavenRunnerParameters(
         false,
         sourceFolder.absolutePath,
@@ -234,7 +234,7 @@ private fun runMavenDependencyUpdatesReport(
     logger: Logger,
     telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
-    buildlogBuilder.appendLine("Command Run: IntelliJ bundled Maven dependency updates report")
+    buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven dependency updates report")
 
     val dependencyUpdatesReportCommandList = listOf(
         "versions:dependency-updates-aggregate-report",

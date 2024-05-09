@@ -336,7 +336,7 @@ fun buildTransformDependencyErrorChatContent(
     buttons = if (showButton) {
         listOf(openDependencyErrorPomFileButton)
     } else {
-        listOf()
+        emptyList()
     },
 
 )

@@ -27,7 +27,7 @@ open class CodeTransformHilDownloadArtifact(
 ) {
 
     companion object {
-        val LOG = getLogger<CodeTransformHilDownloadArtifact>()
+        private val LOG = getLogger<CodeTransformHilDownloadArtifact>()
         private val MAPPER = jacksonObjectMapper()
 
         /**
@@ -83,7 +83,7 @@ open class CodeTransformHilDownloadArtifact(
                 throw RuntimeException("Could not find pom.xml")
             }
 
-            return File(pomFilePath.pathString)
+            return pomFilePath.toAbsolutePath().toFile()
         }
     }
 }

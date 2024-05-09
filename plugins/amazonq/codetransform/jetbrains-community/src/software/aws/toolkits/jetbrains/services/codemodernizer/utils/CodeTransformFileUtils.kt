@@ -27,7 +27,7 @@ import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
 fun filterOnlyParentFiles(filePaths: Set<VirtualFile>): List<VirtualFile> {
-    if (filePaths.isEmpty()) return listOf()
+    if (filePaths.isEmpty()) return emptyList()
     // sorts it like:
     // foo
     // foo/bar
