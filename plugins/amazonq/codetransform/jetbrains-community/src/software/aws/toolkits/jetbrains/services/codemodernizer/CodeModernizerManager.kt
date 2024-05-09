@@ -83,8 +83,6 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.pathString
 
-const val AMAZON_Q_FEEDBACK_DIALOG_KEY = "Amazon Q"
-
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -779,7 +777,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun createDependencyReport(hilDownloadArtifact: CodeTransformHilDownloadArtifact): MavenDependencyReportCommandsResult {
-        val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath() as Path
+        val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath() ?: return MavenDependencyReportCommandsResult.Failure
 
         try {
             val copyPomForDependencyReport = createFileCopy(hilDownloadArtifact.pomFile, getPathToHilDependencyReportDir(tmpDirPath).resolve(HIL_POM_FILE_NAME))
@@ -796,8 +794,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun findAvailableVersionForDependency(pomGroupId: String, pomArtifactId: String): Dependency? {
         try {
+            val hilTempDirPath = codeTransformationSession?.getHilTempDirectoryPath()
+                ?: throw CodeModernizerException("Cannot get HIL temp directory")
+
             val report = parseXmlDependenciesReport(
-                getPathToHilDependencyReport(codeTransformationSession?.getHilTempDirectoryPath() as Path)
+                getPathToHilDependencyReport(hilTempDirPath)
             )
             return report.dependencies?.first {
                 it.groupId == pomGroupId &&
@@ -829,7 +830,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun copyDependencyForHil(selectedVersion: String): MavenCopyCommandsResult {
         try {
-            val tmpDirPath = codeTransformationSession?.getHilTempDirectoryPath() as Path
+            val session = codeTransformationSession ?: throw CodeModernizerException("Cannot get the current session")
+
+            val tmpDirPath = session.getHilTempDirectoryPath()
+                ?: throw CodeModernizerException("Cannot get HIL temp directory")
 
             val downloadedPomPath = getPathToHilArtifactPomFile(tmpDirPath)
             if (!downloadedPomPath.exists()) {
@@ -839,7 +843,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val downloadedPomFile = File(downloadedPomPath.pathString)
             setDependencyVersionInPom(downloadedPomFile, selectedVersion)
 
-            val copyDependencyResult = codeTransformationSession?.copyHilDependencyUsingMaven() as MavenCopyCommandsResult
+            val copyDependencyResult = session.copyHilDependencyUsingMaven()
             return copyDependencyResult
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when getting HIL dependency for upload: ${e.localizedMessage}"
