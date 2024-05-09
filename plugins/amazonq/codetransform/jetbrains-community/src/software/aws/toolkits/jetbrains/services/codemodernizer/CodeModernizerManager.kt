@@ -74,7 +74,7 @@ import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
@@ -876,7 +876,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         val sourceVersion = codeTransformationSession?.getHilDownloadArtifact()?.manifest?.sourcePomVersion as String
         val dependencyReportDirPath = getPathToHilDependencyReportDir(codeTransformationSession?.getHilTempDirectoryPath() as Path)
 
-        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(dependencyReportDirPath.resolve("pom.xml").toFile())
+        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(dependencyReportDirPath.resolve(HIL_POM_FILE_NAME).toFile())
         if (virtualFile != null) {
             val lineNumberToHighlight = findLineNumberByString(virtualFile, "<version>$sourceVersion</version>")
             val pomFileAnnotator = PomFileAnnotator(project, virtualFile, lineNumberToHighlight)
