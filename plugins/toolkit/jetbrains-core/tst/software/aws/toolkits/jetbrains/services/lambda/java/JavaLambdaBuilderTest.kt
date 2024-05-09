@@ -61,13 +61,16 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest {
-        val psiClass = projectRule.setUpMavenProject()
+    fun mavenRootPomHandlerBaseDirIsCorrect() {
+        Thread.sleep(1000)
+        runTest {
+            val psiClass = projectRule.setUpMavenProject()
 
-        val module = ModuleManager.getInstance(projectRule.project).modules.first()
-        val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
-        val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
-        assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
+            val module = ModuleManager.getInstance(projectRule.project).modules.first()
+            val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
+            val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
+            assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
+        }
     }
 
     @Test
