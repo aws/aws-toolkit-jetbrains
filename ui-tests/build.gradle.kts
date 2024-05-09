@@ -44,8 +44,8 @@ tasks.test {
 }
 
 tasks.register<Test>("uiTestCore") {
-    dependsOn(":sandbox-all:buildPlugin")
-    inputs.files(":sandbox-all:buildPlugin")
+    dependsOn(":sandbox-all:prepareUiTestingSandbox")
+    inputs.files(":sandbox-all:prepareUiTestingSandbox")
 
     systemProperty("ide.experimental.ui", false)
     systemProperty("org.gradle.project.ideProfileName", ideProfileName)
