@@ -68,6 +68,7 @@ object CodeWhispererConstants {
     const val TOTAL_SECONDS_IN_MINUTE: Long = 60L
     const val ACCOUNTLESS_START_URL = "accountless"
     const val FEATURE_CONFIG_POLL_INTERVAL_IN_MS: Long = 30 * 60 * 1000L // 30 mins
+    const val CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS: Long = 1500 // 1.5 seconds
     const val USING: String = "using"
     const val GLOBAL_USING: String = "global using"
     const val STATIC: String = "static"
@@ -134,7 +135,9 @@ object CodeWhispererConstants {
         }
     }
     object CrossFile {
-        const val CHUNK_SIZE = 60
+        const val CHUNK_SIZE = 200
+        const val NUMER_OF_LINE_IN_CHUNK = 50
+        const val NUMBER_OF_CHUNK_TO_FETCH = 10
     }
 
     object Utg {
