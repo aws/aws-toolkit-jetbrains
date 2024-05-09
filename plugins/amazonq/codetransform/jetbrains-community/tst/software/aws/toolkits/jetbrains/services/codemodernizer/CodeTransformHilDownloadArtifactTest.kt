@@ -4,25 +4,30 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.testFramework.assertEqualsToFile
+import com.intellij.util.io.delete
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
-
+import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import java.nio.file.Paths
 import kotlin.io.path.Path
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.deleteRecursively
 
 class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
-
     @Before
     override fun setup() {
         super.setup()
     }
 
     @Test
-    fun `Will extract downloadZip`() {
-        val testZipFilePath = Path("software/aws/toolkits/jetbrains/services/codemodernizer/resources/files/hilDownloadResults/downloadResultsZip.zip")
-        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, tempFolder.root.toPath())
+    fun `Human in the loop will extract download artifacts`() {
+        val outputFolder = createTempDirectory("hilTest")
+        val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
+        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
 
         // verify manifest file values
         assertEquals(hilDownloadArtifact.manifest.pomArtifactId, "lombok")
@@ -31,7 +36,8 @@ class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase
         assertEquals(hilDownloadArtifact.manifest.pomArtifactId, "lombok")
 
         // verify pom file
-        val testDownloadPomFile = Path("software/aws/toolkits/jetbrains/services/codemodernizer/resources/files/hilDownloadResults/pom.xml")
-        assertEqualsToFile("test", testDownloadPomFile.toFile(), hilDownloadArtifact.pomFile.readText().toString())
+        val testDownloadPomFile = "humanInTheLoop/pom.xml".toResourceFile().toPath()
+        assertEqualsToFile("test", testDownloadPomFile.toFile(), hilDownloadArtifact.pomFile.readText())
+        outputFolder.delete()
     }
 }
