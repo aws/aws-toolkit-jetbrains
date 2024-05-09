@@ -74,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.isQConnected
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -147,10 +148,17 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
         // Return if a scan is already in progress.
         if (isProjectScanInProgress() && scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) return
-        if (promptReAuth(project, isPluginStarting)) {
+
+        val connectionExpired = if (isPluginStarting) {
+            isQExpired(project)
+        } else {
+            promptReAuth(project)
+        }
+        if (connectionExpired) {
             isProjectScanInProgress.set(false)
             return
         }
+
         //  If scope is project
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
             // Prepare for a project code scan
