@@ -29,11 +29,6 @@ import java.awt.Font
 import javax.swing.Icon
 
 class PomFileAnnotator(private val project: Project, private var virtualFile: VirtualFile, private var lineNumberToHighlight: Int?) {
-    val emptyAction: AnAction = object : AnAction() {
-        override fun actionPerformed(e: AnActionEvent) = Unit
-        override fun update(e: AnActionEvent) = Unit
-    }
-
     // If corresponding model doesn't exist, create it for that document
     private fun getMarkupModelForDocument(document: Document): MarkupModel =
         forDocument(document, project, false) ?: forDocument(document, project, true)
@@ -45,27 +40,6 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
     }
 
     private fun addGutterIconToLine(markupModel: MarkupModel, document: Document, lineNumberToHighlight: Int) {
-        val gutterIconRenderer = object : GutterIconRenderer() {
-            override fun equals(other: Any?): Boolean = true
-
-            override fun hashCode(): Int = javaClass.hashCode()
-
-            override fun getIcon(): Icon {
-                val scaledIcon = AllIcons.General.BalloonWarning
-                return scaledIcon
-            }
-
-            override fun getTooltipText(): String = message("codemodernizer.file.invalid_pom_version")
-
-            override fun isNavigateAction(): Boolean = false
-
-            override fun getClickAction(): AnAction = emptyAction
-
-            override fun getPopupMenuActions(): ActionGroup? = null
-
-            override fun getAlignment(): Alignment = Alignment.LEFT
-        }
-
         val highlighterAttributes = TextAttributes(
             null,
             getLightYellowThemeBackgroundColor(),
@@ -90,7 +64,7 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
             // Optionally, you can customize the range highlighter further
             highlighter.errorStripeMarkColor = JBColor.RED
             highlighter.errorStripeTooltip = message("codemodernizer.file.invalid_pom_version")
-            highlighter.gutterIconRenderer = gutterIconRenderer
+            highlighter.gutterIconRenderer = HilGutterIconRenderer(AllIcons.General.BalloonWarning)
         }
     }
 
@@ -110,4 +84,31 @@ class PomFileAnnotator(private val project: Project, private var virtualFile: Vi
             addGutterIconToLine(markupModel, document, lineNumberToHighlight ?: 1)
         }
     }
+}
+
+private class HilGutterIconRenderer(private val icon: Icon) : GutterIconRenderer() {
+    override fun equals(other: Any?): Boolean {
+        if (other is HilGutterIconRenderer) {
+            return icon == other.icon
+        }
+        return false
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+
+    override fun getIcon(): Icon = icon
+
+    override fun getTooltipText(): String = message("codemodernizer.file.invalid_pom_version")
+
+    override fun isNavigateAction(): Boolean = false
+
+    // No action to be performed
+    override fun getClickAction(): AnAction = object : AnAction() {
+        override fun actionPerformed(e: AnActionEvent) = Unit
+        override fun update(e: AnActionEvent) = Unit
+    }
+
+    override fun getPopupMenuActions(): ActionGroup? = null
+
+    override fun getAlignment(): Alignment = Alignment.LEFT
 }
