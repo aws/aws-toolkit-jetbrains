@@ -1,8 +1,8 @@
 * @aws/aws-ides-team
 
-chat/ @aws/dexp
-amazonqFeatureDev/ @aws/earlybird
 
+amazonqFeatureDev/ @aws/earlybird
+chat/ @aws/dexp
 codemodernizer/ @aws/elastic-gumby
 codetransform/ @aws/elastic-gumby
 codewhisperer/ @aws/codewhisperer-team
