@@ -152,7 +152,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                             "Status: ${createCodeScanResponse.status()} for request id: ${createCodeScanResponse.responseMetadata().requestId()}"
                     }
                 }
-                codeScanFailed(createCodeScanResponse.errorMessage())
+                val errorMessage = createCodeScanResponse.errorMessage()?.let { it } ?: "Security scan failed."
+                codeScanFailed(errorMessage)
             }
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
@@ -188,7 +189,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                                 "Status: ${getCodeScanResponse.status()} for request id: ${getCodeScanResponse.responseMetadata().requestId()}"
                         }
                     }
-                    codeScanFailed(getCodeScanResponse.errorMessage())
+                    val errorMessage = getCodeScanResponse.errorMessage()?.let { it } ?: "Security scan failed."
+                    codeScanFailed(errorMessage)
                 }
             }
 
