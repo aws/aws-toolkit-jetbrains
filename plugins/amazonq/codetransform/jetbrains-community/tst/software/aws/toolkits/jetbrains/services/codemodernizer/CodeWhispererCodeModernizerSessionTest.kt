@@ -23,6 +23,7 @@ import org.assertj.core.api.Assertions.fail
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -62,7 +63,6 @@ import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
-import kotlin.test.assertNull
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     private fun addFilesToProjectModule(vararg path: String) {
@@ -490,12 +490,12 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
         val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
 
-        // assert null befor setting
+        // assert null before setting
         assertNull(testSessionSpy.getHilDownloadArtifact())
         testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
         assertEquals(testSessionSpy.getHilDownloadArtifact(), hilDownloadArtifact)
 
-        // cleanu
+        // cleanup
         outputFolder.delete()
     }
 
