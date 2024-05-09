@@ -289,7 +289,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
     val incrementals = (dependency.incrementals.orEmpty()).sorted()
     val total = majors.size + minors.size + incrementals.size
 
-    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion as String)
+    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion ?: "")
 
     if (majors.isNotEmpty()) {
         message += message("codemodernizer.chat.message.hil.dependency_latest_major", majors.last())

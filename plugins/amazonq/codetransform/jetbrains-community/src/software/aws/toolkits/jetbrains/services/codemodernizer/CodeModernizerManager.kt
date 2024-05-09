@@ -429,7 +429,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
+    private fun postModernizationJob(result: CodeModernizerJobCompletedResult) {
         codeTransformationSession?.setLastTransformResult(result)
 
         if (result is CodeModernizerJobCompletedResult.ManagerDisposed) {
@@ -754,15 +754,15 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             return codeTransformationSession?.getHilDownloadArtifact()
         }
 
-        val jobId = codeTransformationSession?.getActiveJobId() as JobId
-        val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId() as String
+        val jobId = codeTransformationSession?.getActiveJobId() ?: return null
+        val downloadArtifactId = codeTransformationSession?.getHilDownloadArtifactId() ?: return null
 
         val tmpDir = try {
             createTempDirectory("", null)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when creating tmp dir for HIL: ${e.localizedMessage}"
             LOG.error { errorMessage }
-            throw e
+            return null
         }
         try {
             val hilArtifact = artifactHandler.downloadHilArtifact(jobId, downloadArtifactId, tmpDir)

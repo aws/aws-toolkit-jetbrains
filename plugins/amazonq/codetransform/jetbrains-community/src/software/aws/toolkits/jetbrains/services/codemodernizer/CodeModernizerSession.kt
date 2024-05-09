@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadManifest
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
@@ -116,7 +115,7 @@ class CodeModernizerSession(
 
     fun createHilUploadZip(selectedVersion: String) = sessionContext.createZipForHilUpload(
         hilTempDirectoryPath as Path,
-        hilDownloadArtifact?.manifest as CodeTransformHilDownloadManifest,
+        hilDownloadArtifact?.manifest,
         selectedVersion
     )
 
@@ -255,7 +254,8 @@ class CodeModernizerSession(
     fun rejectHilAndContinue(): ResumeTransformationResponse {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         return try {
-            clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.REJECTED)
+            val jobId = state.currentJobId ?: throw CodeModernizerException("No Job ID found")
+            clientAdaptor.resumeCodeTransformation(jobId, TransformationUserActionStatus.REJECTED)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
             LOG.error { errorMessage }
@@ -269,9 +269,10 @@ class CodeModernizerSession(
         if (isDisposed.get()) {
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
+        val jobId = state.currentJobId ?: throw CodeModernizerException("No Job ID found")
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         val createUploadUrlResponse = try {
-            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = state.currentJobId as JobId)
+            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = jobId)
         } catch (e: Exception) {
             val errorMessage = "Unexpected error when creating upload url for HIL: ${e.localizedMessage}"
             LOG.error { errorMessage }
@@ -432,7 +433,7 @@ class CodeModernizerSession(
             return when {
                 result.state == TransformationStatus.STOPPED -> CodeModernizerJobCompletedResult.Stopped
 
-                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.currentHilArtifactId as String)
+                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.currentHilArtifactId ?: "")
 
                 result.state == TransformationStatus.UNKNOWN_TO_SDK_VERSION -> CodeModernizerJobCompletedResult.JobFailed(
                     jobId,

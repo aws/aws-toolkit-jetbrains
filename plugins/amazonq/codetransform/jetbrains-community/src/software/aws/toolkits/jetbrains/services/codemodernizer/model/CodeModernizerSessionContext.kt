@@ -117,9 +117,13 @@ data class CodeModernizerSessionContext(
         buildLogBuilder: StringBuilder
     ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
-    fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest, targetVersion: String): ZipCreationResult =
+    fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =
         runReadAction {
             try {
+                if (manifest == null) {
+                    throw CodeModernizerException("No Hil manifest found")
+                }
+
                 val depRootPath = getPathToHilDependenciesRootDir(hilTempPath)
                 val depDirectory = File(depRootPath.pathString)
 

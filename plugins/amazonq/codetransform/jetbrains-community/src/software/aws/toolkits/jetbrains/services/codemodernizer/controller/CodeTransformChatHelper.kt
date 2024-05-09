@@ -27,10 +27,7 @@ class CodeTransformChatHelper(
 
     fun getActiveCodeTransformTabId(): String? = activeCodeTransformTabId
 
-    fun generateHilPomItemId(): String {
-        hilPomItemId = UUID.randomUUID().toString()
-        return hilPomItemId as String
-    }
+    fun generateHilPomItemId(): String = UUID.randomUUID().toString().also { hilPomItemId = it }
 
     fun clearHilPomItemId() {
         hilPomItemId = null
