@@ -402,7 +402,7 @@ class CodeTransformChatController(
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
             telemetry.logHil(
-                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id ?: "",
+                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = false,
                     reason = "Runtime Error when trying to resume transformation from HIL",
@@ -523,7 +523,7 @@ class CodeTransformChatController(
             codeModernizerManager.rejectHil()
 
             telemetry.logHil(
-                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id ?: "",
+                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = true,
                     reason = "User cancelled",
@@ -537,7 +537,7 @@ class CodeTransformChatController(
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
             telemetry.logHil(
-                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id ?: "",
+                CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = false,
                     reason = "Runtime Error when trying to resume transformation from HIL",

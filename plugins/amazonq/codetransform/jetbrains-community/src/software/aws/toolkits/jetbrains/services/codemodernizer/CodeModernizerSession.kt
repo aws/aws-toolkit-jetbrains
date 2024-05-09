@@ -433,7 +433,7 @@ class CodeModernizerSession(
             return when {
                 result.state == TransformationStatus.STOPPED -> CodeModernizerJobCompletedResult.Stopped
 
-                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.currentHilArtifactId ?: "")
+                result.state == TransformationStatus.PAUSED -> CodeModernizerJobCompletedResult.JobPaused(jobId, state.currentHilArtifactId.orEmpty())
 
                 result.state == TransformationStatus.UNKNOWN_TO_SDK_VERSION -> CodeModernizerJobCompletedResult.JobFailed(
                     jobId,
