@@ -485,7 +485,7 @@ class CodeTransformChatController(
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
                 HilTelemetryMetaData(
-                    versionSelected = selectedVersion,
+                    dependencyVersionSelected = selectedVersion,
                     reason = "User selected version",
                     result = HilResult.SUCCESS.result,
                 )

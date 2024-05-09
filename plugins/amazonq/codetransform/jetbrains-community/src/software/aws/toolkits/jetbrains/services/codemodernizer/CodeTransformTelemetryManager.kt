@@ -223,7 +223,7 @@ enum class HilResult(val result: String) {
 }
 
 data class HilTelemetryMetaData(
-    val versionSelected: String? = null,
+    val dependencyVersionSelected: String? = null,
     val cancelledFromChat: Boolean = false,
     val reason: String,
     val result: String,
