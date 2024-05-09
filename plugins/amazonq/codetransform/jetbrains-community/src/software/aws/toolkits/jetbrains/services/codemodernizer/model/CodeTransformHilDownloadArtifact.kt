@@ -12,7 +12,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.pathString
 
 const val MANIFEST_PATH_IN_ZIP = "manifest.json"
@@ -76,7 +75,6 @@ open class CodeTransformHilDownloadArtifact(
             }
         }
 
-        @OptIn(ExperimentalPathApi::class)
         private fun extractDependencyPom(dirPath: Path): File {
             val pomFilePath = dirPath.resolve(POM_PATH_IN_ZIP)
             if (!pomFilePath.exists()) {
