@@ -234,7 +234,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
             message("codemodernizer.chat.message.result.partially_success")
         }
         is CodeModernizerJobCompletedResult.JobFailed -> {
-            message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason ?: "")
+            message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason.orEmpty())
         }
         else -> {
             message("codemodernizer.chat.message.result.fail")
