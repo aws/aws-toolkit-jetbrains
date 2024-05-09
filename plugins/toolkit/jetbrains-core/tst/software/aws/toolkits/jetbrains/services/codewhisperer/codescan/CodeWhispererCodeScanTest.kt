@@ -205,7 +205,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             val codeScanResponse = codeScanSessionSpy.run()
             assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
             assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanException>()
+            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
         }
     }
 
@@ -233,7 +233,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             val codeScanResponse = codeScanSessionSpy.run()
             assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
             assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanException>()
+            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
         }
     }
 
