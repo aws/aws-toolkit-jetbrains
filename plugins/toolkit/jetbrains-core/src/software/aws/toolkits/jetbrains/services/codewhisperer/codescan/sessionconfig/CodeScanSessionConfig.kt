@@ -194,8 +194,11 @@ class CodeScanSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }
-                                && !changeListManager.isIgnoredFile(current) && !files.contains(current.path)) {
+                        // Using both featureDevSessionContext and changeListManager to ignore files.
+                        // featureDevSessionContext is used to only ignore files in gitignore in project root and uses regex pattern matching.
+                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !changeListManager.isIgnoredFile(current) && !files.contains(current.path)
+                        ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 break
                             } else {
@@ -211,8 +214,9 @@ class CodeScanSessionConfig(
                         }
                     } else {
                         // Directory case: only traverse if not ignored
-                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }
-                            && !changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)) {
+                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
+                        ) {
                             for (child in current.children) {
                                 stack.push(child)
                             }
