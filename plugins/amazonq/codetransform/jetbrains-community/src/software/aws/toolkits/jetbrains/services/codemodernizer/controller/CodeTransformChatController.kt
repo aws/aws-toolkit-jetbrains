@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.HilResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
@@ -405,9 +404,9 @@ class CodeTransformChatController(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = false,
-                    reason = "Runtime Error when trying to resume transformation from HIL",
-                    result = HilResult.FAILURE.result,
-                )
+                ),
+                success = false,
+                reason = "Runtime Error when trying to resume transformation from HIL",
             )
             codeTransformChatHelper.updateLastPendingMessage(buildHilCannotResumeContent())
         }
@@ -494,9 +493,9 @@ class CodeTransformChatController(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
                 HilTelemetryMetaData(
                     dependencyVersionSelected = selectedVersion,
-                    reason = "User selected version",
-                    result = HilResult.SUCCESS.result,
-                )
+                ),
+                success = true,
+                reason = "User selected version"
             )
 
             codeTransformChatHelper.updateLastPendingMessage(buildHilResumedContent())
@@ -526,9 +525,9 @@ class CodeTransformChatController(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = true,
-                    reason = "User cancelled",
-                    result = HilResult.FAILURE.result,
-                )
+                ),
+                success = false,
+                reason = "User cancelled"
             )
 
             runInEdt {
@@ -540,9 +539,9 @@ class CodeTransformChatController(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
                 HilTelemetryMetaData(
                     cancelledFromChat = false,
-                    reason = "Runtime Error when trying to resume transformation from HIL",
-                    result = HilResult.FAILURE.result,
-                )
+                ),
+                success = false,
+                reason = "Runtime Error when trying to resume transformation from HIL",
             )
             codeTransformChatHelper.updateLastPendingMessage(buildHilCannotResumeContent())
         }

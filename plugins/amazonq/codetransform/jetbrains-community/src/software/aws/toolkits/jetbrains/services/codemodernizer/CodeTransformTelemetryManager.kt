@@ -191,12 +191,14 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun logHil(jobId: String, metaData: HilTelemetryMetaData) {
+    fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
         CodetransformTelemetry.humanInTheLoop(
             project,
             jobId,
             metaData.toString(),
             sessionId,
+            reason,
+            success,
         )
     }
 
@@ -217,14 +219,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     }
 }
 
-enum class HilResult(val result: String) {
-    SUCCESS("SUCCESS"),
-    FAILURE("FAILURE"),
-}
-
 data class HilTelemetryMetaData(
     val dependencyVersionSelected: String? = null,
     val cancelledFromChat: Boolean = false,
-    val reason: String,
-    val result: String,
 )
