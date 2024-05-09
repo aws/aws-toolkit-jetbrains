@@ -44,7 +44,6 @@
     <idea-version since-build="232" />
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true">org.jetbrains.idea.maven</depends>
-    <depends optional="true">org.jetbrains.plugins.gradle</depends>
     <resource-bundle>software.aws.toolkits.resources.MessagesBundle</resource-bundle>
 
     <depends>aws.toolkit.core</depends>
