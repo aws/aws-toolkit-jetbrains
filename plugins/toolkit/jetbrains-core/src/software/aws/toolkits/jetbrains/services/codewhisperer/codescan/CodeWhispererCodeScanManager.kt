@@ -320,6 +320,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 message("codewhisperer.codescan.invalid_source_zip_telemetry") -> message("codewhisperer.codescan.run_scan_error")
                 else -> e.message
             }
+            is UploadCodeScanException -> message("codewhisperer.codescan.upload_to_s3_failed")
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> null
@@ -361,6 +362,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 message("codewhisperer.codescan.file_too_large") -> message("codewhisperer.codescan.file_too_large_telemetry")
                 else -> e.message
             }
+            is UploadCodeScanException -> e.message
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> e.message

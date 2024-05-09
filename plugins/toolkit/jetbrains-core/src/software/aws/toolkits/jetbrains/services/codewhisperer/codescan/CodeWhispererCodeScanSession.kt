@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
@@ -152,7 +153,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                             "Status: ${createCodeScanResponse.status()} for request id: ${createCodeScanResponse.responseMetadata().requestId()}"
                     }
                 }
-                val errorMessage = createCodeScanResponse.errorMessage()?.let { it } ?: "Security scan failed."
+                val errorMessage = createCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
                 codeScanFailed(errorMessage)
             }
             val jobId = createCodeScanResponse.jobId()
@@ -189,7 +190,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                                 "Status: ${getCodeScanResponse.status()} for request id: ${getCodeScanResponse.responseMetadata().requestId()}"
                         }
                     }
-                    val errorMessage = getCodeScanResponse.errorMessage()?.let { it } ?: "Security scan failed."
+                    val errorMessage = getCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
                     codeScanFailed(errorMessage)
                 }
             }
@@ -320,7 +321,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: IOException) {
             throw e
         } catch (e: Exception) {
-            throw e
+            val errorMessage = e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+            throw uploadArtifactFailedError(errorMessage)
         }
     }
 
