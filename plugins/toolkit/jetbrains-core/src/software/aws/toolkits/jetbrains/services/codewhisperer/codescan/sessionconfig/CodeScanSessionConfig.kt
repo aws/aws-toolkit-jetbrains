@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
@@ -54,6 +55,8 @@ class CodeScanSessionConfig(
         private set
 
     private var isProjectTruncated = false
+
+    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -152,7 +155,8 @@ class CodeScanSessionConfig(
                     val changeListManager = ChangeListManager.getInstance(project)
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !changeListManager.isIgnoredFile(it)
+                            !changeListManager.isIgnoredFile(it) &&
+                                !featureDevSessionContext.ignoreFile(it, this)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -190,7 +194,8 @@ class CodeScanSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        if (runBlocking { !changeListManager.isIgnoredFile(current) } && !files.contains(current.path)) {
+                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }
+                                && !changeListManager.isIgnoredFile(current) && !files.contains(current.path)) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 break
                             } else {
@@ -206,7 +211,8 @@ class CodeScanSessionConfig(
                         }
                     } else {
                         // Directory case: only traverse if not ignored
-                        if (runBlocking { !changeListManager.isIgnoredFile(current) } && !traversedDirectories.contains(current)) {
+                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) }
+                            && !changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)) {
                             for (child in current.children) {
                                 stack.push(child)
                             }
