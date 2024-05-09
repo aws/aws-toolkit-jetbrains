@@ -273,7 +273,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
         createUploadUrlResponse
     } catch (e: Exception) {
-        LOG.error { "Security scan failed. Something went wrong uploading artifacts: ${e.message}" }
         throw e
     }
 
@@ -287,7 +286,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 .build()
         )
     } catch (e: Exception) {
-        LOG.error { "Security scan failed. Error creating upload URL: ${e.message}" }
         throw e
     }
 
@@ -320,10 +318,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
             }
         } catch (e: IOException) {
-            LOG.error { "Security scan failed. Error uploading artifact to S3: ${e.message}" }
             throw e
         } catch (e: Exception) {
-            LOG.error { "Security scan failed. Error uploading artifact to S3: ${e.message}" }
             throw e
         }
     }
