@@ -11,10 +11,12 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.testFramework.assertEqualsToFile
 import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.utils.io.createFile
+import com.intellij.util.io.delete
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -45,9 +47,11 @@ import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -58,6 +62,8 @@ import java.io.FileInputStream
 import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import kotlin.io.path.createTempDirectory
+import kotlin.test.assertNull
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     fun addFilesToProjectModule(vararg path: String) {
@@ -477,5 +483,32 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             eq(gumbyUploadUrlResponse.kmsKeyArn()),
             any()
         )
+    }
+
+    @Test
+    fun `Human in the loop will set and get download artifacts`() {
+        val outputFolder = createTempDirectory("hilTest")
+        val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
+        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
+
+        // assert null befor setting
+        assertNull(testSessionSpy.getHilDownloadArtifact())
+        testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
+        assertEquals(testSessionSpy.getHilDownloadArtifact(), hilDownloadArtifact)
+
+        // cleanu
+        outputFolder.delete()
+    }
+
+    @Test
+    fun `Human in the loop will clean up download artifacts`() {
+        val outputFolder = createTempDirectory("hilTest")
+        val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
+        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
+        testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
+        testSessionSpy.setHilTempDirectoryPath(outputFolder)
+        assertTrue(outputFolder.exists())
+        testSessionSpy.hilCleanup()
+        assertFalse(outputFolder.exists())
     }
 }
