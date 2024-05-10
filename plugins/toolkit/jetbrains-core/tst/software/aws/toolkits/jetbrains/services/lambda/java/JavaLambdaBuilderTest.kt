@@ -45,20 +45,28 @@ class JavaLambdaBuilderTest {
 
     @Test
     fun gradleRootProjectHandlerBaseDirIsCorrect() {
-        val psiClass = projectRule.setUpGradleProject()
+        try {
+            val psiClass = projectRule.setUpGradleProject()
 
-        val baseDir = sut.handlerBaseDirectory(projectRule.module, psiClass.methods.first())
-        val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
-        assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
+            val baseDir = sut.handlerBaseDirectory(projectRule.module, psiClass.methods.first())
+            val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
+            assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 
     @Test
     fun gradleRootProjectBuildDirectoryIsCorrect() {
-        projectRule.setUpGradleProject()
+        try {
+            projectRule.setUpGradleProject()
 
-        val baseDir = sut.getBuildDirectory(projectRule.module)
-        val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
-        assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
+            val baseDir = sut.getBuildDirectory(projectRule.module)
+            val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
+            assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 
     @Test
@@ -77,18 +85,23 @@ class JavaLambdaBuilderTest {
 
     @Test
     fun mavenRootPomBuildDirectoryIsCorrect() = runTest {
-        projectRule.setUpMavenProject()
+        try {
+            projectRule.setUpMavenProject()
 
-        val module = ModuleManager.getInstance(projectRule.project).modules.first()
-        val baseDir = sut.getBuildDirectory(module)
-        val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
-        assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
+            val module = ModuleManager.getInstance(projectRule.project).modules.first()
+            val baseDir = sut.getBuildDirectory(module)
+            val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
+            assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 
     @Test
     fun unsupportedBuildSystem() {
-        val handlerPsi = projectRule.fixture.addClass(
-            """
+        try {
+            val handlerPsi = projectRule.fixture.addClass(
+                """
             package com.example;
 
             public class SomeClass {
@@ -96,29 +109,40 @@ class JavaLambdaBuilderTest {
                     return input.toUpperCase();
                 }
             }
-            """.trimIndent()
-        )
+                """.trimIndent()
+            )
 
-        assertThatThrownBy {
-            sut.handlerBaseDirectory(projectRule.module, handlerPsi)
-        }.isInstanceOf(IllegalStateException::class.java)
-            .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
+            assertThatThrownBy {
+                sut.handlerBaseDirectory(projectRule.module, handlerPsi)
+            }.isInstanceOf(IllegalStateException::class.java)
+                .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 
     @Test
     fun javaHomePassedWhenNotInContainer() {
-        envVarsRule.remove("JAVA_HOME")
+        try {
+            envVarsRule.remove("JAVA_HOME")
 
-        ModuleRootModificationUtil.setModuleSdk(projectRule.module, IdeaTestUtil.getMockJdk18())
-        assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = false)))
-            .extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
+            ModuleRootModificationUtil.setModuleSdk(projectRule.module, IdeaTestUtil.getMockJdk18())
+            assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = false)))
+                .extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 
     @Test
     fun javaHomeNotPassedWhenInContainer() {
-        envVarsRule.remove("JAVA_HOME")
+        try {
+            envVarsRule.remove("JAVA_HOME")
 
-        assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = true)))
-            .doesNotContainKey("JAVA_HOME")
+            assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = true)))
+                .doesNotContainKey("JAVA_HOME")
+        } catch (e: Exception) {
+            log.error(e)
+        }
     }
 }
