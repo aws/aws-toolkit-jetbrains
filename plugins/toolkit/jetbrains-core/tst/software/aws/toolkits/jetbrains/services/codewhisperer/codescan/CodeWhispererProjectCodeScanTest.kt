@@ -21,7 +21,6 @@ import java.util.zip.ZipInputStream
 import kotlin.io.path.relativeTo
 import kotlin.test.assertNotNull
 
-
 class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsightTestFixtureRule()) {
     private lateinit var testCs: VirtualFile
     private lateinit var utilsCs: VirtualFile
