@@ -13,13 +13,11 @@ import com.intellij.openapi.vfs.VFileProperty
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
@@ -55,8 +53,6 @@ class CodeScanSessionConfig(
         private set
 
     private var isProjectTruncated = false
-
-    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -155,8 +151,7 @@ class CodeScanSessionConfig(
                     val changeListManager = ChangeListManager.getInstance(project)
                     VfsUtil.collectChildrenRecursively(projectRoot).filter {
                         !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !changeListManager.isIgnoredFile(it) &&
-                                !featureDevSessionContext.ignoreFile(it, this)
+                            !changeListManager.isIgnoredFile(it)
                             )
                     }.fold(0L) { acc, next ->
                         totalSize = acc + next.length
@@ -186,7 +181,7 @@ class CodeScanSessionConfig(
         var currentTotalLines = 0L
         val languageCounts = mutableMapOf<CodeWhispererProgrammingLanguage, Int>()
 
-        project.modules.forEach { module ->
+        moduleLoop@ for (module in project.modules) {
             val changeListManager = ChangeListManager.getInstance(module.project)
             if (module.guessModuleDir() != null) {
                 stack.push(module.guessModuleDir())
@@ -194,13 +189,10 @@ class CodeScanSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        // Using both featureDevSessionContext and changeListManager to ignore files.
-                        // featureDevSessionContext is used to only ignore files in gitignore in project root and uses regex pattern matching.
-                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !changeListManager.isIgnoredFile(current) && !files.contains(current.path)
+                        if (!changeListManager.isIgnoredFile(current) && !files.contains(current.path)
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
-                                break
+                                break@moduleLoop
                             } else {
                                 val language = current.programmingLanguage()
                                 if (language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE) {
@@ -214,8 +206,7 @@ class CodeScanSessionConfig(
                         }
                     } else {
                         // Directory case: only traverse if not ignored
-                        if (runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
+                        if (!changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
                         ) {
                             for (child in current.children) {
                                 stack.push(child)
