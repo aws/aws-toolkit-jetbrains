@@ -115,7 +115,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     private val isProjectScanInProgress = AtomicBoolean(false)
 
+    private val defaultScope = projectCoroutineScope(project)
+
     private lateinit var codeScanJob: Job
+    private lateinit var debouncedCodeScanJob: Job
 
     /**
      * Returns true if the code scan is in progress.
@@ -177,25 +180,23 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    private fun createDebouncedRunCodeScan(
-        waitMs: Long = 300L,
-        coroutineScope: CoroutineScope
-    ): (CodeWhispererConstants.CodeAnalysisScope) -> Unit {
-        var debounceJob: Job? = null
-        return { param: CodeWhispererConstants.CodeAnalysisScope ->
-            debounceJob?.cancel()
-            debounceJob = coroutineScope.launch {
-                delay(waitMs)
-                runCodeScan(param, true)
-            }
+    /**
+     * Creates a debounced code scan job with a delay.
+     */
+    fun createDebouncedRunCodeScan(
+        scope: CodeWhispererConstants.CodeAnalysisScope,
+        isPluginStarting: Boolean = false,
+        waitMs: Long = CodeWhispererConstants.AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS * 1000,
+        coroutineScope: CoroutineScope = defaultScope
+    ) {
+        if (this::debouncedCodeScanJob.isInitialized && debouncedCodeScanJob.isActive) {
+            debouncedCodeScanJob.cancel()
+        }
+        debouncedCodeScanJob = coroutineScope.launch {
+            delay(waitMs)
+            runCodeScan(scope, isPluginStarting)
         }
     }
-
-    val defaultScope = projectCoroutineScope(project)
-    val debouncedRunCodeScan = createDebouncedRunCodeScan(
-        waitMs = CodeWhispererConstants.AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS * 1000,
-        coroutineScope = defaultScope
-    )
 
     fun stopCodeScan() {
         // Return if code scan job is not active.
