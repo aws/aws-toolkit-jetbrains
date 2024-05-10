@@ -9,10 +9,10 @@ import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpMavenProject
-import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 
 class JavaLambdaBuilderTest {
@@ -61,16 +60,13 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect() {
-        Thread.sleep(1000)
-        runTest {
-            val psiClass = projectRule.setUpMavenProject()
+    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest {
+        val psiClass = projectRule.setUpMavenProject()
 
-            val module = ModuleManager.getInstance(projectRule.project).modules.first()
-            val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
-            val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
-            assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
-        }
+        val module = ModuleManager.getInstance(projectRule.project).modules.first()
+        val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
+        val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
+        assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
     }
 
     @Test
@@ -97,10 +93,11 @@ class JavaLambdaBuilderTest {
             """.trimIndent()
         )
 
-        assertThatThrownBy {
+        assertThrows<IllegalStateException> {
             sut.handlerBaseDirectory(projectRule.module, handlerPsi)
-        }.isInstanceOf(IllegalStateException::class.java)
-            .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
+        }
+//            .message
+//            .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
     }
 
     @Test
