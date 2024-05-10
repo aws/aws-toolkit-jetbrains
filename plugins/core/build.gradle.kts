@@ -5,18 +5,17 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
-    id("java-library")
     id("toolkit-publishing-conventions")
     id("toolkit-patch-plugin-xml-conventions")
     id("toolkit-jvm-conventions")
 }
 
 dependencies {
-    api(project(":plugin-core:core"))
-    api(project(":plugin-core:sdk-codegen"))
-    api(project(":plugin-core:jetbrains-community"))
-    implementation(project(":plugin-core:resources"))
+    implementation(project(":plugin-core:core"))
+    implementation(project(":plugin-core:jetbrains-community"))
     implementation(project(":plugin-core:jetbrains-ultimate"))
+    implementation(project(":plugin-core:resources"))
+    implementation(project(":plugin-core:sdk-codegen"))
     implementation(project(":plugin-core:webview"))
 }
 
