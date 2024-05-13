@@ -56,7 +56,7 @@ class SsoAccessTokenProvider(
         get() = _authorization.get()
 
     private val isNewAuthPkce: Boolean
-        get() = !Registry.`is`("aws.dev.useDAG", false)
+        get() = Registry.`is`("aws.dev.pkceAuth", false)
 
     private val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
