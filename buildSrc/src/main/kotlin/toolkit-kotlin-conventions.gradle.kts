@@ -20,6 +20,9 @@ dependencies {
     implementation(versionCatalog.findLibrary("kotlin-coroutines").get())
 
     testImplementation(versionCatalog.findLibrary("kotlin-test").get())
+    testImplementation(versionCatalog.findLibrary("kotlin-coroutinesDebug").get())
+    testImplementation(versionCatalog.findLibrary("kotlin-coroutinesTest").get())
+    testImplementation(versionCatalog.findLibrary("mockk").get())
 }
 
 sourceSets {

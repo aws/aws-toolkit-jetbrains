@@ -17,8 +17,10 @@ intellij {
 }
 
 dependencies {
-    compileOnly(project(":plugin-core:jetbrains-community"))
+    compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     // CodeWhispererTelemetryService uses a CircularFifoQueue
     implementation(libs.commons.collections)
+
+    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
 }

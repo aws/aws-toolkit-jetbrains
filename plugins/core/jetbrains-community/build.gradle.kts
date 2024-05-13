@@ -46,9 +46,6 @@ dependencies {
     api(libs.aws.iam)
 
     testFixturesApi(project(path = ":plugin-core:core", configuration = "testArtifacts"))
-    testFixturesApi(libs.mockk)
-    testFixturesApi(libs.kotlin.coroutinesTest)
-    testFixturesApi(libs.kotlin.coroutinesDebug)
     testFixturesApi(libs.wiremock) {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
