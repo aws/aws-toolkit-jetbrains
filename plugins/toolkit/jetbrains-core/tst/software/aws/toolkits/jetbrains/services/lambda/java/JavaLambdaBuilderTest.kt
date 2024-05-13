@@ -3,14 +3,20 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
-import com.intellij.internal.PrintModulesAndEntitySources.Companion.log
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.roots.ModuleRootManagerEx
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -36,72 +42,67 @@ class JavaLambdaBuilderTest {
 
     private val sut = JavaLambdaBuilder()
 
+    private val testDispatcher = StandardTestDispatcher()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
 
         projectRule.fixture.addModule("main")
+
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        testDispatcher.cancel()
     }
 
     @Test
     fun gradleRootProjectHandlerBaseDirIsCorrect() {
-        try {
-            val psiClass = projectRule.setUpGradleProject()
+        val psiClass = projectRule.setUpGradleProject()
 
-            val baseDir = sut.handlerBaseDirectory(projectRule.module, psiClass.methods.first())
-            val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
-            assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        val baseDir = sut.handlerBaseDirectory(projectRule.module, psiClass.methods.first())
+        val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
+        assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
     }
 
     @Test
     fun gradleRootProjectBuildDirectoryIsCorrect() {
-        try {
-            projectRule.setUpGradleProject()
+        projectRule.setUpGradleProject()
 
-            val baseDir = sut.getBuildDirectory(projectRule.module)
-            val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
-            assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        val baseDir = sut.getBuildDirectory(projectRule.module)
+        val moduleRoot = ModuleRootManagerEx.getInstanceEx(projectRule.module).contentRoots.first().path
+        assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
     }
 
     @Test
     fun mavenRootPomHandlerBaseDirIsCorrect() = runTest {
-        try {
-            val psiClass = projectRule.setUpMavenProject()
+        val psiClass = projectRule.setUpMavenProject()
 
-            val module = ModuleManager.getInstance(projectRule.project).modules.first()
-            val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
-            val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
-            assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        val module = ModuleManager.getInstance(projectRule.project).modules.first()
+        val baseDir = sut.handlerBaseDirectory(module, psiClass.methods.first())
+        val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
+        assertThat(baseDir).isEqualTo(Paths.get(moduleRoot))
     }
 
     @Test
     fun mavenRootPomBuildDirectoryIsCorrect() = runTest {
-        try {
-            projectRule.setUpMavenProject()
+        projectRule.setUpMavenProject()
 
-            val module = ModuleManager.getInstance(projectRule.project).modules.first()
-            val baseDir = sut.getBuildDirectory(module)
-            val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
-            assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        val module = ModuleManager.getInstance(projectRule.project).modules.first()
+        val baseDir = sut.getBuildDirectory(module)
+        val moduleRoot = ModuleRootManagerEx.getInstanceEx(module).contentRoots.first().path
+        assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
     }
 
     @Test
     fun unsupportedBuildSystem() {
-        try {
-            val handlerPsi = projectRule.fixture.addClass(
-                """
+        val handlerPsi = projectRule.fixture.addClass(
+            """
             package com.example;
 
             public class SomeClass {
@@ -109,40 +110,29 @@ class JavaLambdaBuilderTest {
                     return input.toUpperCase();
                 }
             }
-                """.trimIndent()
-            )
+            """.trimIndent()
+        )
 
-            assertThatThrownBy {
-                sut.handlerBaseDirectory(projectRule.module, handlerPsi)
-            }.isInstanceOf(IllegalStateException::class.java)
-                .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        assertThatThrownBy {
+            sut.handlerBaseDirectory(projectRule.module, handlerPsi)
+        }.isInstanceOf(IllegalStateException::class.java)
+            .hasMessageEndingWith(message("lambda.build.java.unsupported_build_system", projectRule.module.name))
     }
 
     @Test
     fun javaHomePassedWhenNotInContainer() {
-        try {
-            envVarsRule.remove("JAVA_HOME")
+        envVarsRule.remove("JAVA_HOME")
 
-            ModuleRootModificationUtil.setModuleSdk(projectRule.module, IdeaTestUtil.getMockJdk18())
-            assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = false)))
-                .extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        ModuleRootModificationUtil.setModuleSdk(projectRule.module, IdeaTestUtil.getMockJdk18())
+        assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = false)))
+            .extractingByKey("JAVA_HOME").isEqualTo(IdeaTestUtil.getMockJdk18Path().absolutePath)
     }
 
     @Test
     fun javaHomeNotPassedWhenInContainer() {
-        try {
-            envVarsRule.remove("JAVA_HOME")
+        envVarsRule.remove("JAVA_HOME")
 
-            assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = true)))
-                .doesNotContainKey("JAVA_HOME")
-        } catch (e: Exception) {
-            log.error(e)
-        }
+        assertThat(sut.additionalBuildEnvironmentVariables(projectRule.project, projectRule.module, SamOptions(buildInContainer = true)))
+            .doesNotContainKey("JAVA_HOME")
     }
 }
