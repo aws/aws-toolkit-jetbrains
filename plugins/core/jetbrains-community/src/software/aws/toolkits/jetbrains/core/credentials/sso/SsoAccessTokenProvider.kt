@@ -103,7 +103,7 @@ class SsoAccessTokenProvider(
         }
 
         val isCommercialRegion = !ssoRegion.startsWith("us-gov") && !ssoRegion.startsWith("us-iso") && !ssoRegion.startsWith("cn")
-        val token = if (isNewAuthPkce && scopes.isNotEmpty() && isCommercialRegion) {
+        val token = if (isCommercialRegion && isNewAuthPkce && scopes.isNotEmpty()) {
             pollForPkceToken()
         } else {
             pollForDAGToken()
