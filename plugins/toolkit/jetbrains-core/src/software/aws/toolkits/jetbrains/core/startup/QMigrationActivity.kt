@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.startup
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.ide.plugins.PluginManagerConfigurable
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.ide.plugins.PluginManagerMain
@@ -23,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_MARKETPLACE_URI
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -55,7 +55,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
         if (hasUsedCodeWhisperer || hasUsedQ) {
             // do auto-install
             installQPlugin(project, autoInstall = true)
-        } else {
+        } else if (!PluginManager.isPluginInstalled(PluginId.getId(AwsToolkit.Q_PLUGIN_ID))) {
             // show opt-in/install notification
             notifyInfo(
                 title = message("aws.q.migration.new_users.notify.title"),
@@ -63,7 +63,7 @@ class QMigrationActivity : StartupActivity.DumbAware {
                 project = project,
                 notificationActions = listOf(
                     NotificationAction.createSimple(message("aws.q.migration.action.read_more.text")) {
-                        BrowserUtil.browse(URI(Q_MARKETPLACE_URI))
+                        BrowserUtil.browse(Q_JB_MARKETPLACE_URI)
                         ToolkitTelemetry.showNotification(
                             id = Q_STANDALONE_CHANGE_ID,
                             component = Component.ReadMore,
@@ -184,5 +184,6 @@ class QMigrationActivity : StartupActivity.DumbAware {
 
         private const val Q_STANDALONE_INSTALLED_ID = "amazonQStandaloneInstalled"
         private const val Q_STANDALONE_CHANGE_ID = "amazonQStandaloneChange"
+        private const val Q_JB_MARKETPLACE_URI = "https://plugins.jetbrains.com/plugin/24267-amazon-q"
     }
 }

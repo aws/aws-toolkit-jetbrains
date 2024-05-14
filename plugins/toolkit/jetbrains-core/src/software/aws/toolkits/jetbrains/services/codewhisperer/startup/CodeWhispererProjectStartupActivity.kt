@@ -45,13 +45,11 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         val actionManager = CodeWhispererExplorerActionManager.getInstance()
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         actionManager.setMonthlyQuotaForCodeScansExceeded(false)
+        // Setting up listeners for Auto File Code Scan triggers and Mouse Events.
+        scanManager.setEditorListeners()
         //  Run Proactive Code File Scan and disabling Auto File Scan for Builder ID Users.
-        if (isUserBuilderId(project)) {
-            actionManager.setAutoCodeScan(project, false)
-        } else {
-            // Setting up listeners for Auto File Code Scan triggers.
-            scanManager.setEditorListeners()
-            scanManager.debouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
+        if (!isUserBuilderId(project)) {
+            scanManager.createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE, isPluginStarting = true)
         }
 
         // ---- Everything below will be triggered once after startup ----

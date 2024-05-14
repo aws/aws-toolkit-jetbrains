@@ -1,3 +1,27 @@
+# _3.3_ (2024-05-14)
+- **(Bug Fix)** Don't use `authorization_grant` when performing SSO login with legacy SSO or non-commercial AWS regions
+
+# _3.2_ (2024-05-13)
+- **(Feature)** Amazon Q: Updated status bar icons including an explicit icon for an unconnected state
+- **(Feature)** Human in the loop - Adding human intervention to help update dependencies during the Amazon Q Transformation process
+- **(Feature)** Improve the SSO login experience by switching to the Authorization Code with PKCE flow
+- **(Bug Fix)** Fix AWS SSO connection when authenticating with RDS using an IAM Identity Center profile ([#4145](https://github.com/aws/aws-toolkit-jetbrains/issues/4145))
+- **(Bug Fix)** Amazon Q: Reduce frequency of automated code scans and terminate superseded file scans.
+- **(Bug Fix)** Amazon Q Code Transformation: ensure chat does not freeze with /transform on an invalid project
+- **(Bug Fix)** Amazon Q: Fix issue where items listed by Amazon Q Code Scan were duplicated or missing
+- **(Bug Fix)** Amazon Q Chat: Typewriter animator parts showing up in code fields inside listitems
+- **(Bug Fix)** Removed install Q notification if Q is already installed
+- **(Bug Fix)** Amazon Q: Avoid duplicate credential expired notifications during startup
+- **(Bug Fix)** Amazon Q: Support disabling auto-scan for unsupported languages.
+
+# _3.1_ (2024-04-30)
+- **(Bug Fix)** Amazon Q Feature Development: Handle generated code parsing for rendering references correctly
+- **(Bug Fix)** Amazon Q Chat: Copy to clipboard on code blocks doesn't work
+- **(Bug Fix)** Amazon Q Chat: Fixed markdown is not getting parsed inside list items.
+- **(Bug Fix)** Fix help icon in the AWS Explorer pointing to the wrong auth instructions page
+- **(Bug Fix)** Amazon Q: Fix an issue where /dev usage would cause the UI to freeze and take an unusually long time to complete. ([#4269](https://github.com/aws/aws-toolkit-jetbrains/issues/4269))
+- **(Bug Fix)** Fix for Code Scan Issue editor popup for Builder Id users.
+
 # _3.0_ (2024-04-29)
 - **(Feature)** Amazon Q: Security scans can now run automatically when file changes are made
 - **(Feature)** Amazon Q: Send security issue to chat for explanation and fix
