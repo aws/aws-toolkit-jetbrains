@@ -7,20 +7,14 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.roots.ModuleRootManagerEx
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -42,23 +36,11 @@ class JavaLambdaBuilderTest {
 
     private val sut = JavaLambdaBuilder()
 
-    private val testDispatcher = StandardTestDispatcher()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
 
         projectRule.fixture.addModule("main")
-
-        Dispatchers.setMain(testDispatcher)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-        testDispatcher.cancel()
     }
 
     @Test
@@ -80,7 +62,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest {
+    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest(EDT) {
         val psiClass = projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
@@ -90,7 +72,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomBuildDirectoryIsCorrect() = runTest {
+    fun mavenRootPomBuildDirectoryIsCorrect() = runTest(EDT) {
         projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
