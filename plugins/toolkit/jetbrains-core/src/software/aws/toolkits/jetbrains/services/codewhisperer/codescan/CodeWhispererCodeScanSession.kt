@@ -316,8 +316,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 connection.setFixedLengthStreamingMode(fileToUpload.length())
                 IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
             }
-        } catch (e: IOException) {
-            throw e
         } catch (e: Exception) {
             val errorMessage = e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
             throw uploadArtifactFailedError(errorMessage)
