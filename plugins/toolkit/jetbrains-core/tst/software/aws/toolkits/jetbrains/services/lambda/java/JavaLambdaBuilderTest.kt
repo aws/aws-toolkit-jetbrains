@@ -14,7 +14,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommon
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -62,7 +61,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect(): Unit = runBlocking(EDT) {
+    fun mavenRootPomHandlerBaseDirIsCorrect(): Unit = runBlocking {
         val psiClass = projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
