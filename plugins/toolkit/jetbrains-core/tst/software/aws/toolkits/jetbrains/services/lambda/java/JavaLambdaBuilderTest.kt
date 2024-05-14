@@ -7,7 +7,7 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.roots.ModuleRootManagerEx
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -37,7 +37,7 @@ class JavaLambdaBuilderTest {
     private val sut = JavaLambdaBuilder()
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         setSamExecutableFromEnvironment()
 
         projectRule.fixture.addModule("main")
@@ -62,7 +62,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest(EDT) {
+    fun mavenRootPomHandlerBaseDirIsCorrect(): Unit = runBlocking(EDT) {
         val psiClass = projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
@@ -72,7 +72,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomBuildDirectoryIsCorrect() = runTest(EDT) {
+    fun mavenRootPomBuildDirectoryIsCorrect(): Unit = runBlocking {
         projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
