@@ -253,9 +253,9 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     /**
      * Creates an upload URL and uplaods the zip file to the presigned URL
      */
-    fun createUploadUrlAndUpload(zipFile: File, artifactType: String, codeScanName: String): CreateUploadUrlResponse = try {
+    fun createUploadUrlAndUpload(zipFile: File, artifactType: String, codeScanName: String): CreateUploadUrlResponse {
         // Throw error if zipFile is invalid.
-        if (zipFile.path == "") {
+        if (!zipFile.exists()) {
             invalidSourceZipError()
         }
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
@@ -272,9 +272,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             createUploadUrlResponse.kmsKeyArn(),
             createUploadUrlResponse.requestHeaders()
         )
-        createUploadUrlResponse
-    } catch (e: Exception) {
-        throw e
+        return createUploadUrlResponse
     }
 
     fun createUploadUrl(md5Content: String, artifactType: String, codeScanName: String): CreateUploadUrlResponse = try {

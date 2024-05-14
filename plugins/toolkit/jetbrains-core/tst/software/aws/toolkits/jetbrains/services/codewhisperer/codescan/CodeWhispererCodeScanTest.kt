@@ -10,6 +10,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.internal.verification.Times
 import org.mockito.kotlin.any
@@ -110,6 +111,15 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             eq(null),
             any()
         )
+    }
+
+    @Test
+    fun `test createUploadUrlAndUpload() with invalid source zip file`() {
+        val invalidZipFile = File("/path/file.zip")
+
+        assertThrows<CodeWhispererCodeScanException> {
+            codeScanSessionSpy.createUploadUrlAndUpload(invalidZipFile, "artifactType", codeScanName)
+        }
     }
 
     @Test
