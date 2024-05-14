@@ -37,7 +37,7 @@ class JavaLambdaBuilderTest {
     private val sut = JavaLambdaBuilder()
 
     @Before
-    fun setUp(): Unit = runBlocking {
+    fun setUp() {
         setSamExecutableFromEnvironment()
 
         projectRule.fixture.addModule("main")
