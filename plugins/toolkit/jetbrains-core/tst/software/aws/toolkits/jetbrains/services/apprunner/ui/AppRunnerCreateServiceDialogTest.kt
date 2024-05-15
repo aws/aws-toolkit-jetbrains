@@ -92,9 +92,8 @@ class AppRunnerCreateServiceDialogTest {
     @Test
     fun `Repository Deployment builds request properly`() {
         val repoUrl = RuleUtils.randomName()
-
-        val dialog = runInEdtAndGet { CreationDialog(projectRule.project) }
         runInEdtAndGet {
+            val dialog = CreationDialog(projectRule.project)
             val panel = CreationPanel(projectRule.project).apply {
                 repo.isSelected = true
                 repoConfigFromSettings.isSelected = true
