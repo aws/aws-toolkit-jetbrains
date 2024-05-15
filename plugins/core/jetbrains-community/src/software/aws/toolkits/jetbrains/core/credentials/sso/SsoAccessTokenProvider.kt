@@ -416,7 +416,6 @@ class SsoAccessTokenProvider(
         )
     }
 
-
     private fun CreateTokenResponse.toPKCEAccessToken(creationTime: Instant): PKCEAuthorizationGrantToken {
         val expirationTime = Instant.now(clock).plusSeconds(expiresIn().toLong())
 
