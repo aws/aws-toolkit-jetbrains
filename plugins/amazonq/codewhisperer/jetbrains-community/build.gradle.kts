@@ -25,3 +25,12 @@ dependencies {
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
     testFixturesApi(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
 }
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestingSandbox {
+    val pluginXmlJar = project(":plugin-amazonq").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    intoChild(pluginName.map { "$it/lib" })
+        .from(pluginXmlJar)
+}
