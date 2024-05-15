@@ -17,7 +17,8 @@ junit5 = "5.10.2"
 # https://kotlinlang.org/docs/releases.html#release-details
 kotlin = "1.9.23"
 # set in <root>/settings.gradle.kts
-kotlinCoroutines = "1.8.0"
+kotlinCoroutines = "1.7.3"
+kotlinCoroutinesTest = "1.8.0"
 mockito = "5.11.0"
 mockitoKotlin = "5.2.1"
 mockk = "1.13.10"
@@ -91,7 +92,7 @@ junit5-jupiterParams = { module = "org.junit.jupiter:junit-jupiter-params", vers
 junit5-jupiterVintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit5" }
 kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutinesDebug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinCoroutines" }
-kotlin-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
+kotlin-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutinesTest" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-stdLibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
