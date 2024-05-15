@@ -56,9 +56,7 @@ class CodeWhispererCodeScanIntegrationTest : CodeWhispererIntegrationTestBase() 
             projectRule.fixture.openFileInEditor(file.virtualFile)
         }
         testCodeScanWithErrorMessage(
-            message(
-                "codewhisperer.codescan.file_too_large"
-            )
+            message("codewhisperer.codescan.file_too_large")
         )
     }
 
