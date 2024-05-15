@@ -40,7 +40,7 @@ class AwsToolkitExplorerToolWindowTest {
         (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
         val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
-        runInEdtAndGet {
+        runInEdt {
             sut.loadState(
                 AwsToolkitExplorerToolWindowState().apply {
                     selectedTab =
