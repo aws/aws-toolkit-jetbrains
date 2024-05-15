@@ -3,14 +3,18 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
+import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
+import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.KStubbing
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -33,6 +37,7 @@ import software.amazon.awssdk.services.ssooidc.model.StartDeviceAuthorizationRes
 import software.aws.toolkits.core.region.aRegionId
 import software.aws.toolkits.core.utils.delegateMock
 import software.aws.toolkits.core.utils.test.aString
+import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.utils.rules.SsoLoginCallbackProviderRule
 import java.time.Clock
 import java.time.Duration
@@ -53,11 +58,12 @@ class SsoAccessTokenProviderTest {
     private lateinit var ssoCache: SsoCache
 
     private val applicationRule = ApplicationRule()
+    private val disposableRule = DisposableRule()
     private val ssoCallbackRule = SsoLoginCallbackProviderRule()
 
     @JvmField
     @Rule
-    val ruleChain = RuleChain(applicationRule, ssoCallbackRule)
+    val ruleChain = RuleChain(applicationRule, ssoCallbackRule, disposableRule)
 
     @Before
     fun setUp() {
@@ -164,6 +170,58 @@ class SsoAccessTokenProviderTest {
     }
 
     @Test
+    fun `initiates authorizatation_grant registration when scopes are requested in a commercial region`() {
+        val sut = SsoAccessTokenProvider(ssoUrl, "us-east-1", ssoCache, ssoOidcClient, scopes = listOf("dummy:scope"), clock = clock)
+        setupCacheStub(returnValue = null)
+
+        val oauth = mock<ToolkitOAuthService>()
+        ApplicationManager.getApplication().replaceService(ToolkitOAuthService::class.java, oauth, disposableRule.disposable)
+
+        ssoOidcClient.stub {
+            on(
+                ssoOidcClient.registerClient(any<RegisterClientRequest>())
+            ).thenReturn(
+                RegisterClientResponse.builder()
+                    .clientId(clientId)
+                    .clientSecret(clientSecret)
+                    .clientSecretExpiresAt(clock.instant().plusSeconds(180).toEpochMilli())
+                    .build()
+            )
+        }
+
+        // flow is not completely stubbed out
+        assertThrows<Exception> { sut.accessToken() }
+
+        verify(ssoCache).saveClientRegistration(any<PKCEClientRegistrationCacheKey>(), any())
+    }
+
+    @Test
+    fun `initiates device code registration when scopes are requested in a non-commercial region`() {
+        val sut = SsoAccessTokenProvider(ssoUrl, "us-gov-east-1", ssoCache, ssoOidcClient, scopes = listOf("dummy:scope"), clock = clock)
+        setupCacheStub(returnValue = null)
+
+        val oauth = mock<ToolkitOAuthService>()
+        ApplicationManager.getApplication().replaceService(ToolkitOAuthService::class.java, oauth, disposableRule.disposable)
+
+        ssoOidcClient.stub {
+            on(
+                ssoOidcClient.registerClient(any<RegisterClientRequest>())
+            ).thenReturn(
+                RegisterClientResponse.builder()
+                    .clientId(clientId)
+                    .clientSecret(clientSecret)
+                    .clientSecretExpiresAt(clock.instant().plusSeconds(180).toEpochMilli())
+                    .build()
+            )
+        }
+
+        // flow is not completely stubbed out
+        assertThrows<Exception> { sut.accessToken() }
+
+        verify(ssoCache).saveClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>(), any())
+    }
+
+    @Test
     fun getAccessTokenWithoutCachesMultiplePolls() {
         val expirationClientRegistration = clock.instant().plusSeconds(120)
 
@@ -233,6 +291,54 @@ class SsoAccessTokenProviderTest {
         verify(ssoCache).loadClientRegistration(ssoRegion)
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).saveAccessToken(ssoUrl, refreshedToken)
+    }
+
+    @Test
+    fun `PKCE refresh access token saves PKCE token`() {
+        val sut = SsoAccessTokenProvider(ssoUrl, "us-east-1", ssoCache, ssoOidcClient, scopes = listOf("dummy:scope"), clock = clock)
+
+        val expirationClientRegistration = clock.instant().plusSeconds(120)
+        setupCacheStub(expirationClientRegistration)
+
+        val accessToken = PKCEAuthorizationGrantToken(ssoUrl, ssoRegion, "dummyToken", "refreshToken", clock.instant(), clock.instant())
+        ssoCache.stub {
+            on(
+                ssoCache.loadAccessToken(any<PKCEAccessTokenCacheKey>())
+            ).thenReturn(
+                accessToken
+            )
+
+            on(
+                ssoCache.loadClientRegistration(any<PKCEClientRegistrationCacheKey>())
+            ).thenReturn(
+                PKCEClientRegistration(
+                    clientType = "public",
+                    redirectUris = listOf("uri"),
+                    grantTypes = listOf("grant"),
+                    issuerUrl = ssoUrl,
+                    region = ssoRegion,
+                    scopes = listOf("dummy:scope"),
+                    clientId = clientId,
+                    clientSecret = clientSecret,
+                    expiresAt = clock.instant()
+                )
+            )
+        }
+
+        ssoOidcClient.stub {
+            on(
+                ssoOidcClient.createToken(refreshTokenRequest())
+            ).thenReturn(
+                refreshTokenResponse()
+            )
+        }
+
+        val refreshedToken = runBlocking { sut.refreshToken(sut.accessToken()) }
+
+        verify(ssoCache).loadAccessToken(any<PKCEAccessTokenCacheKey>())
+        verify(ssoCache).loadClientRegistration(any<PKCEClientRegistrationCacheKey>())
+        verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
+        verify(ssoCache).saveAccessToken(any<PKCEAccessTokenCacheKey>(), eq(refreshedToken))
     }
 
     @Test
