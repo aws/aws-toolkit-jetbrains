@@ -7,7 +7,7 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.roots.ModuleRootManagerEx
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.testFramework.IdeaTestUtil
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Before
@@ -61,7 +61,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomHandlerBaseDirIsCorrect(): Unit = runBlocking {
+    fun mavenRootPomHandlerBaseDirIsCorrect() = runTest {
         val psiClass = projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()
@@ -71,7 +71,7 @@ class JavaLambdaBuilderTest {
     }
 
     @Test
-    fun mavenRootPomBuildDirectoryIsCorrect(): Unit = runBlocking {
+    fun mavenRootPomBuildDirectoryIsCorrect() = runTest {
         projectRule.setUpMavenProject()
 
         val module = ModuleManager.getInstance(projectRule.project).modules.first()

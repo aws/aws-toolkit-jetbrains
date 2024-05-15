@@ -12,7 +12,7 @@ dependencyResolutionManagement {
                 }
 
                 "2023.3", "2024.1" -> {
-                    "1.7.3"
+                    "1.8.0"
                 }
 
                 else -> { error("not set") }
