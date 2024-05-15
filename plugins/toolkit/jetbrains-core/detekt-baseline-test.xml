@@ -2,8 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererStateTest.kt$CodeWhispererStateTest$val (actualProject, actualEditor, actualTriggerTypeInfo, actualCaretPosition, actualFileContextInfo) = actualRequestContext</ID>
-    <ID>DestructuringDeclarationWithTooManyEntries:CodeWhispererStateTest.kt$CodeWhispererStateTest$val (actualRequestId, actualRecommendationDetail, _, actualIsDiscarded) = actualDetailContext</ID>
     <ID>ExpressionBodySyntax:CodeWhispererSettingsTest.kt$CodeWhispererSettingsTest.&lt;no name provided>$return myToolWindows[id]</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_fail_autodetectBadSam_andManuallySetToBadSam()</ID>
     <ID>FunctionNaming:AwsSettingsConfigurableTest.kt$AwsSettingsConfigurableTest$@Test fun validate_ok_autodetectBadSam()</ID>
