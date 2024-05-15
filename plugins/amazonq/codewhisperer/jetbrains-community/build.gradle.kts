@@ -18,5 +18,6 @@ dependencies {
     // CodeWhispererTelemetryService uses a CircularFifoQueue, previously transitive from zjsonpatch
     implementation(libs.commons.collections)
 
-    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
 }

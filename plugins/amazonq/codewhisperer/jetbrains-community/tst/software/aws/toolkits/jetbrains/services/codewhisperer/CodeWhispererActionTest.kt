@@ -23,11 +23,11 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
+import software.aws.toolkits.jetbrains.services.amazonq.QConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererWhatIsAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.net.URI
 
 class CodeWhispererActionTest : CodeWhispererTestBase() {
@@ -50,7 +50,7 @@ class CodeWhispererActionTest : CodeWhispererTestBase() {
     @Test
     fun `CodeWhispererLearnMoreAction actionPerformed should open correct URI`() {
         val action = CodeWhispererLearnMoreAction()
-        testBrowserActionHelper(action, CodeWhispererConstants.Q_MARKETPLACE_URI)
+        testBrowserActionHelper(action, QConstants.Q_MARKETPLACE_URI)
     }
 
     @Test
@@ -72,7 +72,7 @@ class CodeWhispererActionTest : CodeWhispererTestBase() {
     @Test
     fun `CodeWhispererWhatIsAction actionPerformed should open correct URI`() {
         val action = CodeWhispererWhatIsAction()
-        testBrowserActionHelper(action, CodeWhispererConstants.Q_MARKETPLACE_URI)
+        testBrowserActionHelper(action, QConstants.Q_MARKETPLACE_URI)
     }
 
     @Test

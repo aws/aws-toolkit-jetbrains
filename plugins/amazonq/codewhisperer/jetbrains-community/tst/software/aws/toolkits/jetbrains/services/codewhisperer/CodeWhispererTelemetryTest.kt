@@ -55,8 +55,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Pause
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.PauseCodeWhispererNode
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.nodes.ResumeCodeWhispererNode
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -766,35 +764,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test a mix of empty and non-empty recommendations should send empty user decision events accordingly`() {
         testSendEmptyUserDecisionEventForEmptyRecommendations(listOfMixedEmptyAndNonEmptyRecommendationResponse)
-    }
-
-    @Test
-    fun `test toggle autoSugestion will emit autoSuggestionActivation telemetry (explorer)`() {
-        val metricCaptor = argumentCaptor<MetricEvent>()
-        doNothing().`when`(batcher).enqueue(metricCaptor.capture())
-
-        PauseCodeWhispererNode(projectRule.project).onDoubleClick(mock())
-        assertEventsContainsFieldsAndCount(
-            metricCaptor.allValues,
-            awsModifySetting,
-            1,
-            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
-            "settingState" to CodeWhispererConstants.AutoSuggestion.DEACTIVATED
-        )
-
-        ResumeCodeWhispererNode(projectRule.project).onDoubleClick(mock())
-        assertEventsContainsFieldsAndCount(
-            metricCaptor.allValues,
-            awsModifySetting,
-            1,
-            "settingId" to CodeWhispererConstants.AutoSuggestion.SETTING_ID,
-            "settingState" to CodeWhispererConstants.AutoSuggestion.ACTIVATED
-        )
-        assertEventsContainsFieldsAndCount(
-            metricCaptor.allValues,
-            awsModifySetting,
-            2,
-        )
     }
 
     @Test

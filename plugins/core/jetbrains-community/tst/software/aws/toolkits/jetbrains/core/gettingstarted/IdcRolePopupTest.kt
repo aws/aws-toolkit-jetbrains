@@ -1,4 +1,4 @@
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
@@ -14,7 +14,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.mockito.kotlin.any
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.sso.model.RoleInfo

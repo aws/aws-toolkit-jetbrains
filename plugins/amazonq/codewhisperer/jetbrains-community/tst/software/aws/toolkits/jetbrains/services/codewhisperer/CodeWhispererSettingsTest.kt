@@ -22,8 +22,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
-import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerFactory
-import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -74,11 +72,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         )
         ToolWindowManager.getInstance(projectRule.project).registerToolWindow(
             RegisterToolWindowTask(
-                id = AwsToolkitExplorerFactory.TOOLWINDOW_ID
-            )
-        )
-        ToolWindowManager.getInstance(projectRule.project).registerToolWindow(
-            RegisterToolWindowTask(
                 id = CodeWhispererCodeReferenceToolWindowFactory.id
             )
         )
@@ -118,9 +111,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         } ?: fail("CodeWhisperer status bar widget not found")
 
         runInEdtAndWait {
-            assertThat(
-                AwsToolkitExplorerToolWindow.toolWindow(projectRule.project)
-            ).isNotNull
             assertThat(problemsWindow.contentManager.contentCount).isEqualTo(0)
             assertThat(codeReferenceWindow.isAvailable).isFalse
             assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue

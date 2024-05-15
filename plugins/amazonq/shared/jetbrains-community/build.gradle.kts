@@ -4,7 +4,6 @@
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
-    id("java-library")
     id("toolkit-intellij-subplugin")
 }
 
