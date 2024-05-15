@@ -11,6 +11,10 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
+intellij {
+    plugins.add(project(":plugin-core"))
+}
+
 dependencies {
     compileOnly(project(":plugin-core:jetbrains-community"))
 
