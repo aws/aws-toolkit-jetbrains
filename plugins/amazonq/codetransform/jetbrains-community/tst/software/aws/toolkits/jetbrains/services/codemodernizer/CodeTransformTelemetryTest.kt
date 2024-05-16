@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.testFramework.LightVirtualFile
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -16,8 +18,6 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import kotlin.io.path.Path
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 class CodeTransformTelemetryTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
     @Before
