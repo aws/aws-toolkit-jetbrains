@@ -10,9 +10,10 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.resources.message
 
 class SsoLogoutAction(private val value: AwsBearerTokenConnection) : DumbAwareAction(message("credentials.individual_identity.signout")) {
@@ -23,13 +24,15 @@ class SsoLogoutAction(private val value: AwsBearerTokenConnection) : DumbAwareAc
                 message("gettingstarted.auth.idc.sign.out.confirmation")
             ).yesText(message("general.confirm")).ask(e.project)
             if (confirmDeletion) {
-                deleteSsoConnectionCW(value)
+                deleteSsoConnection(value)
             }
         }
         logoutFromSsoConnection(e.project, value)
         ApplicationManager.getApplication().messageBus.syncPublisher(
             ToolkitConnectionManagerListener.TOPIC
         ).activeConnectionChanged(null)
-        e.project?.refreshDevToolTree()
+        if (CODECATALYST_SCOPES.all { it in value.scopes }) {
+            e.project?.refreshDevToolTree()
+        }
     }
 }

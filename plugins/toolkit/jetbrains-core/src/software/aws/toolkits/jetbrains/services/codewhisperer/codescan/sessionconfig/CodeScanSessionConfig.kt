@@ -4,82 +4,101 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VFileProperty
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileFormatNotSupported
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_KB
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_BYTES_IN_MB
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Duration
 import java.time.Instant
+import java.util.Stack
 import kotlin.io.path.relativeTo
 
-sealed class CodeScanSessionConfig(
-    private val selectedFile: VirtualFile,
-    private val project: Project
+class CodeScanSessionConfig(
+    private val selectedFile: VirtualFile?,
+    private val project: Project,
+    private val scope: CodeAnalysisScope
 ) {
-    var projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+    var projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
+        project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+    }
         private set
-
-    abstract val sourceExt: List<String>
 
     private var isProjectTruncated = false
 
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    abstract fun overallJobTimeoutInSeconds(): Long
+    fun overallJobTimeoutInSeconds(): Long = when (scope) {
+        CodeAnalysisScope.FILE -> FILE_SCAN_TIMEOUT_IN_SECONDS
+        else -> DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+    }
 
-    abstract fun getPayloadLimitInBytes(): Int
+    fun getPayloadLimitInBytes(): Long = when (scope) {
+        CodeAnalysisScope.FILE -> (FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES)
+        else -> (DEFAULT_PAYLOAD_LIMIT_IN_BYTES)
+    }
 
-    protected fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
+    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
         val exceedsLimit = currentTotalFileSize > getPayloadLimitInBytes() - currentFileSize
         isProjectTruncated = isProjectTruncated || exceedsLimit
         return exceedsLimit
     }
 
-    open fun getImportedFiles(file: VirtualFile, includedSourceFiles: Set<String>): List<String> = listOf()
+    private var programmingLanguage: CodeWhispererProgrammingLanguage = selectedFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
 
-    open fun getSelectedFile(): VirtualFile = selectedFile
+    fun getProgrammingLanguage(): CodeWhispererProgrammingLanguage = programmingLanguage
 
-    open fun createPayload(): Payload {
+    fun getSelectedFile(): VirtualFile? = selectedFile
+
+    fun createPayload(): Payload {
+        // Fail fast if the selected file is null for File Scan
+        if (scope == CodeAnalysisScope.FILE && selectedFile == null) {
+            noFileOpenError()
+        }
+
         // Fail fast if the selected file size is greater than the payload limit.
-        if (selectedFile.length > getPayloadLimitInBytes()) {
-            fileTooLarge(getPresentablePayloadLimit())
+        if (selectedFile != null && selectedFile.length > getPayloadLimitInBytes()) {
+            fileTooLarge()
         }
 
         val start = Instant.now().toEpochMilli()
 
-        LOG.debug { "Creating payload. File selected as root for the context truncation: ${selectedFile.path}" }
+        LOG.debug { "Creating payload. File selected as root for the context truncation: ${projectRoot.path}" }
 
-        val payloadMetadata = when (selectedFile.path.startsWith(projectRoot.path)) {
-            true -> includeDependencies()
-            false -> {
-                // Set project root as the parent of the selected file.
-                projectRoot = selectedFile.parent
-                includeFileOutsideProjectRoot()
+        val payloadMetadata = when (selectedFile) {
+            null -> getProjectPayloadMetadata()
+            else -> when (scope) {
+                CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
+                CodeAnalysisScope.FILE -> getFilePayloadMetadata(selectedFile)
             }
         }
 
         // Copy all the included source files to the source zip
         val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
-            selectedFile.programmingLanguage().toTelemetryType(),
+            payloadMetadata.language,
             payloadMetadata.linesScanned,
             payloadMetadata.sourceFiles.size,
             Instant.now().toEpochMilli() - start,
@@ -91,88 +110,26 @@ sealed class CodeScanSessionConfig(
         return Payload(payloadContext, srcZip)
     }
 
-    open fun includeFileOutsideProjectRoot(): PayloadMetadata =
+    fun getFilePayloadMetadata(file: VirtualFile): PayloadMetadata =
         // Handle the case where the selected file is outside the project root.
         PayloadMetadata(
-            setOf(selectedFile.path),
-            selectedFile.length,
-            Files.lines(selectedFile.toNioPath()).count().toLong()
+            setOf(file.path),
+            file.length,
+            Files.lines(file.toNioPath()).count().toLong(),
+            file.programmingLanguage().toTelemetryType()
         )
-
-    open fun includeDependencies(): PayloadMetadata {
-        val includedSourceFiles = mutableSetOf<String>()
-        var currentTotalFileSize = 0L
-        var currentTotalLines = 0L
-        val files = getSourceFilesUnderProjectRoot(selectedFile)
-        val queue = ArrayDeque<String>()
-
-        files.forEach { pivotFile ->
-            val filePath = pivotFile.path
-            queue.addLast(filePath)
-
-            // BFS
-            while (queue.isNotEmpty()) {
-                if (currentTotalFileSize.equals(getPayloadLimitInBytes())) {
-                    return PayloadMetadata(includedSourceFiles, currentTotalFileSize, currentTotalLines)
-                }
-
-                val currentFilePath = queue.removeFirst()
-                val currentFile = File(currentFilePath).toVirtualFile()
-                if (includedSourceFiles.contains(currentFilePath) ||
-                    currentFile == null ||
-                    willExceedPayloadLimit(currentTotalFileSize, currentFile.length)
-                ) {
-                    continue
-                }
-
-                val currentFileSize = currentFile.length
-
-                currentTotalFileSize += currentFileSize
-                currentTotalLines += Files.lines(currentFile.toNioPath()).count()
-                includedSourceFiles.add(currentFilePath)
-                getImportedFiles(currentFile, includedSourceFiles).forEach {
-                    if (!includedSourceFiles.contains(it)) queue.addLast(it)
-                }
-            }
-        }
-
-        return PayloadMetadata(includedSourceFiles, currentTotalFileSize, currentTotalLines)
-    }
 
     /**
      * Timeout for creating the payload [createPayload]
      */
-    open fun createPayloadTimeoutInSeconds(): Long = CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
+    fun createPayloadTimeoutInSeconds(): Long = CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 
-    open fun getPresentablePayloadLimit(): String = when (getPayloadLimitInBytes() >= TOTAL_BYTES_IN_MB) {
-        true -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_MB}MB"
-        false -> "${getPayloadLimitInBytes() / TOTAL_BYTES_IN_KB}KB"
+    private fun countLinesInVirtualFile(virtualFile: VirtualFile): Int {
+        val bufferedReader = virtualFile.inputStream.bufferedReader()
+        return bufferedReader.useLines { lines -> lines.count() }
     }
 
-    open suspend fun getTotalProjectSizeInBytes(): Long {
-        var totalSize = 0L
-        try {
-            withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
-                VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                    !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                        it.path.endsWith(sourceExt[0]) || (
-                            sourceExt.getOrNull(1) != null && it.path.endsWith(
-                                sourceExt[1]
-                            )
-                            )
-                        )
-                }.fold(0L) { acc, next ->
-                    totalSize = acc + next.length
-                    totalSize
-                }
-            }
-        } catch (e: TimeoutCancellationException) {
-            // Do nothing
-        }
-        return totalSize
-    }
-
-    protected fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             val relativePath = file.relativeTo(projectRoot.toNioPath())
             LOG.debug { "Selected file for truncation: $file" }
@@ -180,53 +137,76 @@ sealed class CodeScanSessionConfig(
         }
     }.toFile()
 
-    /**
-     * Returns all the source files for a given payload type.
-     */
-    open fun getSourceFilesUnderProjectRoot(selectedFile: VirtualFile): List<VirtualFile> {
-        // Include the current selected file
-        val files = mutableListOf(selectedFile)
-        // Include other files only if the current file is in the project.
-        if (selectedFile.path.startsWith(projectRoot.path)) {
-            files.addAll(
-                VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                    (it.path.endsWith(sourceExt[0]) || (sourceExt.getOrNull(1) != null && it.path.endsWith(sourceExt[1]))) && it != selectedFile
+    fun getProjectPayloadMetadata(): PayloadMetadata {
+        val files = mutableSetOf<String>()
+        val traversedDirectories = mutableSetOf<VirtualFile>()
+        val stack = Stack<VirtualFile>()
+        var currentTotalFileSize = 0L
+        var currentTotalLines = 0L
+        val languageCounts = mutableMapOf<CodeWhispererProgrammingLanguage, Int>()
+
+        moduleLoop@ for (module in project.modules) {
+            val changeListManager = ChangeListManager.getInstance(module.project)
+            if (module.guessModuleDir() != null) {
+                stack.push(module.guessModuleDir())
+                while (stack.isNotEmpty()) {
+                    val current = stack.pop()
+
+                    if (!current.isDirectory) {
+                        if (!changeListManager.isIgnoredFile(current) && !files.contains(current.path)
+                        ) {
+                            if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
+                                break@moduleLoop
+                            } else {
+                                val language = current.programmingLanguage()
+                                if (language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE) {
+                                    languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                                }
+
+                                files.add(current.path)
+                                currentTotalFileSize += current.length
+                                currentTotalLines += countLinesInVirtualFile(current)
+                            }
+                        }
+                    } else {
+                        // Directory case: only traverse if not ignored
+                        if (!changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
+                        ) {
+                            for (child in current.children) {
+                                stack.push(child)
+                            }
+                        }
+                        traversedDirectories.add(current)
+                    }
                 }
-            )
+            }
         }
-        return files
+
+        val maxCount = languageCounts.maxByOrNull { it.value }?.value ?: 0
+        val maxCountLanguage = languageCounts.filter { it.value == maxCount }.keys.firstOrNull()
+
+        if (maxCountLanguage == null) {
+            programmingLanguage = CodeWhispererUnknownLanguage.INSTANCE
+            noSupportedFilesError()
+        }
+        programmingLanguage = maxCountLanguage
+        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
     }
 
-    open fun isProjectTruncated() = isProjectTruncated
+    fun isProjectTruncated() = isProjectTruncated
 
-    protected fun getPath(root: String, relativePath: String = ""): Path? = try {
+    fun getPath(root: String, relativePath: String = ""): Path? = try {
         Path.of(root, relativePath).normalize()
     } catch (e: Exception) {
         LOG.debug { "Cannot find file at path $relativePath relative to the root $root" }
         null
     }
 
-    protected fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+    fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     companion object {
         private val LOG = getLogger<CodeScanSessionConfig>()
-        private const val TELEMETRY_TIMEOUT_IN_SECONDS: Long = 10
-        const val FILE_SEPARATOR = '/'
-        fun create(file: VirtualFile, project: Project): CodeScanSessionConfig =
-            when (file.programmingLanguage().toTelemetryType()) {
-                CodewhispererLanguage.Java -> JavaCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Python -> PythonCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Javascript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Javascript)
-                CodewhispererLanguage.Typescript -> JavaScriptCodeScanSessionConfig(file, project, CodewhispererLanguage.Typescript)
-                CodewhispererLanguage.Csharp -> CsharpCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Yaml -> CloudFormationYamlCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Json -> CloudFormationJsonCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Tf,
-                CodewhispererLanguage.Hcl -> TerraformCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Go -> GoCodeScanSessionConfig(file, project)
-                CodewhispererLanguage.Ruby -> RubyCodeScanSessionConfig(file, project)
-                else -> fileFormatNotSupported(file.extension ?: "")
-            }
+        fun create(file: VirtualFile?, project: Project, scope: CodeAnalysisScope): CodeScanSessionConfig = CodeScanSessionConfig(file, project, scope)
     }
 }
 
@@ -250,5 +230,5 @@ data class PayloadMetadata(
     val sourceFiles: Set<String>,
     val payloadSize: Long,
     val linesScanned: Long,
-    val buildPaths: Set<String> = setOf()
+    val language: CodewhispererLanguage
 )

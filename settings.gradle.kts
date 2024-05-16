@@ -25,7 +25,7 @@ buildscript {
     // also since this is a settings plugin, we can't use a version catalog
     // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
     dependencies {
-        classpath(platform("software.amazon.awssdk:bom:2.20.111"))
+        classpath(platform("software.amazon.awssdk:bom:2.25.33"))
     }
 }
 
@@ -68,6 +68,8 @@ rootProject.name = "aws-toolkit-jetbrains"
 
 include("detekt-rules")
 include("ui-tests")
+include("sandbox-all")
+include("tmp-all")
 
 /*
 plugins/
@@ -121,7 +123,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.1", "2023.2" -> {
+                    "2023.2", "2023.3" -> {
                         return@forEach
                     }
                 }

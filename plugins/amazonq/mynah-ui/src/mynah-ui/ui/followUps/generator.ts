@@ -47,10 +47,15 @@ export class FollowUpGenerator {
                     text: 'Would you like to follow up with',
                     options: [
                         {
-                            pillText: 'What are some examples?',
+                            pillText: 'What are some examples of tasks?',
                             type: 'DevExamples',
                         },
                     ],
+                }
+            case 'codetransform':
+                return {
+                    text: '',
+                    options: [],
                 }
             default:
                 return {

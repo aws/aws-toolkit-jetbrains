@@ -7,7 +7,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assumptions.assumeThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -17,7 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.AccessTokenCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
@@ -28,7 +28,6 @@ import java.time.Instant
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("codecatalyst-test-account")
 @DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
-@Disabled("Login Lambda is broken")
 class InteractiveBearerTokenProviderIntegrationTest {
     companion object {
         @JvmStatic
@@ -37,7 +36,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
 
         private val testScopes = listOf("sso:account:access")
         private val diskCache by lazy { DiskCache(cacheDir = diskCachePath) }
-        private val cacheKey = AccessTokenCacheKey(SONO_REGION, SONO_URL, testScopes)
+        private val cacheKey = DeviceGrantAccessTokenCacheKey(SONO_REGION, SONO_URL, testScopes)
     }
 
     @Test
@@ -66,7 +65,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
         val initialToken = diskCache.loadAccessToken(cacheKey)
         assumeThat(initialToken).isNotNull
 
-        diskCache.saveAccessToken(cacheKey, initialToken!!.copy(accessToken = "invalid", expiresAt = Instant.EPOCH))
+        diskCache.saveAccessToken(cacheKey, (initialToken!! as DeviceAuthorizationGrantToken).copy(accessToken = "invalid", expiresAt = Instant.EPOCH))
         val sut = InteractiveBearerTokenProvider(
             startUrl = SONO_URL,
             region = SONO_REGION,

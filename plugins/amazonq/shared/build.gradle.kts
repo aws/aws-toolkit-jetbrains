@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 plugins {
-    id("java")
+    id("toolkit-jvm-conventions")
 }
 
 dependencies {
-    implementation(project(":plugin-amazonq:shared:jetbrains-community", "instrumentedJar"))
-    implementation(project(":plugin-amazonq:shared:jetbrains-ultimate", "instrumentedJar"))
+    implementation(project(":plugin-amazonq:shared:jetbrains-community"))
+    implementation(project(":plugin-amazonq:shared:jetbrains-ultimate"))
 }

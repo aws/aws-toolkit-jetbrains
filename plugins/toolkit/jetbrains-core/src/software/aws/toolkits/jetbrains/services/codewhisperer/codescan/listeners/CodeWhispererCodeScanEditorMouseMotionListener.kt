@@ -6,6 +6,12 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.EditorMouseEvent
 import com.intellij.openapi.editor.event.EditorMouseEventArea
@@ -18,18 +24,26 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.TimeoutUtil.sleep
 import icons.AwsIcons
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.ToolkitPlaces
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.applyPatch
-import software.aws.toolkits.jetbrains.utils.convertMarkdownToHTML
 import software.aws.toolkits.jetbrains.utils.notifyError
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.awt.Dimension
@@ -65,6 +79,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         currentPopupContext?.popup?.cancel()
         currentPopupContext = null
     }
+    private val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
 
     private fun getHtml(issue: CodeWhispererCodeScanIssue): String {
         val isFixAvailable = issue.suggestedFixes.isNotEmpty()
@@ -95,11 +110,21 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 <tbody>
                     <tr>
                         <td>$cweLinks</td>
-                        <td>${if (isFixAvailable) "<span style=\"color:${additionForegroundColor.getHexString()};\">Yes</span>" else "<span style=\"color:${deletionForegroundColor.getHexString()};\">No</span>" }</td>
+                        <td>${if (isFixAvailable) "<span style=\"color:${additionForegroundColor.getHexString()};\">Yes</span>" else "<span style=\"color:${deletionForegroundColor.getHexString()};\">No</span>"}</td>
                         <td>$detectorLibraryLink</td>
                     </tr>
                 </tbody>
             </table>
+        """.trimIndent()
+
+        // add a link sections
+        val explainButton = "<a href=\"amazonq://issue/explain-${issue.title}\" style=\"font-size: 120%\">${message(
+            "codewhisperer.codescan.explain_button_label"
+        )}</a>"
+        val linksSection = """
+        <br />
+        &nbsp;&bull;$explainButton
+        <br />
         """.trimIndent()
 
         val suggestedFixSection = if (isFixAvailable) {
@@ -115,13 +140,17 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             |${issue.suggestedFixes[0].code}
             |```
             |
-            |${if (isFixDescriptionAvailable) {
-                "|### ${message(
-                    "codewhisperer.codescan.suggested_fix_description"
-                )}\n${issue.suggestedFixes[0].description}"
-            } else {
-                ""
-            }}
+            |${
+                if (isFixDescriptionAvailable) {
+                    "|### ${
+                        message(
+                            "codewhisperer.codescan.suggested_fix_description"
+                        )
+                    }\n${issue.suggestedFixes[0].description}"
+                } else {
+                    ""
+                }
+            }
             """.trimMargin()
         } else {
             ""
@@ -129,6 +158,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
 
         return convertMarkdownToHTML(
             """
+            |$linksSection
+            |
             |${issue.recommendation.text}
             |
             |$detectorSection
@@ -183,7 +214,26 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             isEditable = false
             addHyperlinkListener { he ->
                 if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                    BrowserUtil.browse(he.url)
+                    when {
+                        he.description.startsWith("amazonq://issue/explain-") -> {
+                            val issueItemMap = mutableMapOf<String, String>()
+                            issueItemMap["title"] = issue.title
+                            issueItemMap["description"] = issue.description.markdown
+                            issueItemMap["code"] = issue.codeText
+                            val myDataContext = SimpleDataContext.builder().add(issueDataKey, issueItemMap).add(CommonDataKeys.PROJECT, issue.project).build()
+                            val actionEvent = AnActionEvent.createFromInputEvent(
+                                he.inputEvent,
+                                ToolkitPlaces.EDITOR_PSI_REFERENCE,
+                                null,
+                                myDataContext
+                            )
+                            ActionManager.getInstance().getAction("aws.amazonq.explainCodeScanIssue").actionPerformed(actionEvent)
+                        }
+                        else -> {
+                            BrowserUtil.browse(he.url)
+                        }
+                    }
+                    hidePopup()
                 }
             }
             editorKit = kit
@@ -195,16 +245,17 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
         }
-        val label = JLabel(issue.title).apply {
+        val label = JLabel(truncateTitle(issue.title)).apply {
             icon = getSeverityIcon(issue)
             horizontalTextPosition = JLabel.LEFT
         }
         val button = JButton(message("codewhisperer.codescan.apply_fix_button_label")).apply {
             toolTipText = message("codewhisperer.codescan.apply_fix_button_tooltip")
-            addActionListener {
-                handleApplyFix(issue)
-            }
             putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        }
+        button.addActionListener {
+            handleApplyFix(issue)
+            button.isVisible = false
         }
         val nextButton = JButton(AllIcons.Actions.ArrowExpand).apply {
             preferredSize = Dimension(30, this.height)
@@ -253,6 +304,54 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         popup.show(RelativePoint(e.mouseEvent))
 
         CodeWhispererTelemetryService.getInstance().sendCodeScanIssueHoverEvent(issue)
+        sendCodeRemediationTelemetryToServiceApi(
+            issue.file.programmingLanguage(),
+            "CODESCAN_ISSUE_HOVER",
+            issue.detectorId,
+            issue.findingId,
+            issue.ruleId,
+            null,
+            null,
+            null,
+            issue.suggestedFixes.isNotEmpty()
+        )
+    }
+
+    private fun sendCodeRemediationTelemetryToServiceApi(
+        language: CodeWhispererProgrammingLanguage?,
+        codeScanRemediationEventType: String?,
+        detectorId: String?,
+        findingId: String?,
+        ruleId: String?,
+        component: String?,
+        reason: String?,
+        result: String?,
+        includesFix: Boolean?
+    ) {
+        runIfIdcConnectionOrTelemetryEnabled(project) {
+            ApplicationManager.getApplication().executeOnPooledThread {
+                try {
+                    val response = CodeWhispererClientAdaptor.getInstance(project)
+                        .sendCodeScanRemediationTelemetry(
+                            language,
+                            codeScanRemediationEventType,
+                            detectorId,
+                            findingId,
+                            ruleId,
+                            component,
+                            reason,
+                            result,
+                            includesFix
+                        )
+                    LOG.debug { "Successfully sent code scan remediation telemetry. RequestId: ${response.responseMetadata().requestId()}" }
+                } catch (e: Exception) {
+                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                    LOG.debug {
+                        "Failed to send code scan remediation telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                    }
+                }
+            }
+        }
     }
 
     override fun mouseMoved(e: EditorMouseEvent) {
@@ -281,7 +380,10 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         // Show popup for only the first issue found.
         // Only add popup if the issue is still valid. If the issue has gone stale or invalid because
         // the user has made some edits, we don't need to show the popup for the stale or invalid issues.
-        if (!issuesInRange.first().isInvalid) showPopup(issuesInRange, e)
+        if (!issuesInRange.first().isInvalid) {
+            sleep(CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS)
+            showPopup(issuesInRange, e)
+        }
     }
 
     private data class ScanIssuePopupContext(val issue: CodeWhispererCodeScanIssue, val popup: JBPopup)
@@ -296,19 +398,47 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
                 val documentContent = document.text
-                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name) ?: return@runWriteCommandAction
+                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name)
+                if (updatedContent == null) {
+//                    println(applyPatchToContent(issue.suggestedFixes[0].code, documentContent))
+                    throw Error("Patch apply failed.")
+                }
                 document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
                 PsiDocumentManager.getInstance(issue.project).commitDocument(document)
-                notifyInfo(
-                    message("codewhisperer.codescan.fix_applied_success"),
-                )
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)
                 hidePopup()
+                CodeWhispererCodeScanManager.getInstance(issue.project).updateScanNodesForIssuesOutOfTextRange(issue)
             }
+            sendCodeRemediationTelemetryToServiceApi(
+                issue.file.programmingLanguage(),
+                "CODESCAN_ISSUE_APPLY_FIX",
+                issue.detectorId,
+                issue.findingId,
+                issue.ruleId,
+                null,
+                null,
+                Result.Succeeded.toString(),
+                issue.suggestedFixes.isNotEmpty()
+            )
         } catch (err: Error) {
             notifyError(message("codewhisperer.codescan.fix_applied_fail", err))
             LOG.error { "Apply fix command failed. $err" }
             CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Failed, err.message)
+            sendCodeRemediationTelemetryToServiceApi(
+                issue.file.programmingLanguage(),
+                "CODESCAN_ISSUE_APPLY_FIX",
+                issue.detectorId,
+                issue.findingId,
+                issue.ruleId,
+                null,
+                err.message,
+                Result.Failed.toString(),
+                issue.suggestedFixes.isNotEmpty()
+            )
         }
     }
+
+    private fun truncateTitle(title: String): String = title.takeUnless { it.length <= CODE_SCAN_ISSUE_TITLE_MAX_LENGTH }?.let {
+        it.substring(0, CODE_SCAN_ISSUE_TITLE_MAX_LENGTH - 3) + "..."
+    } ?: title
 }

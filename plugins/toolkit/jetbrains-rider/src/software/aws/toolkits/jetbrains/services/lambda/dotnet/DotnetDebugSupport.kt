@@ -7,7 +7,6 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.jetbrains.rider.languages.fileTypes.csharp.CSharpLanguage
 import software.aws.toolkits.core.lambda.LambdaRuntime
-import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.ImageDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.RuntimeDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
@@ -66,11 +65,6 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         debugHost: String,
         debugPorts: List<Int>
     ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
-}
-
-class Dotnet50ImageDebug : DotnetImageDebugSupport() {
-    override val id: String = LambdaRuntime.DOTNET5_0.toString()
-    override fun displayName() = LambdaRuntime.DOTNET5_0.toString().capitalize()
 }
 
 class Dotnet60ImageDebug : DotnetImageDebugSupport() {

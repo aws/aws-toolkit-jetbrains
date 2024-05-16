@@ -9,7 +9,6 @@ import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.intellij.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.withCurrentProfileName
 import java.nio.file.Path
 
 buildscript {
@@ -43,6 +42,7 @@ intellijToolkit {
 
 intellij {
     type.set("RD")
+    plugins.add(project(":plugin-core"))
 }
 
 sourceSets {
@@ -52,32 +52,19 @@ sourceSets {
 }
 
 dependencies {
-    compileOnly(project(":plugin-toolkit:jetbrains-core"))
-    runtimeOnly(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
+    implementation(project(":plugin-toolkit:jetbrains-core"))
 
-    testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
-    testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "instrumentedJar"))
+    testImplementation(project(":plugin-toolkit:jetbrains-core"))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
 }
 
 /**
  * RESHARPER
  */
-// FIX_WHEN_MIN_IS_232
-withCurrentProfileName {
-    when (it) {
-        "2022.2", "2022.3", "2023.1" -> {
-            // rdgen <= 2023.1.2 doesn't work with gradle 8.0
-            apply(from = "rdgen.gradle.kts")
-        }
-
-        else -> {
-            // Not published to gradle plugin portal, use old syntax
-            apply<RdGenPlugin>()
-            tasks.register<RdGenTask>("generateModels")
-        }
-    }
-}.get()
+// Not published to gradle plugin portal, use old syntax
+apply<RdGenPlugin>()
+tasks.register<RdGenTask>("generateModels")
 
 val resharperPluginPath = File(projectDir, "ReSharper.AWS")
 val resharperBuildPath = File(project.buildDir, "dotnetBuild")
@@ -252,7 +239,7 @@ fun getNugetPackagesPath(): File {
     val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
 
     println("NuGet packages: $riderSdk")
-    if (!riderSdk.isDirectory) throw IllegalStateException("$riderSdk does not exist or not a directory")
+    if (!riderSdk.isDirectory) error("$riderSdk does not exist or not a directory")
 
     return riderSdk
 }
@@ -308,9 +295,8 @@ intellij {
 tasks.withType<PrepareSandboxTask>().all {
     dependsOn(resharperDllsDir)
 
-    from(resharperDllsDir) {
-        into("aws-toolkit-jetbrains/dotnet")
-    }
+    intoChild(pluginName.map { "$it/dotnet" })
+        .from(resharperDllsDir)
 }
 
 tasks.compileKotlin {

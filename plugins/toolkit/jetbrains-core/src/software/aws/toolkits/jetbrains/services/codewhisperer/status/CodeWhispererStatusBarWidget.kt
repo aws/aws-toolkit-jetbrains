@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.status
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
+import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.ApplicationManager
@@ -19,15 +20,15 @@ import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CwQTreeRootNode.Companion.Q_SIGNED_OUT_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
+import software.aws.toolkits.jetbrains.utils.isQConnected
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
 import javax.swing.Icon
@@ -49,7 +50,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String) {
+                override fun onChange(providerId: String, newScopes: List<String>?) {
                     statusBar.updateWidget(ID)
                 }
             }
@@ -83,9 +84,9 @@ class CodeWhispererStatusBarWidget(project: Project) :
     override fun getClickConsumer(): Consumer<MouseEvent>? = null
 
     override fun getPopupStep(): ListPopup? =
-        if (isCodeWhispererExpired(project)) {
+        if (isQExpired(project)) {
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
-        } else if (!isCodeWhispererEnabled(project)) {
+        } else if (!isQConnected(project)) {
             JBPopupFactory.getInstance().createActionGroupPopup(
                 "Amazon Q",
                 ActionManager.getInstance().getAction(Q_SIGNED_OUT_ACTION_GROUP) as ActionGroup,
@@ -112,12 +113,19 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isCodeWhispererExpired(project)) {
+        if (isQExpired(project)) {
             AllIcons.General.BalloonWarning
+        } else if (!isQConnected(project)) {
+            AllIcons.RunConfigurations.TestState.Run
         } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            AnimatedIcon.Default()
+            // AnimatedIcon can't serialize over remote host
+            if (!AppMode.isRemoteDevHost()) {
+                AnimatedIcon.Default()
+            } else {
+                AllIcons.Actions.Download
+            }
         } else {
-            AllIcons.General.InspectionsOK
+            AllIcons.Debugger.ThreadStates.Idle
         }
 
     companion object {

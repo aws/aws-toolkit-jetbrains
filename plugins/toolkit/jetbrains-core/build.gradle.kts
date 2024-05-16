@@ -1,53 +1,44 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import com.jetbrains.plugin.structure.base.utils.inputStream
+import com.jetbrains.plugin.structure.base.utils.simpleName
+import com.jetbrains.plugin.structure.intellij.utils.JDOMUtil
+import org.jetbrains.intellij.transformXml
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
-import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
 
 plugins {
+    id("java-library")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
 }
 
-buildscript {
-    dependencies {
-        classpath(libs.telemetryGenerator)
-    }
-}
-
 intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
-sourceSets {
-    main {
-        java.srcDir("${project.buildDir}/generated-src")
-    }
-}
-
-val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = file("${project.buildDir}/generated-src")
-}
-
-tasks.compileKotlin {
-    dependsOn(generateTelemetry)
+intellij {
+    plugins.add(project(":plugin-core"))
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
     changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+}
+
+tasks.compileJava {
+    // https://github.com/gradle/gradle/issues/26006
+    // consistently saves 6+ minutes in CI. we do not need incremental compilation for 2 java files
+    options.isIncremental = false
 }
 
 tasks.jar {
@@ -63,6 +54,27 @@ val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlT
 
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+
+    // jetbrains expects gateway plugin to be dynamic
+    doLast {
+        pluginXmlFiles.get()
+            .map(File::toPath)
+            .forEach { p ->
+                val path = destinationDir.get()
+                    .asFile.toPath().toAbsolutePath()
+                    .resolve(p.simpleName)
+
+                val document = path.inputStream().use { inputStream ->
+                    JDOMUtil.loadDocument(inputStream)
+                }
+
+                document.rootElement
+                    .getAttribute("require-restart")
+                    .setValue("false")
+
+                transformXml(document, path)
+            }
+    }
 }
 
 val gatewayArtifacts by configurations.creating {
@@ -72,10 +84,16 @@ val gatewayArtifacts by configurations.creating {
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
 }
 
+val jarNoPluginXmlArtifacts by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    // only consumed without transitive depen
+}
+
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.WARN
 
     dependsOn(tasks.instrumentedJar)
 
@@ -96,8 +114,22 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
     }
 }
 
+val jarNoPluginXml = tasks.create<Jar>("jarNoPluginXml") {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+
+    dependsOn(tasks.instrumentedJar)
+
+    archiveBaseName.set("aws-toolkit-jetbrains-IC-noPluginXml")
+    from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
+        exclude("**/plugin.xml")
+        exclude("**/plugin-intellij.xml")
+        exclude("**/inactive")
+    }
+}
+
 artifacts {
     add("gatewayArtifacts", gatewayJar)
+    add("jarNoPluginXmlArtifacts", jarNoPluginXml)
 }
 
 tasks.prepareSandbox {
@@ -118,62 +150,69 @@ tasks.processTestResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
+// delete when fully split
+// pull in shim to make tests pass
+val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
+    archiveFileName.set("dummy.jar")
+
+    from(project.file("test-plugin-shim.xml")) {
+        rename { "plugin-shim.xml" }
+        into("META-INF")
+    }
+}
+
+tasks.prepareTestingSandbox {
+    dependsOn(dummyPluginJar)
+
+    intoChild(pluginName.map { "$it/lib" })
+        .from(dummyPluginJar)
+}
+
 dependencies {
-    api(project(":plugin-toolkit:core"))
-    api(libs.aws.apacheClient)
-    api(libs.aws.apprunner)
-    api(libs.aws.cloudcontrol)
-    api(libs.aws.cloudformation)
-    api(libs.aws.cloudwatchlogs)
-    api(libs.aws.codecatalyst)
-    api(libs.aws.dynamodb)
-    api(libs.aws.ec2)
-    api(libs.aws.ecr)
-    api(libs.aws.ecs)
-    api(libs.aws.iam)
-    api(libs.aws.lambda)
-    api(libs.aws.nettyClient)
-    api(libs.aws.rds)
-    api(libs.aws.redshift)
-    api(libs.aws.s3)
-    api(libs.aws.schemas)
-    api(libs.aws.secretsmanager)
-    api(libs.aws.sns)
-    api(libs.aws.sqs)
-    api(libs.aws.services)
+    listOf(
+        libs.aws.apprunner,
+        libs.aws.cloudcontrol,
+        libs.aws.cloudformation,
+        libs.aws.cloudwatchlogs,
+        libs.aws.codecatalyst,
+        libs.aws.dynamodb,
+        libs.aws.ec2,
+//        libs.aws.ecr,
+//        libs.aws.ecs,
+//        libs.aws.iam,
+//        libs.aws.lambda,
+        libs.aws.rds,
+        libs.aws.redshift,
+//        libs.aws.s3,
+        libs.aws.schemas,
+        libs.aws.secretsmanager,
+        libs.aws.sns,
+        libs.aws.sqs,
+        libs.aws.services,
+    ).forEach { api(it) { isTransitive = false } }
 
-    compileOnly(project(":plugin-core:jetbrains-community"))
-    runtimeOnly(project(":plugin-core:jetbrains-community", "instrumentedJar"))
-    // can't seem to make this transitive from :plugin-core:jetbrains-community
-    compileOnly(project(":plugin-core:sdk-codegen"))
-    testImplementation(project(":plugin-core:sdk-codegen"))
+    listOf(
+        libs.aws.apacheClient,
+        libs.aws.nettyClient,
+    ).forEach { compileOnlyApi(it) { isTransitive = false } }
 
+    compileOnlyApi(project(":plugin-toolkit:core"))
+    compileOnlyApi(project(":plugin-core:jetbrains-community"))
+
+    // TODO: remove Q dependency when split is fully done
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
-    implementation(libs.commonmark)
+    // CodeWhispererTelemetryService uses a CircularFifoQueue, transitive from zjsonpatch
+    implementation(libs.commons.collections)
 
-    testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
-    testImplementation(libs.mockk)
-    testImplementation(libs.kotlin.coroutinesTest)
-    testImplementation(libs.kotlin.coroutinesDebug)
-    testImplementation(libs.wiremock) {
-        // conflicts with transitive inclusion from docker plugin
-        exclude(group = "org.apache.httpcomponents.client5")
-    }
-
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     // slf4j is v1.7.36 for <233
     // in <233, the classpass binding functionality picks up the wrong impl of StaticLoggerBinder (from the maven plugin instead of IDE platform) and causes a NoClassDefFoundError
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
-}
 
-// fix implicit dependency on generated source
-tasks.withType<Detekt> {
-    dependsOn(generateTelemetry)
-}
-
-tasks.withType<DetektCreateBaselineTask> {
-    dependsOn(generateTelemetry)
+    // delete when fully split
+    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }

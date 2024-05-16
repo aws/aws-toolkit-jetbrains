@@ -92,7 +92,10 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         this.sendMessageToExtension({
             tabID: tabID,
@@ -102,6 +105,9 @@ export class Connector {
             tabType: 'cwc',
             insertionTargetType: type,
             codeReference,
+            eventId,
+            codeBlockIndex,
+            totalCodeBlocks,
         })
     }
 
@@ -110,7 +116,10 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         this.sendMessageToExtension({
             tabID: tabID,
@@ -120,6 +129,9 @@ export class Connector {
             tabType: 'cwc',
             insertionTargetType: type,
             codeReference,
+            eventId,
+            codeBlockIndex,
+            totalCodeBlocks,
         })
     }
 
@@ -294,15 +306,6 @@ export class Connector {
 
             return
         }
-    }
-
-    transform = (tabID: string): void => {
-        this.sendMessageToExtension({
-            tabID: tabID,
-            command: 'transform',
-            chatMessage: 'transform',
-            tabType: 'cwc',
-        })
     }
 
     private processAuthNeededException = async (messageData: any): Promise<void> => {
