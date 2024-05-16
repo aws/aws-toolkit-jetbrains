@@ -49,6 +49,7 @@ dependencies {
     gatewayOnlyRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
 
     // delete when fully split
+    gatewayOnlyRuntimeOnly(project(":plugin-core:core"))
     gatewayOnlyRuntimeOnly(project(":plugin-core:jetbrains-community"))
 
     testImplementation(project(path = ":plugin-core:core", configuration = "testArtifacts"))
