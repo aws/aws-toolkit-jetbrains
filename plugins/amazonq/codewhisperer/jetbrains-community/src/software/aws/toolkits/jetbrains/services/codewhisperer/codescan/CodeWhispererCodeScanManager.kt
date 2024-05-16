@@ -32,10 +32,8 @@ import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.treeStructure.Tree
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -220,7 +218,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
         var codeScanStatus: Result = Result.Failed
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
-        var getProjectSize: Deferred<Long?> = async { null }
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         var codeScanJobId: String? = null
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
@@ -270,9 +267,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     }
                     LOG.info { "Security scan completed for jobID: $codeScanJobId." }
                 }
-                getProjectSize = async {
-                    codeScanSessionConfig.getTotalProjectSizeInBytes()
-                }
             }
         } catch (e: Error) {
             if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
@@ -292,7 +286,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
             launch {
                 val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
                 CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
-                    CodeScanTelemetryEvent(codeScanResponseContext, duration, codeScanStatus, getProjectSize.await()?.toDouble(), connection, scope)
+                    CodeScanTelemetryEvent(
+                        codeScanResponseContext,
+                        duration,
+                        codeScanStatus,
+                        codeScanResponseContext.payloadContext.srcPayloadSize.toDouble() ?: 0.0,
+                        connection,
+                        scope
+                    )
                 )
                 sendCodeScanTelemetryToServiceAPI(project, language, codeScanJobId, scope)
             }
@@ -305,7 +306,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 if (e.cause?.message?.contains("com.intellij.openapi.compiler.CompilerPaths") == true) {
                     message("codewhisperer.codescan.java_module_not_found")
                 } else {
-                    message("codewhisperer.codescan.service_error")
+                    null
                 }
             }
             else -> null
@@ -324,10 +325,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
-            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.service_error")
-            is CodeWhispererCodeScanException -> e.message
+            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
+            is CodeWhispererCodeScanException -> when (e.message) {
+                message("codewhisperer.codescan.invalid_source_zip_telemetry") -> message("codewhisperer.codescan.run_scan_error")
+                else -> e.message
+            }
+            is UploadCodeScanException -> message("codewhisperer.codescan.upload_to_s3_failed")
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
-            is CancellationException -> "Code scan job cancelled by user."
+            is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> null
         } ?: message("codewhisperer.codescan.run_scan_error")
 
@@ -358,7 +363,22 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     "stacktrace: ${e.stackTrace.contentDeepToString()}"
             }
         }
-        return errorMessage
+
+        val telemetryErrorMessage = when (e) {
+            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+            is CodeWhispererCodeScanException -> when (e.message) {
+                message("codewhisperer.codescan.no_file_open") -> message("codewhisperer.codescan.no_file_open_telemetry")
+                message("codewhisperer.codescan.unsupported_language_error") -> message("codewhisperer.codescan.unsupported_language_error_telemetry")
+                message("codewhisperer.codescan.file_too_large") -> message("codewhisperer.codescan.file_too_large_telemetry")
+                else -> e.message
+            }
+            is UploadCodeScanException -> e.message
+            is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
+            is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
+            else -> e.message
+        } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+
+        return telemetryErrorMessage
     }
 
     /**
