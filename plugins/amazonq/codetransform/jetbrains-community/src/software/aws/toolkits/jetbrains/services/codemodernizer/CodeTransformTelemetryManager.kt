@@ -43,7 +43,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
     private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
 
-    private fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
+    fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
         DigestUtils.sha256(customerSelection.configurationFile.toNioPath().toAbsolutePath().toString())
     )
 
@@ -76,6 +76,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection) {
         val projectHash = getProjectHash(customerSelection)
+        CodeTransformTelemetryState.instance.setSessionId()
+        jobStartedCompleteFromPopupDialog(customerSelection, projectHash)
+    }
+
+    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection, projectHash: String) {
         CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
