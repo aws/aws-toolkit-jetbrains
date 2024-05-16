@@ -51,6 +51,10 @@ class SsoAccessTokenProvider(
     private val scopes: List<String> = emptyList(),
     private val clock: Clock = Clock.systemUTC()
 ) : SdkTokenProvider {
+    init {
+        check(scopes.isNotEmpty()) { "Scopes should not be empty" }
+    }
+
     private val _authorization = AtomicReference<PendingAuthorization?>()
     val authorization: PendingAuthorization?
         get() = _authorization.get()
@@ -103,7 +107,7 @@ class SsoAccessTokenProvider(
         }
 
         val isCommercialRegion = !ssoRegion.startsWith("us-gov") && !ssoRegion.startsWith("us-iso") && !ssoRegion.startsWith("cn")
-        val token = if (isCommercialRegion && isNewAuthPkce && scopes.isNotEmpty()) {
+        val token = if (isCommercialRegion && isNewAuthPkce) {
             pollForPkceToken()
         } else {
             pollForDAGToken()
