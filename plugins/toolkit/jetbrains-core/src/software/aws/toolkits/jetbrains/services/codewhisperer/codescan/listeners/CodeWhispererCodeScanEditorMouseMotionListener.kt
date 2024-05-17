@@ -391,20 +391,19 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         private val LOG = getLogger<CodeWhispererCodeScanEditorMouseMotionListener>()
     }
 
+    private fun extractChanges(issue: CodeWhispererCodeScanIssue): Pair<Int, List<String>> {
+        val codeLines = issue.suggestedFixes[0].code.split("\n")
+        val linesToDelete = codeLines.count { it.startsWith("-") }
+        val linesToInsert = codeLines.filter { it.startsWith("+") }.map { it.removePrefix("+") }
+        return Pair(linesToDelete, linesToInsert)
+    }
+
     private fun handleApplyFix(issue: CodeWhispererCodeScanIssue) {
         try {
             WriteCommandAction.runWriteCommandAction(issue.project) {
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
-                val linesToDelete = issue.suggestedFixes[0].code
-                    .split("\n")
-                    .count { it.startsWith("-") }
-
-                val linesToInsert = issue.suggestedFixes[0].code
-                    .split("\n")
-                    .filter { it.startsWith("+") }
-                    .map { it.removePrefix("+") }
-
+                val (linesToDelete, linesToInsert) = extractChanges(issue)
                 if (document != null) {
                     val startLineOffset = document.getLineStartOffset(issue.startLine - 1)
                     val endLineOffset = document.getLineEndOffset(issue.startLine + linesToDelete - 2)
