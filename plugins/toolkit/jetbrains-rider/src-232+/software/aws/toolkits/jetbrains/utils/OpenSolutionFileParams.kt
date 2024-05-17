@@ -7,12 +7,13 @@ import java.io.File
 
 typealias OpenSolutionFileParams = com.jetbrains.rider.test.OpenSolutionParams
 fun openSolutionFile(solutionDirName: String): File {
-    val solutionFileName = when (solutionDirName) {
-        "testData/solutions/EchoLambda6X" -> "EchoLambda.sln"
-        "testData/solutions/ImageLambda6X" -> "ImageLambda.sln"
+    val solutionFileName = when {
+        solutionDirName.endsWith("SamHelloWorldApp") -> "SamHelloWorldApp.sln"
+        solutionDirName.endsWith("EchoLambda6X") -> "EchoLambda.sln"
+        solutionDirName.endsWith("ImageLambda6X") -> "ImageLambda.sln"
         else -> throw IllegalArgumentException("Unsupported solution directory: $solutionDirName")
     }
     return File("$solutionDirName/$solutionFileName")
 }
 
-const val OPEN_SOLUTION_DIR_NAME: String = "testData/solutions/SamHelloWorldApp/SamHelloWorldApp.sln"
+const val OPEN_SOLUTION_DIR_NAME: String = "testData/solutions/SamHelloWorldApp"
