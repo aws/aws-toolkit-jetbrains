@@ -5,9 +5,6 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.lang.Language
 import com.intellij.openapi.command.CommandProcessor
-import com.intellij.openapi.diff.impl.patch.PatchReader
-import com.intellij.openapi.diff.impl.patch.TextFilePatch
-import com.intellij.openapi.diff.impl.patch.apply.PlainSimplePatchApplier
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFileFactory
@@ -30,15 +27,3 @@ fun formatText(project: Project, language: Language, content: String): String {
  * (e.g. Update Complete)
  */
 fun String.toHumanReadable() = StringUtil.toTitleCase(toLowerCase().replace('_', ' '))
-
-fun generateUnifiedPatch(patch: String, filePath: String): TextFilePatch {
-    val unifiedPatch = "--- $filePath\n+++ $filePath\n$patch"
-    val patchReader = PatchReader(unifiedPatch)
-    val patches = patchReader.readTextPatches()
-    return patches[0]
-}
-
-fun applyPatch(patch: String, fileContent: String, filePath: String): String? {
-    val unifiedPatch = generateUnifiedPatch(patch, filePath)
-    return PlainSimplePatchApplier.apply(fileContent, unifiedPatch.hunks)
-}

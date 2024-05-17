@@ -94,47 +94,4 @@ class TextUtilsTest {
         val actual = convertMarkdownToHTML(input)
         assertThat(actual).isEqualTo(expected)
     }
-
-    @Test
-    fun canApplyPatchSuccessfully() {
-        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
-        val inputFilePath = "dummy.py"
-        val fileContent = "first line\nsecond line\nforth line"
-        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
-        val expected = "first line\nthird line\nforth line"
-        assertThat(actual).isEqualTo(expected)
-    }
-
-    @Test
-    fun canReturnNullWhenApplyPatchFails() {
-        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
-        val inputFilePath = "dummy.py"
-        val fileContent = "first line\nThree line\nforth line"
-        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
-        val expected = null
-        assertThat(actual).isEqualTo(expected)
-    }
-
-    @Test
-    fun shouldHaveZeroHunkSizeForIncorrectPatchGenerated() {
-        val inputPatch = " first line\n-second line\n+third line\n forth line"
-        val inputFilePath = "dummy.py"
-        val actual = generateUnifiedPatch(inputPatch, inputFilePath)
-        assertThat(actual.hunks.size).isEqualTo(0)
-    }
-
-    @Test
-    fun shouldHaveHunksForCorrectPatchGenerated() {
-        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
-        val inputFilePath = "dummy.py"
-        val actual = generateUnifiedPatch(inputPatch, inputFilePath)
-        assertThat(actual.hunks.size).isEqualTo(1)
-        val hunk = actual.hunks[0]
-        assertThat(hunk.startLineAfter).isEqualTo(0)
-        assertThat(hunk.startLineBefore).isEqualTo(0)
-        assertThat(hunk.endLineAfter).isEqualTo(3)
-        assertThat(hunk.endLineBefore).isEqualTo(3)
-        val inputPatchLines = inputPatch.split("\n")
-        hunk.lines.forEachIndexed { index, patchLine -> assertThat(inputPatchLines[index + 1].substring(1)).isEqualTo(patchLine.text) }
-    }
 }

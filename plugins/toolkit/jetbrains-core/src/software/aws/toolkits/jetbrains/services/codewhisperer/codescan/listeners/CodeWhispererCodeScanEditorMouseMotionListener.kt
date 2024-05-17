@@ -42,7 +42,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
-import software.aws.toolkits.jetbrains.utils.applyPatch
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
@@ -397,14 +396,23 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             WriteCommandAction.runWriteCommandAction(issue.project) {
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
-                val documentContent = document.text
-                val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name)
-                if (updatedContent == null) {
-//                    println(applyPatchToContent(issue.suggestedFixes[0].code, documentContent))
-                    throw Error("Patch apply failed.")
+                val linesToDelete = issue.suggestedFixes[0].code
+                    .split("\n")
+                    .count { it.startsWith("-") }
+
+                val linesToInsert = issue.suggestedFixes[0].code
+                    .split("\n")
+                    .filter { it.startsWith("+") }
+                    .map { it.removePrefix("+") }
+
+                if (document != null) {
+                    val startLineOffset = document.getLineStartOffset(issue.startLine - 1)
+                    val endLineOffset = document.getLineEndOffset(issue.startLine + linesToDelete - 2)
+                    document.replaceString(startLineOffset, endLineOffset, linesToInsert.joinToString("\n"))
+                    PsiDocumentManager.getInstance(project).commitDocument(document)
                 }
-                document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
-                PsiDocumentManager.getInstance(issue.project).commitDocument(document)
+                FileDocumentManager.getInstance().saveDocument(document)
+
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)
                 hidePopup()
                 CodeWhispererCodeScanManager.getInstance(issue.project).updateScanNodesForIssuesOutOfTextRange(issue)
