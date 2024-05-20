@@ -49,6 +49,10 @@ dependencies {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
     }
+
+    testRuntimeOnly(project(":plugin-core:core"))
+    testRuntimeOnly(project(":plugin-core:resources"))
+    testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 }
 
 // fix implicit dependency on generated source
@@ -58,4 +62,13 @@ tasks.withType<Detekt> {
 
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateTelemetry)
+}
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestingSandbox {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    intoChild(pluginName.map { "$it/lib" })
+        .from(pluginXmlJar)
 }
