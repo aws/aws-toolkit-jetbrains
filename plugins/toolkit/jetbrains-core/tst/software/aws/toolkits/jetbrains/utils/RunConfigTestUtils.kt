@@ -118,9 +118,9 @@ fun getState(runConfiguration: RunConfiguration, executorId: String = DefaultRun
 
 fun executeRunConfigurationAndWait(runConfiguration: RunConfiguration, executorId: String = DefaultRunExecutor.EXECUTOR_ID): Output {
     val executionFuture = executeRunConfiguration(runConfiguration, executorId)
-    // 4 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
+    // 5 is arbitrary, but Image-based functions can take > 3 min on first build/run, so 4 is a safe number
     return try {
-        executionFuture.get(4, TimeUnit.MINUTES)
+        executionFuture.get(5, TimeUnit.MINUTES)
     } finally {
         try {
             checkJavaSwingTimersAreDisposed()
