@@ -39,7 +39,6 @@ intellijToolkit {
 
 dependencies {
     compileOnlyApi(project(":plugin-core:core"))
-    compileOnlyApi(project(":plugin-core:sdk-codegen"))
     compileOnlyApi(libs.aws.apacheClient)
     compileOnlyApi(libs.aws.nettyClient)
 
