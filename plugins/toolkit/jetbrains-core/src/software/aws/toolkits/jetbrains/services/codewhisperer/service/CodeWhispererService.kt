@@ -105,9 +105,12 @@ class CodeWhispererService {
             return
         }
 
-        if (promptReAuth(project)) return
-
-        if (isQExpired(project)) return
+        if (isQExpired(project)) {
+            ApplicationManager.getApplication().executeOnPooledThread {
+                promptReAuth(project)
+            }
+            return
+        }
 
         latencyContext.credentialFetchingEnd = System.nanoTime()
         val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }
