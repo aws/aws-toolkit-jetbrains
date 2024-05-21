@@ -8,12 +8,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -26,12 +22,9 @@ class CodeTransformTelemetryTest : CodeWhispererCodeModernizerTestBase(HeavyJava
     }
 
     @Test
-    fun `SessionId updated on jobStartedCompleteFromPopupDialog invoked`() {
+    fun `SessionId updated on prepareForNewJobSubmission invoked`() {
         val originalSessionId = CodeTransformTelemetryState.instance.getSessionId()
-        doNothing().whenever(telemetryManagerSpy).jobStartedCompleteFromPopupDialog(any(), any())
-        doReturn(Path("/test/pom.xml")).whenever(emptyPomFileSpy).toNioPath()
-        telemetryManagerSpy.jobStartedCompleteFromPopupDialog(validJDK8CustomerSelection)
-        verify(telemetryManagerSpy, times(1)).jobStartedCompleteFromPopupDialog(any(), any())
+        telemetryManagerSpy.prepareForNewJobSubmission()
         assertNotEquals(originalSessionId, CodeTransformTelemetryState.instance.getSessionId())
     }
 

@@ -47,6 +47,14 @@ class CodeTransformTelemetryManager(private val project: Project) {
         DigestUtils.sha256(customerSelection.configurationFile.toNioPath().toAbsolutePath().toString())
     )
 
+    /**
+     * Will be the first invokation per job submission.
+     * Should contain relevant initialization for proper telemetry emission.
+     */
+    fun prepareForNewJobSubmission() {
+        CodeTransformTelemetryState.instance.setSessionId()
+    }
+
     fun sendValidationResult(validationResult: ValidationResult, onProjectFirstOpen: Boolean = false) {
         // Old telemetry event to be fired only when users click on transform
         if (!validationResult.valid && !onProjectFirstOpen) {
@@ -74,20 +82,13 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection) {
-        val projectHash = getProjectHash(customerSelection)
-        CodeTransformTelemetryState.instance.setSessionId()
-        jobStartedCompleteFromPopupDialog(customerSelection, projectHash)
-    }
+    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection) = CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
+        codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
+        codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
+        codeTransformSessionId = sessionId,
+        codeTransformProjectId = getProjectHash(customerSelection),
+    )
 
-    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection, projectHash: String) {
-        CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
-            codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
-            codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
-            codeTransformSessionId = sessionId,
-            codeTransformProjectId = projectHash,
-        )
-    }
 
     fun jobIsCancelledByUser(srcComponent: CodeTransformCancelSrcComponents) = CodetransformTelemetry.jobIsCancelledByUser(
         codeTransformCancelSrcComponents = srcComponent,
