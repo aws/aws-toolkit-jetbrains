@@ -58,10 +58,8 @@ class CodeScanSessionConfig(
         else -> (DEFAULT_PAYLOAD_LIMIT_IN_BYTES)
     }
 
-    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
-        val exceedsLimit = currentTotalFileSize > getPayloadLimitInBytes() - currentFileSize
-        return exceedsLimit
-    }
+    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean =
+        currentTotalFileSize.let { totalSize -> totalSize > (getPayloadLimitInBytes() - currentFileSize) }
 
     private var programmingLanguage: CodeWhispererProgrammingLanguage = selectedFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
 
