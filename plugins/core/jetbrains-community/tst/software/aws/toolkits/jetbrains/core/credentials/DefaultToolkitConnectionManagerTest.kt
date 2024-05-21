@@ -66,7 +66,7 @@ class DefaultToolkitConnectionManagerTest {
         credManager.clear()
         assertThat(sut.activeConnection()).isEqualTo(null)
 
-        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
+        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
         sut.loadState(ToolkitConnectionManagerState(connection.id))
 
         assertThat(sut.activeConnection()).isEqualTo(connection)
@@ -77,7 +77,7 @@ class DefaultToolkitConnectionManagerTest {
         credManager.clear()
         assertThat(sut.activeConnection()).isEqualTo(null)
 
-        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
+        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
         sut.loadState(ToolkitConnectionManagerState("sso;https://view.awsapps.com/start"))
 
         assertThat(sut.activeConnection()).isEqualTo(connection)
@@ -95,7 +95,7 @@ class DefaultToolkitConnectionManagerTest {
 
     @Test
     fun `switch connection to null will fall back to IAM credential if applicable`() {
-        val bearerConnection = LegacyManagedBearerSsoConnection(aString(), "us-east-1", listOf(aString()))
+        val bearerConnection = LegacyManagedBearerSsoConnection(aString(), "us-east-1", emptyList())
         configureSut(sut, bearerConnection)
 
         sut.switchConnection(null)
@@ -106,9 +106,9 @@ class DefaultToolkitConnectionManagerTest {
     @Test
     fun `switch connection to null will fall back to the first SSO connection in the list if IAM credential is not available`() {
         credManager.clear()
-        val conneciton1 = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
-        authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
-        authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
+        val conneciton1 = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
+        authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
+        authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
         configureSut(sut, conneciton1)
 
         sut.switchConnection(null)
@@ -131,7 +131,7 @@ class DefaultToolkitConnectionManagerTest {
         ApplicationManager.getApplication().replaceService(ConnectionPinningManager::class.java, pinningMock, disposableRule.disposable)
         assertThat(sut.activeConnectionForFeature(feature)).isNull()
 
-        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf(aString())))
+        val connection = authManager.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList()))
         assertThat(sut.activeConnectionForFeature(feature)).isEqualTo(connection)
     }
 
