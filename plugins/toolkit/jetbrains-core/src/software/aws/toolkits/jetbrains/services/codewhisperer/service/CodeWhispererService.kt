@@ -106,6 +106,7 @@ class CodeWhispererService {
         }
 
         if (isQExpired(project)) {
+            // The purpose to execute in the background is to hide the progress indicator UI
             val shouldReauth = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
                 promptReAuth(project)
             }.get()
