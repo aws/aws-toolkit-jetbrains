@@ -70,8 +70,6 @@
     <ID>UnnecessaryApply:EventsFetcherTest.kt$EventsFetcherTest$apply { expectRange("4097", "4097", first, expectedSize = 1) }</ID>
     <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = "" }</ID>
     <ID>UnnecessaryApply:SendMessagePaneTest.kt$SendMessagePaneTest$apply { inputText.text = MESSAGE }</ID>
-    <ID>UnnecessaryFilter:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$filter { !it.content().startsWith(typeahead) }</ID>
-    <ID>UnnecessaryFilter:CodeWhispererTelemetryTest.kt$CodeWhispererTelemetryTest$filter { it.content().isEmpty() }</ID>
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$infoProvider.evaluate(tempFile.absolutePath).blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathPromise.blockingGet(0)!!</ID>
     <ID>UnsafeCallOnNullableType:FileInfoCacheTest.kt$FileInfoCacheTest$pathTempFile1Promise.blockingGet(0)!!</ID>

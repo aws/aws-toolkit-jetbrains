@@ -201,7 +201,7 @@ class WrappingCellRenderer(
         }
 
         textArea.lineWrap = (wrapOnSelection && isSelected) || (wrapOnToggle && wrap)
-        val text = (value as? String) ?: ""
+        val text = (value as? String).orEmpty()
         textArea.text = if (truncateAfterChars != null) {
             text.take(truncateAfterChars)
         } else {
