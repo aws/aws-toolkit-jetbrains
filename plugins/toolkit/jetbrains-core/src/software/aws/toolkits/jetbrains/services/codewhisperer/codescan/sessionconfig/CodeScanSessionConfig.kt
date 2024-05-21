@@ -44,7 +44,7 @@ class CodeScanSessionConfig(
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
         private set
-//    private var fileSizeOfPayload: Long
+
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
