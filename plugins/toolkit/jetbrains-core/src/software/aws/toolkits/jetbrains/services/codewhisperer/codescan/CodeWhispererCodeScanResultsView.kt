@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
@@ -27,7 +26,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import java.net.URI
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import javax.swing.BorderFactory
@@ -122,7 +120,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     fun updateAndDisplayScanResults(
         scanTreeModel: CodeWhispererCodeScanTreeModel,
         scannedFiles: List<VirtualFile>,
-        isProjectTruncated: Boolean,
         scope: CodeWhispererConstants.CodeAnalysisScope
     ) {
         codeScanTree.apply {
@@ -131,13 +128,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
         }
 
         this.scannedFiles = scannedFiles
-
-        if (isProjectTruncated) {
-            learnMoreLabelLink.addActionListener {
-                // TODO: Change this URL to point to updated security scan documentation
-                BrowserUtil.browse(URI("https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"))
-            }
-        }
 
         resultsPanel.apply {
             if (components.contains(progressIndicator)) remove(progressIndicator)
@@ -149,7 +139,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
         }
 
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            changeInfoLabelToDisplayScanCompleted(scannedFiles.size, isProjectTruncated)
+            changeInfoLabelToDisplayScanCompleted(scannedFiles.size)
         }
     }
 
@@ -242,7 +232,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
         }
     }
 
-    private fun changeInfoLabelToDisplayScanCompleted(numScannedFiles: Int, isProjectTruncated: Boolean) {
+    private fun changeInfoLabelToDisplayScanCompleted(numScannedFiles: Int) {
         completeInfoLabel.isVisible = true
         infoLabelPrefix.icon = AllIcons.Actions.Commit
         infoLabelPrefix.text = message(
@@ -250,7 +240,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             numScannedFiles,
             (codeScanTree.model as CodeWhispererCodeScanTreeModel).getTotalIssuesCount(),
             project.name,
-            if (isProjectTruncated) 1 else 0,
             INACTIVE_TEXT_COLOR,
             DateTimeFormatter.ISO_INSTANT.format(Instant.now())
         )
@@ -258,12 +247,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
         infoLabelPrefix.isVisible = true
         scannedFilesLabelLink.text = message("codewhisperer.codescan.view_scanned_files", numScannedFiles)
         scannedFilesLabelLink.isVisible = true
-        if (isProjectTruncated) {
-            learnMoreLabelLink.apply {
-                text = message("aws.settings.learn_more")
-                isVisible = true
-            }
-        }
     }
 
     private fun createToolbar(): ActionToolbar {

@@ -98,7 +98,6 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
         }
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
 
         assertThat(payload.context.totalFiles).isEqualTo(3)
 
