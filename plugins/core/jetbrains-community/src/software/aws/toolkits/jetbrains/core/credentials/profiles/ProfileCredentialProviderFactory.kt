@@ -41,7 +41,6 @@ import software.aws.toolkits.jetbrains.core.credentials.InteractiveCredential
 import software.aws.toolkits.jetbrains.core.credentials.MfaRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.PostValidateInteractiveCredential
 import software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction
-import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
@@ -78,11 +77,13 @@ private class ProfileCredentialsIdentifierMfa(profileName: String, defaultRegion
 private class ProfileCredentialsIdentifierLegacySso(
     profileName: String,
     defaultRegionId: String?,
-    override val ssoCache: SsoCache,
-    override val ssoUrl: String,
     credentialType: CredentialType?
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
-    SsoRequiredInteractiveCredentials
+    PostValidateInteractiveCredential {
+    override fun handleValidationException(e: Exception): ConnectionState.RequiresUserAction? {
+        TODO("Not yet implemented")
+    }
+}
 
 class ProfileCredentialsIdentifierSso @TestOnly constructor(
     profileName: String,
@@ -408,8 +409,6 @@ class ProfileCredentialProviderFactory(private val ssoCache: SsoCache = diskCach
             this.requiresLegacySso(profiles) -> ProfileCredentialsIdentifierLegacySso(
                 name,
                 defaultRegion,
-                ssoCache,
-                this.traverseCredentialChain(profiles).map { it.property(ProfileProperty.SSO_START_URL) }.first { it.isPresent }.get(),
                 requestedProfileType
             )
             this.requiresSso() -> ProfileCredentialsIdentifierSso(

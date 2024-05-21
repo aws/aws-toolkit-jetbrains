@@ -53,6 +53,9 @@ class SsoAccessTokenProvider(
 ) : SdkTokenProvider {
     init {
         check(scopes.isNotEmpty()) { "Scopes should not be empty" }
+        // identity does not want us to use the scope-less path
+        cache.invalidateClientRegistration(ssoRegion)
+        cache.invalidateAccessToken(ssoUrl)
     }
 
     private val _authorization = AtomicReference<PendingAuthorization?>()
@@ -325,23 +328,14 @@ class SsoAccessTokenProvider(
     }
 
     fun invalidate() {
-        if (scopes.isEmpty()) {
-            cache.invalidateAccessToken(ssoUrl)
-        } else {
-            cache.invalidateAccessToken(dagAccessTokenCacheKey)
-            cache.invalidateAccessToken(pkceAccessTokenCacheKey)
-        }
+        cache.invalidateAccessToken(dagAccessTokenCacheKey)
+        cache.invalidateAccessToken(pkceAccessTokenCacheKey)
     }
 
-    private fun loadDagClientRegistration(): ClientRegistration? = if (scopes.isEmpty()) {
-        cache.loadClientRegistration(ssoRegion)?.let {
-            return it
-        }
-    } else {
+    private fun loadDagClientRegistration(): ClientRegistration? =
         cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
             return it
         }
-    }
 
     private fun loadPkceClientRegistration(): PKCEClientRegistration? =
         cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
@@ -351,11 +345,7 @@ class SsoAccessTokenProvider(
     private fun saveClientRegistration(registration: ClientRegistration) {
         when (registration) {
             is DeviceAuthorizationClientRegistration -> {
-                if (scopes.isEmpty()) {
-                    cache.saveClientRegistration(ssoRegion, registration)
-                } else {
-                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
-                }
+                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
             }
 
             is PKCEClientRegistration -> {
@@ -365,19 +355,11 @@ class SsoAccessTokenProvider(
     }
 
     private fun invalidateClientRegistration() {
-        if (scopes.isEmpty()) {
-            cache.invalidateClientRegistration(ssoRegion)
-        } else {
-            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
-            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
-        }
+        cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+        cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
     }
 
-    internal fun loadAccessToken(): AccessToken? = if (scopes.isEmpty()) {
-        cache.loadAccessToken(ssoUrl)?.let {
-            return it
-        }
-    } else {
+    internal fun loadAccessToken(): AccessToken? {
         // load DAG if exists, otherwise PKCE
         cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
             return it
@@ -390,17 +372,13 @@ class SsoAccessTokenProvider(
             }
         }
 
-        null
+        return null
     }
 
     private fun saveAccessToken(token: AccessToken) {
         when (token) {
             is DeviceAuthorizationGrantToken -> {
-                if (scopes.isEmpty()) {
-                    cache.saveAccessToken(ssoUrl, token)
-                } else {
-                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
-                }
+                cache.saveAccessToken(dagAccessTokenCacheKey, token)
             }
 
             is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)

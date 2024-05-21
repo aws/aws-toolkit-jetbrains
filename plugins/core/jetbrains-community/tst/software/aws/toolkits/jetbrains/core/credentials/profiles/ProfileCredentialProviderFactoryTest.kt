@@ -22,6 +22,7 @@ import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -58,6 +59,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcess
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCache
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
@@ -924,8 +926,8 @@ class ProfileCredentialProviderFactoryTest {
         )
 
         val ssoCache = mock<SsoCache> {
-            on { loadAccessToken(("ValidUrl")) }.thenReturn(mock<DeviceAuthorizationGrantToken>())
-            on { loadAccessToken(("ExpiredUrl")) }.thenReturn(null)
+            on { loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == "ValidUrl" }) }.thenReturn(mock<DeviceAuthorizationGrantToken>())
+            on { loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == "ExpiredUrl" }) }.thenReturn(null)
         }
 
         createProviderFactory(ssoCache)
