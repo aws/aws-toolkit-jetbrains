@@ -21,7 +21,10 @@ dependencies {
     detektPlugins(project(":detekt-rules"))
 }
 
-private val detektFiles = fileTree(projectDir).asFileTree.matching { exclude("**/build") }
+private val detektFiles = fileTree(projectDir).asFileTree.matching {
+    include("**/*.kt", "**/*.kts")
+    exclude("**/build/**")
+}
 
 detekt {
     val rulesProject = project(":detekt-rules").projectDir
