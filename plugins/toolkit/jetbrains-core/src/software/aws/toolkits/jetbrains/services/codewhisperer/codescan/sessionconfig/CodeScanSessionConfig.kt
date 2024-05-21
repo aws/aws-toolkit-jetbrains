@@ -9,11 +9,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VFileProperty
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -35,7 +31,6 @@ import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Duration
 import java.time.Instant
 import java.util.Stack
 import kotlin.io.path.relativeTo
@@ -101,7 +96,7 @@ class CodeScanSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) }, scope)
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -134,33 +129,12 @@ class CodeScanSessionConfig(
         return bufferedReader.useLines { lines -> lines.count() }
     }
 
-    suspend fun getTotalProjectSizeInBytes(): Long {
-        var totalSize = 0L
-        try {
-            withTimeout(Duration.ofSeconds(TELEMETRY_TIMEOUT_IN_SECONDS)) {
-                if (scope == CodeAnalysisScope.FILE) {
-                    totalSize = selectedFile?.length ?: 0L
-                } else {
-                    val changeListManager = ChangeListManager.getInstance(project)
-                    VfsUtil.collectChildrenRecursively(projectRoot).filter {
-                        !it.isDirectory && !it.`is`((VFileProperty.SYMLINK)) && (
-                            !changeListManager.isIgnoredFile(it)
-                            )
-                    }.fold(0L) { acc, next ->
-                        totalSize = acc + next.length
-                        totalSize
-                    }
-                }
-            }
-        } catch (e: TimeoutCancellationException) {
-            // Do nothing
-        }
-        return totalSize
-    }
-
-    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>, scope: CodeAnalysisScope): File = createTemporaryZipFile {
         files.forEach { file ->
-            val relativePath = file.relativeTo(projectRoot.toNioPath())
+            val relativePath = when (scope) {
+                CodeAnalysisScope.PROJECT -> file.relativeTo(projectRoot.toNioPath())
+                else -> file
+            }
             LOG.debug { "Selected file for truncation: $file" }
             it.putNextEntry(relativePath.toString(), file)
         }
@@ -235,7 +209,6 @@ class CodeScanSessionConfig(
 
     companion object {
         private val LOG = getLogger<CodeScanSessionConfig>()
-        private const val TELEMETRY_TIMEOUT_IN_SECONDS: Long = 10
         fun create(file: VirtualFile?, project: Project, scope: CodeAnalysisScope): CodeScanSessionConfig = CodeScanSessionConfig(file, project, scope)
     }
 }
