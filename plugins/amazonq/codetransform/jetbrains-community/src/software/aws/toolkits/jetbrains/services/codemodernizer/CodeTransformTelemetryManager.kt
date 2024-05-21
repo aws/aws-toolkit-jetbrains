@@ -89,7 +89,6 @@ class CodeTransformTelemetryManager(private val project: Project) {
         codeTransformProjectId = getProjectHash(customerSelection),
     )
 
-
     fun jobIsCancelledByUser(srcComponent: CodeTransformCancelSrcComponents) = CodetransformTelemetry.jobIsCancelledByUser(
         codeTransformCancelSrcComponents = srcComponent,
         codeTransformSessionId = sessionId
