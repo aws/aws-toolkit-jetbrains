@@ -106,10 +106,13 @@ class CodeWhispererService {
         }
 
         if (isQExpired(project)) {
-            ApplicationManager.getApplication().executeOnPooledThread {
+            val shouldReauth = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
                 promptReAuth(project)
+            }.get()
+
+            if (shouldReauth) {
+                return
             }
-            return
         }
 
         latencyContext.credentialFetchingEnd = System.nanoTime()
