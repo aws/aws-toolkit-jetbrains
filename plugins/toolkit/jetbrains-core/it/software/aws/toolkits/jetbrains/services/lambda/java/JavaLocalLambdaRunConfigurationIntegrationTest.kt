@@ -115,30 +115,27 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     @Test
     fun samIsExecutedWithFileInput() {
-        runInEdtAndWait {
-            val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
-                runtime = runtime.toSdkRuntime(),
-                input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
-                inputIsFile = true,
-                credentialsProviderId = mockId
-            )
-            assertThat(runConfiguration).isNotNull
+        val runConfiguration = createHandlerBasedRunConfiguration(
+            project = projectRule.project,
+            runtime = runtime.toSdkRuntime(),
+            input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
+            inputIsFile = true,
+            credentialsProviderId = mockId
+        )
+        assertThat(runConfiguration).isNotNull
 
-            val executeLambda = executeRunConfigurationAndWait(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
-            assertThat(executeLambda.exitCode).isEqualTo(0)
-            assertThat(executeLambda.stdout).contains("HELLO WORLD")
-        }
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(executeLambda.stdout).contains("HELLO WORLD")
     }
 
     @Test
     fun samIsExecutedWhenRunWithATemplateServerless() {
-        runInEdtAndWait {
-            val templateFile = projectRule.fixture.addFileToModule(
-                projectRule.module,
-                "template.yaml",
-                """
+        val templateFile = projectRule.fixture.addFileToModule(
+            projectRule.module,
+            "template.yaml",
+            """
             Resources:
               SomeFunction:
                 Type: AWS::Serverless::Function
@@ -147,24 +144,23 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
                   CodeUri: .
                   Runtime: $runtime
                   Timeout: 900
-                """.trimIndent()
-            )
+            """.trimIndent()
+        )
 
-            val runConfiguration = createTemplateRunConfiguration(
-                project = projectRule.project,
-                templateFile = templateFile.containingFile.virtualFile.path,
-                logicalId = "SomeFunction",
-                input = "\"Hello World\"",
-                credentialsProviderId = mockId
-            )
+        val runConfiguration = createTemplateRunConfiguration(
+            project = projectRule.project,
+            templateFile = templateFile.containingFile.virtualFile.path,
+            logicalId = "SomeFunction",
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId
+        )
 
-            assertThat(runConfiguration).isNotNull
+        assertThat(runConfiguration).isNotNull
 
-            val executeLambda = executeRunConfigurationAndWait(runConfiguration)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration)
 
-            assertThat(executeLambda.exitCode).isEqualTo(0)
-            assertThat(executeLambda.stdout).contains("HELLO WORLD")
-        }
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(executeLambda.stdout).contains("HELLO WORLD")
     }
 
     @Test
@@ -202,26 +198,24 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     @Test
     fun samIsExecutedWithDebugger() {
-        runInEdtAndWait {
-            projectRule.addBreakpoint()
+        projectRule.addBreakpoint()
 
-            val runConfiguration = createHandlerBasedRunConfiguration(
-                project = projectRule.project,
-                runtime = runtime.toSdkRuntime(),
-                input = "\"Hello World\"",
-                credentialsProviderId = mockId
-            )
-            assertThat(runConfiguration).isNotNull
+        val runConfiguration = createHandlerBasedRunConfiguration(
+            project = projectRule.project,
+            runtime = runtime.toSdkRuntime(),
+            input = "\"Hello World\"",
+            credentialsProviderId = mockId
+        )
+        assertThat(runConfiguration).isNotNull
 
-            val debuggerIsHit = checkBreakPointHit(projectRule.project)
+        val debuggerIsHit = checkBreakPointHit(projectRule.project)
 
-            val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
+        val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
-            assertThat(executeLambda.exitCode).isEqualTo(0)
-            assertThat(executeLambda.stdout).contains("HELLO WORLD")
+        assertThat(executeLambda.exitCode).isEqualTo(0)
+        assertThat(executeLambda.stdout).contains("HELLO WORLD")
 
-            assertThat(debuggerIsHit.get()).isTrue()
-        }
+        assertThat(debuggerIsHit.get()).isTrue()
     }
 
     @Test
