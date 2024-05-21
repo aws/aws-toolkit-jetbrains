@@ -40,32 +40,13 @@ sealed interface PendingAuthorization {
     data class PKCEAuthorization(val future: CompletableFuture<*>, override val progressIndicator: ProgressIndicator) : PendingAuthorization
 }
 
-/**
- * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
- */
-class SsoAccessTokenProvider(
-    private val ssoUrl: String,
-    private val ssoRegion: String,
-    private val cache: SsoCache,
-    private val client: SsoOidcClient,
-    private val scopes: List<String> = emptyList(),
-    private val clock: Clock = Clock.systemUTC()
-) : SdkTokenProvider {
-    init {
-        check(scopes.isNotEmpty()) { "Scopes should not be empty" }
-        // identity does not want us to use the scope-less path
-        cache.invalidateClientRegistration(ssoRegion)
-        cache.invalidateAccessToken(ssoUrl)
-    }
+abstract class SsoAccessTokenCacheAccessor {
+    protected abstract val cache: SsoCache
+    protected abstract val ssoUrl: String
+    protected abstract val ssoRegion: String
+    protected abstract val scopes: List<String>
 
-    private val _authorization = AtomicReference<PendingAuthorization?>()
-    val authorization: PendingAuthorization?
-        get() = _authorization.get()
-
-    private val isNewAuthPkce: Boolean
-        get() = !Registry.`is`("aws.dev.useDAG", false)
-
-    private val dagClientRegistrationCacheKey by lazy {
+    protected val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
@@ -73,7 +54,7 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val pkceClientRegistrationCacheKey by lazy {
+    protected val pkceClientRegistrationCacheKey by lazy {
         PKCEClientRegistrationCacheKey(
             issuerUrl = ssoUrl,
             region = ssoRegion,
@@ -84,7 +65,7 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val dagAccessTokenCacheKey by lazy {
+    protected val dagAccessTokenCacheKey by lazy {
         DeviceGrantAccessTokenCacheKey(
             connectionId = ssoRegion,
             startUrl = ssoUrl,
@@ -92,13 +73,80 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val pkceAccessTokenCacheKey by lazy {
+    protected val pkceAccessTokenCacheKey by lazy {
         PKCEAccessTokenCacheKey(
             issuerUrl = ssoUrl,
             region = ssoRegion,
             scopes = scopes
         )
     }
+
+    protected val isNewAuthPkce: Boolean
+        get() = !Registry.`is`("aws.dev.useDAG", false)
+
+    internal fun loadAccessToken(): AccessToken? {
+        // load DAG if exists, otherwise PKCE
+        cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
+            return it
+        }
+
+        if (isNewAuthPkce) {
+            // don't check existence of PKCE if we're not planning on starting flows with PKCE
+            cache.loadAccessToken(pkceAccessTokenCacheKey)?.let {
+                return it
+            }
+        }
+
+        return null
+    }
+
+    fun invalidate() {
+        cache.invalidateAccessToken(dagAccessTokenCacheKey)
+        cache.invalidateAccessToken(pkceAccessTokenCacheKey)
+    }
+
+    internal companion object {
+        const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
+        const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+        const val REFRESH_GRANT_TYPE = "refresh_token"
+        val PKCE_GRANT_TYPES = listOf("authorization_code", "refresh_token")
+        val PKCE_REDIRECT_URIS = listOf("http://127.0.0.1/oauth/callback")
+    }
+}
+
+/**
+ * Handles cases where we need to check for the existance of a token, but do not want interactivity
+ */
+class LazyAccessTokenProvider(
+    override val cache: SsoCache,
+    override val ssoUrl: String,
+    override val ssoRegion: String,
+    override val scopes: List<String>,
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+    override fun resolveToken() = loadAccessToken()
+}
+
+/**
+ * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
+ */
+class SsoAccessTokenProvider(
+    override val ssoUrl: String,
+    override val ssoRegion: String,
+    override val cache: SsoCache,
+    private val client: SsoOidcClient,
+    override val scopes: List<String> = emptyList(),
+    private val clock: Clock = Clock.systemUTC()
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+    init {
+        check(scopes.isNotEmpty()) { "Scopes should not be empty" }
+        // identity does not want us to use the scope-less path
+        cache.invalidateClientRegistration(ssoRegion)
+        cache.invalidateAccessToken(ssoUrl)
+    }
+
+    private val _authorization = AtomicReference<PendingAuthorization?>()
+    val authorization: PendingAuthorization?
+        get() = _authorization.get()
 
     override fun resolveToken() = accessToken()
 
@@ -327,11 +375,6 @@ class SsoAccessTokenProvider(
         return token
     }
 
-    fun invalidate() {
-        cache.invalidateAccessToken(dagAccessTokenCacheKey)
-        cache.invalidateAccessToken(pkceAccessTokenCacheKey)
-    }
-
     private fun loadDagClientRegistration(): ClientRegistration? =
         cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
             return it
@@ -357,22 +400,6 @@ class SsoAccessTokenProvider(
     private fun invalidateClientRegistration() {
         cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
         cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
-    }
-
-    internal fun loadAccessToken(): AccessToken? {
-        // load DAG if exists, otherwise PKCE
-        cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
-            return it
-        }
-
-        if (isNewAuthPkce) {
-            // don't check existence of PKCE if we're not planning on starting flows with PKCE
-            cache.loadAccessToken(pkceAccessTokenCacheKey)?.let {
-                return it
-            }
-        }
-
-        return null
     }
 
     private fun saveAccessToken(token: AccessToken) {
@@ -412,12 +439,6 @@ class SsoAccessTokenProvider(
     }
 
     private companion object {
-        const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
-        const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
-        const val REFRESH_GRANT_TYPE = "refresh_token"
-        val PKCE_GRANT_TYPES = listOf("authorization_code", "refresh_token")
-        val PKCE_REDIRECT_URIS = listOf("http://127.0.0.1/oauth/callback")
-
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
