@@ -7,7 +7,7 @@ import base.backendStartTimeout
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
-import org.testng.ITestResult
+import org.testng.SkipException
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
@@ -21,11 +21,10 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     }
 
     @BeforeMethod
-    fun `skip test on windows 2023_2`(result: ITestResult) {
+    fun `skip test on windows 2023_2`() {
         val ideVersion = System.getProperty("org.gradle.project.ideProfileName")
         if (System.getProperty("os.name").contains("Windows") && ideVersion == "2023.2") {
-            result.status = ITestResult.SKIP
-            result.throwable = Throwable("Test skipped because it flakes on Windows 2023.2")
+            throw SkipException("Test skipped because it flakes on Windows 2023.2")
         }
     }
 
