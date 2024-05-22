@@ -4,13 +4,24 @@
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.json.JsonLanguage
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.verify
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 
 class TextUtilsTest {
     @Rule
@@ -93,5 +104,85 @@ class TextUtilsTest {
 
         val actual = convertMarkdownToHTML(input)
         assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun extractChangesWithSingleLineDeletion() {
+        val suggestedFixes = listOf(SuggestedFix(description = "MockDescription", code = "-oldLine\n+newLine"))
+        val issue = mock(CodeWhispererCodeScanIssue::class.java)
+        `when`(issue.suggestedFixes).thenReturn(suggestedFixes)
+
+        val (linesToDelete, linesToInsert) = extractChanges(issue)
+
+        assertThat(linesToDelete).isEqualTo(1)
+        assertThat(linesToInsert).isEqualTo(listOf("newLine"))
+    }
+
+    @Test
+    fun extractChangesWithMultipleLineDeletionAndInsertion() {
+        val suggestedFixes = listOf(SuggestedFix(description = "MockDescription", code = "-oldLine1\n-oldLine2\n+newLine1\n+newLine2"))
+        val issue = mock(CodeWhispererCodeScanIssue::class.java)
+        `when`(issue.suggestedFixes).thenReturn(suggestedFixes)
+
+        val (linesToDelete, linesToInsert) = extractChanges(issue)
+
+        assertThat(linesToDelete).isEqualTo(2)
+        assertThat(linesToInsert).isEqualTo(listOf("newLine1", "newLine2"))
+    }
+
+    @Test
+    fun extractChangesWithEmptySuggestedFixes() {
+        val emptyStringList: List<String> = emptyList()
+        val issue = mock(CodeWhispererCodeScanIssue::class.java)
+        `when`(issue.suggestedFixes).thenReturn(emptyList())
+
+        val (linesToDelete, linesToInsert) = extractChanges(issue)
+
+        assertThat(linesToDelete).isEqualTo(0)
+        assertThat(linesToInsert).isEqualTo(emptyStringList)
+    }
+
+    @Test
+    fun updateEditorDocumentWithSingleLineDeletionAndInsertion() {
+        val document = mock(Document::class.java)
+        val project = mock(Project::class.java)
+        val issue = mock(CodeWhispererCodeScanIssue::class.java)
+        val suggestedFixes = listOf(SuggestedFix(description = "MockDescription", code = "-oldLine\n+newLine"))
+        `when`(issue.startLine).thenReturn(1)
+        `when`(issue.suggestedFixes).thenReturn(suggestedFixes)
+        `when`(document.getLineStartOffset(0)).thenReturn(0)
+        `when`(document.getLineEndOffset(0)).thenReturn(10)
+
+        val psiDocumentManager = mock(PsiDocumentManager::class.java)
+        doNothing().`when`(psiDocumentManager).commitDocument(document)
+        Mockito.`when`(PsiDocumentManager.getInstance(project)).thenReturn(psiDocumentManager)
+
+        runInEdtAndWait {
+            updateEditorDocument(document, issue, project)
+        }
+
+        verify(document).replaceString(0, 10, "newLine")
+    }
+
+    @Test
+    fun updateEditorDocumentWithMultipleLineDeletionAndInsertion() {
+        val document = mock(Document::class.java)
+        val project = mock(Project::class.java)
+        val issue = mock(CodeWhispererCodeScanIssue::class.java)
+        val suggestedFixes = listOf(SuggestedFix(description = "MockDescription", code = "-oldLine1\n-oldLine2\n+newLine1\n+newLine2"))
+        `when`(issue.startLine).thenReturn(1)
+        `when`(issue.suggestedFixes).thenReturn(suggestedFixes)
+        `when`(document.getLineStartOffset(0)).thenReturn(20)
+        `when`(document.getLineEndOffset(1)).thenReturn(40)
+
+        val psiDocumentManager = mock(PsiDocumentManager::class.java)
+        doNothing().`when`(psiDocumentManager).commitDocument(document)
+        Mockito.`when`(PsiDocumentManager.getInstance(project)).thenReturn(psiDocumentManager)
+
+        runInEdtAndWait {
+            updateEditorDocument(document, issue, project)
+        }
+
+        verify(document).replaceString(20, 40, "newLine1\nnewLine2")
     }
 }

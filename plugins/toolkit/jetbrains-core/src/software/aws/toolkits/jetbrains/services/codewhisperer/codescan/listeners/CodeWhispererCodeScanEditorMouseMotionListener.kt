@@ -20,7 +20,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollPane
@@ -43,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.updateEditorDocument
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.awt.Dimension
@@ -391,24 +391,12 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         private val LOG = getLogger<CodeWhispererCodeScanEditorMouseMotionListener>()
     }
 
-    private fun extractChanges(issue: CodeWhispererCodeScanIssue): Pair<Int, List<String>> {
-        val codeLines = issue.suggestedFixes[0].code.split("\n")
-        val linesToDelete = codeLines.count { it.startsWith("-") }
-        val linesToInsert = codeLines.filter { it.startsWith("+") }.map { it.removePrefix("+") }
-        return Pair(linesToDelete, linesToInsert)
-    }
-
     private fun handleApplyFix(issue: CodeWhispererCodeScanIssue) {
         try {
             WriteCommandAction.runWriteCommandAction(issue.project) {
                 val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
-
-                val (linesToDelete, linesToInsert) = extractChanges(issue)
                 if (document != null) {
-                    val startLineOffset = document.getLineStartOffset(issue.startLine - 1)
-                    val endLineOffset = document.getLineEndOffset(issue.startLine + linesToDelete - 2)
-                    document.replaceString(startLineOffset, endLineOffset, linesToInsert.joinToString("\n"))
-                    PsiDocumentManager.getInstance(project).commitDocument(document)
+                    updateEditorDocument(document, issue, project)
                 }
                 FileDocumentManager.getInstance().saveDocument(document)
 
