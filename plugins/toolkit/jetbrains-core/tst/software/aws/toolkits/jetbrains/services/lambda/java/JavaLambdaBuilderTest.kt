@@ -60,6 +60,8 @@ class JavaLambdaBuilderTest {
         assertThat(baseDir.toAbsolutePath()).isEqualTo(Paths.get(moduleRoot, SamCommon.SAM_BUILD_DIR, "build"))
     }
 
+    // Using runBlocking instead runTest because there is issue with runTest and the fix is in a later version of coroutines-test
+    // [#3800] (https://github.com/Kotlin/kotlinx.coroutines/issues/3800)
     @Test
     fun mavenRootPomHandlerBaseDirIsCorrect(): Unit = runBlocking {
         val psiClass = projectRule.setUpMavenProject()
