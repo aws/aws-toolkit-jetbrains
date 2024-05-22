@@ -323,14 +323,26 @@ class CodeWhispererCodeScanManager(val project: Project) {
         return errorMessage
     }
 
+    private fun handleCodeScanException(e: CodeWhispererCodeScanException): String? {
+        val message = e.message
+        return when {
+            message == message("codewhisperer.codescan.invalid_source_zip_telemetry") -> {
+                message("codewhisperer.codescan.run_scan_error")
+            }
+            message.isNullOrBlank() -> null
+            else -> message
+        }
+    }
+
+    private fun handleCodeScanServerException(e: CodeWhispererCodeScanServerException): String? =
+        e.message?.takeIf { it.startsWith("UploadArtifactToS3Exception:") }
+            ?.let { message("codewhisperer.codescan.upload_to_s3_failed") }
+
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
-            is CodeWhispererCodeScanException -> when (e.message) {
-                message("codewhisperer.codescan.invalid_source_zip_telemetry") -> message("codewhisperer.codescan.run_scan_error")
-                else -> e.message
-            }
-            is UploadCodeScanException -> message("codewhisperer.codescan.upload_to_s3_failed")
+            is CodeWhispererCodeScanException -> handleCodeScanException(e)
+            is CodeWhispererCodeScanServerException -> handleCodeScanServerException(e)
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> null
@@ -372,7 +384,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 message("codewhisperer.codescan.file_too_large") -> message("codewhisperer.codescan.file_too_large_telemetry")
                 else -> e.message
             }
-            is UploadCodeScanException -> e.message
+            is CodeWhispererCodeScanServerException -> e.message
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> e.message
