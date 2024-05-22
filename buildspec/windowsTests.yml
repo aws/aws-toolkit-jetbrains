@@ -49,10 +49,12 @@ phases:
       - |
         $script:TEST_ARTIFACTS=Join-Path $env:TEMP testArtifacts
         $script:TEST_REPORTS=Join-Path $script:TEST_ARTIFACTS test-reports
+        New-Item -ItemType dir -Path $script:TEST_ARTIFACTS
+        New-Item -ItemType dir -Path $script:TEST_REPORTS
 
         function copyArtifacts($filter, $destdir) {
           Get-ChildItem -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.FullName -Like "$filter" } | ForEach-Object {
-              Copy-Item -Path $_.FullName -Destination "$destdir/$(Resolve-Path -relative $_.FullName)" -Recurse -Container
+              Copy-Item -Path $_.FullName -Destination "$destdir/$(Resolve-Path -Relative $_.FullName)" -Recurse -Container
           }
         }
 
