@@ -66,6 +66,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.ge
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.util.UUID
 
 class FeatureDevController(
@@ -220,7 +221,8 @@ class FeatureDevController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    phase = session.sessionState.phase
+                    phase = session.sessionState.phase,
+                    conversationId = session.conversationIdUnsafe
                 )
             }
         }
@@ -268,7 +270,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe
             )
         }
     }
@@ -284,7 +287,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session.sessionState.phase
+                phase = session.sessionState.phase,
+                conversationId = session.conversationIdUnsafe
             )
         }
     }
@@ -353,7 +357,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.insert_code_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe
             )
         }
     }
@@ -434,7 +439,8 @@ class FeatureDevController(
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session)
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
                 )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
@@ -450,7 +456,12 @@ class FeatureDevController(
                 messenger.sendMonthlyLimitError(tabId = tabId)
                 messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             } else if (err is PlanIterationLimitError) {
-                messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
                     followUp = listOf(
@@ -468,7 +479,12 @@ class FeatureDevController(
                 )
                 messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
             } else if (err is CodeIterationLimitError) {
-                messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
                     followUp = listOf(
@@ -486,7 +502,8 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = msg ?: message("amazonqFeatureDev.exception.request_failed"),
                     retries = retriesRemaining(session),
-                    phase = session?.sessionState?.phase
+                    phase = session?.sessionState?.phase,
+                    conversationId = session?.conversationIdUnsafe
                 )
             }
 
@@ -501,7 +518,7 @@ class FeatureDevController(
     private suspend fun onApproachGeneration(session: Session, message: String, tabId: String) {
         session.preloader(message, messenger)
 
-        logger.info { "Q - Dev chat conversation id: ${session.conversationId}" }
+        logger.info { "$FEATURE_NAME conversation id: ${session.conversationId}" }
 
         messenger.sendAnswer(
             tabId = tabId,
@@ -558,7 +575,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe,
             )
         } finally {
             // Finish processing the event
@@ -596,8 +614,13 @@ class FeatureDevController(
             status = FollowUpStatusType.Info,
         )
 
+        var result: Result = Result.Failed
+        var reason: String? = null
+
         withContext(EDT) {
             val selectedFolder = FileChooser.chooseFile(fileChooserDescriptor, context.project, uri)
+
+            // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
 
@@ -605,9 +628,12 @@ class FeatureDevController(
                     tabId = tabId,
                     followUp = listOf(modifyFolderFollowUp),
                 )
+
+                reason = "ClosedBeforeSelection"
                 return@withContext
             }
 
+            // The folder is not in the workspace
             if (selectedFolder.parent.path != uri.path) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
@@ -621,12 +647,15 @@ class FeatureDevController(
                     tabId = tabId,
                     followUp = listOf(modifyFolderFollowUp),
                 )
+
+                reason = "NotInWorkspaceFolder"
                 return@withContext
             }
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
             session.context.projectRoot = selectedFolder
+            result = Result.Succeeded
 
             messenger.sendAnswer(
                 tabId = tabId,
@@ -634,6 +663,13 @@ class FeatureDevController(
                 message = message("amazonqFeatureDev.follow_up.modified_source_folder", selectedFolder.path),
             )
         }
+
+        AmazonqTelemetry.modifySourceFolder(
+            amazonqConversationId = session.conversationId,
+            credentialStartUrl = getStartUrl(project = context.project),
+            result = result,
+            reason = reason
+        )
     }
 
     private fun sendFeedback() {
