@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
@@ -30,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -57,6 +59,7 @@ const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val READ_TIME_OUT_ERROR: String = "Read timed out"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -133,6 +136,7 @@ class CodeModernizerSession(
         LOG.info { "Starting Modernization Job" }
         val payload: File?
 
+        // Generate zip file
         try {
             if (isDisposed.get()) {
                 LOG.warn { "Disposed when about to create zip to upload" }
@@ -165,20 +169,14 @@ class CodeModernizerSession(
             }
         }
 
-        return try {
+        // Create upload url and upload zip
+        var uploadId = ""
+        try {
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            val uploadId = uploadPayload(payload)
-            if (shouldStop.get()) {
-                LOG.warn { "Job was cancelled by user before start job was called" }
-                return CodeModernizerStartJobResult.Cancelled
-            }
-            val startJobResponse = startJob(uploadId)
-            state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
-            state.currentJobStatus = TransformationStatus.STARTED
-            CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
+            uploadId = uploadPayload(payload)
         } catch (e: AlreadyDisposedException) {
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
@@ -187,18 +185,42 @@ class CodeModernizerSession(
                 // Cancelling during S3 upload will cause IOException of "not enough data written",
                 // so no need to show an IDE error for it
                 LOG.warn { "Job was cancelled by user before start job was called" }
-                CodeModernizerStartJobResult.Cancelled
+                return CodeModernizerStartJobResult.Cancelled
             } else {
                 state.putJobHistory(sessionContext, TransformationStatus.FAILED)
                 state.currentJobStatus = TransformationStatus.FAILED
-                CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
+                // In IntelliJ, IOException does not show the full failure, such as "Request has expired". Based on
+                // past observation, "Read time out" was often observed when there were issues with pre-signed url.
+                if (e.message.toString().contains(READ_TIME_OUT_ERROR)) {
+                    return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED)
+                } else {
+                    return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+                }
             }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
         } finally {
             deleteUploadArtifact(payload)
+        }
+
+        // Send upload completion message to chat (only if successful)
+        CodeTransformMessageListener.instance.onUploadResult()
+
+        return try {
+            if (shouldStop.get()) {
+                LOG.warn { "Job was cancelled by user before start job was called" }
+                return CodeModernizerStartJobResult.Cancelled
+            }
+            val startJobResponse = startJob(uploadId)
+            state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
+            state.currentJobStatus = TransformationStatus.STARTED
+            CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
+        } catch (e: Exception) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
         }
     }
 
@@ -342,7 +364,7 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading artifact to S3: ${e.message}"
+            val errorMessage = "Unexpected error when uploading artifact to S3: $e"
             LOG.error { errorMessage }
             // emit this metric here manually since we don't use callApi(), which emits its own metric
             telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
