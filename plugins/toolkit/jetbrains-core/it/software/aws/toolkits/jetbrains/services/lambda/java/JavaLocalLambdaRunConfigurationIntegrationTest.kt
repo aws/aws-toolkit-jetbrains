@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.lambda.java
 import com.intellij.compiler.CompilerTestUtil
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -115,7 +114,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     }
 
     @Test
-    fun samIsExecutedWithFileInput(): Unit = runBlocking {
+    fun samIsExecutedWithFileInput() {
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
@@ -132,7 +131,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     }
 
     @Test
-    fun samIsExecutedWhenRunWithATemplateServerless(): Unit = runBlocking {
+    fun samIsExecutedWhenRunWithATemplateServerless() {
         val templateFile = projectRule.fixture.addFileToModule(
             projectRule.module,
             "template.yaml",
@@ -198,7 +197,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     }
 
     @Test
-    fun samIsExecutedWithDebugger(): Unit = runBlocking {
+    fun samIsExecutedWithDebugger() {
         projectRule.addBreakpoint()
 
         val runConfiguration = createHandlerBasedRunConfiguration(

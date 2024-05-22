@@ -312,12 +312,6 @@ tasks.test {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
-//    if (System.getProperty("test") == "lambdaGutterMarkHighlightingTest") {
-//        exclude("**/LambdaGutterMarkHighlightingTest")
-//    }
-    if (project.hasProperty("excludeTests")) {
-        exclude("**/LambdaGutterMarkHighlightingTest")
-    }
 }
 
 tasks.integrationTest {
