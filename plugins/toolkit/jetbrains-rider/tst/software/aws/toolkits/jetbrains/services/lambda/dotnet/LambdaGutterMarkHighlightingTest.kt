@@ -7,20 +7,26 @@ import base.backendStartTimeout
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
+import org.testng.ITestResult
+import org.testng.annotations.BeforeMethod
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
 import java.time.Duration
 
-@DisabledOnOs(OS.WINDOWS)
-@DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2023.2", disabledReason = "Flakes on Windows 2023.2")
 class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
 
     companion object {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
+    }
+
+    @BeforeMethod
+    fun `skip test on windows 2023_2`(result: ITestResult) {
+        val ideVersion = System.getProperty("org.gradle.project.ideProfileName")
+        if (System.getProperty("os.name").contains("Windows") && ideVersion == "2023.2") {
+            result.status = ITestResult.SKIP
+            result.throwable = Throwable("Test skipped because it flakes on Windows 2023.2")
+        }
     }
 
     override val backendLoadedTimeout: Duration = backendStartTimeout
