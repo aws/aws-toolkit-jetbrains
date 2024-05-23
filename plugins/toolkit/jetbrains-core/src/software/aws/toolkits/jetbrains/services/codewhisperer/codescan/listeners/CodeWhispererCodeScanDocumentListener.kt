@@ -8,7 +8,6 @@ import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -38,9 +37,5 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
         if (editedTextRange.length > 0 && !CodeWhispererExplorerActionManager.getInstance().isMonthlyQuotaForCodeScansExceeded() && !isUserBuilderId(project)) {
             scanManager.createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         }
-    }
-
-    companion object {
-        private val LOG = getLogger<CodeWhispererCodeScanDocumentListener>()
     }
 }
