@@ -104,6 +104,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
+                    println("AwsToolkitExplorererFactory:: received message AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED : ${newState}")
                     settingsStateChanged(project, newState)
                 }
             }
@@ -165,6 +166,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
 
         LOG.debug { "settingsStateChanged: ${newState::class.simpleName}; isToolkitConnected=$isToolkitConnected" }
+        println("settingsStateChanged: ${newState::class.simpleName}; isToolkitConnected=$isToolkitConnected")
 
         if (!isToolkitConnected || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
@@ -181,10 +183,12 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 }
 
 fun showWebview(project: Project) {
+    println("showing Toolkit webview")
     AwsToolkitExplorerToolWindow.toolWindow(project).loadContent(ToolkitWebviewPanel.getInstance(project).component)
 }
 
 fun showExplorerTree(project: Project) {
+    println("showing AWS explorer tree")
     AwsToolkitExplorerToolWindow.toolWindow(project).loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
 }
 

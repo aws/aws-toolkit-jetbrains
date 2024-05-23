@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.vfs.VirtualFileManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
@@ -286,6 +287,13 @@ class DefaultConfigFilesFacade(
         path.tryFileOp(LOG) {
             touch(restrictToOwner = true)
             appendText(body)
+        }
+
+
+        // not sure why VirtualFileManager.getInstance().refreshAndFindFileByNioPath() not work as this
+        VirtualFileManager.getInstance().findFileByNioPath(path)?.let {
+            println("ConfigFilesFacade:: refreshing virtual file ${it.name}")
+            it.refresh(false, false)
         }
     }
 }
