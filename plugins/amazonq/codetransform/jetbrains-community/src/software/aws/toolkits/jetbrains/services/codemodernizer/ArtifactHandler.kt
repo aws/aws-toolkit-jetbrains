@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -43,7 +44,6 @@ import javax.net.ssl.SSLHandshakeException
 data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String, val errorMessage: String = "")
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
-const val SSL_HANDSHAKE_ERROR: String  = ""
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -164,7 +164,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         } catch (e: Exception) {
             if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
                 notifyUnableToDownload(
-                    DOWNLOAD_PROXY_WILDCARD_ERROR,
+                    DownloadFailureReason.PROXY_WILDCARD_ERROR,
+                )
+            } else if (e is SSLHandshakeException) {
+                notifyUnableToDownload(
+                    DownloadFailureReason.SSL_HANDSHAKE_ERROR,
                 )
             }
             return DownloadArtifactResult(null, "", e.message.orEmpty())
@@ -203,15 +207,15 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    private fun notifyUnableToDownload(error: String) {
+    private fun notifyUnableToDownload(error: DownloadFailureReason) {
         LOG.error { "Unable to download artifact: $error" }
-        if (error.equals(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
+        if (error == DownloadFailureReason.PROXY_WILDCARD_ERROR) {
             notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_wildcard.content", error),
                 project,
             )
-        } else if (error.equals(SSL_HANDSHAKE_ERROR)) {
+        } else if (error == DownloadFailureReason.SSL_HANDSHAKE_ERROR) {
             notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_ssl.content", error),
@@ -222,22 +226,16 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     fun notifyUnableToApplyPatch(patchPath: String, errorMessage: String) {
         LOG.error { "Unable to find patch for file: $patchPath" }
-        if (errorMessage.contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
-            notifyUnableToDownload(DOWNLOAD_PROXY_WILDCARD_ERROR)
-        } else if (errorMessage.contains(SSL_HANDSHAKE_ERROR)) {
-            notifyUnableToDownload(SSL_HANDSHAKE_ERROR)
-        } else {
-            notifyStickyWarn(
-                message("codemodernizer.notification.warn.view_diff_failed.title"),
-                message("codemodernizer.notification.warn.view_diff_failed.content", errorMessage),
-                project,
-                listOf(
-                    openTroubleshootingGuideNotificationAction(
-                        CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
-                    )
-                ),
-            )
-        }
+        notifyStickyWarn(
+            message("codemodernizer.notification.warn.view_diff_failed.title"),
+            message("codemodernizer.notification.warn.view_diff_failed.content", errorMessage),
+            project,
+            listOf(
+                openTroubleshootingGuideNotificationAction(
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
+                )
+            ),
+        )
     }
 
     fun notifyUnableToShowSummary() {

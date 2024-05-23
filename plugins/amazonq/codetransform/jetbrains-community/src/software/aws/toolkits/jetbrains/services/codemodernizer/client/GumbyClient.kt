@@ -48,7 +48,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.time.Instant
 
