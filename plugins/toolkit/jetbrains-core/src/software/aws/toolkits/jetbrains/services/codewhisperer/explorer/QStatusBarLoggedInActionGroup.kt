@@ -11,7 +11,7 @@ import com.intellij.openapi.actionSystem.Separator
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererConnectOnGithubAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererProvideFeedbackAction
@@ -67,7 +67,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
 
             add(Separator.create())
             add(CodeWhispererShowSettingsAction())
-            ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let { c ->
+            ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance())?.let { c ->
                 (c as? AwsBearerTokenConnection)?.let { connection ->
                     add(SsoLogoutAction(connection))
                 }

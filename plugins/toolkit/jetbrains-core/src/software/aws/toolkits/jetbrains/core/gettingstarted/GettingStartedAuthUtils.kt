@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
@@ -175,7 +174,7 @@ fun requestCredentialsForQ(
     connectionInitiatedFromQChatPanel: Boolean = false
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
-    val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+    val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (codeWhispererConnection is LegacyManagedBearerSsoConnection) {
         codeWhispererConnection.let {
             return tryOrNull {

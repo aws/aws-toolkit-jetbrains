@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.resources.message
 import java.awt.event.MouseEvent
@@ -22,7 +22,7 @@ class CustomizationNode(nodeProject: Project) : CodeWhispererActionNode(
     override fun update(presentation: PresentationData) {
         super.update(presentation)
 
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         val activeCustomization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
 
         if (connection != null) {

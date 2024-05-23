@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -29,7 +28,6 @@ enum class ActiveConnectionType {
 }
 
 enum class BearerTokenFeatureSet {
-    CODEWHISPERER,
     CODECATALYST,
     Q
 }
@@ -85,9 +83,6 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
     if (connections.isEmpty()) return ActiveConnection.NotConnected
 
     val activeConnection = when (source) {
-        BearerTokenFeatureSet.CODEWHISPERER -> ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
-            CodeWhispererConnection.getInstance()
-        )
         BearerTokenFeatureSet.CODECATALYST -> ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(
             CodeCatalystConnection.getInstance()
         )
@@ -125,8 +120,7 @@ fun checkIamConnectionValidity(project: Project): ActiveConnection {
 fun checkConnectionValidity(project: Project): ActiveConnection {
     val tokenFeatureSets = listOf(
         BearerTokenFeatureSet.CODECATALYST,
-        BearerTokenFeatureSet.Q,
-        BearerTokenFeatureSet.CODEWHISPERER
+        BearerTokenFeatureSet.Q
     )
     var result = checkIamConnectionValidity(project)
 

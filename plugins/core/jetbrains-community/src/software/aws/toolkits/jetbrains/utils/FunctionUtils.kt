@@ -7,10 +7,8 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -42,21 +40,13 @@ suspend fun <T> pollFor(func: () -> T): T? {
 fun isQConnected(project: Project): Boolean {
     val manager = ToolkitConnectionManager.getInstance(project)
     val qState = manager.connectionStateForFeature(QConnection.getInstance())
-    val cwState = manager.connectionStateForFeature(CodeWhispererConnection.getInstance())
-    LOG.debug {
-        "qConnectionState: $qState; cwConnectionState: $cwState"
-    }
-    return qState != BearerTokenAuthState.NOT_AUTHENTICATED && cwState != BearerTokenAuthState.NOT_AUTHENTICATED
+    return qState != BearerTokenAuthState.NOT_AUTHENTICATED
 }
 
 fun isQExpired(project: Project): Boolean {
     val manager = ToolkitConnectionManager.getInstance(project)
     val qState = manager.connectionStateForFeature(QConnection.getInstance())
-    val cwState = manager.connectionStateForFeature(CodeWhispererConnection.getInstance())
-    LOG.debug {
-        "qConnectionState: $qState; cwConnectionState: $cwState"
-    }
-    return qState == BearerTokenAuthState.NEEDS_REFRESH || cwState == BearerTokenAuthState.NEEDS_REFRESH
+    return qState == BearerTokenAuthState.NEEDS_REFRESH
 }
 
 fun AwsBearerTokenConnection.state(): BearerTokenAuthState =
