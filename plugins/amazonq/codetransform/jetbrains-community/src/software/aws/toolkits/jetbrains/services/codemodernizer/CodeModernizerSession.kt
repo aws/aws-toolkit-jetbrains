@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
+import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
@@ -47,6 +48,7 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.net.ConnectException
 import java.nio.file.Path
 import java.time.Instant
 import java.util.Base64
@@ -59,7 +61,6 @@ const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 1000000000 // 1GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
-const val READ_TIME_OUT_ERROR: String = "Read timed out"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -180,6 +181,22 @@ class CodeModernizerSession(
         } catch (e: AlreadyDisposedException) {
             LOG.warn { e.localizedMessage }
             return CodeModernizerStartJobResult.Disposed
+        } catch (e: ConnectException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
+        } catch (e: HttpRequests.HttpStatusException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return if (e.statusCode == 403) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED)
+            } else {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+            }
+        } catch (e: ConnectException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
         } catch (e: IOException) {
             if (shouldStop.get()) {
                 // Cancelling during S3 upload will cause IOException of "not enough data written",
@@ -189,18 +206,12 @@ class CodeModernizerSession(
             } else {
                 state.putJobHistory(sessionContext, TransformationStatus.FAILED)
                 state.currentJobStatus = TransformationStatus.FAILED
-                // In IntelliJ, IOException does not show the full failure, such as "Request has expired". Based on
-                // past observation, "Read time out" was often observed when there were issues with pre-signed url.
-                if (e.message.toString().contains(READ_TIME_OUT_ERROR)) {
-                    return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED)
-                } else {
-                    return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
-                }
+                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
             }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+            CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
         } finally {
             deleteUploadArtifact(payload)
         }

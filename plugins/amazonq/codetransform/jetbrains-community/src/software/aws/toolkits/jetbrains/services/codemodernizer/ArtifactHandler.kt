@@ -44,6 +44,7 @@ import javax.net.ssl.SSLHandshakeException
 data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String, val errorMessage: String = "")
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
+const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -166,7 +167,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 notifyUnableToDownload(
                     DownloadFailureReason.PROXY_WILDCARD_ERROR,
                 )
-            } else if (e is SSLHandshakeException) {
+            } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
                 notifyUnableToDownload(
                     DownloadFailureReason.SSL_HANDSHAKE_ERROR,
                 )
@@ -207,7 +208,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    private fun notifyUnableToDownload(error: DownloadFailureReason) {
+    fun notifyUnableToDownload(error: DownloadFailureReason) {
         LOG.error { "Unable to download artifact: $error" }
         if (error == DownloadFailureReason.PROXY_WILDCARD_ERROR) {
             notifyStickyWarn(

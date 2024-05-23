@@ -235,7 +235,9 @@ fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String 
         is UploadFailureReason.PRESIGNED_URL_EXPIRED -> {
             message("codemodernizer.chat.message.upload_failed_expiration")
         }
-        // Add more customer friendly error message based on failure scenarios here
+        is UploadFailureReason.CONNECTION_REFUSED -> {
+            message("codemodernizer.chat.message.upload_failed_connection_refused")
+        }
         else -> {
             message("codemodernizer.chat.message.upload_failed_other")
         }
