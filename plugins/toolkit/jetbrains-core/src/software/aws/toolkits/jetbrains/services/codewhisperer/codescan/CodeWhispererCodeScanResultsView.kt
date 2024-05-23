@@ -127,7 +127,9 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             repaint()
         }
 
-        this.scannedFiles = scannedFiles
+        if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+            this.scannedFiles = scannedFiles
+        }
 
         resultsPanel.apply {
             if (components.contains(progressIndicator)) remove(progressIndicator)
