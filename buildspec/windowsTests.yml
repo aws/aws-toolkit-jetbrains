@@ -47,6 +47,7 @@ phases:
   post_build:
     commands:
       - |
+        Get-ChildItem -Recurse -Directory
         $script:TEST_ARTIFACTS=Join-Path $env:TEMP testArtifacts
         $script:TEST_REPORTS=Join-Path $script:TEST_ARTIFACTS test-reports
         New-Item -ItemType dir -Path $script:TEST_ARTIFACTS
