@@ -203,7 +203,7 @@ class GumbyClient(private val project: Project) {
                 it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
             }
         }
-            .connect { request -> // default connect timeout is 10sF
+            .connect { request -> // default connect timeout is 10s
                 val connection = request.connection as HttpURLConnection
                 connection.setFixedLengthStreamingMode(fileToUpload.length())
                 connection.readTimeout = 30 * 60 * 1000 // since pre-signed URL expiration was increased to 30 minutes
