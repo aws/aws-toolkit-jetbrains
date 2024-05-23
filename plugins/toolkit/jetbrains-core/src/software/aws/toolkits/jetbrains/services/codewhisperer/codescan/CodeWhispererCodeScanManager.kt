@@ -387,7 +387,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
             is CodeWhispererCodeScanServerException -> e.message
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
-            else -> e.message
+            else -> when {
+                e.message?.startsWith("codewhisperer.codescan.run_scan_throttling_error_telemetry") == true -> message("codewhisperer.codescan.run_scan_throttling_error_telemetry")
+                e.message != null -> e.message
+                else -> null
+            }
         } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
 
         return telemetryErrorMessage
