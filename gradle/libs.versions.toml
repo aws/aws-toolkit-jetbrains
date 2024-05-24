@@ -31,6 +31,7 @@ sshd = "2.12.1"
 wiremock = "3.3.1"
 undercouch-download = "5.2.1"
 zjsonpatch = "0.4.16"
+okhttp = "4.12.0"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
@@ -106,7 +107,6 @@ sshd-scp = { module = "org.apache.sshd:sshd-scp", version.ref = "sshd" }
 sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version.ref = "sshd" }
 wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjsonpatch" }
-
 [bundles]
 jackson = ["jackson-datetime", "jackson-kotlin", "jackson-yaml", "jackson-xml"]
 kotlin = ["kotlin-stdLibJdk8", "kotlin-reflect"]

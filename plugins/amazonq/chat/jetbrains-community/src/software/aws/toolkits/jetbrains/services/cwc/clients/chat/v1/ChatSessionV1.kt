@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1
 
+import com.google.gson.Gson
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
@@ -50,6 +51,9 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Reference
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.SuggestedFollowUp
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 
 class ChatSessionV1(
     private val project: Project,
@@ -57,10 +61,33 @@ class ChatSessionV1(
 
     override var conversationId: String? = null
 
+    data class RequestPayload(
+        val filePaths: List<String>,
+        val projectRoot: String,
+        val refresh: Boolean
+    )
+
+    fun index() {
+        val url = URL("http://localhost:3000/indexFiles")
+        val payload = RequestPayload(listOf("/Users/leigaol/workplace/transformers/README.md"), "/Users/leigaol/workplace/transformers", true)
+        val payloadJson = Gson().toJson(payload)
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            OutputStreamWriter(outputStream).use {
+                it.write(payloadJson)
+            }
+            val responseCode = responseCode
+            println("Response: $responseCode")
+        }
+    }
+
     override fun chat(data: ChatRequestData): Flow<ChatResponseEvent> = callbackFlow {
         var requestId: String = ""
         var statusCode: Int = 0
-
+        index()
         val responseHandler = GenerateAssistantResponseResponseHandler.builder()
             .onResponse {
                 requestId = it.responseMetadata().requestId()
