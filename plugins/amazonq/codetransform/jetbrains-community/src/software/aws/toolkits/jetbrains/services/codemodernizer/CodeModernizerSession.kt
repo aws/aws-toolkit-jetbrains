@@ -193,10 +193,6 @@ class CodeModernizerSession(
             } else {
                 CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(e.statusCode))
             }
-        } catch (e: ConnectException) {
-            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
-            state.currentJobStatus = TransformationStatus.FAILED
-            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
         } catch (e: IOException) {
             if (shouldStop.get()) {
                 // Cancelling during S3 upload will cause IOException of "not enough data written",
