@@ -191,7 +191,7 @@ class CodeModernizerSession(
             return if (e.statusCode == 403) {
                 CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED)
             } else {
-                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(e.statusCode))
             }
         } catch (e: ConnectException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)

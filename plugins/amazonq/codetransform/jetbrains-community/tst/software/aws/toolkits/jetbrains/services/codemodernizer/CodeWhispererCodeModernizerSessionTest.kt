@@ -38,7 +38,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.stub
@@ -438,10 +437,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doAnswer { throw HttpRequests.HttpStatusException("mock error", 404, "mock url") }
+        doAnswer { throw HttpRequests.HttpStatusException("mock error", 407, "mock url") }
             .whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER), result)
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(407)), result)
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
         assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
     }

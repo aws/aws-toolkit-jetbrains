@@ -39,7 +39,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.net.ssl.SSLHandshakeException
 
 data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String, val errorMessage: String = "")
 

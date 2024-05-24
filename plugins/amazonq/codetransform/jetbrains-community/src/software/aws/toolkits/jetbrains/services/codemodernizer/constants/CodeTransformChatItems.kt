@@ -233,7 +233,10 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
 fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String {
     val resultMessage = when (failureReason) {
         is UploadFailureReason.PRESIGNED_URL_EXPIRED -> {
-            message("codemodernizer.chat.message.upload_failed_expiration")
+            message("codemodernizer.chat.message.upload_failed_url_expired")
+        }
+        is UploadFailureReason.HTTP_ERROR -> {
+            message("codemodernizer.chat.message.upload_failed_http_error", failureReason.statusCode)
         }
         is UploadFailureReason.CONNECTION_REFUSED -> {
             message("codemodernizer.chat.message.upload_failed_connection_refused")
