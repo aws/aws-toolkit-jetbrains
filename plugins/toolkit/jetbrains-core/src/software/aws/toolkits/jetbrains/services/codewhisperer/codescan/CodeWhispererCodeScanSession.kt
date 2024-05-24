@@ -380,6 +380,9 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             val file = try {
                 LocalFileSystem.getInstance().findFileByIoFile(
                     Path.of(sessionContext.sessionConfig.projectRoot.path, it.filePath).toFile()
+                ) ?: LocalFileSystem.getInstance().findFileByIoFile(
+                    // Files outside project use absolute path
+                    Path.of("/", it.filePath).toFile()
                 )
             } catch (e: Exception) {
                 LOG.debug { "Cannot find file at location ${it.filePath}" }
