@@ -137,7 +137,7 @@ data class FileComponent(
     val messageId: String
 ) : UiMessage(
     tabId = tabId,
-    type = "updateFileComponent".toString(),
+    type = "updateFileComponent"
 )
 
 data class ChatInputEnabledMessage(
