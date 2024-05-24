@@ -323,7 +323,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         return errorMessage
     }
 
-    private fun handleCodeScanException(e: CodeWhispererCodeScanException): String? {
+    private fun getCodeScanExceptionMessage(e: CodeWhispererCodeScanException): String? {
         val message = e.message
         return when {
             message == message("codewhisperer.codescan.invalid_source_zip_telemetry") -> {
@@ -334,15 +334,15 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    private fun handleCodeScanServerException(e: CodeWhispererCodeScanServerException): String? =
+    private fun getCodeScanServerExceptionMessage(e: CodeWhispererCodeScanServerException): String? =
         e.message?.takeIf { it.startsWith("UploadArtifactToS3Exception:") }
             ?.let { message("codewhisperer.codescan.upload_to_s3_failed") }
 
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
-            is CodeWhispererCodeScanException -> handleCodeScanException(e)
-            is CodeWhispererCodeScanServerException -> handleCodeScanServerException(e)
+            is CodeWhispererCodeScanException -> getCodeScanExceptionMessage(e)
+            is CodeWhispererCodeScanServerException -> getCodeScanServerExceptionMessage(e)
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> null
@@ -388,9 +388,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> when {
-                e.message?.startsWith("codewhisperer.codescan.run_scan_throttling_error_telemetry") == true -> message("codewhisperer.codescan.run_scan_throttling_error_telemetry")
-                e.message != null -> e.message
-                else -> null
+                /**
+                 * Error message has text with user details(like requestId) which is specific so sending a custom error message to calculate the occurence of this event.
+                 */
+                e.message?.startsWith("codewhisperer.codescan.run_scan_throttling_error_telemetry") == true ->
+                    message("codewhisperer.codescan.run_scan_throttling_error_telemetry")
+                else -> e.message
             }
         } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
 
