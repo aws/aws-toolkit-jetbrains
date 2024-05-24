@@ -285,10 +285,6 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                     actions: getActions([...filePaths, ...deletedFiles]),
                 },
             }
-            mynahUI.notify({
-                title: "hi",
-                content: messageId,
-            })
             mynahUI.updateChatAnswerWithMessageId(tabID, messageId, updateWith)
         },
         onWarning: (tabID: string, message: string, title: string) => {
