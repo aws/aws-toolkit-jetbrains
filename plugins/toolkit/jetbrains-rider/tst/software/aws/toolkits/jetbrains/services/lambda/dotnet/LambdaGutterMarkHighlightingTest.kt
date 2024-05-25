@@ -21,7 +21,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     }
 
     @BeforeMethod
-    fun `skip test on windows`() {
+    fun skipTestsOnWindows() {
         val ideVersion = System.getProperty("org.gradle.project.ideProfileName")
         if (System.getProperty("os.name").contains("Windows") && ideVersion == "2023.2") {
             throw SkipException("Test skipped because it flakes on Windows 2023.2")

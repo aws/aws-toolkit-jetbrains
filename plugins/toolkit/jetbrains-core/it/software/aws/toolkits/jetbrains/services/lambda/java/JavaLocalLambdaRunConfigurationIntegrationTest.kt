@@ -11,6 +11,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -48,6 +49,10 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     @JvmField
     val projectRule = HeavyJavaCodeInsightTestFixtureRule()
 
+    @Rule
+    @JvmField
+    val temporaryFolder = TemporaryFolder()
+
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val input = RuleUtils.randomName()
@@ -55,6 +60,9 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
+
+        val gradleUserHome = temporaryFolder.newFolder("gradle-user-home")
+        System.setProperty("gradle.user.home", gradleUserHome.absolutePath)
 
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
@@ -95,6 +103,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
+        System.clearProperty("gradle.user.home")
     }
 
     @Test
