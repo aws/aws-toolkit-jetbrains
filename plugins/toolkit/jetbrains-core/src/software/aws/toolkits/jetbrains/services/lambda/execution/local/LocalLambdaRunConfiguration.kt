@@ -162,7 +162,7 @@ class LocalLambdaRunConfiguration(project: Project, factory: ConfigurationFactor
             throw RuntimeConfigurationError(message("lambda.run_configuration.handler.validation.in_progress"))
         }
 
-        val isHandlerValid = promise.blockingGet(5000)!!
+        val isHandlerValid = promise.blockingGet(0)!!
         if (!isHandlerValid) {
             throw RuntimeConfigurationError(message("lambda.run_configuration.handler_not_found", handler))
         }
