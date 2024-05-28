@@ -22,7 +22,6 @@ import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -928,8 +927,8 @@ class ProfileCredentialProviderFactoryTest {
         )
 
         val ssoCache = mock<SsoCache> {
-            on { loadAccessToken(any()) }.thenAnswer {
-                val arg = it.arguments[0]
+            on { loadAccessToken(any()) }.thenAnswer { invocation ->
+                val arg = invocation.arguments[0]
                 when (arg) {
                     is DeviceGrantAccessTokenCacheKey -> {
                         when (arg.startUrl) {
@@ -945,7 +944,6 @@ class ProfileCredentialProviderFactoryTest {
                     }
                     else -> null
                 }
-
             }
         }
 
