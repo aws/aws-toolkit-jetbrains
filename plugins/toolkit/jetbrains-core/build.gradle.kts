@@ -4,12 +4,13 @@
 import com.jetbrains.plugin.structure.base.utils.inputStream
 import com.jetbrains.plugin.structure.base.utils.simpleName
 import com.jetbrains.plugin.structure.intellij.utils.JDOMUtil
-import org.jetbrains.intellij.transformXml
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
+import java.io.StringWriter
+import java.nio.file.Path
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -26,8 +27,10 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
-intellij {
-    plugins.add(project(":plugin-core"))
+dependencies {
+    intellijPlatform {
+        localPlugin(project(":plugin-core"))
+    }
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -53,33 +56,33 @@ tasks.integrationTest {
     systemProperty("aws.dev.useDAG", true)
 }
 
-val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
-    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
-    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
+val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
+//    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
+//    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
 
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+//    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 
     // jetbrains expects gateway plugin to be dynamic
-    doLast {
-        pluginXmlFiles.get()
-            .map(File::toPath)
-            .forEach { p ->
-                val path = destinationDir.get()
-                    .asFile.toPath().toAbsolutePath()
-                    .resolve(p.simpleName)
-
-                val document = path.inputStream().use { inputStream ->
-                    JDOMUtil.loadDocument(inputStream)
-                }
-
-                document.rootElement
-                    .getAttribute("require-restart")
-                    .setValue("false")
-
-                transformXml(document, path)
-            }
-    }
+//    doLast {
+//        pluginXmlFiles.get()
+//            .map(File::toPath)
+//            .forEach { p ->
+//                val path = destinationDir.get()
+//                    .asFile.toPath().toAbsolutePath()
+//                    .resolve(p.simpleName)
+//
+//                val document = path.inputStream().use { inputStream ->
+//                    JDOMUtil.loadDocument(inputStream)
+//                }
+//
+//                document.rootElement
+//                    .getAttribute("require-restart")
+//                    .setValue("false")
+//
+//                transformXml(document, path)
+//            }
+//    }
 }
 
 val gatewayArtifacts by configurations.creating {
@@ -172,3 +175,17 @@ dependencies {
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
 }
+//
+//fun transformXml(document: Document, path: Path) {
+//    val xmlOutput = XMLOutputter()
+//    xmlOutput.format.apply {
+//        indent = "  "
+//        omitDeclaration = true
+//        textMode = Format.TextMode.TRIM
+//    }
+//
+//    StringWriter().use {
+//        xmlOutput.output(document, it)
+//        path.writeText(it.toString())
+//    }
+//}

@@ -71,12 +71,6 @@ tasks.check {
 
 afterEvaluate {
     plugins.withType<ToolkitIntellijSubpluginPlugin> {
-        // weird implicit dependency issue, maybe with how the task graph works?
-        // or because tests are on the ide classpath for some reason?
-        tasks.named("classpathIndexCleanup") {
-            mustRunAfter(tasks.named("compileIntegrationTestKotlin"))
-        }
-
         // intellij plugin overrides with instrumented classes that we don't want or need
         integTestTask.configure {
             testClassesDirs = integrationTests.output.classesDirs

@@ -6,7 +6,7 @@ import com.jetbrains.rd.generator.gradle.RdGenPlugin
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import java.nio.file.Path
@@ -40,11 +40,6 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.RD)
 }
 
-intellij {
-    type.set("RD")
-    plugins.add(project(":plugin-core"))
-}
-
 sourceSets {
     main {
         java.srcDirs(layout.buildDirectory.dir("generated-src"))
@@ -52,6 +47,10 @@ sourceSets {
 }
 
 dependencies {
+    intellijPlatform {
+        localPlugin(project(":plugin-core"))
+    }
+
     implementation(project(":plugin-toolkit:jetbrains-core"))
 
     testImplementation(project(":plugin-toolkit:jetbrains-core"))
@@ -100,11 +99,11 @@ configure<RdGenExtension> {
     verbose = true
     hashFolder = rdgenDir.toString()
 
-    classpath({
-        val ijDependency = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
-        println("Calculating classpath for rdgen, intellij.ideaDependency is: $ijDependency")
-        File(ijDependency, "lib/rd").resolve("rider-model.jar").absolutePath
-    })
+//    classpath({
+//        val ijDependency = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
+//        println("Calculating classpath for rdgen, intellij.ideaDependency is: $ijDependency")
+//        File(ijDependency, "lib/rd").resolve("rider-model.jar").absolutePath
+//    })
 
     sources(projectDir.resolve("protocol/model"))
     packages = "model"
@@ -233,7 +232,8 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 }
 
 fun getNugetPackagesPath(): File {
-    val sdkPath = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
+//    val sdkPath = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
+    val sdkPath = ""
     println("SDK path: $sdkPath")
 
     val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
@@ -287,15 +287,15 @@ tasks.clean {
 // `runIde` depends on `prepareSandbox` task and then executes IJ inside the sandbox dir
 // `prepareSandbox` depends on the standard Java `jar` and then copies everything into the sandbox dir
 
-intellij {
+intellijPlatform {
     // kotlin and .NET parts of the plugin need to be in the same plugin base directroy
-    pluginName.set("aws-toolkit-jetbrains")
+    projectName = "aws-toolkit-jetbrains"
 }
 
 tasks.withType<PrepareSandboxTask>().all {
     dependsOn(resharperDllsDir)
 
-    intoChild(pluginName.map { "$it/dotnet" })
+    intoChild(intellijPlatform.projectName.map { "$it/dotnet" })
         .from(resharperDllsDir)
 }
 

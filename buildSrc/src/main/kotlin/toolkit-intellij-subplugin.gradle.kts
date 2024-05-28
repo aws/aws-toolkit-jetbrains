@@ -3,10 +3,8 @@
 
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
-import org.jetbrains.intellij.tasks.DownloadRobotServerPluginTask
-import org.jetbrains.intellij.tasks.PatchPluginXmlTask
-import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
-import org.jetbrains.intellij.utils.OpenedPackages
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
@@ -22,8 +20,6 @@ plugins {
     id("toolkit-intellij-plugin")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
-    id("org.jetbrains.intellij")
-    id("toolkit-patch-plugin-xml-conventions")
 }
 
 // TODO: https://github.com/gradle/gradle/issues/15383
@@ -82,18 +78,36 @@ tasks.processTestResources {
 }
 
 // Run after the project has been evaluated so that the extension (intellijToolkit) has been configured
-intellij {
+intellijPlatform {
     // find the name of first subproject depth, or root if not applied to a subproject hierarchy
-    val projectName = generateSequence(project) { it.parent }.first { it.depth <= 1 }.name
-    pluginName.convention(projectName)
+    projectName.convention(generateSequence(project) { it.parent }.first { it.depth <= 1 }.name)
+    instrumentCode = true
+}
 
-    localPath.set(toolkitIntelliJ.localPath())
-    version.set(toolkitIntelliJ.version())
+dependencies {
+    intellijPlatform {
+        instrumentationTools()
 
-    plugins.set(toolkitIntelliJ.productProfile().map { it.plugins.toMutableList() })
+        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+        val version = toolkitIntelliJ.version()
 
-    downloadSources.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC && !project.isCi() })
-    instrumentCode.set(toolkitIntelliJ.ideFlavor.map { it == IdeFlavor.IC || it == IdeFlavor.IU })
+        create(type, version)
+
+        bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
+        plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
+//        toolkitIntelliJ.productProfile().map { profile ->
+////            profile.bundledPlugins.apply {
+////                if (isNotEmpty()) {
+////                    bundledPlugins(this)
+////                }
+////            }
+//            profile.marketplacePlugins.apply {
+//                if (isNotEmpty()) {
+//                    plugins(this)
+//                }
+//            }
+//        }
+    }
 }
 
 tasks.jar {
@@ -106,24 +120,12 @@ tasks.buildSearchableOptions {
     enabled = false
 }
 
-// https://github.com/JetBrains/gradle-intellij-plugin/blob/829786d5d196ab942d7e6eb3e472ac0af776d3fa/src/main/kotlin/org/jetbrains/intellij/tasks/RunIdeBase.kt#L315
-val openedPackages = OpenedPackages + with(OperatingSystem.current()) {
-    when {
-        isWindows -> listOf(
-            "--add-opens=java.base/sun.nio.fs=ALL-UNNAMED",
-        )
-        else -> emptyList()
-    }
-}
-
 tasks.withType<Test>().all {
-    systemProperty("log.dir", intellij.sandboxDir.map { "$it-test/logs" }.get())
+    systemProperty("log.dir", intellijPlatform.sandboxContainer.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")
     systemProperty("idea.log.config.properties.file", jetbrainsCoreTestResources.resolve("toolkit-test-log.properties"))
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
-
-    jvmArgs(openedPackages)
 }
 
 tasks.withType<JavaExec> {
@@ -159,18 +161,6 @@ tasks.runIde {
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
     systemProperty("memory.snapshots.path", project.rootDir)
     systemProperty("idea.auto.reload.plugins", false)
-
-    val alternativeIde = providers.environmentVariable("ALTERNATIVE_IDE")
-    if (alternativeIde.isPresent) {
-        // remove the trailing slash if there is one or else it will not work
-        val value = alternativeIde.get()
-        val path = File(value.trimEnd('/'))
-        if (path.exists()) {
-            ideDir.set(path)
-        } else {
-            throw GradleException("ALTERNATIVE_IDE path not found $value")
-        }
-    }
 }
 
 // rewrite `runtimeElements` to use the `instrumentedJar` variant
@@ -180,7 +170,7 @@ tasks.runIde {
 configurations.runtimeElements {
     // remove the default artifact and replace with the instrumented jar
     outgoing.artifacts.clear()
-    outgoing.artifacts(configurations.instrumentedJar.map { it.artifacts })
+    outgoing.artifact(tasks.instrumentedJar)
 
     // replace default classes with instrumented classes
     outgoing.variants {
@@ -191,14 +181,4 @@ configurations.runtimeElements {
             }
         }
     }
-}
-
-// 1.x declares dependsOn, but we want mustRunAfter
-// https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/47e2de88e86ffdefd3f6f45c2bb3181366ee4fa4/src/main/kotlin/org/jetbrains/intellij/IntelliJPlugin.kt#L1702
-tasks.classpathIndexCleanup {
-    dependsOn.clear()
-
-    project.tasks
-        .runCatching { named("compileTestKotlin") }
-        .onSuccess { mustRunAfter(it) }
 }

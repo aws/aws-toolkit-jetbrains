@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import net.bytebuddy.utility.RandomString
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 
 plugins {
@@ -13,13 +13,12 @@ plugins {
     id("toolkit-integration-testing")
 }
 
-intellij {
-    pluginName.set("aws-toolkit-jetbrains")
-    type.set("GW")
-}
-
 intellijToolkit {
     ideFlavor.set(IdeFlavor.GW)
+}
+
+intellijPlatform {
+    projectName = "aws-toolkit-jetbrains"
 }
 
 sourceSets {
@@ -119,19 +118,19 @@ tasks.jar {
 }
 
 tasks.withType<PrepareSandboxTask>().all {
-    intoChild(pluginName.map { "$it/gateway-resources" })
+    intoChild(intellijPlatform.projectName.map { "$it/gateway-resources" })
         .from(gatewayResourcesDir)
 }
 
 listOf(
     tasks.prepareSandbox,
-    tasks.prepareTestingSandbox
+    tasks.prepareTestSandbox
 ).forEach {
     it.configure {
-        runtimeClasspathFiles.set(gatewayOnlyRuntimeClasspath)
+        runtimeClasspath.setFrom(gatewayOnlyRuntimeClasspath)
 
         dependsOn(gatewayOnlyResourcesJar)
-        intoChild(pluginName.map { "$it/lib" })
+        intoChild(intellijPlatform.projectName.map { "$it/lib" })
             .from(gatewayOnlyResourcesJar)
     }
 }

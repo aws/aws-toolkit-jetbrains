@@ -3,20 +3,17 @@
 import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
-    id("org.jetbrains.intellij")
+    id("org.jetbrains.intellij.platform")
 }
 
-val ideProfile = IdeVersions.ideProfile(project)
+intellijPlatform {
+    publishing {
+        val publishToken: String by project
+        val publishChannel: String by project
 
-val publishToken: String by project
-val publishChannel: String by project
-
-intellij {
-    version.set(ideProfile.community.version())
-    localPath.set(ideProfile.community.localPath())
-
-    updateSinceUntilBuild.set(false)
-    instrumentCode.set(false)
+        token.set(publishToken)
+        channels.set(publishChannel.split(",").map { it.trim() })
+    }
 }
 
 configurations {
@@ -35,9 +32,4 @@ configurations {
 
 tasks.check {
     dependsOn(tasks.verifyPlugin)
-}
-
-tasks.publishPlugin {
-    token.set(publishToken)
-    channels.set(publishChannel.split(",").map { it.trim() })
 }

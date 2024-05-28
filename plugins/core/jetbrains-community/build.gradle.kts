@@ -65,10 +65,10 @@ tasks.withType<DetektCreateBaselineTask> {
 }
 
 // hack because our test structure currently doesn't make complete sense
-tasks.prepareTestingSandbox {
+tasks.prepareTestSandbox {
     val pluginXmlJar = project(":plugin-core").tasks.jar
 
     dependsOn(pluginXmlJar)
-    intoChild(pluginName.map { "$it/lib" })
+    intoChild(intellijPlatform.projectName.map { "$it/lib" })
         .from(pluginXmlJar)
 }
