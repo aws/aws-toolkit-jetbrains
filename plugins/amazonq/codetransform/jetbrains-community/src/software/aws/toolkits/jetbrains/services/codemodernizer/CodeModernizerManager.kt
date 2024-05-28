@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_EXPIRY_TIME_DAYS
 import software.aws.toolkits.jetbrains.services.codemodernizer.file.PomFileAnnotator
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
@@ -82,6 +83,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.pathString
+import kotlin.time.Duration.Companion.days
 
 @State(name = "codemodernizerStates", storages = [Storage("aws.xml", roamingType = RoamingType.PER_OS)])
 class CodeModernizerManager(private val project: Project) : PersistentStateComponent<CodeModernizerState>, Disposable {
@@ -332,7 +334,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun setJobOngoing(jobId: JobId, sessionContext: CodeModernizerSessionContext) {
         isModernizationInProgress.set(true)
-        managerState = buildState(sessionContext, true, jobId)
+        managerState = buildState(sessionContext, true, jobId, Instant.now())
     }
 
     fun setJobNotOngoing() {
@@ -471,7 +473,15 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
-            if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
+            if (!managerState.isJobOngoing()) return@launch
+
+            val lastJobId = managerState.getLatestJobId()
+            val isJobExpired = managerState.getLatestJobStartTime().plusMillis(JOB_EXPIRY_TIME_DAYS.days.inWholeMilliseconds) < Instant.now()
+            if (isJobExpired) {
+                LOG.info { "Last job is expired, won't attempt to resume job with Id $lastJobId anymore" }
+                setJobNotOngoing()
+                return@launch
+            }
 
             // Gather project details
             if (onProjectFirstOpen) {
@@ -481,7 +491,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             val context = managerState.toSessionContext(project)
             val session = CodeModernizerSession(context)
-            val lastJobId = managerState.getLatestJobId()
+
             LOG.info { "Attempting to resume job with id $lastJobId" }
             val result = session.getJobDetails(lastJobId)
             when (result.status()) {

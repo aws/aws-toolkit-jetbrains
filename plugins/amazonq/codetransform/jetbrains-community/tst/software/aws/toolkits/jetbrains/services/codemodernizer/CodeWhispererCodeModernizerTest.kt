@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.testFramework.LightVirtualFile
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -16,17 +18,23 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerState
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.JobDetails
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.time.Instant
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
+import kotlin.test.assertTrue
 
 class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
@@ -123,5 +131,99 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
             )
         )
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `tryResumeJob does not resume job when job expiry time passed`() = runBlocking {
+        codeModernizerManagerSpy.loadState(CodeModernizerState().apply {
+            lastJobContext.putAll(
+                setOf(
+                    JobDetails.QCT_START_TIME to Instant.EPOCH.toEpochMilli().toString(),
+                    JobDetails.LAST_JOB_ID to jobId.toString()
+                )
+            )
+            flags.putAll(
+                setOf(
+                    StateFlags.IS_ONGOING to true
+                )
+            )
+
+        })
+        codeModernizerManagerSpy.tryResumeJob().join()
+        assertFalse(codeModernizerManagerSpy.state.isJobOngoing())
+        verify(codeModernizerManagerSpy, times(1)).setJobNotOngoing()
+        verifyNoInteractions(testSessionSpy)
+    }
+
+    @Test
+    fun `subsequent tryResumeJob ignores job when job expiry time passed atleast once`() = runBlocking {
+        codeModernizerManagerSpy.loadState(CodeModernizerState().apply {
+            lastJobContext.putAll(
+                setOf(
+                    JobDetails.QCT_START_TIME to Instant.EPOCH.toEpochMilli().toString(),
+                    JobDetails.LAST_JOB_ID to jobId.toString()
+                )
+            )
+            flags.putAll(
+                setOf(
+                    StateFlags.IS_ONGOING to true
+                )
+            )
+
+        })
+        codeModernizerManagerSpy.tryResumeJob().join()
+        codeModernizerManagerSpy.tryResumeJob().join()
+        assertFalse(codeModernizerManagerSpy.state.isJobOngoing())
+        verify(codeModernizerManagerSpy, times(1)).setJobNotOngoing()
+        verifyNoInteractions(testSessionSpy)
+    }
+
+    @Test
+    fun `tryResumeJob job calls resumeJob when job is not yet expired`() = runBlocking {
+        codeModernizerManagerSpy.loadState(CodeModernizerState().apply {
+            lastJobContext.putAll(
+                setOf(
+                    JobDetails.QCT_START_TIME to Instant.now().toEpochMilli().toString(),
+                    JobDetails.LAST_JOB_ID to jobId.toString(),
+                    JobDetails.CONFIGURATION_FILE_PATH to "",
+                    JobDetails.SOURCE_JAVA_VERSION to JavaSdkVersion.JDK_1_8.description,
+                    JobDetails.TARGET_JAVA_VERSION to JavaSdkVersion.JDK_17.description,
+                )
+            )
+            flags.putAll(
+                setOf(
+                    StateFlags.IS_ONGOING to true
+                )
+            )
+        })
+        doReturn(exampleGetCodeMigrationResponse).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
+        doReturn(Job()).whenever(codeModernizerManagerSpy).resumeJob(any(), any(), any())
+        codeModernizerManagerSpy.tryResumeJob().join()
+        assertTrue(codeModernizerManagerSpy.state.isJobOngoing())
+        verify(clientAdaptorSpy, times(1)).getCodeModernizationJob(any())
+        verify(codeModernizerManagerSpy, times(1)).resumeJob(any(), any(), any())
+        return@runBlocking
+    }
+
+    @Test
+    fun `Job expiry is backwards compatible and invalidates job when job start time not set`() = runBlocking {
+        codeModernizerManagerSpy.loadState(CodeModernizerState().apply {
+            lastJobContext.putAll(
+                setOf(
+                    // JobDetails.QCT_START_TIME unset in older versions of Q Code Transform
+                    JobDetails.LAST_JOB_ID to jobId.toString()
+                )
+            )
+            flags.putAll(
+                setOf(
+                    StateFlags.IS_ONGOING to true
+                )
+            )
+
+        })
+        codeModernizerManagerSpy.tryResumeJob().join()
+        assertFalse(codeModernizerManagerSpy.state.isJobOngoing())
+        verify(codeModernizerManagerSpy, times(1)).setJobNotOngoing()
+        verifyNoInteractions(testSessionSpy)
     }
 }
