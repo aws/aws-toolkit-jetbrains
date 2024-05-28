@@ -202,12 +202,12 @@ class CodeModernizerSession(
             } else {
                 state.putJobHistory(sessionContext, TransformationStatus.FAILED)
                 state.currentJobStatus = TransformationStatus.FAILED
-                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
             }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER)
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
         } finally {
             deleteUploadArtifact(payload)
         }

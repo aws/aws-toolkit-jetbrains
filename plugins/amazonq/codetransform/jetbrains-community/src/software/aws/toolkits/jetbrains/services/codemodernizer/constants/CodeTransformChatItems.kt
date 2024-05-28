@@ -241,8 +241,8 @@ fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String 
         is UploadFailureReason.CONNECTION_REFUSED -> {
             message("codemodernizer.chat.message.upload_failed_connection_refused")
         }
-        else -> {
-            message("codemodernizer.chat.message.upload_failed_other")
+        is UploadFailureReason.OTHER -> {
+            message("codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage)
         }
     }
     return resultMessage
