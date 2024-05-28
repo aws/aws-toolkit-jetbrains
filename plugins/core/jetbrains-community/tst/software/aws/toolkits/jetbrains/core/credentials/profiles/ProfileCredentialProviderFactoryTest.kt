@@ -928,9 +928,25 @@ class ProfileCredentialProviderFactoryTest {
         )
 
         val ssoCache = mock<SsoCache> {
-            on { loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == "ValidUrl" }) }.thenReturn(mock<DeviceAuthorizationGrantToken>())
-            on { loadAccessToken(argThat<PKCEAccessTokenCacheKey> { issuerUrl == "ValidUrl" }) }.thenReturn(mock<PKCEAuthorizationGrantToken>())
-            on { loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == "ExpiredUrl" }) }.thenReturn(null)
+            on { loadAccessToken(any()) }.thenAnswer {
+                val arg = it.arguments[0]
+                when (arg) {
+                    is DeviceGrantAccessTokenCacheKey -> {
+                        when (arg.startUrl) {
+                            "ValidUrl" -> mock<DeviceAuthorizationGrantToken>()
+                            else -> null
+                        }
+                    }
+                    is PKCEAccessTokenCacheKey -> {
+                        when (arg.issuerUrl) {
+                            "ValidUrl" -> mock<PKCEAuthorizationGrantToken>()
+                            else -> null
+                        }
+                    }
+                    else -> null
+                }
+
+            }
         }
 
         createProviderFactory(ssoCache)
