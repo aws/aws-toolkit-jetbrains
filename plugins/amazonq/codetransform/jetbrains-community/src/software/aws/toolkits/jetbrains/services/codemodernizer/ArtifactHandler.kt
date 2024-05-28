@@ -162,6 +162,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
+            // SdkClientException will be thrown, masking actual issues like SSLHandshakeException underneath
             if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
                 notifyUnableToDownload(
                     DownloadFailureReason.PROXY_WILDCARD_ERROR,
