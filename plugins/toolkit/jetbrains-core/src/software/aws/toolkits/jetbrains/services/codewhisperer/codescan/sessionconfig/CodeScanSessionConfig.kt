@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
@@ -10,6 +11,7 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -96,7 +98,10 @@ class CodeScanSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
+        val srcZip = when (scope) {
+            CodeAnalysisScope.PROJECT -> zipProject(payloadMetadata.sourceFiles.map { Path.of(it) })
+            CodeAnalysisScope.FILE -> zipFile(Path.of(payloadMetadata.sourceFiles.first()))
+        }
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -128,11 +133,22 @@ class CodeScanSessionConfig(
         return bufferedReader.useLines { lines -> lines.count() }
     }
 
-    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipProject(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             val relativePath = file.relativeTo(projectRoot.toNioPath())
             LOG.debug { "Selected file for truncation: $file" }
             it.putNextEntry(relativePath.toString(), file)
+        }
+    }.toFile()
+
+    private fun zipFile(filePath: Path): File = createTemporaryZipFile {
+        val relativePath = filePath.relativeTo(projectRoot.toNioPath())
+        val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
+        virtualFile?.let { vf ->
+            val document = FileDocumentManager.getInstance().getDocument(vf)
+            document?.let { doc ->
+                it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
+            }
         }
     }.toFile()
 
