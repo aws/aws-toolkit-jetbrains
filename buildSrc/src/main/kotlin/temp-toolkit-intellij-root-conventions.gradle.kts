@@ -42,12 +42,6 @@ val gatewayResources = configurations.create("gatewayResources") {
     isCanBeConsumed = false
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains"
     instrumentCode = false

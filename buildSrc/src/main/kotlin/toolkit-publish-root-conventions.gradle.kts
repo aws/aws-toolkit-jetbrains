@@ -56,19 +56,16 @@ dependencies {
             val runIdeVariant = providers.gradleProperty("runIdeVariant")
 
             // prefer versions declared in IdeVersions
-            val (type,version) = if (runIdeVariant.isPresent) {
-                toolkitIntelliJ.apply {
-                    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
-                }
+            toolkitIntelliJ.apply {
+                ideFlavor.convention(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+            }
+            val (type, version) = if (runIdeVariant.isPresent) {
                 val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
                 val version = toolkitIntelliJ.version()
 
                 type to version
             } else {
-                val type = runIdeVariant.map { IntelliJPlatformType.fromCode(it) }
-                val version = IdeVersions.ideProfile(providers).map { it.name }
-
-                type to version
+                provider { IntelliJPlatformType.IntellijIdeaCommunity } to toolkitIntelliJ.version()
             }
 
             create(type, version)

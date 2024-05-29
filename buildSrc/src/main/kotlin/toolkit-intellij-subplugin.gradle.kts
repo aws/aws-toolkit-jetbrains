@@ -95,18 +95,6 @@ dependencies {
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
-//        toolkitIntelliJ.productProfile().map { profile ->
-////            profile.bundledPlugins.apply {
-////                if (isNotEmpty()) {
-////                    bundledPlugins(this)
-////                }
-////            }
-//            profile.marketplacePlugins.apply {
-//                if (isNotEmpty()) {
-//                    plugins(this)
-//                }
-//            }
-//        }
     }
 }
 
@@ -161,24 +149,4 @@ tasks.runIde {
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
     systemProperty("memory.snapshots.path", project.rootDir)
     systemProperty("idea.auto.reload.plugins", false)
-}
-
-// rewrite `runtimeElements` to use the `instrumentedJar` variant
-// there should never be a reason to use the default artifact at runtime, but `testFixturesRuntimeElements` pulls in `runtimeElements`
-// which is causing conflict between the `runtimeElements` and `instrumentedJar` variants
-// additionally more cleanly solves another headache from the IDE defaulting to instrumented classes while navigating between modules
-configurations.runtimeElements {
-    // remove the default artifact and replace with the instrumented jar
-    outgoing.artifacts.clear()
-    outgoing.artifact(tasks.instrumentedJar)
-
-    // replace default classes with instrumented classes
-    outgoing.variants {
-        get("classes").apply {
-            artifacts.clear()
-            artifact(tasks.instrumentCode) {
-                type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
-            }
-        }
-    }
 }

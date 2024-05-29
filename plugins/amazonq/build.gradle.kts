@@ -15,7 +15,7 @@ plugins {
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
-    changeLogFile.value(layout.buildDirectory.file("/changelog/change-notes.xml"))
+    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
 }
 
 tasks.jar {
@@ -27,6 +27,7 @@ tasks.jar {
 
 dependencies {
     intellijPlatform {
+        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1620
         localPlugin(project(":plugin-core"))
     }
 
