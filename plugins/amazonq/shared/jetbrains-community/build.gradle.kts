@@ -13,7 +13,7 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
+        localPlugin(project(":plugin-core", "pluginZip"))
     }
 
     compileOnlyApi(project(":plugin-core:jetbrains-community"))

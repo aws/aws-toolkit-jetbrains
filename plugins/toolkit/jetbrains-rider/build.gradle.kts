@@ -48,7 +48,7 @@ sourceSets {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
+        localPlugin(project(":plugin-core", "pluginZip"))
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))

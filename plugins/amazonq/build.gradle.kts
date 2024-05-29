@@ -27,8 +27,7 @@ tasks.jar {
 
 dependencies {
     intellijPlatform {
-        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1620
-        localPlugin(project(":plugin-core"))
+        localPlugin(project(":plugin-core", "pluginZip"))
     }
 
     implementation(project(":plugin-amazonq:chat"))

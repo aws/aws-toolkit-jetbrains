@@ -17,7 +17,7 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
+        localPlugin(project(":plugin-core", "pluginZip"))
     }
     compileOnlyApi(project(":plugin-toolkit:jetbrains-core"))
     compileOnlyApi(project(":plugin-core:jetbrains-ultimate"))

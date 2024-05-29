@@ -18,8 +18,8 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        localPlugin(project(":plugin-core"))
-        localPlugin(project(":plugin-amazonq"))
+        localPlugin(project(":plugin-core", "pluginZip"))
+        localPlugin(project(":plugin-amazonq", "pluginZip"))
         plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
     }
 }
