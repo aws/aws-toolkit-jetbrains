@@ -83,6 +83,7 @@ class CodeTransformChatController(
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
+        telemetry.prepareForNewJobSubmission()
         if (!checkForAuth(message.tabId)) {
             return
         }
@@ -120,7 +121,7 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.chatDelayShort()
 
-        CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
+        telemetry.jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
@@ -224,8 +225,8 @@ class CodeTransformChatController(
         codeTransformChatHelper.run {
             updateLastPendingMessage(buildCompileLocalSuccessChatContent())
 
-            addNewMessage(buildTransformBeginChatContent())
-            addNewMessage(buildTransformInProgressChatContent())
+//            addNewMessage(buildTransformBeginChatContent())
+//            addNewMessage(buildTransformInProgressChatContent())
         }
 
         runInEdt {
@@ -288,6 +289,9 @@ class CodeTransformChatController(
                 if (result != null) {
                     handleMavenBuildResult(result)
                 }
+            }
+            CodeTransformCommand.UploadComplete -> {
+                handleCodeTransformUploadCompleted()
             }
             CodeTransformCommand.TransformComplete -> {
                 val result = message.transformResult
@@ -363,6 +367,11 @@ class CodeTransformChatController(
 
     override suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked) {
         BrowserUtil.browse(message.link)
+    }
+
+    private suspend fun handleCodeTransformUploadCompleted() {
+        codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
+        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
     }
 
     private suspend fun handleCodeTransformJobResume() {

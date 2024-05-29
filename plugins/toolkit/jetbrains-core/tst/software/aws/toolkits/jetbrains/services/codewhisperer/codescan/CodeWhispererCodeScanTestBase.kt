@@ -226,10 +226,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         ]                
     """
 
-    internal fun getTotalProjectSizeInBytes(sessionConfigSpy: CodeScanSessionConfig, totalSize: Long) = runBlocking {
-        assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
-    }
-
     internal fun selectedFileLargerThanPayloadSizeThrowsException(sessionConfigSpy: CodeScanSessionConfig) {
         sessionConfigSpy.stub {
             onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
@@ -255,7 +251,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)
         assertThat(srcPayloadSize).isEqualTo(totalSize)
         assertThat(totalLines).isEqualTo(expectedTotalLines)
-        assertThat(sessionConfigSpy.isProjectTruncated()).isFalse
         assertThat(maxCountLanguage).isEqualTo(payloadLanguage)
     }
 
@@ -290,7 +285,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             scanManagerSpy.testRenderResponseOnUIThread(
                 codeScanResponse.issues,
                 codeScanResponse.responseContext.payloadContext.scannedFiles,
-                sessionConfigSpy.isProjectTruncated()
             )
             assertNotNull(scanManagerSpy.getScanTree().model)
             val treeModel = scanManagerSpy.getScanTree().model as? CodeWhispererCodeScanTreeModel

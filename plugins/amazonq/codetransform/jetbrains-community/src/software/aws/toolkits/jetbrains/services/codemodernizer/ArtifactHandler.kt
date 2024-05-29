@@ -22,11 +22,12 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
@@ -39,7 +40,10 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String)
+data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String, val errorMessage: String = "")
+
+const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
+const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -51,7 +55,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         if (isCurrentlyDownloading.get()) return
         val result = downloadArtifact(job)
         if (result.artifact == null) {
-            notifyUnableToApplyPatch(result.zipPath)
+            notifyUnableToApplyPatch(result.zipPath, result.errorMessage)
         } else {
             displayDiffUsingPatch(result.artifact.patch, job)
         }
@@ -123,7 +127,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     DownloadArtifactResult(artifact, zipPath)
                 } catch (e: RuntimeException) {
                     LOG.error { e.message.toString() }
-                    DownloadArtifactResult(null, zipPath)
+                    DownloadArtifactResult(null, zipPath, e.message.orEmpty())
                 }
             }
 
@@ -148,7 +152,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             } catch (e: RuntimeException) {
                 LOG.error { e.message.toString() }
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
-                DownloadArtifactResult(null, zipPath)
+                DownloadArtifactResult(null, zipPath, e.message.orEmpty())
             } finally {
                 telemetry.jobArtifactDownloadAndDeserializeTime(
                     downloadStartTime,
@@ -158,7 +162,17 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
-            return DownloadArtifactResult(null, "")
+            // SdkClientException will be thrown, masking actual issues like SSLHandshakeException underneath
+            if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
+                notifyUnableToDownload(
+                    DownloadFailureReason.PROXY_WILDCARD_ERROR,
+                )
+            } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
+                notifyUnableToDownload(
+                    DownloadFailureReason.SSL_HANDSHAKE_ERROR,
+                )
+            }
+            return DownloadArtifactResult(null, "", e.message.orEmpty())
         } finally {
             isCurrentlyDownloading.set(false)
         }
@@ -194,15 +208,32 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    fun notifyUnableToApplyPatch(patchPath: String) {
+    fun notifyUnableToDownload(error: DownloadFailureReason) {
+        LOG.error { "Unable to download artifact: $error" }
+        if (error == DownloadFailureReason.PROXY_WILDCARD_ERROR) {
+            notifyStickyWarn(
+                message("codemodernizer.notification.warn.view_diff_failed.title"),
+                message("codemodernizer.notification.warn.download_failed_wildcard.content", error),
+                project,
+            )
+        } else if (error == DownloadFailureReason.SSL_HANDSHAKE_ERROR) {
+            notifyStickyWarn(
+                message("codemodernizer.notification.warn.view_diff_failed.title"),
+                message("codemodernizer.notification.warn.download_failed_ssl.content", error),
+                project,
+            )
+        }
+    }
+
+    fun notifyUnableToApplyPatch(patchPath: String, errorMessage: String) {
         LOG.error { "Unable to find patch for file: $patchPath" }
         notifyStickyWarn(
             message("codemodernizer.notification.warn.view_diff_failed.title"),
-            message("codemodernizer.notification.warn.view_diff_failed.content"),
+            message("codemodernizer.notification.warn.view_diff_failed.content", errorMessage),
             project,
             listOf(
                 openTroubleshootingGuideNotificationAction(
-                    TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
                 )
             ),
         )
@@ -216,7 +247,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             project,
             listOf(
                 openTroubleshootingGuideNotificationAction(
-                    TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
                 )
             ),
         )
