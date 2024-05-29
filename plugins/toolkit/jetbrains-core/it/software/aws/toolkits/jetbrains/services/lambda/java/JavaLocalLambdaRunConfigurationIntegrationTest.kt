@@ -11,7 +11,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.jupiter.api.TestInstance
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -31,10 +30,8 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
-import java.io.File
 
 @RunWith(Parameterized::class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
     companion object {
         @JvmStatic
@@ -54,14 +51,10 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val input = RuleUtils.randomName()
-    private val customGradleUserHome = File(System.getProperty("java.io.tmpdir"), "gradle-user-home").apply {
-        mkdirs()
-    }
 
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
-        System.setProperty("gradle.user.home", customGradleUserHome.absolutePath)
 
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
@@ -102,7 +95,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        System.clearProperty("gradle.user.home")
     }
 
     @Test
