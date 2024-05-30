@@ -44,7 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.Follo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.initialExamples
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswer
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthNeededException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthenticationInProgressMessage
@@ -532,7 +531,7 @@ class FeatureDevController(
         val interactions = session.send(message)
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
 
-        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType  = FeatureDevMessageType.Answer, canBeVoted = true)
+        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType = FeatureDevMessageType.Answer, canBeVoted = true)
 
         if (interactions.interactionSucceeded) {
             messenger.sendAnswer(
