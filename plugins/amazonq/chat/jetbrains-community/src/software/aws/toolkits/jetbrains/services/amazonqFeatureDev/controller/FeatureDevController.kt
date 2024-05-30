@@ -231,6 +231,7 @@ class FeatureDevController(
     override suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked) {
         val fileToUpdate = message.filePath
         val session = getSessionInfo(message.tabId)
+        val messageId = message.messageId
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -245,7 +246,7 @@ class FeatureDevController(
         filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
         deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
 
-        messenger.updateFileComponent(message.tabId, filePaths, deletedFiles)
+        messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
     }
 
     private suspend fun newTabOpened(tabId: String) {
@@ -522,19 +523,15 @@ class FeatureDevController(
 
         messenger.sendAnswer(
             tabId = tabId,
-            messageType = FeatureDevMessageType.Answer,
+            messageType = FeatureDevMessageType.AnswerStream,
             message = message("amazonqFeatureDev.create_plan"),
         )
 
-        // Ensure that the loading icon stays showing
-        messenger.sendAsyncEventProgress(tabId = tabId, inProgress = true)
-
-        messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.generating_approach"))
 
         val interactions = session.send(message)
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
 
-        messenger.sendAnswerPart(tabId = tabId, message = interactions.content, canBeVoted = interactions.interactionSucceeded)
+        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType  = FeatureDevMessageType.Answer, canBeVoted = true)
 
         if (interactions.interactionSucceeded) {
             messenger.sendAnswer(
