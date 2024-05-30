@@ -22,7 +22,17 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         val treeModel = scanManager.getScanTree().model
 
+        val oldLineDeletedCount = event.oldFragment.toString().count { it == '\n' }
+        val newLineInsertedCount = event.newFragment.toString().count { it == '\n' }
+
+        val lineOffset = when {
+            oldLineDeletedCount == 0 && newLineInsertedCount != 0 -> newLineInsertedCount
+            oldLineDeletedCount != 0 && newLineInsertedCount == 0 -> -oldLineDeletedCount
+            else -> 0
+        }
+
         val editedTextRange = TextRange.create(event.offset, event.offset + event.oldLength)
+        scanManager.updateScanNodesForOffSet(file, lineOffset, editedTextRange)
         val nodes = scanManager.getOverlappingScanNodes(file, editedTextRange)
         nodes.forEach {
             val issue = it.userObject as CodeWhispererCodeScanIssue

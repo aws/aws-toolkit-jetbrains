@@ -387,7 +387,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
      */
     fun addCodeScanUI(setSelected: Boolean = false) = runInEdt {
         reset()
-        EditorFactory.getInstance().eventMulticaster.addDocumentListener(documentListener, project)
         val problemsWindow = getProblemsWindow()
         if (!problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
             problemsWindow.contentManager.addContent(codeScanIssuesContent)
@@ -458,6 +457,33 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
+    private fun offsetSuggestedFix(suggestedFix: SuggestedFix, lines: Int): SuggestedFix {
+        val updatedCode = suggestedFix.code.replace(
+            Regex("""(@@ -)(\d+)(,\d+ \+)(\d+)(,\d+ @@)""")
+        ) { matchResult ->
+            val prefix = matchResult.groupValues[1]
+            val startLine = matchResult.groupValues[2].toInt() + lines
+            val middle = matchResult.groupValues[3]
+            val endLine = matchResult.groupValues[4].toInt() + lines
+            val suffix = matchResult.groupValues[5]
+            "$prefix$startLine$middle$endLine$suffix"
+        }
+
+        return suggestedFix.copy(code = updatedCode)
+    }
+
+    fun updateScanNodesForOffSet(file: VirtualFile, lineOffset: Int, eventOffset: TextRange) {
+        val document = FileDocumentManager.getInstance().getDocument(file) ?: return
+        scanNodesLookup[file]?.forEach { node ->
+            val issue = node.userObject as CodeWhispererCodeScanIssue
+            if (document.getLineNumber(eventOffset.startOffset) <= issue.startLine) {
+                issue.startLine = issue.startLine + lineOffset
+                issue.endLine = issue.endLine + lineOffset
+                issue.suggestedFixes = issue.suggestedFixes.map { fix -> offsetSuggestedFix(fix, lineOffset) }
+            }
+        }
+    }
+
     private fun CodeWhispererCodeScanIssue.copyRange(newRange: TextRange): CodeWhispererCodeScanIssue {
         val newStartLine = document.getLineNumber(newRange.startOffset)
         val newStartCol = newRange.startOffset - document.getLineStartOffset(newStartLine)
@@ -498,7 +524,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val editorFactory = EditorFactory.getInstance()
             editorFactory.eventMulticaster.addDocumentListener(documentListener, project)
             editorFactory.addEditorFactoryListener(fileListener, project)
-            EditorFactory.getInstance().eventMulticaster.addEditorMouseMotionListener(
+            editorFactory.eventMulticaster.addEditorMouseMotionListener(
                 editorMouseListener,
                 codeScanIssuesContent
             )
@@ -673,9 +699,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
 data class CodeWhispererCodeScanIssue(
     val project: Project,
     val file: VirtualFile,
-    val startLine: Int,
+    var startLine: Int,
     val startCol: Int,
-    val endLine: Int,
+    var endLine: Int,
     val endCol: Int,
     val title: @InspectionMessage String,
     val description: Description,
@@ -686,7 +712,7 @@ data class CodeWhispererCodeScanIssue(
     val relatedVulnerabilities: List<String>,
     val severity: String,
     val recommendation: Recommendation,
-    val suggestedFixes: List<SuggestedFix>,
+    var suggestedFixes: List<SuggestedFix>,
     val issueSeverity: HighlightDisplayLevel = HighlightDisplayLevel.WARNING,
     val isInvalid: Boolean = false,
     var rangeHighlighter: RangeHighlighterEx? = null
