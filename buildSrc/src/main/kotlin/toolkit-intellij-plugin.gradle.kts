@@ -19,15 +19,3 @@ repositories {
         defaultRepositories()
     }
 }
-
-// hack for fix in beta4
-//   - In plugin 'org.jetbrains.intellij.platform.gradle.plugins.project.IntelliJPlatformBasePlugin$Inject' type 'org.jetbrains.intellij.platform.gradle.tasks.GenerateManifestTask' property 'kotlinStdlibBundled' doesn't have a configured value.
-//
-//    Reason: This property isn't marked as optional and no value has been configured.
-//
-//    Possible solutions:
-//      1. Assign a value to 'kotlinStdlibBundled'.
-//      2. Mark property 'kotlinStdlibBundled' as optional.
-tasks.generateManifest {
-    kotlinStdlibBundled = false
-}

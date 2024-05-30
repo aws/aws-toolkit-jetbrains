@@ -95,15 +95,22 @@ val rdgenDir = File("$nonLazyBuildDir/rdgen/")
 
 rdgenDir.mkdirs()
 
+// https://github.com/JetBrains/resharper-unity/blob/master/rider/build.gradle.kts
+val rdLibDirectory: () -> File = { file(intellijPlatform.platformPath.resolve("lib/rd/")) }
+
+val rdModelJarFile: File by lazy {
+    val jarFile = File(rdLibDirectory(), "rider-model.jar").canonicalFile
+    assert(jarFile.isFile)
+    return@lazy jarFile
+}
+
 configure<RdGenExtension> {
     verbose = true
     hashFolder = rdgenDir.toString()
 
-//    classpath({
-//        val ijDependency = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
-//        println("Calculating classpath for rdgen, intellij.ideaDependency is: $ijDependency")
-//        File(ijDependency, "lib/rd").resolve("rider-model.jar").absolutePath
-//    })
+    classpath({
+        rdModelJarFile
+    })
 
     sources(projectDir.resolve("protocol/model"))
     packages = "model"
@@ -232,11 +239,10 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 }
 
 fun getNugetPackagesPath(): File {
-//    val sdkPath = tasks.setupDependencies.flatMap { it.idea }.map { it.classes }.get()
-    val sdkPath = ""
+    val sdkPath = rdLibDirectory()
     println("SDK path: $sdkPath")
 
-    val riderSdk = File(sdkPath, "lib/DotNetSdkForRdPlugins")
+    val riderSdk = File("lib/DotNetSdkForRdPlugins")
 
     println("NuGet packages: $riderSdk")
     if (!riderSdk.isDirectory) error("$riderSdk does not exist or not a directory")
