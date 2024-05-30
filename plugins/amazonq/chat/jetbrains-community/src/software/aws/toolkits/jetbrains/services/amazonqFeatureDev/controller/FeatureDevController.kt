@@ -527,6 +527,7 @@ class FeatureDevController(
             message = message("amazonqFeatureDev.create_plan"),
         )
 
+        messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.generating_approach"))
 
         val interactions = session.send(message)
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
