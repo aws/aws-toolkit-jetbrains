@@ -106,12 +106,12 @@ class TextUtilsTest {
     }
 
     @Test
-    fun canReturnNullWhenApplyPatchFails() {
+    fun shouldTryToApplyPatchEvenIfPatchIsIncorrect() {
         val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
         val inputFilePath = "dummy.py"
         val fileContent = "first line\nThree line\nforth line"
         val actual = applyPatch(inputPatch, fileContent, inputFilePath)
-        val expected = null
+        val expected = "first line\nthird line\nThree line\nforth line"
         assertThat(actual).isEqualTo(expected)
     }
 
