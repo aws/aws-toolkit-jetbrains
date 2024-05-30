@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
@@ -144,8 +145,10 @@ class CodeScanSessionConfig(
     private fun zipFile(filePath: Path): File = createTemporaryZipFile {
         val relativePath = filePath.relativeTo(projectRoot.toNioPath())
         val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
-        virtualFile?.let { vf ->
-            val document = FileDocumentManager.getInstance().getDocument(vf)
+        virtualFile?.let { file ->
+            val document = runReadAction {
+                FileDocumentManager.getInstance().getDocument(file)
+            }
             document?.let { doc ->
                 it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
             }
