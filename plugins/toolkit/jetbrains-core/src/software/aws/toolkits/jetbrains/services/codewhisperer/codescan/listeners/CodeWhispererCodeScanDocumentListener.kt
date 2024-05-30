@@ -22,12 +22,12 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         val treeModel = scanManager.getScanTree().model
 
-        val oldLineDeletedCount = event.oldFragment.toString().count { it == '\n' }
-        val newLineInsertedCount = event.newFragment.toString().count { it == '\n' }
+        val deletedLineCount = event.oldFragment.toString().count { it == '\n' }
+        val insertedLineCount = event.newFragment.toString().count { it == '\n' }
 
         val lineOffset = when {
-            oldLineDeletedCount == 0 && newLineInsertedCount != 0 -> newLineInsertedCount
-            oldLineDeletedCount != 0 && newLineInsertedCount == 0 -> -oldLineDeletedCount
+            deletedLineCount == 0 && insertedLineCount != 0 -> insertedLineCount
+            deletedLineCount != 0 && insertedLineCount == 0 -> -deletedLineCount
             else -> 0
         }
 
