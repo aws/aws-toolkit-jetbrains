@@ -137,4 +137,22 @@ class TextUtilsTest {
         val inputPatchLines = inputPatch.split("\n")
         hunk.lines.forEachIndexed { index, patchLine -> assertThat(inputPatchLines[index + 1].substring(1)).isEqualTo(patchLine.text) }
     }
+
+    @Test
+    fun shouldApplyPatchEvenIfNeighboringLinesDiffer() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "foo\nsecond line\nbar"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        assertThat(actual).isEqualTo("foo\nthird line\nbar")
+    }
+
+    @Test
+    fun shouldApplyPatchEvenIfLineNumbersDiffer() {
+        val inputPatch = "@@ -1,3 +1,3 @@\n first line\n-second line\n+third line\n forth line"
+        val inputFilePath = "dummy.py"
+        val fileContent = "dummy\ndummy\ndummy\ndummy\nfirst line\nsecond line\nforth line"
+        val actual = applyPatch(inputPatch, fileContent, inputFilePath)
+        assertThat(actual).isEqualTo("dummy\ndummy\ndummy\ndummy\nfirst line\nthird line\nforth line")
+    }
 }
