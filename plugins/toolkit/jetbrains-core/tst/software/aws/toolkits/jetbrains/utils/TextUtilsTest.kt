@@ -144,7 +144,7 @@ class TextUtilsTest {
     fun offsetSuggestedFixUpdateLineNumbersWithInsertion() {
         val originalCode = """
         fun main() {
-            println("Hello, World!")
+            println("Hello, Suggested Fix is Here!")
         }
     """.trimIndent()
 
@@ -152,8 +152,8 @@ class TextUtilsTest {
             code = """
             @@ -1,3 +1,4 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!")
              }
         """.trimIndent(),
             description = "Add a variable for the greeting"
@@ -162,8 +162,8 @@ class TextUtilsTest {
         val expectedCode = """
             @@ -2,3 +2,4 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!")
              }
         """.trimIndent()
 
@@ -175,7 +175,7 @@ class TextUtilsTest {
     fun offsetSuggestedFixUpdateMultipleLineNumbersWithInsertion() {
         val originalCode = """
         fun main() {
-            println("Hello, World!")
+            println("Hello, Suggested Fix is Here!")
         }
     """.trimIndent()
 
@@ -183,20 +183,20 @@ class TextUtilsTest {
             code = """
             @@ -1,3 +1,5 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
-            +    println("Goodbye, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!"))
+            +    println("Hello, Welcome to Amazon Q")
              }
         """.trimIndent(),
-            description = "Add a variable for the greeting and a goodbye message"
+            description = "Add a variable for the greeting with multiple lines"
         )
 
         val expectedCode = """
             @@ -4,3 +4,5 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
-            +    println("Goodbye, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!"))
+            +    println("Hello, Welcome to Amazon Q")
              }
         """.trimIndent()
 
@@ -208,7 +208,7 @@ class TextUtilsTest {
     fun offsetSuggestedFixUpdateLineNumbersWithDeletion() {
         val originalCode = """
         fun main() {
-            println("Hello, World!")
+            println("Hello, Suggested Fix is Here!")
         }
     """.trimIndent()
 
@@ -216,8 +216,8 @@ class TextUtilsTest {
             code = """
             @@ -24,3 +24,4 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!")
              }
         """.trimIndent(),
             description = "Add a variable for the greeting"
@@ -226,8 +226,8 @@ class TextUtilsTest {
         val expectedCode = """
             @@ -19,3 +19,4 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!")
              }
         """.trimIndent()
 
@@ -239,7 +239,7 @@ class TextUtilsTest {
     fun offsetSuggestedFixUpdateMultipleLineNumbersWithDeletion() {
         val originalCode = """
         fun main() {
-            println("Hello, World!")
+            println("Hello, Suggested Fix is Here!")
         }
     """.trimIndent()
 
@@ -247,20 +247,20 @@ class TextUtilsTest {
             code = """
             @@ -10,3 +10,5 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
-            +    println("Goodbye, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!"))
+            +    println("Hello, Welcome to Amazon Q")
              }
         """.trimIndent(),
-            description = "Add a variable for the greeting and a goodbye message"
+            description = "Add a variable for the greeting with multiple lines"
         )
 
         val expectedCode = """
             @@ -8,3 +8,5 @@
              fun main() {
-            +    val greeting = "Hello, World!"
-                 println("Hello, World!")
-            +    println("Goodbye, World!")
+            +    val greeting = "Hello, Suggested Fix is Here!"
+                 println("Hello, Suggested Fix is Here!"))
+            +    println("Hello, Welcome to Amazon Q")
              }
         """.trimIndent()
 
