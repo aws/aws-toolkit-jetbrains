@@ -69,6 +69,7 @@ object CodeWhispererConstants {
     const val ACCOUNTLESS_START_URL = "accountless"
     const val FEATURE_CONFIG_POLL_INTERVAL_IN_MS: Long = 30 * 60 * 1000L // 30 mins
     const val CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS: Long = 1500 // 1.5 seconds
+    const val TEXT_CHANGE_DELAY_IN_MS = 1000 // 1 second
     const val USING: String = "using"
     const val GLOBAL_USING: String = "global using"
     const val STATIC: String = "static"
