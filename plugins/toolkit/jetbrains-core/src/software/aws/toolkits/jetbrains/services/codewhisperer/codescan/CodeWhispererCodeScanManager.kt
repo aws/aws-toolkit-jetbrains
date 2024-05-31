@@ -460,23 +460,23 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private fun offsetSuggestedFix(suggestedFix: SuggestedFix, lines: Int): SuggestedFix {
         val updatedCode = suggestedFix.code.replace(
             Regex("""(@@ -)(\d+)(,\d+ \+)(\d+)(,\d+ @@)""")
-        ) { matchResult ->
-            val prefix = matchResult.groupValues[1]
-            val startLine = matchResult.groupValues[2].toInt() + lines
-            val middle = matchResult.groupValues[3]
-            val endLine = matchResult.groupValues[4].toInt() + lines
-            val suffix = matchResult.groupValues[5]
+        ) { result ->
+            val prefix = result.groupValues[1]
+            val startLine = result.groupValues[2].toInt() + lines
+            val middle = result.groupValues[3]
+            val endLine = result.groupValues[4].toInt() + lines
+            val suffix = result.groupValues[5]
             "$prefix$startLine$middle$endLine$suffix"
         }
 
         return suggestedFix.copy(code = updatedCode)
     }
 
-    fun updateScanNodesForOffSet(file: VirtualFile, lineOffset: Int, eventOffset: TextRange) {
+    fun updateScanNodesForOffSet(file: VirtualFile, lineOffset: Int, editedTextRange: TextRange) {
         val document = FileDocumentManager.getInstance().getDocument(file) ?: return
         scanNodesLookup[file]?.forEach { node ->
             val issue = node.userObject as CodeWhispererCodeScanIssue
-            if (document.getLineNumber(eventOffset.startOffset) <= issue.startLine) {
+            if (document.getLineNumber(editedTextRange.startOffset) <= issue.startLine) {
                 issue.startLine = issue.startLine + lineOffset
                 issue.endLine = issue.endLine + lineOffset
                 issue.suggestedFixes = issue.suggestedFixes.map { fix -> offsetSuggestedFix(fix, lineOffset) }
