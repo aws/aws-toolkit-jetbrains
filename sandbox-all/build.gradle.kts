@@ -26,6 +26,7 @@ dependencies {
         val version = toolkitIntelliJ.version()
 
         create(type, version)
+        jetbrainsRuntime()
 
         localPlugin(project(":plugin-core", "pluginZip"))
         localPlugin(project(":plugin-amazonq", "pluginZip"))

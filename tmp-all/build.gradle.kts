@@ -18,6 +18,12 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
+        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+        val version = toolkitIntelliJ.version()
+
+        create(type, version)
+        jetbrainsRuntime()
+
         localPlugin(project(":plugin-core", "pluginZip"))
         localPlugin(project(":plugin-amazonq", "pluginZip"))
         plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
