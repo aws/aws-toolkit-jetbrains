@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
@@ -58,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -411,7 +411,7 @@ class CodeTransformChatController(
         } catch (e: Exception) {
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
+                CodeTransformTelemetryMetadata(
                     cancelledFromChat = false,
                 ),
                 success = false,
@@ -500,7 +500,7 @@ class CodeTransformChatController(
 
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
-                HilTelemetryMetaData(
+                CodeTransformTelemetryMetadata(
                     dependencyVersionSelected = selectedVersion,
                 ),
                 success = true,
@@ -532,7 +532,7 @@ class CodeTransformChatController(
 
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
+                CodeTransformTelemetryMetadata(
                     cancelledFromChat = true,
                 ),
                 success = false,
@@ -546,7 +546,7 @@ class CodeTransformChatController(
         } catch (e: Exception) {
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
+                CodeTransformTelemetryMetadata(
                     cancelledFromChat = false,
                 ),
                 success = false,
