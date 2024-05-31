@@ -7,19 +7,20 @@ import org.junit.Test
 
 open class CodeTransformTelemetryMetadataSingletonTest {
     @Test
-    fun `test sets values and resets defaults properly`() {
+    fun `CodeTransformTelemetryMetadata will set values and resets defaults properly`() {
         CodeTransformTelemetryMetadataSingleton.setDependencyVersionSelected("1.2.3")
         CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(true)
         assertEquals(CodeTransformTelemetryMetadataSingleton.getInstance().dependencyVersionSelected, "1.2.3")
         assertEquals(CodeTransformTelemetryMetadataSingleton.getInstance().cancelledFromChat, true)
 
+        // check reset defaults works
         CodeTransformTelemetryMetadataSingleton.getInstance().resetDefaults()
         assertEquals(CodeTransformTelemetryMetadataSingleton.getInstance().dependencyVersionSelected, null)
         assertEquals(CodeTransformTelemetryMetadataSingleton.getInstance().cancelledFromChat, false)
     }
 
     @Test
-    fun `test toJsonString serializes object correctly`() {
+    fun `CodeTransformTelemetryMetadataSingletonTest toJsonString() will serialize object correctly`() {
         CodeTransformTelemetryMetadataSingleton.setDependencyVersionSelected("1.2.3")
         CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(true)
         val expectedJsonString = """{"dependencyVersionSelected":"1.2.3","cancelledFromChat":true}"""
@@ -27,12 +28,12 @@ open class CodeTransformTelemetryMetadataSingletonTest {
     }
 
     @Test
-    fun `test trimJsonString trims JSON string to specified length`() {
-        val longString = "a".repeat(CODETRANSFORM_METADATA_MAX_STRINGIFIED_LENGTH + 1000)
+    fun `CodeTransformTelemetryMetadataSingletonTest trimJsonString() trims single field JSON string to specified length`() {
+        val longString = "a".repeat(CODETRANSFORM_METADATA_MAX_STRINGIFIED_LENGTH)
         CodeTransformTelemetryMetadataSingleton.setDependencyVersionSelected(longString)
         CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(true)
 
-        val expectedTrimmedJsonString = """{"cancelledFromChat":true}"""
+        val expectedTrimmedJsonString = """{"dependencyVersionSelected":"${"a".repeat(MAX_SERIALIZABLE_STRING_LENGTH)}","cancelledFromChat":true}"""
         assertEquals(expectedTrimmedJsonString, CodeTransformTelemetryMetadataSingleton.getInstance().toJsonString())
     }
 }
