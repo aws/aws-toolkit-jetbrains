@@ -413,7 +413,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         scanNodesLookup[file]?.mapNotNull { node ->
             val issue = node.userObject as CodeWhispererCodeScanIssue
             if (issue.textRange?.overlaps(range) == true && !issue.isInvalid) node else null
-        } ?: listOf()
+        }.orEmpty()
     }
 
     fun getScanTree(): Tree = codeScanResultsPanel.getCodeScanTree()
