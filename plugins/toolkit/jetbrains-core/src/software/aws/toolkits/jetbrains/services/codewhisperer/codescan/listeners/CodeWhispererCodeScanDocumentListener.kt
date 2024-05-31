@@ -29,8 +29,8 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
             synchronized(it) {
                 treeModel.valueForPathChanged(TreePath(it.path), issue.copy(isInvalid = true))
             }
-            issue.rangeHighlighter?.dispose()
             issue.rangeHighlighter?.textAttributes = null
+            issue.rangeHighlighter?.dispose()
         }
         scanManager.updateScanNodes(file)
 
