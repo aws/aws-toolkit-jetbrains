@@ -276,7 +276,9 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         gradlePropertiesFile.writeText(
             """
             org.gradle.daemon=true
+            org.gradle.caching=false
             gradle.user.home=${gradleUserHome.absolutePath}
+            org.gradle.jvmargs=-Dfile.encoding=UTF-8 -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -Dorg.gradle.jvmargs.lockTimeout=120s
             """.trimIndent()
         )
     }
