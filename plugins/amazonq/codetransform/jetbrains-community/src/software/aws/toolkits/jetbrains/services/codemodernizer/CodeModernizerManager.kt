@@ -484,7 +484,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val lastJobId = managerState.getLatestJobId()
             val isJobExpired = managerState.getLatestJobStartTime().plusMillis(JOB_EXPIRY_TIME_DAYS.days.inWholeMilliseconds) < Instant.now()
             if (isJobExpired) {
-                LOG.info { "Last job is expired, won't attempt to resume job with Id $lastJobId anymore" }
                 setJobNotOngoing()
                 return@launch
             }
