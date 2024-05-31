@@ -10,7 +10,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertEquals
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 
 class TextUtilsTest {
     @Rule
@@ -137,4 +139,133 @@ class TextUtilsTest {
         val inputPatchLines = inputPatch.split("\n")
         hunk.lines.forEachIndexed { index, patchLine -> assertThat(inputPatchLines[index + 1].substring(1)).isEqualTo(patchLine.text) }
     }
+
+    @Test
+    fun offsetSuggestedFixUpdateLineNumbersWithInsertion() {
+        val originalCode = """
+        fun main() {
+            println("Hello, World!")
+        }
+    """.trimIndent()
+
+        val suggestedFix = SuggestedFix(
+            code = """
+            @@ -1,3 +1,4 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+             }
+        """.trimIndent(),
+            description = "Add a variable for the greeting"
+        )
+
+        val expectedCode = """
+            @@ -2,3 +2,4 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+             }
+        """.trimIndent()
+
+        val result = offsetSuggestedFix(suggestedFix, 1)
+        assertEquals(expectedCode, result.code)
+    }
+
+    @Test
+    fun offsetSuggestedFixUpdateMultipleLineNumbersWithInsertion() {
+        val originalCode = """
+        fun main() {
+            println("Hello, World!")
+        }
+    """.trimIndent()
+
+        val suggestedFix = SuggestedFix(
+            code = """
+            @@ -1,3 +1,5 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+            +    println("Goodbye, World!")
+             }
+        """.trimIndent(),
+            description = "Add a variable for the greeting and a goodbye message"
+        )
+
+        val expectedCode = """
+            @@ -4,3 +4,5 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+            +    println("Goodbye, World!")
+             }
+        """.trimIndent()
+
+        val result = offsetSuggestedFix(suggestedFix, 3)
+        assertEquals(expectedCode, result.code)
+    }
+
+    @Test
+    fun offsetSuggestedFixUpdateLineNumbersWithDeletion() {
+        val originalCode = """
+        fun main() {
+            println("Hello, World!")
+        }
+    """.trimIndent()
+
+        val suggestedFix = SuggestedFix(
+            code = """
+            @@ -24,3 +24,4 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+             }
+        """.trimIndent(),
+            description = "Add a variable for the greeting"
+        )
+
+        val expectedCode = """
+            @@ -19,3 +19,4 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+             }
+        """.trimIndent()
+
+        val result = offsetSuggestedFix(suggestedFix, -5)
+        assertEquals(expectedCode, result.code)
+    }
+
+    @Test
+    fun offsetSuggestedFixUpdateMultipleLineNumbersWithDeletion() {
+        val originalCode = """
+        fun main() {
+            println("Hello, World!")
+        }
+    """.trimIndent()
+
+        val suggestedFix = SuggestedFix(
+            code = """
+            @@ -10,3 +10,5 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+            +    println("Goodbye, World!")
+             }
+        """.trimIndent(),
+            description = "Add a variable for the greeting and a goodbye message"
+        )
+
+        val expectedCode = """
+            @@ -8,3 +8,5 @@
+             fun main() {
+            +    val greeting = "Hello, World!"
+                 println("Hello, World!")
+            +    println("Goodbye, World!")
+             }
+        """.trimIndent()
+
+        val result = offsetSuggestedFix(suggestedFix, -2)
+        assertEquals(expectedCode, result.code)
+    }
+
 }
