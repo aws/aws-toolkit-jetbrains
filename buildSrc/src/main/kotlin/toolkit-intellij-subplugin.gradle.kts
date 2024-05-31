@@ -92,7 +92,7 @@ dependencies {
         val version = toolkitIntelliJ.version()
 
         create(type, version)
-
+        jetbrainsRuntime()
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
     }

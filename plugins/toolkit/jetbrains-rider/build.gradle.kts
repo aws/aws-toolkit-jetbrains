@@ -177,8 +177,6 @@ val prepareBuildProps = tasks.register("prepareBuildProps") {
 val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
     group = backendGroup
 
-    dependsOn(tasks.setupDependencies)
-
     val nugetConfigPath = File(projectDir, "NuGet.Config")
     // FIX_WHEN_MIN_IS_211 remove the projectDir one above
     val nugetConfigPath211 = Path.of(projectDir.absolutePath, "testData", "NuGet.config").toFile()
@@ -239,10 +237,10 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
 }
 
 fun getNugetPackagesPath(): File {
-    val sdkPath = rdLibDirectory()
+    val sdkPath = intellijPlatform.platformPath
     println("SDK path: $sdkPath")
 
-    val riderSdk = File("lib/DotNetSdkForRdPlugins")
+    val riderSdk = sdkPath.resolve("lib").resolve("DotNetSdkForRdPlugins").toAbsolutePath().toFile()
 
     println("NuGet packages: $riderSdk")
     if (!riderSdk.isDirectory) error("$riderSdk does not exist or not a directory")

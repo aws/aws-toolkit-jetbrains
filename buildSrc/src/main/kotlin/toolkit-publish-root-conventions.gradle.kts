@@ -69,6 +69,7 @@ dependencies {
             }
 
             create(type, version)
+            jetbrainsRuntime()
         }
     }
 }
