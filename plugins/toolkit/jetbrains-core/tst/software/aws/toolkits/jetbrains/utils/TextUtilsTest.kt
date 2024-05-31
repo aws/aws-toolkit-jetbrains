@@ -8,9 +8,9 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Assert.assertEquals
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 
@@ -142,12 +142,6 @@ class TextUtilsTest {
 
     @Test
     fun offsetSuggestedFixUpdateLineNumbersWithInsertion() {
-        val originalCode = """
-        fun main() {
-            println("Hello, Suggested Fix is Here!")
-        }
-    """.trimIndent()
-
         val suggestedFix = SuggestedFix(
             code = """
             @@ -1,3 +1,4 @@
@@ -155,7 +149,7 @@ class TextUtilsTest {
             +    val greeting = "Hello, Suggested Fix is Here!"
                  println("Hello, Suggested Fix is Here!")
              }
-        """.trimIndent(),
+            """.trimIndent(),
             description = "Add a variable for the greeting"
         )
 
@@ -173,12 +167,6 @@ class TextUtilsTest {
 
     @Test
     fun offsetSuggestedFixUpdateMultipleLineNumbersWithInsertion() {
-        val originalCode = """
-        fun main() {
-            println("Hello, Suggested Fix is Here!")
-        }
-    """.trimIndent()
-
         val suggestedFix = SuggestedFix(
             code = """
             @@ -1,3 +1,5 @@
@@ -187,7 +175,7 @@ class TextUtilsTest {
                  println("Hello, Suggested Fix is Here!"))
             +    println("Hello, Welcome to Amazon Q")
              }
-        """.trimIndent(),
+            """.trimIndent(),
             description = "Add a variable for the greeting with multiple lines"
         )
 
@@ -206,12 +194,6 @@ class TextUtilsTest {
 
     @Test
     fun offsetSuggestedFixUpdateLineNumbersWithDeletion() {
-        val originalCode = """
-        fun main() {
-            println("Hello, Suggested Fix is Here!")
-        }
-    """.trimIndent()
-
         val suggestedFix = SuggestedFix(
             code = """
             @@ -24,3 +24,4 @@
@@ -219,7 +201,7 @@ class TextUtilsTest {
             +    val greeting = "Hello, Suggested Fix is Here!"
                  println("Hello, Suggested Fix is Here!")
              }
-        """.trimIndent(),
+            """.trimIndent(),
             description = "Add a variable for the greeting"
         )
 
@@ -237,12 +219,6 @@ class TextUtilsTest {
 
     @Test
     fun offsetSuggestedFixUpdateMultipleLineNumbersWithDeletion() {
-        val originalCode = """
-        fun main() {
-            println("Hello, Suggested Fix is Here!")
-        }
-    """.trimIndent()
-
         val suggestedFix = SuggestedFix(
             code = """
             @@ -10,3 +10,5 @@
@@ -251,7 +227,7 @@ class TextUtilsTest {
                  println("Hello, Suggested Fix is Here!"))
             +    println("Hello, Welcome to Amazon Q")
              }
-        """.trimIndent(),
+            """.trimIndent(),
             description = "Add a variable for the greeting with multiple lines"
         )
 
@@ -267,5 +243,4 @@ class TextUtilsTest {
         val result = offsetSuggestedFix(suggestedFix, -2)
         assertEquals(expectedCode, result.code)
     }
-
 }
