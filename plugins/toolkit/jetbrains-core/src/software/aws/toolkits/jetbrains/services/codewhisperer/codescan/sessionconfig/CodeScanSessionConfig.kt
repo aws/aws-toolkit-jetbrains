@@ -10,10 +10,12 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
@@ -44,6 +46,8 @@ class CodeScanSessionConfig(
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
         private set
+
+    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -86,12 +90,17 @@ class CodeScanSessionConfig(
             null -> getProjectPayloadMetadata()
             else -> when (scope) {
                 CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                CodeAnalysisScope.FILE -> getFilePayloadMetadata(selectedFile)
+                CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
+                    getFilePayloadMetadata(selectedFile)
+                } else {
+                    projectRoot = selectedFile.parent
+                    getFilePayloadMetadata(selectedFile)
+                }
             }
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) }, scope)
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -106,7 +115,6 @@ class CodeScanSessionConfig(
     }
 
     fun getFilePayloadMetadata(file: VirtualFile): PayloadMetadata =
-        // Handle the case where the selected file is outside the project root.
         PayloadMetadata(
             setOf(file.path),
             file.length,
@@ -124,12 +132,9 @@ class CodeScanSessionConfig(
         return bufferedReader.useLines { lines -> lines.count() }
     }
 
-    private fun zipFiles(files: List<Path>, scope: CodeAnalysisScope): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
-            val relativePath = when (scope) {
-                CodeAnalysisScope.PROJECT -> file.relativeTo(projectRoot.toNioPath())
-                else -> file
-            }
+            val relativePath = file.relativeTo(projectRoot.toNioPath())
             LOG.debug { "Selected file for truncation: $file" }
             it.putNextEntry(relativePath.toString(), file)
         }
@@ -151,7 +156,9 @@ class CodeScanSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        if (!changeListManager.isIgnoredFile(current) && !files.contains(current.path)
+                        if (!changeListManager.isIgnoredFile(current) &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !files.contains(current.path)
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 fileTooLarge()
@@ -168,7 +175,9 @@ class CodeScanSessionConfig(
                         }
                     } else {
                         // Directory case: only traverse if not ignored
-                        if (!changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
+                        if (!changeListManager.isIgnoredFile(current) &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !traversedDirectories.contains(current)
                         ) {
                             for (child in current.children) {
                                 stack.push(child)
