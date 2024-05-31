@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
@@ -58,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryMetadataSingleton
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -409,11 +409,10 @@ class CodeTransformChatController(
 
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
+            CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(false)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = false,
-                ),
+                CodeTransformTelemetryMetadataSingleton.getInstance(),
                 success = false,
                 reason = "Runtime Error when trying to resume transformation from HIL",
             )
@@ -497,12 +496,10 @@ class CodeTransformChatController(
 
         try {
             codeModernizerManager.tryResumeWithAlternativeVersion(selectedVersion)
-
+            CodeTransformTelemetryMetadataSingleton.setDependencyVersionSelected(selectedVersion)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
-                HilTelemetryMetaData(
-                    dependencyVersionSelected = selectedVersion,
-                ),
+                CodeTransformTelemetryMetadataSingleton.getInstance(),
                 success = true,
                 reason = "User selected version"
             )
@@ -529,12 +526,10 @@ class CodeTransformChatController(
 
         try {
             codeModernizerManager.rejectHil()
-
+            CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(true)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = true,
-                ),
+                CodeTransformTelemetryMetadataSingleton.getInstance(),
                 success = false,
                 reason = "User cancelled"
             )
@@ -544,11 +539,10 @@ class CodeTransformChatController(
             }
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
+            CodeTransformTelemetryMetadataSingleton.setCancelledFromChat(false)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = false,
-                ),
+                CodeTransformTelemetryMetadataSingleton.getInstance(),
                 success = false,
                 reason = "Runtime Error when trying to resume transformation from HIL",
             )

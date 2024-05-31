@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
@@ -196,11 +197,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
+    fun logHil(jobId: String, metaData: CodeTransformTelemetryMetadata, success: Boolean, reason: String) {
         CodetransformTelemetry.humanInTheLoop(
             project,
             jobId,
-            metaData.toString(),
+            metaData.toJsonString(),
             sessionId,
             reason,
             success,
@@ -223,8 +224,3 @@ class CodeTransformTelemetryManager(private val project: Project) {
         fun getInstance(project: Project): CodeTransformTelemetryManager = project.service()
     }
 }
-
-data class HilTelemetryMetaData(
-    val dependencyVersionSelected: String? = null,
-    val cancelledFromChat: Boolean = false,
-)
