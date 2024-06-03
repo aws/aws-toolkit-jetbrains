@@ -228,6 +228,6 @@ gradle.projectsLoaded {
     if (userHomeDir != null) {
         gradle.startParameter.gradleUserHomeDir = File(userHomeDir)
     } else {
-        gradle.startParameter.gradleUserHomeDir = File(System.getProperty("gradle.user.home"), ".gradle")
+        gradle.startParameter.gradleUserHomeDir = File(System.getProperty("user.home"), ".gradle")
     }
 }
