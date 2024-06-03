@@ -21,6 +21,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import com.jetbrains.rd.util.concurrentMapOf
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -48,6 +49,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -90,6 +92,8 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class CodeWhispererService {
+    private val connRefresh: MutableMap<ToolkitConnection, Int> = concurrentMapOf()
+
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
@@ -106,13 +110,20 @@ class CodeWhispererService {
         }
 
         if (isQExpired(project)) {
-            // The purpose to execute in the background is to hide the progress indicator UI
-            val shouldReauth = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
-                promptReAuth(project)
-            }.get()
+            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
+                // TODO: debounce, only try refresh once
+                val shouldReauth = if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand || connRefresh[conn] == null) {
+                    ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
+                        connRefresh[conn] = connRefresh.getOrDefault(conn, 0) + 1
+                        promptReAuth(project)
+                    }.get()
+                } else {
+                    true
+                }
 
-            if (shouldReauth) {
-                return
+                if (shouldReauth) {
+                    return
+                }
             }
         }
 
