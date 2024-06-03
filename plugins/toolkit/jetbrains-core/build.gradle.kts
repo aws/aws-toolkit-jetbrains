@@ -10,6 +10,7 @@ import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
+import java.io.File
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -220,4 +221,13 @@ dependencies {
 
     // delete when fully split
     testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
+}
+
+gradle.projectsLoaded {
+    val userHomeDir = System.getenv("GRADLE_USER_HOME")
+    if (userHomeDir != null) {
+        gradle.startParameter.gradleUserHomeDir = File(userHomeDir)
+    } else {
+        gradle.startParameter.gradleUserHomeDir = File(System.getProperty("gradle.user.home"), ".gradle")
+    }
 }
