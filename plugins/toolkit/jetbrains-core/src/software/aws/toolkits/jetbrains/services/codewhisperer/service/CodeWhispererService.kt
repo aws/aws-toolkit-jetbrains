@@ -92,7 +92,7 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class CodeWhispererService {
-    private val connRefresh: MutableMap<ToolkitConnection, Int> = concurrentMapOf()
+    private val connRefreshAttempts: MutableMap<ToolkitConnection, Int> = concurrentMapOf()
 
     fun showRecommendationsInPopup(
         editor: Editor,
@@ -111,10 +111,10 @@ class CodeWhispererService {
 
         if (isQExpired(project)) {
             ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
-                // TODO: debounce, only try refresh once
-                val shouldReauth = if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand || connRefresh[conn] == null) {
+                // only refresh for users once unless it's a manual trigger
+                val shouldReauth = if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand || connRefreshAttempts[conn] == null) {
                     ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
-                        connRefresh[conn] = connRefresh.getOrDefault(conn, 0) + 1
+                        connRefreshAttempts[conn] = connRefreshAttempts.getOrDefault(conn, 0) + 1
                         promptReAuth(project)
                     }.get()
                 } else {
