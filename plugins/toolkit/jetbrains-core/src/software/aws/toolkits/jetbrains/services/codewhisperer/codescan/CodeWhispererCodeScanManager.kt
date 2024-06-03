@@ -231,7 +231,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
             language = codeScanSessionConfig.getSelectedFile()?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
-                !language.isAutoFileScanSupported()
+                (!language.isAutoFileScanSupported() || codeScanSessionConfig.getSelectedFile()?.path?.endsWith(".jar") == true)
             ) {
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 codeScanStatus = Result.Cancelled
