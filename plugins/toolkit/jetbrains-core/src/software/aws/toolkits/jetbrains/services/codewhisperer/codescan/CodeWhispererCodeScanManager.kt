@@ -392,7 +392,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                  * Error message has text with user details(like requestId) which is specific so sending a custom error message to calculate the occurence of this event.
                  */
                 e.message?.startsWith("Too many requests, please wait before trying again.") == true ->
-               "Too many requests, please wait before trying again."
+                    "Too many requests, please wait before trying again."
                 else -> e.message
             }
         } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
