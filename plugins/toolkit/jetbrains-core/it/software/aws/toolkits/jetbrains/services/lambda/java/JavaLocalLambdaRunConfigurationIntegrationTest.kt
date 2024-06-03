@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.java
 
 import com.intellij.compiler.CompilerTestUtil
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -20,6 +21,9 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
+import software.aws.toolkits.jetbrains.services.lambda.sam.samBuildCommand
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
@@ -69,6 +73,23 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         gradleUserHome = File(testProjectDir, "gradleUserHome")
         gradleUserHome.mkdirs()
         createGradlePropertiesFile(gradleUserHome)
+
+        val samExecutable = SamExecutable()
+        val samPath = samExecutable.resolve() ?: throw RuntimeException("Failed to resolve SAM CLI path")
+
+        val commandLine = GeneralCommandLine(samPath.toString())
+
+        val env = System.getenv().toMutableMap()
+        env["GRADLE_USER_HOME"] = gradleUserHome.absolutePath
+
+        run {
+            commandLine.samBuildCommand(
+                templatePath = testProjectDir.toPath(),
+                buildDir = File(testProjectDir, "build").toPath(),
+                environmentVariables = env,
+                samOptions = SamOptions(buildInContainer = true)
+            )
+        }
 
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
