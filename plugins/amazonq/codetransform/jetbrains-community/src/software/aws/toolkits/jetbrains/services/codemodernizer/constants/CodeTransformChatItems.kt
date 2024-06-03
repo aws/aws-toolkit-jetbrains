@@ -170,6 +170,14 @@ fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTran
     )
 )
 
+fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    followUps = listOf(
+        startNewTransformFollowUp
+    )
+)
+
+
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
     val moduleBuildFiles = validationResult.validatedBuildFiles
 
@@ -232,21 +240,19 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
 
 fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String {
     val resultMessage = when (failureReason) {
-        is UploadFailureReason.PRESIGNED_URL_EXPIRED -> {
-            message("codemodernizer.chat.message.upload_failed_url_expired")
-        }
-        is UploadFailureReason.HTTP_ERROR -> {
-            message("codemodernizer.chat.message.upload_failed_http_error", failureReason.statusCode)
-        }
-        is UploadFailureReason.CONNECTION_REFUSED -> {
-            message("codemodernizer.chat.message.upload_failed_connection_refused")
-        }
-        is UploadFailureReason.OTHER -> {
-            message("codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage)
-        }
+        is UploadFailureReason.PRESIGNED_URL_EXPIRED -> message("codemodernizer.chat.message.upload_failed_url_expired")
+        is UploadFailureReason.HTTP_ERROR -> message("codemodernizer.chat.message.upload_failed_http_error", failureReason.statusCode)
+        is UploadFailureReason.CONNECTION_REFUSED -> message("codemodernizer.chat.message.upload_failed_connection_refused")
+        is UploadFailureReason.OTHER -> message("codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage)
+        is UploadFailureReason.CREDENTIALS_EXPIRED -> message("q.connection.expired")
     }
     return resultMessage
 }
+
+fun buildAuthRestoredMessage() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.reauth_success"),
+)
 
 fun buildCompileLocalSuccessChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,

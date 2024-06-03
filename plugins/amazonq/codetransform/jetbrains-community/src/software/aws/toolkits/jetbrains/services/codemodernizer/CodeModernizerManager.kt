@@ -4,6 +4,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.PersistentStateComponent
@@ -47,6 +48,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -249,13 +251,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeModernizerSessionState.getInstance(project).currentJobStopTime = Instant.MIN
     }
 
-    private fun notifyJobFailure(failureReason: String?) {
+    private fun notifyJobFailure(failureReason: String?, actions: Collection<AnAction> = listOf()) {
         val reason = failureReason ?: message("codemodernizer.notification.info.modernize_failed.unknown_failure_reason") // should not happen
         notifyStickyInfo(
             message("codemodernizer.notification.info.modernize_failed.title"),
             reason,
             project,
-            listOf(displayFeedbackNotificationAction())
+            listOf(displayFeedbackNotificationAction(), *actions.toTypedArray())
         )
     }
 
@@ -340,6 +342,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         managerState.flags[StateFlags.IS_ONGOING] = false
     }
 
+    fun isJobOngoingInState() = managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)
+
     fun handleLocalMavenBuildResult(mavenCopyCommandsResult: MavenCopyCommandsResult) {
         codeTransformationSession?.setLastMvnBuildResult(mavenCopyCommandsResult)
         // Send IDE notifications first
@@ -366,6 +370,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
+//            val result = MavenCopyCommandsResult.Success("")
             isMvnRunning.set(false)
             handleLocalMavenBuildResult(result)
         }
@@ -593,9 +598,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 result.failureReason
             )
 
-            is CodeModernizerJobCompletedResult.ZipUploadFailed -> notifyJobFailure(
-                message("codemodernizer.notification.warn.upload_failed", result.failureReason.toString()),
-            )
+            is CodeModernizerJobCompletedResult.ZipUploadFailed -> {
+                if (result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
+                    setJobNotOngoing()
+                    CodeTransformMessageListener.instance.onCheckAuth()
+                    notifyJobFailure(
+                        message("codemodernizer.notification.warn.upload_failed_expired_credentials.content"),
+                        listOf(NotificationAction.createSimpleExpiring("Reauthenticate") {
+                            CodeTransformMessageListener.instance.onReauthStarted()
+                        })
+                    )
+                } else {
+                    notifyJobFailure(
+                        message("codemodernizer.notification.warn.upload_failed", result.failureReason),
+                    )
+                }
+            }
 
             is CodeModernizerJobCompletedResult.RetryableFailure -> notifyJobFailure(
                 result.failureReason

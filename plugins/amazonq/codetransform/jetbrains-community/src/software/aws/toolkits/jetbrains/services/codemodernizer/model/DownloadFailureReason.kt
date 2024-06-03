@@ -6,5 +6,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 sealed class DownloadFailureReason {
     object SSL_HANDSHAKE_ERROR : DownloadFailureReason()
     object PROXY_WILDCARD_ERROR : DownloadFailureReason()
+    object CREDENTIALS_EXPIRED : DownloadFailureReason()
     object OTHER : DownloadFailureReason()
 }

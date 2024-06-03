@@ -12,4 +12,6 @@ enum class CodeTransformCommand {
     TransformResuming,
     AuthRestored,
     StartHil,
+    CheckAuth,
+    ReauthStarted,
 }

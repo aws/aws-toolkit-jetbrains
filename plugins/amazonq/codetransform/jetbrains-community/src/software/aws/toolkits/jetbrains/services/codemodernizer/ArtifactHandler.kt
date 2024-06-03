@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -16,23 +17,27 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithQ
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getQTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsToolkitBundle.message
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -43,6 +48,7 @@ data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zip
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
+const val DOWNLOAD_TOKEN_DOES_NOT_EXIST: String = "Token refresh started before session initialized"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -107,21 +113,23 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     suspend fun downloadArtifact(job: JobId): DownloadArtifactResult {
         isCurrentlyDownloading.set(true)
+        if ((getQTokenProvider(project) as BearerTokenProvider).currentToken() != null)
+            getQTokenProvider(project)?.invalidate()
         val downloadStartTime = Instant.now()
         try {
             // 1. Attempt reusing previously downloaded artifact for job
-            val previousArtifact = downloadedArtifacts.getOrDefault(job, null)
-            if (previousArtifact != null && previousArtifact.exists()) {
-                val zipPath = previousArtifact.toAbsolutePath().toString()
-                return try {
-                    val artifact = CodeModernizerArtifact.create(zipPath)
-                    downloadedSummaries[job] = artifact.summary
-                    DownloadArtifactResult(artifact, zipPath)
-                } catch (e: RuntimeException) {
-                    LOG.error { e.message.toString() }
-                    DownloadArtifactResult(null, zipPath, e.message.orEmpty())
-                }
-            }
+//            val previousArtifact = downloadedArtifacts.getOrDefault(job, null)
+//            if (previousArtifact != null && previousArtifact.exists()) {
+//                val zipPath = previousArtifact.toAbsolutePath().toString()
+//                return try {
+//                    val artifact = CodeModernizerArtifact.create(zipPath)
+//                    downloadedSummaries[job] = artifact.summary
+//                    DownloadArtifactResult(artifact, zipPath)
+//                } catch (e: RuntimeException) {
+//                    LOG.error { e.message.toString() }
+//                    DownloadArtifactResult(null, zipPath, e.message.orEmpty())
+//                }
+//            }
 
             // 2. Download the data
             notifyDownloadStart()
@@ -154,16 +162,26 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
-            // SdkClientException will be thrown, masking actual issues like SSLHandshakeException underneath
-            if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
-                notifyUnableToDownload(
+            when {
+                e is SsoOidcException || e.message.toString().contains(DOWNLOAD_TOKEN_DOES_NOT_EXIST) -> {
+                    notifyUnableToDownload(
+                        DownloadFailureReason.CREDENTIALS_EXPIRED,
+                    )
+                }
+
+                e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR) -> notifyUnableToDownload(
                     DownloadFailureReason.PROXY_WILDCARD_ERROR,
                 )
-            } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
-                notifyUnableToDownload(
+
+                e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR) -> notifyUnableToDownload(
                     DownloadFailureReason.SSL_HANDSHAKE_ERROR,
                 )
+
+                else -> {
+                    // noop, let message surface
+                }
             }
+
             return DownloadArtifactResult(null, "", e.message.orEmpty())
         } finally {
             isCurrentlyDownloading.set(false)
@@ -202,19 +220,33 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     fun notifyUnableToDownload(error: DownloadFailureReason) {
         LOG.error { "Unable to download artifact: $error" }
-        if (error == DownloadFailureReason.PROXY_WILDCARD_ERROR) {
-            notifyStickyWarn(
+        when {
+            error == DownloadFailureReason.PROXY_WILDCARD_ERROR -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_wildcard.content", error),
                 project,
             )
-        } else if (error == DownloadFailureReason.SSL_HANDSHAKE_ERROR) {
-            notifyStickyWarn(
+
+            error == DownloadFailureReason.SSL_HANDSHAKE_ERROR -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_ssl.content", error),
                 project,
             )
+
+            error == DownloadFailureReason.CREDENTIALS_EXPIRED -> {
+                CodeTransformMessageListener.instance.onCheckAuth()
+                notifyStickyWarn(
+                    message("codemodernizer.notification.warn.expired_credentials.title"),
+                    message("codemodernizer.notification.warn.download_failed_expired_credentials.content"),
+                    project,
+                    listOf(NotificationAction.createSimple("Reauthenticate") {
+                        reauthenticateWithQ(project)
+                    })
+                )
+            }
         }
+
+
     }
 
     fun notifyUnableToApplyPatch(patchPath: String, errorMessage: String) {

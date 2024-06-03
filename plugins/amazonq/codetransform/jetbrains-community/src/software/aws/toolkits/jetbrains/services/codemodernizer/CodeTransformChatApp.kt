@@ -6,9 +6,12 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -22,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Authenti
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CODE_TRANSFORM_TAB_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getQTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import java.util.concurrent.atomic.AtomicBoolean
 
 private enum class CodeTransformMessageTypes(val type: String) {
     TabCreated("new-tab-was-created"),
@@ -45,7 +50,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
 
 class CodeTransformChatApp : AmazonQApp {
     private val scope = disposableCoroutineScope(this)
-
+    private val isProcessingAuthChanged = AtomicBoolean(false)
     override val tabTypes = listOf(CODE_TRANSFORM_TAB_NAME)
 
     override fun init(context: AmazonQAppInitContext) {
@@ -78,44 +83,67 @@ class CodeTransformChatApp : AmazonQApp {
             }
         }
 
+        fun authChanged() {
+            val isNoOtherThreadsProcessing = !isProcessingAuthChanged.compareAndSet(false, true)
+            LOG.error("auth: in authChanged is already processing: $isNoOtherThreadsProcessing")
+            if (isNoOtherThreadsProcessing) return
+            scope.launch {
+                val authController = AuthController()
+                val credentialState = authController.getAuthNeededStates(context.project).amazonQ
+                LOG.error("auth: credentialstate is null: ${credentialState == null}")
+                if (credentialState == null) {
+                    // Notify tabs about restoring authentication
+                    context.messagesFromAppToUi.publish(
+                        AuthenticationUpdateMessage(
+                            featureDevEnabled = isFeatureDevAvailable(context.project),
+                            codeTransformEnabled = isCodeTransformAvailable(context.project),
+                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+                        )
+                    )
+
+                    chatSessionStorage.changeAuthenticationNeeded(false)
+                    chatSessionStorage.changeAuthenticationNeededNotified(false)
+                    CodeTransformMessageListener.instance.onAuthRestored()
+                } else {
+                    chatSessionStorage.changeAuthenticationNeeded(true)
+
+                    // Ask for reauth
+                    chatSessionStorage.getAuthenticatingSessions().filter { !it.authNeededNotified }.forEach {
+                        context.messagesFromAppToUi.publish(
+                            AuthenticationNeededExceptionMessage(
+                                tabId = it.tabId,
+                                authType = credentialState.authType,
+                                message = credentialState.message,
+                            )
+                        )
+                    }
+
+                    // Prevent multiple calls to activeConnectionChanged
+                    chatSessionStorage.changeAuthenticationNeededNotified(true)
+                }
+                isProcessingAuthChanged.set(false)
+            }
+        }
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            BearerTokenProviderListener.TOPIC,
+            object : BearerTokenProviderListener {
+                override fun onChange(providerId: String, newScopes: List<String>?) {
+                    val qProvider = getQTokenProvider(context.project)
+                    val isQ = qProvider?.id == providerId
+                    val isAuthorized = qProvider?.state() == BearerTokenAuthState.AUTHORIZED
+                    LOG.error("Auth from bearer token provider, provider: $providerId authorized: $isAuthorized")
+                    if (!isQ || !isAuthorized) return
+                    authChanged()
+                }
+            }
+        )
+
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    scope.launch {
-                        val authController = AuthController()
-                        val credentialState = authController.getAuthNeededStates(context.project).amazonQ
-                        if (credentialState == null) {
-                            // Notify tabs about restoring authentication
-                            context.messagesFromAppToUi.publish(
-                                AuthenticationUpdateMessage(
-                                    featureDevEnabled = isFeatureDevAvailable(context.project),
-                                    codeTransformEnabled = isCodeTransformAvailable(context.project),
-                                    authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
-                                )
-                            )
-
-                            chatSessionStorage.changeAuthenticationNeeded(false)
-                            chatSessionStorage.changeAuthenticationNeededNotified(false)
-                            CodeTransformMessageListener.instance.onAuthRestored()
-                        } else {
-                            chatSessionStorage.changeAuthenticationNeeded(true)
-
-                            // Ask for reauth
-                            chatSessionStorage.getAuthenticatingSessions().filter { !it.authNeededNotified }.forEach {
-                                context.messagesFromAppToUi.publish(
-                                    AuthenticationNeededExceptionMessage(
-                                        tabId = it.tabId,
-                                        authType = credentialState.authType,
-                                        message = credentialState.message,
-                                    )
-                                )
-                            }
-
-                            // Prevent multiple calls to activeConnectionChanged
-                            chatSessionStorage.changeAuthenticationNeededNotified(true)
-                        }
-                    }
+                    LOG.error("Auth from connection manager, provider ${newConnection?.getConnectionSettings()?.providerId}")
+                    authChanged()
                 }
             }
         )
@@ -146,4 +174,9 @@ class CodeTransformChatApp : AmazonQApp {
     override fun dispose() {
         // nothing to do
     }
+
+    companion object {
+        val LOG = getLogger<CodeTransformChatApp>()
+    }
+
 }
