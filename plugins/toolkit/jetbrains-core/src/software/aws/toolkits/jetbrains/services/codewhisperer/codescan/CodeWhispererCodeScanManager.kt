@@ -332,6 +332,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             is UploadCodeScanException -> message("codewhisperer.codescan.upload_to_s3_failed")
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
+            is IllegalStateException -> message("codewhisperer.codescan.cannot_read_file")
             else -> null
         } ?: message("codewhisperer.codescan.run_scan_error")
 
