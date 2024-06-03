@@ -125,7 +125,7 @@ class CodeScanSessionConfig(
                 file.programmingLanguage().toTelemetryType()
             )
         } catch (e: Exception) {
-            cannotFindFile("${file.path} with file payload creation error: ${e.message}")
+            cannotFindFile("File payload creation error: ${e.message}", file.path)
         }
     }
 
@@ -139,7 +139,7 @@ class CodeScanSessionConfig(
             val bufferedReader = virtualFile.inputStream.bufferedReader()
             return bufferedReader.useLines { lines -> lines.count() }
         } catch (e: Exception) {
-            cannotFindFile("${virtualFile.path} with line count error: ${e.message}")
+            cannotFindFile("Line count error: ${e.message}", virtualFile.path)
         }
     }
 
@@ -150,7 +150,7 @@ class CodeScanSessionConfig(
                 LOG.debug { "Selected file for truncation: $file" }
                 it.putNextEntry(relativePath.toString(), file)
             } catch (e: Exception) {
-                cannotFindFile("${file.pathString} with zipping error: ${e.message}")
+                cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
         }
     }.toFile()

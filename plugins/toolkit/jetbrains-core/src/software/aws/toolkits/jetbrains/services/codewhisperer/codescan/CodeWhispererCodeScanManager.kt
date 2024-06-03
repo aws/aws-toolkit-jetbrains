@@ -738,7 +738,7 @@ data class CodeWhispererCodeScanIssue(
 
     val document = runReadAction {
         FileDocumentManager.getInstance().getDocument(file)
-            ?: cannotFindFile(file.path)
+            ?: cannotFindFile("Unable to find file", file.path)
     }
 
     /**
