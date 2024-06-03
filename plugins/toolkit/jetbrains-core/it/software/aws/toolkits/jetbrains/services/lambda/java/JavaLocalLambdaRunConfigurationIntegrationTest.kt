@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
+import java.io.File
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
@@ -56,17 +57,19 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val input = RuleUtils.randomName()
+    private lateinit var testProjectDir: File
+    private lateinit var gradleUserHome: File
 
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
 
-        // testProjectDir = tempFolder.newFolder("test-project")
-        // createMinimalGradleBuildSetup(testProjectDir)
-        // gradleUserHome = File(testProjectDir, "gradleUserHome")
-        // gradleUserHome.mkdirs()
-        //  createGradlePropertiesFile(gradleUserHome)
-        // runGradleBuild(testProjectDir.toString())
+        testProjectDir = tempFolder.newFolder("test-project")
+        createMinimalGradleBuildSetup(testProjectDir)
+        gradleUserHome = File(testProjectDir, "gradleUserHome")
+        gradleUserHome.mkdirs()
+        createGradlePropertiesFile(gradleUserHome)
+
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
         val psiClass = fixture.addClass(
@@ -106,7 +109,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        // gradleUserHome.deleteRecursively()
+        gradleUserHome.deleteRecursively()
     }
 
     @Test
@@ -252,4 +255,27 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         expectedOutput = input.uppercase(),
         addBreakpoint = { projectRule.addBreakpoint() }
     )
+    private fun createMinimalGradleBuildSetup(testProjectDir: File) {
+        val buildGradleFile = File(testProjectDir, "build.gradle.kts")
+        buildGradleFile.writeText(
+            """
+        plugins {
+            java
+        }
+ 
+        repositories {
+            mavenCentral()
+        }
+            """.trimIndent()
+        )
+    }
+
+    private fun createGradlePropertiesFile(gradleUserHome: File) {
+        val gradlePropertiesFile = File(gradleUserHome, "gradle.properties")
+        gradlePropertiesFile.writeText(
+            """
+            gradle.user.home=${gradleUserHome.absolutePath}
+            """.trimIndent()
+        )
+    }
 }
