@@ -222,12 +222,3 @@ dependencies {
     // delete when fully split
     testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }
-
-gradle.projectsLoaded {
-    val userHomeDir = System.getenv("GRADLE_USER_HOME")
-    if (userHomeDir != null) {
-        gradle.startParameter.gradleUserHomeDir = File(userHomeDir)
-    } else {
-        gradle.startParameter.gradleUserHomeDir = File(System.getProperty("user.home"), ".gradle")
-    }
-}
