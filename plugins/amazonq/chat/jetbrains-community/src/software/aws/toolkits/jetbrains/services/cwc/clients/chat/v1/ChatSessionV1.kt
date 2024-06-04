@@ -69,7 +69,7 @@ class ChatSessionV1(
 
     fun index() {
         val url = URL("http://localhost:3000/indexFiles")
-        val payload = RequestPayload(listOf("/Users/leigaol/workplace/transformers/README.md"), "/Users/leigaol/workplace/transformers", true)
+        val payload = RequestPayload(listOf("/Users/zoelin/Workspace/aws-toolkit-jetbrains/CONTRIBUTING.md"), "/Users/zoelin/Workplace/aws-toolkit-jetbrains", true)
         val payloadJson = Gson().toJson(payload)
         with(url.openConnection() as HttpURLConnection) {
             requestMethod = "POST"
