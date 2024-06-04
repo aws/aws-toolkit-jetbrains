@@ -41,7 +41,7 @@ class CodeWhispererFeatureConfigService {
                 val availableCustomizations =
                     calculateIfIamIdentityCenterConnection(project) {
                         try {
-                            CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations().map { it.arn }
+                            CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations().map { c -> c.arn }
                         } catch (e: Exception) {
                             LOG.debug(e) { "Failed to list available customizations" }
                             null
