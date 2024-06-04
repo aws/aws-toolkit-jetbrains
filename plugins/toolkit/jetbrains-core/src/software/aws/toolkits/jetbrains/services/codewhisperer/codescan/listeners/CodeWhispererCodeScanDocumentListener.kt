@@ -6,8 +6,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.isFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -22,19 +24,31 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         val treeModel = scanManager.getScanTree().model
 
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        val activeEditor = fileEditorManager.selectedEditor
+        val deletedLineCount = event.oldFragment.toString().count { it == '\n' }
+        val insertedLineCount = event.newFragment.toString().count { it == '\n' }
+
+        val lineOffset = when {
+            deletedLineCount == 0 && insertedLineCount != 0 -> insertedLineCount
+            deletedLineCount != 0 && insertedLineCount == 0 -> -deletedLineCount
+            else -> 0
+        }
+
         val editedTextRange = TextRange.create(event.offset, event.offset + event.oldLength)
+        scanManager.updateScanNodesForOffSet(file, lineOffset, editedTextRange)
         val nodes = scanManager.getOverlappingScanNodes(file, editedTextRange)
         nodes.forEach {
             val issue = it.userObject as CodeWhispererCodeScanIssue
             synchronized(it) {
                 treeModel.valueForPathChanged(TreePath(it.path), issue.copy(isInvalid = true))
             }
-            issue.rangeHighlighter?.dispose()
             issue.rangeHighlighter?.textAttributes = null
+            issue.rangeHighlighter?.dispose()
         }
         scanManager.updateScanNodes(file)
-
-        if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() &&
+        if (activeEditor != null && activeEditor.file == file &&
+            file.isFile && CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() &&
             !CodeWhispererExplorerActionManager.getInstance().isMonthlyQuotaForCodeScansExceeded() &&
             !isUserBuilderId(project)
         ) {
