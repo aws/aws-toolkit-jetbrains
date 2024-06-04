@@ -18,8 +18,8 @@ import com.intellij.openapi.roots.ProjectRootManager
 fun Module.tryGetJdk(project: Project): JavaSdkVersion? {
     val javaSdk = JavaSdkImpl.getInstance()
     val moduleRootManager = ModuleRootManager.getInstance(this)
-    val moduleLanguageLevel = this.tryGetJdkLanguageLevelJdk() ?: javaSdk.getVersion(moduleRootManager.sdk!!)
-    val projectSdk = javaSdk.getVersion(ProjectRootManager.getInstance(project).projectSdk!!)
+    val moduleLanguageLevel = this.tryGetJdkLanguageLevelJdk() ?: moduleRootManager.sdk?.let { javaSdk.getVersion(it) }
+    val projectSdk = ProjectRootManager.getInstance(project).projectSdk?.let { javaSdk.getVersion(it) }
     return moduleLanguageLevel ?: projectSdk
 }
 
@@ -34,5 +34,5 @@ fun Module.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
     val moduleRootManager = ModuleRootManager.getInstance(this)
     val languageLevelModuleExtension = moduleRootManager.getModuleExtension(LanguageLevelModuleExtensionImpl::class.java)
     val languageLevel = languageLevelModuleExtension?.languageLevel
-    return JavaSdkVersion.fromLanguageLevel(languageLevel!!)
+    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) } ?: null
 }
