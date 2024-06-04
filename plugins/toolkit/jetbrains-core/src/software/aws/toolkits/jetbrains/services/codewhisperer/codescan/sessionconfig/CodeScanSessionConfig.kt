@@ -162,15 +162,19 @@ class CodeScanSessionConfig(
     }.toFile()
 
     private fun zipFile(filePath: Path): File = createTemporaryZipFile {
-        val relativePath = filePath.relativeTo(projectRoot.toNioPath())
-        val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
-        virtualFile?.let { file ->
-            val document = runReadAction {
-                FileDocumentManager.getInstance().getDocument(file)
+        try {
+            val relativePath = filePath.relativeTo(projectRoot.toNioPath())
+            val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
+            virtualFile?.let { file ->
+                val document = runReadAction {
+                    FileDocumentManager.getInstance().getDocument(file)
+                }
+                document?.let { doc ->
+                    it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
+                }
             }
-            document?.let { doc ->
-                it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
-            }
+        } catch (e: Exception) {
+            cannotFindFile("Zipping error: ${e.message}", filePath.pathString)
         }
     }.toFile()
 
