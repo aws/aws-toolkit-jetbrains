@@ -112,7 +112,8 @@ class CodeWhispererService {
         if (isQExpired(project)) {
             ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
                 // only refresh for users once unless it's a manual trigger
-                val shouldReauth = if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand || connRefreshAttempts[conn] == null) {
+                val attemptsCount = connRefreshAttempts.getOrDefault(conn, 0)
+                val shouldReauth = if (attemptsCount < 3) {
                     ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
                         connRefreshAttempts[conn] = connRefreshAttempts.getOrDefault(conn, 0) + 1
                         promptReAuth(project)
