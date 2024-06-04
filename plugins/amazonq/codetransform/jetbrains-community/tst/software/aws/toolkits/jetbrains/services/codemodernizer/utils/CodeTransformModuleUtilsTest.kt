@@ -34,7 +34,7 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         Mockito.mockStatic(JavaSdkImpl::class.java)
 
         javaSdkMock = Mockito.mock(JavaSdkImpl::class.java)
-        sdkMock = Mockito.mock(Sdk::class.java)
+        sdkMock = Mockito.spy(Sdk::class.java)
         moduleRootManagerMock = Mockito.mock(ModuleRootManager::class.java)
         projectRootManagerMock = Mockito.mock(ProjectRootManager::class.java)
         languageLevelModuleExtensionMock = Mockito.mock(LanguageLevelModuleExtensionImpl::class.java)
@@ -43,24 +43,34 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         Mockito.`when`(ProjectRootManager.getInstance(project)).thenReturn(projectRootManagerMock)
         Mockito.`when`(moduleRootManagerMock.getModuleExtension(LanguageLevelModuleExtensionImpl::class.java))
             .thenReturn(languageLevelModuleExtensionMock)
-        Mockito.`when`(moduleRootManagerMock.sdk).thenReturn(sdkMock)
-        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(sdkMock)
     }
 
     @Test
     fun `CodeTransformModuleUtils tryGetJdk() function returns module language level when set`() {
+        Mockito.`when`(moduleRootManagerMock.sdk).thenReturn(sdkMock)
+        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(null)
         Mockito.`when`(languageLevelModuleExtensionMock.languageLevel).thenReturn(LanguageLevel.JDK_1_8)
         Mockito.`when`(javaSdkMock.getVersion(any())).thenReturn(JavaSdkVersion.JDK_1_8)
         val result = module.tryGetJdk(project)
         assertEquals(JavaSdkVersion.JDK_1_8, result)
     }
 
-    @Test
+
     fun `CodeTransformModuleUtils tryGetJdk() function returns project SDK when module language level is not set`() {
+        Mockito.`when`(moduleRootManagerMock.sdk).thenReturn(null)
+        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(sdkMock)
         Mockito.`when`(languageLevelModuleExtensionMock.languageLevel).thenReturn(null)
-        Mockito.`when`(javaSdkMock.getVersion(any())).thenReturn(JavaSdkVersion.JDK_17)
+        Mockito.`when`(javaSdkMock.getVersion(sdkMock)).thenReturn(JavaSdkVersion.JDK_17)
         val result = module.tryGetJdk(project)
         assertEquals(JavaSdkVersion.JDK_17, result)
+    }
+
+    @Test
+    fun `CodeTransformModuleUtils tryGetJdk() function returns null when project and module sdk and language level is not set`() {
+        Mockito.`when`(languageLevelModuleExtensionMock.languageLevel).thenReturn(null)
+        Mockito.`when`(javaSdkMock.getVersion(sdkMock)).thenReturn(null)
+        val result = module.tryGetJdk(project)
+        assertEquals(null, result)
     }
 
     @Test

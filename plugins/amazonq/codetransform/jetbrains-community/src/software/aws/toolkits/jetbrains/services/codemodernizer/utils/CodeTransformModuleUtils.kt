@@ -19,8 +19,9 @@ fun Module.tryGetJdk(project: Project): JavaSdkVersion? {
     val javaSdk = JavaSdkImpl.getInstance()
     val moduleRootManager = ModuleRootManager.getInstance(this)
     val moduleLanguageLevel = this.tryGetJdkLanguageLevelJdk() ?: moduleRootManager.sdk?.let { javaSdk.getVersion(it) }
-    val projectSdk = ProjectRootManager.getInstance(project).projectSdk?.let { javaSdk.getVersion(it) }
-    return moduleLanguageLevel ?: projectSdk
+    val projectSdk = ProjectRootManager.getInstance(project).projectSdk
+    val projectSdkVersion = projectSdk?.let { javaSdk.getVersion(it) }
+    return moduleLanguageLevel ?: projectSdkVersion
 }
 
 /**
