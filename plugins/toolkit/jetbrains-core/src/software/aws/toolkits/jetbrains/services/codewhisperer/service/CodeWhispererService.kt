@@ -795,11 +795,18 @@ class CodeWhispererService {
                 RecommendationsWithReferencesPreference.BLOCK
             }
 
+            // customization arn a/b
+            val customizationArnFromAB = CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()
+            val customizationArnToUse =
+                customizationArnFromAB.ifEmpty {
+                    customizationArn
+                }
+
             return GenerateCompletionsRequest.builder()
                 .fileContext(fileContext)
                 .supplementalContexts(supplementalContexts)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
-                .customizationArn(customizationArn)
+                .customizationArn(customizationArnToUse)
                 .optOutPreference(getTelemetryOptOutPreference())
                 .build()
         }
