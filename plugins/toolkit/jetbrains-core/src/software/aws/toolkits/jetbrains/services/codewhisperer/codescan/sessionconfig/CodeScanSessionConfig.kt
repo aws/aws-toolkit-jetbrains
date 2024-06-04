@@ -10,10 +10,14 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
@@ -29,10 +33,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.Stack
+import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
 class CodeScanSessionConfig(
@@ -44,6 +48,8 @@ class CodeScanSessionConfig(
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
         private set
+
+    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -86,12 +92,17 @@ class CodeScanSessionConfig(
             null -> getProjectPayloadMetadata()
             else -> when (scope) {
                 CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                CodeAnalysisScope.FILE -> getFilePayloadMetadata(selectedFile)
+                CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
+                    getFilePayloadMetadata(selectedFile)
+                } else {
+                    projectRoot = selectedFile.parent
+                    getFilePayloadMetadata(selectedFile)
+                }
             }
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) }, scope)
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -105,14 +116,18 @@ class CodeScanSessionConfig(
         return Payload(payloadContext, srcZip)
     }
 
-    fun getFilePayloadMetadata(file: VirtualFile): PayloadMetadata =
-        // Handle the case where the selected file is outside the project root.
-        PayloadMetadata(
-            setOf(file.path),
-            file.length,
-            Files.lines(file.toNioPath()).count().toLong(),
-            file.programmingLanguage().toTelemetryType()
-        )
+    private fun getFilePayloadMetadata(file: VirtualFile): PayloadMetadata {
+        try {
+            return PayloadMetadata(
+                setOf(file.path),
+                file.length,
+                countLinesInVirtualFile(file).toLong(),
+                file.programmingLanguage().toTelemetryType()
+            )
+        } catch (e: Exception) {
+            cannotFindFile("File payload creation error: ${e.message}", file.path)
+        }
+    }
 
     /**
      * Timeout for creating the payload [createPayload]
@@ -120,18 +135,23 @@ class CodeScanSessionConfig(
     fun createPayloadTimeoutInSeconds(): Long = CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 
     private fun countLinesInVirtualFile(virtualFile: VirtualFile): Int {
-        val bufferedReader = virtualFile.inputStream.bufferedReader()
-        return bufferedReader.useLines { lines -> lines.count() }
+        try {
+            val bufferedReader = virtualFile.inputStream.bufferedReader()
+            return bufferedReader.useLines { lines -> lines.count() }
+        } catch (e: Exception) {
+            cannotFindFile("Line count error: ${e.message}", virtualFile.path)
+        }
     }
 
-    private fun zipFiles(files: List<Path>, scope: CodeAnalysisScope): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
-            val relativePath = when (scope) {
-                CodeAnalysisScope.PROJECT -> file.relativeTo(projectRoot.toNioPath())
-                else -> file
+            try {
+                val relativePath = file.relativeTo(projectRoot.toNioPath())
+                LOG.debug { "Selected file for truncation: $file" }
+                it.putNextEntry(relativePath.toString(), file)
+            } catch (e: Exception) {
+                cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
-            LOG.debug { "Selected file for truncation: $file" }
-            it.putNextEntry(relativePath.toString(), file)
         }
     }.toFile()
 
@@ -151,24 +171,32 @@ class CodeScanSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        if (!changeListManager.isIgnoredFile(current) && !files.contains(current.path)
+                        if (current.isFile && !changeListManager.isIgnoredFile(current) &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !current.path.endsWith(".jar")
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 fileTooLarge()
                             } else {
-                                val language = current.programmingLanguage()
-                                if (language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE) {
-                                    languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                                try {
+                                    val language = current.programmingLanguage()
+                                    if (language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE) {
+                                        languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                                    }
+                                    files.add(current.path)
+                                    currentTotalFileSize += current.length
+                                    currentTotalLines += countLinesInVirtualFile(current)
+                                } catch (e: Exception) {
+                                    LOG.debug { "Error parsing the file: ${current.path} with error: ${e.message}" }
+                                    continue
                                 }
-
-                                files.add(current.path)
-                                currentTotalFileSize += current.length
-                                currentTotalLines += countLinesInVirtualFile(current)
                             }
                         }
                     } else {
                         // Directory case: only traverse if not ignored
-                        if (!changeListManager.isIgnoredFile(current) && !traversedDirectories.contains(current)
+                        if (!changeListManager.isIgnoredFile(current) &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            !traversedDirectories.contains(current) && current.isValid
                         ) {
                             for (child in current.children) {
                                 stack.push(child)
