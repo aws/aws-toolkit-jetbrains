@@ -59,7 +59,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         checkRemoteDevVersionAndPromptUpdate()
 
         // Reconnect CodeWhisperer on startup
-//        promptReAuth(project, isPluginStarting = true)
+        promptReAuth(project, isPluginStarting = true)
         if (isQExpired(project)) return
 
         // Init featureConfig job
