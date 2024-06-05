@@ -59,7 +59,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     private val input = RuleUtils.randomName()
     private lateinit var testProjectDir: File
-    private lateinit var gradleUserHome: File
 
     @Before
     fun setUp() {
@@ -67,10 +66,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
         createMinimalGradleBuildSetup(testProjectDir)
 
-        gradleUserHome = File(testProjectDir, "gradleUserHome")
-        gradleUserHome.mkdirs()
-
-        createGradlePropertiesFile(gradleUserHome)
+        createGradlePropertiesFile(testProjectDir)
 
         setSamExecutableFromEnvironment()
 
@@ -113,7 +109,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        gradleUserHome.deleteRecursively()
+        testProjectDir.deleteRecursively()
     }
 
     @Test
@@ -275,12 +271,12 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         )
     }
 
-    private fun createGradlePropertiesFile(gradleUserHome: File) {
-        val gradlePropertiesFile = File(gradleUserHome, "gradle.properties")
+    private fun createGradlePropertiesFile(testProject: File) {
+        val gradlePropertiesFile = File(testProject, "gradle.properties")
         gradlePropertiesFile.writeText(
             """
             org.gradle.jvmargs=-Xmx4096m
-            gradle.user.home=${gradleUserHome.absolutePath}
+            gradle.user.home=${testProjectDir.absolutePath}
             """.trimIndent()
         )
     }
