@@ -3,7 +3,6 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
-import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {

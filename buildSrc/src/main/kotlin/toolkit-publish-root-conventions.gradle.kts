@@ -38,6 +38,15 @@ if (!project.isCi()) {
     }
 }
 
+intellijPlatform {
+    instrumentCode = true
+    verifyPlugin {
+        ides {
+            recommended()
+        }
+    }
+}
+
 dependencies {
     intellijPlatform {
         pluginVerifier()

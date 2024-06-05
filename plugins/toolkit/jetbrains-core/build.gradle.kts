@@ -1,16 +1,9 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import com.jetbrains.plugin.structure.base.utils.inputStream
-import com.jetbrains.plugin.structure.base.utils.simpleName
-import com.jetbrains.plugin.structure.intellij.utils.JDOMUtil
-import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.isCi
-import java.io.StringWriter
-import java.nio.file.Path
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -60,7 +53,7 @@ val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks
 //    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
 //    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
 
-    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
+//    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
 //    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 
     // jetbrains expects gateway plugin to be dynamic
@@ -176,7 +169,7 @@ dependencies {
     testRuntimeOnly(libs.slf4j.jdk14)
 }
 //
-//fun transformXml(document: Document, path: Path) {
+// fun transformXml(document: Document, path: Path) {
 //    val xmlOutput = XMLOutputter()
 //    xmlOutput.format.apply {
 //        indent = "  "
@@ -188,4 +181,4 @@ dependencies {
 //        xmlOutput.output(document, it)
 //        path.writeText(it.toString())
 //    }
-//}
+// }

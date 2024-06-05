@@ -1,6 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 
 private val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
@@ -18,5 +19,12 @@ repositories {
     intellijPlatform {
         defaultRepositories()
         jetbrainsRuntime()
+    }
+}
+
+dependencies {
+    intellijPlatform {
+        testFramework(TestFrameworkType.Platform.JUnit4)
+        testFramework(TestFrameworkType.Platform.JUnit5)
     }
 }
