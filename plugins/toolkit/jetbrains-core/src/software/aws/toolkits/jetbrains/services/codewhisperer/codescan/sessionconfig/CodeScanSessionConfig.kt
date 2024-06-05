@@ -146,8 +146,14 @@ class CodeScanSessionConfig(
     private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
-                val relativePath = file.relativeTo(projectRoot.toNioPath())
-                LOG.debug { "Selected file for truncation: $file" }
+                var relativePath: Path
+                try {
+                    relativePath = file.relativeTo(projectRoot.toNioPath())
+                } catch (e: Exception) {
+                    val tmpProjectRoot = File(projectRoot.path)
+                    relativePath = file.relativeTo(tmpProjectRoot.toPath())
+                }
+                LOG.debug { "Adding file to payload: $file" }
                 it.putNextEntry(relativePath.toString(), file)
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
