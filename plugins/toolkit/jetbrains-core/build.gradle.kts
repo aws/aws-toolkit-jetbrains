@@ -10,7 +10,6 @@ import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.isCi
-import java.io.File
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
