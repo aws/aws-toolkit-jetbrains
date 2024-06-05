@@ -261,7 +261,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         buildGradleFile.writeText(
             """
             plugins {
-                java
+                id 'java'
             }
  
             repositories {
@@ -276,7 +276,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         gradlePropertiesFile.writeText(
             """
             org.gradle.jvmargs=-Xmx4096m
-            gradle.user.home=${testProjectDir.absolutePath}
+            org.gradle.user.home=${testProjectDir.absolutePath}
             """.trimIndent()
         )
     }
