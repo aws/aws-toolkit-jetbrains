@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -53,6 +54,8 @@ class CodeScanSessionConfig(
         private set
 
     private val featureDevSessionContext = FeatureDevSessionContext(project)
+
+    val fileIndex = ProjectRootManager.getInstance(project).fileIndex
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -196,7 +199,7 @@ class CodeScanSessionConfig(
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
                             runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !current.path.endsWith(".jar")
+                            runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 fileTooLarge()
@@ -219,7 +222,8 @@ class CodeScanSessionConfig(
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
                             runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !traversedDirectories.contains(current) && current.isValid
+                            !traversedDirectories.contains(current) && current.isValid &&
+                            runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             for (child in current.children) {
                                 stack.push(child)
