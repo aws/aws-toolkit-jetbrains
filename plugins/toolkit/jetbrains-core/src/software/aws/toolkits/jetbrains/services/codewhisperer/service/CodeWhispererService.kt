@@ -21,7 +21,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
-import com.jetbrains.rd.util.concurrentMapOf
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -49,7 +48,6 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -92,7 +90,7 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class CodeWhispererService {
-    private val connRefreshAttempts: MutableMap<ToolkitConnection, Int> = concurrentMapOf()
+    private var refreshFailure: Int = 0
 
     fun showRecommendationsInPopup(
         editor: Editor,
@@ -110,21 +108,21 @@ class CodeWhispererService {
         }
 
         if (isQExpired(project)) {
-            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
-                // say the connection is un-refreshable if refresh fails for 3 times
-                val attemptsCount = connRefreshAttempts.getOrDefault(conn, 0)
-                val shouldReauth = if (attemptsCount < 3) {
-                    ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
-                        connRefreshAttempts[conn] = connRefreshAttempts.getOrDefault(conn, 0) + 1
-                        promptReAuth(project)
-                    }.get()
-                } else {
-                    true
+            // say the connection is un-refreshable if refresh fails for 3 times
+            val shouldReauth = if (refreshFailure < 3) {
+                ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
+                    promptReAuth(project)
+                }.get().also { success ->
+                    if (!success) {
+                        refreshFailure++
+                    }
                 }
+            } else {
+                true
+            }
 
-                if (shouldReauth) {
-                    return
-                }
+            if (shouldReauth) {
+                return
             }
         }
 
