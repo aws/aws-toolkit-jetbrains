@@ -55,16 +55,6 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         assertEquals(JavaSdkVersion.JDK_1_8, result)
     }
 
-
-    fun `CodeTransformModuleUtils tryGetJdk() function returns project SDK when module language level is not set`() {
-        Mockito.`when`(moduleRootManagerMock.sdk).thenReturn(null)
-        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(sdkMock)
-        Mockito.`when`(languageLevelModuleExtensionMock.languageLevel).thenReturn(null)
-        Mockito.`when`(javaSdkMock.getVersion(sdkMock)).thenReturn(JavaSdkVersion.JDK_17)
-        val result = module.tryGetJdk(project)
-        assertEquals(JavaSdkVersion.JDK_17, result)
-    }
-
     @Test
     fun `CodeTransformModuleUtils tryGetJdk() function returns null when project and module sdk and language level is not set`() {
         Mockito.`when`(languageLevelModuleExtensionMock.languageLevel).thenReturn(null)

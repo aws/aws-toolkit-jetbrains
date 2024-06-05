@@ -33,8 +33,8 @@ fun Project.tryGetJdk(): JavaSdkVersion? {
  */
 fun Project.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
     val languageLevelExtension = LanguageLevelProjectExtension.getInstance(this)
-    val languageLevel = languageLevelExtension.languageLevel
-    return JavaSdkVersion.fromLanguageLevel(languageLevel)
+    val languageLevel = languageLevelExtension?.languageLevel
+    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) }
 }
 
 fun Project.getSupportedJavaMappings(supportedJavaMappings: Map<JavaSdkVersion, Set<JavaSdkVersion>>): List<String> =
