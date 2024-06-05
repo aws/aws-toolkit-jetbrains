@@ -135,9 +135,8 @@ class CodeTransformChatController(
     suspend fun tryRestoreChatProgress(): Boolean {
         val isTransformOngoing = codeModernizerManager.isModernizationJobActive()
         val isMvnRunning = codeModernizerManager.isRunningMvn()
-        val isTransformationResuming = codeModernizerManager.isModernizationJobResuming()
 
-        while (isTransformationResuming) {
+        while (codeModernizerManager.isModernizationJobResuming()) {
             // Poll until transformation is resumed
             delay(50)
         }
@@ -269,6 +268,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
+        logger.error("Invoking display diff from chat: processCodeTransformViewDiff")
         artifactHandler.displayDiffAction(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
     }
 
@@ -329,8 +329,16 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformCommand(message: CodeTransformActionMessage) {
-        val activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId()
-        activeTabId ?: logger.error("in processCodeTransformCommand $activeTabId")
+        var activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId()
+        activeTabId ?: logger.error("in processCodeTransformCommand there is no tab active for CodeTransform: activeTabId == $activeTabId")
+        if (activeTabId == null && message.command == CodeTransformCommand.TransformResuming) {
+            // If we are resuming a job, we should show transform progress also in chat, so open a tab if this is the case.
+            codeTransformChatHelper.createNewCodeTransformTab()
+            while (activeTabId == null) {
+                logger.warn("Waiting for new CodeTransformTab to open")
+                activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId()
+            }
+        }
         activeTabId ?: return
 
         when (message.command) {
@@ -362,7 +370,8 @@ class CodeTransformChatController(
     }
 
     override suspend fun processTabCreated(message: IncomingCodeTransformMessage.TabCreated) {
-        logger.debug { "$FEATURE_NAME: New tab created: $message" }
+        logger.error { "$FEATURE_NAME: New tab created: $message" }
+        codeTransformChatHelper.setActiveCodeTransformTabId(message.tabId)
     }
 
     /**

@@ -84,9 +84,8 @@ class CodeTransformChatApp : AmazonQApp {
         }
 
         fun authChanged() {
-            val isNoOtherThreadsProcessing = !isProcessingAuthChanged.compareAndSet(false, true)
-            LOG.error("auth: in authChanged is already processing: $isNoOtherThreadsProcessing")
-            if (isNoOtherThreadsProcessing) return
+            val isAnotherThreadProcessing = !isProcessingAuthChanged.compareAndSet(false, true)
+            if (isAnotherThreadProcessing) return
             scope.launch {
                 val authController = AuthController()
                 val credentialState = authController.getAuthNeededStates(context.project).amazonQ

@@ -171,16 +171,14 @@ class CodeModernizerSession(
                 else -> CodeModernizerStartJobResult.ZipCreationFailed(message("codemodernizer.notification.warn.zip_creation_failed.reasons.unknown"))
             }
         }
-//        while ((getQTokenProvider(sessionContext.project)?.state()?.name ?: "AUTHORIZED") == "AUTHORIZED") {
-//            // noop just to await expiry of token...
-//        }
         val tokenProvider =
             getQTokenProvider(sessionContext.project) ?: return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
-        tokenProvider.invalidate()
         if (maybeReauthProviderIfNeeded(
                 sessionContext.project,
                 tokenProvider
-            ) { }
+            ) {
+                // Don't trigger auth here, surface auth issue for CodeModernizerManager to orchestrate.
+            }
         ) return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
 
         // Create upload url and upload zip

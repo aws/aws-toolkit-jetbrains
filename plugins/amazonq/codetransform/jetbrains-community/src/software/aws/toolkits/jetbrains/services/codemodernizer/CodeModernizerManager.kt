@@ -303,6 +303,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun resumeJob(session: CodeModernizerSession, lastJobId: JobId, currentJobResult: TransformationJob) = projectCoroutineScope(project).launch {
+        isJobSuccessfullyResumed.set(true)
+        CodeTransformMessageListener.instance.onTransformResuming()
         if (isModernizationJobActive()) {
             runInEdt { getBottomToolWindow().show() }
             return@launch
@@ -370,7 +372,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
-//            val result = MavenCopyCommandsResult.Success("")
             isMvnRunning.set(false)
             handleLocalMavenBuildResult(result)
         }
@@ -472,6 +473,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
+    /**
+     * Silently try to resume the job, informs users only when job successfully resumed, suppresses exceptions.
+     */
     fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
@@ -497,40 +501,16 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             val result = session.getJobDetails(lastJobId)
             when (result.status()) {
                 TransformationStatus.COMPLETED -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyStickyInfo(
-                        message("codemodernizer.manager.job_finished_title"),
-                        message("codemodernizer.manager.job_finished_content"),
-                        project,
-                        listOf(
-                            displayDiffNotificationAction(lastJobId),
-                            displaySummaryNotificationAction(lastJobId),
-                            viewTransformationHubAction()
-                        )
-                    )
                     resumeJob(session, lastJobId, result)
                     setJobNotOngoing()
                 }
 
                 TransformationStatus.PARTIALLY_COMPLETED -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
-                    notifyStickyInfo(
-                        message("codemodernizer.notification.info.modernize_failed.title"),
-                        message("codemodernizer.manager.job_failed_content", result.reason()),
-                        project,
-                        listOf(
-                            displayDiffNotificationAction(lastJobId),
-                            displaySummaryNotificationAction(lastJobId),
-                            displayFeedbackNotificationAction(),
-                            viewTransformationHubAction()
-                        )
-                    )
                     resumeJob(session, lastJobId, result)
                     setJobNotOngoing()
                 }
 
                 TransformationStatus.UNKNOWN_TO_SDK_VERSION -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
                     notifyStickyInfo(
                         message("codemodernizer.notification.warn.on_resume.unknown_status_response.title"),
                         message("codemodernizer.notification.warn.on_resume.unknown_status_response.content"),
@@ -539,13 +519,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 }
 
                 TransformationStatus.STOPPED, TransformationStatus.STOPPING -> {
-                    CodeTransformMessageListener.instance.onTransformResuming()
+                    // If user stopped the last job, there is no need for us to resume the job
                     setJobNotOngoing()
                 }
 
                 else -> {
-                    isJobSuccessfullyResumed.set(true)
-                    CodeTransformMessageListener.instance.onTransformResuming()
                     resumeJob(session, lastJobId, result)
                     notifyStickyInfo(
                         message("codemodernizer.manager.job_ongoing_title"),
@@ -578,6 +556,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
         message("codemodernizer.notification.info.modernize_complete.view_diff")
     ) {
+        LOG.error("Invoking display diff from displayDiffNotificationAction")
         artifactHandler.displayDiffAction(jobId)
     }
 
@@ -604,13 +583,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     CodeTransformMessageListener.instance.onCheckAuth()
                     notifyJobFailure(
                         message("codemodernizer.notification.warn.upload_failed_expired_credentials.content"),
-                        listOf(NotificationAction.createSimpleExpiring("Reauthenticate") {
+                        listOf(NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
                             CodeTransformMessageListener.instance.onReauthStarted()
                         })
                     )
                 } else {
                     notifyJobFailure(
-                        message("codemodernizer.notification.warn.upload_failed", result.failureReason),
+                        message("codemodernizer.notification.warn.upload_failed", result.failureReason.toString()),
                     )
                 }
             }
@@ -769,6 +748,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun showDiff() {
         val job = codeTransformationSession?.getActiveJobId() ?: return
+        LOG.error("Invoking display diff from showDiff")
         artifactHandler.displayDiffAction(job)
     }
 
@@ -919,5 +899,18 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
 
         return true
+    }
+
+    /**
+     * When customer attempts to download an artifact and it fails for some reason (credential expiry etc)
+     * we need to be able to resume the job in order for customers to be able to reattempt the download.
+     * This sets the job as ongoing in the persistent state so that when tryResumeJob is triggered the
+     * IDE attempts to resume the job.
+     */
+    fun handleResumableDownloadArtifactFailure(job: JobId) {
+        // handle the case when user clicks long living notification but has a new job running
+        val session = this.codeTransformationSession ?: return
+        if (session.getActiveJobId() != job) return
+        setJobOngoing(job, session.sessionContext)
     }
 }

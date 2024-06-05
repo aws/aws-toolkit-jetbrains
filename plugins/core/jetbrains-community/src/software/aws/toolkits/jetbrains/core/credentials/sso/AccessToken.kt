@@ -31,7 +31,7 @@ sealed interface AccessToken : SdkToken, Credentials {
     @get:JsonInclude(JsonInclude.Include.NON_NULL)
     val refreshToken: String?
 
-    var expiresAt: Instant
+    val expiresAt: Instant
     val createdAt: Instant
 
     override fun token() = accessToken
@@ -47,7 +47,7 @@ data class DeviceAuthorizationGrantToken(
     override val region: String,
     override val accessToken: String,
     override val refreshToken: String? = null,
-    override var expiresAt: Instant,
+    override val expiresAt: Instant,
     override val createdAt: Instant = Instant.EPOCH
 ) : AccessToken {
     override val ssoUrl: String
@@ -61,7 +61,7 @@ data class PKCEAuthorizationGrantToken(
     override val region: String,
     override val accessToken: String,
     override val refreshToken: String,
-    override var expiresAt: Instant,
+    override val expiresAt: Instant,
     override val createdAt: Instant
 ) : AccessToken {
     override val ssoUrl: String
