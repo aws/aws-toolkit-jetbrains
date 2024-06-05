@@ -268,15 +268,15 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private fun createMinimalGradleBuildSetup(testProjectDir: File) {
         val buildGradleFile = File(testProjectDir, "build.gradle.kts")
         buildGradleFile.writeText(
-            """
-        plugins {
-            java
-        }
+        """
+            plugins {
+                java
+            }
  
-        repositories {
-            mavenCentral()
-        }
-            """.trimIndent()
+            repositories {
+                mavenCentral()
+            }
+        """.trimIndent()
         )
     }
 
