@@ -241,7 +241,7 @@ data class CodeModernizerSessionContext(
                             }
                         } catch (e: NoSuchFileException) {
                             // continue without failing
-                            LOG.error{ "NoSuchFileException likely due to a symlink, skipping file" }
+                            LOG.error { "NoSuchFileException likely due to a symlink, skipping file" }
                         }
                     }
 
