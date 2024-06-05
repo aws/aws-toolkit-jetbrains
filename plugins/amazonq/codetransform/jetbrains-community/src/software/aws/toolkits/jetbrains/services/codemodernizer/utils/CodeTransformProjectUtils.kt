@@ -23,7 +23,7 @@ fun Project.tryGetJdk(): JavaSdkVersion? {
     if (languagelevelSdk != null) {
         return languagelevelSdk
     }
-    return javaSdk.getVersion(projectSdk ?: return null)
+    return projectSdk?.let { javaSdk.getVersion(it) }
 }
 
 /**
