@@ -72,6 +72,11 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
         createGradlePropertiesFile(gradleUserHome)
 
+        val lockFile = File("$gradleUserHome/caches/javaCompile/javaCompile.lock")
+        if (lockFile.exists()) {
+            lockFile.delete()
+        }
+
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
