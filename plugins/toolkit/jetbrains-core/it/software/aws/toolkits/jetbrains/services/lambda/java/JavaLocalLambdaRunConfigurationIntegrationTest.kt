@@ -72,11 +72,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
         createGradlePropertiesFile(gradleUserHome)
 
-        val lockFile = File("$gradleUserHome/caches/javaCompile/javaCompile.lock")
-        if (lockFile.exists()) {
-            lockFile.delete()
-        }
-
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
@@ -268,7 +263,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private fun createMinimalGradleBuildSetup(testProjectDir: File) {
         val buildGradleFile = File(testProjectDir, "build.gradle.kts")
         buildGradleFile.writeText(
-        """
+            """
             plugins {
                 java
             }
@@ -276,7 +271,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             repositories {
                 mavenCentral()
             }
-        """.trimIndent()
+            """.trimIndent()
         )
     }
 
