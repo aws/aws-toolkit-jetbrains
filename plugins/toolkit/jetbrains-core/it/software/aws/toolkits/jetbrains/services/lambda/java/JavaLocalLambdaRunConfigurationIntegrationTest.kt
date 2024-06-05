@@ -50,6 +50,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
+
     private val input = RuleUtils.randomName()
 
     @Before
