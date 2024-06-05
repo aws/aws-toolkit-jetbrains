@@ -20,6 +20,7 @@ suspend fun MessagePublisher.sendAnswer(
     messageType: FeatureDevMessageType,
     followUp: List<FollowUp>? = null,
     canBeVoted: Boolean? = false,
+    snapToTop: Boolean? = false,
 ) {
     val chatMessage =
         FeatureDevMessage(
@@ -29,7 +30,8 @@ suspend fun MessagePublisher.sendAnswer(
             messageType = messageType,
             message = message,
             followUps = followUp,
-            canBeVoted = canBeVoted ?: false
+            canBeVoted = canBeVoted ?: false,
+            snapToTop = snapToTop ?: false
         )
     this.publish(chatMessage)
 }
@@ -58,11 +60,12 @@ suspend fun MessagePublisher.sendSystemPrompt(
     )
 }
 
-suspend fun MessagePublisher.updateFileComponent(tabId: String, filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>) {
+suspend fun MessagePublisher.updateFileComponent(tabId: String, filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, messageId: String) {
     val fileComponentMessage = FileComponent(
         tabId = tabId,
         filePaths = filePaths,
         deletedFiles = deletedFiles,
+        messageId = messageId,
     )
     this.publish(fileComponentMessage)
 }

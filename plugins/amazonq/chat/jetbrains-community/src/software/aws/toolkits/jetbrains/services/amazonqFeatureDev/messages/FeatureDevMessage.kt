@@ -107,6 +107,7 @@ data class FeatureDevMessage(
     val message: String? = null,
     val followUps: List<FollowUp>? = null,
     val canBeVoted: Boolean,
+    val snapToTop: Boolean
 
 ) : UiMessage(
     tabId = tabId,
@@ -133,7 +134,8 @@ data class UpdatePlaceholderMessage(
 data class FileComponent(
     @JsonProperty("tabID") override val tabId: String,
     val filePaths: List<NewFileZipInfo>,
-    val deletedFiles: List<DeletedFileInfo>
+    val deletedFiles: List<DeletedFileInfo>,
+    val messageId: String
 ) : UiMessage(
     tabId = tabId,
     type = "updateFileComponent"

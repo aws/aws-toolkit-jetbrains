@@ -22,17 +22,18 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_DOWNLOAD_DIFF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,6 +41,9 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class DownloadArtifactResult(val artifact: CodeModernizerArtifact?, val zipPath: String, val errorMessage: String = "")
+
+const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
+const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -86,14 +90,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
-        val downloadResultsResponse = try {
-            clientAdaptor.downloadExportResultArchive(jobId, artifactId)
-        } catch (e: Exception) {
-            val errorMessage = "Unexpected error when downloading hil artifact: ${e.localizedMessage}"
-            LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.ExportResultArchive, jobId = jobId.id)
-            throw e
-        }
+        val downloadResultsResponse = clientAdaptor.downloadExportResultArchive(jobId, artifactId)
 
         return try {
             val tmpPath = tmpDir.toPath()
@@ -158,7 +155,18 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
-            return DownloadArtifactResult(null, "", e.message.orEmpty())
+            var errorMessage: String = e.message.orEmpty()
+            // SdkClientException will be thrown, masking actual issues like SSLHandshakeException underneath
+            if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
+                errorMessage = message("codemodernizer.notification.warn.download_failed_wildcard.content")
+                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
+            } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
+                errorMessage = message("codemodernizer.notification.warn.download_failed_ssl.content")
+                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
+            } else {
+                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.OTHER(e.message.toString()))
+            }
+            return DownloadArtifactResult(null, "", errorMessage)
         } finally {
             isCurrentlyDownloading.set(false)
         }
@@ -202,7 +210,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             project,
             listOf(
                 openTroubleshootingGuideNotificationAction(
-                    TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
                 )
             ),
         )
@@ -216,7 +224,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             project,
             listOf(
                 openTroubleshootingGuideNotificationAction(
-                    TROUBLESHOOTING_URL_DOWNLOAD_DIFF
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
                 )
             ),
         )

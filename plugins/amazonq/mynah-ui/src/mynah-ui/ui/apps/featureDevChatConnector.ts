@@ -28,7 +28,7 @@ export interface ConnectorProps {
     onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     onNewTab: (tabType: TabType) => void
     tabsStorage: TabsStorage
-    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[]) => void
+    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string) => void
 }
 
 export class Connector {
@@ -136,6 +136,7 @@ export class Connector {
                 messageId: messageData.messageID ?? messageData.triggerID ?? '',
                 relatedContent: undefined,
                 canBeVoted: messageData.canBeVoted,
+                snapToTop: messageData.snapToTop,
                 followUp:
                     messageData.followUps !== undefined && messageData.followUps.length > 0
                         ? {
@@ -201,7 +202,7 @@ export class Connector {
 
     handleMessageReceive = async (messageData: any): Promise<void> => {
         if (messageData.type === 'updateFileComponent') {
-            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles)
+            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId)
             return
         }
         if (messageData.type === 'errorMessage') {
