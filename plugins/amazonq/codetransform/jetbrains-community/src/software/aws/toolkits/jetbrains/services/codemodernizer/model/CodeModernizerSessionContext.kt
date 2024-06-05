@@ -14,6 +14,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
@@ -224,7 +225,7 @@ data class CodeModernizerSessionContext(
                         }
                     }
 
-                    LOG.info("Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}")
+                    LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
                     // 3) Sources
                     files.forEach { file ->
@@ -245,7 +246,7 @@ data class CodeModernizerSessionContext(
                         }
                     }
 
-                    LOG.info("Source code files size = ${files.sumOf { it.length.toInt() }}")
+                    LOG.info { "Source code files size = ${files.sumOf { it.length.toInt() }}" }
 
                     // 4) Build Log
                     buildLogBuilder.toString().byteInputStream().use {
