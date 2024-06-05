@@ -209,12 +209,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             }
         }
         val updatedStatuses = when (newState) {
-            TransformationStatus.ACCEPTED -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.accepted")
-                statuses.update(BuildStepStatus.WORKING, ProgressStepId.UPLOADING)
-            }
-
-            TransformationStatus.STARTED -> {
+            TransformationStatus.CREATED, TransformationStatus.ACCEPTED, TransformationStatus.STARTED -> {
                 loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.accepted")
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.UPLOADING)
             }
