@@ -5,12 +5,18 @@ package software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1
 
 import com.google.gson.Gson
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessModuleDir
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.model.AssistantResponseEvent
@@ -34,12 +40,17 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.TextDocument
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessage
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessageContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -54,6 +65,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Stack
 
 class ChatSessionV1(
     private val project: Project,
@@ -67,27 +79,9 @@ class ChatSessionV1(
         val refresh: Boolean
     )
 
-    fun index() {
-        val url = URL("http://localhost:3000/indexFiles")
-        val payload = RequestPayload(listOf("/Users/zoelin/Workspace/aws-toolkit-jetbrains/CONTRIBUTING.md"), "/Users/zoelin/Workplace/aws-toolkit-jetbrains", true)
-        val payloadJson = Gson().toJson(payload)
-        with(url.openConnection() as HttpURLConnection) {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            OutputStreamWriter(outputStream).use {
-                it.write(payloadJson)
-            }
-            val responseCode = responseCode
-            println("Response: $responseCode")
-        }
-    }
-
     override fun chat(data: ChatRequestData): Flow<ChatResponseEvent> = callbackFlow {
         var requestId: String = ""
         var statusCode: Int = 0
-        index()
         val responseHandler = GenerateAssistantResponseResponseHandler.builder()
             .onResponse {
                 requestId = it.responseMetadata().requestId()
