@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
-import java.io.File
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
@@ -58,20 +57,15 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     private val input = RuleUtils.randomName()
-    private lateinit var testProjectDir: File
 
     @Before
     fun setUp() {
-        testProjectDir = tempFolder.newFolder("test-project")
-
-        createMinimalGradleBuildSetup(testProjectDir)
-
-        createGradlePropertiesFile(testProjectDir)
-
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
+
         val module = fixture.addModule("main")
+
         val psiClass = fixture.addClass(
             module,
             """
@@ -83,6 +77,27 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
                 }
             }
             """
+        )
+        fixture.addFileToProject(
+            "gradle.properties",
+            """
+            org.gradle.user.home="${fixture.module.moduleFilePath}"
+            org.gradle.jvmargs=-Xmx4096m
+            """.trimIndent()
+        )
+
+        fixture.addFileToModule(
+            module,
+            "build.gradle.kts",
+            """
+            plugins {
+                id 'java'
+            }
+ 
+            repositories {
+                mavenCentral()
+            }
+            """.trimIndent()
         )
 
         val compatibility = when (runtime) {
@@ -109,7 +124,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        testProjectDir.deleteRecursively()
     }
 
     @Test
@@ -255,29 +269,4 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         expectedOutput = input.uppercase(),
         addBreakpoint = { projectRule.addBreakpoint() }
     )
-
-    private fun createMinimalGradleBuildSetup(testProjectDir: File) {
-        val buildGradleFile = File(testProjectDir, "build.gradle.kts")
-        buildGradleFile.writeText(
-            """
-            plugins {
-                id 'java'
-            }
- 
-            repositories {
-                mavenCentral()
-            }
-            """.trimIndent()
-        )
-    }
-
-    private fun createGradlePropertiesFile(testProject: File) {
-        val gradlePropertiesFile = File(testProject, "gradle.properties")
-        gradlePropertiesFile.writeText(
-            """
-            org.gradle.jvmargs=-Xmx4096m
-            org.gradle.user.home=${testProjectDir.absolutePath}
-            """.trimIndent()
-        )
-    }
 }
