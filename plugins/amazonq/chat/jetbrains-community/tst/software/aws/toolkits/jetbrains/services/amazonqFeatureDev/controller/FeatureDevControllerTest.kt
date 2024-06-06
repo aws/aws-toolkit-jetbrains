@@ -35,7 +35,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -62,7 +61,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFol
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
 import org.mockito.kotlin.verify as mockitoVerify
 
 class FeatureDevControllerTest : FeatureDevTestBase() {
@@ -407,9 +405,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-        mockkObject(AmazonqTelemetry)
-        every { AmazonqTelemetry.modifySourceFolder(amazonqConversationId = any()) } just runs
-
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
         every { selectFolder(any(), any()) } returns null
 
@@ -427,13 +422,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     )
                 )
             )
-            AmazonqTelemetry.modifySourceFolder(
-                amazonqConversationId = spySession.conversationId,
-                credentialStartUrl = any(),
-                result = Result.Failed,
-                reason = ModifySourceFolderReason.ClosedBeforeSelection.toString(),
-                createTime = any()
-            )
         }
     }
 
@@ -444,9 +432,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        mockkObject(AmazonqTelemetry)
-        every { AmazonqTelemetry.modifySourceFolder(amazonqConversationId = any()) } just runs
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
         every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
@@ -470,13 +455,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     )
                 )
             )
-            AmazonqTelemetry.modifySourceFolder(
-                amazonqConversationId = spySession.conversationId,
-                credentialStartUrl = any(),
-                result = Result.Failed,
-                reason = ModifySourceFolderReason.NotInWorkspaceFolder.toString(),
-                createTime = any()
-            )
         }
     }
 
@@ -487,9 +465,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
         whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        mockkObject(AmazonqTelemetry)
-        every { AmazonqTelemetry.modifySourceFolder(amazonqConversationId = any()) } just runs
 
         val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
@@ -503,13 +478,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 tabId = testTabId,
                 messageType = FeatureDevMessageType.Answer,
                 message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path)
-            )
-            AmazonqTelemetry.modifySourceFolder(
-                amazonqConversationId = spySession.conversationId,
-                credentialStartUrl = any(),
-                result = Result.Succeeded,
-                reason = isNull(),
-                createTime = any()
             )
         }
     }

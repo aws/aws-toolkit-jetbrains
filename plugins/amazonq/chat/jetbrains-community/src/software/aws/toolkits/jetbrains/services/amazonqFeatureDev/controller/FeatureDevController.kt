@@ -31,7 +31,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationL
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderReason
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
@@ -612,7 +612,7 @@ class FeatureDevController(
         )
 
         var result: Result = Result.Failed
-        var reason: ModifySourceFolderReason? = null
+        var reason: ModifySourceFolderErrorReason? = null
 
         withContext(EDT) {
             val selectedFolder = selectFolder(context.project, currentSourceFolder)
@@ -625,7 +625,7 @@ class FeatureDevController(
                     followUp = listOf(modifyFolderFollowUp),
                 )
 
-                reason = ModifySourceFolderReason.ClosedBeforeSelection
+                reason = ModifySourceFolderErrorReason.ClosedBeforeSelection
                 return@withContext
             }
 
@@ -644,7 +644,7 @@ class FeatureDevController(
                     followUp = listOf(modifyFolderFollowUp),
                 )
 
-                reason = ModifySourceFolderReason.NotInWorkspaceFolder
+                reason = ModifySourceFolderErrorReason.NotInWorkspaceFolder
                 return@withContext
             }
 

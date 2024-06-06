@@ -17,7 +17,7 @@ const val DEFAULT_RETRY_LIMIT = 0
 // Max allowed size for a repository in bytes
 const val MAX_PROJECT_SIZE_BYTES: Long = 200 * 1024 * 1024
 
-enum class ModifySourceFolderReason(
+enum class ModifySourceFolderErrorReason(
     private val reasonText: String
 ) {
     ClosedBeforeSelection("ClosedBeforeSelection"),
