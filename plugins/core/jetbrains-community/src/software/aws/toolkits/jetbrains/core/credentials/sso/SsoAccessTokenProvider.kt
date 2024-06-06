@@ -122,7 +122,7 @@ class LazyAccessTokenProvider(
     override val ssoUrl: String,
     override val ssoRegion: String,
     override val scopes: List<String>,
-    ) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
     override fun resolveToken() = loadAccessToken()
 }
 
