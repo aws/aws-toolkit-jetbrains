@@ -30,7 +30,6 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
-import java.io.File
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
@@ -54,7 +53,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     private val input = RuleUtils.randomName()
-    private lateinit var gradleUserHomeDir: File
+    private lateinit var gradleUserHomeDir: MutableMap<String, String>
 
     @Before
     fun setUp() {
@@ -77,9 +76,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             """
         )
 
-        gradleUserHomeDir = File(module.moduleFilePath).parentFile
-
-        System.setProperty("GRADLE_USER_HOME", gradleUserHomeDir.absolutePath)
+        gradleUserHomeDir = mutableMapOf("GRADLE_USER_HOME" to fixture.tempDirPath)
 
         fixture.addFileToModule(
             module,
@@ -119,7 +116,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        gradleUserHomeDir.deleteRecursively()
+        gradleUserHomeDir.clear()
     }
 
     @Test
@@ -128,6 +125,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
+            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
@@ -145,6 +143,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             runtime = runtime.toSdkRuntime(),
             input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
             inputIsFile = true,
+            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
@@ -177,6 +176,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
+            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
 
@@ -210,6 +210,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
+            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
 
@@ -229,6 +230,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
+            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
