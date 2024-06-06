@@ -13,6 +13,7 @@ import org.mockito.Mockito.never
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -44,6 +45,31 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         doReturn(result).whenever(handler).downloadArtifact(any())
         handler.displayDiff(jobId)
         verify(handler, times(1)).notifyUnableToApplyPatch(path, "")
+    }
+
+    @Test
+    fun `ArtifactHandler notifies proxy wildcard error`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Dangling meta character '*' near index 0")).whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult(null, "", message("codemodernizer.notification.warn.download_failed_wildcard.content"))
+        val result = handler.downloadArtifact(jobId)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler notifies ssl handshake error`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult(
+            null,
+            "",
+            message("codemodernizer.notification.warn.download_failed_ssl.content")
+        )
+        val result = handler.downloadArtifact(jobId)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
     }
 
     @Test
