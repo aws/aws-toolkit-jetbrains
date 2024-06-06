@@ -109,7 +109,7 @@ class CodeWhispererService {
 
         if (isQExpired(project)) {
             // say the connection is un-refreshable if refresh fails for 3 times
-            val shouldReauth = if (refreshFailure < MAX_REFREH_ATTEMPT) {
+            val shouldReauth = if (refreshFailure < MAX_REFRESH_ATTEMPT) {
                 ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
                     promptReAuth(project)
                 }.get().also { success ->
