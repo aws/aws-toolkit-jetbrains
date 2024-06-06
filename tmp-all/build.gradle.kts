@@ -23,8 +23,8 @@ dependencies {
         create(type, version)
         jetbrainsRuntime()
 
-        localPlugin(project(":plugin-core", "pluginZip"))
-        localPlugin(project(":plugin-amazonq", "pluginZip"))
-        plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
+//        localPlugin(project(":plugin-core", "pluginZip"))
+//        localPlugin(project(":plugin-amazonq", "pluginZip"))
+//        plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
     }
 }

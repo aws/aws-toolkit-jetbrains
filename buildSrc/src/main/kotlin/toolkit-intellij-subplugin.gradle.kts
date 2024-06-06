@@ -88,10 +88,14 @@ dependencies {
     intellijPlatform {
         instrumentationTools()
 
-        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-        val version = toolkitIntelliJ.version()
+        // annoying resolution issue that we dont wan't to bother fixing
+        if (!project.name.contains("jetbrains-gateway")) {
+            val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
+            val version = toolkitIntelliJ.version()
 
-        create(type, version)
+            create(type, version)
+        }
+
         jetbrainsRuntime()
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
