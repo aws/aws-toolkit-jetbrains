@@ -54,6 +54,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     private val input = RuleUtils.randomName()
+    private lateinit var gradleUserHomeDir: File
 
     @Before
     fun setUp() {
@@ -76,15 +77,9 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             """
         )
 
-        val gradleUserHomeDir = File(module.moduleFilePath).parentFile
+        gradleUserHomeDir = File(module.moduleFilePath).parentFile
 
-        fixture.addFileToProject(
-            "gradle.properties",
-            """
-            org.gradle.user.home="${gradleUserHomeDir.absolutePath}"
-            org.gradle.jvmargs=-Xmx4096m
-            """.trimIndent()
-        )
+        System.setProperty("GRADLE_USER_HOME", gradleUserHomeDir.absolutePath)
 
         fixture.addFileToModule(
             module,
@@ -124,6 +119,7 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
+        gradleUserHomeDir.deleteRecursively()
     }
 
     @Test
