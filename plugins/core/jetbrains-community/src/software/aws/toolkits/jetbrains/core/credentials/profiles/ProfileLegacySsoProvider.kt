@@ -35,8 +35,8 @@ class ProfileLegacySsoProvider(ssoCache: SsoCache, profile: Profile) : AwsCreden
             ssoRegion,
             ssoCache,
             ssoOidcClient,
-            listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE),
             isAlwaysShowDeviceCode = true,
+            scopes = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE),
         )
 
         credentialsProvider = SsoCredentialProvider(
