@@ -109,7 +109,7 @@ class CodeWhispererService {
 
         if (isQExpired(project)) {
             // say the connection is un-refreshable if refresh fails for 3 times
-            val shouldReauth = if (refreshFailure < 3) {
+            val shouldReauth = if (refreshFailure < MAX_REFREH_ATTEMPT) {
                 ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
                     promptReAuth(project)
                 }.get().also { success ->
@@ -764,6 +764,8 @@ class CodeWhispererService {
 
     companion object {
         private val LOG = getLogger<CodeWhispererService>()
+        private const val MAX_REFREH_ATTEMPT = 3
+
         val CODEWHISPERER_CODE_COMPLETION_PERFORMED: Topic<CodeWhispererCodeCompletionServiceListener> = Topic.create(
             "CodeWhisperer code completion service invoked",
             CodeWhispererCodeCompletionServiceListener::class.java
