@@ -11,7 +11,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -31,13 +30,11 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
+import java.io.File
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
 
-    @Rule
-    @JvmField
-    val tempFolder = TemporaryFolder()
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -78,10 +75,13 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             }
             """
         )
+
+        val gradleUserHomeDir = File(module.moduleFilePath).parentFile
+
         fixture.addFileToProject(
             "gradle.properties",
             """
-            org.gradle.user.home="${fixture.module.moduleFilePath}"
+            org.gradle.user.home="${gradleUserHomeDir.absolutePath}"
             org.gradle.jvmargs=-Xmx4096m
             """.trimIndent()
         )
