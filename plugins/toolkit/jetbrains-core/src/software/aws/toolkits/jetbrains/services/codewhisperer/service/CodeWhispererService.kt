@@ -764,7 +764,7 @@ class CodeWhispererService {
 
     companion object {
         private val LOG = getLogger<CodeWhispererService>()
-        private const val MAX_REFREH_ATTEMPT = 3
+        private const val MAX_REFRESH_ATTEMPT = 3
 
         val CODEWHISPERER_CODE_COMPLETION_PERFORMED: Topic<CodeWhispererCodeCompletionServiceListener> = Topic.create(
             "CodeWhisperer code completion service invoked",
