@@ -199,6 +199,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
      */
     fun addCodeModernizeUI(setSelected: Boolean = false, moduleOrProjectNameForFile: String? = null) = runInEdt {
         val appModernizerBottomWindow = getBottomToolWindow()
+        appModernizerBottomWindow.isAvailable = true
         if (!appModernizerBottomWindow.contentManager.contents.contains(codeModernizerBottomWindowPanelContent)) {
             appModernizerBottomWindow.contentManager.addContent(codeModernizerBottomWindowPanelContent)
         }
@@ -556,7 +557,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
         message("codemodernizer.notification.info.modernize_complete.view_diff")
     ) {
-        LOG.error("Invoking display diff from displayDiffNotificationAction")
         artifactHandler.displayDiffAction(jobId)
     }
 
@@ -748,7 +748,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun showDiff() {
         val job = codeTransformationSession?.getActiveJobId() ?: return
-        LOG.error("Invoking display diff from showDiff")
         artifactHandler.displayDiffAction(job)
     }
 

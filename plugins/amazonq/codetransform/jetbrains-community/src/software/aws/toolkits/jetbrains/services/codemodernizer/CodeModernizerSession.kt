@@ -22,7 +22,6 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -41,7 +40,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTE
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_STARTED
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getQTokenProvider
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
@@ -171,15 +170,9 @@ class CodeModernizerSession(
                 else -> CodeModernizerStartJobResult.ZipCreationFailed(message("codemodernizer.notification.warn.zip_creation_failed.reasons.unknown"))
             }
         }
-        val tokenProvider =
-            getQTokenProvider(sessionContext.project) ?: return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
-        if (maybeReauthProviderIfNeeded(
-                sessionContext.project,
-                tokenProvider
-            ) {
-                // Don't trigger auth here, surface auth issue for CodeModernizerManager to orchestrate.
-            }
-        ) return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
+        if (!isValidCodeTransformConnection(sessionContext.project)) {
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
+        }
 
         // Create upload url and upload zip
         var uploadId = ""

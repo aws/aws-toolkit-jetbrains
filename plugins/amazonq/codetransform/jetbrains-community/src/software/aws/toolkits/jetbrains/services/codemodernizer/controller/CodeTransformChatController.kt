@@ -227,9 +227,6 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             updateLastPendingMessage(buildCompileLocalSuccessChatContent())
-
-//            addNewMessage(buildTransformBeginChatContent())
-//            addNewMessage(buildTransformInProgressChatContent())
         }
 
         runInEdt {
@@ -268,7 +265,6 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
-        logger.error("Invoking display diff from chat: processCodeTransformViewDiff")
         artifactHandler.displayDiffAction(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
     }
 
@@ -284,7 +280,6 @@ class CodeTransformChatController(
      * Invoking this is equivalent to user clicking "reauthenticate" in the Chat when credentials expired.
      */
     suspend fun handleReauthStarted(activeTabId: String) {
-        logger.error("Auth: In handle reauth started, activeTabId: ${activeTabId}")
         if (isCodeTransformAvailable(context.project)) return
         processAuthFollowUpClick(IncomingCodeTransformMessage.AuthFollowUpWasClicked(activeTabId, AuthFollowUpType.ReAuth))
     }
@@ -294,13 +289,11 @@ class CodeTransformChatController(
      * that auth changed to invalid.
      */
     suspend fun handleCheckAuth(activeTabId: String) {
-        logger.error("auth: in handleCheckAuth")
         if (!checkForAuth(activeTabId)) {
             runInEdt {
                 CodeModernizerBottomWindowPanelManager.getInstance(context.project).toolWindow?.isAvailable = isCodeTransformAvailable(context.project)
                 CodeModernizerManager.getInstance(context.project).handleCredentialsChanged()
             }
-            logger.error("auth: in handleCheckAuth not authenticated")
         }
     }
 
@@ -309,22 +302,16 @@ class CodeTransformChatController(
      * Attempts to resume the job if one was ongoing pre auth expiry or requests users to start a new transformation.
      */
     suspend fun handleAuthRestored() {
-        logger.error("Auth: In handle auth restored")
-        if (isCodeTransformAvailable(context.project)) {
-            logger.error("Auth: Code transform is available")
-            val manager = CodeModernizerManager.getInstance(context.project)
-            manager.handleCredentialsChanged()
-            if (manager.isJobOngoingInState()) {
-                logger.error("Auth: Trying to resume job")
-                runInEdt {
-                    CodeModernizerBottomWindowPanelManager.getInstance(context.project).toolWindow?.isAvailable = true
-                    manager.tryResumeJob()
-                }
-            } else {
-                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+        if (!isCodeTransformAvailable(context.project)) return
+        val manager = CodeModernizerManager.getInstance(context.project)
+        manager.handleCredentialsChanged()
+        if (manager.isJobOngoingInState()) {
+            runInEdt {
+                CodeModernizerBottomWindowPanelManager.getInstance(context.project).toolWindow?.isAvailable = true
+                manager.tryResumeJob()
             }
         } else {
-            logger.error("Auth: Code transform is not available")
+            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
         }
     }
 
@@ -335,7 +322,6 @@ class CodeTransformChatController(
             // If we are resuming a job, we should show transform progress also in chat, so open a tab if this is the case.
             codeTransformChatHelper.createNewCodeTransformTab()
             while (activeTabId == null) {
-                logger.warn("Waiting for new CodeTransformTab to open")
                 activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId()
             }
         }
@@ -370,7 +356,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processTabCreated(message: IncomingCodeTransformMessage.TabCreated) {
-        logger.error { "$FEATURE_NAME: New tab created: $message" }
+        logger.debug { "$FEATURE_NAME: New tab created: $message" }
         codeTransformChatHelper.setActiveCodeTransformTabId(message.tabId)
     }
 

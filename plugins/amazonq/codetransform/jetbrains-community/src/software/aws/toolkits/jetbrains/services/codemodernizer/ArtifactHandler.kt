@@ -34,7 +34,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArt
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
@@ -55,7 +55,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     private var isCurrentlyDownloading = AtomicBoolean(false)
     internal suspend fun displayDiff(job: JobId) {
-        LOG.error("In displayDiff artifact")
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job)) {
             is DownloadArtifactResult.Success -> displayDiffUsingPatch(result.artifact.patch, job)
@@ -110,9 +109,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     suspend fun downloadArtifact(job: JobId): DownloadArtifactResult {
-        LOG.error("In download artifact")
         isCurrentlyDownloading.set(true)
-
         val downloadStartTime = Instant.now()
         try {
             // 1. Attempt reusing previously downloaded artifact for job
@@ -133,7 +130,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             notifyDownloadStart()
 
             LOG.info { "Verifying user is authenticated prior to download" }
-            if (!isCodeTransformAvailable(project)) {
+            if (!isValidCodeTransformConnection(project)) {
                 CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
                 return DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
             }
@@ -168,7 +165,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
-            LOG.error("In ArtifactHandler: ${e.localizedMessage}")
             return when {
                 e is SsoOidcException || e is NoTokenInitializedException -> {
                     CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
@@ -296,7 +292,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
 
     fun showTransformationSummary(job: JobId) {
-        LOG.error("In showTransformationSummary artifact")
         if (isCurrentlyDownloading.get()) return
         runReadAction {
             projectCoroutineScope(project).launch {

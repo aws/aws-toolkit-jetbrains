@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
@@ -89,7 +88,6 @@ class CodeTransformChatApp : AmazonQApp {
             scope.launch {
                 val authController = AuthController()
                 val credentialState = authController.getAuthNeededStates(context.project).amazonQ
-                LOG.error("auth: credentialstate is null: ${credentialState == null}")
                 if (credentialState == null) {
                     // Notify tabs about restoring authentication
                     context.messagesFromAppToUi.publish(
@@ -130,7 +128,6 @@ class CodeTransformChatApp : AmazonQApp {
                     val qProvider = getQTokenProvider(context.project)
                     val isQ = qProvider?.id == providerId
                     val isAuthorized = qProvider?.state() == BearerTokenAuthState.AUTHORIZED
-                    LOG.error("Auth from bearer token provider, provider: $providerId authorized: $isAuthorized")
                     if (!isQ || !isAuthorized) return
                     authChanged()
                 }
@@ -141,7 +138,6 @@ class CodeTransformChatApp : AmazonQApp {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    LOG.error("Auth from connection manager, provider ${newConnection?.getConnectionSettings()?.providerId}")
                     authChanged()
                 }
             }
@@ -172,10 +168,6 @@ class CodeTransformChatApp : AmazonQApp {
 
     override fun dispose() {
         // nothing to do
-    }
-
-    companion object {
-        val LOG = getLogger<CodeTransformChatApp>()
     }
 
 }

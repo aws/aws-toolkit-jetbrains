@@ -20,10 +20,13 @@ fun isIntellij(): Boolean {
     return productCode == "IC" || productCode == "IU"
 }
 
-fun isCodeTransformAvailable(project: Project): Boolean {
-    if (!isIntellij()) return false
-    if (isRunningOnRemoteBackend() || !isQSupportedInThisVersion()) return false
+fun isValidCodeTransformConnection(project: Project): Boolean {
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
     return (connection.connectionType == ActiveConnectionType.IAM_IDC || connection.connectionType == ActiveConnectionType.BUILDER_ID) &&
         connection is ActiveConnection.ValidBearer
+}
+fun isCodeTransformAvailable(project: Project): Boolean {
+    if (!isIntellij()) return false
+    if (isRunningOnRemoteBackend() || !isQSupportedInThisVersion()) return false
+    return isValidCodeTransformConnection(project)
 }
