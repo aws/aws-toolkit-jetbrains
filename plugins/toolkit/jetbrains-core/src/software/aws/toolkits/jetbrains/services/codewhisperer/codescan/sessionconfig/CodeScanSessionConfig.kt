@@ -150,12 +150,11 @@ class CodeScanSessionConfig(
     private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
-                var relativePath: Path
-                try {
-                    relativePath = file.relativeTo(projectRoot.toNioPath())
+                val relativePath = try {
+                    file.relativeTo(projectRoot.toNioPath())
                 } catch (e: Exception) {
                     val tmpProjectRoot = File(projectRoot.path)
-                    relativePath = file.relativeTo(tmpProjectRoot.toPath())
+                    file.relativeTo(tmpProjectRoot.toPath())
                 }
                 LOG.debug { "Adding file to payload: $file" }
                 it.putNextEntry(relativePath.toString(), file)
