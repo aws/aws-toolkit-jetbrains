@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1.RequestPayload
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -30,6 +29,12 @@ class ProjectContextProvider (private val project: Project){
             index()
         }
     }
+
+    data class RequestPayload(
+        val filePaths: List<String>,
+        val projectRoot: String,
+        val refresh: Boolean
+    )
 
     private fun index() {
         val url = URL("http://localhost:3000/indexFiles")
