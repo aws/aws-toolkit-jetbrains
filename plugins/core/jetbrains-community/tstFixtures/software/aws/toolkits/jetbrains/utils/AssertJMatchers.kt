@@ -34,9 +34,10 @@ val <T> CompletableFutureAssert<T>.hasException get() = this.wait().isCompletedE
 fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractThrowableAssert<SELF, ACTUAL>.hasCauseWithMessage(
     message: String
 ): AbstractThrowableAssert<SELF, ACTUAL> {
-    satisfies { parentThrowable ->
+    // https://github.com/assertj/assertj/issues/2357
+    satisfies(Consumer { parentThrowable ->
         assertThat(parentThrowable.cause).isNotNull.hasMessage(message)
-    }
+    })
     return this
 }
 

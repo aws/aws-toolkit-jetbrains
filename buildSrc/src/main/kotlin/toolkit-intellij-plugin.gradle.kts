@@ -25,7 +25,5 @@ repositories {
 dependencies {
     intellijPlatform {
         instrumentationTools()
-//        testFramework(TestFrameworkType.Platform.JUnit4)
-        testFramework(TestFrameworkType.Platform.JUnit5)
     }
 }

@@ -3,6 +3,7 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -38,6 +39,10 @@ intellijToolkit {
 }
 
 dependencies {
+    intellijPlatform {
+        testFramework(TestFrameworkType.Platform.JUnit4)
+        testFramework(TestFrameworkType.Plugin.Java)
+    }
     compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(libs.aws.apacheClient)
     compileOnlyApi(libs.aws.nettyClient)
