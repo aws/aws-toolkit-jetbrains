@@ -30,17 +30,21 @@ class ProjectContextProvider (private val project: Project){
         }
     }
 
-    data class RequestPayload(
+    data class IndexRequestPayload(
         val filePaths: List<String>,
         val projectRoot: String,
         val refresh: Boolean
+    )
+
+    data class QueryRequestPayload (
+        val query: String
     )
 
     private fun index() {
         val url = URL("http://localhost:3000/indexFiles")
         val files = collectFiles().toList()
         val projectRoot = project.guessProjectDir()?.path ?: return
-        val payload = RequestPayload(files, projectRoot, true)
+        val payload = IndexRequestPayload(files, projectRoot, true)
         val payloadJson = Gson().toJson(payload)
         with(url.openConnection() as HttpURLConnection) {
             requestMethod = "POST"
@@ -51,7 +55,28 @@ class ProjectContextProvider (private val project: Project){
                 it.write(payloadJson)
             }
             val responseCode = responseCode
-            println("Response: $responseCode")
+            logger.info("Response: $responseCode")
+        }
+    }
+
+    fun query(prompt: String): String {
+        val url = URL("http://localhost:3000/query")
+        val payload = QueryRequestPayload(prompt)
+        val payloadJson = Gson().toJson(payload)
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            OutputStreamWriter(outputStream).use {
+                it.write(payloadJson)
+            }
+
+            val responseBody = if (responseCode == 200) { inputStream.bufferedReader().use { it.readText() }} else {
+                ""
+            }
+            logger.info("Response Body: $responseBody")
+            return responseBody
         }
     }
 

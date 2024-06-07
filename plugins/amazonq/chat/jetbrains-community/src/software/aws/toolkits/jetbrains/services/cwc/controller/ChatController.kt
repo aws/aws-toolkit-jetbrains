@@ -119,13 +119,30 @@ class ChatController private constructor(
     }
 
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
+        var prompt = message.chatMessage
+        var queryResult = ""
+        if(prompt.startsWith("@ws")){
+            prompt = prompt.drop(3)
+            queryResult = projectContextProvider.query(prompt)
+        } else if (prompt.startsWith("@workspace")){
+            prompt = prompt.drop(10)
+            queryResult = projectContextProvider.query(prompt)
+        }
+        logger.info("chucks!! $queryResult")
+        if(queryResult.length > 0) {
+            prompt = prompt + "\\nHere is relevant code:" + queryResult
+        }
+        if (prompt.length > 4000) {
+            prompt = prompt.substring(0, 3999)
+        }
         handleChat(
             tabId = message.tabId,
             triggerId = UUID.randomUUID().toString(),
-            message = message.chatMessage,
+            message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
+            queryResult
         )
     }
 
@@ -147,6 +164,7 @@ class ChatController private constructor(
         val fileContext = lastRequest?.activeFileContext ?: ActiveFileContext(null, null)
 
         // Re-use the editor context when making the follow-up request
+        // TODO: add last project context
         handleChat(
             tabId = message.tabId,
             triggerId = UUID.randomUUID().toString(),
@@ -154,6 +172,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromFollowupType(message.followUp.type),
             TriggerType.Click,
+            ""
         )
 
         telemetryHelper.recordInteractWithMessage(message)
@@ -249,7 +268,8 @@ class ChatController private constructor(
             message = prompt,
             activeFileContext = context,
             userIntent = intentRecognizer.getUserIntentFromOnboardingPageInteraction(message),
-            triggerType = TriggerType.Click, // todo trigger type
+            triggerType = TriggerType.Click, // todo trigger type,
+            ""
         )
     }
 
@@ -320,6 +340,7 @@ class ChatController private constructor(
             return
         }
 
+        // TODO: add project context
         val inputPrompt = modelPrompt ?: prompt
         handleChat(
             tabId = tabId,
@@ -328,6 +349,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
             TriggerType.CodeScanButton,
+            ""
         )
     }
 
@@ -343,6 +365,7 @@ class ChatController private constructor(
         activeFileContext: ActiveFileContext,
         userIntent: UserIntent?,
         triggerType: TriggerType,
+        projectContextQueryResult: String
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {
