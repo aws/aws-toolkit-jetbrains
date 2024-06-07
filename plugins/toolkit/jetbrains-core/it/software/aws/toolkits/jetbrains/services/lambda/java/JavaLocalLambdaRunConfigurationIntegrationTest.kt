@@ -11,6 +11,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -33,6 +34,9 @@ import software.aws.toolkits.jetbrains.utils.setUpJdk
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
+    @Rule
+    @JvmField
+    val tempDir = TemporaryFolder()
 
     companion object {
         @JvmStatic
@@ -76,16 +80,15 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             """
         )
 
-        gradleUserHomeDir = mutableMapOf("GRADLE_USER_HOME" to fixture.tempDirPath)
+        gradleUserHomeDir = mutableMapOf("GRADLE_USER_HOME" to "${tempDir.newFolder("gradleUserHome").toPath()}")
 
-        fixture.addFileToModule(
-            module,
+        fixture.addFileToProject(
             "build.gradle.kts",
             """
             plugins {
                 id 'java'
             }
- 
+
             repositories {
                 mavenCentral()
             }
