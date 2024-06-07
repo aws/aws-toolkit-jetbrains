@@ -4,17 +4,18 @@
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.google.gson.Gson
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
-import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -23,9 +24,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Stack
 
-class ProjectContextProvider (private val project: Project){
+@Service(Service.Level.PROJECT)
+class ProjectContextProvider (val project: Project){
     init {
-        projectCoroutineScope(project).launch(){
+        // TODO: shut this down when project is closed
+        ApplicationManager.getApplication().executeOnPooledThread(){
             index()
         }
     }
@@ -38,6 +41,10 @@ class ProjectContextProvider (private val project: Project){
 
     data class QueryRequestPayload (
         val query: String
+    )
+
+    data class UpdateIndexRequestPayload (
+        val filePath: String
     )
 
     private fun index() {
@@ -77,6 +84,23 @@ class ProjectContextProvider (private val project: Project){
             }
             logger.info("Response Body: $responseBody")
             return responseBody
+        }
+    }
+
+    fun updateIndex(filePath: String) {
+        val url = URL("http://localhost:3000/updateIndex")
+        val payload = UpdateIndexRequestPayload(filePath)
+        val payloadJson = Gson().toJson(payload)
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            OutputStreamWriter(outputStream).use {
+                it.write(payloadJson)
+            }
+            val responseCode = responseCode
+            logger.info("Response: $responseCode")
         }
     }
 
@@ -139,5 +163,6 @@ class ProjectContextProvider (private val project: Project){
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
+        fun getInstance(project: Project) = project.service<ProjectContextProvider>()
     }
 }

@@ -95,7 +95,7 @@ class ChatController private constructor(
         contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
-        projectContextProvider = ProjectContextProvider(context.project)
+        projectContextProvider = ProjectContextProvider.getInstance(context.project)
     )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
