@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationType
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUploadArtifactType
@@ -165,7 +166,8 @@ class GumbyClient(private val project: Project) {
 
     suspend fun downloadExportResultArchive(
         jobId: JobId,
-        hilDownloadArtifactId: String? = null
+        hilDownloadArtifactId: String? = null,
+        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
@@ -178,7 +180,7 @@ class GumbyClient(private val project: Project) {
                     TransformationExportContext
                         .builder()
                         .downloadArtifactId(hilDownloadArtifactId)
-                        .downloadArtifactType("ClientInstructions")
+                        .downloadArtifactType(downloadArtifactType.toString())
                         .build()
                 )
                 .build()

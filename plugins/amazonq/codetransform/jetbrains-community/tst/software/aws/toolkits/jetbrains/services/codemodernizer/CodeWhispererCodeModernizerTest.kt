@@ -14,10 +14,12 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
@@ -42,7 +44,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val path = testCodeModernizerArtifact.zipPath
         doNothing().whenever(handler).notifyUnableToApplyPatch(path, "")
         val result = DownloadArtifactResult(null, path)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
         handler.displayDiff(jobId)
         verify(handler, times(1)).notifyUnableToApplyPatch(path, "")
     }
@@ -52,7 +54,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         doThrow(RuntimeException("Dangling meta character '*' near index 0")).whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
         val expectedResult = DownloadArtifactResult(null, "", message("codemodernizer.notification.warn.download_failed_wildcard.content"))
-        val result = handler.downloadArtifact(jobId)
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
         assertEquals(expectedResult, result)
     }
@@ -67,7 +69,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
             "",
             message("codemodernizer.notification.warn.download_failed_ssl.content")
         )
-        val result = handler.downloadArtifact(jobId)
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
         assertEquals(expectedResult, result)
     }
@@ -77,7 +79,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult(testCodeModernizerArtifact, path)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
         doNothing().whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
         verify(handler, never()).notifyUnableToApplyPatch(path, "")

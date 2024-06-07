@@ -71,6 +71,12 @@ private val viewSummaryButton = Button(
     keepCardAfterClick = true,
 )
 
+private val viewBuildLog = Button(
+    id = CodeTransformButtonId.ViewBuildLog.id,
+    text = message("codemodernizer.chat.message.button.view_failure_build_log"),
+    keepCardAfterClick = true,
+)
+
 private val confirmHilSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmHilSelection.id,
     text = message("codemodernizer.chat.message.button.hil_submit"),
@@ -298,6 +304,13 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         is CodeModernizerJobCompletedResult.JobFailed -> {
             message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
         }
+        is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> {
+            if (result.hasBuildLog) {
+                message("codemodernizer.chat.message.result.fail_initial_build")
+            } else {
+                message("codemodernizer.chat.message.result.fail_initial_build_no_build_log", result.failureReason)
+            }
+        }
         is CodeModernizerJobCompletedResult.UnableToCreateJob -> {
             result.failureReason
         }
@@ -314,6 +327,8 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
             listOf(viewDiffButton, viewSummaryButton)
+        } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild) {
+            listOf(viewBuildLog)
         } else {
             null
         },

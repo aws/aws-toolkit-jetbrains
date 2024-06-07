@@ -481,8 +481,15 @@ class CodeModernizerSession(
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_start_failure")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
                     } else if (!passedBuild) {
-                        val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
-                        return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason)
+                        // TODO: Instead of string matching, pre-fetch the failure build log, and if it doesn't exist, set hasBuildLog to false.
+                        if (result.jobDetails?.reason() != null && result.jobDetails.reason().contains("The requested module could not be built")) {
+                            val failureReason = result.jobDetails.reason()
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, true)
+                        } else {
+                            // If job failed to start before building, such as due to malformed manifest or lines of code limits reached.
+                            val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, false)
+                        }
                     } else {
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_status_response")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
