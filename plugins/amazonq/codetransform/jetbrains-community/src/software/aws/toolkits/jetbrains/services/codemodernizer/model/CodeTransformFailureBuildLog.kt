@@ -20,10 +20,10 @@ open class CodeTransformFailureBuildLog(
 ) : CodeTransformDownloadArtifact {
     companion object : CodeTransformDownloadArtifact {
         private val tempDir = createTempDirectory("codeTransformBuildLog", null)
-        // We currently don't have a need for information in the manifest file, so we just ignore it
+
+        // We currently don't have a need for information in the "manifest.json", so we just ignore it.
         // In the future if we have multiple build artifacts available, then we can use this to
         // determine the path to each artifact
-        private const val MANIFEST_PATH_IN_ZIP = "manifest.json"
         private const val BUILD_LOG_NAME_IN_ZIP = "buildCommandOutput.log"
         private val LOG = getLogger<CodeTransformFailureBuildLog>()
 

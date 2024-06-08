@@ -16,7 +16,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifactType
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -66,7 +66,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    private suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
+    suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
         val zipFilePath = withContext(getCoroutineBgContext()) {
             if (outputDirPath == null) {
                 Files.createTempFile(null, ".zip")
@@ -103,7 +103,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    suspend fun downloadArtifact(job: JobId, artifactType: TransformationDownloadArtifactType): DownloadArtifactResult {
+    suspend fun downloadArtifact(
+        job: JobId,
+        artifactType: TransformationDownloadArtifactType,
+        isPreFetch: Boolean = false
+    ): DownloadArtifactResult {
         isCurrentlyDownloading.set(true)
         val downloadStartTime = Instant.now()
         try {
@@ -130,8 +134,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             }
 
             // 2. Download the data
-            notifyDownloadStart()
             LOG.info { "About to download the export result archive" }
+            // only notify if downloading client instructions (upgraded code)
+            if (artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
+                notifyDownloadStart()
+            }
             val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
                 clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
             } else {
@@ -175,14 +182,17 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         } catch (e: Exception) {
             var errorMessage: String = e.message.orEmpty()
             // SdkClientException will be thrown, masking actual issues like SSLHandshakeException underneath
-            if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
-                errorMessage = message("codemodernizer.notification.warn.download_failed_wildcard.content")
-                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
-            } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
-                errorMessage = message("codemodernizer.notification.warn.download_failed_ssl.content")
-                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
-            } else {
-                CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.OTHER(e.message.toString()))
+            // TODO: remove this check once we are no longer pre-fetching for build log, as the check will no longer be needed
+            if (!isPreFetch) {
+                if (e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR)) {
+                    errorMessage = message("codemodernizer.notification.warn.download_failed_wildcard.content")
+                    CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR(artifactType))
+                } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
+                    errorMessage = message("codemodernizer.notification.warn.download_failed_ssl.content")
+                    CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR(artifactType))
+                } else {
+                    CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.OTHER(artifactType, e.message.toString()))
+                }
             }
             return DownloadArtifactResult(null, "", errorMessage)
         } finally {
@@ -226,23 +236,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             message("codemodernizer.notification.info.download.started.content"),
             project,
         )
-    }
-
-    fun notifyUnableToDownload(error: DownloadFailureReason) {
-        LOG.error { "Unable to download artifact: $error" }
-        if (error == DownloadFailureReason.PROXY_WILDCARD_ERROR) {
-            notifyStickyWarn(
-                message("codemodernizer.notification.warn.view_diff_failed.title"),
-                message("codemodernizer.notification.warn.download_failed_wildcard.content", error),
-                project,
-            )
-        } else if (error == DownloadFailureReason.SSL_HANDSHAKE_ERROR) {
-            notifyStickyWarn(
-                message("codemodernizer.notification.warn.view_diff_failed.title"),
-                message("codemodernizer.notification.warn.download_failed_ssl.content", error),
-                project,
-            )
-        }
     }
 
     fun notifyUnableToApplyPatch(patchPath: String, errorMessage: String) {

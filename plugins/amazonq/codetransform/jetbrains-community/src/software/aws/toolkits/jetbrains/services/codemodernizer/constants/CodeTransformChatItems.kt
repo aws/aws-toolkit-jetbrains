@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
@@ -327,7 +328,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
             listOf(viewDiffButton, viewSummaryButton)
-        } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild) {
+        } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {
             null
@@ -453,27 +454,37 @@ fun buildHilCannotResumeContent() = CodeTransformChatMessageContent(
     ),
 )
 
-fun buildDownloadFailureChatContent(downloadFailureReason: DownloadFailureReason): CodeTransformChatMessageContent {
-    val reason = when (downloadFailureReason) {
+fun buildDownloadFailureChatContent(reason: DownloadFailureReason): CodeTransformChatMessageContent {
+    val message = when (reason) {
         is DownloadFailureReason.SSL_HANDSHAKE_ERROR -> {
-            message("codemodernizer.chat.message.download_failed_ssl")
+            message("codemodernizer.chat.message.download_failed_ssl", getDownloadedArtifactTextFromType(reason.artifactType))
         }
         is DownloadFailureReason.PROXY_WILDCARD_ERROR -> {
-            message("codemodernizer.chat.message.download_failed_wildcard")
+            message("codemodernizer.chat.message.download_failed_wildcard", getDownloadedArtifactTextFromType(reason.artifactType))
         }
         is DownloadFailureReason.OTHER -> {
-            message("codemodernizer.chat.message.download_failed_other", downloadFailureReason.errorMessage)
+            message("codemodernizer.chat.message.download_failed_other", getDownloadedArtifactTextFromType(reason.artifactType), reason.errorMessage)
         }
     }
 
     // DownloadFailureReason.OTHER might be retryable, so including buttons to allow retry.
     return CodeTransformChatMessageContent(
         type = CodeTransformChatMessageType.FinalizedAnswer,
-        message = reason,
-        buttons = if (downloadFailureReason is DownloadFailureReason.SSL_HANDSHAKE_ERROR || downloadFailureReason is DownloadFailureReason.OTHER) {
+        message = message,
+        buttons = if (
+            (reason is DownloadFailureReason.SSL_HANDSHAKE_ERROR && reason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) ||
+            (reason is DownloadFailureReason.OTHER && reason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
+        ) {
             listOf(viewDiffButton, viewSummaryButton)
         } else {
             null
         },
     )
 }
+
+private fun getDownloadedArtifactTextFromType(artifactType: TransformationDownloadArtifactType): String =
+    when (artifactType) {
+        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> "upgraded code"
+        TransformationDownloadArtifactType.LOGS -> "build log"
+        TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> "code"
+    }

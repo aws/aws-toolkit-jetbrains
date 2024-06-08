@@ -3,9 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
-
 /**
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
  */
-interface CodeTransformDownloadArtifact {}
+interface CodeTransformDownloadArtifact
