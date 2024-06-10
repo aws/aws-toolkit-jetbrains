@@ -23,26 +23,34 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConst
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.webview.BearerLoginHandler
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
 import java.io.IOException
 
 sealed interface Login {
     val id: CredentialSourceId
+    fun login(project: Project): ToolkitConnection?
 
     data class BuilderId(
         val scopes: List<String>,
-        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onError: (Exception) -> Unit
+        val loginHandler: BearerLoginHandler
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
-        fun loginBuilderId(project: Project): Boolean {
-            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError)
-            return true
+        override fun login(project: Project): ToolkitConnection? = try {
+            loginSso(project, SONO_URL, SONO_REGION, scopes, loginHandler::onPendingToken).also {
+                loginHandler.onSuccess(it)
+            }
+        } catch (e: Exception) {
+            loginHandler.onError(e)
+
+            null
         }
     }
 
@@ -50,17 +58,17 @@ sealed interface Login {
         val startUrl: String,
         val region: AwsRegion,
         val scopes: List<String>,
-        val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onError: (Exception, AuthProfile) -> Unit
+        val loginHandler: BearerLoginHandler,
+        private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade()
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
-        private val configFilesFacade = DefaultConfigFilesFacade()
 
-        fun loginIdc(project: Project): AwsBearerTokenConnection? {
+        override fun login(project: Project): ToolkitConnection? {
             // we have this check here so we blow up early if user has an invalid config file
             try {
                 configFilesFacade.readSsoSessions()
             } catch (e: Exception) {
+                loginHandler.onError(e)
                 println("Failed to read sso sessions file")
                 return null
             }
@@ -72,44 +80,51 @@ sealed interface Login {
                 scopes = scopes
             )
 
-            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return null
+            val conn = try {
+                authAndUpdateConfig(project, profile, configFilesFacade, loginHandler::onPendingToken) { _, _ -> }
+            } catch (e: Exception) {
+                loginHandler.onError(e)
 
-            // TODO: delta, make sure we are good to switch immediately
-//            if (!promptForIdcPermissionSet) {
-//                ToolkitConnectionManager.getInstance(project).switchConnection(connection)
-//                close(DialogWrapper.OK_EXIT_CODE)
-//                return
-//            }
+                return null
+            }
+
             ToolkitConnectionManager.getInstance(project).switchConnection(conn)
 
-            return conn
+            return conn.also {
+                loginHandler.onSuccess(it)
+            }
         }
     }
 
     data class LongLivedIAM(
         val profileName: String,
         val accessKey: String,
-        val secretKey: String
+        val secretKey: String,
+        private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade()
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.SharedCredentials
-        private val configFilesFacade = DefaultConfigFilesFacade()
 
-        fun loginIAM(
-            project: Project,
-            onConfigFileFacadeError: (Exception) -> Unit,
-            onProfileAlreadyExist: () -> Unit,
-            onConnectionValidationError: () -> Unit
-        ): Boolean {
+        override fun login(project: Project): ToolkitConnection? {
             val existingProfiles = try {
                 configFilesFacade.readAllProfiles()
             } catch (e: Exception) {
-                onConfigFileFacadeError(e)
-                return false
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    result = Result.Failed,
+                    reason = e.message,
+                    credentialType = CredentialType.StaticProfile
+                )
+                return null
             }
 
             if (existingProfiles.containsKey(profileName)) {
-                onProfileAlreadyExist()
-                return false
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    result = Result.Failed,
+                    reason = "Profile already exists",
+                    credentialType = CredentialType.StaticProfile
+                )
+                return null
             }
 
             val callerIdentity = tryOrNull {
@@ -124,8 +139,13 @@ sealed interface Login {
             }
 
             if (callerIdentity == null) {
-                onConnectionValidationError()
-                return false
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    result = Result.Failed,
+                    reason = "Connection validation error",
+                    credentialType = CredentialType.StaticProfile
+                )
+                return null
             }
 
             val profile = Profile.builder()
@@ -144,7 +164,11 @@ sealed interface Login {
             // TODO: should it live in configFileFacade
             VirtualFileManager.getInstance().refreshWithoutFileWatcher(false)
 
-            return true
+            return if (CredentialManager.getInstance().getCredentialIdentifiers().isNotEmpty()) {
+                return AwsConnectionManagerConnection(project)
+            } else {
+                null
+            }
         }
     }
 }
@@ -155,7 +179,7 @@ fun authAndUpdateConfig(
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
     onError: (Exception, AuthProfile) -> Unit
-): AwsBearerTokenConnection? {
+): AwsBearerTokenConnection {
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()
 
@@ -189,7 +213,8 @@ fun authAndUpdateConfig(
             reason = message,
             result = Result.Failed
         )
-        return null
+
+        throw e
     }
     AuthTelemetry.addConnection(
         project,
@@ -214,7 +239,7 @@ fun authAndUpdateConfig(
     return connection
 }
 
-internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
+fun ssoErrorMessageFromException(e: Exception) = when (e) {
     is IllegalStateException -> e.message ?: message("general.unknown_error")
     is ProcessCanceledException -> message("codewhisperer.credential.login.dialog.exception.cancel_login")
     is InvalidRequestException -> message("codewhisperer.credential.login.exception.invalid_input")

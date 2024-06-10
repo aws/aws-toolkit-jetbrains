@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.webview
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -14,45 +16,62 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.annotations.VisibleForTesting
+import org.slf4j.event.Level
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
-import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.LastLoginIdcInfo
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
+import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
 import java.util.concurrent.Future
+import java.util.function.Function
 
-data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean = false, val requireReauth: Boolean = false)
+data class BrowserState(
+    val feature: FeatureId,
+    val browserCancellable: Boolean = false,
+    val requireReauth: Boolean = false,
+    var stage: String = "START",
+    val lastLoginIdcInfo: LastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo(),
+    var existingConnections: List<AwsBearerTokenConnection> = emptyList()
+)
 
-abstract class LoginBrowser(
+abstract class AwsLoginBrowser(
     private val project: Project,
     val domain: String,
     val webScriptUri: String
 ) {
     abstract val jcefBrowser: JBCefBrowserBase
 
+    protected val jcefHandler = Function<String, JBCefJSQuery.Response> {
+        val obj = LOG.tryOrNull("Unable deserialize login browser message: $it", Level.WARN) {
+            objectMapper.readValue<BrowserMessage>(it)
+        }
+
+        handleBrowserMessage(obj)
+
+        null
+    }
+
     protected var currentAuthorization: PendingAuthorization? = null
 
-    protected data class BearerConnectionSelectionSettings(val currentSelection: AwsBearerTokenConnection, val onChange: (AwsBearerTokenConnection) -> Unit)
+    protected lateinit var myState: BrowserState
 
-    protected val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
-
-    protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+    protected fun updateOnPendingToken(provider: InteractiveBearerTokenProvider) {
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -62,9 +81,46 @@ abstract class LoginBrowser(
         }
     }
 
-    abstract fun prepareBrowser(state: BrowserState)
+    @VisibleForTesting
+    internal val objectMapper = jacksonObjectMapper()
 
-    fun executeJS(jsScript: String) {
+    abstract fun customize(state: BrowserState): BrowserState
+
+    abstract fun handleBrowserMessage(message: BrowserMessage?)
+
+    abstract fun loginBuilderId(scopes: List<String>)
+
+    abstract fun loginIdC(url: String, region: AwsRegion, scopes: List<String>)
+
+    abstract fun loadWebView(query: JBCefJSQuery)
+
+    fun prepareBrowser(state: BrowserState) {
+        myState = state
+        customize(state)
+
+        val jsonData = """
+            {
+                stage: '${state.stage}',
+                regions: ${objectMapper.writeValueAsString(AwsRegionProvider.getInstance().allRegionsForService("sso").values)},
+                idcInfo: {
+                    profileName: '${state.lastLoginIdcInfo.profileName}',
+                    startUrl: '${state.lastLoginIdcInfo.startUrl}',
+                    region: '${state.lastLoginIdcInfo.region}'
+                },
+                cancellable: ${state.browserCancellable},
+                feature: '${state.feature}',
+                existConnections: ${objectMapper.writeValueAsString(state.existingConnections)}
+            }
+        """.trimIndent()
+        executeJS("window.ideClient.prepareUi($jsonData)")
+    }
+
+    fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
+        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
+        else -> ""
+    }
+
+    private fun executeJS(jsScript: String) {
         this.jcefBrowser.cefBrowser.let {
             it.executeJavaScript(jsScript, it.url, 0)
         }
@@ -80,91 +136,25 @@ abstract class LoginBrowser(
         // TODO: telemetry
     }
 
-    fun userCodeFromAuthorization(authorization: PendingAuthorization) = when (authorization) {
-        is PendingAuthorization.DAGAuthorization -> authorization.authorization.userCode
-        else -> ""
-    }
-
-    open fun loginBuilderId(scopes: List<String>) {
-        val onError: (Exception) -> Unit = { e ->
-            tryHandleUserCanceledLogin(e)
-            AwsTelemetry.loginWithBrowser(
-                project = null,
-                credentialStartUrl = SONO_URL,
-                result = Result.Failed,
-                reason = e.message,
-                credentialSourceId = CredentialSourceId.AwsId
-            )
-        }
+    protected fun loginBuilderId(scopes: List<String>, loginHandler: BearerLoginHandler) {
         loginWithBackgroundContext {
-            Login.BuilderId(scopes, onPendingToken, onError).loginBuilderId(project)
-            AwsTelemetry.loginWithBrowser(
-                project = null,
-                credentialStartUrl = SONO_URL,
-                result = Result.Succeeded,
-                credentialSourceId = CredentialSourceId.AwsId
-            )
+            Login.BuilderId(scopes, loginHandler).login(project)
         }
     }
 
-    open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
-            val message = ssoErrorMessageFromException(e)
-            if (!tryHandleUserCanceledLogin(e)) {
-                LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
-            }
-            AwsTelemetry.loginWithBrowser(
-                project = null,
-                credentialStartUrl = url,
-                result = Result.Failed,
-                reason = message,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
-            )
-        }
+    protected fun loginIdC(url: String, region: AwsRegion, scopes: List<String>, loginHandler: BearerLoginHandler) {
         loginWithBackgroundContext {
-            Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
-            AwsTelemetry.loginWithBrowser(
-                project = null,
-                credentialStartUrl = url,
-                result = Result.Succeeded,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
-            )
+            Login.IdC(url, region, scopes, loginHandler).login(project)
         }
     }
 
-    open fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
+    protected fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
         runInEdt {
             Login.LongLivedIAM(
                 profileName,
                 accessKey,
                 secretKey
-            ).loginIAM(
-                project,
-                { error ->
-                    AwsTelemetry.loginWithBrowser(
-                        project = null,
-                        result = Result.Failed,
-                        reason = error.message,
-                        credentialType = CredentialType.StaticProfile
-                    )
-                },
-                {
-                    AwsTelemetry.loginWithBrowser(
-                        project = null,
-                        result = Result.Failed,
-                        reason = "Profile already exists",
-                        credentialType = CredentialType.StaticProfile
-                    )
-                },
-                {
-                    AwsTelemetry.loginWithBrowser(
-                        project = null,
-                        result = Result.Failed,
-                        reason = "Connection validation error",
-                        credentialType = CredentialType.StaticProfile
-                    )
-                }
-            )
+            ).login(project)
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 result = Result.Succeeded,
@@ -184,8 +174,6 @@ abstract class LoginBrowser(
             }
         }
 
-    abstract fun loadWebView(query: JBCefJSQuery)
-
     protected suspend fun pollForAuthorization(provider: InteractiveBearerTokenProvider): PendingAuthorization? = pollFor {
         provider.pendingAuthorization
     }
@@ -193,7 +181,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken)
+                reauthConnectionIfNeeded(project, connection, ::updateOnPendingToken)
                 AwsTelemetry.loginWithBrowser(
                     project = null,
                     isReAuth = true,
@@ -205,7 +193,7 @@ abstract class LoginBrowser(
         }
     }
 
-    private fun tryHandleUserCanceledLogin(e: Exception): Boolean {
+    protected fun tryHandleUserCanceledLogin(e: Exception): Boolean {
         if (e !is ProcessCanceledException ||
             e.cause !is IllegalStateException ||
             e.message?.contains(message("credentials.pending.user_cancel.message")) == false
@@ -217,7 +205,7 @@ abstract class LoginBrowser(
     }
 
     companion object {
-        private val LOG = getLogger<LoginBrowser>()
+        private val LOG = getLogger<AwsLoginBrowser>()
         fun getWebviewHTML(webScriptUri: String, query: JBCefJSQuery): String {
             val colorMode = if (JBColor.isBright()) "jb-light" else "jb-dark"
             val postMessageToJavaJsCode = query.inject("JSON.stringify(message)")

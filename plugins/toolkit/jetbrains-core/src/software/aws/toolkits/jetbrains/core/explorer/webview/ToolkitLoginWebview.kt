@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.explorer.webview
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -35,34 +34,39 @@ import migration.software.aws.toolkits.jetbrains.core.credentials.CredentialMana
 import org.cef.CefApp
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.AwsLoginBrowser
+import software.aws.toolkits.jetbrains.core.webview.BearerLoginHandler
+import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
-import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.Result
 import java.awt.event.ActionListener
-import java.util.function.Function
 import javax.swing.JButton
-import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
 class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScope) : Disposable {
@@ -119,7 +123,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
             browser = null
         } else {
             browser = ToolkitWebviewBrowser(project, this).also {
-                webviewContainer.add(it.component())
+                webviewContainer.add(it.jcefBrowser.component)
             }
         }
 
@@ -140,8 +144,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     override fun dispose() {}
 }
 
-// TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
-class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : LoginBrowser(
+class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : AwsLoginBrowser(
     project,
     ToolkitWebviewBrowser.DOMAIN,
     ToolkitWebviewBrowser.WEB_SCRIPT_URI
@@ -159,87 +162,6 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             .build()
     }
     private val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
-    private val objectMapper = jacksonObjectMapper()
-
-    private val handler = Function<String, JBCefJSQuery.Response> {
-        val jsonTree = objectMapper.readTree(it)
-        val command = jsonTree.get("command").asText()
-        LOG.debug { "Data received from Toolkit browser: ${jsonTree.toPrettyString()}" }
-
-        when (command) {
-            // TODO: handler functions could live in parent class
-            "prepareUi" -> {
-                val cancellable = isTookitConnected(project)
-                this.prepareBrowser(BrowserState(FeatureId.AwsExplorer, browserCancellable = cancellable))
-            }
-
-            "selectConnection" -> {
-                val connId = jsonTree.get("connectionId").asText()
-                this.selectionSettings[connId]?.let { settings ->
-                    settings.onChange(settings.currentSelection)
-                }
-            }
-
-            "loginBuilderId" -> {
-                loginBuilderId(CODECATALYST_SCOPES)
-            }
-
-            "loginIdC" -> {
-                // TODO: make it type safe, maybe (de)serialize into a data class
-                val url = jsonTree.get("url").asText()
-                val region = jsonTree.get("region").asText()
-                val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
-                val feature: String = jsonTree.get("feature").asText()
-
-                val scopes = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
-                    CODECATALYST_SCOPES
-                } else {
-                    listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
-                }
-
-                loginIdC(url, awsRegion, scopes)
-            }
-
-            "loginIAM" -> {
-                // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
-                val accessKey = jsonTree.get("accessKey").asText()
-                val secretKey = jsonTree.get("secretKey").asText()
-                loginIAM(profileName, accessKey, secretKey)
-            }
-
-            "toggleBrowser" -> {
-                showExplorerTree(project)
-            }
-
-            "cancelLogin" -> {
-                cancelLogin()
-            }
-
-            "signout" -> {
-                ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())?.let { connection ->
-                    connection as AwsBearerTokenConnection
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "toolkitBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
-                        )
-                    )
-                }
-            }
-
-            "reauth" -> {
-                reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
-            }
-
-            else -> {
-                error("received unknown command from Toolkit login browser")
-            }
-        }
-
-        null
-    }
 
     init {
         CefApp.getInstance()
@@ -254,42 +176,84 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
         loadWebView(query)
 
-        query.addHandler(handler)
+        query.addHandler(jcefHandler)
     }
 
-    override fun prepareBrowser(state: BrowserState) {
-        selectionSettings.clear()
+    override fun handleBrowserMessage(message: BrowserMessage?) {
+        when (message) {
+            // TODO: handler functions could live in parent class
+            is BrowserMessage.PrepareUi -> {
+                this.prepareBrowser(BrowserState(FeatureId.AwsExplorer, browserCancellable = isTookitConnected(project)))
+            }
 
-        if (!isTookitConnected(project)) {
-            // existing connections
-            val bearerCreds = ToolkitAuthManager.getInstance().listConnections()
-                .filterIsInstance<AwsBearerTokenConnection>()
-                .associate {
-                    it.id to BearerConnectionSelectionSettings(it) { conn ->
-                        if (conn.isSono()) {
-                            loginBuilderId(CODECATALYST_SCOPES)
-                        } else {
-                            // TODO: rewrite scope logic, it's short term solution only
-                            AwsRegionProvider.getInstance()[conn.region]?.let { region ->
-                                loginIdC(conn.startUrl, region, listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE))
-                            }
+            is BrowserMessage.SelectConnection -> {
+                myState.existingConnections.firstOrNull { it.id == message.connectionId }?.let { conn ->
+                    if (conn.isSono()) {
+                        loginBuilderId(CODECATALYST_SCOPES)
+                    } else {
+                        // TODO: rewrite scope logic, it's short term solution only
+                        AwsRegionProvider.getInstance()[conn.region]?.let { region ->
+                            loginIdC(conn.startUrl, region, listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE))
                         }
                     }
                 }
+            }
 
-            selectionSettings.putAll(bearerCreds)
+            is BrowserMessage.LoginBuilderId -> {
+                loginBuilderId(CODECATALYST_SCOPES)
+            }
+
+            is BrowserMessage.LoginIdC -> {
+                val awsRegion = AwsRegionProvider.getInstance()[message.region] ?: error("unknown region returned from Toolkit browser")
+                val scopes = if (FeatureId.from(message.feature) == FeatureId.Codecatalyst) {
+                    CODECATALYST_SCOPES
+                } else {
+                    listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+                }
+
+                loginIdC(message.url, awsRegion, scopes)
+            }
+
+            is BrowserMessage.LoginIAM -> {
+                loginIAM(message.profileName, message.accessKey, message.secretKey)
+            }
+
+            is BrowserMessage.ToggleBrowser -> {
+                showExplorerTree(project)
+            }
+
+            is BrowserMessage.CancelLogin -> {
+                cancelLogin()
+            }
+
+            is BrowserMessage.Signout -> {
+                ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())?.let { connection ->
+                    connection as AwsBearerTokenConnection
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "toolkitBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
+                        )
+                    )
+                }
+            }
+
+            is BrowserMessage.Reauth -> {
+                reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
+            }
+
+            else -> {
+                LOG.warn { "received unknown command from Toolkit browser, unable to de-serialized" }
+            }
         }
+    }
 
-        // previous login
-        val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
+    override fun customize(state: BrowserState): BrowserState {
+        state.existingConnections = ToolkitAuthManager.getInstance().listConnections()
+            .filterIsInstance<AwsBearerTokenConnection>()
 
-        // available regions
-        val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values
-        val regionJson = objectMapper.writeValueAsString(regions)
-
-        // TODO: if codecatalyst connection expires, set stage to 'REAUTH'
-        // TODO: make these strings type safe
-        val stage = if (state.feature == FeatureId.Codecatalyst) {
+        state.stage = if (state.feature == FeatureId.Codecatalyst) {
             "SSO_FORM"
         } else if (shouldPromptToolkitReauth(project)) {
             "REAUTH"
@@ -297,54 +261,92 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             "START"
         }
 
-        val jsonData = """
-            {
-                stage: '$stage',
-                regions: $regionJson,
-                idcInfo: {
-                    profileName: '${lastLoginIdcInfo.profileName}',
-                    startUrl: '${lastLoginIdcInfo.startUrl}',
-                    region: '${lastLoginIdcInfo.region}'
-                },
-                cancellable: ${state.browserCancellable},
-                feature: '${state.feature}',
-                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
+        return state
+    }
+
+    override fun loginBuilderId(scopes: List<String>) {
+        val h = object : BearerLoginHandler {
+            override fun onSuccess(connection: ToolkitConnection) {
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    credentialStartUrl = SONO_URL,
+                    result = Result.Succeeded,
+                    credentialSourceId = CredentialSourceId.AwsId
+                )
             }
-        """.trimIndent()
-        executeJS("window.ideClient.prepareUi($jsonData)")
+
+            override fun onPendingToken(provider: InteractiveBearerTokenProvider) {
+                updateOnPendingToken(provider)
+            }
+
+            override fun onError(e: Exception) {
+                tryHandleUserCanceledLogin(e)
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    credentialStartUrl = SONO_URL,
+                    result = Result.Failed,
+                    reason = e.message,
+                    credentialSourceId = CredentialSourceId.AwsId
+                )
+            }
+        }
+
+        loginBuilderId(scopes, h)
     }
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
-            // TODO: telemetry
-        }
+        val h = object : BearerLoginHandler {
+            override fun onPendingToken(provider: InteractiveBearerTokenProvider) {
+                updateOnPendingToken(provider)
+            }
 
-        val login = Login.IdC(url, region, scopes, onPendingToken, onIdCError)
+            override fun onSuccess(connection: ToolkitConnection) {
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    credentialStartUrl = url,
+                    result = Result.Succeeded,
+                    credentialSourceId = CredentialSourceId.IamIdentityCenter
+                )
 
-        loginWithBackgroundContext {
-            val connection = login.loginIdc(project)
-            if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
-                val tokenProvider = connection.getConnectionSettings().tokenProvider
+                if (scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
+                    connection as AwsBearerTokenConnection
+                    val tokenProvider = connection.getConnectionSettings().tokenProvider
 
-                runInEdt {
-                    val rolePopup = IdcRolePopup(
-                        project,
-                        region.id,
-                        validatedSsoIdentifierFromUrl(url),
-                        tokenProvider,
-                        IdcRolePopupState(), // TODO: is it correct <<?
-                    )
-                    rolePopup.show()
+                    runInEdt {
+                        val rolePopup = IdcRolePopup(
+                            project,
+                            region.id,
+                            validatedSsoIdentifierFromUrl(url),
+                            tokenProvider,
+                            IdcRolePopupState(), // TODO: is it correct <<?
+                        )
+                        rolePopup.show()
+                    }
                 }
             }
+
+            override fun onError(e: Exception) {
+                val message = ssoErrorMessageFromException(e)
+                if (!tryHandleUserCanceledLogin(e)) {
+                    LOG.error(e) { "Failed to authenticate: message: $message" }
+                }
+
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    credentialStartUrl = url,
+                    result = Result.Failed,
+                    reason = e.message,
+                    credentialSourceId = CredentialSourceId.IamIdentityCenter
+                )
+            }
         }
+
+        loginIdC(url, region, scopes, h)
     }
 
     override fun loadWebView(query: JBCefJSQuery) {
         jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
     }
-
-    fun component(): JComponent? = jcefBrowser.component
 
     companion object {
         private val LOG = getLogger<ToolkitWebviewBrowser>()
