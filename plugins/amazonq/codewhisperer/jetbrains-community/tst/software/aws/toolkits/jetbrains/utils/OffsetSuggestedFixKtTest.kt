@@ -1,7 +1,9 @@
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.aws.toolkits.jetbrains.utils
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 
