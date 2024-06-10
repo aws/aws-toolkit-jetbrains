@@ -13,6 +13,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
@@ -39,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -162,6 +164,7 @@ class ChatController private constructor(
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
         withContext(EDT) {
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
+            val psiFile = runReadAction { PsiDocumentManager.getInstance(context.project).getPsiFile(editor.document) } ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset
@@ -184,6 +187,7 @@ class ChatController private constructor(
                             PsiDocumentManager.getInstance(context.project).getPsiFile(editor.document)?.virtualFile,
                             editor.document.createRangeMarker(caret.selectionStart, caret.selectionEnd, true),
                             message.code,
+                            psiFile.programmingLanguage()
                         ),
                     )
                 }
