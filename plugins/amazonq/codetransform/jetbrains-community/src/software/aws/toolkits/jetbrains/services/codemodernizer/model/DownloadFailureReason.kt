@@ -7,4 +7,5 @@ sealed class DownloadFailureReason {
     object SSL_HANDSHAKE_ERROR : DownloadFailureReason()
     object PROXY_WILDCARD_ERROR : DownloadFailureReason()
     object CREDENTIALS_EXPIRED : DownloadFailureReason()
+    data class OTHER(val errorMessage: String) : DownloadFailureReason()
 }

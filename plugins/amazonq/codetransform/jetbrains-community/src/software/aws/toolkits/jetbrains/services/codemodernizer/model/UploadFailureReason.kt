@@ -8,5 +8,6 @@ sealed class UploadFailureReason {
     object PRESIGNED_URL_EXPIRED : UploadFailureReason()
     object CONNECTION_REFUSED : UploadFailureReason()
     object CREDENTIALS_EXPIRED : UploadFailureReason()
+    object SSL_HANDSHAKE_ERROR : UploadFailureReason()
     data class OTHER(val errorMessage: String) : UploadFailureReason()
 }

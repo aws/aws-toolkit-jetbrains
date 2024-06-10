@@ -423,7 +423,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizer requests returns credentials expired when SsoOidcException during upload`() {
+    fun `CodeModernizer returns credentials expired when SsoOidcException during upload`() {
         setupConnection(BearerTokenAuthState.AUTHORIZED)
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
@@ -433,7 +433,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizer requests returns credentials expired when expired before upload`() {
+    fun `CodeModernizer returns credentials expired when expired before upload`() {
         listOf(BearerTokenAuthState.NEEDS_REFRESH, BearerTokenAuthState.NOT_AUTHENTICATED).forEach {
             setupConnection(it)
             val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))

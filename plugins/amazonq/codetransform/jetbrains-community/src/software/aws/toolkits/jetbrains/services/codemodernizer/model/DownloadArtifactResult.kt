@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 sealed class DownloadArtifactResult {
     data class Success(val artifact: CodeModernizerArtifact, val zipPath: String) : DownloadArtifactResult()
     data class Failure(val errorMessage: String) : DownloadArtifactResult()
-    data class KnownDownloadFailure(val failureReason: DownloadFailureReason) : DownloadArtifactResult()
+    data class DownloadFailure(val failureReason: DownloadFailureReason) : DownloadArtifactResult()
 }

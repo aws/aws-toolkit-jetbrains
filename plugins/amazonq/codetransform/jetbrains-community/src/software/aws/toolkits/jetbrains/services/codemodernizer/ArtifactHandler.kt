@@ -59,7 +59,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         when (val result = downloadArtifact(job)) {
             is DownloadArtifactResult.Success -> displayDiffUsingPatch(result.artifact.patch, job)
             is DownloadArtifactResult.Failure -> notifyUnableToApplyPatch(result.errorMessage)
-            is DownloadArtifactResult.KnownDownloadFailure -> notifyUnableToDownload(result.failureReason)
+            is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
         }
     }
 
@@ -108,6 +108,12 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
+    /**
+     * Downloads an artifact and returns a [DownloadArtifactResult]
+     * [DownloadArtifactResult.DownloadFailure] indicates failure when downloading artifact
+     * [DownloadArtifactResult.Failure] indicates failure when processing artifact
+     * [DownloadArtifactResult.Success] indicates success when downloading and processing artifact
+     */
     suspend fun downloadArtifact(job: JobId): DownloadArtifactResult {
         isCurrentlyDownloading.set(true)
         val downloadStartTime = Instant.now()
@@ -132,7 +138,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             LOG.info { "Verifying user is authenticated prior to download" }
             if (!isValidCodeTransformConnection(project)) {
                 CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
-                return DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+                return DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
             }
 
             LOG.info { "About to download the export result archive" }
@@ -168,16 +174,16 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             return when {
                 e is SsoOidcException || e is NoTokenInitializedException -> {
                     CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
-                    DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
                 }
 
                 e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR) ->
-                    DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
 
                 e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR) ->
-                    DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
 
-                else -> DownloadArtifactResult.Failure(e.message.orEmpty())
+                else -> DownloadArtifactResult.DownloadFailure(DownloadFailureReason.OTHER(e.message.orEmpty()))
             }
         } finally {
             isCurrentlyDownloading.set(false)
@@ -215,7 +221,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     fun notifyUnableToDownload(error: DownloadFailureReason) {
+        // Inform chat about failure
         LOG.error { "Unable to download artifact: $error" }
+        CodeTransformMessageListener.instance.onDownloadFailure(error)
+
+        // Display notification balloon if applicable
         when (error) {
             DownloadFailureReason.PROXY_WILDCARD_ERROR -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
@@ -230,7 +240,10 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             )
 
             DownloadFailureReason.CREDENTIALS_EXPIRED -> {
+                // Inform chat that reauth is required
                 CodeTransformMessageListener.instance.onCheckAuth()
+
+                // Since chat content is reset on reauth, inform users with notification balloon
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
                     message("codemodernizer.notification.warn.download_failed_expired_credentials.content"),
@@ -242,21 +255,23 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     )
                 )
             }
+
+            is DownloadFailureReason.OTHER -> {
+                // No notification, only chat update
+            }
         }
     }
 
-    fun notifyUnableToApplyPatch(errorMessage: String) {
-        notifyStickyWarn(
-            message("codemodernizer.notification.warn.view_diff_failed.title"),
-            message("codemodernizer.notification.warn.view_diff_failed.content", errorMessage),
-            project,
-            listOf(
-                openTroubleshootingGuideNotificationAction(
-                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
-                )
-            ),
-        )
-    }
+    fun notifyUnableToApplyPatch(errorMessage: String) = notifyStickyWarn(
+        message("codemodernizer.notification.warn.view_diff_failed.title"),
+        message("codemodernizer.notification.warn.view_diff_failed.content", errorMessage),
+        project,
+        listOf(
+            openTroubleshootingGuideNotificationAction(
+                CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
+            )
+        ),
+    )
 
     fun notifyUnableToShowSummary() {
         LOG.error { "Unable to display summary" }
@@ -297,7 +312,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 when (val result = downloadArtifact(job)) {
                     is DownloadArtifactResult.Success -> showSummaryFromFile(result.artifact.summaryMarkdownFile)
                     is DownloadArtifactResult.Failure -> notifyUnableToShowSummary()
-                    is DownloadArtifactResult.KnownDownloadFailure -> notifyUnableToDownload(result.failureReason)
+                    is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
                 }
             }
         }

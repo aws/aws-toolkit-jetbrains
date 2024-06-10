@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
@@ -244,6 +245,7 @@ fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String 
         is UploadFailureReason.CONNECTION_REFUSED -> message("codemodernizer.chat.message.upload_failed_connection_refused")
         is UploadFailureReason.OTHER -> message("codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage)
         is UploadFailureReason.CREDENTIALS_EXPIRED -> message("q.connection.expired")
+        is UploadFailureReason.SSL_HANDSHAKE_ERROR -> message("codemodernizer.chat.message.upload_failed_ssl_error")
     }
     return resultMessage
 }
@@ -438,3 +440,23 @@ fun buildHilCannotResumeContent() = CodeTransformChatMessageContent(
         startNewTransformFollowUp
     ),
 )
+
+fun buildDownloadFailureChatContent(downloadFailureReason: DownloadFailureReason): CodeTransformChatMessageContent? {
+    val reason = when (downloadFailureReason) {
+        is DownloadFailureReason.SSL_HANDSHAKE_ERROR -> message("codemodernizer.chat.message.download_failed_ssl")
+        is DownloadFailureReason.PROXY_WILDCARD_ERROR -> message("codemodernizer.chat.message.download_failed_wildcard")
+        is DownloadFailureReason.OTHER -> message("codemodernizer.chat.message.download_failed_other", downloadFailureReason.errorMessage)
+        is DownloadFailureReason.CREDENTIALS_EXPIRED -> return null // credential expiry resets chat, no point emitting a message
+    }
+
+    // DownloadFailureReason.OTHER might be retryable, so including buttons to allow retry.
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+        message = reason,
+        buttons = if (downloadFailureReason is DownloadFailureReason.SSL_HANDSHAKE_ERROR || downloadFailureReason is DownloadFailureReason.OTHER) {
+            listOf(viewDiffButton, viewSummaryButton)
+        } else {
+            null
+        },
+    )
+}
