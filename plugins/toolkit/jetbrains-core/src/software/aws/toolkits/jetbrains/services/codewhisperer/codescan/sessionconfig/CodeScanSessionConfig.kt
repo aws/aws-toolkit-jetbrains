@@ -3,13 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.createTemporaryZipFile
@@ -50,6 +54,8 @@ class CodeScanSessionConfig(
         private set
 
     private val featureDevSessionContext = FeatureDevSessionContext(project)
+
+    val fileIndex = ProjectRootManager.getInstance(project).fileIndex
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -102,7 +108,10 @@ class CodeScanSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
+        val srcZip = when (scope) {
+            CodeAnalysisScope.PROJECT -> zipProject(payloadMetadata.sourceFiles.map { Path.of(it) })
+            CodeAnalysisScope.FILE -> zipFile(Path.of(payloadMetadata.sourceFiles.first()))
+        }
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -143,7 +152,7 @@ class CodeScanSessionConfig(
         }
     }
 
-    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipProject(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
                 val relativePath = file.relativeTo(projectRoot.toNioPath())
@@ -152,6 +161,23 @@ class CodeScanSessionConfig(
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
+        }
+    }.toFile()
+
+    private fun zipFile(filePath: Path): File = createTemporaryZipFile {
+        try {
+            val relativePath = filePath.relativeTo(projectRoot.toNioPath())
+            val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
+            virtualFile?.let { file ->
+                val document = runReadAction {
+                    FileDocumentManager.getInstance().getDocument(file)
+                }
+                document?.let { doc ->
+                    it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
+                }
+            }
+        } catch (e: Exception) {
+            cannotFindFile("Zipping error: ${e.message}", filePath.pathString)
         }
     }.toFile()
 
@@ -173,7 +199,7 @@ class CodeScanSessionConfig(
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
                             runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !current.path.endsWith(".jar")
+                            runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
                                 fileTooLarge()
@@ -196,7 +222,8 @@ class CodeScanSessionConfig(
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
                             runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
-                            !traversedDirectories.contains(current) && current.isValid
+                            !traversedDirectories.contains(current) && current.isValid &&
+                            runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             for (child in current.children) {
                                 stack.push(child)

@@ -1,3 +1,14 @@
+# _3.10_ (2024-06-07)
+- **(Bug Fix)** Resolve a NullPointerException that could occur while handling editor creation event. ([#4554](https://github.com/aws/aws-toolkit-jetbrains/issues/4554))
+
+# _3.9_ (2024-06-06)
+- **(Feature)** feat(featureDev): generated plan being shown from top
+- **(Feature)** Amazon Q Code Transform: Communicate download failure in transform chat, and improve download failure notification
+- **(Feature)** CodeTransformation: increase project upload limit to 2GB
+- **(Bug Fix)** Security Scan: Improved method of applying security fixes
+- **(Bug Fix)** Security Scan: Improved accuracy when applying security fixes
+- **(Bug Fix)** Security Scan: Fixes inconsistent behavior with how security issues are underlined in the editor.
+
 # _3.8_ (2024-05-30)
 - **(Bug Fix)** fix(featureDev): File Rejection stopped working
 - **(Bug Fix)** Amazon Q Feature Development: Update error message when repo size larger than 200 megabytes

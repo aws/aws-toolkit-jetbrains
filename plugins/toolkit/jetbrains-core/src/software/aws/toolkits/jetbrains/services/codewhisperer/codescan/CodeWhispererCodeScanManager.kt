@@ -26,6 +26,7 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.isFile
 import com.intellij.refactoring.suggested.range
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
@@ -230,9 +231,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     FileEditorManager.getInstance(project).selectedEditor?.file
                 }
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
-            language = codeScanSessionConfig.getSelectedFile()?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
+            val selectedFile = codeScanSessionConfig.getSelectedFile()
+            language = selectedFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
-                (!language.isAutoFileScanSupported() || codeScanSessionConfig.getSelectedFile()?.path?.endsWith(".jar") == true)
+                (
+                    selectedFile == null || !language.isAutoFileScanSupported() || !selectedFile.isFile ||
+                        runReadAction { (codeScanSessionConfig.fileIndex.isInLibrarySource(selectedFile)) } ||
+                        selectedFile.fileSystem.protocol == "remoteDeploymentFS"
+                    )
             ) {
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 codeScanStatus = Result.Cancelled
