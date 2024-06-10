@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.UnknownMessageT
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 
 class MessageSerializer @VisibleForTesting constructor() {
-
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
