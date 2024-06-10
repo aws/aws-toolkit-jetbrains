@@ -351,7 +351,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 e.message?.contains("Too many requests, please wait before trying again.") == true -> "Too many requests, please wait before trying again."
                 e.message?.contains("Improperly formed request.") == true -> "Improperly formed request."
                 e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
-                e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true -> "Encountered an unexpected error when processing the request, please try again."
+                e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true ->
+                    "Encountered an unexpected error when processing the request, please try again."
                 else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
             }
             throw codeScanServerException("CreateCodeScanException: $errorMessage")
