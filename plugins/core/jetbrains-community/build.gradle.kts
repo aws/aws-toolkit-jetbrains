@@ -38,11 +38,19 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
+// expose intellij test framework to fixture consumers
+configurations.testFixturesCompileOnlyApi {
+    extendsFrom(
+        configurations.intellijPlatformTestDependencies.get()
+    )
+}
+
 dependencies {
     intellijPlatform {
         testFramework(TestFrameworkType.Platform.JUnit4)
         testFramework(TestFrameworkType.Plugin.Java)
     }
+
     compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(libs.aws.apacheClient)
     compileOnlyApi(libs.aws.nettyClient)
