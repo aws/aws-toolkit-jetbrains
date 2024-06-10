@@ -317,7 +317,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformCommand(message: CodeTransformActionMessage) {
         var activeTabId = codeTransformChatHelper.getActiveCodeTransformTabId()
-        activeTabId ?: logger.error("in processCodeTransformCommand there is no tab active for CodeTransform: activeTabId == $activeTabId")
+        activeTabId ?: logger.error { "in processCodeTransformCommand there is no tab active for CodeTransform: activeTabId == $activeTabId" }
         if (activeTabId == null && message.command == CodeTransformCommand.TransformResuming) {
             // If we are resuming a job, we should show transform progress also in chat, so open a tab if this is the case.
             codeTransformChatHelper.createNewCodeTransformTab()

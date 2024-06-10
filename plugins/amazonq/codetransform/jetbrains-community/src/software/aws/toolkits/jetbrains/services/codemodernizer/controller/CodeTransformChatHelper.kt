@@ -111,7 +111,6 @@ class CodeTransformChatHelper(
 
     suspend fun createNewCodeTransformTab() = messagePublisher.publish(CodeTransformCreateTab)
 
-
     suspend fun chatDelayShort() {
         delay(500)
     }

@@ -44,9 +44,11 @@ fun refreshToken(project: Project) {
     provider.refresh()
 }
 
-fun getQTokenProvider(project: Project) = (ToolkitConnectionManager
-    .getInstance(project)
-    .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection)
+fun getQTokenProvider(project: Project) = (
+    ToolkitConnectionManager
+        .getInstance(project)
+        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+    )
     ?.getConnectionSettings()
     ?.tokenProvider
     ?.delegate as? BearerTokenProvider

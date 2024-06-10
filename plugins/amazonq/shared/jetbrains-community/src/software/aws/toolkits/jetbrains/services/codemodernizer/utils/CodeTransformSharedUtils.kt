@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import java.time.Instant
@@ -21,9 +21,10 @@ fun isIntellij(): Boolean {
 }
 
 fun isValidCodeTransformConnection(project: Project): Boolean {
-    val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    return (connection.connectionType == ActiveConnectionType.IAM_IDC || connection.connectionType == ActiveConnectionType.BUILDER_ID) &&
-        connection is ActiveConnection.ValidBearer
+    val activeConnection =
+        ToolkitConnectionManager.getInstance(project)
+            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection ?: return false
+    return !activeConnection.lazyIsUnauthedBearerConnection()
 }
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false

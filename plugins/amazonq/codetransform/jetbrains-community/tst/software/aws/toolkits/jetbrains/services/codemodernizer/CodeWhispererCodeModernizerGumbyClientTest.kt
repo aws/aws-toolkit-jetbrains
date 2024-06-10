@@ -59,7 +59,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
 
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var streamingBearerClient: CodeWhispererStreamingAsyncClient

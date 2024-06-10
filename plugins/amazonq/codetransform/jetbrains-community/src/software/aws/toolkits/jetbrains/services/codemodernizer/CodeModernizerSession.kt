@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -139,6 +140,10 @@ class CodeModernizerSession(
         val payload: File?
 
         // Generate zip file
+        if (!isValidCodeTransformConnection(sessionContext.project)) {
+            // Creating zip can take some time, so quit early
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
+        }
         try {
             if (isDisposed.get()) {
                 LOG.warn { "Disposed when about to create zip to upload" }
@@ -170,11 +175,11 @@ class CodeModernizerSession(
                 else -> CodeModernizerStartJobResult.ZipCreationFailed(message("codemodernizer.notification.warn.zip_creation_failed.reasons.unknown"))
             }
         }
+
+        // Create upload url and upload zip
         if (!isValidCodeTransformConnection(sessionContext.project)) {
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
         }
-
-        // Create upload url and upload zip
         var uploadId = ""
         try {
             if (shouldStop.get()) {
@@ -208,6 +213,8 @@ class CodeModernizerSession(
                 state.currentJobStatus = TransformationStatus.FAILED
                 return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
             }
+        } catch (e: SsoOidcException) {
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED

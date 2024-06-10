@@ -14,11 +14,12 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
@@ -42,52 +43,71 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `ArtifactHandler notifies users if patch does not exist`() = runBlocking {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
-        val path = testCodeModernizerArtifact.zipPath
-        doNothing().whenever(handler).notifyUnableToApplyPatch(path, "")
-        val result = DownloadArtifactResult(null, path)
+        val expectedError = "test error"
+        doNothing().whenever(handler).notifyUnableToApplyPatch(expectedError)
+        val result = DownloadArtifactResult.Failure(expectedError)
         doReturn(result).whenever(handler).downloadArtifact(any())
         handler.displayDiff(jobId)
-        verify(handler, times(1)).notifyUnableToApplyPatch(path, "")
+        verify(handler, times(1)).notifyUnableToApplyPatch(expectedError)
     }
 
     @Test
     fun `ArtifactHandler notifies proxy wildcard error`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
-        doThrow(RuntimeException("Dangling meta character '*' near index 0")).whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
-        doNothing().whenever(handler).notifyUnableToDownload(eq(DownloadFailureReason.PROXY_WILDCARD_ERROR))
-        val expectedResult = DownloadArtifactResult(null, "", "Dangling meta character '*' near index 0")
+        doThrow(RuntimeException("Dangling meta character '*' near index 0"))
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
         val result = handler.downloadArtifact(jobId)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
-        verify(handler, times(1)).notifyUnableToDownload(DownloadFailureReason.PROXY_WILDCARD_ERROR)
         assertEquals(expectedResult, result)
     }
 
     @Test
     fun `ArtifactHandler notifies ssl handshake error`() = runBlocking {
-        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
+        val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
         doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
             .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
-        doNothing().whenever(handler).notifyUnableToDownload(eq(DownloadFailureReason.SSL_HANDSHAKE_ERROR))
-        val expectedResult = DownloadArtifactResult(
-            null,
-            "",
-            "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"
-        )
+        val expectedResult = DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
         val result = handler.downloadArtifact(jobId)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
-        verify(handler, times(1)).notifyUnableToDownload(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler catches invalid grant exceptions`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
+        val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
+        doThrow(SsoOidcException.builder().build())
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+        val result = handler.downloadArtifact(jobId)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler checks if credentials need refresh before calling ExportResultArchive api`() = runBlocking {
+        listOf(BearerTokenAuthState.NEEDS_REFRESH, BearerTokenAuthState.NOT_AUTHENTICATED).forEach {
+            setupConnection(it)
+            val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
+            val expectedResult = DownloadArtifactResult.KnownDownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+            val result = handler.downloadArtifact(jobId)
+            verify(clientAdaptorSpy, times(0)).downloadExportResultArchive(jobId)
+            assertEquals(expectedResult, result)
+        }
     }
 
     @Test
     fun `ArtifactHandler displays patch`() = runBlocking {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val path = testCodeModernizerArtifact.zipPath
-        val result = DownloadArtifactResult(testCodeModernizerArtifact, path)
+        val result = DownloadArtifactResult.Success(testCodeModernizerArtifact, path)
         doReturn(result).whenever(handler).downloadArtifact(any())
         doNothing().whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
-        verify(handler, never()).notifyUnableToApplyPatch(path, "")
+        verify(handler, never()).notifyUnableToApplyPatch(any())
         verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patch, jobId)
     }
 

@@ -235,14 +235,14 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     message("codemodernizer.notification.warn.expired_credentials.title"),
                     message("codemodernizer.notification.warn.download_failed_expired_credentials.content"),
                     project,
-                    listOf(NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
-                        CodeTransformMessageListener.instance.onReauthStarted()
-                    })
+                    listOf(
+                        NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
+                            CodeTransformMessageListener.instance.onReauthStarted()
+                        }
+                    )
                 )
             }
         }
-
-
     }
 
     fun notifyUnableToApplyPatch(errorMessage: String) {
@@ -289,7 +289,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             }
         }
     }
-
 
     fun showTransformationSummary(job: JobId) {
         if (isCurrentlyDownloading.get()) return

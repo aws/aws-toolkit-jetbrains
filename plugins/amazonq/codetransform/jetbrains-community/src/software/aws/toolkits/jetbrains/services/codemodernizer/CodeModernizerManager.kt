@@ -545,10 +545,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    private fun viewTransformationHubAction() = NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
-        getBottomToolWindow().show()
-    }
-
     private fun resumeJobNotificationAction(session: CodeModernizerSession, lastJobId: JobId, currentJobResult: TransformationJob) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_ongoing.view_status")) {
             resumeJob(session, lastJobId, currentJobResult)
@@ -583,9 +579,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     CodeTransformMessageListener.instance.onCheckAuth()
                     notifyJobFailure(
                         message("codemodernizer.notification.warn.upload_failed_expired_credentials.content"),
-                        listOf(NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
-                            CodeTransformMessageListener.instance.onReauthStarted()
-                        })
+                        listOf(
+                            NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
+                                CodeTransformMessageListener.instance.onReauthStarted()
+                            }
+                        )
                     )
                 } else {
                     notifyJobFailure(

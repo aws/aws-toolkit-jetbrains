@@ -169,5 +169,4 @@ class CodeTransformChatApp : AmazonQApp {
     override fun dispose() {
         // nothing to do
     }
-
 }

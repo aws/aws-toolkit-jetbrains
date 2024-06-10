@@ -177,7 +177,6 @@ fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransform
     )
 )
 
-
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
     val moduleBuildFiles = validationResult.validatedBuildFiles
 
