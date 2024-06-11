@@ -462,6 +462,13 @@ fun buildDownloadFailureChatContent(reason: DownloadFailureReason): CodeTransfor
         is DownloadFailureReason.PROXY_WILDCARD_ERROR -> {
             message("codemodernizer.chat.message.download_failed_wildcard", getDownloadedArtifactTextFromType(reason.artifactType))
         }
+        is DownloadFailureReason.INVALID_ARTIFACT -> {
+            if (reason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
+                message("codemodernizer.chat.message.download_failed_client_instructions_expired")
+            } else {
+                message("codemodernizer.chat.message.download_failed_invalid_artifact", getDownloadedArtifactTextFromType(reason.artifactType))
+            }
+        }
         is DownloadFailureReason.OTHER -> {
             message("codemodernizer.chat.message.download_failed_other", getDownloadedArtifactTextFromType(reason.artifactType), reason.errorMessage)
         }

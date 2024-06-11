@@ -8,5 +8,6 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.Transformati
 sealed class DownloadFailureReason {
     data class SSL_HANDSHAKE_ERROR(val artifactType: TransformationDownloadArtifactType) : DownloadFailureReason()
     data class PROXY_WILDCARD_ERROR(val artifactType: TransformationDownloadArtifactType) : DownloadFailureReason()
+    data class INVALID_ARTIFACT(val artifactType: TransformationDownloadArtifactType) : DownloadFailureReason()
     data class OTHER(val artifactType: TransformationDownloadArtifactType, val errorMessage: String) : DownloadFailureReason()
 }

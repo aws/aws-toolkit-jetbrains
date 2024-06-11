@@ -47,6 +47,7 @@ data class DownloadArtifactResult(val artifact: CodeTransformDownloadArtifact?, 
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
+const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -190,6 +191,8 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 } else if (e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR)) {
                     errorMessage = message("codemodernizer.notification.warn.download_failed_ssl.content")
                     CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR(artifactType))
+                } else if (e.message.toString().contains(INVALID_ARTIFACT_ERROR)) {
+                    CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.INVALID_ARTIFACT(artifactType))
                 } else {
                     CodeTransformMessageListener.instance.onDownloadFailure(DownloadFailureReason.OTHER(artifactType, e.message.toString()))
                 }
