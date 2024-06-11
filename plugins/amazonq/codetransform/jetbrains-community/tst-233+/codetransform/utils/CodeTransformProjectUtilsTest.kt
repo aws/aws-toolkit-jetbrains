@@ -11,7 +11,10 @@ import com.intellij.pom.java.LanguageLevel
 import com.intellij.testFramework.IdeaTestUtil.getMockJdk21
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.mockito.Mockito
+import org.mockito.Mockito.mockStatic
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeWhispererCodeModernizerTestBase
 import kotlin.test.Test
 
@@ -23,46 +26,47 @@ class CodeTransformProjectUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Before
     override fun setup() {
         super.setup()
-        Mockito.mockStatic(LanguageLevelProjectExtension::class.java)
+        mockStatic(LanguageLevelProjectExtension::class.java)
 
         sdkMock = getMockJdk21()
-        languageLevelProjectExtensionMock = Mockito.mock(LanguageLevelProjectExtension::class.java)
+        languageLevelProjectExtensionMock = mock<LanguageLevelProjectExtension>()
 
-        Mockito.`when`(LanguageLevelProjectExtension.getInstance(project)).thenReturn(languageLevelProjectExtensionMock)
+        whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(languageLevelProjectExtensionMock)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdk() function returns project SDK when module language level is not set`() {
-        Mockito.mockStatic(ProjectRootManager::class.java)
-        projectRootManagerMock = Mockito.mock(ProjectRootManager::class.java)
-        Mockito.`when`(ProjectRootManager.getInstance(project)).thenReturn(projectRootManagerMock)
-        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(sdkMock)
-        Mockito.`when`(languageLevelProjectExtensionMock.languageLevel).thenReturn(null)
+        mockStatic(ProjectRootManager::class.java)
+        projectRootManagerMock = mock<ProjectRootManager>()
+        whenever(ProjectRootManager.getInstance(project)).doReturn((projectRootManagerMock))
+        whenever(projectRootManagerMock.projectSdk).doReturn(sdkMock)
+        whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(null)
         val result = project.tryGetJdk()
         assertEquals(JavaSdkVersion.JDK_21, result)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdk() function returns project SDK when module language level is set`() {
-        Mockito.mockStatic(ProjectRootManager::class.java)
-        projectRootManagerMock = Mockito.mock(ProjectRootManager::class.java)
-        Mockito.`when`(ProjectRootManager.getInstance(project)).thenReturn(projectRootManagerMock)
-        Mockito.`when`(projectRootManagerMock.projectSdk).thenReturn(sdkMock)
-        Mockito.`when`(languageLevelProjectExtensionMock.languageLevel).thenReturn(LanguageLevel.JDK_1_8)
+        mockStatic(ProjectRootManager::class.java)
+        projectRootManagerMock = mock<ProjectRootManager>()
+        whenever(ProjectRootManager.getInstance(project)).doReturn(projectRootManagerMock)
+        whenever(projectRootManagerMock.projectSdk).doReturn(sdkMock)
+        whenever(languageLevelProjectExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         val result = project.tryGetJdk()
         assertEquals(JavaSdkVersion.JDK_1_8, result)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdkLanguageLevelJdk() function returns null when language level is null`() {
-        Mockito.`when`(languageLevelProjectExtensionMock.languageLevel).thenReturn(null)
+        whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(null)
+        doReturn(null).whenever(languageLevelProjectExtensionMock.languageLevel)
         val result = project.tryGetJdkLanguageLevelJdk()
         assertEquals(null, result)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdkLanguageLevelJdk() function returns language level version`() {
-        Mockito.`when`(languageLevelProjectExtensionMock.languageLevel).thenReturn(LanguageLevel.JDK_1_8)
+        whenever(languageLevelProjectExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         val result = project.tryGetJdkLanguageLevelJdk()
         assertEquals(JavaSdkVersion.JDK_1_8, result)
     }
