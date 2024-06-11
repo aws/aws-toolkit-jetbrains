@@ -59,7 +59,6 @@ class CodeTransformProjectUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `CodeTransformProjectUtils tryGetJdkLanguageLevelJdk() function returns null when language level is null`() {
         whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(null)
-        doReturn(null).whenever(languageLevelProjectExtensionMock.languageLevel)
         val result = project.tryGetJdkLanguageLevelJdk()
         assertEquals(null, result)
     }
