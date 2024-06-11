@@ -79,7 +79,7 @@ class CodeWhispererLanguageManager {
             else -> null
         }
             ?: languageExtensionsMap[fileExtension]
-            ?: CodeWhispererUnknownLanguage.INSTANCE
+            ?: CodeWhispererPlainText.INSTANCE
     }
 
     /**
@@ -88,7 +88,7 @@ class CodeWhispererLanguageManager {
     fun getLanguage(psiFile: PsiFile): CodeWhispererProgrammingLanguage = psiFile.virtualFile?.let {
         getLanguage(it)
     } ?: languageExtensionsMap.keys.find { ext -> psiFile.name.endsWith(ext) }?.let { languageExtensionsMap[it] }
-        ?: CodeWhispererUnknownLanguage.INSTANCE
+        ?: CodeWhispererPlainText.INSTANCE
 
     companion object {
         fun getInstance(): CodeWhispererLanguageManager = service()
