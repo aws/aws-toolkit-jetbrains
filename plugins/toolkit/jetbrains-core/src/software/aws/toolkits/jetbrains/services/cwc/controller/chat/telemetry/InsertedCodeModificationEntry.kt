@@ -7,7 +7,6 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserModificationTrackingEntry
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.time.Instant
 
 data class InsertedCodeModificationEntry(

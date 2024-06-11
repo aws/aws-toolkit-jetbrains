@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.ge
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererRuntime
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -205,7 +204,9 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             cwsprChatModificationPercentage = percentage,
             credentialStartUrl = getStartUrl(project)
         )
-        CodeWhispererClientAdaptor.getInstance(project).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, insertedCode.codewhispererLanguage, percentage)
+        CodeWhispererClientAdaptor.getInstance(
+            project
+        ).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, insertedCode.codewhispererLanguage, percentage)
     }
 
 // temp disable user modfication event for further discussion on metric calculation
