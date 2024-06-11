@@ -7,11 +7,12 @@ import com.intellij.lang.Language
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diff.impl.patch.PatchReader
 import com.intellij.openapi.diff.impl.patch.TextFilePatch
-import com.intellij.openapi.diff.impl.patch.apply.PlainSimplePatchApplier
+import com.intellij.openapi.diff.impl.patch.apply.GenericPatchApplier
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.codeStyle.CodeStyleManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.SuggestedFix
 
 fun formatText(project: Project, language: Language, content: String): String {
     var result = content
@@ -38,7 +39,22 @@ fun generateUnifiedPatch(patch: String, filePath: String): TextFilePatch {
     return patches[0]
 }
 
-fun applyPatch(patch: String, fileContent: String, filePath: String): String? {
+fun applyPatch(patch: String, fileContent: String, filePath: String): String {
     val unifiedPatch = generateUnifiedPatch(patch, filePath)
-    return PlainSimplePatchApplier.apply(fileContent, unifiedPatch.hunks)
+    return GenericPatchApplier.applySomehow(fileContent, unifiedPatch.hunks).patchedText
+}
+
+fun offsetSuggestedFix(suggestedFix: SuggestedFix, lines: Int): SuggestedFix {
+    val updatedCode = suggestedFix.code.replace(
+        Regex("""(@@ -)(\d+)(,\d+ \+)(\d+)(,\d+ @@)""")
+    ) { result ->
+        val prefix = result.groupValues[1]
+        val startLine = result.groupValues[2].toInt() + lines
+        val middle = result.groupValues[3]
+        val endLine = result.groupValues[4].toInt() + lines
+        val suffix = result.groupValues[5]
+        "$prefix$startLine$middle$endLine$suffix"
+    }
+
+    return suggestedFix.copy(code = updatedCode)
 }
