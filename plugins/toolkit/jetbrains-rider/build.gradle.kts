@@ -6,6 +6,7 @@ import com.jetbrains.rd.generator.gradle.RdGenPlugin
 import com.jetbrains.rd.generator.gradle.RdGenTask
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -49,6 +50,7 @@ sourceSets {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core", "pluginZip"))
+        testFramework(TestFrameworkType.Plugin.ReSharper)
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))

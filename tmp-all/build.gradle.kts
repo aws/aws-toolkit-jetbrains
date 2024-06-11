@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -26,5 +27,7 @@ dependencies {
 //        localPlugin(project(":plugin-core", "pluginZip"))
 //        localPlugin(project(":plugin-amazonq", "pluginZip"))
 //        plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
+
+        testFramework(TestFrameworkType.Platform.JUnit5)
     }
 }

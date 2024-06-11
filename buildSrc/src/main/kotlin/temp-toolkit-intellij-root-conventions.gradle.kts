@@ -78,8 +78,8 @@ dependencies {
         gatewayResources(project(":plugin-toolkit:jetbrains-gateway", configuration = "gatewayResources"))
     }
 
-    implementation(project(":plugin-toolkit:jetbrains-rider"))
-    resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
+//    implementation(project(":plugin-toolkit:jetbrains-rider"))
+//    resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
 }
 
 // not available in gradle plugin 2.0 yet

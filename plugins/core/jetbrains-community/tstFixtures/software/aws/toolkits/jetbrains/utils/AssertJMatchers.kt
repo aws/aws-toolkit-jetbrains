@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.utils
 
 import org.assertj.core.api.AbstractAssert
+import org.assertj.core.api.AbstractIterableAssert
 import org.assertj.core.api.AbstractThrowableAssert
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.CompletableFutureAssert
@@ -31,13 +32,18 @@ val <T> CompletionStage<T>.value get() = toCompletableFuture().get(TIMEOUT.toMil
 
 val <T> CompletableFutureAssert<T>.hasException get() = this.wait().isCompletedExceptionally
 
+// https://github.com/assertj/assertj/issues/2357
+@Suppress("UNCHECKED_CAST")
+fun <T : Any?> AbstractAssert<*, T>.satisfiesKt(requirements: Consumer<T>): AbstractAssert<*, T> {
+    return this.satisfies(requirements) as AbstractAssert<*, T>
+}
+
 fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractThrowableAssert<SELF, ACTUAL>.hasCauseWithMessage(
     message: String
 ): AbstractThrowableAssert<SELF, ACTUAL> {
-    // https://github.com/assertj/assertj/issues/2357
-    satisfies(Consumer { parentThrowable ->
+    satisfiesKt { parentThrowable ->
         assertThat(parentThrowable.cause).isNotNull.hasMessage(message)
-    })
+    }
     return this
 }
 

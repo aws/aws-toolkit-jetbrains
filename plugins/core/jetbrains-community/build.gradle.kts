@@ -48,6 +48,7 @@ configurations.testFixturesCompileOnlyApi {
 dependencies {
     intellijPlatform {
         testFramework(TestFrameworkType.Platform.JUnit4)
+        testFramework(TestFrameworkType.Platform.JUnit5)
         testFramework(TestFrameworkType.Plugin.Java)
     }
 
@@ -63,7 +64,7 @@ dependencies {
         exclude(group = "org.apache.httpcomponents.client5")
     }
 
-    testRuntimeOnly(project(":plugin-core:core"))
+    testImplementation(project(":plugin-core:core"))
     testRuntimeOnly(project(":plugin-core:resources"))
     testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 }

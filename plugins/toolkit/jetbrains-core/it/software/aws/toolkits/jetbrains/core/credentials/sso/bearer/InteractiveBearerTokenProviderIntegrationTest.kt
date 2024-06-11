@@ -74,7 +74,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
             id = "test"
         )
 
-        assertThat(sut.resolveToken()).satisfies {
+        assertThat(sut.resolveToken()).satisfiesKt {
             assertThat(it).isNotNull()
             assertThat(it).isNotEqualTo(initialToken)
         }
