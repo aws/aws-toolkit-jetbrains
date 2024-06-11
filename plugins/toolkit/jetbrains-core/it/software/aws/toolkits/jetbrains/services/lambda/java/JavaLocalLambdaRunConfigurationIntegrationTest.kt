@@ -11,7 +11,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -34,10 +33,6 @@ import software.aws.toolkits.jetbrains.utils.setUpJdk
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
-    @Rule
-    @JvmField
-    val tempDir = TemporaryFolder()
-
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -55,18 +50,14 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
-
     private val input = RuleUtils.randomName()
-    private lateinit var gradleUserHomeDir: MutableMap<String, String>
 
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
-
         val module = fixture.addModule("main")
-
         val psiClass = fixture.addClass(
             module,
             """
@@ -78,21 +69,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
                 }
             }
             """
-        )
-
-        gradleUserHomeDir = mutableMapOf("GRADLE_USER_HOME" to "${tempDir.newFolder("gradleUserHome").toPath()}")
-
-        fixture.addFileToProject(
-            "build.gradle.kts",
-            """
-            plugins {
-                id 'java'
-            }
-
-            repositories {
-                mavenCentral()
-            }
-            """.trimIndent()
         )
 
         val compatibility = when (runtime) {
@@ -119,7 +95,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
-        gradleUserHomeDir.clear()
     }
 
     @Test
@@ -128,7 +103,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
-            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
@@ -146,7 +120,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             runtime = runtime.toSdkRuntime(),
             input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
             inputIsFile = true,
-            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull
@@ -179,7 +152,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
 
@@ -213,7 +185,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
 
@@ -233,7 +204,6 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
-            environmentVariables = gradleUserHomeDir,
             credentialsProviderId = mockId
         )
         assertThat(runConfiguration).isNotNull

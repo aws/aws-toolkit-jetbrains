@@ -19,10 +19,12 @@ import software.aws.toolkits.jetbrains.services.lambda.sam.SamExecutable
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamVersionCache
 import software.aws.toolkits.jetbrains.services.lambda.validation.LambdaHandlerValidator
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.security.InvalidParameterException
 
 private const val TEST_EVALUATE_BLOCKING_TIMEOUT_MS = 2000
+private val gradleUserHome = Files.createTempDirectory("gradle-user-home").toAbsolutePath().toString()
 
 fun createTemplateRunConfiguration(
     project: Project,
@@ -36,7 +38,6 @@ fun createTemplateRunConfiguration(
     inputIsFile: Boolean = false,
     credentialsProviderId: String? = null,
     region: AwsRegion? = getDefaultRegion(),
-    environmentVariables: MutableMap<String, String> = mutableMapOf(),
     samOptions: SamOptions = SamOptions()
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
@@ -45,7 +46,9 @@ fun createTemplateRunConfiguration(
     runConfiguration.runtime(runtime)
     runConfiguration.architecture(architecture)
     runConfiguration.pathMappings = pathMappings
-    runConfiguration.environmentVariables(environmentVariables)
+
+    val gradleEnvVars = mutableMapOf("GRADLE_USER_HOME" to gradleUserHome)
+    runConfiguration.environmentVariables(gradleEnvVars)
 
     createBaseRunConfiguration(
         runConfiguration,
@@ -53,7 +56,8 @@ fun createTemplateRunConfiguration(
         credentialsProviderId,
         inputIsFile,
         input,
-        samOptions
+        samOptions,
+        gradleEnvVars
     )
     return runConfiguration
 }
@@ -72,6 +76,8 @@ fun createHandlerBasedRunConfiguration(
     val runConfiguration = samRunConfiguration(project)
     runConfiguration.useHandler(runtime, handler)
 
+    environmentVariables["GRADLE_USER_HOME"] = gradleUserHome
+
     runConfiguration.environmentVariables(environmentVariables)
 
     createBaseRunConfiguration(
@@ -80,7 +86,8 @@ fun createHandlerBasedRunConfiguration(
         credentialsProviderId,
         inputIsFile,
         input,
-        samOptions
+        samOptions,
+        environmentVariables
     )
 
     return runConfiguration
@@ -92,10 +99,12 @@ private fun createBaseRunConfiguration(
     credentialsProviderId: String?,
     inputIsFile: Boolean,
     input: String?,
-    samOptions: SamOptions
+    samOptions: SamOptions,
+    environmentVariables: Map<String, String>
 ) {
     runConfiguration.regionId(region?.id)
     runConfiguration.credentialProviderId(credentialsProviderId)
+    runConfiguration.environmentVariables(environmentVariables)
 
     if (inputIsFile) {
         runConfiguration.useInputFile(input)
