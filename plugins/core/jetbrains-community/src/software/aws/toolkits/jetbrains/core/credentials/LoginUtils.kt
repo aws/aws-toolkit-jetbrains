@@ -62,7 +62,7 @@ sealed interface Login {
 
         fun loginIdc(project: Project): AwsBearerTokenConnection? {
             // we have this check here so we blow up early if user has an invalid config file
-            LOG.tryOrNull("Failed to read sso sessions file", level = Level.WARN) {
+            LOG.tryOrNull("Failed to read sso sessions file", level = Level.ERROR) {
                 configFilesFacade.readSsoSessions()
             }
 
