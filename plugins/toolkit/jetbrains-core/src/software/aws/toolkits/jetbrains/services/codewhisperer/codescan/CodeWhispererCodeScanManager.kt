@@ -289,19 +289,21 @@ class CodeWhispererCodeScanManager(val project: Project) {
         } finally {
             // After code scan
             afterCodeScan(scope)
-            launch {
-                val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
-                CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
-                    CodeScanTelemetryEvent(
-                        codeScanResponseContext,
-                        duration,
-                        codeScanStatus,
-                        codeScanResponseContext.payloadContext.srcPayloadSize.toDouble() ?: 0.0,
-                        connection,
-                        scope
+            if (!(scope == CodeWhispererConstants.CodeAnalysisScope.FILE && !language.isAutoFileScanSupported())) {
+                launch {
+                    val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
+                    CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
+                        CodeScanTelemetryEvent(
+                            codeScanResponseContext,
+                            duration,
+                            codeScanStatus,
+                            codeScanResponseContext.payloadContext.srcPayloadSize.toDouble() ?: 0.0,
+                            connection,
+                            scope
+                        )
                     )
-                )
-                sendCodeScanTelemetryToServiceAPI(project, language, codeScanJobId, scope)
+                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanJobId, scope)
+                }
             }
         }
     }
