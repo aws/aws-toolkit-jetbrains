@@ -63,6 +63,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
@@ -289,7 +290,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
         } finally {
             // After code scan
             afterCodeScan(scope)
-            if (!(scope == CodeWhispererConstants.CodeAnalysisScope.FILE && !language.isAutoFileScanSupported())) {
+            if (!(
+                    scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
+                        (!language.isAutoFileScanSupported() || language == CodeWhispererPlainText.INSTANCE)
+                    )
+            ) {
                 launch {
                     val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
                     CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
