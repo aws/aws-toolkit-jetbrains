@@ -64,7 +64,7 @@ sealed interface Login {
             // we have this check here so we blow up early if user has an invalid config file
             LOG.tryOrNull("Failed to read sso sessions file", level = Level.ERROR) {
                 configFilesFacade.readSsoSessions()
-            }
+            } ?: return null
 
             val profile = UserConfigSsoSessionProfile(
                 configSessionName = validatedSsoIdentifierFromUrl(startUrl),
