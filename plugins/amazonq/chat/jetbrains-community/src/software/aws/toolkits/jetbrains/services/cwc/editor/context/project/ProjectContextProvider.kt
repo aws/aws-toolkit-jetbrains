@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.google.gson.Gson
+
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -25,9 +27,10 @@ import java.net.URL
 import java.util.Stack
 
 @Service(Service.Level.PROJECT)
-class ProjectContextProvider (val project: Project){
+class ProjectContextProvider (val project: Project) : Disposable{
+    private val encoderServer = EncoderServer.getInstance()
     init {
-        // TODO: shut this down when project is closed
+        encoderServer.start()
         ApplicationManager.getApplication().executeOnPooledThread(){
             index()
         }
@@ -48,6 +51,10 @@ class ProjectContextProvider (val project: Project){
     )
 
     private fun index() {
+        if (!encoderServer.isServerRunning()) {
+            logger.info("encoder server is not running, skipping index")
+            return
+        }
         val url = URL("http://localhost:3000/indexFiles")
         val files = collectFiles().toList()
         val projectRoot = project.guessProjectDir()?.path ?: return
@@ -62,11 +69,15 @@ class ProjectContextProvider (val project: Project){
                 it.write(payloadJson)
             }
             val responseCode = responseCode
-            logger.info("Response: $responseCode")
+            logger.info("Index Response: $responseCode")
         }
     }
 
     fun query(prompt: String): String {
+        if(!encoderServer.isServerRunning()) {
+            logger.info("encoder server is not running, skipping query")
+            return ""
+        }
         val url = URL("http://localhost:3000/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = Gson().toJson(payload)
@@ -82,7 +93,6 @@ class ProjectContextProvider (val project: Project){
             val responseBody = if (responseCode == 200) { inputStream.bufferedReader().use { it.readText() }} else {
                 ""
             }
-            logger.info("Response Body: $responseBody")
             return responseBody
         }
     }
@@ -100,7 +110,7 @@ class ProjectContextProvider (val project: Project){
                 it.write(payloadJson)
             }
             val responseCode = responseCode
-            logger.info("Response: $responseCode")
+            logger.info("update index response: $responseCode")
         }
     }
 
@@ -159,6 +169,10 @@ class ProjectContextProvider (val project: Project){
         }
         logger.info {"number of files indexed: $files.length"}
         return files
+    }
+
+    override fun dispose() {
+        encoderServer.close()
     }
 
     companion object {
