@@ -65,7 +65,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBui
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
@@ -224,7 +223,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         var codeScanJobId: String? = null
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
-        var isTelemetrySkipped = false
+        var skipTelemetry = false
         try {
             val file =
                 if (isRunningOnRemoteBackend()) {
@@ -242,7 +241,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                         selectedFile.fileSystem.protocol == "remoteDeploymentFS"
                     )
             ) {
-                isTelemetrySkipped = true
+                skipTelemetry = true
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 codeScanStatus = Result.Cancelled
                 return@launch
@@ -253,7 +252,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     val session = CodeWhispererCodeScanSession(sessionContext)
                     val codeScanResponse = session.run()
                     language = codeScanSessionConfig.getProgrammingLanguage()
-                    if (language == CodeWhispererPlainText.INSTANCE) { isTelemetrySkipped = true }
+                    if (language == CodeWhispererPlainText.INSTANCE) { skipTelemetry = true }
                     codeScanResponseContext = codeScanResponse.responseContext
                     codeScanJobId = codeScanResponseContext.codeScanJobId
                     when (codeScanResponse) {
@@ -293,7 +292,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         } finally {
             // After code scan
             afterCodeScan(scope)
-            if (!isTelemetrySkipped) {
+            if (!skipTelemetry) {
                 launch {
                     val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
                     CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
