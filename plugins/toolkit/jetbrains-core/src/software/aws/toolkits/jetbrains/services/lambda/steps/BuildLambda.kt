@@ -26,7 +26,7 @@ data class BuildLambdaRequest(
 class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
     private val gradleUserHome = Files.createTempDirectory("test-gradle-user-home").toAbsolutePath().toString()
-    private val buildEnvVars = mutableMapOf("GRADLE_USER_HOME" to gradleUserHome)
+    private val buildEnvVars = mapOf("GRADLE_USER_HOME" to gradleUserHome)
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
         templatePath = request.templatePath,

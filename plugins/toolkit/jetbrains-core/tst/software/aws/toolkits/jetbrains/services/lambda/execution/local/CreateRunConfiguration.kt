@@ -36,7 +36,6 @@ fun createTemplateRunConfiguration(
     inputIsFile: Boolean = false,
     credentialsProviderId: String? = null,
     region: AwsRegion? = getDefaultRegion(),
-    environmentVariables: MutableMap<String, String> = mutableMapOf(),
     samOptions: SamOptions = SamOptions()
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
@@ -45,7 +44,6 @@ fun createTemplateRunConfiguration(
     runConfiguration.runtime(runtime)
     runConfiguration.architecture(architecture)
     runConfiguration.pathMappings = pathMappings
-    runConfiguration.environmentVariables(environmentVariables)
 
     createBaseRunConfiguration(
         runConfiguration,
@@ -71,6 +69,7 @@ fun createHandlerBasedRunConfiguration(
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
     runConfiguration.useHandler(runtime, handler)
+
     runConfiguration.environmentVariables(environmentVariables)
 
     createBaseRunConfiguration(
