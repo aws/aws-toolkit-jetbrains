@@ -14,10 +14,12 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
@@ -42,11 +44,12 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
     @Test
     fun `ArtifactHandler notifies users if patch does not exist`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val expectedError = "test error"
         doNothing().whenever(handler).notifyUnableToApplyPatch(expectedError)
         val result = DownloadArtifactResult.Failure(expectedError)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
         handler.displayDiff(jobId)
         verify(handler, times(1)).notifyUnableToApplyPatch(expectedError)
     }
@@ -55,10 +58,12 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     fun `ArtifactHandler notifies proxy wildcard error`() = runBlocking {
         setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+
         doThrow(RuntimeException("Dangling meta character '*' near index 0"))
             .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
-        val expectedResult = DownloadArtifactResult.DownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
-        val result = handler.downloadArtifact(jobId)
+        val expectedResult =
+            DownloadArtifactResult.DownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
         assertEquals(expectedResult, result)
     }
@@ -69,8 +74,21 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
         doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
             .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
-        val expectedResult = DownloadArtifactResult.DownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
-        val result = handler.downloadArtifact(jobId)
+        val expectedResult =
+            DownloadArtifactResult.DownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler do not notify error in prefetch`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult.Skipped
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, true)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
         assertEquals(expectedResult, result)
     }
@@ -81,8 +99,9 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
         doThrow(SsoOidcException.builder().build())
             .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
-        val expectedResult = DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
-        val result = handler.downloadArtifact(jobId)
+        val expectedResult =
+            DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
         assertEquals(expectedResult, result)
     }
@@ -92,8 +111,9 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         listOf(BearerTokenAuthState.NEEDS_REFRESH, BearerTokenAuthState.NOT_AUTHENTICATED).forEach {
             setupConnection(it)
             val handler = spy(ArtifactHandler(projectRule.project, clientAdaptorSpy))
-            val expectedResult = DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
-            val result = handler.downloadArtifact(jobId)
+            val expectedResult =
+                DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS))
+            val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
             verify(clientAdaptorSpy, times(0)).downloadExportResultArchive(jobId)
             assertEquals(expectedResult, result)
         }
@@ -101,14 +121,29 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
     @Test
     fun `ArtifactHandler displays patch`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult.Success(testCodeModernizerArtifact, path)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
         doNothing().whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
         verify(handler, never()).notifyUnableToApplyPatch(any())
         verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patch, jobId)
+    }
+
+    @Test
+    fun `ArtifactHandler could not find build log from path`() = runBlocking {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        val expected = DownloadArtifactResult.Failure("Could not find build log")
+        val mockDownloadResult = listOf<ByteArray>()
+        doReturn(mockDownloadResult).whenever(clientAdaptorSpy)
+            .downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
+        doReturn(Pair(exampleZipPath, 0)).whenever(handler).unzipToPath(mockDownloadResult)
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
+        assertEquals(expected, result)
     }
 
     @Test

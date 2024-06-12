@@ -274,6 +274,10 @@ class CodeTransformChatController(
         artifactHandler.showTransformationSummary(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
     }
 
+    override suspend fun processCodeTransformViewBuildLog(message: IncomingCodeTransformMessage.CodeTransformViewBuildLog) {
+        artifactHandler.showBuildLog(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
+
     override suspend fun processCodeTransformNewAction(message: IncomingCodeTransformMessage.CodeTransformNew) {
         processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = message.tabId, startNewTransform = true))
     }

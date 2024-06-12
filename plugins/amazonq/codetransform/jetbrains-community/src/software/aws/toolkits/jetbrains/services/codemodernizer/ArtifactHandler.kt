@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
@@ -29,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
@@ -47,31 +49,30 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
+const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
-
+    private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
+
     internal suspend fun displayDiff(job: JobId) {
         if (isCurrentlyDownloading.get()) return
-        when (val result = downloadArtifact(job)) {
-            is DownloadArtifactResult.Success -> displayDiffUsingPatch(result.artifact.patch, job)
+        when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
+            is DownloadArtifactResult.Success -> {
+                if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
+                displayDiffUsingPatch(result.artifact.patch, job)
+            }
+
             is DownloadArtifactResult.Failure -> notifyUnableToApplyPatch(result.errorMessage)
             is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
+            is DownloadArtifactResult.Skipped -> {}
         }
     }
 
-    private fun notifyDownloadStart() {
-        notifyStickyInfo(
-            message("codemodernizer.notification.info.download.started.title"),
-            message("codemodernizer.notification.info.download.started.content"),
-            project,
-        )
-    }
-
-    private suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
+    suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
         val zipFilePath = withContext(getCoroutineBgContext()) {
             if (outputDirPath == null) {
                 Files.createTempFile(null, ".zip")
@@ -114,18 +115,30 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
      * [DownloadArtifactResult.Failure] indicates failure when processing artifact
      * [DownloadArtifactResult.Success] indicates success when downloading and processing artifact
      */
-    suspend fun downloadArtifact(job: JobId): DownloadArtifactResult {
+    suspend fun downloadArtifact(
+        job: JobId,
+        artifactType: TransformationDownloadArtifactType,
+        isPreFetch: Boolean = false
+    ): DownloadArtifactResult {
         isCurrentlyDownloading.set(true)
         val downloadStartTime = Instant.now()
         try {
             // 1. Attempt reusing previously downloaded artifact for job
-            val previousArtifact = downloadedArtifacts.getOrDefault(job, null)
+            val previousArtifact = if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                downloadedBuildLogPath.getOrDefault(job, null)
+            } else {
+                downloadedArtifacts.getOrDefault(job, null)
+            }
             if (previousArtifact != null && previousArtifact.exists()) {
                 val zipPath = previousArtifact.toAbsolutePath().toString()
                 return try {
-                    val artifact = CodeModernizerArtifact.create(zipPath)
-                    downloadedSummaries[job] = artifact.summary
-                    DownloadArtifactResult.Success(artifact, zipPath)
+                    if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                        DownloadArtifactResult.Success(CodeTransformFailureBuildLog.create(zipPath), zipPath)
+                    } else {
+                        val artifact = CodeModernizerArtifact.create(zipPath)
+                        downloadedSummaries[job] = artifact.summary
+                        DownloadArtifactResult.Success(artifact, zipPath)
+                    }
                 } catch (e: RuntimeException) {
                     LOG.error { e.message.toString() }
                     DownloadArtifactResult.Failure(e.message.orEmpty())
@@ -133,16 +146,22 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             }
 
             // 2. Download the data
-            notifyDownloadStart()
-
             LOG.info { "Verifying user is authenticated prior to download" }
             if (!isValidCodeTransformConnection(project)) {
                 CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
-                return DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+                return DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED(artifactType))
             }
 
             LOG.info { "About to download the export result archive" }
-            val downloadResultsResponse = clientAdaptor.downloadExportResultArchive(job)
+            // only notify if downloading client instructions (upgraded code)
+            if (artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
+                notifyDownloadStart()
+            }
+            val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
+            } else {
+                clientAdaptor.downloadExportResultArchive(job)
+            }
 
             // 3. Convert to zip
             LOG.info { "Downloaded the export result archive, about to transform to zip" }
@@ -151,11 +170,19 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             val zipPath = path.toAbsolutePath().toString()
             LOG.info { "Successfully converted the download to a zip at $zipPath." }
 
-            // 4. Deserialize zip to CodeModernizerArtifact
+            // 4. Deserialize zip
             var telemetryErrorMessage: String? = null
             return try {
-                val output = DownloadArtifactResult.Success(CodeModernizerArtifact.create(zipPath), zipPath)
-                downloadedArtifacts[job] = path
+                val output = if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                    DownloadArtifactResult.Success(CodeTransformFailureBuildLog.create(zipPath), zipPath)
+                } else {
+                    DownloadArtifactResult.Success(CodeModernizerArtifact.create(zipPath), zipPath)
+                }
+                if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                    downloadedBuildLogPath[job] = path
+                } else {
+                    downloadedArtifacts[job] = path
+                }
                 output
             } catch (e: RuntimeException) {
                 LOG.error { e.message.toString() }
@@ -163,6 +190,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.Failure(e.message.orEmpty())
             } finally {
+                // TODO: add artifact type to telemetry to differentiate downloads for client instructions vs logs
                 telemetry.jobArtifactDownloadAndDeserializeTime(
                     downloadStartTime,
                     job,
@@ -171,19 +199,21 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
         } catch (e: Exception) {
+            if (isPreFetch) return DownloadArtifactResult.Skipped
             return when {
                 e is SsoOidcException || e is NoTokenInitializedException -> {
                     CodeModernizerManager.getInstance(project).handleResumableDownloadArtifactFailure(job)
-                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED)
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.CREDENTIALS_EXPIRED(artifactType))
                 }
-
                 e.message.toString().contains(DOWNLOAD_PROXY_WILDCARD_ERROR) ->
-                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR)
-
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.PROXY_WILDCARD_ERROR(artifactType))
                 e.message.toString().contains(DOWNLOAD_SSL_HANDSHAKE_ERROR) ->
-                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR)
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.SSL_HANDSHAKE_ERROR(artifactType))
 
-                else -> DownloadArtifactResult.DownloadFailure(DownloadFailureReason.OTHER(e.message.orEmpty()))
+                e.message.toString().contains(INVALID_ARTIFACT_ERROR) ->
+                    DownloadArtifactResult.DownloadFailure(DownloadFailureReason.INVALID_ARTIFACT(artifactType))
+
+                else -> DownloadArtifactResult.DownloadFailure(DownloadFailureReason.OTHER(artifactType, e.message.orEmpty()))
             }
         } finally {
             isCurrentlyDownloading.set(false)
@@ -227,19 +257,19 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
         // Display notification balloon if applicable
         when (error) {
-            DownloadFailureReason.PROXY_WILDCARD_ERROR -> notifyStickyWarn(
+            is DownloadFailureReason.PROXY_WILDCARD_ERROR -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_wildcard.content", error),
                 project,
             )
 
-            DownloadFailureReason.SSL_HANDSHAKE_ERROR -> notifyStickyWarn(
+            is DownloadFailureReason.SSL_HANDSHAKE_ERROR -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
                 message("codemodernizer.notification.warn.download_failed_ssl.content", error),
                 project,
             )
 
-            DownloadFailureReason.CREDENTIALS_EXPIRED -> {
+            is DownloadFailureReason.CREDENTIALS_EXPIRED -> {
                 // Inform chat that reauth is required
                 CodeTransformMessageListener.instance.onCheckAuth()
 
@@ -256,10 +286,18 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 )
             }
 
-            is DownloadFailureReason.OTHER -> {
+            is DownloadFailureReason.OTHER, is DownloadFailureReason.INVALID_ARTIFACT -> {
                 // No notification, only chat update
             }
         }
+    }
+
+    private fun notifyDownloadStart() {
+        notifyStickyInfo(
+            message("codemodernizer.notification.info.download.started.title"),
+            message("codemodernizer.notification.info.download.started.content"),
+            project,
+        )
     }
 
     fun notifyUnableToApplyPatch(errorMessage: String) = notifyStickyWarn(
@@ -278,6 +316,20 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         notifyStickyWarn(
             message("codemodernizer.notification.warn.view_summary_failed.title"),
             message("codemodernizer.notification.warn.view_summary_failed.content"),
+            project,
+            listOf(
+                openTroubleshootingGuideNotificationAction(
+                    CODE_TRANSFORM_TROUBLESHOOT_DOC_ARTIFACT
+                )
+            ),
+        )
+    }
+
+    fun notifyUnableToShowBuildLog() {
+        LOG.error { "Unable to display build log" }
+        notifyStickyWarn(
+            message("codemodernizer.notification.warn.view_build_log_failed.title"),
+            message("codemodernizer.notification.warn.view_build_log_failed.content"),
             project,
             listOf(
                 openTroubleshootingGuideNotificationAction(
@@ -309,10 +361,37 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         if (isCurrentlyDownloading.get()) return
         runReadAction {
             projectCoroutineScope(project).launch {
-                when (val result = downloadArtifact(job)) {
-                    is DownloadArtifactResult.Success -> showSummaryFromFile(result.artifact.summaryMarkdownFile)
+                when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
+                    is DownloadArtifactResult.Success -> {
+                        if (result.artifact !is CodeModernizerArtifact) return@launch notifyUnableToShowSummary()
+                        showSummaryFromFile(result.artifact.summaryMarkdownFile)
+                    }
                     is DownloadArtifactResult.Failure -> notifyUnableToShowSummary()
                     is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
+                    is DownloadArtifactResult.Skipped -> {}
+                }
+            }
+        }
+    }
+
+    fun showBuildLog(job: JobId) {
+        if (isCurrentlyDownloading.get()) return
+        runReadAction {
+            projectCoroutineScope(project).launch {
+                when (val result = downloadArtifact(job, TransformationDownloadArtifactType.LOGS)) {
+                    is DownloadArtifactResult.Success -> {
+                        if (result.artifact !is CodeTransformFailureBuildLog) return@launch notifyUnableToShowBuildLog()
+                        val buildLogVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(result.artifact.logFile)
+                        if (buildLogVirtualFile != null) {
+                            runInEdt {
+                                FileEditorManager.getInstance(project).openFile(buildLogVirtualFile, true)
+                            }
+                        }
+                    }
+
+                    is DownloadArtifactResult.Failure -> notifyUnableToShowBuildLog()
+                    is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
+                    is DownloadArtifactResult.Skipped -> {}
                 }
             }
         }
