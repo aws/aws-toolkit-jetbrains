@@ -12,7 +12,6 @@ import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.region.PartitionParser
 import software.aws.toolkits.core.region.ServiceEndpointResource
 import software.aws.toolkits.core.region.ToolkitRegionProvider
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
@@ -61,7 +60,6 @@ class AwsRegionProvider : ToolkitRegionProvider() {
 
     companion object {
         private const val DEFAULT_REGION = "us-east-1"
-        private val LOG = getLogger<AwsRegionProvider>()
 
         @JvmStatic
         fun getInstance(): ToolkitRegionProvider = service()
