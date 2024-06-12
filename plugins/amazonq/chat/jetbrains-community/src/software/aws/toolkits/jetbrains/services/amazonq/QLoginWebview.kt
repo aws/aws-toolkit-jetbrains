@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import ai.grazie.utils.applyIf
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -221,7 +222,12 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
         }
 
         // previous login
-        val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo()
+        val lastLoginIdcInfo = ToolkitAuthManager.getInstance().getLastLoginIdcInfo().apply {
+            // set default option as us-east-1
+            if (this.region.isBlank()) {
+                this.region = AwsRegionProvider.getInstance().defaultRegion().id
+            }
+        }
 
         // available regions
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values.let {
