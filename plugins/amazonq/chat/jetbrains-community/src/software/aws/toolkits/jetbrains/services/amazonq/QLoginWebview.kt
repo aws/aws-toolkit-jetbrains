@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
-import ai.grazie.utils.applyIf
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
