@@ -224,6 +224,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         var codeScanJobId: String? = null
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
+        var isTelemetrySkipped = false
         try {
             val file =
                 if (isRunningOnRemoteBackend()) {
@@ -233,7 +234,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 }
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
             val selectedFile = codeScanSessionConfig.getSelectedFile()
-            language = selectedFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
+            language = codeScanSessionConfig.getProgrammingLanguage()
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
                 (
                     selectedFile == null || !language.isAutoFileScanSupported() || !selectedFile.isFile ||
@@ -241,6 +242,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                         selectedFile.fileSystem.protocol == "remoteDeploymentFS"
                     )
             ) {
+                isTelemetrySkipped = true
                 LOG.debug { "Language is unknown or plaintext, skipping code scan." }
                 codeScanStatus = Result.Cancelled
                 return@launch
@@ -251,6 +253,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     val session = CodeWhispererCodeScanSession(sessionContext)
                     val codeScanResponse = session.run()
                     language = codeScanSessionConfig.getProgrammingLanguage()
+                    if (language == CodeWhispererPlainText.INSTANCE) { isTelemetrySkipped = true }
                     codeScanResponseContext = codeScanResponse.responseContext
                     codeScanJobId = codeScanResponseContext.codeScanJobId
                     when (codeScanResponse) {
@@ -290,11 +293,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         } finally {
             // After code scan
             afterCodeScan(scope)
-            if (!(
-                    scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
-                        (!language.isAutoFileScanSupported() || language == CodeWhispererPlainText.INSTANCE)
-                    )
-            ) {
+            if (!isTelemetrySkipped) {
                 launch {
                     val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
                     CodeWhispererTelemetryService.getInstance().sendSecurityScanEvent(
