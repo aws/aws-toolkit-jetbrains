@@ -205,7 +205,7 @@ class CodeScanSessionConfig(
                             } else {
                                 try {
                                     val language = current.programmingLanguage()
-                                    if (language != CodeWhispererUnknownLanguage.INSTANCE) {
+                                    if (language !is CodeWhispererUnknownLanguage) {
                                         languageCounts[language] = (languageCounts[language] ?: 0) + 1
                                     }
                                     files.add(current.path)
