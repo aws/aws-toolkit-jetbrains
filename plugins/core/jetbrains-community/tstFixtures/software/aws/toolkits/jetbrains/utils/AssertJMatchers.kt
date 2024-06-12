@@ -34,9 +34,16 @@ val <T> CompletableFutureAssert<T>.hasException get() = this.wait().isCompletedE
 
 // https://github.com/assertj/assertj/issues/2357
 @Suppress("UNCHECKED_CAST")
-fun <T : Any?> AbstractAssert<*, T>.satisfiesKt(requirements: Consumer<T>): AbstractAssert<*, T> {
-    return this.satisfies(requirements) as AbstractAssert<*, T>
-}
+fun <E : Any?, I : Iterable<E>> AbstractIterableAssert<*, I, E, *>.allSatisfyKt(requirements: Consumer<E>) =
+    allSatisfy(requirements) as AbstractIterableAssert<*, I, E, *>
+
+@Suppress("UNCHECKED_CAST")
+fun <E : Any?, I : Iterable<E>> AbstractIterableAssert<*, I, E, *>.anySatisfyKt(requirements: Consumer<E>) =
+    anySatisfy(requirements) as AbstractIterableAssert<*, I, E, *>
+
+@Suppress("UNCHECKED_CAST")
+fun <T : Any?> AbstractAssert<*, T>.satisfiesKt(requirements: Consumer<T>) =
+    satisfies(requirements) as AbstractAssert<*, T>
 
 fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractThrowableAssert<SELF, ACTUAL>.hasCauseWithMessage(
     message: String

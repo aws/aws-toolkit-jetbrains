@@ -13,10 +13,7 @@ import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.test.assertPosixPermissions
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
-import java.nio.file.Files
 import java.nio.file.Paths
-import java.nio.file.attribute.PosixFilePermission
-import java.nio.file.attribute.PosixFilePermissions
 
 class DefaultConfigFilesFacadeTest {
 

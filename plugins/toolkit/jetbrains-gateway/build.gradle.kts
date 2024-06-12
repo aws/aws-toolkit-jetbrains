@@ -43,13 +43,15 @@ val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
     from(processGatewayOnlyResources)
 }
 
-configurations["intellijPlatformDependency"].dependencies.addLater(toolkitIntelliJ.version().map {
-    dependencies.create(
-        group = "com.jetbrains.gateway",
-        name = "JetBrainsGateway",
-        version = it,
-    )
-})
+configurations["intellijPlatformDependency"].dependencies.addLater(
+    toolkitIntelliJ.version().map {
+        dependencies.create(
+            group = "com.jetbrains.gateway",
+            name = "JetBrainsGateway",
+            version = it,
+        )
+    }
+)
 
 dependencies {
     // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway

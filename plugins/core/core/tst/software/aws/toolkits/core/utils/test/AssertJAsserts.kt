@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.core.utils.test
 
+import org.assertj.core.api.AbstractIterableAssert
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.IterableAssert
 import org.assertj.core.api.ListAssert
 import org.assertj.core.api.ObjectAssert
 import java.nio.file.Files
@@ -16,8 +16,8 @@ val <T : Any> ObjectAssert<T?>.notNull: ObjectAssert<T>
     get() = this.isNotNull as ObjectAssert<T>
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified SubType : Any> IterableAssert<*>.hasOnlyElementsOfType(): IterableAssert<SubType> =
-    hasOnlyElementsOfType(SubType::class.java) as IterableAssert<SubType>
+inline fun <reified SubType : Any> AbstractIterableAssert<*, *, *, *>.hasOnlyElementsOfTypeKt() =
+    hasOnlyElementsOfType(SubType::class.java) as AbstractIterableAssert<*, Iterable<SubType>, SubType, *>
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified SubType : Any> ListAssert<*>.hasOnlyOneElementOfType(): ObjectAssert<SubType> =
