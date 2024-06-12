@@ -9,6 +9,7 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
@@ -17,6 +18,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -54,13 +56,18 @@ import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.net.ssl.SSLHandshakeException
 
 const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
-const val MAX_ZIP_SIZE = 1000000000 // 1GB
+const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+
+// constants for handling SDKClientException
+const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
+const val SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: PKIX path building failed"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -72,6 +79,7 @@ class CodeModernizerSession(
     private val isDisposed = AtomicBoolean(false)
     private val shouldStop = AtomicBoolean(false)
     private val telemetry = CodeTransformTelemetryManager.getInstance(sessionContext.project)
+    private val artifactHandler = ArtifactHandler(sessionContext.project, GumbyClient.getInstance(sessionContext.project))
 
     private var mvnBuildResult: MavenCopyCommandsResult? = null
     private var transformResult: CodeModernizerJobCompletedResult? = null
@@ -156,6 +164,8 @@ class CodeModernizerSession(
 
             telemetry.jobCreateZipEndTime(payloadSize, startTime)
 
+            LOG.info { "Uploading zip file with size: $payloadSize bytes" }
+
             if (payloadSize > MAX_ZIP_SIZE) {
                 return CodeModernizerStartJobResult.CancelledZipTooLarge
             }
@@ -185,6 +195,10 @@ class CodeModernizerSession(
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
+        } catch (e: SSLHandshakeException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
         } catch (e: HttpRequests.HttpStatusException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
@@ -203,6 +217,17 @@ class CodeModernizerSession(
                 state.putJobHistory(sessionContext, TransformationStatus.FAILED)
                 state.currentJobStatus = TransformationStatus.FAILED
                 return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+            }
+        } catch (e: SdkClientException) {
+            // Errors from code whisperer client will always be thrown as SdkClientException
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return if (e.message.toString().contains(CONNECTION_REFUSED_ERROR)) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
+            } else if (e.message.toString().contains(SSL_HANDSHAKE_ERROR)) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
+            } else {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
             }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
@@ -458,8 +483,16 @@ class CodeModernizerSession(
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_start_failure")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
                     } else if (!passedBuild) {
-                        val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
-                        return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason)
+                        // This is a short term solution to check if build log is available by attempting to download it.
+                        // In the long term, we should check if build log is available from transformation metadata.
+                        val downloadArtifactResult = artifactHandler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, true)
+                        if (downloadArtifactResult.artifact != null) {
+                            val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, true)
+                        } else {
+                            val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, false)
+                        }
                     } else {
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_status_response")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
