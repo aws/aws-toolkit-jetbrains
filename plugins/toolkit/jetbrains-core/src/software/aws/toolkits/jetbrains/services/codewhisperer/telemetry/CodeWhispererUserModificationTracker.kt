@@ -20,6 +20,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
@@ -38,7 +40,6 @@ import kotlin.math.min
 
 interface UserModificationTrackingEntry {
     val time: Instant
-    val codewhispererLanguage: CodeWhispererProgrammingLanguage
 }
 
 data class AcceptedSuggestionEntry(
@@ -51,7 +52,7 @@ data class AcceptedSuggestionEntry(
     val index: Int,
     val triggerType: CodewhispererTriggerType,
     val completionType: CodewhispererCompletionType,
-    override val codewhispererLanguage: CodeWhispererProgrammingLanguage,
+    val codewhispererLanguage: CodeWhispererProgrammingLanguage,
     val codewhispererRuntime: CodewhispererRuntime?,
     val codewhispererRuntimeSource: String?,
     val connection: ToolkitConnection?
@@ -204,9 +205,11 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             cwsprChatModificationPercentage = percentage,
             credentialStartUrl = getStartUrl(project)
         )
+        val lang = insertedCode.vFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
+
         CodeWhispererClientAdaptor.getInstance(
             project
-        ).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, insertedCode.codewhispererLanguage, percentage)
+        ).sendChatUserModificationTelemetry(insertedCode.conversationId, insertedCode.messageId, lang, percentage)
     }
 
 // temp disable user modfication event for further discussion on metric calculation

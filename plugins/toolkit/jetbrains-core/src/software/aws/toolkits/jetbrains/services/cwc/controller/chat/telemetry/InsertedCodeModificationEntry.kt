@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserModificationTrackingEntry
 import java.time.Instant
 
@@ -16,5 +15,4 @@ data class InsertedCodeModificationEntry(
     val vFile: VirtualFile?,
     val range: RangeMarker,
     val originalString: String,
-    override val codewhispererLanguage: CodeWhispererProgrammingLanguage
 ) : UserModificationTrackingEntry
