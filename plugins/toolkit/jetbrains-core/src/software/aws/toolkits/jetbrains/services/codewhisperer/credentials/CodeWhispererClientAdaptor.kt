@@ -511,7 +511,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             telemetryEventBuilder.chatUserModificationEvent {
                 it.conversationId(sessionId)
                 it.messageId(requestId)
-                it.programmingLanguage { langBuilder -> langBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId) }
+                it.programmingLanguage { langBuilder ->
+                    langBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
+                }
                 it.modificationPercentage(modificationPercentage)
             }
         }
