@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix for validation exception for telemetry events for unsupported languages."
+}
