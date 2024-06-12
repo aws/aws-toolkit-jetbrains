@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix for validation exception for telemetry events for unsupported languages."
+  "description" : "Fix intermittent validation exception from CodeWhisperer service for improperly formed request"
 }
