@@ -124,12 +124,13 @@ file("plugins").listFiles()?.forEach root@ {
                 return@forEach
             }
             if (it.name == "jetbrains-gateway") {
-                when (providers.gradleProperty("ideProfileName").get()) {
-                    // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.2", "2023.3" -> {
-                        return@forEach
-                    }
-                }
+                return@forEach
+//                when (providers.gradleProperty("ideProfileName").get()) {
+//                    // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
+//                    "2023.2", "2023.3" -> {
+//                        return@forEach
+//                    }
+//                }
             }
 
             val projectName = path.joinToString(separator = ":", prefix = ":")
