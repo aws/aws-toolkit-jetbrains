@@ -51,6 +51,8 @@ tasks.jar {
 tasks.integrationTest {
     // cant run tests under authorization_grant with PKCE yet
     systemProperty("aws.dev.useDAG", true)
+    maxHeapSize = "2048m"
+    maxParallelForks = 1
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
