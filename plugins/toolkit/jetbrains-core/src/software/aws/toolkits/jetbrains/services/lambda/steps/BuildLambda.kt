@@ -37,16 +37,7 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     )
 
     override fun handleSuccessResult(output: String, stepEmitter: StepEmitter, context: Context) {
-        try {
-            context.putAttribute(BUILT_LAMBDA, BuiltLambda(request.buildDir.resolve("template.yaml"), request.logicalId))
-        } finally {
-            Thread.sleep(5000)
-            cleanup()
-        }
-    }
-
-    private fun cleanup() {
-        Files.deleteIfExists(Path.of(gradleUserHome))
+        context.putAttribute(BUILT_LAMBDA, BuiltLambda(request.buildDir.resolve("template.yaml"), request.logicalId))
     }
 
     companion object {
