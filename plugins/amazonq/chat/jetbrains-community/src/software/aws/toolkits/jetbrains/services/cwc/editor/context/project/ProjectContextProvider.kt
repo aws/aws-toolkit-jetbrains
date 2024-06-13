@@ -15,9 +15,12 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -28,10 +31,12 @@ import java.util.Stack
 
 @Service(Service.Level.PROJECT)
 class ProjectContextProvider (val project: Project) : Disposable{
-    private val encoderServer = EncoderServer.getInstance()
+    private var encoderServer: EncoderServer = EncoderServer.getInstance(project)
+
     init {
         encoderServer.start()
-        ApplicationManager.getApplication().executeOnPooledThread(){
+        projectCoroutineScope(project).launch{
+            delay(3000)
             index()
         }
     }
@@ -55,7 +60,8 @@ class ProjectContextProvider (val project: Project) : Disposable{
             logger.info("encoder server is not running, skipping index")
             return
         }
-        val url = URL("http://localhost:3000/indexFiles")
+        val port = encoderServer.currentPort
+        val url = URL("http://localhost:$port/indexFiles")
         val files = collectFiles().toList()
         val projectRoot = project.guessProjectDir()?.path ?: return
         val payload = IndexRequestPayload(files, projectRoot, true)
@@ -78,7 +84,8 @@ class ProjectContextProvider (val project: Project) : Disposable{
             logger.info("encoder server is not running, skipping query")
             return ""
         }
-        val url = URL("http://localhost:3000/query")
+        val port = encoderServer.currentPort
+        val url = URL("http://localhost:$port/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = Gson().toJson(payload)
         with(url.openConnection() as HttpURLConnection) {
@@ -98,7 +105,8 @@ class ProjectContextProvider (val project: Project) : Disposable{
     }
 
     fun updateIndex(filePath: String) {
-        val url = URL("http://localhost:3000/updateIndex")
+        val port = encoderServer.currentPort
+        val url = URL("http://localhost:$port/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
         val payloadJson = Gson().toJson(payload)
         with(url.openConnection() as HttpURLConnection) {
@@ -172,7 +180,7 @@ class ProjectContextProvider (val project: Project) : Disposable{
     }
 
     override fun dispose() {
-        encoderServer.close()
+        encoderServer.dispose()
     }
 
     companion object {
