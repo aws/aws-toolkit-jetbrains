@@ -144,25 +144,25 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
     }
 
     private fun disposeStaleConnections(newConnection: AwsBearerTokenConnection) {
-        connections.removeAll { existOldConn ->
-            (existOldConn.id == newConnection.id).also { isDuplicate ->
-                if (isDuplicate && existOldConn is Disposable) {
-                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                        .onChange(existOldConn.id, newConnection.scopes)
-                    Disposer.dispose(existOldConn)
-                }
-            }
-        }
-
-        transientConnections.removeAll { existOldConn ->
-            (existOldConn.id == newConnection.id).also { isDuplicate ->
-                if (isDuplicate && existOldConn is Disposable) {
-                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
-                        .onChange(existOldConn.id, newConnection.scopes)
-                    Disposer.dispose(existOldConn)
-                }
-            }
-        }
+//        connections.removeAll { existOldConn ->
+//            (existOldConn.id == newConnection.id).also { isDuplicate ->
+//                if (isDuplicate && existOldConn is Disposable) {
+//                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+//                        .onChange(existOldConn.id, newConnection.scopes)
+//                    Disposer.dispose(existOldConn)
+//                }
+//            }
+//        }
+//
+//        transientConnections.removeAll { existOldConn ->
+//            (existOldConn.id == newConnection.id).also { isDuplicate ->
+//                if (isDuplicate && existOldConn is Disposable) {
+//                    ApplicationManager.getApplication().messageBus.syncPublisher(BearerTokenProviderListener.TOPIC)
+//                        .onChange(existOldConn.id, newConnection.scopes)
+//                    Disposer.dispose(existOldConn)
+//                }
+//            }
+//        }
     }
 
     private fun deleteConnection(predicate: (ToolkitConnection) -> Boolean) {
@@ -200,8 +200,13 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
         deleteConnection { it == connection }
     }
 
-    override fun deleteConnection(connectionId: String) {
-        deleteConnection { it.id == connectionId }
+    override fun deleteConnection(connectionId: String, connectionScopes: List<String>) {
+        deleteConnection { it.id == connectionId && checkConnectionScopes(it, connectionScopes)}
+    }
+
+    private fun checkConnectionScopes(connection: ToolkitConnection, connectionScopes: List<String>) : Boolean {
+        val conn = connection as AwsBearerTokenConnection
+        return  conn.scopes.equals(connectionScopes)
     }
 
     override fun getConnection(connectionId: String) = listConnections().firstOrNull { it.id == connectionId }

@@ -50,7 +50,7 @@ export interface State {
     lastLoginIdcInfo: IdcInfo,
     feature: Feature,
     cancellable: boolean,
-    existingConnections: AwsBearerTokenConnection[]
+    // existingConnections: AwsBearerTokenConnection[]
 }
 
 export enum LoginIdentifier {
@@ -97,7 +97,7 @@ export class BuilderId implements LoginOption {
     }
 }
 
-export class ExistConnection implements LoginOption {
+/*export class ExistConnection implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.EXISTING_LOGINS
 
     constructor(readonly pluginConnectionId: string) {}
@@ -106,4 +106,4 @@ export class ExistConnection implements LoginOption {
     requiresBrowser(): boolean {
         return true
     }
-}
+}*/

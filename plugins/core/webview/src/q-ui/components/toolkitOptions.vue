@@ -3,7 +3,7 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
-        <div class="font-amazon" v-if="existConnections.length > 0">
+        <!--div class="font-amazon" v-if="existConnections.length > 0">
             <div class="title bottom-small-gap">Connect with an existing account:</div>
             <div v-for="(connection, index) in this.existConnections" :key="index">
                 <SelectableItem
@@ -16,7 +16,7 @@
                     class="bottom-small-gap"
                 ></SelectableItem>
             </div>
-        </div>
+        </div-->
 
         <div class="title font-amazon bottom-small-gap">Choose a sign-in option:</div>
         <SelectableItem
@@ -63,7 +63,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL, ExistConnection} from "../../model";
+import {Feature, Stage, LoginIdentifier, BuilderId, AwsBearerTokenConnection, SONO_URL} from "../../model";
 import {AWS_BUILDER_ID_NAME, IDENTITY_CENTER_NAME} from "../../constants";
 
 export default defineComponent({
@@ -82,9 +82,9 @@ export default defineComponent({
         feature(): Feature {
             return this.$store.state.feature
         },
-        existConnections(): AwsBearerTokenConnection[] {
-            return this.$store.state.existingConnections
-        }
+        // existConnections(): AwsBearerTokenConnection[] {
+        //     return this.$store.state.existingConnections
+        // }
     },
     data() {
         return {
@@ -112,7 +112,7 @@ export default defineComponent({
             } else {
                 // TODO: else ... is not precise
                 // TODO: should pass the entire connection json obj instead of connection id only
-                this.$emit('login', new ExistConnection(this.selectedLoginOption))
+               // this.$emit('login', new ExistConnection(this.selectedLoginOption))
             }
         },
         // TODO: duplicates in qOptions, should leverage model/LoginOption interface

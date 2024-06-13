@@ -21,7 +21,7 @@ const store = createStore<State>({
         },
         feature: 'Q',
         cancellable: false,
-        existingConnections: [] as AwsBearerTokenConnection[]
+        // existingConnections: [] as AwsBearerTokenConnection[]
     },
     getters: {},
     mutations: {
@@ -45,9 +45,9 @@ const store = createStore<State>({
             state.lastLoginIdcInfo.startUrl = idcInfo.startUrl
             state.lastLoginIdcInfo.region = idcInfo.region
         },
-        setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
-            state.existingConnections = connections
-        },
+        // setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
+        //     state.existingConnections = connections
+        // },
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []

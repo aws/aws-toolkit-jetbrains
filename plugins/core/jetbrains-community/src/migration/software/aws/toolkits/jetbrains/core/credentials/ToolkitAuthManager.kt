@@ -23,7 +23,7 @@ interface ToolkitAuthManager {
     fun getOrCreateSsoConnection(profile: UserConfigSsoSessionProfile): AwsBearerTokenConnection
 
     fun deleteConnection(connection: ToolkitConnection)
-    fun deleteConnection(connectionId: String)
+    fun deleteConnection(connectionId: String, connectionScopes: List<String> = emptyList())
 
     fun getConnection(connectionId: String): ToolkitConnection?
 

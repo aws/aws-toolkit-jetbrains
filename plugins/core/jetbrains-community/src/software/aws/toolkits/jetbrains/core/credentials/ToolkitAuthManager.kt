@@ -42,6 +42,8 @@ interface AwsBearerTokenConnection : ToolkitConnection {
     val startUrl: String
     val region: String
     val scopes: List<String>
+    override val id: String
+        get() = "abc"
 
     override fun getConnectionSettings(): TokenConnectionSettings
 }
@@ -63,6 +65,10 @@ data class UserConfigSsoSessionProfile(
     val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
 }
+
+
+
+
 
 data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
@@ -135,29 +141,36 @@ fun loginSso(
         if (connection !is AwsBearerTokenConnection) {
             return@let null
         }
-
-        // There is an existing connection we can use
-        if (!requestedScopes.all { it in connection.scopes }) {
-            allScopes.addAll(connection.scopes)
-
-            logger.info {
-                """
-                    Forcing reauth on ${connection.id} since requested scopes ($requestedScopes)
-                    are not a complete subset of current scopes (${connection.scopes})
-                """.trimIndent()
-            }
-            // can't reuse since requested scopes are not in current connection. forcing reauth
-            return createAndAuthNewConnection(
+        return createAndAuthNewConnection(
                 ManagedSsoProfile(
                     region,
                     startUrl,
                     allScopes.toList()
                 )
             )
-        }
 
-        // For the case when the existing connection is in invalid state, we need to re-auth
-        reauthConnectionIfNeeded(project, connection)
+        // There is an existing connection we can use
+//        if (!requestedScopes.all { it in connection.scopes }) {
+//            allScopes.addAll(connection.scopes)
+//
+//            logger.info {
+//                """
+//                    Forcing reauth on ${connection.id} since requested scopes ($requestedScopes)
+//                    are not a complete subset of current scopes (${connection.scopes})
+//                """.trimIndent()
+//            }
+//            // can't reuse since requested scopes are not in current connection. forcing reauth
+//            return createAndAuthNewConnection(
+//                ManagedSsoProfile(
+//                    region,
+//                    startUrl,
+//                    allScopes.toList()
+//                )
+//            )
+//        }
+//
+//        // For the case when the existing connection is in invalid state, we need to re-auth
+//        reauthConnectionIfNeeded(project, connection)
         return connection
     } ?: run {
         // No existing connection, start from scratch
@@ -174,7 +187,7 @@ fun loginSso(
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
-        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+        ToolkitAuthManager.getInstance().deleteConnection(connection.id, connectionScopes = connection.scopes)
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             deleteSsoConnection(connection)
         }
