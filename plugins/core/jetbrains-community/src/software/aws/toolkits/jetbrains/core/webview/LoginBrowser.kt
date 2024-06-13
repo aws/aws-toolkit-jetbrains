@@ -123,7 +123,7 @@ abstract class LoginBrowser(
             }
             AwsTelemetry.loginWithBrowser(
                 project = null,
-                credentialStartUrl = url + "IDC LOGIN",
+                credentialStartUrl = url,
                 result = Result.Failed,
                 reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
@@ -133,7 +133,7 @@ abstract class LoginBrowser(
             Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
             AwsTelemetry.loginWithBrowser(
                 project = null,
-                credentialStartUrl = url + "IDC LOGIN",
+                credentialStartUrl = url,
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
