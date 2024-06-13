@@ -42,7 +42,9 @@ intellijPlatform {
     instrumentCode = true
     verifyPlugin {
         ides {
-            recommended()
+            // recommended() appears to resolve latest EAP for a product?git
+            ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
+            ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
         }
     }
 }

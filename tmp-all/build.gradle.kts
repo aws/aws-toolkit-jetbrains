@@ -28,6 +28,7 @@ dependencies {
 //        localPlugin(project(":plugin-amazonq", "pluginZip"))
 //        plugin(toolkitIntelliJ.ideProfile().map { "aws.toolkit:2.19-${it.shortName}" })
 
+        testFramework(TestFrameworkType.Platform.Bundled)
         testFramework(TestFrameworkType.Platform.JUnit5)
     }
 }

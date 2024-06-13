@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import net.bytebuddy.utility.RandomString
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
@@ -54,6 +55,11 @@ configurations["intellijPlatformDependency"].dependencies.addLater(
 )
 
 dependencies {
+    intellijPlatform {
+        testFramework(TestFrameworkType.Platform.JUnit5)
+        testFramework(TestFrameworkType.Platform.Bundled)
+    }
+
     // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
     compileOnly(project(":plugin-toolkit:jetbrains-core"))
     gatewayOnlyRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
