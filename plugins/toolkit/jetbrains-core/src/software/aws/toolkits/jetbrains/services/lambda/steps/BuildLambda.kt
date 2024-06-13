@@ -40,6 +40,7 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
         try {
             context.putAttribute(BUILT_LAMBDA, BuiltLambda(request.buildDir.resolve("template.yaml"), request.logicalId))
         } finally {
+            Thread.sleep(5000)
             cleanup()
         }
     }
