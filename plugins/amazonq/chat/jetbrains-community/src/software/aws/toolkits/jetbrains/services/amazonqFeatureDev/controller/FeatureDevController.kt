@@ -13,8 +13,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileChooser.FileChooser
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
@@ -25,14 +23,15 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
@@ -44,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.Follo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.initialExamples
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswer
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthNeededException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthenticationInProgressMessage
@@ -62,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
 import software.aws.toolkits.resources.message
@@ -193,7 +192,7 @@ class FeatureDevController(
         when (sessionState) {
             is PrepareCodeGenerationState -> {
                 runInEdt {
-                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.projectRoot)
+                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
 
                     val leftDiffContent = if (existingFile == null) {
                         EmptyContent()
@@ -436,7 +435,7 @@ class FeatureDevController(
             }
         } catch (err: Exception) {
             logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
-            if (err is ContentLengthError) {
+            if (err is RepoSizeError) {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -519,23 +518,20 @@ class FeatureDevController(
     private suspend fun onApproachGeneration(session: Session, message: String, tabId: String) {
         session.preloader(message, messenger)
 
-        logger.info { "$FEATURE_NAME conversation id: ${session.conversationId}" }
+        logger.info { conversationIDLog(session.conversationId) }
 
         messenger.sendAnswer(
             tabId = tabId,
-            messageType = FeatureDevMessageType.Answer,
+            messageType = FeatureDevMessageType.AnswerStream,
             message = message("amazonqFeatureDev.create_plan"),
         )
-
-        // Ensure that the loading icon stays showing
-        messenger.sendAsyncEventProgress(tabId = tabId, inProgress = true)
 
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.generating_approach"))
 
         val interactions = session.send(message)
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
 
-        messenger.sendAnswerPart(tabId = tabId, message = interactions.content, canBeVoted = interactions.interactionSucceeded)
+        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType = FeatureDevMessageType.Answer, canBeVoted = true, snapToTop = true)
 
         if (interactions.interactionSucceeded) {
             messenger.sendAnswer(
@@ -606,8 +602,8 @@ class FeatureDevController(
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val uri = session.context.projectRoot
-        val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+        val currentSourceFolder = session.context.selectedSourceFolder
+        val projectRoot = session.context.projectRoot
 
         val modifyFolderFollowUp = FollowUp(
             pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
@@ -616,11 +612,10 @@ class FeatureDevController(
         )
 
         var result: Result = Result.Failed
-        var reason: String? = null
+        var reason: ModifySourceFolderErrorReason? = null
 
         withContext(EDT) {
-            val selectedFolder = FileChooser.chooseFile(fileChooserDescriptor, context.project, uri)
-
+            val selectedFolder = selectFolder(context.project, currentSourceFolder)
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
@@ -630,12 +625,12 @@ class FeatureDevController(
                     followUp = listOf(modifyFolderFollowUp),
                 )
 
-                reason = "ClosedBeforeSelection"
+                reason = ModifySourceFolderErrorReason.ClosedBeforeSelection
                 return@withContext
             }
 
             // The folder is not in the workspace
-            if (selectedFolder.parent.path != uri.path) {
+            if (!selectedFolder.path.startsWith(projectRoot.path)) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
@@ -649,13 +644,13 @@ class FeatureDevController(
                     followUp = listOf(modifyFolderFollowUp),
                 )
 
-                reason = "NotInWorkspaceFolder"
+                reason = ModifySourceFolderErrorReason.NotInWorkspaceFolder
                 return@withContext
             }
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.projectRoot = selectedFolder
+            session.context.selectedSourceFolder = selectedFolder
             result = Result.Succeeded
 
             messenger.sendAnswer(
@@ -669,7 +664,7 @@ class FeatureDevController(
             amazonqConversationId = session.conversationId,
             credentialStartUrl = getStartUrl(project = context.project),
             result = result,
-            reason = reason
+            reason = reason?.toString()
         )
     }
 
@@ -684,6 +679,8 @@ class FeatureDevController(
     private fun getSessionInfo(tabId: String) = chatSessionStorage.getSession(tabId, context.project)
 
     fun retriesRemaining(session: Session?): Int = session?.retries ?: DEFAULT_RETRY_LIMIT
+
+    fun conversationIDLog(conversationId: String) = "$FEATURE_NAME Conversation ID: $conversationId"
 
     companion object {
         private val logger = getLogger<FeatureDevController>()

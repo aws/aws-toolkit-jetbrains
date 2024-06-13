@@ -13,10 +13,13 @@ import org.mockito.Mockito.never
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
@@ -41,9 +44,49 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val path = testCodeModernizerArtifact.zipPath
         doNothing().whenever(handler).notifyUnableToApplyPatch(path, "")
         val result = DownloadArtifactResult(null, path)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
         handler.displayDiff(jobId)
         verify(handler, times(1)).notifyUnableToApplyPatch(path, "")
+    }
+
+    @Test
+    fun `ArtifactHandler notifies proxy wildcard error`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Dangling meta character '*' near index 0")).whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult(null, "", message("codemodernizer.notification.warn.download_failed_wildcard.content"))
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler notifies ssl handshake error`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult(
+            null,
+            "",
+            message("codemodernizer.notification.warn.download_failed_ssl.content")
+        )
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun `ArtifactHandler do not notify error in prefetch`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        doThrow(RuntimeException("Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException: PKIX path building failed"))
+            .whenever(clientAdaptorSpy).downloadExportResultArchive(jobId)
+        val expectedResult = DownloadArtifactResult(
+            null,
+            "",
+            message("codemodernizer.notification.warn.download_failed_ssl.content")
+        )
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId)
+        assertEquals(expectedResult, result)
     }
 
     @Test
@@ -51,11 +94,25 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult(testCodeModernizerArtifact, path)
-        doReturn(result).whenever(handler).downloadArtifact(any())
+        doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
         doNothing().whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
         verify(handler, never()).notifyUnableToApplyPatch(path, "")
         verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patch, jobId)
+    }
+
+    @Test
+    fun `ArtifactHandler could not find build log from path`() = runBlocking {
+        val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
+        val path = exampleZipPath.toAbsolutePath().toString()
+        val expected = DownloadArtifactResult(null, path, "Could not find build log")
+        val mockDownloadResult = listOf<ByteArray>()
+        doReturn(mockDownloadResult).whenever(clientAdaptorSpy)
+            .downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
+        doReturn(Pair(exampleZipPath, 0)).whenever(handler).unzipToPath(mockDownloadResult)
+        val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, false)
+        verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
+        assertEquals(expected, result)
     }
 
     @Test
