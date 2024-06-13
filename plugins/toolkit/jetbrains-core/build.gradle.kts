@@ -123,6 +123,9 @@ tasks.prepareSandbox {
 tasks.testJar {
     // classpath.index is a duplicate
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    // not sure why this is getting pulled in
+    exclude("**/plugin.xml")
 }
 
 tasks.processTestResources {
