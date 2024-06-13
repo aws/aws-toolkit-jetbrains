@@ -264,14 +264,19 @@ class CodeWhispererPopupManager {
 
     fun cancelPopup(popup: JBPopup) {
         popup.cancel()
+        Disposer.dispose(popup)
     }
 
     fun closePopup(popup: JBPopup) {
         popup.closeOk(null)
+        Disposer.dispose(popup)
     }
 
     fun closePopup() {
-        myPopup?.closeOk(null)
+        myPopup?.let {
+            it.closeOk(null)
+            Disposer.dispose(it)
+        }
     }
 
     fun showPopup(

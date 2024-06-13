@@ -691,16 +691,14 @@ class CodeWhispererService {
 
     private fun addPopupChildDisposables(popup: JBPopup) {
         val originalTabExitsBracketsAndQuotes = CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES
+        val originalAutoPopupCompletionLookup = CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP
+
         CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES = false
+        CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = false
+
         Disposer.register(popup) {
             CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES = originalTabExitsBracketsAndQuotes
-        }
-        val originalAutoPopupCompletionLookup = CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP
-        CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = false
-        Disposer.register(popup) {
             CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = originalAutoPopupCompletionLookup
-        }
-        Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()
         }
     }
