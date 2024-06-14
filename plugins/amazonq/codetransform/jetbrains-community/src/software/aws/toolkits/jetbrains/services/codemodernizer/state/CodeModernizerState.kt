@@ -10,25 +10,28 @@ import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
+import java.time.Instant
 
 enum class JobDetails {
     LAST_JOB_ID,
     CONFIGURATION_FILE_PATH,
     TARGET_JAVA_VERSION,
     SOURCE_JAVA_VERSION,
+    QCT_START_TIME,
 }
 
 enum class StateFlags {
     IS_ONGOING
 }
 
-fun buildState(context: CodeModernizerSessionContext, isJobOngoing: Boolean, jobId: JobId) = CodeModernizerState().apply {
+fun buildState(context: CodeModernizerSessionContext, isJobOngoing: Boolean, jobId: JobId, startTime: Instant) = CodeModernizerState().apply {
     lastJobContext.putAll(
         setOf(
             JobDetails.LAST_JOB_ID to jobId.id,
             JobDetails.CONFIGURATION_FILE_PATH to context.configurationFile.path,
             JobDetails.TARGET_JAVA_VERSION to context.targetJavaVersion.description,
             JobDetails.SOURCE_JAVA_VERSION to context.sourceJavaVersion.description,
+            JobDetails.QCT_START_TIME to startTime.toEpochMilli().toString()
         )
     )
     flags.putAll(
@@ -45,7 +48,18 @@ class CodeModernizerState : BaseState() {
     @get:Property
     val flags by map<StateFlags, Boolean>()
 
+    fun isJobOngoing() = flags.getOrDefault(StateFlags.IS_ONGOING, false)
     fun getLatestJobId() = JobId(lastJobContext[JobDetails.LAST_JOB_ID] ?: throw RuntimeException("No Job has been executed!"))
+
+    /**
+     * Return latest job start time or the [Instant.EPOCH] if last job did not have a `registered` start time in state.
+     */
+    fun getLatestJobStartTime(): Instant {
+        val defaultValue = ""
+        val lastStartTime = lastJobContext.getOrDefault(JobDetails.QCT_START_TIME, defaultValue)
+        if (lastStartTime == defaultValue) return Instant.EPOCH
+        return Instant.ofEpochMilli(lastStartTime.toLong())
+    }
 
     fun toSessionContext(project: Project): CodeModernizerSessionContext {
         val configurationFile = lastJobContext[JobDetails.CONFIGURATION_FILE_PATH]?.toVirtualFile()
