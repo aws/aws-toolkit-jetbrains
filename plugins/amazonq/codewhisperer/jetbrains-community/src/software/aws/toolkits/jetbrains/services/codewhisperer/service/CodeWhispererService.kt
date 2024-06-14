@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
-import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationInfo
@@ -69,6 +68,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
@@ -90,6 +90,7 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class CodeWhispererService {
+    private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
     fun showRecommendationsInPopup(
@@ -690,15 +691,9 @@ class CodeWhispererService {
     }
 
     private fun addPopupChildDisposables(popup: JBPopup) {
-        val originalTabExitsBracketsAndQuotes = CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES
-        val originalAutoPopupCompletionLookup = CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP
-
-        CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES = false
-        CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = false
+        codeInsightSettingsFacade.disableCodeInsightUntil(popup)
 
         Disposer.register(popup) {
-            CodeInsightSettings.getInstance().TAB_EXITS_BRACKETS_AND_QUOTES = originalTabExitsBracketsAndQuotes
-            CodeInsightSettings.getInstance().AUTO_POPUP_COMPLETION_LOOKUP = originalAutoPopupCompletionLookup
             CodeWhispererPopupManager.getInstance().reset()
         }
     }
