@@ -26,13 +26,6 @@
         <extensionPoint qualifiedName="amazon.q.codewhisperer.importAdder" interface="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdder" dynamic="true"/>
     </extensionPoints>
 
-    <depends optional="true" config-file="ext-codewhisperer-java.xml">com.intellij.modules.java</depends>
-<!--    <depends optional="true" config-file="ext-codewhisperer-python.xml">com.intellij.modules.python</depends>-->
-    <depends optional="true" config-file="ext-codewhisperer-scala.xml">org.intellij.scala</depends>
-<!--    <depends optional="true" config-file="ext-codewhisperer-kotlin.xml">org.jetbrains.kotlin</depends>-->
-<!--    <depends optional="true" config-file="ext-codewhisperer-shell.xml">com.jetbrains.sh</depends>-->
-<!--    <depends optional="true" config-file="ext-codewhisperer-rust.xml">com.jetbrains.rust</depends>-->
-
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
@@ -76,7 +69,7 @@
     <extensions defaultExtensionNs="amazon.q.codewhisperer">
         <!-- TODO: c/c++ extensions should live its own module instead of jetbrains-core -->
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC"/>
-<!--        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp"/>-->
+        <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp"/>
         <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererFallbackImportAdder"/>
     </extensions>
 
