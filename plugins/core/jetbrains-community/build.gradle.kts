@@ -47,8 +47,8 @@ configurations.testFixturesCompileOnlyApi {
 
 dependencies {
     intellijPlatform {
-        testFramework(TestFrameworkType.Platform.JUnit4)
-        testFramework(TestFrameworkType.Platform.JUnit5)
+        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
         testFramework(TestFrameworkType.Plugin.Java)
     }
 

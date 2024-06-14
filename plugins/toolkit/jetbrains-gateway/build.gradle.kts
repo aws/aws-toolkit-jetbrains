@@ -56,8 +56,8 @@ configurations["intellijPlatformDependency"].dependencies.addLater(
 
 dependencies {
     intellijPlatform {
-        testFramework(TestFrameworkType.Platform.JUnit5)
-        testFramework(TestFrameworkType.Platform.Bundled)
+        testFramework(TestFrameworkType.JUnit5)
+        testFramework(TestFrameworkType.Bundled)
     }
 
     // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway

@@ -11,10 +11,6 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IU)
 }
 
-intellij {
-    plugins.add(project(":plugin-core"))
-}
-
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core", "pluginZip"))
