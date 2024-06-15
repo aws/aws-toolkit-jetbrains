@@ -28,6 +28,7 @@ import java.nio.file.Files
 @Ignore("testing for memory leaks")
 class Dotnet60LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda6X", LambdaRuntime.DOTNET6_0)
 
+@Ignore("testing for memory leaks")
 class Dotnet60LocalLambdaImageRunConfigurationIntegrationTest :
     DotnetLocalLambdaImageRunConfigurationIntegrationTestBase("ImageLambda6X", LambdaRuntime.DOTNET6_0)
 
