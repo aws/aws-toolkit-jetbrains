@@ -23,7 +23,7 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
         var isComplete: Boolean = false
             private set
 
-        fun commit():  ChangeAndRevert<T> {
+        fun commit(): ChangeAndRevert<T> {
             p.setter.call(value)
             return this
         }

@@ -43,7 +43,7 @@ class CodeInsightsSettingsFacadeTest {
 
         sut.disableCodeInsightUntil(disposable)
 
-        val random = Random(0).nextInt(1,10)
+        val random = Random(0).nextInt(1, 10)
         repeat(random) {
             assertThat(settings.TAB_EXITS_BRACKETS_AND_QUOTES).isFalse
             assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isFalse
