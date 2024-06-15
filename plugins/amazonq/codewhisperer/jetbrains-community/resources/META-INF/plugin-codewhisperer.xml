@@ -2,8 +2,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <idea-plugin>
-    <depends>com.intellij.modules.lang</depends>
-
     <applicationListeners>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUIChangeListener"
                   topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupStateChangeListener"/>
