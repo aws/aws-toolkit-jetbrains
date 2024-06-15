@@ -70,6 +70,10 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
             registerDisposable(parentDisposable)
             pendingReverts.add(this)
         }.commit()
+
+        Disposer.register(parentDisposable) {
+            revertAll()
+        }
     }
 
     override fun dispose() {
