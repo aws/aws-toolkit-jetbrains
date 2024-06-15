@@ -60,7 +60,6 @@ val integTestTask = tasks.register<Test>("integrationTest") {
         environment.remove("AWS_ACCESS_KEY_ID")
         environment.remove("AWS_SECRET_ACCESS_KEY")
         environment.remove("AWS_SESSION_TOKEN")
-        maxHeapSize = "8192"
     }
 
     mustRunAfter(tasks.test)
