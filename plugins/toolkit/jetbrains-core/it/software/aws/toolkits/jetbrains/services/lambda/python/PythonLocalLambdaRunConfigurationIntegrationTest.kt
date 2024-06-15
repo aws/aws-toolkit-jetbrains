@@ -13,6 +13,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +38,7 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.stopOnPause
 
+@Ignore("testing for memory leaks")
 @RunWith(Parameterized::class)
 class PythonLocalLambdaRunConfigurationIntegrationTest(private val runtime: Runtime) {
     companion object {

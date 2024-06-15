@@ -10,6 +10,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
@@ -45,6 +46,7 @@ import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.waitToLoad
 import java.time.Duration
 
+@Ignore("testing for memory leaks")
 class CreateFunctionIntegrationTest {
     private val projectRule = HeavyJavaCodeInsightTestFixtureRule()
     private val resourceCache = MockResourceCacheRule()

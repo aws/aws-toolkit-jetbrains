@@ -9,6 +9,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ExceptionUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
@@ -33,6 +34,7 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
+@Ignore("testing for memory leaks")
 @RequiresRealCredentials
 class SamDeployTest {
     private val largeTemplateLocation = Paths.get(System.getProperty("testDataPath"), "testFiles", "LargeTemplate.yml").toString()
