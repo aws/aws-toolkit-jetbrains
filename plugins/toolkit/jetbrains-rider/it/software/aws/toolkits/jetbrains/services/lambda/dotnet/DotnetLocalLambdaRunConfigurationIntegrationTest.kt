@@ -11,6 +11,7 @@ import com.jetbrains.rider.test.scriptingApi.removeAllBreakpoints
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
+import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.utils.jsonToMap
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import java.nio.file.Files
 
+@Ignore("testing for memory leaks")
 class Dotnet60LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda6X", LambdaRuntime.DOTNET6_0)
 
 class Dotnet60LocalLambdaImageRunConfigurationIntegrationTest :
