@@ -11,9 +11,7 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.resources.message
-import java.nio.file.Files
 import java.nio.file.Path
-import java.util.UUID
 
 data class BuildLambdaRequest(
     val templatePath: Path,
@@ -26,14 +24,12 @@ data class BuildLambdaRequest(
 
 class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
-    private val gradleUserHome = Files.createTempDirectory("test-gradle-user-home-${UUID.randomUUID()}").toAbsolutePath().toString()
-    private val buildEnvVars = mapOf("GRADLE_USER_HOME" to gradleUserHome)
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
         templatePath = request.templatePath,
         logicalId = request.logicalId,
         buildDir = request.buildDir,
-        environmentVariables = buildEnvVars,
+        environmentVariables = request.buildEnvVars,
         samOptions = request.samOptions
     )
 

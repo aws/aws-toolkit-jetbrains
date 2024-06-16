@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTem
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWaitRider
 import software.aws.toolkits.jetbrains.utils.jsonToMap
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
-import java.io.File
 import java.nio.file.Files
 
 class Dotnet60LocalLambdaRunConfigurationIntegrationTest : DotnetLocalLambdaRunConfigurationIntegrationTestBase("EchoLambda6X", LambdaRuntime.DOTNET6_0)
@@ -40,7 +39,6 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     private val handler = "EchoLambda::EchoLambda.Function::FunctionHandler"
 
     private var initialImmediateWindow: Boolean = false
-    private val solutionDirectoryPath: String = this.getSolutionDirectoryName()
 
     @BeforeMethod
     fun setUp() {
@@ -56,7 +54,6 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
     @AfterMethod
     fun tearDown() {
         PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
-        File(solutionDirectoryPath).deleteRecursively()
     }
 
     override fun getSolutionDirectoryName(): String = "testData/solutions/$solutionName"
@@ -136,7 +133,6 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
 
     private var initialImmediateWindow: Boolean = false
-    private val solutionDirectoryPath: String = this.getSolutionDirectoryName()
 
     @BeforeMethod
     fun setUp() {
@@ -153,7 +149,6 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
     fun tearDown() {
         PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
         removeAllBreakpoints(project)
-        File(solutionDirectoryPath).deleteRecursively()
     }
 
     override fun getSolutionDirectoryName(): String = "testData/solutions/$solutionName"
