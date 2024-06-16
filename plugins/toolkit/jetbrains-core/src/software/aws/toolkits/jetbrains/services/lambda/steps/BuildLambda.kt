@@ -26,6 +26,7 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
+
         templatePath = request.templatePath,
         logicalId = request.logicalId,
         buildDir = request.buildDir,
