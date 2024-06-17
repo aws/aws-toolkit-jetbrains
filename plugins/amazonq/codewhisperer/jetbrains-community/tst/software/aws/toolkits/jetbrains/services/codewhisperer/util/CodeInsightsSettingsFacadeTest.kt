@@ -22,7 +22,6 @@ class CodeInsightsSettingsFacadeTest {
     private lateinit var sut: CodeInsightsSettingsFacade
     private lateinit var myDisposable: Disposable
 
-
     @BeforeEach
     fun setUp() {
         sut = CodeInsightsSettingsFacade()
