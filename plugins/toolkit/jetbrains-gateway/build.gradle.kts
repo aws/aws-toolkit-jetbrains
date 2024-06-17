@@ -13,6 +13,7 @@ plugins {
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
+    id("toolkit-publishing-conventions")
 }
 
 intellijToolkit {
@@ -164,32 +165,7 @@ tasks.buildPlugin {
     archiveClassifier.set(classifier)
 }
 
-val publishToken: String by project
-val publishChannel: String by project
-tasks.publishPlugin {
-    token.set(publishToken)
-    channels.set(publishChannel.split(",").map { it.trim() })
-}
-
 tasks.integrationTest {
     val testToken = RandomString.make(32)
     environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)
-}
-
-configurations {
-    all {
-        // IDE provides netty
-        exclude("io.netty")
-    }
-
-    // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
-    runtimeClasspath {
-        exclude(group = "org.slf4j")
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-    }
-}
-
-tasks.check {
-    dependsOn(tasks.verifyPlugin)
 }

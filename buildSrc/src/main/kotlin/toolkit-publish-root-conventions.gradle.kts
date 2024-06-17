@@ -40,17 +40,7 @@ if (!project.isCi()) {
 }
 
 intellijPlatform {
-    instrumentCode = true
-    verifyPlugin {
-        // need to tune this
-        failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
-
-        ides {
-            // recommended() appears to resolve latest EAP for a product?git
-            ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
-            ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
-        }
-    }
+    instrumentCode = false
 }
 
 dependencies {
