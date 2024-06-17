@@ -47,7 +47,7 @@ import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecut
 import software.aws.toolkits.jetbrains.gateway.inProgress
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.awt.Color
 import java.awt.FlowLayout
@@ -171,7 +171,7 @@ class PauseAction(private val ws: Workspace, private val workspaceList: Workspac
     override fun actionPerformed(e: AnActionEvent) {
         val result = Messages.showYesNoCancelDialog(message("caws.pause_warning"), message("caws.pause_warning_title"), null)
         if (result != Messages.YES) return
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 ThinClientTrackerService.getInstance().terminateIfRunning(ws.identifier.id)
                 cawsClient.stopDevEnvironment {
@@ -200,7 +200,7 @@ class TerminateAction(private val ws: Workspace, private val workspaceList: Work
     override fun actionPerformed(e: AnActionEvent) {
         val result = Messages.showYesNoDialog(message("caws.delete_workspace_warning"), message("caws.delete_workspace_warning_title"), null)
         if (result != Messages.YES) return
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 cawsClient.deleteDevEnvironment {
                     it.spaceName(ws.identifier.project.space)

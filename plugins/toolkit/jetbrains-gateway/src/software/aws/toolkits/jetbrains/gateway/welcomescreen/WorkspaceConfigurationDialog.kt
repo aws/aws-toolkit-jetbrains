@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.gateway.cawsEnvironmentTimeout
 import software.aws.toolkits.jetbrains.gateway.ideVersionComboBox
 import software.aws.toolkits.jetbrains.services.caws.InactivityTimeout
 import software.aws.toolkits.jetbrains.services.caws.loadParameterDescriptions
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import software.aws.toolkits.telemetry.CodecatalystUpdateDevEnvironmentLocationType
@@ -94,11 +94,11 @@ class WorkspaceConfigurationDialog private constructor(cawsClient: CodeCatalystC
                 dialog.setPreferredFocusComponent(content)
                 dialog.setOkText(message("general.update_button"))
                 dialog.setOkOperation {
-                    executeOnPooledThreadWithParentContext {
+                    pluginAwareExecuteOnPooledThread {
                         val errors = content.panel.validateAll()
                         errors.firstOrNull()?.let {
                             dialog.setErrorText(it.message, it.component)
-                            return@executeOnPooledThreadWithParentContext
+                            return@pluginAwareExecuteOnPooledThread
                         }
                         content.panel.apply()
 
