@@ -7,6 +7,7 @@ import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SimpleModificationTracker
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import kotlin.reflect.KMutableProperty
 
@@ -15,7 +16,7 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
         CodeInsightSettings.getInstance()
     }
 
-    private var pendingReverts = mutableListOf<ChangeAndRevert<*>>()
+    private var pendingReverts = listOf<ChangeAndRevert<*>>()
 
     inner class ChangeAndRevert<T : Any>(
         val p: KMutableProperty<T>,
@@ -62,16 +63,22 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
 
     fun disableCodeInsightUntil(parentDisposable: Disposable) {
         revertAll()
-        println(settings.hashCode())
+        val toReverts = mutableListOf<ChangeAndRevert<*>>()
+
         ChangeAndRevert(settings::TAB_EXITS_BRACKETS_AND_QUOTES, false).apply {
             registerDisposable(parentDisposable)
-            pendingReverts.add(this)
+            toReverts.add(this)
         }.commit()
 
         ChangeAndRevert(settings::AUTO_POPUP_COMPLETION_LOOKUP, false).apply {
             registerDisposable(parentDisposable)
-            pendingReverts.add(this)
+            toReverts.add(this)
         }.commit()
+
+        if (pendingReverts.count { !it.isComplete } != 0) {
+            LOG.error { "trying to overwrite users' settings without reverting all previous overwrites" }
+        }
+        pendingReverts = toReverts
 
         Disposer.register(parentDisposable) {
             revertAll()

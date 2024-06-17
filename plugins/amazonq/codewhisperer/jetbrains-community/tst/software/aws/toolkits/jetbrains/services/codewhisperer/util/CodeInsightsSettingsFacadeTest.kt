@@ -32,7 +32,6 @@ class CodeInsightsSettingsFacadeTest {
     @Test
     fun `should revert when parent is disposed test 1`(@TestDisposable disposable: Disposable) {
         Disposer.register(disposable, myDisposable)
-        println(settings.hashCode())
 
         ApplicationManager.getApplication().replaceService(
             CodeInsightSettings::class.java,
