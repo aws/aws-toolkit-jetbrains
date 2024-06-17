@@ -6,6 +6,8 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
+import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.profiles.Profile
@@ -30,18 +32,21 @@ import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
 import java.io.IOException
 
+private val LOG = LoggerFactory.getLogger("LoginUtils")
+
 sealed interface Login {
     val id: CredentialSourceId
 
     data class BuilderId(
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onError: (Exception) -> Unit
+        val onError: (Exception) -> Unit,
+        val onSuccess: () -> Unit
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
         fun loginBuilderId(project: Project): Boolean {
-            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError)
+            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError, onSuccess)
             return true
         }
     }
@@ -58,12 +63,9 @@ sealed interface Login {
 
         fun loginIdc(project: Project): AwsBearerTokenConnection? {
             // we have this check here so we blow up early if user has an invalid config file
-            try {
+            LOG.tryOrNull("Failed to read sso sessions file", level = Level.ERROR) {
                 configFilesFacade.readSsoSessions()
-            } catch (e: Exception) {
-                println("Failed to read sso sessions file")
-                return null
-            }
+            } ?: return null
 
             val profile = UserConfigSsoSessionProfile(
                 configSessionName = validatedSsoIdentifierFromUrl(startUrl),
