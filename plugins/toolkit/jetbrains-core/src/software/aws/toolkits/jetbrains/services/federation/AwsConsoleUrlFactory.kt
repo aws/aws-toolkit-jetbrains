@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
@@ -22,6 +21,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
 import software.aws.toolkits.resources.message
@@ -151,7 +151,7 @@ object AwsConsoleUrlFactory {
             return
         }
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        executeOnPooledThreadWithParentContext {
             try {
                 val encodedArn = URLEncoder.encode(arn, Charsets.UTF_8)
                 val encodedUa = URLEncoder.encode(AwsClientManager.getUserAgent(), Charsets.UTF_8)

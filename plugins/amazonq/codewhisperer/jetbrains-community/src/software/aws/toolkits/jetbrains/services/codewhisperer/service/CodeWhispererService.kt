@@ -78,6 +78,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
@@ -110,7 +111,7 @@ class CodeWhispererService {
         if (isQExpired(project)) {
             // say the connection is un-refreshable if refresh fails for 3 times
             val shouldReauth = if (refreshFailure < MAX_REFRESH_ATTEMPT) {
-                ApplicationManager.getApplication().executeOnPooledThread<Boolean> {
+                executeOnPooledThreadWithParentContext {
                     promptReAuth(project)
                 }.get().also { success ->
                     if (!success) {

@@ -18,25 +18,23 @@ class PluginResolver private constructor(callerStackTrace: Array<StackTraceEleme
             .firstNotNullOfOrNull { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(it.className) }
     }
 
-    val product: AWSProduct =
-        when (pluginDescriptor?.pluginId?.idString) {
+    val product: AWSProduct
+        get() = when (pluginDescriptor?.pluginId?.idString) {
             "amazon.q" -> AWSProduct.AMAZON_Q_FOR_JET_BRAINS
             else -> AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS
         }
 
-    val version = pluginDescriptor?.version ?: "unknown"
+    val version: String
+        get() = pluginDescriptor?.version ?: "unknown"
 
     companion object {
         private val threadLocalResolver = ThreadLocal<PluginResolver>()
 
         /**
          * Creates a new PluginResolver instance off the current thread's stack trace, or retrieves
-         * the existing thread-local resolver if it is set. If a value did not previously exist,
-         * the new instance is stored in the thread-local.
+         * the thread-local resolver if one is set.
          */
-        fun fromCurrentThread() = threadLocalResolver.get() ?: PluginResolver(Thread.currentThread().stackTrace).also {
-            threadLocalResolver.set(it)
-        }
+        fun fromCurrentThread() = threadLocalResolver.get() ?: PluginResolver(Thread.currentThread().stackTrace)
 
         /**
          * Creates a new PluginResolver instance from a provided stack trace.
@@ -44,8 +42,8 @@ class PluginResolver private constructor(callerStackTrace: Array<StackTraceEleme
         fun fromStackTrace(stackTrace: Array<StackTraceElement>) = PluginResolver(stackTrace)
 
         /**
-         * Sets the PluginResolver instance in a thread-local for the current thread.
-         * This is useful
+         * Sets a PluginResolver instance to a thread-local for the current thread.
+         * This value will be retrieved by subsequent calls to fromCurrentThread.
          */
         fun setThreadLocal(value: PluginResolver) {
             threadLocalResolver.set(value)

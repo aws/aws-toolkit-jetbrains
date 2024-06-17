@@ -77,8 +77,8 @@ fun sleepWithCancellation(sleepAmount: Duration, indicator: ProgressIndicator?) 
 
 fun <T> executeOnPooledThreadWithParentContext(action: () -> T): Future<T> {
     /**
-     * Ensures plugin resolution references original call stack since worker
-     * thread will not contain it. Necessary for telemetry.
+     * Ensures plugin resolution references parent thread plugin resolver since
+     * worker thread will not contain original call stack. Necessary for telemetry.
      */
     val pluginResolver = PluginResolver.fromCurrentThread()
     return ApplicationManager.getApplication().executeOnPooledThread<T> {

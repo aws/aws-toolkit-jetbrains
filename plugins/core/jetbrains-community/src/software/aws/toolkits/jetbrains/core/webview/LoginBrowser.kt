@@ -181,8 +181,8 @@ abstract class LoginBrowser(
         }
     }
 
-    protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> {
-        return executeOnPooledThreadWithParentContext {
+    protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> =
+        executeOnPooledThreadWithParentContext {
             runBlocking {
                 withBackgroundProgress(project, message("credentials.pending.title")) {
                     blockingContext {
@@ -191,7 +191,6 @@ abstract class LoginBrowser(
                 }
             }
         }
-    }
 
     abstract fun loadWebView(query: JBCefJSQuery)
 

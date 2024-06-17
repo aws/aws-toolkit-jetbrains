@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.core.explorer.actions
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.core.explorer.DeleteResourceDialog
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerResourceNode
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -29,7 +29,7 @@ abstract class DeleteResourceAction<in T : AwsExplorerResourceNode<*>> : SingleR
         if (!response) {
             AwsTelemetry.deleteResource(project = selected.project, serviceType = selected.serviceId, result = Result.Cancelled)
         } else {
-            ApplicationManager.getApplication().executeOnPooledThread {
+            executeOnPooledThreadWithParentContext {
                 try {
                     performDelete(selected)
                     notifyInfo(project = selected.project, title = message("delete_resource.deleted", resourceType, resourceName))

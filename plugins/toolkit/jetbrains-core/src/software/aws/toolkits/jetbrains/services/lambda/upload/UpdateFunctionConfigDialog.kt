@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.upload
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
@@ -17,6 +16,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.waitForUpdatableState
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
@@ -81,7 +81,7 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
         val functionDetails = viewToFunctionDetails()
         val lambdaClient: LambdaClient = project.awsClient()
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        executeOnPooledThreadWithParentContext {
             try {
                 lambdaClient.waitForUpdatableState(functionDetails.name)
                 lambdaClient.updateFunctionConfiguration(functionDetails)

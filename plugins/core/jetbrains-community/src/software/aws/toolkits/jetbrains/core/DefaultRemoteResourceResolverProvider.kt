@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkits.core.utils.UrlFetcher
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -23,7 +23,7 @@ class DefaultRemoteResourceResolverProvider : RemoteResourceResolverProvider {
 
             DefaultRemoteResourceResolver(HttpRequestUrlFetcher, cachePath) {
                 val future = CompletableFuture<Path>()
-                ApplicationManager.getApplication().executeOnPooledThread {
+                executeOnPooledThreadWithParentContext {
                     try {
                         future.complete(it.call())
                     } catch (e: Exception) {

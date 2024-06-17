@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
+import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 
@@ -54,7 +55,7 @@ open class CawsLoginOverlay(
 
             row {
                 button(message("caws.login")) {
-                    ApplicationManager.getApplication().executeOnPooledThread {
+                    executeOnPooledThreadWithParentContext {
                         CodeCatalystCredentialManager.getInstance(project).promptAuth()
                     }
                 }.applyToComponent {
