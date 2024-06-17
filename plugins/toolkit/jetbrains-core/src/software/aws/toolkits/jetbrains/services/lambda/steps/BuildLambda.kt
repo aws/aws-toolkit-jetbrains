@@ -27,7 +27,7 @@ data class BuildLambdaRequest(
 
 class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
-    private val buildEnvVars = mapOf("GRADLE_USER_HOME" to gradleUserHome)
+    private val buildEnvVars = mapOf("GRADLE_USER_HOME" to gradleUserHomeDir)
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
 
@@ -44,13 +44,13 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
 
     companion object {
         val BUILT_LAMBDA = AttributeBagKey.create<BuiltLambda>("BUILT_LAMBDA")
-        private val gradleUserHome = Files.createTempDirectory("test-gradle-user-home").toAbsolutePath().toString()
+        private val gradleUserHomeDir = Files.createTempDirectory("test-gradle-user-home").toAbsolutePath().toString()
 
         @JvmStatic
         @AfterClass
-        fun cleanupTempDir() {
+        fun cleanupGradleUserHomeDir() {
             try {
-                Files.deleteIfExists(Path.of(gradleUserHome))
+                Files.deleteIfExists(Path.of(gradleUserHomeDir))
             } catch (e: IOException) {
                 e.printStackTrace()
             }
