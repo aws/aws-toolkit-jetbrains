@@ -6,7 +6,7 @@ import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
-    id("org.jetbrains.intellij.platform")
+    id("toolkit-intellij-plugin")
 }
 
 intellijPlatform {
@@ -23,7 +23,7 @@ intellijPlatform {
         failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
 
         ides {
-            // recommended() appears to resolve latest EAP for a product?git
+            // recommended() appears to resolve latest EAP for a product?
             ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
             ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
         }
