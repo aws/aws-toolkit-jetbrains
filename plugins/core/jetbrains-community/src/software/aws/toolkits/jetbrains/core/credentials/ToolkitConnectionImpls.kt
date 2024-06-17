@@ -47,7 +47,7 @@ class LegacyManagedBearerSsoConnection(
     region,
     scopes,
     cache,
-    ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region),
+    ToolkitBearerTokenProvider.ssoIdentifier(),
     ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 )
 

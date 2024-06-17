@@ -3,20 +3,20 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
-<!--        <div class="font-amazon" v-if="existConnections.length > 0">-->
-<!--            <div class="title bottom-small-gap">Connect with an existing account:</div>-->
-<!--            <div v-for="(connection, index) in this.existConnections" :key="index">-->
-<!--                <SelectableItem-->
-<!--                    @toggle="toggleItemSelection"-->
-<!--                    :isSelected="selectedLoginOption === connection.id"-->
-<!--                    :itemId="connection.id"-->
-<!--                    :login-type="this.connectionType(connection)"-->
-<!--                    :itemTitle="this.connectionDisplayedName(connection)"-->
-<!--                    :itemText="this.connectionTypeDescription(connection)"-->
-<!--                    class="bottom-small-gap"-->
-<!--                ></SelectableItem>-->
-<!--            </div>-->
-<!--        </div>-->
+        <div class="font-amazon" v-if="existConnections.length > 0">
+            <div class="title bottom-small-gap">Connect with an existing account:</div>
+            <div v-for="(connection, index) in this.existConnections" :key="index">
+                <SelectableItem
+                    @toggle="toggleItemSelection"
+                    :isSelected="selectedLoginOption === connection.id"
+                    :itemId="connection.id"
+                    :login-type="this.connectionType(connection)"
+                    :itemTitle="this.connectionDisplayedName(connection)"
+                    :itemText="this.connectionTypeDescription(connection)"
+                    class="bottom-small-gap"
+                ></SelectableItem>
+            </div>
+        </div>
 
         <div class="title font-amazon bottom-small-gap" v-if="existingLogin.id === -1">Choose a sign-in option:</div>
         <SelectableItem
@@ -51,7 +51,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
-import {AwsBearerTokenConnection, BuilderId,  Feature, LoginIdentifier, SONO_URL, Stage} from "../../model";
+import {AwsBearerTokenConnection, BuilderId, ExistConnection, Feature, LoginIdentifier, SONO_URL, Stage} from "../../model";
 import {AWS_BUILDER_ID_NAME, IDENTITY_CENTER_NAME} from "../../constants"
 
 export default defineComponent({
@@ -70,9 +70,9 @@ export default defineComponent({
         feature(): Feature {
             return this.$store.state.feature
         },
-        // existConnections(): AwsBearerTokenConnection[] {
-        //     return this.$store.state.existingConnections
-        // }
+        existConnections(): AwsBearerTokenConnection[] {
+            return this.$store.state.existingConnections
+        }
     },
     data() {
         return {
@@ -97,7 +97,7 @@ export default defineComponent({
             } else {
                 // TODO: else ... is not precise
                 // TODO: should pass the entire connection json obj instead of connection id only
-                // this.$emit('login', new ExistConnection(this.selectedLoginOption))
+                 this.$emit('login', new ExistConnection(this.selectedLoginOption))
             }
         },
         // TODO: duplicates in toolkitOptions, should leverage model/LoginOption interface

@@ -3,7 +3,7 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
-        <!--div class="font-amazon" v-if="existConnections.length > 0">
+        <div class="font-amazon" v-if="existConnections.length > 0">
             <div class="title bottom-small-gap">Connect with an existing account:</div>
             <div v-for="(connection, index) in this.existConnections" :key="index">
                 <SelectableItem
@@ -16,7 +16,7 @@
                     class="bottom-small-gap"
                 ></SelectableItem>
             </div>
-        </div-->
+        </div>
 
         <div class="title font-amazon bottom-small-gap">Choose a sign-in option:</div>
         <SelectableItem

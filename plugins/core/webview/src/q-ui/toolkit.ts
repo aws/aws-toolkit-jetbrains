@@ -22,7 +22,7 @@ const store = createStore<State>({
         },
         feature: 'awsExplorer',
         cancellable: false,
-        // existingConnections: [] as AwsBearerTokenConnection[]
+        existingConnections: [] as AwsBearerTokenConnection[]
     },
     getters: {},
     mutations: {
@@ -45,9 +45,9 @@ const store = createStore<State>({
         setCancellable(state: State, cancellable: boolean) {
             state.cancellable = cancellable
         },
-        // setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
-        //     state.existingConnections = connections
-        // },
+        setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
+            state.existingConnections = connections
+        },
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []

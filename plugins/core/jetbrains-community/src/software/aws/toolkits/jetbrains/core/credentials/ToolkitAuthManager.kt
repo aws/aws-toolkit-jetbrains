@@ -42,8 +42,6 @@ interface AwsBearerTokenConnection : ToolkitConnection {
     val startUrl: String
     val region: String
     val scopes: List<String>
-    override val id: String
-        get() = "abc"
 
     override fun getConnectionSettings(): TokenConnectionSettings
 }
@@ -65,10 +63,6 @@ data class UserConfigSsoSessionProfile(
     val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
 }
-
-
-
-
 
 data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
@@ -131,7 +125,7 @@ fun loginSso(
         return connection
     }
 
-    val connectionId = ToolkitBearerTokenProvider.ssoIdentifier(startUrl, region)
+    val connectionId = ToolkitBearerTokenProvider.ssoIdentifier()
 
     val manager = ToolkitAuthManager.getInstance()
     val allScopes = requestedScopes.toMutableSet()
@@ -149,28 +143,6 @@ fun loginSso(
                 )
             )
 
-        // There is an existing connection we can use
-//        if (!requestedScopes.all { it in connection.scopes }) {
-//            allScopes.addAll(connection.scopes)
-//
-//            logger.info {
-//                """
-//                    Forcing reauth on ${connection.id} since requested scopes ($requestedScopes)
-//                    are not a complete subset of current scopes (${connection.scopes})
-//                """.trimIndent()
-//            }
-//            // can't reuse since requested scopes are not in current connection. forcing reauth
-//            return createAndAuthNewConnection(
-//                ManagedSsoProfile(
-//                    region,
-//                    startUrl,
-//                    allScopes.toList()
-//                )
-//            )
-//        }
-//
-//        // For the case when the existing connection is in invalid state, we need to re-auth
-//        reauthConnectionIfNeeded(project, connection)
         return connection
     } ?: run {
         // No existing connection, start from scratch

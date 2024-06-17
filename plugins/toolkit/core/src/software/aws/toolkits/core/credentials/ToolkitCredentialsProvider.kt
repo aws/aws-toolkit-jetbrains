@@ -6,6 +6,7 @@ package software.aws.toolkits.core.credentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.aws.toolkits.resources.message
+import java.util.UUID
 
 enum class CredentialType {
     StaticProfile,
@@ -128,7 +129,7 @@ interface ToolkitBearerTokenProviderDelegate : SdkTokenProvider, ToolkitAuthenti
 class ToolkitBearerTokenProvider(val delegate: ToolkitBearerTokenProviderDelegate) : SdkTokenProvider by delegate, ToolkitAuthenticationProvider by delegate {
     companion object {
         // TODO: is there a better place for this
-        fun ssoIdentifier(startUrl: String, region: String = DEFAULT_SSO_REGION) = "sso;$region;$startUrl"
+        fun ssoIdentifier() =  UUID.randomUUID().toString()
 
         // TODO: For AWS Builder ID, we only have startUrl for now instead of each users' metadata data i.e. Email address
         fun ssoDisplayName(startUrl: String) = if (startUrl == SONO_URL) {
