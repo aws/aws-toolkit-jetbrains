@@ -11,7 +11,9 @@ import software.aws.toolkits.core.utils.getLogger
 import kotlin.reflect.KMutableProperty
 
 class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
-    private val settings = CodeInsightSettings.getInstance()
+    private val settings by lazy {
+        CodeInsightSettings.getInstance()
+    }
 
     private var pendingReverts = mutableListOf<ChangeAndRevert<*>>()
 
@@ -60,7 +62,7 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
 
     fun disableCodeInsightUntil(parentDisposable: Disposable) {
         revertAll()
-
+        println(settings.hashCode())
         ChangeAndRevert(settings::TAB_EXITS_BRACKETS_AND_QUOTES, false).apply {
             registerDisposable(parentDisposable)
             pendingReverts.add(this)
