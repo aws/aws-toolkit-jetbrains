@@ -9,12 +9,12 @@ import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.never
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
@@ -46,12 +47,12 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     fun `ArtifactHandler notifies users if patch does not exist`() = runBlocking {
         setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
-        val expectedError = "test error"
-        doNothing().whenever(handler).notifyUnableToApplyPatch(expectedError)
-        val result = DownloadArtifactResult.Failure(expectedError)
+        val expectedError = ParseZipFailureReason(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, "test error")
+        doNothing().whenever(handler).notifyUnableToApplyPatch(any())
+        val result = DownloadArtifactResult.ParseZipFailure(expectedError)
         doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
         handler.displayDiff(jobId)
-        verify(handler, times(1)).notifyUnableToApplyPatch(expectedError)
+        verify(handler, times(1)).notifyUnableToApplyPatch(any())
     }
 
     @Test
@@ -136,7 +137,10 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     fun `ArtifactHandler could not find build log from path`() = runBlocking {
         setupConnection(BearerTokenAuthState.AUTHORIZED)
         val handler = spy(ArtifactHandler(project, clientAdaptorSpy))
-        val expected = DownloadArtifactResult.Failure("Could not find build log")
+        val expected =
+            DownloadArtifactResult.ParseZipFailure(
+                ParseZipFailureReason(TransformationDownloadArtifactType.LOGS, "Could not find build log")
+            )
         val mockDownloadResult = listOf<ByteArray>()
         doReturn(mockDownloadResult).whenever(clientAdaptorSpy)
             .downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)

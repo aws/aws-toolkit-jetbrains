@@ -35,6 +35,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -65,8 +67,8 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 displayDiffUsingPatch(result.artifact.patch, job)
             }
-
-            is DownloadArtifactResult.Failure -> notifyUnableToApplyPatch(result.errorMessage)
+            is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
+            is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
             is DownloadArtifactResult.Skipped -> {}
         }
@@ -111,9 +113,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     /**
      * Downloads an artifact and returns a [DownloadArtifactResult]
-     * [DownloadArtifactResult.DownloadFailure] indicates failure when downloading artifact
-     * [DownloadArtifactResult.Failure] indicates failure when processing artifact
      * [DownloadArtifactResult.Success] indicates success when downloading and processing artifact
+     * [DownloadArtifactResult.DownloadFailure] indicates failure when downloading artifact
+     * [DownloadArtifactResult.ParseZipFailure] indicates failure when parsing artifact contents
+     * [DownloadArtifactResult.UnzipFailure] indicates failure when unzipping artifact contents to disk
+     * [DownloadArtifactResult.Skipped] indicates a silent failure that should be skipped as [isPreFetch] is set
      */
     suspend fun downloadArtifact(
         job: JobId,
@@ -141,7 +145,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     }
                 } catch (e: RuntimeException) {
                     LOG.error { e.message.toString() }
-                    DownloadArtifactResult.Failure(e.message.orEmpty())
+                    DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
                 }
             }
 
@@ -165,10 +169,19 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             // 3. Convert to zip
             LOG.info { "Downloaded the export result archive, about to transform to zip" }
-
-            val (path, totalDownloadBytes) = unzipToPath(downloadResultsResponse)
-            val zipPath = path.toAbsolutePath().toString()
-            LOG.info { "Successfully converted the download to a zip at $zipPath." }
+            val path: Path
+            val totalDownloadBytes: Int
+            val zipPath: String
+            try {
+                val result = unzipToPath(downloadResultsResponse)
+                path = result.first
+                totalDownloadBytes = result.second
+                zipPath = path.toAbsolutePath().toString()
+                LOG.info { "Successfully converted the download to a zip at $zipPath." }
+            } catch (e: Exception) {
+                LOG.error { e.message.toString() }
+                return DownloadArtifactResult.UnzipFailure(UnzipFailureReason(artifactType, e.message.orEmpty()))
+            }
 
             // 4. Deserialize zip
             var telemetryErrorMessage: String? = null
@@ -188,7 +201,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 LOG.error { e.message.toString() }
                 LOG.error { "Unable to find patch for file: $zipPath" }
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
-                DownloadArtifactResult.Failure(e.message.orEmpty())
+                DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
                 // TODO: add artifact type to telemetry to differentiate downloads for client instructions vs logs
                 telemetry.jobArtifactDownloadAndDeserializeTime(
@@ -366,7 +379,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                         if (result.artifact !is CodeModernizerArtifact) return@launch notifyUnableToShowSummary()
                         showSummaryFromFile(result.artifact.summaryMarkdownFile)
                     }
-                    is DownloadArtifactResult.Failure -> notifyUnableToShowSummary()
+                    is DownloadArtifactResult.ParseZipFailure, is DownloadArtifactResult.UnzipFailure -> notifyUnableToShowSummary()
                     is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
                     is DownloadArtifactResult.Skipped -> {}
                 }
@@ -389,7 +402,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                         }
                     }
 
-                    is DownloadArtifactResult.Failure -> notifyUnableToShowBuildLog()
+                    is DownloadArtifactResult.ParseZipFailure, is DownloadArtifactResult.UnzipFailure -> notifyUnableToShowBuildLog()
                     is DownloadArtifactResult.DownloadFailure -> notifyUnableToDownload(result.failureReason)
                     is DownloadArtifactResult.Skipped -> {}
                 }
