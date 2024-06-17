@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.cloudformation.model.DescribeStacksReques
 import software.amazon.awssdk.services.cloudformation.model.Stack
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import software.aws.toolkits.core.utils.wait
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
@@ -36,14 +36,14 @@ fun CloudFormationClient.executeChangeSetAndWait(stackName: String, changeSet: S
 }
 
 fun CloudFormationClient.describeStack(stackName: String, callback: (Stack?) -> Unit) {
-    executeOnPooledThreadWithParentContext {
+    pluginAwareExecuteOnPooledThread {
         val stack = this.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()
         callback(stack)
     }
 }
 
 fun CloudFormationClient.describeStackForSync(stackName: String, enableParamsAndTags: (Boolean) -> Unit, callback: (Stack?) -> Unit) {
-    executeOnPooledThreadWithParentContext {
+    pluginAwareExecuteOnPooledThread {
         try {
             enableParamsAndTags(false)
             val stack = this.describeStacks { it.stackName(stackName) }.stacks().firstOrNull()

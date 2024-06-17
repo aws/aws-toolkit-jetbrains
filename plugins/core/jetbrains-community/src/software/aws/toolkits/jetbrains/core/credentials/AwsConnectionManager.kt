@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.utils.MRUList
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import java.util.concurrent.atomic.AtomicReference
@@ -169,15 +169,15 @@ abstract class AwsConnectionManager(private val project: Project) : SimpleModifi
 
     private fun validateCredentials(credentialsIdentifier: CredentialIdentifier?, region: AwsRegion?, isInitial: Boolean): AsyncPromise<ConnectionState> {
         val promise = AsyncPromise<ConnectionState>()
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             if (credentialsIdentifier == null || region == null) {
                 promise.setResult(ConnectionState.IncompleteConfiguration(credentialsIdentifier, region))
-                return@executeOnPooledThreadWithParentContext
+                return@pluginAwareExecuteOnPooledThread
             }
 
             if (isInitial && credentialsIdentifier is InteractiveCredential && credentialsIdentifier.userActionRequired()) {
                 promise.setResult(ConnectionState.RequiresUserAction(credentialsIdentifier))
-                return@executeOnPooledThreadWithParentContext
+                return@pluginAwareExecuteOnPooledThread
             }
 
             var success = true

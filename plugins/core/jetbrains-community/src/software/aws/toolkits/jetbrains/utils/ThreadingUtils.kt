@@ -75,7 +75,7 @@ fun sleepWithCancellation(sleepAmount: Duration, indicator: ProgressIndicator?) 
     }
 }
 
-fun <T> executeOnPooledThreadWithParentContext(action: () -> T): Future<T> {
+fun <T> pluginAwareExecuteOnPooledThread(action: () -> T): Future<T> {
     /**
      * Ensures plugin resolution references parent thread plugin resolver since
      * worker thread will not contain original call stack. Necessary for telemetry.

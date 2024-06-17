@@ -21,9 +21,9 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyNoActiveCredentialsError
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.DeeplinkTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -151,7 +151,7 @@ object AwsConsoleUrlFactory {
             return
         }
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 val encodedArn = URLEncoder.encode(arn, Charsets.UTF_8)
                 val encodedUa = URLEncoder.encode(AwsClientManager.getUserAgent(), Charsets.UTF_8)

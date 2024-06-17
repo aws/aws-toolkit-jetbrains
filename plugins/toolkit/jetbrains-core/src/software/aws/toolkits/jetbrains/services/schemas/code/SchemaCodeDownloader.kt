@@ -16,7 +16,7 @@ import software.amazon.awssdk.services.schemas.model.PutCodeBindingRequest
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
@@ -91,7 +91,7 @@ class SchemaCodeDownloader(
 class CodeGenerator(private val schemasClient: SchemasClient) {
     fun generate(schemaDownload: SchemaCodeDownloadRequestDetails): CompletionStage<CodeGenerationStatus> {
         val future = CompletableFuture<CodeGenerationStatus>()
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 val request = PutCodeBindingRequest.builder()
                     .language(schemaDownload.language.apiValue)
@@ -118,7 +118,7 @@ class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
         initialCodeGenerationStatus: CodeGenerationStatus = CodeGenerationStatus.CREATE_IN_PROGRESS
     ): CompletionStage<String> {
         val future = CompletableFuture<String>()
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 if (initialCodeGenerationStatus != CodeGenerationStatus.CREATE_COMPLETE) {
                     schemasClient.waiter().waitUntilCodeBindingExists {
@@ -141,7 +141,7 @@ class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
         schemaDownload: SchemaCodeDownloadRequestDetails
     ): CompletionStage<CodeGenerationStatus> {
         val future = CompletableFuture<CodeGenerationStatus>()
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 val request = DescribeCodeBindingRequest.builder()
                     .language(schemaDownload.language.apiValue)
@@ -168,7 +168,7 @@ class CodeDownloader(private val schemasClient: SchemasClient) {
         schemaDownload: SchemaCodeDownloadRequestDetails
     ): CompletionStage<DownloadedSchemaCode> {
         val future = CompletableFuture<DownloadedSchemaCode>()
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 val request = GetCodeBindingSourceRequest.builder()
                     .language(schemaDownload.language.apiValue)

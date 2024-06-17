@@ -12,7 +12,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.getResource
 import software.aws.toolkits.jetbrains.services.schemas.resources.SchemasResources
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class SchemaSearchExecutor(
     private val project: Project,
@@ -24,7 +24,7 @@ class SchemaSearchExecutor(
         incrementalResultsCallback: OnSearchResultReturned,
         registrySearchErrorCallback: OnSearchResultError
     ) {
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 val results = doSingleSearch(registryName, searchText)
                 incrementalResultsCallback(results.map { SchemaSearchResultWithRegistry(it.name, it.versions, registryName) })

@@ -43,8 +43,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.applyPatch
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.awt.Dimension
@@ -330,7 +330,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         includesFix: Boolean?
     ) {
         runIfIdcConnectionOrTelemetryEnabled(project) {
-            executeOnPooledThreadWithParentContext {
+            pluginAwareExecuteOnPooledThread {
                 try {
                     val response = CodeWhispererClientAdaptor.getInstance(project)
                         .sendCodeScanRemediationTelemetry(

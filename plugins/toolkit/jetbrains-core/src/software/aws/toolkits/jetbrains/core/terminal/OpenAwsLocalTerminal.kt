@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifier
 import software.aws.toolkits.jetbrains.core.experiments.ToolkitExperiment
 import software.aws.toolkits.jetbrains.core.experiments.isEnabled
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -48,13 +48,13 @@ class OpenAwsLocalTerminal : DumbAwareAction(
         when (val state = AwsConnectionManager.getInstance(project).connectionState) {
             is ConnectionState.ValidConnection -> {
                 val connection = state.connection
-                executeOnPooledThreadWithParentContext {
+                pluginAwareExecuteOnPooledThread {
                     val credentials = try {
                         connection.credentials.resolveCredentials()
                     } catch (e: Exception) {
                         LOG.error(e) { message("aws.terminal.exception.failed_to_resolve_credentials", ExceptionUtil.getThrowableText(e)) }
                         AwsTelemetry.openLocalTerminal(project, result = Result.Failed)
-                        return@executeOnPooledThreadWithParentContext
+                        return@pluginAwareExecuteOnPooledThread
                     }
                     runInEdt {
                         val runner = AwsLocalTerminalRunner(project, connection.shortName) { envs ->

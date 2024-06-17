@@ -54,7 +54,7 @@ abstract class CachingAsyncEvaluator<TEntry, TReturn> {
         }
 
         if (promise == asyncPromise) {
-            executeOnPooledThreadWithParentContext {
+            pluginAwareExecuteOnPooledThread {
                 try {
                     val result = getValue(entry)
                     asyncPromise.setResult(result)

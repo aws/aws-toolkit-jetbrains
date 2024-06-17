@@ -11,7 +11,7 @@ import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.shouldSkipInvokingBasedOnRightContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler) : EnterHandler(originalHandler) {
     override fun executeWriteAction(editor: Editor, caret: Caret?, dataContext: DataContext?) {
@@ -21,7 +21,7 @@ class CodeWhispererEnterHandler(private val originalHandler: EditorActionHandler
             return
         }
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.Enter())
         }
     }

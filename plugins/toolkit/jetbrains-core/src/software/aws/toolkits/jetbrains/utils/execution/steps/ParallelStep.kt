@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.utils.execution.steps
 
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 
@@ -31,7 +31,7 @@ abstract class ParallelStep : Step() {
             val stepFuture = CompletableFuture<Unit>()
             listOfChildTasks.add(ChildStep(stepFuture))
 
-            executeOnPooledThreadWithParentContext {
+            pluginAwareExecuteOnPooledThread {
                 try {
                     it.run(context, messageEmitter, ignoreCancellation)
                     stepFuture.complete(null)

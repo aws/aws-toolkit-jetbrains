@@ -18,14 +18,14 @@ import software.aws.toolkits.jetbrains.services.lambda.runtimeGroup
 import software.aws.toolkits.jetbrains.services.lambda.toDataClass
 import software.aws.toolkits.jetbrains.services.lambda.upload.UpdateFunctionCodeDialog
 import software.aws.toolkits.jetbrains.services.lambda.upload.UpdateFunctionConfigDialog
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 
 abstract class UpdateFunctionAction(title: String) : SingleResourceNodeAction<LambdaFunctionNode>(title) {
     override fun actionPerformed(selected: LambdaFunctionNode, e: AnActionEvent) {
         val project = e.getRequiredData(PlatformDataKeys.PROJECT)
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             val client: LambdaClient = project.awsClient()
 
             // Fetch latest version just in case

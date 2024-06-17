@@ -77,13 +77,13 @@ class ThreadingUtilsKtTest {
     }
 
     @Test
-    fun `executeOnPooledThreadWithParentContext inherits plugin resolver`() {
+    fun `pluginAwareExecuteOnPooledThread inherits plugin resolver`() {
         val pluginResolver = mockk<PluginResolver> {
             every { product } returns AWSProduct.AMAZON_Q_FOR_JET_BRAINS
         }
         PluginResolver.setThreadLocal(pluginResolver)
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             assertEquals(PluginResolver.fromCurrentThread().product, AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
         }.get()
     }

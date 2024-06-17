@@ -25,7 +25,7 @@ import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.toEnvironmentVariables
 import software.aws.toolkits.jetbrains.services.lambda.sam.getSamCli
 import software.aws.toolkits.jetbrains.services.lambda.sam.samSyncCommand
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.Path
@@ -78,7 +78,7 @@ class SyncApplicationRunProfile(
                             if (event.text.contains("[Y/n]:") && isDevStack) {
                                 insertAssertionNow = true
                                 isDevStack = false
-                                executeOnPooledThreadWithParentContext {
+                                pluginAwareExecuteOnPooledThread {
                                     try {
                                         while (insertAssertionNow) {
                                             processHandler.processInput?.write("Y\n".toByteArray(Charset.defaultCharset()))

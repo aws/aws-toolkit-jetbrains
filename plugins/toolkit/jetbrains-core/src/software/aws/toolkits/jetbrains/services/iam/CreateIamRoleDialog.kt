@@ -16,7 +16,7 @@ import software.amazon.awssdk.services.iam.model.Role
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.iam.Iam.createRoleWithPolicy
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.ui.formatAndSet
 import software.aws.toolkits.resources.message
 import java.awt.Component
@@ -61,7 +61,7 @@ class CreateIamRoleDialog(
             setOKButtonText(message("general.create_in_progress"))
             isOKActionEnabled = false
 
-            executeOnPooledThreadWithParentContext {
+            pluginAwareExecuteOnPooledThread {
                 try {
                     createIamRole()
                     ApplicationManager.getApplication().invokeLater(

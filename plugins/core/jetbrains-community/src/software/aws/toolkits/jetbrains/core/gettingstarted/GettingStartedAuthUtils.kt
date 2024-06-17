@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConn
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getStartupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -224,7 +224,7 @@ fun requestCredentialsForQ(
 fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
-    executeOnPooledThreadWithParentContext {
+    pluginAwareExecuteOnPooledThread {
         reauthConnectionIfNeeded(project, connection)
     }
 }

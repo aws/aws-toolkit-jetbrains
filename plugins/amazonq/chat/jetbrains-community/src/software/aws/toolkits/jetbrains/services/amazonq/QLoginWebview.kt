@@ -36,9 +36,9 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
@@ -164,7 +164,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             "reauth" -> {
                 ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
                     if (conn is ManagedBearerSsoConnection) {
-                        executeOnPooledThreadWithParentContext {
+                        pluginAwareExecuteOnPooledThread {
                             reauthConnectionIfNeeded(project, conn, onPendingToken)
                         }
                     }

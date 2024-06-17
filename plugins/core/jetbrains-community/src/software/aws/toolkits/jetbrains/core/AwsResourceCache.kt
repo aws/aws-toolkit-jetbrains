@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettingsOrThrow
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -213,7 +213,7 @@ class DefaultAwsResourceCache(
     }
 
     private fun <T> getCachedResource(context: Context<T>) {
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             var currentValue: Entry<T>? = null
             try {
                 @Suppress("UNCHECKED_CAST")

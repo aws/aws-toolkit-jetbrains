@@ -21,11 +21,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyWarn
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
@@ -66,7 +66,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         initFeatureConfigPollingJob(project)
 
         calculateIfIamIdentityCenterConnection(project) {
-            executeOnPooledThreadWithParentContext {
+            pluginAwareExecuteOnPooledThread {
                 CodeWhispererModelConfigurator.getInstance().listCustomizations(project, passive = true)
             }
         }

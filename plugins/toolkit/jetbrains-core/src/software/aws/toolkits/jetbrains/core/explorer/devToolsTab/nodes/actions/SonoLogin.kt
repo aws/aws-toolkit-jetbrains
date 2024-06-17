@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
@@ -20,7 +20,7 @@ class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
         val project = e.project ?: return
         UiTelemetry.click(project, elementId = "auth_start_CodeCatalyst")
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             val connectionManager = ToolkitConnectionManager.getInstance(project)
             connectionManager.activeConnectionForFeature(CodeCatalystConnection.getInstance())?.let {
                 reauthConnectionIfNeeded(project, it)

@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeA
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudformationTelemetry
 import java.time.Duration
@@ -229,7 +229,7 @@ private class StackUI(
 
             override fun setSelected(e: AnActionEvent, newState: Boolean) {
                 if (state.getAndSet(newState) != newState) {
-                    executeOnPooledThreadWithParentContext {
+                    pluginAwareExecuteOnPooledThread {
                         updater.applyFilter {
                             newState || it.resourceStatus().type != StatusType.COMPLETED
                         }

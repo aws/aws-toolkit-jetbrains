@@ -45,7 +45,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.pat.generateAndStorePat
 import software.aws.toolkits.jetbrains.services.caws.pat.patExists
 import software.aws.toolkits.jetbrains.ui.connection.CawsLoginOverlay
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
@@ -83,7 +83,7 @@ class CawsCloneDialogComponent(
 
     override fun doClone(checkoutListener: CheckoutProvider.Listener) {
         val repository = repoList.selectedValue ?: throw RuntimeException("Repository was not selected")
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             val userId = lazilyGetUserId()
             try {
                 // TODO: show progress bar here so it doesn't look like we're stuck

@@ -16,8 +16,8 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.services.lambda.LambdaFunction
 import software.aws.toolkits.jetbrains.services.lambda.waitForUpdatableState
-import software.aws.toolkits.jetbrains.utils.executeOnPooledThreadWithParentContext
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.LambdaPackageType
 import software.aws.toolkits.telemetry.LambdaTelemetry
@@ -81,7 +81,7 @@ class UpdateFunctionConfigDialog(private val project: Project, private val initi
         val functionDetails = viewToFunctionDetails()
         val lambdaClient: LambdaClient = project.awsClient()
 
-        executeOnPooledThreadWithParentContext {
+        pluginAwareExecuteOnPooledThread {
             try {
                 lambdaClient.waitForUpdatableState(functionDetails.name)
                 lambdaClient.updateFunctionConfiguration(functionDetails)
