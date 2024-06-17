@@ -318,6 +318,7 @@ tasks.integrationTest {
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
+    dependsOn(tasks.integrationTestClasses)
 
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
