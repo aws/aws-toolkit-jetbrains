@@ -61,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextProvider
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -120,7 +121,7 @@ class ChatController private constructor(
 
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
         var prompt = message.chatMessage
-        var queryResult = ""
+        var queryResult: List<RelevantDocument> = emptyList()
         if(prompt.startsWith("@ws")){
             prompt = prompt.drop(3)
             queryResult = projectContextProvider.query(prompt)
@@ -128,13 +129,11 @@ class ChatController private constructor(
             prompt = prompt.drop(10)
             queryResult = projectContextProvider.query(prompt)
         }
-        logger.info("chucks!! $queryResult")
-        if(queryResult.length > 0) {
-            prompt = prompt + "\\nHere is relevant code:" + queryResult
-        }
+
         if (prompt.length > 4000) {
             prompt = prompt.substring(0, 3999)
         }
+
         handleChat(
             tabId = message.tabId,
             triggerId = UUID.randomUUID().toString(),
@@ -172,7 +171,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromFollowupType(message.followUp.type),
             TriggerType.Click,
-            ""
+            emptyList()
         )
 
         telemetryHelper.recordInteractWithMessage(message)
@@ -269,7 +268,7 @@ class ChatController private constructor(
             activeFileContext = context,
             userIntent = intentRecognizer.getUserIntentFromOnboardingPageInteraction(message),
             triggerType = TriggerType.Click, // todo trigger type,
-            ""
+            emptyList()
         )
     }
 
@@ -349,7 +348,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
             TriggerType.CodeScanButton,
-            ""
+            emptyList()
         )
     }
 
@@ -365,7 +364,7 @@ class ChatController private constructor(
         activeFileContext: ActiveFileContext,
         userIntent: UserIntent?,
         triggerType: TriggerType,
-        projectContextQueryResult: String
+        projectContextQueryResult: List<RelevantDocument>
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {
@@ -384,6 +383,7 @@ class ChatController private constructor(
             userIntent = userIntent,
             triggerType = triggerType,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
+            projectContextQueryResult
         )
 
         val sessionInfo = getSessionInfo(tabId)

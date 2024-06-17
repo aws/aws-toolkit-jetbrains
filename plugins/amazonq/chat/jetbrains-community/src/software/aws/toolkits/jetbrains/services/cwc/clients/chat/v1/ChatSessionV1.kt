@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.GenerateAssi
 import software.amazon.awssdk.services.codewhispererstreaming.model.Position
 import software.amazon.awssdk.services.codewhispererstreaming.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererstreaming.model.Range
+import software.amazon.awssdk.services.codewhispererstreaming.model.RelevantTextDocument
 import software.amazon.awssdk.services.codewhispererstreaming.model.SupplementaryWebLinksEvent
 import software.amazon.awssdk.services.codewhispererstreaming.model.SymbolType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TextDocument
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Reference
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.SuggestedFollowUp
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 
 class ChatSessionV1(
     private val project: Project,
@@ -197,7 +199,7 @@ class ChatSessionV1(
     private fun ChatRequestData.toChatRequest(): GenerateAssistantResponseRequest {
         val userInputMessageContextBuilder = UserInputMessageContext.builder()
         if (activeFileContext.fileContext != null) {
-            userInputMessageContextBuilder.editorState(activeFileContext.toEditorState())
+            userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantDocuments))
         }
         val userInputMessageContext = userInputMessageContextBuilder.build()
 
@@ -217,7 +219,7 @@ class ChatSessionV1(
             .build()
     }
 
-    private fun ActiveFileContext.toEditorState(): EditorState {
+    private fun ActiveFileContext.toEditorState(relevantDocuments: List<RelevantDocument>): EditorState {
         // Cursor State
         val start = focusAreaContext?.codeSelectionRange?.start
         val end = focusAreaContext?.codeSelectionRange?.end
@@ -274,9 +276,16 @@ class ChatSessionV1(
             documentBuilder.relativeFilePath(filePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT))
         }
 
+        val documents: MutableList<RelevantTextDocument> = mutableListOf()
+        relevantDocuments.forEach{doc -> run {
+            val document = RelevantTextDocument.builder().text(doc.text).relativeFilePath(doc.relativeFilePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT)).build()
+            documents.add(document)
+        }}
+
         return EditorState.builder()
             .cursorState(cursorStateBuilder.build())
             .document(documentBuilder.build())
+            .relevantTextDocuments(documents)
             .build()
     }
 

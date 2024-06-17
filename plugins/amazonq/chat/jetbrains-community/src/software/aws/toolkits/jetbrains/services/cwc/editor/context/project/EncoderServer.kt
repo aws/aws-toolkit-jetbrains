@@ -16,15 +16,19 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
     private val isRunning = AtomicBoolean(false)
-    private val portManager = EncoderServerPortManager.getInstance()
+    private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
     private lateinit var serverThread: Thread
     private var processOutput: ProcessOutput? = null
     private var numberOfRetry = 0
-    var currentPort: String = portManager.getPort()
+    var currentPort: String
+
+    init {
+        portManager.getPort().also { currentPort = it }
+    }
 
     private val serverRunnable = Runnable {
         logger.info("encoder port : $currentPort")
-        while (numberOfRetry < 3) {
+        while (numberOfRetry < 10) {
             runCommand(getCommand())
         }
     }

@@ -3,10 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.gson.Gson
-
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -19,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
@@ -55,6 +57,26 @@ class ProjectContextProvider (val project: Project) : Disposable{
         val filePath: String
     )
 
+   data class Chunk (
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("filePath")
+       val filePath: String ?= null,
+        @JsonProperty("content")
+       val content: String?= null,
+        @JsonProperty("id")
+       val id: String?= null,
+        @JsonProperty("index")
+       val index: String?= null,
+        @JsonProperty("vec")
+       val vec: List<String>?= null,
+        @JsonProperty("context")
+       val context: String?= null,
+        @JsonProperty("prev")
+       val prev: String?= null,
+        @JsonProperty("next")
+       val next: String?= null,
+   )
+
     private fun index() {
         if (!encoderServer.isServerRunning()) {
             logger.info("encoder server is not running, skipping index")
@@ -66,41 +88,60 @@ class ProjectContextProvider (val project: Project) : Disposable{
         val projectRoot = project.guessProjectDir()?.path ?: return
         val payload = IndexRequestPayload(files, projectRoot, true)
         val payloadJson = Gson().toJson(payload)
-        with(url.openConnection() as HttpURLConnection) {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            OutputStreamWriter(outputStream).use {
-                it.write(payloadJson)
+        try{
+            with(url.openConnection() as HttpURLConnection) {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Accept", "application/json")
+                doOutput = true
+                OutputStreamWriter(outputStream).use {
+                    it.write(payloadJson)
+                }
+                val responseCode = responseCode
+                logger.info("Index Response: $responseCode")
             }
-            val responseCode = responseCode
-            logger.info("Index Response: $responseCode")
+        } catch (e: Exception){
+            logger.info("error while indexing: ${e.message}")
         }
     }
 
-    fun query(prompt: String): String {
-        if(!encoderServer.isServerRunning()) {
+    fun query(prompt: String): List<RelevantDocument> {
+        if (!encoderServer.isServerRunning()) {
             logger.info("encoder server is not running, skipping query")
-            return ""
+            return emptyList()
         }
         val port = encoderServer.currentPort
         val url = URL("http://localhost:$port/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = Gson().toJson(payload)
-        with(url.openConnection() as HttpURLConnection) {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Accept", "application/json")
-            doOutput = true
-            OutputStreamWriter(outputStream).use {
-                it.write(payloadJson)
-            }
+        try {
+            with(url.openConnection() as HttpURLConnection) {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Accept", "application/json")
+                doOutput = true
+                OutputStreamWriter(outputStream).use {
+                    it.write(payloadJson)
+                }
 
-            val responseBody = if (responseCode == 200) { inputStream.bufferedReader().use { it.readText() }} else {
-                ""
+                val responseBody = if (responseCode == 200) {
+                    inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    ""
+                }
+
+                val mapper = ObjectMapper()
+                try {
+                    val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
+                    return queryResultToRelevantDocuments(parsedResponse)
+                } catch (e: Exception) {
+                    logger.info("error parsing query response ${e.message}")
+                    return emptyList()
+                }
             }
-            return responseBody
+        } catch (e: Exception) {
+            logger.info("error while querying: ${e.message}")
+            return emptyList()
         }
     }
 
@@ -175,8 +216,28 @@ class ProjectContextProvider (val project: Project) : Disposable{
                 }
             }
         }
-        logger.info {"number of files indexed: $files.length"}
         return files
+    }
+
+    private fun queryResultToRelevantDocuments(queryResult: List<Chunk>) : List<RelevantDocument> {
+        val chunksMap: MutableMap<String, MutableList<Chunk>> = mutableMapOf()
+        queryResult.forEach { chunk ->
+            run {
+                if(chunk.filePath == null) return@forEach
+                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.filePath)) chunksMap[chunk.filePath]!! else mutableListOf()
+                list.add(chunk)
+                chunksMap[chunk.filePath] = list
+            }
+        }
+        val documents: MutableList<RelevantDocument> = mutableListOf()
+        chunksMap.forEach{filePath, chunkList ->
+        run {
+            var text = ""
+            chunkList.forEach() { chunk -> text += (chunk.context ?: chunk.content)}
+            val document = RelevantDocument(filePath, text)
+            documents.add(document)
+        }}
+        return documents
     }
 
     override fun dispose() {
@@ -187,4 +248,5 @@ class ProjectContextProvider (val project: Project) : Disposable{
         private val logger = getLogger<ProjectContextProvider>()
         fun getInstance(project: Project) = project.service<ProjectContextProvider>()
     }
+
 }
