@@ -23,12 +23,6 @@ intellijToolkit {
 
 intellijPlatform {
     projectName = "aws-toolkit-jetbrains"
-
-    verifyPlugin {
-        ides {
-            ide(provider { IntelliJPlatformType.Gateway }, toolkitIntelliJ.version())
-        }
-    }
 }
 
 sourceSets {
@@ -52,15 +46,20 @@ val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
     from(processGatewayOnlyResources)
 }
 
-configurations["intellijPlatformDependency"].dependencies.addLater(
-    toolkitIntelliJ.version().map {
-        dependencies.create(
-            group = "com.jetbrains.gateway",
-            name = "JetBrainsGateway",
-            version = it,
-        )
-    }
-)
+listOf(
+    "intellijPlatformDependency",
+    "intellijPluginVerifierIdesDependency",
+).forEach { configurationName ->
+    configurations[configurationName].dependencies.addLater(
+        toolkitIntelliJ.version().map {
+            dependencies.create(
+                group = "com.jetbrains.gateway",
+                name = "JetBrainsGateway",
+                version = it,
+            )
+        }
+    )
+}
 
 dependencies {
     intellijPlatform {
