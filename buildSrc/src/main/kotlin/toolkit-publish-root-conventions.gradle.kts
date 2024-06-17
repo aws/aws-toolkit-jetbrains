@@ -41,6 +41,14 @@ if (!project.isCi()) {
 
 intellijPlatform {
     instrumentCode = false
+
+    verifyPlugin {
+        ides {
+            // recommended() appears to resolve latest EAP for a product?
+            ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
+            ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
+        }
+    }
 }
 
 dependencies {

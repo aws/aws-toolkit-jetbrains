@@ -3,10 +3,9 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
-    id("toolkit-intellij-plugin")
+    id("org.jetbrains.intellij.platform")
 }
 
 intellijPlatform {
@@ -21,12 +20,6 @@ intellijPlatform {
     verifyPlugin {
         // need to tune this
         failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
-
-        ides {
-            // recommended() appears to resolve latest EAP for a product?
-            ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
-            ide(provider { IntelliJPlatformType.IntellijIdeaUltimate }, toolkitIntelliJ.version())
-        }
     }
 }
 
