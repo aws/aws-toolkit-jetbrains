@@ -207,7 +207,7 @@ data class CodeTransformChatUpdateMessage(
     type = "codeTransformChatUpdateMessage",
 )
 
-data object CodeTransformCreateTab :
+object CodeTransformCreateTab :
     CodeTransformUiMessage(
         tabId = null,
         type = "codeTransformCreateTab",
