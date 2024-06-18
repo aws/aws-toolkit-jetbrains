@@ -6,8 +6,10 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
+import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
@@ -16,12 +18,14 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
@@ -30,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -45,18 +50,24 @@ import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.net.ConnectException
 import java.nio.file.Path
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.net.ssl.SSLHandshakeException
 
 const val ZIP_SOURCES_PATH = "sources"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
-const val MAX_ZIP_SIZE = 1000000000 // 1GB
+const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+
+// constants for handling SDKClientException
+const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
+const val SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: PKIX path building failed"
 
 class CodeModernizerSession(
     val sessionContext: CodeModernizerSessionContext,
@@ -68,6 +79,7 @@ class CodeModernizerSession(
     private val isDisposed = AtomicBoolean(false)
     private val shouldStop = AtomicBoolean(false)
     private val telemetry = CodeTransformTelemetryManager.getInstance(sessionContext.project)
+    private val artifactHandler = ArtifactHandler(sessionContext.project, GumbyClient.getInstance(sessionContext.project))
 
     private var mvnBuildResult: MavenCopyCommandsResult? = null
     private var transformResult: CodeModernizerJobCompletedResult? = null
@@ -133,6 +145,7 @@ class CodeModernizerSession(
         LOG.info { "Starting Modernization Job" }
         val payload: File?
 
+        // Generate zip file
         try {
             if (isDisposed.get()) {
                 LOG.warn { "Disposed when about to create zip to upload" }
@@ -151,6 +164,8 @@ class CodeModernizerSession(
 
             telemetry.jobCreateZipEndTime(payloadSize, startTime)
 
+            LOG.info { "Uploading zip file with size: $payloadSize bytes" }
+
             if (payloadSize > MAX_ZIP_SIZE) {
                 return CodeModernizerStartJobResult.CancelledZipTooLarge
             }
@@ -165,12 +180,67 @@ class CodeModernizerSession(
             }
         }
 
-        return try {
+        // Create upload url and upload zip
+        var uploadId = ""
+        try {
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            val uploadId = uploadPayload(payload)
+            uploadId = uploadPayload(payload)
+        } catch (e: AlreadyDisposedException) {
+            LOG.warn { e.localizedMessage }
+            return CodeModernizerStartJobResult.Disposed
+        } catch (e: ConnectException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
+        } catch (e: SSLHandshakeException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
+        } catch (e: HttpRequests.HttpStatusException) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return if (e.statusCode == 403) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED)
+            } else {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(e.statusCode))
+            }
+        } catch (e: IOException) {
+            if (shouldStop.get()) {
+                // Cancelling during S3 upload will cause IOException of "not enough data written",
+                // so no need to show an IDE error for it
+                LOG.warn { "Job was cancelled by user before start job was called" }
+                return CodeModernizerStartJobResult.Cancelled
+            } else {
+                state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+                state.currentJobStatus = TransformationStatus.FAILED
+                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+            }
+        } catch (e: SdkClientException) {
+            // Errors from code whisperer client will always be thrown as SdkClientException
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return if (e.message.toString().contains(CONNECTION_REFUSED_ERROR)) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
+            } else if (e.message.toString().contains(SSL_HANDSHAKE_ERROR)) {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
+            } else {
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+            }
+        } catch (e: Exception) {
+            state.putJobHistory(sessionContext, TransformationStatus.FAILED)
+            state.currentJobStatus = TransformationStatus.FAILED
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+        } finally {
+            deleteUploadArtifact(payload)
+        }
+
+        // Send upload completion message to chat (only if successful)
+        CodeTransformMessageListener.instance.onUploadResult()
+
+        return try {
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
@@ -179,26 +249,10 @@ class CodeModernizerSession(
             state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
             CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
-        } catch (e: AlreadyDisposedException) {
-            LOG.warn { e.localizedMessage }
-            return CodeModernizerStartJobResult.Disposed
-        } catch (e: IOException) {
-            if (shouldStop.get()) {
-                // Cancelling during S3 upload will cause IOException of "not enough data written",
-                // so no need to show an IDE error for it
-                LOG.warn { "Job was cancelled by user before start job was called" }
-                CodeModernizerStartJobResult.Cancelled
-            } else {
-                state.putJobHistory(sessionContext, TransformationStatus.FAILED)
-                state.currentJobStatus = TransformationStatus.FAILED
-                CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
-            }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
             CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
-        } finally {
-            deleteUploadArtifact(payload)
         }
     }
 
@@ -241,27 +295,13 @@ class CodeModernizerSession(
 
     fun resumeTransformFromHil() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        try {
-            clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.COMPLETED)
-        } catch (e: Exception) {
-            val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
-            LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId?.id)
-            throw e
-        }
+        clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.COMPLETED)
     }
 
     fun rejectHilAndContinue(): ResumeTransformationResponse {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        return try {
-            val jobId = state.currentJobId ?: throw CodeModernizerException("No Job ID found")
-            clientAdaptor.resumeCodeTransformation(jobId, TransformationUserActionStatus.REJECTED)
-        } catch (e: Exception) {
-            val errorMessage = "Unexpected error when resuming transformation: ${e.localizedMessage}"
-            LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.ResumeTransformation, jobId = state.currentJobId?.id)
-            throw e
-        }
+        val jobId = state.currentJobId ?: throw CodeModernizerException("No Job ID found")
+        return clientAdaptor.resumeCodeTransformation(jobId, TransformationUserActionStatus.REJECTED)
     }
 
     fun uploadHilPayload(payload: File): String {
@@ -271,14 +311,7 @@ class CodeModernizerSession(
         }
         val jobId = state.currentJobId ?: throw CodeModernizerException("No Job ID found")
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
-        val createUploadUrlResponse = try {
-            clientAdaptor.createHilUploadUrl(sha256checksum, jobId = jobId)
-        } catch (e: Exception) {
-            val errorMessage = "Unexpected error when creating upload url for HIL: ${e.localizedMessage}"
-            LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.CreateUploadUrl, jobId = state.currentJobId?.id)
-            throw e
-        }
+        val createUploadUrlResponse = clientAdaptor.createHilUploadUrl(sha256checksum, jobId = jobId)
 
         LOG.info {
             "Uploading zip with checksum $sha256checksum using uploadId: ${
@@ -326,7 +359,7 @@ class CodeModernizerSession(
         val createUploadUrlResponse = clientAdaptor.createGumbyUploadUrl(sha256checksum)
 
         LOG.info {
-            "Uploading zip with checksum $sha256checksum using uploadId: ${
+            "Uploading zip at ${payload.path} with checksum $sha256checksum using uploadId: ${
                 createUploadUrlResponse.uploadId()
             } and size ${(payload.length() / 1000).toInt()}kB"
         }
@@ -342,7 +375,7 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading artifact to S3: ${e.localizedMessage}"
+            val errorMessage = "Unexpected error when uploading artifact to S3: $e"
             LOG.error { errorMessage }
             // emit this metric here manually since we don't use callApi(), which emits its own metric
             telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
@@ -450,8 +483,16 @@ class CodeModernizerSession(
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_start_failure")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
                     } else if (!passedBuild) {
-                        val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
-                        return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason)
+                        // This is a short term solution to check if build log is available by attempting to download it.
+                        // In the long term, we should check if build log is available from transformation metadata.
+                        val downloadArtifactResult = artifactHandler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, true)
+                        if (downloadArtifactResult.artifact != null) {
+                            val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, true)
+                        } else {
+                            val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.maven_failed.content")
+                            return CodeModernizerJobCompletedResult.JobFailedInitialBuild(jobId, failureReason, false)
+                        }
                     } else {
                         val failureReason = result.jobDetails?.reason() ?: message("codemodernizer.notification.warn.unknown_status_response")
                         return CodeModernizerJobCompletedResult.JobFailed(jobId, failureReason)
@@ -461,7 +502,7 @@ class CodeModernizerSession(
                 result.succeeded -> CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
 
                 // Should not happen
-                else -> CodeModernizerJobCompletedResult.JobFailed(jobId, result.jobDetails?.reason())
+                else -> CodeModernizerJobCompletedResult.JobFailed(jobId, result.jobDetails?.reason().orEmpty())
             }
         } catch (e: Exception) {
             return when (e) {
@@ -474,7 +515,7 @@ class CodeModernizerSession(
                     LOG.error(e) { e.message.toString() }
                     CodeModernizerJobCompletedResult.RetryableFailure(
                         jobId,
-                        message("codemodernizer.notification.info.modernize_failed.connection_failed", e.localizedMessage),
+                        message("codemodernizer.notification.info.modernize_failed.connection_failed", e.message.orEmpty()),
                     )
                 }
             }

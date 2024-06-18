@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.sso.SsoClient
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.utils.SdkAutoCloseable
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoAccessTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCredentialProvider
@@ -33,7 +34,9 @@ class ProfileLegacySsoProvider(ssoCache: SsoCache, profile: Profile) : AwsCreden
             profile.requiredProperty(ProfileProperty.SSO_START_URL),
             ssoRegion,
             ssoCache,
-            ssoOidcClient
+            ssoOidcClient,
+            isAlwaysShowDeviceCode = true,
+            scopes = listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE),
         )
 
         credentialsProvider = SsoCredentialProvider(

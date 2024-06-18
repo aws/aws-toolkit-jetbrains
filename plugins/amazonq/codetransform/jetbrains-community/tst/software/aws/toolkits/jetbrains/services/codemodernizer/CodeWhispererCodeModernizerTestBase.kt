@@ -51,8 +51,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerManifest
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.MigrationStep
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
@@ -63,6 +64,7 @@ import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRul
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.io.File
 import java.time.Instant
+import kotlin.io.path.Path
 
 open class CodeWhispererCodeModernizerTestBase(
     @Rule @JvmField
@@ -86,14 +88,16 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val diffResource = "diff.patch".toResourceFile()
     internal val examplePatchVirtualFile = LightVirtualFile("diff.patch", diffResource.readText())
     internal val emptyPomFile = LightVirtualFile("pom.xml", "")
+    internal val emptyPomFileSpy = spy(emptyPomFile)
     internal val jobId = JobId("Test job id")
-    internal val migrationStep = MigrationStep("Test migration step")
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
+    internal lateinit var testTransformFailureBuildLog: CodeTransformFailureBuildLog
     internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
     internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
     internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val testRequestId = "test_aws_request_id"
     internal val testSessionId = "test_codewhisperer_session_id"
+    internal lateinit var validJDK8CustomerSelection: CustomerSelection
     internal val validZipPatchDirPath = "patch/"
     internal val validZipArtifactsPath = "artifacts/"
     internal val validZipSummaryPath = "summary/"
@@ -260,6 +264,7 @@ open class CodeWhispererCodeModernizerTestBase(
 
         val virtualFileMock = Mockito.mock(VirtualFile::class.java)
         val summaryFileMock = Mockito.mock(File::class.java)
+        val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
         testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
@@ -274,6 +279,12 @@ open class CodeWhispererCodeModernizerTestBase(
                     listOf(examplePatchVirtualFile),
                     validTransformationSummary,
                     summaryFileMock,
+                ),
+            )
+        testTransformFailureBuildLog =
+            spy(
+                CodeTransformFailureBuildLog(
+                    logFileMock
                 ),
             )
 
@@ -291,6 +302,8 @@ open class CodeWhispererCodeModernizerTestBase(
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationStopped()
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationStartStopping()
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationFailedToStop()
+        doReturn(Path("/test/pom.xml")).whenever(emptyPomFileSpy).toNioPath()
+        validJDK8CustomerSelection = CustomerSelection(emptyPomFileSpy, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
     }
 
     companion object {

@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCo
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildDownloadFailureChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilCannotResumeContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilErrorContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilInitialContent
@@ -59,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Incoming
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
@@ -69,7 +71,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOr
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.resources.AwsToolkitBundle.message
+import software.aws.toolkits.resources.message
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -83,6 +85,7 @@ class CodeTransformChatController(
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
+        telemetry.prepareForNewJobSubmission()
         if (!checkForAuth(message.tabId)) {
             return
         }
@@ -120,7 +123,7 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.chatDelayShort()
 
-        CodeTransformTelemetryManager.getInstance(context.project).jobIsStartedFromChatPrompt()
+        telemetry.jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
@@ -223,9 +226,6 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             updateLastPendingMessage(buildCompileLocalSuccessChatContent())
-
-            addNewMessage(buildTransformBeginChatContent())
-            addNewMessage(buildTransformInProgressChatContent())
         }
 
         runInEdt {
@@ -271,6 +271,10 @@ class CodeTransformChatController(
         artifactHandler.showTransformationSummary(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
     }
 
+    override suspend fun processCodeTransformViewBuildLog(message: IncomingCodeTransformMessage.CodeTransformViewBuildLog) {
+        artifactHandler.showBuildLog(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
+
     override suspend fun processCodeTransformNewAction(message: IncomingCodeTransformMessage.CodeTransformNew) {
         processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = message.tabId, startNewTransform = true))
     }
@@ -289,6 +293,9 @@ class CodeTransformChatController(
                     handleMavenBuildResult(result)
                 }
             }
+            CodeTransformCommand.UploadComplete -> {
+                handleCodeTransformUploadCompleted()
+            }
             CodeTransformCommand.TransformComplete -> {
                 val result = message.transformResult
                 if (result != null) {
@@ -303,6 +310,12 @@ class CodeTransformChatController(
             }
             CodeTransformCommand.StartHil -> {
                 handleHil()
+            }
+            CodeTransformCommand.DownloadFailed -> {
+                val result = message.downloadFailure
+                if (result != null) {
+                    handleDownloadFailed(message.downloadFailure)
+                }
             }
             else -> {
                 processTransformQuickAction(IncomingCodeTransformMessage.Transform(tabId = activeTabId))
@@ -363,6 +376,11 @@ class CodeTransformChatController(
 
     override suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked) {
         BrowserUtil.browse(message.link)
+    }
+
+    private suspend fun handleCodeTransformUploadCompleted() {
+        codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
+        codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
     }
 
     private suspend fun handleCodeTransformJobResume() {
@@ -446,6 +464,11 @@ class CodeTransformChatController(
         runInEdt {
             codeModernizerManager.getBottomToolWindow().show()
         }
+    }
+
+    private suspend fun handleDownloadFailed(failureReason: DownloadFailureReason) {
+        codeTransformChatHelper.addNewMessage(buildDownloadFailureChatContent(failureReason))
+        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
     // Remove open file button after pom.xml is deleted

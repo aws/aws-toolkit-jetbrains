@@ -29,6 +29,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
@@ -53,8 +55,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.StateFlags
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.buildState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_MAVEN_COMMANDS
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.TROUBLESHOOTING_URL_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findLineNumberByString
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
@@ -74,7 +74,7 @@ import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
-import software.aws.toolkits.resources.AwsToolkitBundle.message
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
@@ -184,6 +184,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
 
         val result = validateCore(project)
+
         telemetry.sendValidationResult(result)
 
         return result
@@ -347,7 +348,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+                listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
             )
         }
 
@@ -383,6 +384,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
                     message("codemodernizer.notification.warn.unable_to_start_job", result.exception),
                     true,
+                )
+            }
+
+            is CodeModernizerStartJobResult.ZipUploadFailed -> {
+                CodeModernizerJobCompletedResult.ZipUploadFailed(
+                    result.reason
                 )
             }
 
@@ -586,6 +593,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 result.failureReason
             )
 
+            is CodeModernizerJobCompletedResult.ZipUploadFailed -> notifyJobFailure(
+                message("codemodernizer.notification.warn.upload_failed", result.failureReason.toString()),
+            )
+
             is CodeModernizerJobCompletedResult.RetryableFailure -> notifyJobFailure(
                 result.failureReason
             )
@@ -627,13 +638,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_MAVEN_COMMANDS), displayFeedbackNotificationAction()),
+                listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
             )
             is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> notifyStickyInfo(
                 message("codemodernizer.notification.warn.zip_too_large.title"),
                 message("codemodernizer.notification.warn.zip_too_large.content"),
                 project,
-                listOf(openTroubleshootingGuideNotificationAction(TROUBLESHOOTING_URL_PREREQUISITES), displayFeedbackNotificationAction()),
+                listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE), displayFeedbackNotificationAction()),
             )
             is CodeModernizerJobCompletedResult.Stopped -> notifyStickyInfo(
                 message("codemodernizer.notification.info.transformation_stop.title"),

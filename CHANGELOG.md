@@ -1,3 +1,40 @@
+# _3.11_ (2024-06-13)
+- **(Feature)** Amazon Q Code Transform: Allow user to view transformation build log
+- **(Bug Fix)** Fix intermittent validation exception from CodeWhisperer service for improperly formed request
+- **(Bug Fix)** fix(Amazon Q Code Transformation): allow module to be zipped successfully even if it contains broken symlinks
+
+# _3.10_ (2024-06-07)
+- **(Bug Fix)** Resolve a NullPointerException that could occur while handling editor creation event. ([#4554](https://github.com/aws/aws-toolkit-jetbrains/issues/4554))
+
+# _3.9_ (2024-06-06)
+- **(Feature)** feat(featureDev): generated plan being shown from top
+- **(Feature)** Amazon Q Code Transform: Communicate download failure in transform chat, and improve download failure notification
+- **(Feature)** CodeTransformation: increase project upload limit to 2GB
+- **(Bug Fix)** Security Scan: Improved method of applying security fixes
+- **(Bug Fix)** Security Scan: Improved accuracy when applying security fixes
+- **(Bug Fix)** Security Scan: Fixes inconsistent behavior with how security issues are underlined in the editor.
+
+# _3.8_ (2024-05-30)
+- **(Bug Fix)** fix(featureDev): File Rejection stopped working
+- **(Bug Fix)** Amazon Q Feature Development: Update error message when repo size larger than 200 megabytes
+- **(Bug Fix)** Always show device code prompt when performing device code grant through a legacy SSO configuration
+
+# _3.7_ (2024-05-29)
+- **(Bug Fix)** (featureDev): Revert fix for file rejection. Reason: The plan disappears after clicking generate Code
+- **(Bug Fix)** Amazon Q Code Transformation: show more specific error messages on failure cases
+
+# _3.6_ (2024-05-28)
+- **(Bug Fix)** Fix recurring popup "refreshing token" whne users're typing in the IDE and Q connection expires
+
+# _3.5_ (2024-05-23)
+- **(Bug Fix)** Amazon Q Code Transformation: show exact error messages in chat when job fails
+
+# _3.4_ (2024-05-16)
+- **(Bug Fix)** Amazon Q Chat: Prompt input field in Q Chat tabs doesn't stop after it reaches to the given maxLength
+- **(Bug Fix)** Amazon Q Chat: When window gets focus, even though the autoFocus property is set to true, input field doesn't get focus
+- **(Bug Fix)** Amazon Q Chat: Inside chat body, if there is a code block inside a list item it shows <br/> tags
+- **(Bug Fix)** Security Scan: Improved error notifications
+
 # _3.3_ (2024-05-14)
 - **(Bug Fix)** Don't use `authorization_grant` when performing SSO login with legacy SSO or non-commercial AWS regions
 

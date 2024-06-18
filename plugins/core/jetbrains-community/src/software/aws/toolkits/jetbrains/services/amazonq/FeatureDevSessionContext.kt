@@ -31,7 +31,12 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
-class FeatureDevSessionContext(val project: Project) {
+interface RepoSizeError {
+    val message: String
+}
+class RepoSizeLimitError(override val message: String) : RuntimeException(), RepoSizeError
+
+class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
     private val ignorePatterns = setOf(
@@ -61,9 +66,13 @@ class FeatureDevSessionContext(val project: Project) {
         "dist/"
     ).map { Regex(it) }
 
-    private var _projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+    // projectRoot: is the directory where the project is located when selected to open a project.
+    val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+
+    // selectedSourceFolder": is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
+    private var _selectedSourceFolder = projectRoot
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
-    private val gitIgnoreFile = File(projectRoot.path, ".gitignore")
+    private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
 
     init {
         ignorePatternsWithGitIgnore = (ignorePatterns + parseGitIgnore().map { Regex(it) }).toList()
@@ -72,7 +81,7 @@ class FeatureDevSessionContext(val project: Project) {
     fun getProjectZip(): ZipCreationResult {
         val zippedProject = runBlocking {
             withBackgroundProgress(project, message("amazonqFeatureDev.create_plan.background_progress_title")) {
-                zipFiles(projectRoot)
+                zipFiles(selectedSourceFolder)
             }
         }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
@@ -92,16 +101,23 @@ class FeatureDevSessionContext(val project: Project) {
 
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
+        var totalSize: Long = 0
+
         VfsUtil.visitChildrenRecursively(
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
-                    if (file.isFile) {
+                    val isFileIgnored = runBlocking { ignoreFile(file, this) }
+                    if (file.isFile && !isFileIgnored) {
+                        totalSize += file.length
                         files.add(file)
+
+                        if (maxProjectSizeBytes != null && totalSize > maxProjectSizeBytes) {
+                            throw RepoSizeLimitError(message("amazonqFeatureDev.content_length.error_text"))
+                        }
                         return true
-                    }
-                    return runBlocking {
-                        !ignoreFile(file, this)
+                    } else {
+                        return !isFileIgnored
                     }
                 }
             }
@@ -113,9 +129,7 @@ class FeatureDevSessionContext(val project: Project) {
             files.chunked(50).forEach { chunk ->
                 launch {
                     for (file in chunk) {
-                        if (file.isFile && !ignoreFile(file, this)) {
-                            send(file)
-                        }
+                        send(file)
                     }
                 }
             }
@@ -152,11 +166,11 @@ class FeatureDevSessionContext(val project: Project) {
         .replace("*", ".*")
         .let { if (it.endsWith("/")) "$it?" else it } // Handle directory-specific patterns by optionally matching trailing slash
 
-    var projectRoot: VirtualFile
+    var selectedSourceFolder: VirtualFile
         set(newRoot) {
-            _projectRoot = newRoot
+            _selectedSourceFolder = newRoot
         }
-        get() = _projectRoot
+        get() = _selectedSourceFolder
 }
 
 data class ZipCreationResult(val payload: File, val checksum: String, val contentLength: Long)

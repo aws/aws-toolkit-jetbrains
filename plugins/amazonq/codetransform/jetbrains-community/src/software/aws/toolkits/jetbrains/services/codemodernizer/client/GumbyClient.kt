@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationExportContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -165,7 +166,8 @@ class GumbyClient(private val project: Project) {
 
     suspend fun downloadExportResultArchive(
         jobId: JobId,
-        hilDownloadArtifactId: String? = null
+        hilDownloadArtifactId: String? = null,
+        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
@@ -178,7 +180,7 @@ class GumbyClient(private val project: Project) {
                     TransformationExportContext
                         .builder()
                         .downloadArtifactId(hilDownloadArtifactId)
-                        .downloadArtifactType("ClientInstructions")
+                        .downloadArtifactType(downloadArtifactType.toString())
                         .build()
                 )
                 .build()
@@ -206,6 +208,7 @@ class GumbyClient(private val project: Project) {
             .connect { request -> // default connect timeout is 10s
                 val connection = request.connection as HttpURLConnection
                 connection.setFixedLengthStreamingMode(fileToUpload.length())
+                connection.readTimeout = 32 * 60 * 1000 // pre-signed URL expires in 30 minutes. Includes some buffer for connection.
                 fileToUpload.inputStream().use { inputStream ->
                     connection.outputStream.use {
                         val bufferSize = 4096

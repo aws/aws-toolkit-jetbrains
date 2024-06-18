@@ -9,6 +9,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.APPROACH_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
@@ -39,7 +40,7 @@ class Session(val tabID: String, val project: Project) {
     var isAuthenticating: Boolean
 
     init {
-        context = FeatureDevSessionContext(project)
+        context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
         _state = ConversationNotStartedState("", tabID)
@@ -96,16 +97,16 @@ class Session(val tabID: String, val project: Project) {
      * Triggered by the Insert code follow-up button to apply code changes.
      */
     fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>) {
-        val projectRootPath = context.projectRoot.toNioPath()
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
-        filePaths.forEach { resolveAndCreateOrUpdateFile(projectRootPath, it.zipFilePath, it.fileContent) }
+        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
 
-        deletedFiles.forEach { resolveAndDeleteFile(projectRootPath, it.zipFilePath) }
+        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
 
         ReferenceLogController.addReferenceLog(references, project)
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
-        VfsUtil.markDirtyAndRefresh(true, true, true, context.projectRoot)
+        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
     }
 
     suspend fun send(msg: String): Interaction {
@@ -151,6 +152,9 @@ class Session(val tabID: String, val project: Project) {
                 return _conversationId as String
             }
         }
+
+    val conversationIdUnsafe: String?
+        get() = _conversationId
 
     val sessionState: SessionState
         get() {

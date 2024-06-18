@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 suspend fun FeatureDevController.onCodeGeneration(session: Session, message: String, tabId: String) {
-    getLogger<FeatureDevController>().info { "Q - Dev chat conversation id ${session.conversationId}" }
+    getLogger<FeatureDevController>().info { conversationIDLog(session.conversationId) }
 
     messenger.sendAsyncEventProgress(
         tabId = tabId,
