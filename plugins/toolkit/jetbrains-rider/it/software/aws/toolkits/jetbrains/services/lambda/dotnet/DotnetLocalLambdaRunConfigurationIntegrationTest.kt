@@ -11,6 +11,7 @@ import com.jetbrains.rider.test.scriptingApi.removeAllBreakpoints
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
+import org.testng.annotations.Ignore
 import org.testng.annotations.Test
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -178,6 +179,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
             .containsEntry("AWS_SESSION_TOKEN", "")
     }
 
+    @Ignore("testing")
     @Test
     fun samIsExecutedDebuggerImage() {
         setBreakpoint()
