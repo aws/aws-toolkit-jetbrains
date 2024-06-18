@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.gateway.welcomescreen
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.ui.DialogBuilder
