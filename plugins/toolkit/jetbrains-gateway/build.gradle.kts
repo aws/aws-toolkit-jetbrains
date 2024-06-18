@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import net.bytebuddy.utility.RandomString
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
