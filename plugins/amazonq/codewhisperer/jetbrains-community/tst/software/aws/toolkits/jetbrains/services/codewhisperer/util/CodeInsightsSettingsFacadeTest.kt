@@ -7,31 +7,36 @@ import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.spy
 import kotlin.random.Random
 
-@TestApplication
 class CodeInsightsSettingsFacadeTest {
     private lateinit var settings: CodeInsightSettings
     private lateinit var sut: CodeInsightsSettingsFacade
-    private lateinit var myDisposable: Disposable
+
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+    }
 
     @BeforeEach
     fun setUp() {
         sut = CodeInsightsSettingsFacade()
         settings = spy { CodeInsightSettings() }
-        myDisposable = Disposable {}
     }
 
     @Test
     fun `should revert when parent is disposed test 1`(@TestDisposable disposable: Disposable) {
-        Disposer.register(disposable, myDisposable)
+        val myFakePopup = Disposable {}
+        Disposer.register(disposable, myFakePopup)
 
         ApplicationManager.getApplication().replaceService(
             CodeInsightSettings::class.java,
@@ -45,7 +50,7 @@ class CodeInsightsSettingsFacadeTest {
         settings.AUTOCOMPLETE_ON_CODE_COMPLETION = true
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
 
-        sut.disableCodeInsightUntil(myDisposable)
+        sut.disableCodeInsightUntil(myFakePopup)
 
         val random = Random(0).nextInt(1, 10)
         repeat(random) {
@@ -53,7 +58,7 @@ class CodeInsightsSettingsFacadeTest {
             assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isFalse
         }
 
-        Disposer.dispose(myDisposable)
+        Disposer.dispose(myFakePopup)
 
         assertThat(settings.TAB_EXITS_BRACKETS_AND_QUOTES).isTrue
         assertThat(settings.AUTO_POPUP_COMPLETION_LOOKUP).isTrue
