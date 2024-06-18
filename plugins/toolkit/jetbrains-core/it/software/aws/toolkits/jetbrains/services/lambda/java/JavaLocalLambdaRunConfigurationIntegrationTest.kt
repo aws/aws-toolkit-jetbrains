@@ -19,6 +19,8 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
+import software.aws.toolkits.jetbrains.services.lambda.steps.BuildLambdaRequest
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
@@ -30,6 +32,9 @@ import software.aws.toolkits.jetbrains.utils.samImageRunDebugTest
 import software.aws.toolkits.jetbrains.utils.setSamExecutableFromEnvironment
 import software.aws.toolkits.jetbrains.utils.setUpGradleProject
 import software.aws.toolkits.jetbrains.utils.setUpJdk
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 
 @RunWith(Parameterized::class)
 class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: LambdaRuntime) {
@@ -51,10 +56,14 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
     private val mockId = "MockCredsId"
     private val mockCreds = AwsBasicCredentials.create("Access", "ItsASecret")
     private val input = RuleUtils.randomName()
+    private lateinit var gradleUserHomeDir: String
+    private lateinit var buildLambdaRequest: BuildLambdaRequest
 
     @Before
     fun setUp() {
         setSamExecutableFromEnvironment()
+
+        gradleUserHomeDir = Files.createTempDirectory("test-gradle-user-home").toAbsolutePath().toString()
 
         val fixture = projectRule.fixture
         val module = fixture.addModule("main")
@@ -89,12 +98,23 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         }
 
         MockCredentialsManager.getInstance().addCredentials(mockId, mockCreds)
+
+        buildLambdaRequest = BuildLambdaRequest(
+            templatePath = Paths.get("path/to/template"),
+            logicalId = "logicalId",
+            buildDir = Paths.get("path/to/build"),
+            buildEnvVars = mapOf("EXISTING_VAR" to "existing_value"),
+            samOptions = SamOptions(),
+            preBuildSteps = listOf(),
+            gradleUserHomeDir = gradleUserHomeDir
+        )
     }
 
     @After
     fun tearDown() {
         CompilerTestUtil.disableExternalCompiler(projectRule.project)
         MockCredentialsManager.getInstance().reset()
+        File(gradleUserHomeDir).deleteRecursively()
     }
 
     @Test
