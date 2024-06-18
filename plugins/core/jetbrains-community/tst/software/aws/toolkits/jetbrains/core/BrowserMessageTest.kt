@@ -6,16 +6,39 @@ package software.aws.toolkits.jetbrains.core
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ProjectExtension
+import com.intellij.ui.jcef.JBCefBrowserBase
+import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.ObjectAssert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
+import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
+
+class NoOpLoginBrowser(project: Project, domain: String = "", url: String = "") : LoginBrowser(project, domain, url) {
+    override val jcefBrowser: JBCefBrowserBase = mock()
+
+    override fun prepareBrowser(state: BrowserState) {}
+
+    override fun loadWebView(query: JBCefJSQuery) {}
+
+    override fun handleBrowserMessage(message: BrowserMessage?) {}
+}
 
 class BrowserMessageTest {
     private lateinit var objectMapper: ObjectMapper
+
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+    }
 
     private inline fun <reified T : BrowserMessage> assertDeserializedInstanceOf(jsonStr: String): ObjectAssert<BrowserMessage> {
         val actual = objectMapper.readValue<BrowserMessage>(jsonStr)
@@ -30,7 +53,7 @@ class BrowserMessageTest {
 
     @BeforeEach
     fun setup() {
-        objectMapper = ObjectMapper().registerKotlinModule()
+        objectMapper = NoOpLoginBrowser(projectExtension.project).objectMapper
     }
 
     @Test
