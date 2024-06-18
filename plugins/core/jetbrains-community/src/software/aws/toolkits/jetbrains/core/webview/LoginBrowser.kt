@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
@@ -211,7 +212,7 @@ abstract class LoginBrowser(
     }
 
     protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> =
-        ApplicationManager.getApplication().executeOnPooledThread<T> {
+        pluginAwareExecuteOnPooledThread {
             runBlocking {
                 withBackgroundProgress(project, message("credentials.pending.title")) {
                     blockingContext {
