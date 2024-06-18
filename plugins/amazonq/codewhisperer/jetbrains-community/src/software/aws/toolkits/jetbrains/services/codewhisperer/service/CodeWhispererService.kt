@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -89,7 +90,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererService {
+class CodeWhispererService : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
@@ -754,6 +755,8 @@ class CodeWhispererService {
     fun showCodeWhispererErrorHint(editor: Editor, message: String) {
         HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
     }
+
+    override fun dispose() {}
 
     companion object {
         private val LOG = getLogger<CodeWhispererService>()
