@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.steps
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import org.junit.AfterClass
 import software.aws.toolkits.core.utils.AttributeBagKey
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.services.lambda.sam.samBuildCommand
@@ -12,8 +11,6 @@ import software.aws.toolkits.jetbrains.utils.execution.steps.Context
 import software.aws.toolkits.jetbrains.utils.execution.steps.Step
 import software.aws.toolkits.jetbrains.utils.execution.steps.StepEmitter
 import software.aws.toolkits.resources.message
-import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 
 data class BuildLambdaRequest(
@@ -49,17 +46,6 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
 
     companion object {
         val BUILT_LAMBDA = AttributeBagKey.create<BuiltLambda>("BUILT_LAMBDA")
-        private val gradleUserHomeDir = Files.createTempDirectory("test-gradle-user-home").toAbsolutePath().toString()
-
-        @JvmStatic
-        @AfterClass
-        fun cleanupGradleUserHomeDir() {
-            try {
-                Files.deleteIfExists(Path.of(gradleUserHomeDir))
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
     }
 }
 
