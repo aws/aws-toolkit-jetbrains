@@ -170,7 +170,9 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()))
             }
 
-            else -> {}
+            is BrowserMessage.LoginIAM, is BrowserMessage.ToggleBrowser -> {
+                error("QBrowser doesn't support the provided command ${message::class.simpleName}")
+            }
         }
     }
 

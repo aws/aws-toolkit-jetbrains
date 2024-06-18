@@ -235,8 +235,6 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             is BrowserMessage.Reauth -> {
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
-
-            else -> {}
         }
     }
 
@@ -335,7 +333,6 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
-        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }

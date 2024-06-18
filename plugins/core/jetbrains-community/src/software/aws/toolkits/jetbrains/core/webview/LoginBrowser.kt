@@ -54,7 +54,7 @@ abstract class LoginBrowser(
     abstract val jcefBrowser: JBCefBrowserBase
 
     protected val jcefHandler = Function<String, JBCefJSQuery.Response> {
-        val obj = LOG.tryOrNull("Unable deserialize login browser message: $it", Level.WARN) {
+        val obj = LOG.tryOrNull("${this::class.simpleName} unable deserialize login browser message: $it", Level.ERROR) {
             objectMapper.readValue<BrowserMessage>(it)
         }
 
