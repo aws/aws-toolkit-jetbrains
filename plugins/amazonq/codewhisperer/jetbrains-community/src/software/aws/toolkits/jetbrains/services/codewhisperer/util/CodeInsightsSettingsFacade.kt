@@ -86,7 +86,7 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
     }
 
     override fun dispose() {
-        pendingReverts.forEach { it.revert() }
+        revertAll()
     }
 
     companion object {
