@@ -177,22 +177,26 @@ class SamRunningState(
     companion object {
         private const val dummyLogicalId = "Function"
 
-        internal fun buildBuildLambdaRequest(project: Project, lambdaSettings: LocalLambdaRunSettings) = when (lambdaSettings) {
-            is TemplateRunSettings ->
-                buildLambdaFromTemplate(
-                    project,
-                    lambdaSettings
-                )
-            is ImageTemplateRunSettings ->
-                buildLambdaFromTemplate(
-                    project,
-                    lambdaSettings
-                )
-            is HandlerRunSettings ->
-                lambdaSettings.lambdaBuilder().buildFromHandler(
-                    project,
-                    lambdaSettings
-                )
+        internal fun buildBuildLambdaRequest(project: Project, lambdaSettings: LocalLambdaRunSettings): BuildLambdaRequest {
+            val buildLambdaRequest = when (lambdaSettings) {
+                is TemplateRunSettings ->
+                    buildLambdaFromTemplate(
+                        project,
+                        lambdaSettings
+                    )
+                is ImageTemplateRunSettings ->
+                    buildLambdaFromTemplate(
+                        project,
+                        lambdaSettings
+                    )
+                is HandlerRunSettings ->
+                    lambdaSettings.lambdaBuilder().buildFromHandler(
+                        project,
+                        lambdaSettings
+                    )
+            }
+            val gradleUserHomeDir = System.getenv("GRADLE_USER_HOME") ?: buildLambdaRequest.gradleUserHomeDir
+            return buildLambdaRequest.copy(gradleUserHomeDir = gradleUserHomeDir)
         }
 
         private fun buildLambdaFromTemplate(
