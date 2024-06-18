@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
@@ -19,10 +17,8 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -42,7 +38,6 @@ import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
-import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
@@ -104,15 +99,28 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(parentDisposable)
     private val query = JBCefJSQuery.create(jcefBrowser)
-    private val objectMapper = jacksonObjectMapper()
 
-    private val handler = Function<String, JBCefJSQuery.Response> {
-        val message = LOG.tryOrNull("Unable to deserialize message from Q browser", Level.ERROR) {
-            objectMapper.readValue<BrowserMessage>(it)
-        }
+    init {
+        CefApp.getInstance()
+            .registerSchemeHandlerFactory(
+                "http",
+                domain,
+                WebviewResourceHandlerFactory(
+                    domain = "http://$domain/",
+                    assetUri = "/webview/assets/"
+                ),
+            )
 
+        loadWebView(query)
+
+        query.addHandler(jcefHandler)
+    }
+
+    fun component(): JComponent? = jcefBrowser.component
+
+    override fun handleBrowserMessage(message: BrowserMessage?) {
         if (message == null) {
-            return@Function null
+            return
         }
 
         when (message) {
@@ -148,14 +156,14 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "qBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
+                        SsoLogoutAction(connection).actionPerformed(
+                            AnActionEvent.createFromDataContext(
+                                "qBrowser",
+                                null,
+                                DataContext.EMPTY_CONTEXT
+                            )
                         )
-                    )
-                }
+                    }
             }
 
             is BrowserMessage.Reauth -> {
@@ -164,27 +172,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
             else -> {}
         }
-
-        null
     }
-
-    init {
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                domain,
-                WebviewResourceHandlerFactory(
-                    domain = "http://$domain/",
-                    assetUri = "/webview/assets/"
-                ),
-            )
-
-        loadWebView(query)
-
-        query.addHandler(handler)
-    }
-
-    fun component(): JComponent? = jcefBrowser.component
 
     override fun prepareBrowser(state: BrowserState) {
         // TODO: duplicate code in ToolkitLoginWebview
@@ -219,7 +207,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         // available regions
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values.let {
-            objectMapper.writeValueAsString(it)
+            writeValueAsString(it)
         }
 
         // TODO: pass "REAUTH" if connection expires
@@ -240,7 +228,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 },
                 cancellable: ${state.browserCancellable},
                 feature: '${state.feature}',
-                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
+                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")
