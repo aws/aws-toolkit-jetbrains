@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.explorer.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -33,11 +34,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import migration.software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import org.cef.CefApp
+import org.slf4j.event.Level
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
@@ -53,6 +55,7 @@ import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
@@ -162,61 +165,55 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     private val objectMapper = jacksonObjectMapper()
 
     private val handler = Function<String, JBCefJSQuery.Response> {
-        val jsonTree = objectMapper.readTree(it)
-        val command = jsonTree.get("command").asText()
-        LOG.debug { "Data received from Toolkit browser: ${jsonTree.toPrettyString()}" }
+        val message = LOG.tryOrNull("Unable to deserialize message from Toolkit browser", Level.ERROR) {
+            objectMapper.readValue<BrowserMessage>(it)
+        }
 
-        when (command) {
-            // TODO: handler functions could live in parent class
-            "prepareUi" -> {
+        if (message == null) {
+            return@Function null
+        }
+
+        when (message) {
+            is BrowserMessage.PrepareUi -> {
                 val cancellable = isTookitConnected(project)
                 this.prepareBrowser(BrowserState(FeatureId.AwsExplorer, browserCancellable = cancellable))
             }
 
-            "selectConnection" -> {
-                val connId = jsonTree.get("connectionId").asText()
-                this.selectionSettings[connId]?.let { settings ->
+            is BrowserMessage.SelectConnection -> {
+                this.selectionSettings[message.connectionId]?.let { settings ->
                     settings.onChange(settings.currentSelection)
                 }
             }
 
-            "loginBuilderId" -> {
+            is BrowserMessage.LoginBuilderId -> {
                 loginBuilderId(CODECATALYST_SCOPES)
             }
 
-            "loginIdC" -> {
-                // TODO: make it type safe, maybe (de)serialize into a data class
-                val url = jsonTree.get("url").asText()
-                val region = jsonTree.get("region").asText()
-                val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Toolkit browser")
-                val feature: String = jsonTree.get("feature").asText()
+            is BrowserMessage.LoginIdC -> {
+                val awsRegion = AwsRegionProvider.getInstance()[message.region] ?: error("unknown region returned from Toolkit browser")
 
-                val scopes = if (FeatureId.from(feature) == FeatureId.Codecatalyst) {
+                val scopes = if (FeatureId.from(message.feature) == FeatureId.Codecatalyst) {
                     CODECATALYST_SCOPES
                 } else {
                     listOf(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
                 }
 
-                loginIdC(url, awsRegion, scopes)
+                loginIdC(message.url, awsRegion, scopes)
             }
 
-            "loginIAM" -> {
-                // TODO: make it type safe, maybe (de)serialize into a data class
-                val profileName = jsonTree.get("profileName").asText()
-                val accessKey = jsonTree.get("accessKey").asText()
-                val secretKey = jsonTree.get("secretKey").asText()
-                loginIAM(profileName, accessKey, secretKey)
+            is BrowserMessage.LoginIAM -> {
+                loginIAM(message.profileName, message.accessKey, message.secretKey)
             }
 
-            "toggleBrowser" -> {
+            is BrowserMessage.ToggleBrowser -> {
                 showExplorerTree(project)
             }
 
-            "cancelLogin" -> {
+            is BrowserMessage.CancelLogin -> {
                 cancelLogin()
             }
 
-            "signout" -> {
+            is BrowserMessage.Signout -> {
                 ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())?.let { connection ->
                     connection as AwsBearerTokenConnection
                     SsoLogoutAction(connection).actionPerformed(
@@ -229,13 +226,11 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 }
             }
 
-            "reauth" -> {
+            is BrowserMessage.Reauth -> {
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
 
-            else -> {
-                error("received unknown command from Toolkit login browser")
-            }
+            else -> {}
         }
 
         null
