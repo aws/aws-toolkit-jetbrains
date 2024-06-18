@@ -28,7 +28,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 )
 sealed interface BrowserMessage {
 
-    // TODO: make it data object when 232 is not supported by us as data object syntax is not available
+    // FIX_WHEN_MIN_IS_233: data objects are not stable until Kotlin 1.9
+    // https://kotlinlang.org/docs/whatsnew19.html#stable-data-objects-for-symmetry-with-data-classes
     object PrepareUi : BrowserMessage
 
     data class SelectConnection(val connectionId: String) : BrowserMessage
