@@ -10,6 +10,7 @@ import com.intellij.openapi.util.SimpleModificationTracker
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import kotlin.reflect.KMutableProperty
 
 class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
@@ -50,6 +51,10 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
     private var pendingReverts = listOf<ChangeAndRevert<*>>()
     val pendingRevertCounts: Int
         get() = pendingReverts.size
+
+    init {
+        Disposer.register(CodeWhispererService.getInstance(), this)
+    }
 
     @VisibleForTesting
     internal fun revertAll() {
