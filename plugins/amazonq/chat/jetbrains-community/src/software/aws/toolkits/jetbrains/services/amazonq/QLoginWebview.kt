@@ -156,14 +156,14 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                        SsoLogoutAction(connection).actionPerformed(
-                            AnActionEvent.createFromDataContext(
-                                "qBrowser",
-                                null,
-                                DataContext.EMPTY_CONTEXT
-                            )
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
                         )
-                    }
+                    )
+                }
             }
 
             is BrowserMessage.Reauth -> {
