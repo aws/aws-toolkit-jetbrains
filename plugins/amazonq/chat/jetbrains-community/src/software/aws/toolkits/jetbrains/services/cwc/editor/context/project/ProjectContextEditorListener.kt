@@ -5,11 +5,14 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
 
 class ProjectContextEditorListener: FileEditorManagerListener {
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-        ProjectContextProvider.getInstance(source.project).updateIndex(file.path)
+        if(CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            ProjectContextController.getInstance(source.project).updateIndex(file.path)
+        }
     }
 }
 

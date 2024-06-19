@@ -87,6 +87,23 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
+        group(message("aws.settings.codewhisperer.group.q_chat")) {
+            row {
+                checkBox(message("aws.settings.codewhisperer.project_context")).apply {
+                    connect.subscribe(
+                        ToolkitConnectionManagerListener.TOPIC,
+                        object : ToolkitConnectionManagerListener {
+                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                enabled(isCodeWhispererEnabled(project))
+                            }
+                        }
+                    )
+                    enabled(invoke)
+                    bindSelected(codeWhispererSettings::isProjectContextEnabled, codeWhispererSettings::toggleProjectContextEnabled)
+                }.comment(message("aws.settings.codewhisperer.project_context.tooltip"))
+            }
+        }
+
         group(message("aws.settings.codewhisperer.group.data_sharing")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.configurable.opt_out.title")).apply {

@@ -44,6 +44,12 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         true
     )
 
+    fun toggleProjectContextEnabled(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
+    }
+
+    fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -67,5 +73,6 @@ enum class CodeWhispererConfigurationType {
     IsImportAdderEnabled,
     IsAutoUpdateEnabled,
     IsAutoUpdateNotificationEnabled,
-    IsAutoUpdateFeatureNotificationShownOnce
+    IsAutoUpdateFeatureNotificationShownOnce,
+    IsProjectContextEnabled,
 }

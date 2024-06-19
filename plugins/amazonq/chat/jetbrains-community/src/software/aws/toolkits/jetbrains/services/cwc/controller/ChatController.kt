@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -60,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.U
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
@@ -83,7 +85,7 @@ class ChatController private constructor(
     private val contextExtractor: ActiveFileContextExtractor,
     private val intentRecognizer: UserIntentRecognizer,
     private val authController: AuthController,
-    private val projectContextProvider: ProjectContextProvider,
+    private val projectContextController: ProjectContextController,
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
@@ -96,7 +98,7 @@ class ChatController private constructor(
         contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
-        projectContextProvider = ProjectContextProvider.getInstance(context.project)
+        projectContextController = ProjectContextController.getInstance(context.project),
     )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
@@ -122,16 +124,14 @@ class ChatController private constructor(
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
         var prompt = message.chatMessage
         var queryResult: List<RelevantDocument> = emptyList()
-        if(prompt.startsWith("@ws")){
-            prompt = prompt.drop(3)
-            queryResult = projectContextProvider.query(prompt)
-        } else if (prompt.startsWith("@workspace")){
-            prompt = prompt.drop(10)
-            queryResult = projectContextProvider.query(prompt)
-        }
-
-        if (prompt.length > 4000) {
-            prompt = prompt.substring(0, 3999)
+        if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
+            if(prompt.startsWith("@ws")){
+                prompt = prompt.drop(3)
+                queryResult = projectContextController.query(prompt)
+            } else if (prompt.startsWith("@workspace")){
+                prompt = prompt.drop(10)
+                queryResult = projectContextController.query(prompt)
+            }
         }
 
         handleChat(

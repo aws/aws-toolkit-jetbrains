@@ -31,17 +31,15 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Stack
 
-@Service(Service.Level.PROJECT)
-class ProjectContextProvider (val project: Project) : Disposable{
-    private var encoderServer: EncoderServer = EncoderServer.getInstance(project)
+//@Service(Service.Level.PROJECT)
+class ProjectContextProvider (val project: Project, val encoderServer: EncoderServer) : Disposable{
 
-    init {
-        encoderServer.start()
-        projectCoroutineScope(project).launch{
-            delay(3000)
-            index()
-        }
-    }
+//    init {
+//        projectCoroutineScope(project).launch{
+//            delay(3000)
+//            index()
+//        }
+//    }
 
     data class IndexRequestPayload(
         val filePaths: List<String>,
@@ -77,77 +75,57 @@ class ProjectContextProvider (val project: Project) : Disposable{
        val next: String?= null,
    )
 
-    private fun index() {
-        if (!encoderServer.isServerRunning()) {
-            logger.info("encoder server is not running, skipping index")
-            return
-        }
-        val port = encoderServer.currentPort
-        val url = URL("http://localhost:$port/indexFiles")
+    fun index() {
+        val url = URL("http://localhost:${encoderServer.currentPort}/indexFiles")
         val files = collectFiles().toList()
         val projectRoot = project.guessProjectDir()?.path ?: return
         val payload = IndexRequestPayload(files, projectRoot, true)
         val payloadJson = Gson().toJson(payload)
-        try{
-            with(url.openConnection() as HttpURLConnection) {
-                requestMethod = "POST"
-                setRequestProperty("Content-Type", "application/json")
-                setRequestProperty("Accept", "application/json")
-                doOutput = true
-                OutputStreamWriter(outputStream).use {
-                    it.write(payloadJson)
-                }
-                val responseCode = responseCode
-                logger.info("Index Response: $responseCode")
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            OutputStreamWriter(outputStream).use {
+                it.write(payloadJson)
             }
-        } catch (e: Exception){
-            logger.info("error while indexing: ${e.message}")
+            val responseCode = responseCode
+            logger.debug("project context index response code: $responseCode")
         }
     }
 
     fun query(prompt: String): List<RelevantDocument> {
-        if (!encoderServer.isServerRunning()) {
-            logger.info("encoder server is not running, skipping query")
-            return emptyList()
-        }
-        val port = encoderServer.currentPort
-        val url = URL("http://localhost:$port/query")
+        val url = URL("http://localhost:${encoderServer.currentPort}/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = Gson().toJson(payload)
-        try {
-            with(url.openConnection() as HttpURLConnection) {
-                requestMethod = "POST"
-                setRequestProperty("Content-Type", "application/json")
-                setRequestProperty("Accept", "application/json")
-                doOutput = true
-                OutputStreamWriter(outputStream).use {
-                    it.write(payloadJson)
-                }
-
-                val responseBody = if (responseCode == 200) {
-                    inputStream.bufferedReader().use { it.readText() }
-                } else {
-                    ""
-                }
-
-                val mapper = ObjectMapper()
-                try {
-                    val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
-                    return queryResultToRelevantDocuments(parsedResponse)
-                } catch (e: Exception) {
-                    logger.info("error parsing query response ${e.message}")
-                    return emptyList()
-                }
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "POST"
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+            doOutput = true
+            OutputStreamWriter(outputStream).use {
+                it.write(payloadJson)
             }
-        } catch (e: Exception) {
-            logger.info("error while querying: ${e.message}")
-            return emptyList()
+
+            val responseBody = if (responseCode == 200) {
+                inputStream.bufferedReader().use { it.readText() }
+            } else {
+                ""
+            }
+
+            val mapper = ObjectMapper()
+            try {
+                val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
+                return queryResultToRelevantDocuments(parsedResponse)
+            } catch (e: Exception) {
+                logger.debug("error parsing query response ${e.message}")
+                return emptyList()
+            }
         }
     }
 
     fun updateIndex(filePath: String) {
-        val port = encoderServer.currentPort
-        val url = URL("http://localhost:$port/updateIndex")
+        val url = URL("http://localhost:${encoderServer.currentPort}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
         val payloadJson = Gson().toJson(payload)
         with(url.openConnection() as HttpURLConnection) {
@@ -159,7 +137,7 @@ class ProjectContextProvider (val project: Project) : Disposable{
                 it.write(payloadJson)
             }
             val responseCode = responseCode
-            logger.info("update index response: $responseCode")
+            logger.debug("project context update index response code: $responseCode")
         }
     }
 
@@ -241,12 +219,12 @@ class ProjectContextProvider (val project: Project) : Disposable{
     }
 
     override fun dispose() {
-        encoderServer.dispose()
+       // clear index?
     }
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
-        fun getInstance(project: Project) = project.service<ProjectContextProvider>()
+        fun getInstance(project: Project, encoderServer: EncoderServer) = ProjectContextProvider(project, encoderServer)
     }
 
 }
