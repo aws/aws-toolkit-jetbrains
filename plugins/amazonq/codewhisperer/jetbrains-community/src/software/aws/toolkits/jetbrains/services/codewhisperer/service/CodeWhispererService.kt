@@ -95,6 +95,10 @@ class CodeWhispererService : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
+    init {
+        Disposer.register(this, codeInsightSettingsFacade)
+    }
+
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,

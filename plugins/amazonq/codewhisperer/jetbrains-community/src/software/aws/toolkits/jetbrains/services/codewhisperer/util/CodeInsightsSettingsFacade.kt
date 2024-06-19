@@ -52,10 +52,6 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
     val pendingRevertCounts: Int
         get() = pendingReverts.size
 
-    init {
-        Disposer.register(CodeWhispererService.getInstance(), this)
-    }
-
     @VisibleForTesting
     internal fun revertAll() {
         if (pendingReverts.count { !it.isComplete } == 0) {
