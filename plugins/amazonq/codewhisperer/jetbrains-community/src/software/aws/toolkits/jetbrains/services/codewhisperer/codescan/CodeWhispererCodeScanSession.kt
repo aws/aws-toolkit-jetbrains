@@ -432,7 +432,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         sleep(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
     }
 
-    private fun getTelemetryErrorMessage(e: Exception): String = when {
+    fun getTelemetryErrorMessage(e: Exception): String = when {
         e.message?.contains("Resource not found.") == true -> "Resource not found."
         e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
         e.message?.contains("Service returned HTTP status code 403") == true -> "Service returned HTTP status code 403"
