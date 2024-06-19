@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix file rejections for files outside of src/"
+  "description" : "Feature Development: Fix file rejections for files outside of src/"
 }
