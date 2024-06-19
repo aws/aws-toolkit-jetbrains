@@ -17,7 +17,6 @@ import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.Url
 import com.intellij.util.Urls.newFromEncoded
 import com.intellij.util.io.DigestUtil
-import com.intellij.util.text.nullize
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.FullHttpRequest
@@ -75,8 +74,8 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
 
         if (parameters["code"] == null) {
             val error = parameters["error"]?.firstOrNull()
-            val error_description = parameters["error_description"]?.firstOrNull()
-            toolkitRequest.error = OAuthError(error = error, errorDescription = error_description)
+            val errorDescription = parameters["error_description"]?.firstOrNull()
+            toolkitRequest.error = OAuthError(error = error, errorDescription = errorDescription)
         }
 
         return super.handleOAuthServerCallback(path, parameters)
