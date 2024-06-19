@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -51,7 +52,7 @@ object CodeWhispererConstants {
     val ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES = TextAttributes(null, null, JBColor.YELLOW, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
     const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
     const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
-    const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 500 * 1024 * 1024 // 500 MB
+    const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 1 * 1024 * 1024 * 1024 // 1GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
     const val PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 30
