@@ -367,7 +367,11 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Getting security scan failed: ${e.message}" }
-        throw codeScanServerException("GetCodeScanException: " + e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
+        val errorMessage = when {
+            e.message?.contains("Resource not found.") == true -> "Resource not found."
+            else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+        }
+        throw codeScanServerException("GetCodeScanException: $errorMessage")
     }
 
     fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeScanFindingsResponse = try {
