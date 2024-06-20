@@ -154,7 +154,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     }
                 }
                 val errorMessage = createCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-                codeScanFailed(errorMessage)
+                codeScanFailed(errorMessage, "CreateCodeScanFailedError")
             }
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
@@ -191,7 +191,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                         }
                     }
                     val errorMessage = getCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-                    codeScanFailed(errorMessage)
+                    codeScanFailed(errorMessage, "DefaultError")
                 }
             }
 
@@ -287,7 +287,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Create Upload URL failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException("CreateUploadUrlException: $errorMessage")
+        throw codeScanServerException(errorMessage, "CreateUploadUrlError")
     }
 
     private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
@@ -321,7 +321,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: Exception) {
             LOG.debug { "Artifact failed to upload in the S3 bucket: ${e.message}" }
             val errorMessage = getTelemetryErrorMessage(e)
-            throw codeScanServerException("UploadArtifactToS3Exception: $errorMessage")
+            throw codeScanServerException(errorMessage, "UploadArtifactToS3Error")
         }
     }
 
@@ -344,7 +344,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
             val errorMessage = getTelemetryErrorMessage(e)
-            throw codeScanServerException("CreateCodeScanException: $errorMessage")
+            throw codeScanServerException(errorMessage, "CreateCodeScanError")
         }
     }
 
@@ -357,7 +357,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Getting security scan failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException("GetCodeScanException: $errorMessage")
+        throw codeScanServerException(errorMessage, "GetCodeScanError")
     }
 
     fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeScanFindingsResponse = try {
@@ -371,7 +371,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Listing security scan failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException("ListCodeScanFindingsException: $errorMessage")
+        throw codeScanServerException(errorMessage, "ListCodeScanFindingsError")
     }
 
     fun mapToCodeScanIssues(recommendations: List<String>): List<CodeWhispererCodeScanIssue> {
