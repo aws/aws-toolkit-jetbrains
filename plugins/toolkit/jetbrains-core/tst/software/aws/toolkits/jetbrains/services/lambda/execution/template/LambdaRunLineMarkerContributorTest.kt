@@ -12,7 +12,6 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.openFile
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 class LambdaRunLineMarkerContributorTest {
 
@@ -37,7 +36,7 @@ Resources:
 
         runAndAssertionMarks(projectRule.fixture) { marks ->
             assertThat(marks).hasSize(1)
-            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfiesKt {
+            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
                 assertThat(it!!.text).isEqualTo("ServerlessFunction")
             }
         }
@@ -59,7 +58,7 @@ Resources:
         )
         runAndAssertionMarks(projectRule.fixture) { marks ->
             assertThat(marks).hasSize(1)
-            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfiesKt {
+            assertThat(marks.first().lineMarkerInfo.element).isNotNull.satisfies {
                 assertThat(it!!.text).isEqualTo("LambdaFunction")
             }
         }

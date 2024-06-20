@@ -37,7 +37,6 @@ import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionState
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -268,11 +267,9 @@ class TelemetryServiceTest {
     private fun assertMetricEventsContains(events: Collection<MetricEvent>, eventName: String, awsAccount: String, awsRegion: String) {
         assertThat(events).filteredOn { event ->
             event.data.any { it.name == eventName }
-        }.anySatisfy { element ->
-            assertThat(element).isInstanceOfSatisfying<MetricEvent> {
-                assertThat(it.awsAccount).isEqualTo(awsAccount)
-                assertThat(it.awsRegion).isEqualTo(awsRegion)
-            }
+        }.anySatisfy {
+            assertThat(it.awsAccount).isEqualTo(awsAccount)
+            assertThat(it.awsRegion).isEqualTo(awsRegion)
         }
     }
 }

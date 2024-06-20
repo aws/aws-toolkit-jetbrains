@@ -4,16 +4,18 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.IterableAssert
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.amazon.awssdk.profiles.Profile
 import software.aws.toolkits.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.test.assertPosixPermissions
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
+import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 
 class DefaultConfigFilesFacadeTest {
 
@@ -31,8 +33,8 @@ class DefaultConfigFilesFacadeTest {
         assertThat(file).exists().hasContent(DefaultConfigFilesFacade.TEMPLATE)
 
         assumeNoException<UnsupportedOperationException> {
-            assertPosixPermissions(file, "rw-------")
-            assertPosixPermissions(file.parent, "rwxr-xr-x")
+            assertThat(Files.getPosixFilePermissions(file)).matches("rw-------")
+            assertThat(Files.getPosixFilePermissions(file.parent)).matches("rwxr-xr-x")
         }
     }
 
@@ -48,8 +50,8 @@ class DefaultConfigFilesFacadeTest {
         sut.createConfigFile()
 
         assumeNoException<UnsupportedOperationException> {
-            assertPosixPermissions(file, "rw-------")
-            assertPosixPermissions(file.parent, "rwxrwxrwx")
+            assertThat(Files.getPosixFilePermissions(file)).matches("rw-------")
+            assertThat(Files.getPosixFilePermissions(file.parent)).matches("rwxrwxrwx")
         }
     }
 
@@ -104,7 +106,7 @@ class DefaultConfigFilesFacadeTest {
 
         assertThat(sut.readAllProfiles())
             .hasSize(1)
-            .satisfiesKt {
+            .satisfies {
                 val entry = it.entries.first()
                 assertThat(entry.key).isEqualTo("profileName")
                 assertThat(entry.value).isEqualTo(
@@ -592,6 +594,10 @@ class DefaultConfigFilesFacadeTest {
             [sso-session session3]
             """.trimIndent()
         )
+    }
+
+    private fun IterableAssert<PosixFilePermission>.matches(permissionString: String) {
+        containsOnly(*PosixFilePermissions.fromString(permissionString).toTypedArray())
     }
 
     private inline fun <reified T> assumeNoException(block: () -> Unit) {

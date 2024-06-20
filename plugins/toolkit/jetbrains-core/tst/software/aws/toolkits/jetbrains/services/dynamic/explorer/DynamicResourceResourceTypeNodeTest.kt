@@ -15,7 +15,6 @@ import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerEmptyNode
 import software.aws.toolkits.jetbrains.core.explorer.nodes.AwsExplorerErrorNode
 import software.aws.toolkits.jetbrains.core.id
 import software.aws.toolkits.jetbrains.services.dynamic.CloudControlApiResources
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 
 class DynamicResourceResourceTypeNodeTest {
@@ -36,7 +35,7 @@ class DynamicResourceResourceTypeNodeTest {
 
         val sut = DynamicResourceResourceTypeNode(projectRule.project, type)
 
-        assertThat(sut.children).hasOnlyOneElementOfType<DynamicResourceNode>().satisfiesKt {
+        assertThat(sut.children).hasOnlyOneElementOfType<DynamicResourceNode>().satisfies {
             assertThat(it.displayName()).isEqualTo(identifier)
         }
     }
@@ -48,7 +47,7 @@ class DynamicResourceResourceTypeNodeTest {
 
         val sut = DynamicResourceResourceTypeNode(projectRule.project, type)
 
-        assertThat(sut.children).hasOnlyOneElementOfType<AwsExplorerEmptyNode>().satisfiesKt {
+        assertThat(sut.children).hasOnlyOneElementOfType<AwsExplorerEmptyNode>().satisfies {
             assertThat(it.displayName()).startsWith(message("dynamic_resources.unavailable_in_region", ""))
         }
     }

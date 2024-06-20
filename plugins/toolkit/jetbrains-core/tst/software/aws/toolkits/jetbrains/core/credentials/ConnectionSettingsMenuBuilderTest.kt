@@ -22,7 +22,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ConnectionSettingsMenuBu
 import software.aws.toolkits.jetbrains.core.credentials.MockAwsConnectionManager.ProjectAccountSettingsManagerRule
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 
 class ConnectionSettingsMenuBuilderTest {
@@ -88,7 +87,7 @@ class ConnectionSettingsMenuBuilderTest {
             .build()
         val actions = group.getChildren().filterIsInstance<ActionGroup>()
 
-        assertThat(actions).singleElement().satisfiesKt {
+        assertThat(actions).singleElement().satisfies {
             assertThat(it.isPopup).isTrue
             assertThat(it.templatePresentation.text).isEqualTo(message("settings.partitions"))
             assertThat(it.getChildren()).hasSize(otherPartitions.size)

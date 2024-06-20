@@ -12,7 +12,6 @@ import org.assertj.core.api.ObjectAssert
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.settings.AwsSettingsRule
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 class AwsConnectionExtensionSettingsEditorTest {
 
@@ -130,7 +129,7 @@ class AwsConnectionExtensionSettingsEditorTest {
     private fun ObjectAssert<AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
         expected: AwsCredentialInjectionOptions.() -> Unit
     ) {
-        satisfiesKt {
+        satisfies {
             val updatedConfiguration = createConfiguration { }
             it.applyTo(updatedConfiguration)
             assertThat(updatedConfiguration.extensionOptions()).usingRecursiveComparison().isEqualTo(AwsCredentialInjectionOptions(expected))

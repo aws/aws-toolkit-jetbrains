@@ -15,7 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.utils.test.notNull
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
@@ -103,7 +102,7 @@ class ScpCommandLineTest {
 
         val paths = sut.executeScpTest()
 
-        assertThat(paths).singleElement().notNull.satisfiesKt {
+        assertThat(paths).singleElement().notNull.satisfies {
             assertThat(it.fileName.toString()).isEqualTo(uuid)
             // is nested
             assertThat(it.parent.fileName.toString()).isEqualTo(directory.name)

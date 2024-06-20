@@ -19,7 +19,6 @@ import software.aws.toolkits.core.utils.RemoteResourceResolver
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
-import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -151,7 +150,7 @@ class AwsRegionProviderTest {
 
         val awsRegionProvider = AwsRegionProvider()
 
-        assertThat(awsRegionProvider.defaultPartition()).satisfiesKt {
+        assertThat(awsRegionProvider.defaultPartition()).satisfies {
             assertThat(it.id).isEqualTo("moon")
         }
     }
