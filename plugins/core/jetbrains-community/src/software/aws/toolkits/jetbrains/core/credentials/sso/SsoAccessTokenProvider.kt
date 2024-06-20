@@ -403,7 +403,6 @@ class SsoAccessTokenProvider(
             return token
         } catch (e: Exception) {
             val requestId = when (e) {
-                is SsoOidcException -> e.requestId()
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
