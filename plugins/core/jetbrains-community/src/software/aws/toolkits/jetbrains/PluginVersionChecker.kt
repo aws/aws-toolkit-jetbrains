@@ -78,7 +78,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
                         coreDescriptor?.let { descriptor -> PluginUpdateManager.updatePlugin(descriptor, EmptyProgressIndicator()) }
                     }
 
-                    PluginEnabler.getInstance().disable(
+                    PluginEnabler.HEADLESS.disable(
                         AwsToolkit.PLUGINS_INFO.values.mapNotNull {
                             val descriptor = it.descriptor as? IdeaPluginDescriptor
                             if (descriptor != null && descriptor != core.descriptor) {
@@ -106,7 +106,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
                 return false
             }
 
-            PluginEnabler.getInstance().disable(listOf(descriptor))
+            PluginEnabler.HEADLESS.disable(listOf(descriptor))
             return true
         }
 
