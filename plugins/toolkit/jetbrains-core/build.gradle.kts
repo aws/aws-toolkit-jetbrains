@@ -1,9 +1,19 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import com.jetbrains.plugin.structure.intellij.utils.JDOMUtil
+import org.jdom2.Document
+import org.jdom2.output.Format
+import org.jdom2.output.XMLOutputter
+import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.isCi
+import java.io.StringWriter
+import java.nio.file.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.writeText
 
 val toolkitVersion: String by project
 val ideProfile = IdeVersions.ideProfile(project)
@@ -50,32 +60,28 @@ tasks.integrationTest {
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
-//    pluginXmlFiles.set(tasks.patchPluginXml.map { it.pluginXmlFiles }.get())
-//    destinationDir.set(project.buildDir.resolve("patchedPluginXmlFilesGW"))
+    inputFile.set(tasks.patchPluginXml.map { it.outputFile.get() })
 
-//    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
-//    version.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
+    pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 
     // jetbrains expects gateway plugin to be dynamic
-//    doLast {
-//        pluginXmlFiles.get()
-//            .map(File::toPath)
-//            .forEach { p ->
-//                val path = destinationDir.get()
-//                    .asFile.toPath().toAbsolutePath()
-//                    .resolve(p.simpleName)
-//
-//                val document = path.inputStream().use { inputStream ->
-//                    JDOMUtil.loadDocument(inputStream)
-//                }
-//
-//                document.rootElement
-//                    .getAttribute("require-restart")
-//                    .setValue("false")
-//
-//                transformXml(document, path)
-//            }
-//    }
+    doLast {
+        outputFile.asFile
+            .map(File::toPath)
+            .get()
+            .let { path ->
+                val document = path.inputStream().use { inputStream ->
+                    JDOMUtil.loadDocument(inputStream)
+                }
+
+                document.rootElement
+                    .getAttribute("require-restart")
+                    .setValue("false")
+
+                transformXml(document, path)
+            }
+    }
 }
 
 val gatewayArtifacts by configurations.creating {
@@ -171,17 +177,17 @@ dependencies {
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
 }
-//
-// fun transformXml(document: Document, path: Path) {
-//    val xmlOutput = XMLOutputter()
-//    xmlOutput.format.apply {
-//        indent = "  "
-//        omitDeclaration = true
-//        textMode = Format.TextMode.TRIM
-//    }
-//
-//    StringWriter().use {
-//        xmlOutput.output(document, it)
-//        path.writeText(it.toString())
-//    }
-// }
+
+fun transformXml(document: Document, path: Path) {
+    val xmlOutput = XMLOutputter()
+    xmlOutput.format.apply {
+        indent = "  "
+        omitDeclaration = true
+        textMode = Format.TextMode.TRIM
+    }
+
+    StringWriter().use {
+        xmlOutput.output(document, it)
+        path.writeText(text = it.toString())
+    }
+}

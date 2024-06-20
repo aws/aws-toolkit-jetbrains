@@ -28,8 +28,8 @@ dependencies {
         create(type, version)
         jetbrainsRuntime()
 
-//        localPlugin(project(":plugin-core", "pluginZip"))
-//        localPlugin(project(":plugin-amazonq", "pluginZip"))
-//        localPlugin(project(":plugin-toolkit:intellij-standalone", "pluginZip"))
+        localPlugin(project(":plugin-core", "pluginZip"))
+        localPlugin(project(":plugin-amazonq", "pluginZip"))
+        localPlugin(project(":plugin-toolkit:intellij-standalone", "pluginZip"))
     }
 }
