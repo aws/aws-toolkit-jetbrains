@@ -57,7 +57,7 @@ class PluginVersionChecker : ApplicationInitializedListener {
             LOG.info { "Restarting due to forced update of plugins" }
 
             // IDE invokeLater is not initialized yet
-            SwingUtilities.invokeLater {
+            SwingUtilities.invokeAndWait {
                 ApplicationManagerEx.getApplicationEx().restart(true)
             }
             return
