@@ -60,8 +60,6 @@ tasks.integrationTest {
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
-    inputFile.set(tasks.patchPluginXml.map { it.outputFile.get() })
-
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 
