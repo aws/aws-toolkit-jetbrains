@@ -50,6 +50,7 @@ sourceSets {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core", "pluginZip"))
+        testFramework(TestFrameworkType.Bundled)
         testFramework(TestFrameworkType.Plugin.ReSharper)
     }
 
