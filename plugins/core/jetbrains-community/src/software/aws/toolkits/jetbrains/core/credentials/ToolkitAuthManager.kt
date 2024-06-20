@@ -227,7 +227,7 @@ fun reauthConnectionIfNeeded(
     return reauthProviderIfNeeded(project, tokenProvider, connection)
 }
 
-fun reauthProviderIfNeeded(
+private fun reauthProviderIfNeeded(
     project: Project?,
     tokenProvider: BearerTokenProvider,
     connection: ToolkitConnection
