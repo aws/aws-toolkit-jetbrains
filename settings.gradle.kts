@@ -120,11 +120,7 @@ file("plugins").listFiles()?.forEach root@ {
         .filter { it.isDirectory && it.resolve("build.gradle.kts").isFile }
         .iterator()
         .forEach {
-            if (it.name == "jetbrains-rider") {
-                return@forEach
-            }
             if (it.name == "jetbrains-gateway") {
-//                return@forEach
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
                     "2023.2", "2023.3" -> {
