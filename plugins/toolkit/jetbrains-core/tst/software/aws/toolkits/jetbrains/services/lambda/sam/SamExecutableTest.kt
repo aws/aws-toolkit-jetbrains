@@ -61,7 +61,7 @@ class SamExecutableTest {
             logicalId = "FooResource",
             buildDir = buildDir,
             samOptions = SamOptions(
-                buildInContainer = false
+                buildInContainer = true
             )
         )
 
@@ -73,7 +73,10 @@ class SamExecutableTest {
                 "--template",
                 "$templatePath",
                 "--build-dir",
-                "$buildDir"
+                "$buildDir",
+                "--use-container",
+                "--container-env-var",
+                "Foo=Bar"
             ).joinToString(separator = " ")
         )
     }

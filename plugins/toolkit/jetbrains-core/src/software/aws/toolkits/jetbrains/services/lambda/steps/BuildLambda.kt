@@ -19,24 +19,18 @@ data class BuildLambdaRequest(
     val buildDir: Path,
     val buildEnvVars: Map<String, String> = emptyMap(),
     val samOptions: SamOptions,
-    val preBuildSteps: List<Step> = emptyList(),
-    val gradleUserHomeDir: String? = null
+    val preBuildSteps: List<Step> = emptyList()
 )
 
 class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.build")
-    private val buildEnvVars = request.buildEnvVars.toMutableMap().apply {
-        request.gradleUserHomeDir?.let {
-            this["GRADLE_USER_HOME"] = it
-        }
-    }
 
     override fun constructCommandLine(context: Context): GeneralCommandLine = getCli().samBuildCommand(
 
         templatePath = request.templatePath,
         logicalId = request.logicalId,
         buildDir = request.buildDir,
-        environmentVariables = buildEnvVars,
+        environmentVariables = request.buildEnvVars,
         samOptions = request.samOptions
     )
 

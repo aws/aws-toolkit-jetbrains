@@ -36,9 +36,11 @@ fun createTemplateRunConfiguration(
     inputIsFile: Boolean = false,
     credentialsProviderId: String? = null,
     region: AwsRegion? = getDefaultRegion(),
+    environmentVariables: MutableMap<String, String> = mutableMapOf(),
     samOptions: SamOptions = SamOptions()
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
+    runConfiguration.environmentVariables(environmentVariables)
     runConfiguration.useTemplate(templateFile, logicalId)
     runConfiguration.isImage = isImage
     runConfiguration.runtime(runtime)
