@@ -407,7 +407,6 @@ class SsoAccessTokenProvider(
                 else -> null
             }
             val message = when (e) {
-                is SsoOidcException -> e.awsErrorDetails().errorMessage()
                 is AwsServiceException -> e.awsErrorDetails().errorMessage()
                 else -> e.message ?: "Unknown error"
             }
