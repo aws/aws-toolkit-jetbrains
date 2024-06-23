@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.webview
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.blockingContext
@@ -28,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
@@ -95,6 +95,11 @@ abstract class LoginBrowser(
                 result = Result.Failed,
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId
+            )
+            AuthTelemetry.addConnection(
+                result = Result.Failed,
+                credentialSourceId = CredentialSourceId.AwsId,
+                reason = e.message
             )
         }
         val onSuccess: () -> Unit = {
@@ -182,7 +187,7 @@ abstract class LoginBrowser(
     }
 
     protected fun <T> loginWithBackgroundContext(action: () -> T): Future<T> =
-        ApplicationManager.getApplication().executeOnPooledThread<T> {
+        pluginAwareExecuteOnPooledThread {
             runBlocking {
                 withBackgroundProgress(project, message("credentials.pending.title")) {
                     blockingContext {
@@ -202,13 +207,6 @@ abstract class LoginBrowser(
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, onPendingToken)
-                AwsTelemetry.loginWithBrowser(
-                    project = null,
-                    isReAuth = true,
-                    result = Result.Succeeded,
-                    credentialStartUrl = connection.startUrl,
-                    credentialType = CredentialType.BearerToken
-                )
             }
         }
     }
