@@ -17,7 +17,6 @@ import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
 import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
-import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -407,7 +406,7 @@ class SsoAccessTokenProvider(
                 else -> null
             }
             val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails().errorMessage()
+                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
                 else -> e.message ?: "Unknown error"
             }
             sendFailedRefreshCredentialsMetricIfNeeded(
