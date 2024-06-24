@@ -59,13 +59,16 @@ tasks.integrationTest {
     systemProperty("aws.dev.useDAG", true)
 }
 
-val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
+val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+}
 
+val patchedGatewayPluginXml by tasks.creating {
+    dependsOn(gatewayPluginXml)
     // jetbrains expects gateway plugin to be dynamic
     doLast {
-        outputFile.asFile
+        gatewayPluginXml.outputFile.asFile
             .map(File::toPath)
             .get()
             .let { path ->
@@ -94,7 +97,7 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN
 
-    dependsOn(tasks.instrumentedJar, gatewayPluginXml)
+    dependsOn(tasks.instrumentedJar, patchedGatewayPluginXml)
 
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
     from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
@@ -103,7 +106,7 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
         exclude("**/inactive")
     }
 
-    from(gatewayPluginXml) {
+    from(patchedGatewayPluginXml) {
         into("META-INF")
     }
 
