@@ -320,11 +320,7 @@ class SsoAccessTokenProviderTest {
             on(
                 ssoOidcClient.createToken(refreshTokenRequest())
             )
-                .thenThrow(
-                    AwsServiceException.builder()
-                        .awsErrorDetails(AwsErrorDetails.builder().errorMessage("Test Err Msg").build())
-                        .build()
-                )
+                .thenThrow(AwsServiceException.builder().build())
         }
 
         assertThatThrownBy { runBlocking { sut.refreshToken(sut.accessToken()) } }
