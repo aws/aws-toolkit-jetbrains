@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix refresh token telemetry failure due to null aws error details"
+  "description" : "Fix refresh token failure due to null aws error details"
 }
