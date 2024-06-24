@@ -94,7 +94,7 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN
 
-    dependsOn(tasks.instrumentedJar)
+    dependsOn(tasks.instrumentedJar, gatewayPluginXml)
 
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
     from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
