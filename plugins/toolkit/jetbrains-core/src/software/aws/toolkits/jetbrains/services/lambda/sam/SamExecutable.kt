@@ -102,10 +102,6 @@ fun GeneralCommandLine.samBuildCommand(
     addParameter(buildDir.toString())
     if (samOptions.buildInContainer) {
         withParameters("--use-container")
-//        environmentVariables.forEach { (key, value) ->
-//            withParameters("--container-env-var")
-//            withParameters("$key=$value")
-//        }
     }
 
     if (samOptions.skipImagePull) {
