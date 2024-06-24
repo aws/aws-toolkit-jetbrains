@@ -64,8 +64,12 @@ val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 }
 
-val patchedGatewayPluginXml by tasks.creating {
+val patchGatewayPluginXml by tasks.creating {
     dependsOn(gatewayPluginXml)
+
+    val output = temporaryDir.resolve("plugin.xml")
+    outputs.file(output)
+
     // jetbrains expects gateway plugin to be dynamic
     doLast {
         gatewayPluginXml.outputFile.asFile
@@ -80,7 +84,7 @@ val patchedGatewayPluginXml by tasks.creating {
                     .getAttribute("require-restart")
                     .setValue("false")
 
-                transformXml(document, path)
+                transformXml(document, output.toPath())
             }
     }
 }
@@ -97,7 +101,7 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // unclear why the exclude() statement didn't work
     duplicatesStrategy = DuplicatesStrategy.WARN
 
-    dependsOn(tasks.instrumentedJar, patchedGatewayPluginXml)
+    dependsOn(tasks.instrumentedJar, patchGatewayPluginXml)
 
     archiveBaseName.set("aws-toolkit-jetbrains-IC-GW")
     from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
@@ -106,7 +110,7 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
         exclude("**/inactive")
     }
 
-    from(patchedGatewayPluginXml) {
+    from(patchGatewayPluginXml) {
         into("META-INF")
     }
 
