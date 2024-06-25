@@ -40,3 +40,8 @@ configurations {
 tasks.check {
     dependsOn(tasks.verifyPlugin)
 }
+
+tasks.verifyPlugin {
+    // hack to run serially because the CLI tool writes random directories in current user home directory
+    inputs.file("$rootDir/dummy.mutex")
+}
