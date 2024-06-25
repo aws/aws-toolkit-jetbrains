@@ -4,36 +4,26 @@
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController (val project: Project) : Disposable {
-    private lateinit var encoderServer: EncoderServer
-    private lateinit var projectContextProvider : ProjectContextProvider
+    private val encoderServer: EncoderServer = EncoderServer.getInstance(project)
+    private val projectContextProvider : ProjectContextProvider = ProjectContextProvider.getInstance(project, encoderServer)
+    private val scope = disposableCoroutineScope(this)
     init {
-        ApplicationManager.getApplication().executeOnPooledThread() {
+        scope.launch{
             if(CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                encoderServer = EncoderServer.getInstance(project)
-                projectContextProvider = ProjectContextProvider.getInstance(project, encoderServer!!)
-                projectContextProvider!!.index()
+                   encoderServer.downloadArtifactsAndStartServer()
+                   encoderServer.serverThread.join()
+                   projectContextProvider.initAndIndex()
             }
-        }
-    }
-
-    fun index() {
-        if (encoderServer?.isServerRunning() != true) {
-            logger.debug("encoder server is not running, skipping index for project context")
-            return
-        }
-        try {
-            projectContextProvider!!.index()
-        } catch (e: Exception) {
-            logger.warn("error while indexing for project context $e.message")
         }
     }
 

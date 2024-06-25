@@ -7,19 +7,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.openapi.application.PathManager
 import com.intellij.util.io.HttpRequests
 import org.apache.commons.lang3.SystemUtils
 import software.aws.toolkits.core.utils.getLogger
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.file.Files
-import java.nio.file.Paths
-import kotlin.io.path.createDirectories
+
 
 class ManifestManager {
-//    val cachePath = Paths.get(PathManager.getDefaultSystemPathFor("LOCALAPPDATA")).resolve("project/manifest").createDirectories()
     val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/temp/manifest.json"
     val SERVER_VERSION = "0.0.1"
     private val os = getOs()
@@ -33,7 +28,7 @@ class ManifestManager {
         @JsonProperty("url")
         val url: String ?= null,
         @JsonProperty("hashes")
-        val contents: List<String> ?= emptyList(),
+        val hashes: List<String> ?= emptyList(),
         @JsonProperty("bytes")
         val bytes: Number ?= null
     )
@@ -77,14 +72,7 @@ class ManifestManager {
         connection.requestMethod = "GET"
         connection.setRequestProperty("Accept", "application/json")
         connection.setRequestProperty("Content-Type", "application/json")
-//        connection.setRequestProperty("If-None-Match", etag)
-//        val headerFields = connection.headerFields
-//        val newTag = headerFields["ETag"]?.firstOrNull()
-//        if( newTag != null && etag != newTag) {
-            return fetchFromRemoteAndSave()
-//        } else {
-//            return fetchFromCache()
-//        }
+        return fetchFromRemoteAndSave()
     }
 
     private fun readManifestFile(content: String) : Manifest? {
@@ -99,15 +87,6 @@ class ManifestManager {
         }
     }
 
-    private fun getNodeUrlFromTarget (target: VersionTarget) :String? {
-        val content = target.contents?.find{content -> content?.filename?.contains("node") == true }
-        return content?.url
-    }
-
-    private fun getZipUrlFromTarget (target: VersionTarget) :String? {
-        val content = target.contents?.find{content -> content?.filename?.contains("qserver") == true }
-        return content?.url
-    }
 
     private fun getTargetFromManifest(manifest: Manifest): VersionTarget? {
         val targets = manifest.versions?.find{version -> version.serverVersion != null && (version.serverVersion.contains(SERVER_VERSION))}?.targets
@@ -118,35 +97,20 @@ class ManifestManager {
         return targets!!.find{ target -> target.platform == os && target.arch == targetArch }
     }
 
-    fun getNodeUrlFromManifest(manifest: Manifest): String? {
+    fun getNodeContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
-        return getNodeUrlFromTarget(target)
+        return target.contents?.find{content -> content?.filename?.contains("node") == true }
     }
 
-    fun getZipUrlFromManifest(manifest: Manifest): String? {
-        val target = getTargetFromManifest(manifest) ?: return null
-        return getZipUrlFromTarget(target)
-    }
 
-//    private fun fetchFromCache() : Manifest? {
-//        val filePath = Paths.get(cachePath.toString(), "manifest.json")
-//        try {
-//            val content = Files.readString(filePath)
-//            return readManifestFile(content)
-//        } catch (e: IOException) {
-//            logger.info("error reading manifest from cache")
-//            return fetchFromRemoteAndSave()
-//        }
-//    }
+    fun getZipContentFromManifest(manifest: Manifest): TargetContent? {
+        val target = getTargetFromManifest(manifest) ?: return null
+        return target.contents?.find{content -> content?.filename?.contains("qserver") == true }
+    }
 
     private fun fetchFromRemoteAndSave(): Manifest? {
         try {
             val response= HttpRequests.request(cloudFrontUrl).readString()
-//            val response= HttpRequests.request(cloudFrontUrl).readBytes(null)
-//            val filePath = Paths.get(cachePath.toString(), "manifest.json")
-//            Files.createDirectories(filePath.parent)
-//            Files.write(filePath, response)
-//            val content = Files.readString(filePath)
             return readManifestFile(response)
         } catch(e: Exception) {
             return null
@@ -154,7 +118,7 @@ class ManifestManager {
         }
     }
 
-    private fun getOs() : String {
+    fun getOs() : String {
         if (SystemUtils.IS_OS_WINDOWS) {
             return "windows"
         } else if (SystemUtils.IS_OS_MAC) {
