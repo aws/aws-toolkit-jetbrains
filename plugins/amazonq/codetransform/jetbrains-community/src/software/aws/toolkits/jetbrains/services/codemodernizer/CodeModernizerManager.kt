@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryService
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
@@ -122,6 +123,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     )
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
+        CodeTransformTelemetryService.getInstance().resetDefaults()
     }
 
     fun validate(project: Project): ValidationResult {

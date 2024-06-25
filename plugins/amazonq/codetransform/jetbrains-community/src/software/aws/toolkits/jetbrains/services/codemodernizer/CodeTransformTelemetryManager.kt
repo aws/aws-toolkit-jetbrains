@@ -6,12 +6,14 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.serialization.encodeToString
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
@@ -196,11 +198,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
+    fun logHil(jobId: String, metaData: CodeTransformTelemetryMetadata, success: Boolean, reason: String) {
         CodetransformTelemetry.humanInTheLoop(
             project,
             jobId,
-            metaData.toString(),
+            metaData.toJsonString(),
             sessionId,
             reason,
             success,
@@ -223,8 +225,3 @@ class CodeTransformTelemetryManager(private val project: Project) {
         fun getInstance(project: Project): CodeTransformTelemetryManager = project.service()
     }
 }
-
-data class HilTelemetryMetaData(
-    val dependencyVersionSelected: String? = null,
-    val cancelledFromChat: Boolean = false,
-)
