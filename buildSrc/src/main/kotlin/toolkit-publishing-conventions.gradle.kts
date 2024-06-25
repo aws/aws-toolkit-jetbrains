@@ -43,5 +43,5 @@ tasks.check {
 
 tasks.verifyPlugin {
     // hack to run serially because the CLI tool writes random directories in current user home directory
-    inputs.file("$rootDir/dummy.mutex")
+    inputs.file("$rootDir/README.md")
 }
