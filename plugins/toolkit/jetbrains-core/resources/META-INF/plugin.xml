@@ -107,11 +107,6 @@
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
-    <depends optional="true" config-file="ext-scala.xml">org.intellij.scala</depends>
-    <depends optional="true" config-file="ext-kotlin.xml">org.jetbrains.kotlin</depends>
-    <depends optional="true" config-file="ext-shell.xml">com.jetbrains.sh</depends>
-    <depends optional="true" config-file="ext-rust-deprecated.xml">org.rust.lang</depends>
-    <depends optional="true" config-file="ext-rust.xml">com.jetbrains.rust</depends>
 
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
         <xi:fallback/>
@@ -353,7 +348,6 @@
     </extensions>
 
     <actions resource-bundle="software.aws.toolkits.resources.MessagesBundle">
-        <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
         <action id="aws.settings.refresh" class="software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction"/>
         <action id="aws.toolkit.showFeedback" class="software.aws.toolkits.jetbrains.ui.feedback.ShowFeedbackDialogAction"/>
         <action id="aws.toolkit.open.arn.browser" class="software.aws.toolkits.jetbrains.services.federation.OpenArnInConsoleEditorPopupAction">
