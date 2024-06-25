@@ -45,6 +45,12 @@ configurations.testFixturesCompileOnlyApi {
     )
 }
 
+// intellij java-test-framework pollutes test classpath with extracted java plugins
+configurations.testFixturesApi {
+    exclude("com.jetbrains.intellij.java", "java")
+    exclude("com.jetbrains.intellij.java", "java-impl")
+}
+
 dependencies {
     intellijPlatform {
         testFramework(TestFrameworkType.Platform)
