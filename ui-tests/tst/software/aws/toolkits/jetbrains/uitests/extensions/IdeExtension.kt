@@ -8,6 +8,9 @@ import com.intellij.remoterobot.stepsProcessing.StepLogger
 import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.utils.waitFor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -47,18 +50,20 @@ class Ide : BeforeAllCallback, AfterAllCallback {
         log.info("Connected to IDE")
     }
 
-    private fun waitForIde() {
-        waitFor(
-            duration = Duration.ofMinutes(10),
-            interval = Duration.ofMillis(500),
-            errorMessage = "Could not connect to remote robot in time"
-        ) {
-            if (!gradleProcess.isRunning()) {
-                throw IllegalStateException("Gradle task has ended, check log")
-            }
+    private fun waitForIde() = runBlocking {
+        withTimeoutOrNull(Duration.ofMinutes(10).toMillis()) {
+            while (true) {
+                if (!gradleProcess.isRunning()) {
+                    throw IllegalStateException("Gradle task has ended, check log")
+                }
 
-            canConnectToToRobot()
-        }
+                if (canConnectToToRobot()) {
+                    return@withTimeoutOrNull
+                }
+
+                delay(500)
+            }
+        } ?: throw Exception("Could not connect to remote robot in time")
     }
 
     private fun canConnectToToRobot(): Boolean = try {
