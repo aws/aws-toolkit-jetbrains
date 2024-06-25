@@ -338,7 +338,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
     private fun getCodeScanExceptionMessage(e: CodeWhispererCodeScanException): String? {
         val message = e.message
         return when {
-            message.isNullOrBlank() -> null
+            message.isBlank() -> null
             message == message("codewhisperer.codescan.invalid_source_zip_telemetry") -> {
                 message("codewhisperer.codescan.run_scan_error")
             }
