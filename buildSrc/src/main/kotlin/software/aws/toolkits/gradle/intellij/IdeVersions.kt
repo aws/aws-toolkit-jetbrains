@@ -48,11 +48,11 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2023.2",
+                sdkVersion = "2023.2.5",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2023.2.3",
-                nugetVersion = "2023.2.0"
+                nugetVersion = "2023.2.5"
             )
         ),
         Profile(
