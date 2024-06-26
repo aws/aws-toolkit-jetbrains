@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -21,8 +22,6 @@ class ProjectContextController (val project: Project) : Disposable {
         scope.launch{
             if(CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                    encoderServer.downloadArtifactsAndStartServer()
-                   encoderServer.serverThread.join()
-                   projectContextProvider.initAndIndex()
             }
         }
     }

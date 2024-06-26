@@ -50,21 +50,36 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
 
+    fun getProjectContextIndexThreadCount() :Int = state.intValue.getOrDefault(
+        CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount,
+        0
+    )
+
+    fun setProjectContextIndexThreadCount(value: Int) {
+        state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
 
-    override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply { value.putAll(state.value) }
+    override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply {
+        value.putAll(state.value)
+        intValue.putAll(state.intValue)
+    }
 
     override fun loadState(state: CodeWhispererConfiguration) {
         this.state.value.clear()
+        this.state.intValue.clear()
         this.state.value.putAll(state.value)
+        this.state.intValue.putAll(state.intValue)
     }
 }
 
 class CodeWhispererConfiguration : BaseState() {
     @get:Property
     val value by map<CodeWhispererConfigurationType, Boolean>()
+    val intValue by map<CodeWhispererIntConfigurationType, Int>()
 }
 
 enum class CodeWhispererConfigurationType {
@@ -75,4 +90,8 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateNotificationEnabled,
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
+}
+
+enum class CodeWhispererIntConfigurationType {
+    ProjectContextIndexThreadCount
 }

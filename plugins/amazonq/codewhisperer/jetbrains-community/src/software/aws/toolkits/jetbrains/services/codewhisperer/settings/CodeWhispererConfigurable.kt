@@ -7,6 +7,8 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -101,6 +103,21 @@ class CodeWhispererConfigurable(private val project: Project) :
                     enabled(invoke)
                     bindSelected(codeWhispererSettings::isProjectContextEnabled, codeWhispererSettings::toggleProjectContextEnabled)
                 }.comment(message("aws.settings.codewhisperer.project_context.tooltip"))
+            }
+
+            row {
+                intTextField(range = IntRange(1, 10)).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
+                    .align(AlignX.FILL).apply {
+                        connect.subscribe(
+                            ToolkitConnectionManagerListener.TOPIC,
+                            object : ToolkitConnectionManagerListener {
+                                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                    enabled(isCodeWhispererEnabled(project))
+                                }
+                            }
+                        )
+                        enabled(invoke)
+                }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
             }
         }
 

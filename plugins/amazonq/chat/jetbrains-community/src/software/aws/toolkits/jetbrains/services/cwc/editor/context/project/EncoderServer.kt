@@ -25,6 +25,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.manifest.ManifestManager
 import java.io.FileOutputStream
 import java.io.IOException
@@ -54,13 +55,15 @@ class EncoderServer (val project: Project): Disposable {
     private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val MAX_NUMBER_OF_RETRIES: Int = 10
     val key = generateHmacKey()
-    var process : Process? = null
+    lateinit var process : Process
 
     fun downloadArtifactsAndStartServer () {
         portManager.getPort().also { currentPort = it }
         downloadArtifactsIfNeeded()
         start()
     }
+
+    fun isNodeProcessRunning () = ::process.isInitialized && process.isAlive || numberOfRetry.get() == 9
 
     private fun generateHmacKey(): Key {
         val keyBytes = ByteArray(32)
@@ -84,12 +87,15 @@ class EncoderServer (val project: Project): Disposable {
         return signedJWT.serialize()
     }
 
-    private val serverRunnable = Runnable {
-        logger.info("encoder server started in port : $currentPort")
-        while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
-            runCommand(getCommand())
-        }
-    }
+//    private fun serverRunnable () {
+//        logger.info("encoder server started in port : $currentPort")
+//        while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
+//            val isSuccess = runCommand(getCommand())
+//            if (isSuccess) {
+//                break
+//            }
+//        }
+//    }
 
     data class EncryptionRequest (
         val version: String = "1.0",
@@ -102,15 +108,15 @@ class EncoderServer (val project: Project): Disposable {
         return jacksonObjectMapper().writeValueAsString(request)
     }
 
-    private fun runCommand (command: GeneralCommandLine) {
+    private fun runCommand (command: GeneralCommandLine) : Boolean {
         try {
 //            val request = getEncryptionRequest()
             process = command.createProcess()
-            val output = process?.inputStream?.bufferedReader().use { it?.readText()}
-            logger.info("started process: ${output}")
-            if(process?.exitValue() != 0) {
+            val exitCode = process.waitFor()
+            if(exitCode != 0) {
                 throw Exception(process?.errorStream?.bufferedReader().use { it?.readText() })
             }
+            return true
         } catch (e: Exception){
             logger.info("error running encoder server: $e")
             if(e.stackTraceToString().contains("address already in use")) {
@@ -120,15 +126,18 @@ class EncoderServer (val project: Project): Disposable {
             } else {
                 throw Exception(e.message)
             }
+            return false
         }
     }
 
     private fun getCommand (): GeneralCommandLine {
+        val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val map = mutableMapOf<String, String>()
         map["PORT"] = currentPort
         map["CACHE_DIR"] = PluginPathManager.getPluginHomePath("amazonq")
         map["START_AMAZONQ_LSP"] = "true"
-        val jsPath = cachePath.resolve("qserver").resolve("extension.js").toString()
+        map["Q_WORKER_THREADS"] = threadCount.toString()
+        val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME).toString()
         val command = GeneralCommandLine(nodePath, jsPath)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
@@ -140,8 +149,15 @@ class EncoderServer (val project: Project): Disposable {
 
     fun start() {
         if (!isRunning.getAndSet(true)) {
-            serverThread = Thread(serverRunnable)
-            serverThread.start()
+//            serverThread = Thread(serverRunnable)
+//            serverRunnable.run()
+//            serverThread.start()
+            while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
+                val isSuccess = runCommand(getCommand())
+                if (isSuccess) {
+                    break
+                }
+            }
         } else {
             throw IllegalStateException("Encoder server is already running!")
         }
@@ -150,7 +166,8 @@ class EncoderServer (val project: Project): Disposable {
     private fun close() {
         if (isRunning.getAndSet(false)) {
             process?.let { ProcessCloseUtil.close(it) }
-            serverThread.interrupt()
+//            serverThread.interrupt()
+//            serverRunnable
         }
     }
 
@@ -186,9 +203,8 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun validateHash (expectedHash: String?, input: ByteArray): Boolean {
         if (expectedHash == null) { return false}
-        val hash = Base64.getEncoder().encodeToString(
-            DigestUtils.sha256(input))
-        return hash == expectedHash
+        val sha384 = DigestUtils.sha384Hex(input)
+        return ("sha384:$sha384") == expectedHash
     }
 
     private fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {

@@ -15,17 +15,36 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Stack
 
-class ProjectContextProvider (val project: Project, val encoderServer: EncoderServer) : Disposable{
+class ProjectContextProvider (val project: Project, private val encoderServer: EncoderServer) : Disposable{
+    private val scope = disposableCoroutineScope(this)
+    init {
+        scope.launch {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+                while (true) {
+                    if (encoderServer.isNodeProcessRunning()) {
+                        delay(300)
+                        initAndIndex()
+                        break
+                    }
+                    delay(300)
+                }
+            }
+        }
+    }
     data class IndexRequestPayload(
         val filePaths: List<String>,
         val projectRoot: String,
