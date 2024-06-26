@@ -131,7 +131,17 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                     "url": "recommendationUrl"
                 },
                 "suggestedFixes": []
-            }
+            },
+            codeSnippet: [
+                {
+                    number:1,
+                    content: "codeBlock1"
+                },
+                {
+                    number:2,
+                    content: "codeBlock2"
+                }
+            ]
         }
     """.trimIndent()
 

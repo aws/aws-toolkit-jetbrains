@@ -426,6 +426,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 null
             }
         }.onEach { issue ->
+            // Add range highlighters for all the issues found.
             runInEdt {
                 issue.rangeHighlighter = issue.addRangeHighlighter()
             }
