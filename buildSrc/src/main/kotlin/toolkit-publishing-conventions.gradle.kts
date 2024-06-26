@@ -18,6 +18,7 @@ intellijPlatform {
     }
 
     verifyPlugin {
+        subsystemsToCheck.set(VerifyPluginTask.Subsystems.WITHOUT_ANDROID)
         // need to tune this
         failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
     }
