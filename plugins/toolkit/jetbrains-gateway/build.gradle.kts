@@ -83,8 +83,6 @@ dependencies {
     testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
-    testImplementation(libs.kotlin.coroutinesTest)
-    testImplementation(libs.kotlin.coroutinesDebug)
     testImplementation(libs.wiremock)
     testImplementation(libs.bundles.sshd)
 }
