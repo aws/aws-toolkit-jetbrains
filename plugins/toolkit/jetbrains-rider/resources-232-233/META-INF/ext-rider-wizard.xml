@@ -3,5 +3,6 @@
 
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>    </extensions>
+        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
+    </extensions>
 </idea-plugin>
