@@ -43,6 +43,6 @@ tasks.check {
 }
 
 tasks.verifyPlugin {
-    // hack to run serially because the CLI tool writes random directories in current user home directory
-    inputs.file("$rootDir/README.md")
+    // give each instance its own home dir
+    systemProperty("plugin.verifier.home.dir", temporaryDir)
 }
