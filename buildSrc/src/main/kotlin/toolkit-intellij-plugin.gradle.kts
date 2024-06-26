@@ -27,3 +27,7 @@ dependencies {
         instrumentationTools()
     }
 }
+
+tasks.verifyPlugin {
+    isEnabled = false
+}

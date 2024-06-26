@@ -38,11 +38,9 @@ configurations {
     }
 }
 
-tasks.check {
-    dependsOn(tasks.verifyPlugin)
-}
-
+// not run as part of check because of memory pressue issues
 tasks.verifyPlugin {
+    isEnabled = true
     // give each instance its own home dir
     systemProperty("plugin.verifier.home.dir", temporaryDir)
 }
