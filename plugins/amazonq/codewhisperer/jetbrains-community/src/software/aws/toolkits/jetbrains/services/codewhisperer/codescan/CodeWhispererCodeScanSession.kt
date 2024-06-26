@@ -393,7 +393,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 }?.let { document ->
                     val shouldShow = recommendation.codeSnippet.all { codeSni ->
                         document.getText().split("\n").getOrNull(codeSni.number - 1) == codeSni.content
-                    }
+                    } ?: true
 
                     if (shouldShow) {
                         val endLineInDocument = minOf(maxOf(0, recommendation.endLine - 1), document.lineCount - 1)
