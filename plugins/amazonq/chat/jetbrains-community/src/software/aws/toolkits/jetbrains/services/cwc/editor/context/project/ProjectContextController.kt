@@ -27,7 +27,7 @@ class ProjectContextController (val project: Project) : Disposable {
     }
 
     fun query(prompt: String) : List<RelevantDocument> {
-        if (encoderServer?.isServerRunning() != true) {
+        if (encoderServer?.isNodeProcessRunning() != true) {
             logger.debug("encoder server is not running, skipping query for project context")
             return emptyList()
         }
@@ -40,7 +40,7 @@ class ProjectContextController (val project: Project) : Disposable {
     }
 
     fun updateIndex(filePath: String) {
-        if (encoderServer?.isServerRunning() != true) {
+        if (encoderServer?.isNodeProcessRunning() != true) {
             logger.debug("encoder server is not running, skipping update index for project context")
         }
         try {

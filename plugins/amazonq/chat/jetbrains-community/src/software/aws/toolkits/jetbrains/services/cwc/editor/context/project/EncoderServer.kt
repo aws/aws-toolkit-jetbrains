@@ -44,11 +44,9 @@ import javax.crypto.spec.SecretKeySpec
 @Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
     val cachePath = Paths.get(PluginPathManager.getPluginHomePath("amazonq")).resolve("projectContext").createDirectories()
-// TODO: update the final file names
     private val SERVER_DIRECTORY_NAME = "qserver.zip"
     private val isRunning = AtomicBoolean(false)
     private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
-    lateinit var serverThread: Thread
     private var numberOfRetry = AtomicInteger(0)
     lateinit var currentPort: String
     private val manifestManager = ManifestManager.getInstance()
@@ -61,9 +59,10 @@ class EncoderServer (val project: Project): Disposable {
         portManager.getPort().also { currentPort = it }
         downloadArtifactsIfNeeded()
         start()
+        //
     }
 
-    fun isNodeProcessRunning () = ::process.isInitialized && process.isAlive || numberOfRetry.get() == 9
+    fun isNodeProcessRunning () = ::process.isInitialized && process.isAlive
 
     private fun generateHmacKey(): Key {
         val keyBytes = ByteArray(32)
@@ -87,16 +86,6 @@ class EncoderServer (val project: Project): Disposable {
         return signedJWT.serialize()
     }
 
-//    private fun serverRunnable () {
-//        logger.info("encoder server started in port : $currentPort")
-//        while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
-//            val isSuccess = runCommand(getCommand())
-//            if (isSuccess) {
-//                break
-//            }
-//        }
-//    }
-
     data class EncryptionRequest (
         val version: String = "1.0",
         val mode: String = "JWT",
@@ -110,7 +99,6 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun runCommand (command: GeneralCommandLine) : Boolean {
         try {
-//            val request = getEncryptionRequest()
             process = command.createProcess()
             val exitCode = process.waitFor()
             if(exitCode != 0) {
@@ -145,13 +133,8 @@ class EncoderServer (val project: Project): Disposable {
         return command
     }
 
-    fun isServerRunning(): Boolean = isRunning.get()
-
     fun start() {
         if (!isRunning.getAndSet(true)) {
-//            serverThread = Thread(serverRunnable)
-//            serverRunnable.run()
-//            serverThread.start()
             while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
                 val isSuccess = runCommand(getCommand())
                 if (isSuccess) {
@@ -165,9 +148,8 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun close() {
         if (isRunning.getAndSet(false)) {
+            logger.debug(process?.inputStream?.bufferedReader().use { it?.readText() })
             process?.let { ProcessCloseUtil.close(it) }
-//            serverThread.interrupt()
-//            serverRunnable
         }
     }
 
@@ -189,10 +171,7 @@ class EncoderServer (val project: Project): Disposable {
                 if(serverContent?.url != null) {
                     if(validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
                         downloadFromRemote(serverContent.url, zipFilePath)
-                        val isZipSuccess = unzipFile(zipFilePath, cachePath)
-                        if (!isZipSuccess) {
-                            throw Exception("error unzipping encoder server zipfile: $zipFilePath")
-                        }
+                        unzipFile(zipFilePath, cachePath)
                     }
                 }
             }
@@ -207,21 +186,24 @@ class EncoderServer (val project: Project): Disposable {
         return ("sha384:$sha384") == expectedHash
     }
 
-    private fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
-        if (!zipFilePath.exists()) return false
-        val zipFile = ZipFile(zipFilePath.toFile())
-        zipFile.use { file ->
-            file.entries().asSequence()
-                .filterNot { it.isDirectory }
-                .map { zipEntry ->
-                    val destPath = destDir.resolve(zipEntry.name)
-                    destPath.createParentDirectories()
-                    FileOutputStream(destPath.toFile()).use { targetFile ->
-                        zipFile.getInputStream(zipEntry).copyTo(targetFile)
-                    }
-                }.toList()
+    private fun unzipFile(zipFilePath: Path, destDir: Path) {
+        if (!zipFilePath.exists()) return
+        try {
+            val zipFile = ZipFile(zipFilePath.toFile())
+            zipFile.use { file ->
+                file.entries().asSequence()
+                    .filterNot { it.isDirectory }
+                    .map { zipEntry ->
+                        val destPath = destDir.resolve(zipEntry.name)
+                        destPath.createParentDirectories()
+                        FileOutputStream(destPath.toFile()).use { targetFile ->
+                            zipFile.getInputStream(zipEntry).copyTo(targetFile)
+                        }
+                    }.toList()
+            }
+        } catch (e: Exception){
+            logger.warn("error while unzipping project context artifact: ${e.message}")
         }
-        return true
     }
 
 

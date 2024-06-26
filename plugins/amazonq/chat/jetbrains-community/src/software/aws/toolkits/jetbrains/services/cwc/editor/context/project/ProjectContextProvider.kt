@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -36,11 +37,12 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 while (true) {
                     if (encoderServer.isNodeProcessRunning()) {
-                        delay(300)
+                        delay(1000)
                         initAndIndex()
                         break
+                    } else {
+                        yield()
                     }
-                    delay(300)
                 }
             }
         }
@@ -187,7 +189,6 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val traversedDirectories = mutableSetOf<VirtualFile>()
         var currentTotalFileSize = 0L
         val stack = Stack<VirtualFile>()
-        logger.info("modules: ${project.modules}")
         moduleLoop@ for (module in project.modules) {
             if (module.guessModuleDir() != null) {
                 stack.push(module.guessModuleDir())
@@ -234,10 +235,10 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val chunksMap: MutableMap<String, MutableList<Chunk>> = mutableMapOf()
         queryResult.forEach { chunk ->
             run {
-                if(chunk.filePath == null) return@forEach
-                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.filePath)) chunksMap[chunk.filePath]!! else mutableListOf()
+                if(chunk.relativePath == null) return@forEach
+                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.relativePath)) chunksMap[chunk.relativePath]!! else mutableListOf()
                 list.add(chunk)
-                chunksMap[chunk.filePath] = list
+                chunksMap[chunk.relativePath] = list
             }
         }
         val documents: MutableList<RelevantDocument> = mutableListOf()
