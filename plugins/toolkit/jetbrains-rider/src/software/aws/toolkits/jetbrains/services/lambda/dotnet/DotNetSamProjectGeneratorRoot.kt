@@ -82,7 +82,7 @@ abstract class DotNetSamProjectGeneratorRoot(
 
     private fun validateData() {
         // first validateData comes from SamInitSelectionPanel constructor...
-        samPanel?.validate()?.let {
+        samPanel.validate()?.let {
             context.statusMessages.add(StatusMessages.Error(it.message))
             return
         }
