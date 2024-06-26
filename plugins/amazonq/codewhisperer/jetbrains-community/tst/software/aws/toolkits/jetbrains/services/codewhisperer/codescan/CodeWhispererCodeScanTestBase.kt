@@ -132,14 +132,14 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                 },
                 "suggestedFixes": []
             },
-            codeSnippet: [
+            "codeSnippet": [
                 {
-                    number:1,
-                    content: "codeBlock1"
+                    "number": 1,
+                    "content": "codeBlock1"
                 },
                 {
-                    number:2,
-                    content: "codeBlock2"
+                    "number": 2,
+                    "content": "codeBlock2"
                 }
             ]
         }
