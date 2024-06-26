@@ -18,9 +18,8 @@ plugins {
 
 dependencies {
     testImplementation(gradleApi())
-    testImplementation(project(":plugin-toolkit:core"))
-    testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
-    testImplementation(project(":plugin-toolkit:resources"))
+    testImplementation(project(":plugin-core:core"))
+    testImplementation(project(path = ":plugin-core:core", configuration = "testArtifacts"))
     testImplementation(libs.kotlin.coroutines)
     testImplementation(libs.junit5.jupiterApi)
     testImplementation(libs.intellijRemoteFixtures)
@@ -44,8 +43,8 @@ tasks.test {
 }
 
 tasks.register<Test>("uiTestCore") {
-    dependsOn(":plugin-toolkit:intellij:buildPlugin")
-    inputs.files(":plugin-toolkit:intellij:buildPlugin")
+    dependsOn(":sandbox-all:prepareUiTestingSandbox")
+    inputs.files(":sandbox-all:prepareUiTestingSandbox")
 
     systemProperty("ide.experimental.ui", false)
     systemProperty("org.gradle.project.ideProfileName", ideProfileName)
@@ -55,7 +54,7 @@ tasks.register<Test>("uiTestCore") {
     systemProperty("testDataPath", project.rootDir.resolve("testdata").toString())
     systemProperty("testReportPath", project.buildDir.resolve("reports").resolve("tests").resolve("testRecordings").toString())
 
-    systemProperty("GRADLE_PROJECT", "plugin-toolkit:intellij")
+    systemProperty("GRADLE_PROJECT", "sandbox-all")
     useJUnitPlatform {
         includeTags("core")
     }

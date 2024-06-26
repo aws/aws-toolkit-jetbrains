@@ -5,7 +5,10 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
+import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Button
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
@@ -14,6 +17,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.FormItemOption
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
@@ -65,6 +72,32 @@ private val viewSummaryButton = Button(
     keepCardAfterClick = true,
 )
 
+private val viewBuildLog = Button(
+    id = CodeTransformButtonId.ViewBuildLog.id,
+    text = message("codemodernizer.chat.message.button.view_failure_build_log"),
+    keepCardAfterClick = true,
+)
+
+private val confirmHilSelectionButton = Button(
+    id = CodeTransformButtonId.ConfirmHilSelection.id,
+    text = message("codemodernizer.chat.message.button.hil_submit"),
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+)
+
+private val rejectHilSelectionButton = Button(
+    id = CodeTransformButtonId.RejectHilSelection.id,
+    text = message("codemodernizer.chat.message.button.hil_cancel"),
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+)
+
+private val openDependencyErrorPomFileButton = Button(
+    id = CodeTransformButtonId.OpenDependencyErrorPom.id,
+    text = message("codemodernizer.chat.message.button.open_file"),
+    keepCardAfterClick = true,
+)
+
 private val startNewTransformFollowUp = FollowUp(
     type = FollowUpType.NewCodeTransform,
     pillText = message("codemodernizer.chat.message.follow_up.new_transformation"),
@@ -105,6 +138,17 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
 """.trimIndent()
 
+private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
+        ### ${message("codemodernizer.chat.prompt.title.dependency_details")}
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **${message("codemodernizer.chat.prompt.label.dependency_name")}**             |   $dependencyName   |
+        | **${message("codemodernizer.chat.prompt.label.dependency_current_version")}**             |   $currentVersion |
+        | **${message("codemodernizer.chat.prompt.label.dependency_selected_version")}**             |   $selectedVersion |
+""".trimIndent()
+
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.validation.check_eligible_projects"),
     type = CodeTransformChatMessageType.PendingAnswer,
@@ -122,12 +166,19 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
     }
 
     return CodeTransformChatMessageContent(
-        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", CODE_TRANSFORM_TROUBLESHOOT_DOC)}",
+        message = "$errorMessage\n\n${message("codemodernizer.chat.message.validation.error.more_info", CODE_TRANSFORM_PREREQUISITES)}",
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 }
 
 fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    followUps = listOf(
+        startNewTransformFollowUp
+    )
+)
+
+fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     followUps = listOf(
         startNewTransformFollowUp
@@ -190,8 +241,25 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
         "codemodernizer.chat.message.local_build_failed"
     )}\n\n${message(
         "codemodernizer.chat.message.validation.error.more_info",
-        CODE_TRANSFORM_TROUBLESHOOT_DOC
+        CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
     )}",
+)
+
+fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String {
+    val resultMessage = when (failureReason) {
+        is UploadFailureReason.PRESIGNED_URL_EXPIRED -> message("codemodernizer.chat.message.upload_failed_url_expired")
+        is UploadFailureReason.HTTP_ERROR -> message("codemodernizer.chat.message.upload_failed_http_error", failureReason.statusCode)
+        is UploadFailureReason.CONNECTION_REFUSED -> message("codemodernizer.chat.message.upload_failed_connection_refused")
+        is UploadFailureReason.OTHER -> message("codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage)
+        is UploadFailureReason.CREDENTIALS_EXPIRED -> message("q.connection.expired")
+        is UploadFailureReason.SSL_HANDSHAKE_ERROR -> message("codemodernizer.chat.message.upload_failed_ssl_error")
+    }
+    return resultMessage
+}
+
+fun buildAuthRestoredMessage() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.reauth_success"),
 )
 
 fun buildCompileLocalSuccessChatContent() = CodeTransformChatMessageContent(
@@ -199,9 +267,14 @@ fun buildCompileLocalSuccessChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.local_build_success"),
 )
 
-fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
+fun buildTransformBeginChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     message = message("codemodernizer.chat.message.transform_begin"),
+)
+
+fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.transform_in_progress"),
     buttons = listOf(
         openTransformHubButton,
         stopTransformButton,
@@ -211,10 +284,6 @@ fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
 fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.resume_ongoing"),
     type = CodeTransformChatMessageType.PendingAnswer,
-    buttons = listOf(
-        openTransformHubButton,
-        stopTransformButton,
-    ),
 )
 
 fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
@@ -224,14 +293,33 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
                 "codemodernizer.chat.message.result.zip_too_large"
             )}\n\n${message(
                 "codemodernizer.chat.message.validation.error.more_info",
-                CODE_TRANSFORM_TROUBLESHOOT_DOC
+                CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
             )}"
+        }
+        is CodeModernizerJobCompletedResult.ZipUploadFailed -> {
+            buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
             message("codemodernizer.chat.message.result.success")
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
             message("codemodernizer.chat.message.result.partially_success")
+        }
+        is CodeModernizerJobCompletedResult.JobFailed -> {
+            message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
+        }
+        is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> {
+            if (result.hasBuildLog) {
+                message("codemodernizer.chat.message.result.fail_initial_build")
+            } else {
+                message("codemodernizer.chat.message.result.fail_initial_build_no_build_log", result.failureReason)
+            }
+        }
+        is CodeModernizerJobCompletedResult.UnableToCreateJob -> {
+            result.failureReason
+        }
+        is CodeModernizerJobCompletedResult.RetryableFailure -> {
+            result.failureReason
         }
         else -> {
             message("codemodernizer.chat.message.result.fail")
@@ -243,8 +331,177 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
             listOf(viewDiffButton, viewSummaryButton)
+        } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
+            listOf(viewBuildLog)
         } else {
             null
         },
     )
 }
+
+fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransformChatMessageContent {
+    val majors = (dependency.majors.orEmpty()).sorted()
+    val minors = (dependency.minors.orEmpty()).sorted()
+    val incrementals = (dependency.incrementals.orEmpty()).sorted()
+    val total = majors.size + minors.size + incrementals.size
+
+    var message = message("codemodernizer.chat.message.hil.dependency_summary", total, dependency.currentVersion.orEmpty())
+
+    if (majors.isNotEmpty()) {
+        message += message("codemodernizer.chat.message.hil.dependency_latest_major", majors.last())
+    }
+    if (minors.isNotEmpty()) {
+        message += message("codemodernizer.chat.message.hil.dependency_latest_minor", minors.last())
+    }
+    if (incrementals.isNotEmpty()) {
+        message += message("codemodernizer.chat.message.hil.dependency_latest_incremental", incrementals.last())
+    }
+
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+        message = message,
+        formItems = listOf(
+            FormItem(
+                id = CodeTransformFormItemId.DependencyVersion.id,
+                title = message("codemodernizer.chat.message.hil.dependency_choose_version"),
+                options = (majors + minors + incrementals).map { FormItemOption(it, it) },
+            )
+        ),
+        buttons = listOf(
+            confirmHilSelectionButton,
+            rejectHilSelectionButton,
+        ),
+    )
+}
+
+fun buildTransformDependencyErrorChatContent(
+    hilDownloadArtifact: CodeTransformHilDownloadArtifact,
+    showButton: Boolean = true
+) = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
+        "\n\n```xml" +
+        "\n" +
+        "<dependencies>\n" +
+        "  <dependency>\n" +
+        "    <groupId>${hilDownloadArtifact.manifest.pomGroupId}</groupId>\n" +
+        "    <artifactId>${hilDownloadArtifact.manifest.pomArtifactId}</artifactId>\n" +
+        "    <version>${hilDownloadArtifact.manifest.sourcePomVersion}</version>\n" +
+        "  </dependency>\n" +
+        "</dependencies>",
+    type = CodeTransformChatMessageType.PendingAnswer,
+    buttons = if (showButton) {
+        listOf(openDependencyErrorPomFileButton)
+    } else {
+        emptyList()
+    },
+
+)
+
+fun buildTransformFindingLocalAlternativeDependencyChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.hil.searching"),
+    type = CodeTransformChatMessageType.PendingAnswer,
+)
+
+fun buildUserHilSelection(dependencyName: String, currentVersion: String, selectedVersion: String) = CodeTransformChatMessageContent(
+    message = getUserHilSelectionMarkdown(dependencyName, currentVersion, selectedVersion),
+    type = CodeTransformChatMessageType.Prompt,
+)
+
+fun buildCompileHilAlternativeVersionContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.hil.trying_resume"),
+)
+
+fun buildHilResumedContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.hil.resumed"),
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
+)
+
+fun buildHilRejectContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.hil.user_rejected"),
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
+)
+
+fun buildHilInitialContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.hil.start_message"),
+)
+
+fun buildHilErrorContent(errorMessage: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = errorMessage,
+)
+
+fun buildHilResumeWithErrorContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.hil.continue_after_error"),
+    buttons = listOf(
+        openTransformHubButton,
+        stopTransformButton,
+    ),
+)
+
+fun buildHilCannotResumeContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.hil.cannot_resume"),
+    followUps = listOf(
+        startNewTransformFollowUp
+    ),
+)
+
+fun buildDownloadFailureChatContent(downloadFailureReason: DownloadFailureReason): CodeTransformChatMessageContent? {
+    val artifactText = getDownloadedArtifactTextFromType(downloadFailureReason.artifactType)
+    val message = when (downloadFailureReason) {
+        is DownloadFailureReason.SSL_HANDSHAKE_ERROR -> message(
+            "codemodernizer.chat.message.download_failed_ssl",
+            artifactText
+        )
+
+        is DownloadFailureReason.PROXY_WILDCARD_ERROR -> message(
+            "codemodernizer.chat.message.download_failed_wildcard",
+            artifactText
+        )
+
+        is DownloadFailureReason.OTHER -> message(
+            "codemodernizer.chat.message.download_failed_other",
+            artifactText,
+            downloadFailureReason.errorMessage
+        )
+        is DownloadFailureReason.CREDENTIALS_EXPIRED -> return null // credential expiry resets chat, no point emitting a message
+        is DownloadFailureReason.INVALID_ARTIFACT -> {
+            if (downloadFailureReason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
+                message("codemodernizer.chat.message.download_failed_client_instructions_expired")
+            } else {
+                message("codemodernizer.chat.message.download_failed_invalid_artifact", artifactText)
+            }
+        }
+    }
+
+    // DownloadFailureReason.OTHER might be retryable, so including buttons to allow retry.
+    return CodeTransformChatMessageContent(
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+        message = message,
+        buttons = if (downloadFailureReason.artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS &&
+            (downloadFailureReason is DownloadFailureReason.OTHER || downloadFailureReason is DownloadFailureReason.SSL_HANDSHAKE_ERROR)
+        ) {
+            listOf(viewDiffButton, viewSummaryButton)
+        } else {
+            null
+        },
+    )
+}
+
+private fun getDownloadedArtifactTextFromType(artifactType: TransformationDownloadArtifactType): String =
+    when (artifactType) {
+        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> "upgraded code"
+        TransformationDownloadArtifactType.LOGS -> "build log"
+        TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> "code"
+    }

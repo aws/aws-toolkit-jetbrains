@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeGeneration
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
@@ -35,7 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.GenerateTaskAssistPlanResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -66,9 +67,13 @@ open class FeatureDevTestBase(
     internal val testTabId = "test-tab-id"
     internal val testFilePaths = mapOf(Pair("test.ts", "This is a comment"))
     internal val testDeletedFiles = listOf("deleted.ts")
-    internal val testReferences = listOf(CodeReference(information = "test"))
+    internal val testReferences = listOf(CodeReferenceGenerated())
     internal val testChecksumSha = "test-sha"
     internal val testContentLength: Long = 40
+
+    internal val exampleSendTelemetryEventResponse = SendTelemetryEventResponse.builder()
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
+        .build() as SendTelemetryEventResponse
 
     internal val exampleCreateTaskAssistConversationResponse = CreateTaskAssistConversationResponse.builder()
         .conversationId(testConversationId)

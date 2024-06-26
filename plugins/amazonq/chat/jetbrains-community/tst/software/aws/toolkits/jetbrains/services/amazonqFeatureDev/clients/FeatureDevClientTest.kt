@@ -100,7 +100,7 @@ class FeatureDevClientTest : FeatureDevTestBase() {
         connectionManager = mock {
             on {
                 activeConnectionForFeature(any())
-            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), emptyList())) as AwsBearerTokenConnection
+            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf("scopes"))) as AwsBearerTokenConnection
         }
         projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
 
@@ -153,11 +153,19 @@ class FeatureDevClientTest : FeatureDevTestBase() {
 
     @Test
     fun `check exportTaskAssistResultArchive`() = runTest {
-        whenever(amazonQStreamingClient.exportResultArchive(any<String>(), any<ExportIntent>(), any(), any())) doReturn exampleExportResultArchiveResponse
+        whenever(
+            amazonQStreamingClient.exportResultArchive(
+                any<String>(),
+                any<ExportIntent>(),
+                eq(null),
+                any(),
+                any()
+            )
+        ) doReturn exampleExportResultArchiveResponse
 
         val actual = featureDevClient.exportTaskAssistResultArchive("1234")
 
-        verify(amazonQStreamingClient).exportResultArchive(eq("1234"), eq(ExportIntent.TASK_ASSIST), any(), any())
+        verify(amazonQStreamingClient).exportResultArchive(eq("1234"), eq(ExportIntent.TASK_ASSIST), eq(null), any(), any())
         verifyNoInteractions(bearerClient)
         verifyNoInteractions(streamingBearerClient)
         verifyNoMoreInteractions(amazonQStreamingClient)

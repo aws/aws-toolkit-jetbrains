@@ -27,7 +27,7 @@ export class TabDataGenerator {
     private tabInputPlaceholder: Map<TabType, string> = new Map([
         ['unknown', 'Ask a question or enter "/" for quick commands'],
         ['cwc', 'Ask a question or enter "/" for quick commands'],
-        ['featuredev', 'Briefly describe a task or issue'],
+        ['featuredev', 'Describe your task or issue in as much detail as possible'],
     ])
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
@@ -45,7 +45,7 @@ export class TabDataGenerator {
         ],
         [
             'featuredev',
-            `Welcome to feature development.
+            `Hi, I'm the Amazon Q Developer Agent for software development.
 
 I can generate code to implement new functionality across your workspace. We'll start by discussing an implementation plan, and then we can review and regenerate code based on your feedback. 
 

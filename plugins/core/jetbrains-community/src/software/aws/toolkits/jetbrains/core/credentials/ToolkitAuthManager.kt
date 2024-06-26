@@ -25,6 +25,11 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.CredentialType
+import software.aws.toolkits.telemetry.Result
 
 sealed interface ToolkitConnection {
     val id: String
@@ -108,7 +113,8 @@ fun loginSso(
     region: String,
     requestedScopes: List<String>,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
-    onError: (Exception) -> Unit = {}
+    onError: (Exception) -> Unit = {},
+    onSuccess: () -> Unit = {},
 ): AwsBearerTokenConnection? {
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
@@ -119,6 +125,10 @@ fun loginSso(
         } catch (e: Exception) {
             onError(e)
             null
+        }
+
+        if (connection != null) {
+            onSuccess()
         }
 
         ToolkitConnectionManager.getInstance(project).switchConnection(connection)
@@ -214,13 +224,57 @@ fun reauthConnectionIfNeeded(
     if (tokenProvider is InteractiveBearerTokenProvider) {
         onPendingToken(tokenProvider)
     }
-    return reauthProviderIfNeeded(project, tokenProvider)
+    return reauthProviderIfNeeded(project, tokenProvider, connection)
 }
 
-fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider): BearerTokenProvider {
+private fun reauthProviderIfNeeded(
+    project: Project?,
+    tokenProvider: BearerTokenProvider,
+    connection: ToolkitConnection
+): BearerTokenProvider {
     maybeReauthProviderIfNeeded(project, tokenProvider) {
         runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            tokenProvider.reauthenticate()
+            try {
+                tokenProvider.reauthenticate()
+
+                if (connection is AwsBearerTokenConnection) {
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        result = Result.Succeeded,
+                        isReAuth = true,
+                        credentialType = CredentialType.BearerToken,
+                        credentialStartUrl = connection.startUrl,
+                        credentialSourceId = CredentialSourceId.AwsId
+                    )
+                }
+                AuthTelemetry.addConnection(
+                    project = null,
+                    result = Result.Succeeded,
+                    isReAuth = true,
+                    credentialSourceId = CredentialSourceId.AwsId
+                )
+            } catch (e: Exception) {
+                if (connection is AwsBearerTokenConnection) {
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        result = Result.Failed,
+                        isReAuth = true,
+                        reason = e.message,
+                        credentialType = CredentialType.BearerToken,
+                        credentialStartUrl = connection.startUrl,
+                        credentialSourceId = CredentialSourceId.AwsId
+                    )
+                }
+                AuthTelemetry.addConnection(
+                    project = null,
+                    result = Result.Succeeded,
+                    isReAuth = true,
+                    credentialSourceId = CredentialSourceId.AwsId,
+                    reason = e.message
+                )
+
+                throw e
+            }
         }
     }
 

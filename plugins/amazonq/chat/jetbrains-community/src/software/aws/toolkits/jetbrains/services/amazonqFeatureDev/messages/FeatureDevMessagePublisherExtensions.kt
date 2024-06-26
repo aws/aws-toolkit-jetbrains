@@ -5,11 +5,12 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages
 
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.licenseText
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.resources.message
 import java.util.UUID
 
@@ -19,6 +20,7 @@ suspend fun MessagePublisher.sendAnswer(
     messageType: FeatureDevMessageType,
     followUp: List<FollowUp>? = null,
     canBeVoted: Boolean? = false,
+    snapToTop: Boolean? = false,
 ) {
     val chatMessage =
         FeatureDevMessage(
@@ -28,7 +30,8 @@ suspend fun MessagePublisher.sendAnswer(
             messageType = messageType,
             message = message,
             followUps = followUp,
-            canBeVoted = canBeVoted ?: false
+            canBeVoted = canBeVoted ?: false,
+            snapToTop = snapToTop ?: false
         )
     this.publish(chatMessage)
 }
@@ -57,11 +60,12 @@ suspend fun MessagePublisher.sendSystemPrompt(
     )
 }
 
-suspend fun MessagePublisher.updateFileComponent(tabId: String, filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>) {
+suspend fun MessagePublisher.updateFileComponent(tabId: String, filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, messageId: String) {
     val fileComponentMessage = FileComponent(
         tabId = tabId,
         filePaths = filePaths,
         deletedFiles = deletedFiles,
+        messageId = messageId,
     )
     this.publish(fileComponentMessage)
 }
@@ -117,12 +121,14 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null) {
+suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null, conversationId: String? = null) {
+    val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
+
     if (retries == 0) {
-        this.sendErrorMessage(
+        this.sendAnswer(
             tabId = tabId,
-            title = message("amazonqFeatureDev.no_retries.error_text"),
-            message = errMessage,
+            messageType = FeatureDevMessageType.Answer,
+            message = message("amazonqFeatureDev.no_retries.error_text") + conversationIdText,
         )
 
         this.sendAnswer(
@@ -144,14 +150,14 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retrie
             this.sendErrorMessage(
                 tabId = tabId,
                 title = message("amazonqFeatureDev.approach_gen.error_text"),
-                message = errMessage,
+                message = errMessage + conversationIdText,
             )
         }
         else -> {
             this.sendErrorMessage(
                 tabId = tabId,
                 title = message("amazonqFeatureDev.error_text"),
-                message = errMessage,
+                message = errMessage + conversationIdText,
             )
         }
     }
@@ -191,11 +197,19 @@ suspend fun MessagePublisher.sendCodeResult(
     uploadId: String,
     filePaths: List<NewFileZipInfo>,
     deletedFiles: List<DeletedFileInfo>,
-    references: List<CodeReference>
+    references: List<CodeReferenceGenerated>
 ) {
-    // It is being done this mapping as featureDev currently doesn't support fully references.
-    val refs = references.filter { it.licenseName != null && it.url != null && it.repository != null }.map {
-        ReducedCodeReference(information = it.licenseText())
+    val refs = references.map { ref ->
+        CodeReference(
+            licenseName = ref.licenseName,
+            repository = ref.repository,
+            url = ref.url,
+            recommendationContentSpan = RecommendationContentSpan(
+                ref.recommendationContentSpan?.start ?: 0,
+                ref.recommendationContentSpan?.end ?: 0,
+            ),
+            information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})"
+        )
     }
 
     this.publish(

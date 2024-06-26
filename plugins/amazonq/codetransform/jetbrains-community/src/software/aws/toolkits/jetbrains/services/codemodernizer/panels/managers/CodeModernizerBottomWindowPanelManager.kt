@@ -180,6 +180,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         buildProgressSplitterPanelManager.apply {
             when (result) {
                 is CodeModernizerJobCompletedResult.UnableToCreateJob,
+                is CodeModernizerJobCompletedResult.ZipUploadFailed,
                 is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge,
                 is CodeModernizerJobCompletedResult.JobAbortedMissingDependencies -> setJobFailedToStartUI()
 
@@ -191,6 +192,8 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> setJobCompletedSuccessfullyUI()
 
                 is CodeModernizerJobCompletedResult.ManagerDisposed -> return@setUI
+
+                is CodeModernizerJobCompletedResult.JobPaused,
                 is CodeModernizerJobCompletedResult.Stopped,
                 is CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> userInitiatedStopCodeModernizationUI()
             }
@@ -236,6 +239,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
                 TransformationStatus.TRANSFORMED,
+                TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
             )

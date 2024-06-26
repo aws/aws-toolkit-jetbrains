@@ -43,9 +43,17 @@ class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
     private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
 
-    private fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
+    fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
         DigestUtils.sha256(customerSelection.configurationFile.toNioPath().toAbsolutePath().toString())
     )
+
+    /**
+     * Will be the first invokation per job submission.
+     * Should contain relevant initialization for proper telemetry emission.
+     */
+    fun prepareForNewJobSubmission() {
+        CodeTransformTelemetryState.instance.setSessionId()
+    }
 
     fun sendValidationResult(validationResult: ValidationResult, onProjectFirstOpen: Boolean = false) {
         // Old telemetry event to be fired only when users click on transform
@@ -74,15 +82,12 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection) {
-        val projectHash = getProjectHash(customerSelection)
-        CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
-            codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
-            codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
-            codeTransformSessionId = sessionId,
-            codeTransformProjectId = projectHash,
-        )
-    }
+    fun jobStartedCompleteFromPopupDialog(customerSelection: CustomerSelection) = CodetransformTelemetry.jobStartedCompleteFromPopupDialog(
+        codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection.sourceJavaVersion.name),
+        codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection.targetJavaVersion.name),
+        codeTransformSessionId = sessionId,
+        codeTransformProjectId = getProjectHash(customerSelection),
+    )
 
     fun jobIsCancelledByUser(srcComponent: CodeTransformCancelSrcComponents) = CodetransformTelemetry.jobIsCancelledByUser(
         codeTransformCancelSrcComponents = srcComponent,
@@ -191,6 +196,17 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
+    fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
+        CodetransformTelemetry.humanInTheLoop(
+            project,
+            jobId,
+            metaData.toString(),
+            sessionId,
+            reason,
+            success,
+        )
+    }
+
     fun dependenciesCopied() = CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = sessionId)
     fun jobIsStartedFromChatPrompt() {
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
@@ -207,3 +223,8 @@ class CodeTransformTelemetryManager(private val project: Project) {
         fun getInstance(project: Project): CodeTransformTelemetryManager = project.service()
     }
 }
+
+data class HilTelemetryMetaData(
+    val dependencyVersionSelected: String? = null,
+    val cancelledFromChat: Boolean = false,
+)

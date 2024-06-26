@@ -28,7 +28,7 @@ export interface ConnectorProps {
     onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     onNewTab: (tabType: TabType) => void
     tabsStorage: TabsStorage
-    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[]) => void
+    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string) => void
 }
 
 export class Connector {
@@ -136,6 +136,7 @@ export class Connector {
                 messageId: messageData.messageID ?? messageData.triggerID ?? '',
                 relatedContent: undefined,
                 canBeVoted: messageData.canBeVoted,
+                snapToTop: messageData.snapToTop,
                 followUp:
                     messageData.followUps !== undefined && messageData.followUps.length > 0
                         ? {
@@ -158,7 +159,7 @@ export class Connector {
                 ...messageData.deletedFiles,
             ])
             const answer: ChatItem = {
-                type: ChatItemType.CODE_RESULT,
+                type: ChatItemType.ANSWER,
                 relatedContent: undefined,
                 followUp: undefined,
                 canBeVoted: true,
@@ -166,6 +167,7 @@ export class Connector {
                 // TODO get the backend to store a message id in addition to conversationID
                 messageId: messageData.messageID ?? messageData.triggerID ?? messageData.conversationID,
                 fileList: {
+                    rootFolderTitle: 'Changes',
                     filePaths: (messageData.filePaths as DiffTreeFileInfo[]).map(path => path.zipFilePath),
                     deletedFiles: (messageData.deletedFiles as DiffTreeFileInfo[]).map(path => path.zipFilePath),
                     actions,
@@ -200,7 +202,7 @@ export class Connector {
 
     handleMessageReceive = async (messageData: any): Promise<void> => {
         if (messageData.type === 'updateFileComponent') {
-            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles)
+            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId)
             return
         }
         if (messageData.type === 'errorMessage') {

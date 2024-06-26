@@ -11,10 +11,13 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.utils.io.createFile
+import com.intellij.util.io.HttpRequests
+import com.intellij.util.io.delete
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -22,6 +25,7 @@ import org.assertj.core.api.Assertions.fail
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -32,6 +36,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -45,22 +50,30 @@ import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
+import java.net.ConnectException
 import java.util.Base64
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import kotlin.io.path.createTempDirectory
 
 class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
-    fun addFilesToProjectModule(vararg path: String) {
+    private fun addFilesToProjectModule(vararg path: String) {
         val module = projectRule.module
         path.forEach { projectRule.fixture.addFileToModule(module, it, it) }
     }
@@ -77,6 +90,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     override fun setup() {
         super.setup()
         ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "Process Proxy: Launcher")
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
     }
 
     @Test
@@ -399,6 +413,85 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
+    fun `CodeModernizer cannot upload payload due to already disposed`() {
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        doAnswer { throw AlreadyDisposedException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.Disposed, result)
+    }
+
+    @Test
+    fun `CodeModernizer returns credentials expired when SsoOidcException during upload`() {
+        setupConnection(BearerTokenAuthState.AUTHORIZED)
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doAnswer { throw SsoOidcException.builder().build() }.whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED), result)
+    }
+
+    @Test
+    fun `CodeModernizer returns credentials expired when expired before upload`() {
+        listOf(BearerTokenAuthState.NEEDS_REFRESH, BearerTokenAuthState.NOT_AUTHENTICATED).forEach {
+            setupConnection(it)
+            val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+            assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED), result)
+        }
+    }
+
+    @Test
+    fun `CodeModernizer cannot upload payload due to presigned url issue`() {
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        doAnswer { throw HttpRequests.HttpStatusException("mock error", 403, "mock url") }
+            .whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED), result)
+        verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
+        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+    }
+
+    @Test
+    fun `CodeModernizer cannot upload payload due to other status code`() {
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        doAnswer { throw HttpRequests.HttpStatusException("mock error", 407, "mock url") }
+            .whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(407)), result)
+        verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
+        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+    }
+
+    @Test
+    fun `CodeModernizer cannot upload payload due to unknown issue`() {
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        doAnswer { throw IOException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER("mock exception")), result)
+        verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
+        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+    }
+
+    @Test
+    fun `CodeModernizer cannot upload payload due to connection refused`() {
+        doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
+            .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
+        doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
+        doAnswer { throw ConnectException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
+        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED), result)
+        verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
+        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+    }
+
+    @Test
     fun `CodeModernizer can poll job for status updates`() {
         doReturn(exampleGetCodeMigrationResponse, *happyPathMigrationResponses.toTypedArray()).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
         doReturn(exampleGetCodeMigrationPlanResponse).whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
@@ -477,5 +570,32 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             eq(gumbyUploadUrlResponse.kmsKeyArn()),
             any()
         )
+    }
+
+    @Test
+    fun `Human in the loop will set and get download artifacts`() {
+        val outputFolder = createTempDirectory("hilTest")
+        val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
+        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
+
+        // assert null before setting
+        assertNull(testSessionSpy.getHilDownloadArtifact())
+        testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
+        assertEquals(testSessionSpy.getHilDownloadArtifact(), hilDownloadArtifact)
+
+        // cleanup
+        outputFolder.delete()
+    }
+
+    @Test
+    fun `Human in the loop will clean up download artifacts`() {
+        val outputFolder = createTempDirectory("hilTest")
+        val testZipFilePath = "humanInTheLoop/downloadResults.zip".toResourceFile().toPath()
+        val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
+        testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
+        testSessionSpy.setHilTempDirectoryPath(outputFolder)
+        assertTrue(outputFolder.exists())
+        testSessionSpy.hilCleanup()
+        assertFalse(outputFolder.exists())
     }
 }

@@ -7,7 +7,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assumptions.assumeThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -22,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTok
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.time.Instant
 
@@ -29,7 +29,6 @@ import java.time.Instant
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("codecatalyst-test-account")
 @DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
-@Disabled("Login Lambda is broken")
 class InteractiveBearerTokenProviderIntegrationTest {
     companion object {
         @JvmStatic
@@ -76,7 +75,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
             id = "test"
         )
 
-        assertThat(sut.resolveToken()).satisfies {
+        assertThat(sut.resolveToken()).satisfiesKt {
             assertThat(it).isNotNull()
             assertThat(it).isNotEqualTo(initialToken)
         }

@@ -26,6 +26,10 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
+intellij {
+    plugins.add(project(":plugin-core"))
+}
+
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
     changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
@@ -42,6 +46,11 @@ tasks.jar {
     from(changelog) {
         into("META-INF")
     }
+}
+
+tasks.integrationTest {
+    // cant run tests under authorization_grant with PKCE yet
+    systemProperty("aws.dev.useDAG", true)
 }
 
 val gatewayPluginXml = tasks.create<org.jetbrains.intellij.tasks.PatchPluginXmlTask>("patchPluginXmlForGateway") {
@@ -80,12 +89,6 @@ val gatewayArtifacts by configurations.creating {
     extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
 }
 
-val jarNoPluginXmlArtifacts by configurations.creating {
-    isCanBeConsumed = true
-    isCanBeResolved = false
-    // only consumed without transitive depen
-}
-
 val gatewayJar = tasks.create<Jar>("gatewayJar") {
     // META-INF/plugin.xml is a duplicate?
     // unclear why the exclude() statement didn't work
@@ -110,22 +113,8 @@ val gatewayJar = tasks.create<Jar>("gatewayJar") {
     }
 }
 
-val jarNoPluginXml = tasks.create<Jar>("jarNoPluginXml") {
-    duplicatesStrategy = DuplicatesStrategy.WARN
-
-    dependsOn(tasks.instrumentedJar)
-
-    archiveBaseName.set("aws-toolkit-jetbrains-IC-noPluginXml")
-    from(tasks.instrumentedJar.get().outputs.files.map { zipTree(it) }) {
-        exclude("**/plugin.xml")
-        exclude("**/plugin-intellij.xml")
-        exclude("**/inactive")
-    }
-}
-
 artifacts {
     add("gatewayArtifacts", gatewayJar)
-    add("jarNoPluginXmlArtifacts", jarNoPluginXml)
 }
 
 tasks.prepareSandbox {
@@ -144,10 +133,6 @@ tasks.processTestResources {
     // TODO how can we remove this. Fails due to:
     // "customerUploadedEventSchemaMultipleTypes.json.txt is a duplicate but no duplicate handling strategy has been set"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    // delete when fully split
-    // pull in shim to make tests pass
-    from(project(":plugin-toolkit:intellij").file("src/main/resources"))
 }
 
 dependencies {
@@ -173,29 +158,17 @@ dependencies {
         libs.aws.services,
     ).forEach { api(it) { isTransitive = false } }
 
-    listOf(
-        libs.aws.apacheClient,
-        libs.aws.nettyClient,
-    ).forEach { compileOnlyApi(it) { isTransitive = false } }
-
-    compileOnlyApi(project(":plugin-toolkit:core"))
+    compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
     // TODO: remove Q dependency when split is fully done
-    implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
-    // CodeWhispererTelemetryService uses a CircularFifoQueue, transitive from zjsonpatch
-    implementation(libs.commons.collections)
 
-    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
     // slf4j is v1.7.36 for <233
     // in <233, the classpass binding functionality picks up the wrong impl of StaticLoggerBinder (from the maven plugin instead of IDE platform) and causes a NoClassDefFoundError
     // instead of trying to fix the classpath, since it's built by gradle-intellij-plugin, shove slf4j >= 2.0.9 onto the test classpath, which uses a ServiceLoader and call it done
     testImplementation(libs.slf4j.api)
     testRuntimeOnly(libs.slf4j.jdk14)
-
-    // delete when fully split
-    testRuntimeOnly(project(":plugin-core:jetbrains-community"))
-    testRuntimeOnly(project(":plugin-amazonq", "moduleOnlyJars"))
 }

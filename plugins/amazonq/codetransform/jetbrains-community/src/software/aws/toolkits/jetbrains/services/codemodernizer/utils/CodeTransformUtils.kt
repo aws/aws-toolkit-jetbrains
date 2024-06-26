@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -21,6 +22,8 @@ val STATES_WHERE_PLAN_EXIST = setOf(
     TransformationStatus.TRANSFORMED,
     TransformationStatus.PARTIALLY_COMPLETED,
     TransformationStatus.COMPLETED,
+    TransformationStatus.PAUSED,
+    TransformationStatus.RESUMED,
 )
 
 val STATES_AFTER_INITIAL_BUILD = setOf(
@@ -35,18 +38,20 @@ val STATES_AFTER_STARTED = setOf(
     *STATES_AFTER_INITIAL_BUILD.toTypedArray(),
 )
 
-const val TROUBLESHOOTING_URL_DOWNLOAD_DIFF =
-    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19c11"
-const val TROUBLESHOOTING_URL_MAVEN_COMMANDS =
-    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/troubleshooting-code-transformation.html#w24aac14c20c19b7"
-const val TROUBLESHOOTING_URL_PREREQUISITES =
-    "https://docs.aws.amazon.com/amazonq/latest/aws-builder-use-ug/code-transformation.html#prerequisites"
-
 fun refreshToken(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     val provider = (connection?.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     provider.refresh()
 }
+
+fun getQTokenProvider(project: Project) = (
+    ToolkitConnectionManager
+        .getInstance(project)
+        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+    )
+    ?.getConnectionSettings()
+    ?.tokenProvider
+    ?.delegate as? BearerTokenProvider
 
 fun openTroubleshootingGuideNotificationAction(targetUrl: String) = OpenBrowserAction(
     message("codemodernizer.notification.info.view_troubleshooting_guide"),

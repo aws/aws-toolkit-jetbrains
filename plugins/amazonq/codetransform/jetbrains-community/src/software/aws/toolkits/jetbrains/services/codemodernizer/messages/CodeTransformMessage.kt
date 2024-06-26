@@ -23,11 +23,16 @@ enum class CodeTransformButtonId(val id: String) {
     OpenMvnBuild("open_mvn_build"),
     ViewDiff("view_diff"),
     ViewSummary("view_summary"),
+    ViewBuildLog("view_build_log"),
+    ConfirmHilSelection("confirm_hil_selection"),
+    RejectHilSelection("reject_hil_selection"),
+    OpenDependencyErrorPom("open_dependency_error_pom"),
 }
 
 enum class CodeTransformFormItemId(val id: String) {
     SelectModule("module"),
-    SelectTargetVersion("target_version"),
+    SelectTargetVersion("targetVersion"),
+    DependencyVersion("dependencyVersion"),
 }
 
 data class Button(
@@ -49,7 +54,7 @@ data class FormItem(
     val type: String = "select",
     val title: String,
     val mandatory: Boolean = true,
-    val options: List<FormItemOption> = listOf(),
+    val options: List<FormItemOption> = emptyList(),
 )
 
 // === UI -> App Messages ===
@@ -92,6 +97,10 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 
+    data class CodeTransformViewBuildLog(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
     data class TabCreated(
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
@@ -111,13 +120,26 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         val messageId: String?,
         val link: String,
     ) : IncomingCodeTransformMessage
+
+    data class ConfirmHilSelection(
+        @JsonProperty("tabID") val tabId: String,
+        val version: String,
+    ) : IncomingCodeTransformMessage
+
+    data class RejectHilSelection(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
+    data class OpenPomFileHilClicked(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
 }
 
 // === App -> UI messages ===
 sealed class CodeTransformUiMessage(
     open val tabId: String?,
     open val type: String,
-    val messageId: String? = UUID.randomUUID().toString(),
+    open val messageId: String? = UUID.randomUUID().toString(),
 ) : CodeTransformBaseMessage {
     val time = Instant.now().epochSecond
     val sender = CODE_TRANSFORM_TAB_NAME
@@ -143,13 +165,17 @@ data class AuthenticationUpdateMessage(
 
 data class CodeTransformChatMessage(
     @JsonProperty("tabID") override val tabId: String,
+    override val messageId: String? = UUID.randomUUID().toString(),
     val messageType: ChatMessageType,
     val message: String? = null,
     val buttons: List<Button>? = null,
     val formItems: List<FormItem>? = null,
     val followUps: List<FollowUp>? = null,
     val isAddingNewItem: Boolean = true,
+    val isLoading: Boolean = false,
+    val clearPreviousItemButtons: Boolean = true,
 ) : CodeTransformUiMessage(
+    messageId = messageId,
     tabId = tabId,
     type = "chatMessage",
 )
@@ -169,6 +195,23 @@ data class CodeTransformNotificationMessage(
     type = "codeTransformNotificationMessage",
 )
 
+data class CodeTransformChatUpdateMessage(
+    @JsonProperty("tabID") override val tabId: String,
+    val targetMessageId: String,
+    val message: String? = null,
+    val buttons: List<Button>? = null,
+    val formItems: List<FormItem>? = null,
+    val followUps: List<FollowUp>? = null,
+) : CodeTransformUiMessage(
+    tabId = tabId,
+    type = "codeTransformChatUpdateMessage",
+)
+
+object CodeTransformCreateTab :
+    CodeTransformUiMessage(
+        tabId = null,
+        type = "codeTransformCreateTab",
+    )
 enum class CodeTransformChatMessageType {
     Prompt,
     PendingAnswer,

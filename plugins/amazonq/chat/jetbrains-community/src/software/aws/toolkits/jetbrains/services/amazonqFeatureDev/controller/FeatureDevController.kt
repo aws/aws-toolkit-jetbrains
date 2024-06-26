@@ -13,8 +13,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileChooser.FileChooser
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
@@ -25,14 +23,15 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
@@ -44,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.Follo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.initialExamples
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswer
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthNeededException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthenticationInProgressMessage
@@ -54,6 +52,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendM
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
@@ -61,10 +60,12 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.util.UUID
 
 class FeatureDevController(
@@ -119,20 +120,32 @@ class FeatureDevController(
             SessionStatePhase.APPROACH -> {
                 when (message.vote) {
                     "upvote" -> {
-                        AmazonqTelemetry.approachThumbsUp(amazonqConversationId = session.conversationId)
+                        AmazonqTelemetry.approachThumbsUp(
+                            amazonqConversationId = session.conversationId,
+                            credentialStartUrl = getStartUrl(project = context.project)
+                        )
                     }
                     "downvote" -> {
-                        AmazonqTelemetry.approachThumbsDown(amazonqConversationId = session.conversationId)
+                        AmazonqTelemetry.approachThumbsDown(
+                            amazonqConversationId = session.conversationId,
+                            credentialStartUrl = getStartUrl(project = context.project)
+                        )
                     }
                 }
             }
             SessionStatePhase.CODEGEN -> {
                 when (message.vote) {
                     "upvote" -> {
-                        AmazonqTelemetry.codeGenerationThumbsUp(amazonqConversationId = session.conversationId)
+                        AmazonqTelemetry.codeGenerationThumbsUp(
+                            amazonqConversationId = session.conversationId,
+                            credentialStartUrl = getStartUrl(project = context.project)
+                        )
                     }
                     "downvote" -> {
-                        AmazonqTelemetry.codeGenerationThumbsDown(amazonqConversationId = session.conversationId)
+                        AmazonqTelemetry.codeGenerationThumbsDown(
+                            amazonqConversationId = session.conversationId,
+                            credentialStartUrl = getStartUrl(project = context.project)
+                        )
                     }
                 }
             }
@@ -167,7 +180,11 @@ class FeatureDevController(
     override suspend fun processOpenDiff(message: IncomingFeatureDevMessage.OpenDiff) {
         val session = getSessionInfo(message.tabId)
 
-        AmazonqTelemetry.isReviewedChanges(amazonqConversationId = session.conversationId, enabled = true)
+        AmazonqTelemetry.isReviewedChanges(
+            amazonqConversationId = session.conversationId,
+            enabled = true,
+            credentialStartUrl = getStartUrl(project = context.project)
+        )
 
         val project = context.project
         val sessionState = session.sessionState
@@ -175,7 +192,7 @@ class FeatureDevController(
         when (sessionState) {
             is PrepareCodeGenerationState -> {
                 runInEdt {
-                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.projectRoot)
+                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
 
                     val leftDiffContent = if (existingFile == null) {
                         EmptyContent()
@@ -203,7 +220,8 @@ class FeatureDevController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    phase = session.sessionState.phase
+                    phase = session.sessionState.phase,
+                    conversationId = session.conversationIdUnsafe
                 )
             }
         }
@@ -212,6 +230,7 @@ class FeatureDevController(
     override suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked) {
         val fileToUpdate = message.filePath
         val session = getSessionInfo(message.tabId)
+        val messageId = message.messageId
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -226,7 +245,7 @@ class FeatureDevController(
         filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
         deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
 
-        messenger.updateFileComponent(message.tabId, filePaths, deletedFiles)
+        messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
     }
 
     private suspend fun newTabOpened(tabId: String) {
@@ -251,7 +270,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe
             )
         }
     }
@@ -267,7 +287,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session.sessionState.phase
+                phase = session.sessionState.phase,
+                conversationId = session.conversationIdUnsafe
             )
         }
     }
@@ -279,7 +300,7 @@ class FeatureDevController(
 
             var filePaths: List<NewFileZipInfo> = emptyList()
             var deletedFiles: List<DeletedFileInfo> = emptyList()
-            var references: List<CodeReference> = emptyList()
+            var references: List<CodeReferenceGenerated> = emptyList()
 
             when (val state = session.sessionState) {
                 is PrepareCodeGenerationState -> {
@@ -292,7 +313,8 @@ class FeatureDevController(
             AmazonqTelemetry.isAcceptedCodeChanges(
                 amazonqNumberOfFilesAccepted = (filePaths.filterNot { it.rejected }.size + deletedFiles.filterNot { it.rejected }.size) * 1.0,
                 amazonqConversationId = session.conversationId,
-                enabled = true
+                enabled = true,
+                credentialStartUrl = getStartUrl(project = context.project)
             )
 
             session.insertChanges(
@@ -335,7 +357,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.insert_code_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe
             )
         }
     }
@@ -358,13 +381,21 @@ class FeatureDevController(
 
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
-        AmazonqTelemetry.endChat(amazonqConversationId = session.conversationId, amazonqEndOfTheConversationLatency = sessionLatency.toDouble())
+        AmazonqTelemetry.endChat(
+            amazonqConversationId = session.conversationId,
+            amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
+            credentialStartUrl = getStartUrl(project = context.project)
+        )
     }
 
     private suspend fun provideFeedbackAndRegenerateCode(tabId: String) {
         val session = getSessionInfo(tabId)
 
-        AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = session.conversationId, enabled = true)
+        AmazonqTelemetry.isProvideFeedbackForCodeGen(
+            amazonqConversationId = session.conversationId,
+            enabled = true,
+            credentialStartUrl = getStartUrl(project = context.project)
+        )
 
         // Unblock the message button
         messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false)
@@ -404,11 +435,12 @@ class FeatureDevController(
             }
         } catch (err: Exception) {
             logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
-            if (err is ContentLengthError) {
+            if (err is RepoSizeError) {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session)
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
                 )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
@@ -424,7 +456,12 @@ class FeatureDevController(
                 messenger.sendMonthlyLimitError(tabId = tabId)
                 messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             } else if (err is PlanIterationLimitError) {
-                messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
                     followUp = listOf(
@@ -442,7 +479,12 @@ class FeatureDevController(
                 )
                 messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
             } else if (err is CodeIterationLimitError) {
-                messenger.sendError(tabId = tabId, errMessage = err.message, retries = retriesRemaining(session))
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
                 messenger.sendSystemPrompt(
                     tabId = tabId,
                     followUp = listOf(
@@ -460,7 +502,8 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = msg ?: message("amazonqFeatureDev.exception.request_failed"),
                     retries = retriesRemaining(session),
-                    phase = session?.sessionState?.phase
+                    phase = session?.sessionState?.phase,
+                    conversationId = session?.conversationIdUnsafe
                 )
             }
 
@@ -475,21 +518,20 @@ class FeatureDevController(
     private suspend fun onApproachGeneration(session: Session, message: String, tabId: String) {
         session.preloader(message, messenger)
 
+        logger.info { conversationIDLog(session.conversationId) }
+
         messenger.sendAnswer(
             tabId = tabId,
-            messageType = FeatureDevMessageType.Answer,
+            messageType = FeatureDevMessageType.AnswerStream,
             message = message("amazonqFeatureDev.create_plan"),
         )
-
-        // Ensure that the loading icon stays showing
-        messenger.sendAsyncEventProgress(tabId = tabId, inProgress = true)
 
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.generating_approach"))
 
         val interactions = session.send(message)
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
 
-        messenger.sendAnswerPart(tabId = tabId, message = interactions.content, canBeVoted = interactions.interactionSucceeded)
+        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType = FeatureDevMessageType.Answer, canBeVoted = true, snapToTop = true)
 
         if (interactions.interactionSucceeded) {
             messenger.sendAnswer(
@@ -530,7 +572,8 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase
+                phase = session?.sessionState?.phase,
+                conversationId = session?.conversationIdUnsafe,
             )
         } finally {
             // Finish processing the event
@@ -559,8 +602,8 @@ class FeatureDevController(
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val uri = session.context.projectRoot
-        val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+        val currentSourceFolder = session.context.selectedSourceFolder
+        val projectRoot = session.context.projectRoot
 
         val modifyFolderFollowUp = FollowUp(
             pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
@@ -568,8 +611,12 @@ class FeatureDevController(
             status = FollowUpStatusType.Info,
         )
 
+        var result: Result = Result.Failed
+        var reason: ModifySourceFolderErrorReason? = null
+
         withContext(EDT) {
-            val selectedFolder = FileChooser.chooseFile(fileChooserDescriptor, context.project, uri)
+            val selectedFolder = selectFolder(context.project, currentSourceFolder)
+            // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
 
@@ -577,10 +624,13 @@ class FeatureDevController(
                     tabId = tabId,
                     followUp = listOf(modifyFolderFollowUp),
                 )
+
+                reason = ModifySourceFolderErrorReason.ClosedBeforeSelection
                 return@withContext
             }
 
-            if (selectedFolder.parent.path != uri.path) {
+            // The folder is not in the workspace
+            if (!selectedFolder.path.startsWith(projectRoot.path)) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
@@ -593,12 +643,15 @@ class FeatureDevController(
                     tabId = tabId,
                     followUp = listOf(modifyFolderFollowUp),
                 )
+
+                reason = ModifySourceFolderErrorReason.NotInWorkspaceFolder
                 return@withContext
             }
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.projectRoot = selectedFolder
+            session.context.selectedSourceFolder = selectedFolder
+            result = Result.Succeeded
 
             messenger.sendAnswer(
                 tabId = tabId,
@@ -606,6 +659,13 @@ class FeatureDevController(
                 message = message("amazonqFeatureDev.follow_up.modified_source_folder", selectedFolder.path),
             )
         }
+
+        AmazonqTelemetry.modifySourceFolder(
+            amazonqConversationId = session.conversationId,
+            credentialStartUrl = getStartUrl(project = context.project),
+            result = result,
+            reason = reason?.toString()
+        )
     }
 
     private fun sendFeedback() {
@@ -619,6 +679,8 @@ class FeatureDevController(
     private fun getSessionInfo(tabId: String) = chatSessionStorage.getSession(tabId, context.project)
 
     fun retriesRemaining(session: Session?): Int = session?.retries ?: DEFAULT_RETRY_LIMIT
+
+    fun conversationIDLog(conversationId: String) = "$FEATURE_NAME Conversation ID: $conversationId"
 
     companion object {
         private val logger = getLogger<FeatureDevController>()

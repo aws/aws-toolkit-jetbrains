@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 
 @ExtendWith(ApplicationExtension::class)
 class ProfileCredentialsIdentifierSsoTest {
@@ -46,8 +47,8 @@ class ProfileCredentialsIdentifierSsoTest {
         mockClientManager.create<SsoOidcClient>()
 
         // IllegalStateException instead of more general base Exception so we know if the type changes
-        val exception = assertThrows<IllegalStateException> {
-            InteractiveBearerTokenProvider("", "us-east-1", emptyList(), cache = cache, id = "test").resolveToken()
+        val exception = assertThrows<NoTokenInitializedException> {
+            InteractiveBearerTokenProvider("", "us-east-1", listOf("scopes"), cache = cache, id = "test").resolveToken()
         }
         assertThat(sut.handleValidationException(exception)).isNotNull()
     }

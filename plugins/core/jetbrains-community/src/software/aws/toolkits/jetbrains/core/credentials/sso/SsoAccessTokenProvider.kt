@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.registry.Registry
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.amazon.awssdk.services.ssooidc.model.AuthorizationPendingException
 import software.amazon.awssdk.services.ssooidc.model.CreateTokenResponse
@@ -40,25 +41,13 @@ sealed interface PendingAuthorization {
     data class PKCEAuthorization(val future: CompletableFuture<*>, override val progressIndicator: ProgressIndicator) : PendingAuthorization
 }
 
-/**
- * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
- */
-class SsoAccessTokenProvider(
-    private val ssoUrl: String,
-    private val ssoRegion: String,
-    private val cache: SsoCache,
-    private val client: SsoOidcClient,
-    private val scopes: List<String> = emptyList(),
-    private val clock: Clock = Clock.systemUTC()
-) : SdkTokenProvider {
-    private val _authorization = AtomicReference<PendingAuthorization?>()
-    val authorization: PendingAuthorization?
-        get() = _authorization.get()
+abstract class SsoAccessTokenCacheAccessor {
+    protected abstract val cache: SsoCache
+    protected abstract val ssoUrl: String
+    protected abstract val ssoRegion: String
+    protected abstract val scopes: List<String>
 
-    private val isNewAuthPkce: Boolean
-        get() = Registry.`is`("aws.dev.pkceAuth", false)
-
-    private val dagClientRegistrationCacheKey by lazy {
+    protected val dagClientRegistrationCacheKey by lazy {
         DeviceAuthorizationClientRegistrationCacheKey(
             startUrl = ssoUrl,
             scopes = scopes,
@@ -66,7 +55,7 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val pkceClientRegistrationCacheKey by lazy {
+    protected val pkceClientRegistrationCacheKey by lazy {
         PKCEClientRegistrationCacheKey(
             issuerUrl = ssoUrl,
             region = ssoRegion,
@@ -77,7 +66,7 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val dagAccessTokenCacheKey by lazy {
+    protected val dagAccessTokenCacheKey by lazy {
         DeviceGrantAccessTokenCacheKey(
             connectionId = ssoRegion,
             startUrl = ssoUrl,
@@ -85,13 +74,81 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private val pkceAccessTokenCacheKey by lazy {
+    protected val pkceAccessTokenCacheKey by lazy {
         PKCEAccessTokenCacheKey(
             issuerUrl = ssoUrl,
             region = ssoRegion,
             scopes = scopes
         )
     }
+
+    protected val isNewAuthPkce: Boolean
+        get() = !Registry.`is`("aws.dev.useDAG", false)
+
+    internal fun loadAccessToken(): AccessToken? {
+        // load DAG if exists, otherwise PKCE
+        cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
+            return it
+        }
+
+        if (isNewAuthPkce) {
+            // don't check existence of PKCE if we're not planning on starting flows with PKCE
+            cache.loadAccessToken(pkceAccessTokenCacheKey)?.let {
+                return it
+            }
+        }
+
+        return null
+    }
+
+    fun invalidate() {
+        cache.invalidateAccessToken(dagAccessTokenCacheKey)
+        cache.invalidateAccessToken(pkceAccessTokenCacheKey)
+    }
+
+    internal companion object {
+        const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
+        const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+        const val REFRESH_GRANT_TYPE = "refresh_token"
+        val PKCE_GRANT_TYPES = listOf("authorization_code", "refresh_token")
+        val PKCE_REDIRECT_URIS = listOf("http://127.0.0.1/oauth/callback")
+    }
+}
+
+/**
+ * Handles cases where we need to check for the existance of a token, but do not want interactivity
+ */
+class LazyAccessTokenProvider(
+    override val cache: SsoCache,
+    override val ssoUrl: String,
+    override val ssoRegion: String,
+    override val scopes: List<String>,
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+    override fun resolveToken() = loadAccessToken()
+}
+
+/**
+ * Takes care of creating/refreshing the SSO access token required to fetch SSO-based credentials.
+ */
+class SsoAccessTokenProvider(
+    override val ssoUrl: String,
+    override val ssoRegion: String,
+    override val cache: SsoCache,
+    private val client: SsoOidcClient,
+    private val isAlwaysShowDeviceCode: Boolean = false,
+    override val scopes: List<String> = emptyList(),
+    private val clock: Clock = Clock.systemUTC()
+) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
+    init {
+        check(scopes.isNotEmpty()) { "Scopes should not be empty" }
+        // identity does not want us to use the scope-less path
+        cache.invalidateClientRegistration(ssoRegion)
+        cache.invalidateAccessToken(ssoUrl)
+    }
+
+    private val _authorization = AtomicReference<PendingAuthorization?>()
+    val authorization: PendingAuthorization?
+        get() = _authorization.get()
 
     override fun resolveToken() = accessToken()
 
@@ -102,7 +159,8 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val token = if (isNewAuthPkce) {
+        val isCommercialRegion = !ssoRegion.startsWith("us-gov") && !ssoRegion.startsWith("us-iso") && !ssoRegion.startsWith("cn")
+        val token = if (isCommercialRegion && isNewAuthPkce) {
             pollForPkceToken()
         } else {
             pollForDAGToken()
@@ -123,7 +181,7 @@ class SsoAccessTokenProvider(
         val registerResponse = client.registerClient {
             it.clientType(PUBLIC_CLIENT_REGISTRATION_TYPE)
             it.scopes(scopes)
-            it.clientName("AWS IDE Plugins for JetBrains")
+            it.clientName(PKCE_CLIENT_NAME)
         }
 
         val registeredClient = DeviceAuthorizationClientRegistration(
@@ -206,7 +264,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun pollForDAGToken(): AccessToken {
-        val onPendingToken = service<SsoLoginCallbackProvider>().getProvider(ssoUrl)
+        val onPendingToken = service<SsoLoginCallbackProvider>().getProvider(isAlwaysShowDeviceCode, ssoUrl)
         val progressIndicator = progressIndicator()
         val registration = registerDAGClient()
         val authorization = authorizeDAGClient(registration)
@@ -278,61 +336,93 @@ class SsoAccessTokenProvider(
         }
     }
 
+    private fun sendFailedRefreshCredentialsMetricIfNeeded(
+        currentToken: AccessToken,
+        reason: String,
+        reasonDesc: String,
+        requestId: String? = null
+    ) {
+        val tokenCreationTime = currentToken.createdAt
+        val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
+        val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
+
+        if (tokenCreationTime != Instant.EPOCH) {
+            AwsTelemetry.refreshCredentials(
+                project = null,
+                result = Result.Failed,
+                sessionDuration = sessionDuration.toHours().toInt(),
+                credentialSourceId = credentialSourceId,
+                reason = reason,
+                reasonDesc = reasonDesc,
+                requestId = requestId
+            )
+        }
+    }
+
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
-            val tokenCreationTime = currentToken.createdAt
-
-            if (tokenCreationTime != Instant.EPOCH) {
-                val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
-                val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
-                AwsTelemetry.refreshCredentials(
-                    project = null,
-                    result = Result.Failed,
-                    sessionDuration = sessionDuration.toHours().toInt(),
-                    credentialSourceId = credentialSourceId,
-                    reason = "Null refresh token"
-                )
-            }
-
-            throw InvalidRequestException.builder().message("Requested token refresh, but refresh token was null").build()
+            val message = "Requested token refresh, but refresh token was null"
+            sendFailedRefreshCredentialsMetricIfNeeded(
+                currentToken,
+                reason = "Null refresh token",
+                reasonDesc = message
+            )
+            throw InvalidRequestException.builder().message(message).build()
         }
 
         val registration = when (currentToken) {
             is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
             is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
-        } ?: throw InvalidClientException.builder().message("Unable to load client registration").build()
-
-        val newToken = client.createToken {
-            it.clientId(registration.clientId)
-            it.clientSecret(registration.clientSecret)
-            it.grantType(REFRESH_GRANT_TYPE)
-            it.refreshToken(currentToken.refreshToken)
+        }
+        if (registration == null) {
+            val message = "Unable to load client registration"
+            sendFailedRefreshCredentialsMetricIfNeeded(
+                currentToken,
+                reason = "Null client registration",
+                reasonDesc = message
+            )
+            throw InvalidClientException.builder().message(message).build()
         }
 
-        val token = newToken.toDAGAccessToken(currentToken.createdAt)
-        saveAccessToken(token)
+        try {
+            val newToken = client.createToken {
+                it.clientId(registration.clientId)
+                it.clientSecret(registration.clientSecret)
+                it.grantType(REFRESH_GRANT_TYPE)
+                it.refreshToken(currentToken.refreshToken)
+            }
 
-        return token
+            val token = when (currentToken) {
+                is DeviceAuthorizationGrantToken -> newToken.toDAGAccessToken(currentToken.createdAt)
+                is PKCEAuthorizationGrantToken -> newToken.toPKCEAccessToken(currentToken.createdAt)
+            }
+
+            saveAccessToken(token)
+
+            return token
+        } catch (e: Exception) {
+            val requestId = when (e) {
+                is AwsServiceException -> e.requestId()
+                else -> null
+            }
+            val message = when (e) {
+                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
+                else -> e.message ?: "Unknown error"
+            }
+            sendFailedRefreshCredentialsMetricIfNeeded(
+                currentToken,
+                reason = "Refresh access token request failed",
+                reasonDesc = message,
+                requestId = requestId
+            )
+            throw e
+        }
     }
 
-    fun invalidate() {
-        if (scopes.isEmpty()) {
-            cache.invalidateAccessToken(ssoUrl)
-        } else {
-            cache.invalidateAccessToken(dagAccessTokenCacheKey)
-            cache.invalidateAccessToken(pkceAccessTokenCacheKey)
-        }
-    }
-
-    private fun loadDagClientRegistration(): ClientRegistration? = if (scopes.isEmpty()) {
-        cache.loadClientRegistration(ssoRegion)?.let {
-            return it
-        }
-    } else {
+    private fun loadDagClientRegistration(): ClientRegistration? =
         cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
             return it
         }
-    }
 
     private fun loadPkceClientRegistration(): PKCEClientRegistration? =
         cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
@@ -342,11 +432,7 @@ class SsoAccessTokenProvider(
     private fun saveClientRegistration(registration: ClientRegistration) {
         when (registration) {
             is DeviceAuthorizationClientRegistration -> {
-                if (scopes.isEmpty()) {
-                    cache.saveClientRegistration(ssoRegion, registration)
-                } else {
-                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
-                }
+                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
             }
 
             is PKCEClientRegistration -> {
@@ -356,49 +442,21 @@ class SsoAccessTokenProvider(
     }
 
     private fun invalidateClientRegistration() {
-        if (scopes.isEmpty()) {
-            cache.invalidateClientRegistration(ssoRegion)
-        } else {
-            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
-            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
-        }
-    }
-
-    internal fun loadAccessToken(): AccessToken? = if (scopes.isEmpty()) {
-        cache.loadAccessToken(ssoUrl)?.let {
-            return it
-        }
-    } else {
-        // load DAG if exists, otherwise PKCE
-        cache.loadAccessToken(dagAccessTokenCacheKey)?.let {
-            return it
-        }
-
-        if (isNewAuthPkce) {
-            // don't check existence of PKCE if we're not planning on starting flows with PKCE
-            cache.loadAccessToken(pkceAccessTokenCacheKey)?.let {
-                return it
-            }
-        }
-
-        null
+        cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+        cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
     }
 
     private fun saveAccessToken(token: AccessToken) {
         when (token) {
             is DeviceAuthorizationGrantToken -> {
-                if (scopes.isEmpty()) {
-                    cache.saveAccessToken(ssoUrl, token)
-                } else {
-                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
-                }
+                cache.saveAccessToken(dagAccessTokenCacheKey, token)
             }
 
             is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
         }
     }
 
-    private fun CreateTokenResponse.toDAGAccessToken(creationTime: Instant): AccessToken {
+    private fun CreateTokenResponse.toDAGAccessToken(creationTime: Instant): DeviceAuthorizationGrantToken {
         val expirationTime = Instant.now(clock).plusSeconds(expiresIn().toLong())
 
         return DeviceAuthorizationGrantToken(
@@ -411,13 +469,20 @@ class SsoAccessTokenProvider(
         )
     }
 
-    private companion object {
-        const val PUBLIC_CLIENT_REGISTRATION_TYPE = "public"
-        const val DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
-        const val REFRESH_GRANT_TYPE = "refresh_token"
-        val PKCE_GRANT_TYPES = listOf("authorization_code", "refresh_token")
-        val PKCE_REDIRECT_URIS = listOf("http://127.0.0.1/oauth/callback")
+    private fun CreateTokenResponse.toPKCEAccessToken(creationTime: Instant): PKCEAuthorizationGrantToken {
+        val expirationTime = Instant.now(clock).plusSeconds(expiresIn().toLong())
 
+        return PKCEAuthorizationGrantToken(
+            issuerUrl = ssoUrl,
+            region = ssoRegion,
+            accessToken = accessToken(),
+            refreshToken = refreshToken(),
+            expiresAt = expirationTime,
+            createdAt = creationTime
+        )
+    }
+
+    private companion object {
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
