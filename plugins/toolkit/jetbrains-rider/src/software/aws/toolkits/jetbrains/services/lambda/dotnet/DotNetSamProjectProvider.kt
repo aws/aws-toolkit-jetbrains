@@ -18,9 +18,8 @@ class DotNetSamProjectProvider : ProjectTemplateProvider {
 
     override val isReady = Property(true)
 
-    override fun load(lifetime: Lifetime, context: NewProjectDialogContext): IProperty<Set<ProjectTemplateType>?> {
-        return Property(setOf(RiderSamProject()))
-    }
+    override fun load(lifetime: Lifetime, context: NewProjectDialogContext): IProperty<Set<ProjectTemplateType>?> =
+        Property(setOf(RiderSamProject()))
 
     private class RiderSamProject : ProjectTemplateType {
         override val group = message("sam.init.group.name")
