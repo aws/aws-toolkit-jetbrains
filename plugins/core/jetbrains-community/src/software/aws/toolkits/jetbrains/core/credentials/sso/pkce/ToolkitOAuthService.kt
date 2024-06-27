@@ -184,7 +184,6 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
 
     // only handle the /oauth/callback endpoint
     override fun isSupported(request: FullHttpRequest) = request.uri().trim('/').startsWith("oauth/callback")
-
 }
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
