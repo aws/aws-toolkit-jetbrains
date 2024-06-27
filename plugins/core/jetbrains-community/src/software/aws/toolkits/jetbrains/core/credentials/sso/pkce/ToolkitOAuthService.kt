@@ -182,10 +182,9 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         return AcceptCodeHandleResult.Redirect(urlBase.addParameters(params))
     }
 
-    override fun isSupported(request: FullHttpRequest): Boolean {
-        // only handle the /oauth/callback endpoint
-        return request.uri().trim('/').startsWith("oauth/callback")
-    }
+    // only handle the /oauth/callback endpoint
+    override fun isSupported(request: FullHttpRequest) = request.uri().trim('/').startsWith("oauth/callback")
+
 }
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
