@@ -38,11 +38,11 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                 while (true) {
                     if (encoderServer.isNodeProcessRunning()) {
                         // TODO: need better solution for this
-                        delay(8000)
+                        delay(15000)
                         initAndIndex()
                         break
                     } else {
-                        yield()
+                        delay(300)
                     }
                 }
             }

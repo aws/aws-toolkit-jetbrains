@@ -2278,6 +2278,9 @@
                 },
                 "chatUserModificationEvent": {
                     "shape": "ChatUserModificationEvent"
+                },
+                "featureDevEvent": {
+                    "shape": "FeatureDevEvent"
                 }
             },
             "union": true

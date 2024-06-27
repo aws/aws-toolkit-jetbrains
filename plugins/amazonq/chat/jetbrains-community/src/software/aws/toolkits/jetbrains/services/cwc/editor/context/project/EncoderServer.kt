@@ -33,6 +33,7 @@ import java.io.OutputStreamWriter
 import java.nio.file.Paths
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermission
 import java.security.Key
 import java.security.SecureRandom
 import java.util.Base64
@@ -43,7 +44,7 @@ import javax.crypto.spec.SecretKeySpec
 
 @Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
-    private val cachePath = Paths.get(PluginPathManager.getPluginHomePath("amazonq")).resolve("projectContext").createDirectories()
+    private val cachePath = Paths.get(PluginPathManager.getPluginHomePath("plugin-amazonq")).resolve("projectContext").createDirectories()
     private val SERVER_DIRECTORY_NAME = "qserver.zip"
     private val isRunning = AtomicBoolean(false)
     private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
@@ -112,7 +113,7 @@ class EncoderServer (val project: Project): Disposable {
                numberOfRetry.incrementAndGet()
                currentPort = portManager.getPort()
             } else {
-                throw Exception(e.message)
+               throw Exception(e.message)
             }
             return false
         }
@@ -121,9 +122,7 @@ class EncoderServer (val project: Project): Disposable {
     private fun getCommand (): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val map = mutableMapOf<String, String>()
-        val cacheDir = cachePath.resolve("cache").createDirectories()
         map["PORT"] = currentPort
-        map["CACHE_DIR"] = cacheDir.toString()
         map["START_AMAZONQ_LSP"] = "true"
         map["Q_WORKER_THREADS"] = threadCount.toString()
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
@@ -162,11 +161,13 @@ class EncoderServer (val project: Project): Disposable {
             if(!Files.exists(nodePath) && manifest != null) {
                 val nodeContent = manifestManager.getNodeContentFromManifest(manifest)
                 if(nodeContent?.url != null) {
-                    if(validateHash(nodeContent.hashes?.first(), HttpRequests.request(nodeContent.url).readBytes(null))) {
+                    val bytes = HttpRequests.request(nodeContent.url).readBytes(null)
+                    if(validateHash(nodeContent.hashes?.first(), bytes)) {
                         downloadFromRemote(nodeContent.url, nodePath)
                     }
                 }
             }
+            makeFileExecutable(nodePath)
             if(!Files.exists(zipFilePath) && manifest != null) {
                 val serverContent = manifestManager.getZipContentFromManifest(manifest)
                 if(serverContent?.url != null) {
@@ -184,7 +185,24 @@ class EncoderServer (val project: Project): Disposable {
     private fun validateHash (expectedHash: String?, input: ByteArray): Boolean {
         if (expectedHash == null) { return false}
         val sha384 = DigestUtils.sha384Hex(input)
-        return ("sha384:$sha384") == expectedHash
+        val isValid = ("sha384:$sha384") == expectedHash
+        if (!isValid) {
+            logger.warn("failed validating hash for artifacts $expectedHash")
+        }
+        return isValid
+    }
+
+    private fun makeFileExecutable(filePath: Path) {
+        val permissions = mutableSetOf(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.GROUP_EXECUTE,
+            PosixFilePermission.OTHERS_READ,
+            PosixFilePermission.OTHERS_EXECUTE,
+        )
+        Files.setPosixFilePermissions(filePath, permissions)
     }
 
     private fun unzipFile(zipFilePath: Path, destDir: Path) {
