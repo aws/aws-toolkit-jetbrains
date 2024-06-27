@@ -261,7 +261,8 @@ fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String 
         )}"
 
         is UploadFailureReason.HTTP_ERROR -> "${message(
-            "codemodernizer.chat.message.upload_failed_http_error", failureReason.statusCode
+            "codemodernizer.chat.message.upload_failed_http_error",
+            failureReason.statusCode
         )}\n\n${message(
             "codemodernizer.chat.message.validation.error.more_info",
             CODE_TRANSFORM_TROUBLESHOOT_DOC_UPLOAD_ERROR_OVERVIEW
@@ -270,7 +271,8 @@ fun buildZipUploadFailedChatMessage(failureReason: UploadFailureReason): String 
         is UploadFailureReason.CONNECTION_REFUSED -> message("codemodernizer.chat.message.upload_failed_connection_refused")
 
         is UploadFailureReason.OTHER -> "${message(
-            "codemodernizer.chat.message.upload_failed_other", failureReason.errorMessage
+            "codemodernizer.chat.message.upload_failed_other",
+            failureReason.errorMessage
         )}\n\n${message(
             "codemodernizer.chat.message.validation.error.more_info",
             CODE_TRANSFORM_TROUBLESHOOT_DOC_UPLOAD_ERROR_OVERVIEW
