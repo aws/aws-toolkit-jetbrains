@@ -124,15 +124,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             "detectorName": "detectorName",
             "findingId": "findingId",
             "relatedVulnerabilities": [],
-            "severity": "severity",
-            "remediation": {
-                "recommendation": {
-                    "text": "recommendationText",
-                    "url": "recommendationUrl"
-                },
-                "suggestedFixes": []
-            },
-            "codeSnippet": [
+             "codeSnippet": [
                 {
                     "number": 1,
                     "content": "codeBlock1"
@@ -141,7 +133,15 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                     "number": 2,
                     "content": "codeBlock2"
                 }
-            ]
+            ],
+            "severity": "severity",
+            "remediation": {
+                "recommendation": {
+                    "text": "recommendationText",
+                    "url": "recommendationUrl"
+                },
+                "suggestedFixes": []
+            }
         }
     """.trimIndent()
 
