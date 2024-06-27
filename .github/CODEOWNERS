@@ -7,4 +7,4 @@ codemodernizer/ @aws/elastic-gumby
 codetransform/ @aws/elastic-gumby
 codewhisperer/ @aws/codewhisperer-team
 
-mynah-ui/ @aws/dexp
+mynah-ui/ @aws/dexp @aws/elastic-gumby @aws/earlybird
