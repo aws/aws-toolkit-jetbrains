@@ -13,6 +13,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
+import com.intellij.util.io.systemIndependentPath
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
@@ -127,7 +128,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
 
         return """
         {
-            "filePath": "$filePath",
+            "filePath": "${filePath.systemIndependentPath}",
             "startLine": $startLine,
             "endLine": $endLine,
             "title": "test",
