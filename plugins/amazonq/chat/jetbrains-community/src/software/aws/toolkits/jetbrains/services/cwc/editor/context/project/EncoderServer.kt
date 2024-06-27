@@ -43,7 +43,7 @@ import javax.crypto.spec.SecretKeySpec
 
 @Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
-    val cachePath = Paths.get(PluginPathManager.getPluginHomePath("amazonq")).resolve("projectContext").createDirectories()
+    private val cachePath = Paths.get(PluginPathManager.getPluginHomePath("amazonq")).resolve("projectContext").createDirectories()
     private val SERVER_DIRECTORY_NAME = "qserver.zip"
     private val isRunning = AtomicBoolean(false)
     private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
@@ -108,9 +108,9 @@ class EncoderServer (val project: Project): Disposable {
         } catch (e: Exception){
             logger.info("error running encoder server: $e")
             if(e.stackTraceToString().contains("address already in use")) {
-                portManager.addUsedPort(currentPort)
-                numberOfRetry.incrementAndGet()
-                currentPort = portManager.getPort()
+               portManager.addUsedPort(currentPort)
+               numberOfRetry.incrementAndGet()
+               currentPort = portManager.getPort()
             } else {
                 throw Exception(e.message)
             }
@@ -121,8 +121,9 @@ class EncoderServer (val project: Project): Disposable {
     private fun getCommand (): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val map = mutableMapOf<String, String>()
+        val cacheDir = cachePath.resolve("cache").createDirectories()
         map["PORT"] = currentPort
-        map["CACHE_DIR"] = PluginPathManager.getPluginHomePath("amazonq")
+        map["CACHE_DIR"] = cacheDir.toString()
         map["START_AMAZONQ_LSP"] = "true"
         map["Q_WORKER_THREADS"] = threadCount.toString()
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()

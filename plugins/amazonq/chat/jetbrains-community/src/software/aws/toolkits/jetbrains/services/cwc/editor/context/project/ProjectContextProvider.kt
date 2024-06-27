@@ -37,7 +37,8 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 while (true) {
                     if (encoderServer.isNodeProcessRunning()) {
-                        delay(1000)
+                        // TODO: need better solution for this
+                        delay(8000)
                         initAndIndex()
                         break
                     } else {

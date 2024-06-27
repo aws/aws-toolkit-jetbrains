@@ -27,10 +27,10 @@ class ProjectContextController (val project: Project) : Disposable {
     }
 
     fun query(prompt: String) : List<RelevantDocument> {
-        if (encoderServer?.isNodeProcessRunning() != true) {
-            logger.debug("encoder server is not running, skipping query for project context")
-            return emptyList()
-        }
+       if (encoderServer?.isNodeProcessRunning() != true) {
+           logger.debug("encoder server is not running, skipping query for project context")
+           return emptyList()
+       }
         try {
             return projectContextProvider!!.query(prompt)
         } catch (e: Exception) {
