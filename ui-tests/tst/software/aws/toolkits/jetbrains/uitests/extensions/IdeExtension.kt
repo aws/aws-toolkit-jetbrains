@@ -8,6 +8,7 @@ import com.intellij.remoterobot.stepsProcessing.StepLogger
 import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.utils.waitFor
+import kotlinx.coroutines.runBlocking
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -49,7 +50,7 @@ class Ide : BeforeAllCallback, AfterAllCallback {
 
     private fun waitForIde() {
         waitFor(
-            duration = Duration.ofMinutes(10),
+            duration = Duration.ofMinutes(20),
             interval = Duration.ofMillis(500),
             errorMessage = "Could not connect to remote robot in time"
         ) {
@@ -61,13 +62,15 @@ class Ide : BeforeAllCallback, AfterAllCallback {
         }
     }
 
-    private fun canConnectToToRobot(): Boolean = try {
-        Socket().use { socket ->
-            socket.connect(InetSocketAddress("127.0.0.1", robotPort))
-            true
+    private fun canConnectToToRobot(): Boolean = runBlocking {
+        try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress("127.0.0.1", robotPort))
+                true
+            }
+        } catch (e: IOException) {
+            false
         }
-    } catch (e: IOException) {
-        false
     }
 
     override fun afterAll(context: ExtensionContext) {
