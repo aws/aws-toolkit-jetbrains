@@ -183,11 +183,6 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
     }
 
     override fun isSupported(request: FullHttpRequest): Boolean {
-        // only handle if we're actively waiting on a redirect
-        if (!oauthService().hasPendingRequest()) {
-            return false
-        }
-
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
     }
