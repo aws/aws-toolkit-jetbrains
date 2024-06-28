@@ -1,7 +1,7 @@
 [versions]
 apache-commons-collections = "4.4"
 apache-commons-io = "2.16.0"
-assertJ = "3.20.2" # Upgrading leads to SAM errors: https://youtrack.jetbrains.com/issue/KT-17765
+assertJ = "3.26.0"
 # match with <root>/settings.gradle.kts
 awsSdk = "2.25.33"
 commonmark = "0.17.1"
@@ -25,7 +25,7 @@ mockk = "1.13.10"
 node-gradle = "7.0.2"
 telemetryGenerator = "1.0.216"
 testLogger = "4.0.0"
-testRetry = "1.5.2"
+testRetry = "1.5.9"
 # test-only; platform provides slf4j transitively at runtime. <233, 1.7.36; >=233, 2.0.9
 slf4j = "2.0.9"
 sshd = "2.12.1"
