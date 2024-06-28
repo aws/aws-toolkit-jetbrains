@@ -331,6 +331,7 @@ class SsoAccessTokenProvider(
             } catch (e: ProcessCanceledException) {
                 future.cancel(true)
                 _authorization.set(null)
+                ToolkitOAuthService.getInstance().cancel()
                 throw ProcessCanceledException(IllegalStateException(message("credentials.pending.user_cancel.message")))
             }
         }

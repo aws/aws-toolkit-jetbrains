@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials.sso.pkce
 import com.intellij.collaboration.auth.OAuthCallbackHandlerBase
 import com.intellij.collaboration.auth.services.OAuthCredentialsAcquirer
 import com.intellij.collaboration.auth.services.OAuthRequest
+import com.intellij.collaboration.auth.services.OAuthService
 import com.intellij.collaboration.auth.services.OAuthServiceBase
 import com.intellij.collaboration.auth.services.PkceUtils
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -18,10 +19,12 @@ import com.intellij.util.Urls.newFromEncoded
 import com.intellij.util.io.DigestUtil
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.QueryStringDecoder
 import org.jetbrains.ide.BuiltInServerManager
 import org.jetbrains.ide.RestService
+import org.jetbrains.io.BuiltInServer
 import org.jetbrains.io.response
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.endpoints.SsoOidcEndpointParams
@@ -43,6 +46,11 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override val name: String = "aws/toolkit"
 
     fun hasPendingRequest() = currentRequest.get() != null
+
+    fun cancel() {
+        this.currentRequest.set(null)
+        currentRequest.get()?.result?.completeExceptionally(Exception("cancel request"))
+    }
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
         val currentRequest = currentRequest.get()
@@ -182,8 +190,19 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         return AcceptCodeHandleResult.Redirect(urlBase.addParameters(params))
     }
 
-    // only handle the /oauth/callback endpoint
-    override fun isSupported(request: FullHttpRequest) = request.uri().trim('/').startsWith("oauth/callback")
+    override fun isSupported(request: FullHttpRequest): Boolean {
+        // only handle the /oauth/callback endpoint
+        return request.uri().trim('/').startsWith("oauth/callback")
+    }
+
+    override fun execute(urlDecoder: QueryStringDecoder, request: FullHttpRequest, context: ChannelHandlerContext): String? {
+        println("closing channel ************")
+
+        context.channel().config().setOption(ChannelOption.SO_KEEPALIVE, false)
+//        context.channel().close().get()
+
+        return super.execute(urlDecoder, request, context)
+    }
 }
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
@@ -197,6 +216,10 @@ internal class ToolkitOAuthCallbackResultService : RestService() {
 
         val response = response(type, Unpooled.wrappedBuffer(content))
         sendResponse(request, context, response)
+
+        println("closing channel !!!!!!!!!!!!!!!")
+        context.channel().config().setOption(ChannelOption.SO_KEEPALIVE, false)
+        context.channel().close().get()
 
         // return null on success
         return null
