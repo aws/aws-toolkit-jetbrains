@@ -283,14 +283,42 @@ class FeatureDevController(
             session.initCodegen(messenger)
             onCodeGeneration(session, "", tabId)
         } catch (err: Exception) {
-            val message = createUserFacingErrorMessage(err.message)
-            messenger.sendError(
-                tabId = tabId,
-                errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
-                retries = retriesRemaining(session),
-                phase = session.sessionState.phase,
-                conversationId = session.conversationIdUnsafe
-            )
+            logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
+            if (err is RepoSizeError) {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session.conversationIdUnsafe
+                )
+                messenger.sendSystemPrompt(
+                    tabId = tabId,
+                    followUp = listOf(
+                        FollowUp(
+                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
+                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
+                            status = FollowUpStatusType.Info,
+                        )
+                    ),
+                )
+            } else if (err is ZipFileError) {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = 0,
+                    phase = session.sessionState.phase,
+                    conversationId = session.conversationIdUnsafe
+                )
+            } else {
+                val message = createUserFacingErrorMessage(err.message)
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
+                    retries = retriesRemaining(session),
+                    phase = session.sessionState.phase,
+                    conversationId = session.conversationIdUnsafe
+                )
+            }
         }
     }
 
