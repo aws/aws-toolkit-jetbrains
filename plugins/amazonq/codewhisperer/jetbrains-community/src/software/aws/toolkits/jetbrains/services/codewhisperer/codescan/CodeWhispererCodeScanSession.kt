@@ -391,9 +391,21 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 runReadAction {
                     FileDocumentManager.getInstance().getDocument(file)
                 }?.let { document ->
-                    val shouldShow = recommendation.codeSnippet.all { codeSni ->
-                        document.getText().split("\n").getOrNull(codeSni.number - 1) == codeSni.content
-                    } ?: true
+
+                    val documentLines = document.getText().split("\n")
+                    val (startLine, endLine) = recommendation.run { startLine to endLine }
+                    var shouldShow = true
+
+                    for (codeSni in recommendation.codeSnippet) {
+                        val lineNumber = codeSni.number - 1
+                        if (codeSni.number in startLine..endLine) {
+                            val documentLine = documentLines.getOrNull(lineNumber)
+                            if (documentLine != codeSni.content) {
+                                shouldShow = false
+                                break
+                            }
+                        }
+                    }
 
                     if (shouldShow) {
                         val endLineInDocument = minOf(maxOf(0, recommendation.endLine - 1), document.lineCount - 1)
