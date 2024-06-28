@@ -43,6 +43,7 @@ phases:
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
       - dotnet codeartifact-creds configure set profile container
+      - export CODEARTIFACT_AUTH_TOKEN=$(aws --region us-west-2 --profile container codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --region us-west-2 --query authorizationToken --output text)
       - chmod +x gradlew
       - DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --info --console plain
       - |
