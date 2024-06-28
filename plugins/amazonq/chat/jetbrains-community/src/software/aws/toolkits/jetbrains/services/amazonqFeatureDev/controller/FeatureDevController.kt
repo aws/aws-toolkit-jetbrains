@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMess
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -495,6 +496,14 @@ class FeatureDevController(
                             status = FollowUpStatusType.Success,
                         )
                     ),
+                )
+            } else if (err is ZipFileError) {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = 0,
+                    phase = session?.sessionState?.phase,
+                    conversationId = session?.conversationIdUnsafe
                 )
             } else {
                 val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
