@@ -291,6 +291,7 @@ class CodeWhispererTelemetryService {
         val totalIssues = codeScanEvent.codeScanResponseContext.codeScanTotalIssues
         val issuesWithFixes = codeScanEvent.codeScanResponseContext.codeScanIssuesWithFixes
         val reason = codeScanEvent.codeScanResponseContext.reason
+        val reasonDesc = codeScanEvent.codeScanResponseContext.reasonDesc
         val startUrl = getConnectionStartUrl(codeScanEvent.connection)
         val codeAnalysisScope = codeScanEvent.codeAnalysisScope
         val passive = codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE
@@ -310,6 +311,7 @@ class CodeWhispererTelemetryService {
                 "Service invocation duration in milliseconds: ${serviceInvocationContext.serviceInvocationDuration}, \n" +
                 "Total number of lines scanned: ${payloadContext.totalLines}, \n" +
                 "Reason: $reason \n" +
+                "Reason description: $reasonDesc \n" +
                 "Scope: ${codeAnalysisScope.value} \n" +
                 "Passive: $passive \n"
         }
@@ -329,6 +331,7 @@ class CodeWhispererTelemetryService {
             artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration.toInt(),
             codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration.toInt(),
             reason = reason,
+            reasonDesc = reasonDesc,
             result = codeScanEvent.result,
             credentialStartUrl = startUrl,
             codewhispererCodeScanScope = CodewhispererCodeScanScope.from(codeAnalysisScope.value),
