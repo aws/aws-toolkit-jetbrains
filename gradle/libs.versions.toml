@@ -18,7 +18,6 @@ junit5 = "5.10.2"
 kotlin = "1.9.23"
 # set in <root>/settings.gradle.kts
 kotlinCoroutines = "1.7.3"
-kotlinNativeLibrary = "1.3.72"
 mockito = "5.11.0"
 mockitoKotlin = "5.2.1"
 mockk = "1.13.10"
@@ -93,7 +92,6 @@ junit5-jupiterVintage = { module = "org.junit.vintage:junit-vintage-engine", ver
 kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutinesDebug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinCoroutines" }
 kotlin-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
-kotlin-native-library-reader = {module = "org.jetbrains.kotlin:kotlin-native-library-reader", version.ref = "kotlinNativeLibrary"}
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-stdLibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
