@@ -16,8 +16,8 @@ import java.net.URL
 
 class ManifestManager {
     private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/temp/manifest.json"
-    private val SERVER_VERSION = "0.0.4"
-    private val os = getOs()
+    val SERVER_VERSION = "0.0.5"
+    val currentOs = getOs()
     private val arch = System.getProperty("os.arch")
 
 
@@ -92,8 +92,8 @@ class ManifestManager {
         if (targets.isNullOrEmpty()) {
             return null
         }
-        val targetArch = if(os != "windows" && (arch.contains("arm") || arch == "aarch64")) "arm64" else "x64"
-        return targets!!.find{ target -> target.platform == os && target.arch == targetArch }
+        val targetArch = if(currentOs != "windows" && (arch.contains("arm") || arch == "aarch64")) "arm64" else "x64"
+        return targets!!.find{ target -> target.platform == currentOs && target.arch == targetArch }
     }
 
     fun getNodeContentFromManifest(manifest: Manifest): TargetContent? {

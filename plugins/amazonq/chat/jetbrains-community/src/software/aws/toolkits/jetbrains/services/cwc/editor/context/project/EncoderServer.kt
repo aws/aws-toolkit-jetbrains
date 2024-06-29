@@ -5,10 +5,7 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.ProcessOutput
-import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.PluginPathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -22,6 +19,7 @@ import com.nimbusds.jose.crypto.MACSigner
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import org.apache.commons.codec.digest.DigestUtils
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -29,10 +27,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.manifest.ManifestManager
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
-import java.nio.file.Paths
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import java.security.Key
 import java.security.SecureRandom
@@ -44,23 +41,23 @@ import javax.crypto.spec.SecretKeySpec
 
 @Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
-    private val cachePath = Paths.get(PluginPathManager.getPluginHomePath("plugin-amazonq")).resolve("projectContext").createDirectories()
-    private val SERVER_DIRECTORY_NAME = "qserver.zip"
+    private val cachePath = Paths.get(
+        UserHomeDirectoryUtils.userHomeDirectory()).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
+    private val manifestManager = ManifestManager.getInstance()
+    private val SERVER_DIRECTORY_NAME = "qserver-${manifestManager.SERVER_VERSION}.zip"
     private val isRunning = AtomicBoolean(false)
     private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
     private var numberOfRetry = AtomicInteger(0)
     lateinit var currentPort: String
-    private val manifestManager = ManifestManager.getInstance()
     private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val MAX_NUMBER_OF_RETRIES: Int = 10
     val key = generateHmacKey()
-    lateinit var process : Process
+    private lateinit var process : Process
 
     fun downloadArtifactsAndStartServer () {
         portManager.getPort().also { currentPort = it }
         downloadArtifactsIfNeeded()
         start()
-        //
     }
 
     fun isNodeProcessRunning () = ::process.isInitialized && process.isAlive
@@ -103,18 +100,20 @@ class EncoderServer (val project: Project): Disposable {
             process = command.createProcess()
             val exitCode = process.waitFor()
             if(exitCode != 0) {
-                throw Exception(process?.errorStream?.bufferedReader().use { it?.readText() })
+                val error = process.errorStream.bufferedReader().use { it.readText() }
+                logger.info(error)
+                throw Exception(error)
             }
             return true
         } catch (e: Exception){
-            logger.info("error running encoder server: $e")
             if(e.stackTraceToString().contains("address already in use")) {
                portManager.addUsedPort(currentPort)
-               numberOfRetry.incrementAndGet()
                currentPort = portManager.getPort()
             } else {
-               throw Exception(e.message)
+               logger.info("error running encoder server: ${e.stackTraceToString()}")
             }
+            process.destroy()
+            numberOfRetry.incrementAndGet()
             return false
         }
     }
@@ -125,9 +124,11 @@ class EncoderServer (val project: Project): Disposable {
         map["PORT"] = currentPort
         map["START_AMAZONQ_LSP"] = "true"
         map["Q_WORKER_THREADS"] = threadCount.toString()
+        map["CACHE_DIR"] = cachePath.toString()
+        map["MODEL_DIR"] = cachePath.resolve("qserver").toString()
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME).toString()
-        val command = GeneralCommandLine(nodePath, jsPath)
+        val command = GeneralCommandLine(nodePath, "--inspect", jsPath)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withEnvironment(map)
         return command
@@ -148,17 +149,16 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun close() {
         if (isRunning.getAndSet(false)) {
-            logger.debug(process?.inputStream?.bufferedReader().use { it?.readText() })
-            process?.let { ProcessCloseUtil.close(it) }
+            process.let { ProcessCloseUtil.close(it) }
         }
     }
 
     private fun downloadArtifactsIfNeeded (){
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME)
         val zipFilePath = cachePath.resolve(SERVER_DIRECTORY_NAME)
-        val manifest = manifestManager.getManifest()
+        val manifest = manifestManager.getManifest() ?: return
         try {
-            if(!Files.exists(nodePath) && manifest != null) {
+            if(!Files.exists(nodePath)) {
                 val nodeContent = manifestManager.getNodeContentFromManifest(manifest)
                 if(nodeContent?.url != null) {
                     val bytes = HttpRequests.request(nodeContent.url).readBytes(null)
@@ -167,18 +167,46 @@ class EncoderServer (val project: Project): Disposable {
                     }
                 }
             }
-            makeFileExecutable(nodePath)
-            if(!Files.exists(zipFilePath) && manifest != null) {
-                val serverContent = manifestManager.getZipContentFromManifest(manifest)
-                if(serverContent?.url != null) {
-                    if(validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
-                        downloadFromRemote(serverContent.url, zipFilePath)
-                        unzipFile(zipFilePath, cachePath)
+            if(manifestManager.currentOs != "windows") {
+                makeFileExecutable(nodePath)
+            }
+            val files = cachePath.toFile().listFiles()
+            if(files.isNotEmpty()) {
+                val filenames = files.map { it.name }
+                if(filenames.contains(SERVER_DIRECTORY_NAME)) {
+                    return
+                }
+                tryDeleteOldArtifacts(filenames)
+            }
+
+            val serverContent = manifestManager.getZipContentFromManifest(manifest)
+            if(serverContent?.url != null) {
+                if(validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
+                    downloadFromRemote(serverContent.url, zipFilePath)
+                    unzipFile(zipFilePath, cachePath)
+                }
+            }
+        } catch (e: Exception){
+            logger.warn("error downloading artifacts ${e.stackTraceToString()}")
+        }
+    }
+
+    private fun tryDeleteOldArtifacts (filenames: List<String>) {
+        try {
+            filenames.forEach { filename ->
+                run {
+                    if (filename.contains("qserver")) {
+                        val parts = filename.split("-")
+                        val version = if (parts.size > 1) parts[1] else null
+                        if (version != null && version != "${manifestManager.SERVER_VERSION}.zip") {
+                            Files.deleteIfExists(cachePath.resolve(filename))
+                            Files.deleteIfExists(cachePath.resolve("qserver"))
+                        }
                     }
                 }
             }
         } catch (e: Exception){
-            logger.info("error downloading artifacts $e.message")
+            logger.warn("error deleting old artifacts $e.stackTraceToString()")
         }
     }
 

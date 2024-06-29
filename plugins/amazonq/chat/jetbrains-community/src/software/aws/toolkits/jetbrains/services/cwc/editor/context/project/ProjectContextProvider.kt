@@ -17,7 +17,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -102,7 +101,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             OutputStreamWriter(outputStream).use {
                 it.write(payload)
             }
-            logger.debug("project context initialize response code: $responseCode")
+            logger.info("project context initialize response code: $responseCode")
             if (responseCode == 200) return true else false
         }
     }
@@ -122,7 +121,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             OutputStreamWriter(outputStream).use {
                 it.write(encrypted)
             }
-            logger.debug("project context index response code: $responseCode")
+            logger.info("project context index response code: $responseCode")
             if (responseCode == 200) return true else false
         }
     }
@@ -132,30 +131,46 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val payload = QueryRequestPayload(prompt)
         val payloadJson = Gson().toJson(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
-        with(url.openConnection() as HttpURLConnection) {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "text/plain")
-            setRequestProperty("Accept", "text/plain")
-            doOutput = true
-            OutputStreamWriter(outputStream).use {
-                it.write(encrypted)
-            }
 
-            val responseBody = if (responseCode == 200) {
-                inputStream.bufferedReader().use { it.readText() }
-            } else {
-                ""
-            }
+        val connection = url.openConnection() as HttpURLConnection
 
-            val mapper = ObjectMapper()
-            try {
-                val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
-                return queryResultToRelevantDocuments(parsedResponse)
-            } catch (e: Exception) {
-                logger.debug("error parsing query response ${e.message}")
-                return emptyList()
+        // Set the connect and read timeouts
+        connection.connectTimeout = 5000 // 5 seconds
+        connection.readTimeout = 10000 // 10 second
+
+        // Set any other request properties or parameter
+        // Set the request method to POST
+        connection.requestMethod = "POST"
+
+        // Set the request headers
+        connection.setRequestProperty("Content-Type", "text/plain")
+        connection.setRequestProperty("Accept", "text/plain")
+
+        // Enable output for the request body
+        connection.doOutput = true
+        connection.outputStream.use { outputStream ->
+            OutputStreamWriter(outputStream).use { writer ->
+                writer.write(encrypted)
             }
         }
+        // Connect to the server
+        val responseCode = connection.responseCode
+        logger.info("project context query response code: $responseCode")
+        val responseBody = if (responseCode == 200) {
+            connection.inputStream.bufferedReader().use { reader -> reader.readText() }
+        } else {
+            ""
+        }
+
+        val mapper = ObjectMapper()
+        try {
+            val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
+            return queryResultToRelevantDocuments(parsedResponse)
+        } catch (e: Exception) {
+            logger.warn("error parsing query response ${e.message}")
+            return emptyList()
+        }
+        connection.disconnect()
     }
 
     fun updateIndex(filePath: String) {
