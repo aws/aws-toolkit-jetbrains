@@ -199,7 +199,7 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         println("closing channel ************")
 
         context.channel().config().setOption(ChannelOption.SO_KEEPALIVE, false)
-//        context.channel().close().get()
+        context.channel().close().get()
 
         return super.execute(urlDecoder, request, context)
     }
@@ -217,9 +217,9 @@ internal class ToolkitOAuthCallbackResultService : RestService() {
         val response = response(type, Unpooled.wrappedBuffer(content))
         sendResponse(request, context, response)
 
-        println("closing channel !!!!!!!!!!!!!!!")
-        context.channel().config().setOption(ChannelOption.SO_KEEPALIVE, false)
-        context.channel().close().get()
+//        println("closing channel !!!!!!!!!!!!!!!")
+//        context.channel().config().setOption(ChannelOption.SO_KEEPALIVE, false)
+//        context.channel().close().get()
 
         // return null on success
         return null
