@@ -34,6 +34,7 @@ import software.aws.toolkits.resources.message
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 
 const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
@@ -58,7 +59,13 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
             }
         }
 
-        return authorize(ToolkitOAuthRequest(registration))
+        return authorize(ToolkitOAuthRequest(registration)).exceptionally { e ->
+            if (e is CancellationException) {
+                this.currentRequest.set(null)
+            }
+
+            throw e
+        }
     }
 
     override fun handleServerCallback(path: String, parameters: Map<String, List<String>>): Boolean {
