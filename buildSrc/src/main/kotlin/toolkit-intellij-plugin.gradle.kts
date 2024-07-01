@@ -9,7 +9,7 @@ import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 private val toolkitIntelliJ = project.extensions.create<ToolkitIntelliJExtension>("intellijToolkit")
 
 plugins {
-    id("org.jetbrains.intellij.platform")
+    id("org.jetbrains.intellij.platform.module")
 }
 
 intellijPlatform {
@@ -19,8 +19,15 @@ intellijPlatform {
 // there is an issue if this is declared more than once in a project (either directly or through script plugins)
 repositories {
     intellijPlatform {
-        defaultRepositories()
+        localPlatformArtifacts()
+        intellijDependencies()
+        releases()
+        snapshots()
+        marketplace()
         jetbrainsRuntime()
+        // binary releases take lowest priority
+        // but maybe this is only needed for rider?
+        jetBrainsCdn()
     }
 }
 
@@ -28,10 +35,6 @@ dependencies {
     intellijPlatform {
         instrumentationTools()
     }
-}
-
-tasks.verifyPlugin {
-    isEnabled = false
 }
 
 // CI keeps running out of RAM, so limit IDE instance count to 4

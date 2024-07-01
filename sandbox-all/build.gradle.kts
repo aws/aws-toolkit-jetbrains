@@ -7,6 +7,7 @@ import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
     id("toolkit-intellij-plugin")
+    id("org.jetbrains.intellij.platform")
 }
 
 toolkitIntelliJ.apply {
@@ -16,7 +17,7 @@ toolkitIntelliJ.apply {
 
 tasks.buildPlugin {
     doFirst {
-        throw GradleException("This project does not produce an artifact. Use project-specific command, e.g. :plugin-toolkit:intellij-standalone:runIde")
+        throw StopActionException("This project does not produce an artifact. Use project-specific command, e.g. :plugin-toolkit:intellij-standalone:runIde")
     }
 }
 
