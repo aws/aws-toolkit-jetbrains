@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
@@ -145,6 +146,7 @@ abstract class LoginBrowser(
     }
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
+        val isReAuth = ToolkitConnectionManager.getInstance(project).activeConnection() != null
         val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
             val message = ssoErrorMessageFromException(e)
             if (!tryHandleUserCanceledLogin(e)) {
@@ -153,19 +155,36 @@ abstract class LoginBrowser(
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = url,
+                isReAuth = isReAuth,
                 result = Result.Failed,
                 reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
+            AuthTelemetry.addConnection(
+                result = Result.Failed,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                reason = message,
+                isReAuth = isReAuth,
+            )
         }
-        loginWithBackgroundContext {
-            Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
+        val onSuccess: () -> Unit = {
             AwsTelemetry.loginWithBrowser(
                 project = null,
-                credentialStartUrl = url,
                 result = Result.Succeeded,
+                isReAuth = isReAuth,
+                credentialType = CredentialType.BearerToken,
+                credentialStartUrl = url,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
+            AuthTelemetry.addConnection(
+                project = null,
+                result = Result.Succeeded,
+                isReAuth = isReAuth,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter
+            )
+        }
+        loginWithBackgroundContext {
+            Login.IdC(url, region, scopes, onPendingToken, onSuccess, onError).loginIdc(project)
         }
     }
 
