@@ -15,9 +15,9 @@ dependencyResolutionManagement {
                     "1.7.3"
                 }
 
-		"2024.2" -> {
-		    "1.8.0"
-		}
+                "2024.2" -> {
+                    "1.8.0"
+                }
 
                 else -> { error("not set") }
             }
