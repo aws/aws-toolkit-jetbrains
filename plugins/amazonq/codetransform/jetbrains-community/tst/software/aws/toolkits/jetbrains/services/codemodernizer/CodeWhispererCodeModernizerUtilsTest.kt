@@ -64,7 +64,6 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         assertThat(expected).isEqualTo(mutableList)
     }
 
-
     @Test
     fun `refresh on access denied`() {
         val mockAccessDeniedException = Mockito.mock(AccessDeniedException::class.java)
