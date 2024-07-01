@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
 import javax.crypto.spec.SecretKeySpec
 
-@Service(Service.Level.PROJECT)
 class EncoderServer (val project: Project): Disposable {
     private val cachePath = Paths.get(
         UserHomeDirectoryUtils.userHomeDirectory()).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
@@ -52,7 +51,7 @@ class EncoderServer (val project: Project): Disposable {
     private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val MAX_NUMBER_OF_RETRIES: Int = 10
     val key = generateHmacKey()
-    private lateinit var process : Process
+    private var process : Process? = null
 
     fun downloadArtifactsAndStartServer () {
         portManager.getPort().also { currentPort = it }
@@ -60,7 +59,7 @@ class EncoderServer (val project: Project): Disposable {
         start()
     }
 
-    fun isNodeProcessRunning () = ::process.isInitialized && process.isAlive
+    fun isNodeProcessRunning () = process != null && process!!.isAlive
 
     private fun generateHmacKey(): Key {
         val keyBytes = ByteArray(32)
@@ -97,11 +96,11 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun runCommand (command: GeneralCommandLine) : Boolean {
         try {
+            logger.info("starting encoder server for project context")
             process = command.createProcess()
-            val exitCode = process.waitFor()
+            val exitCode = process!!.waitFor()
             if(exitCode != 0) {
-                val error = process.errorStream.bufferedReader().use { it.readText() }
-                logger.info(error)
+                val error = process!!.errorStream.bufferedReader().use { it.readText() }
                 throw Exception(error)
             }
             return true
@@ -110,9 +109,9 @@ class EncoderServer (val project: Project): Disposable {
                portManager.addUsedPort(currentPort)
                currentPort = portManager.getPort()
             } else {
-               logger.info("error running encoder server: ${e.stackTraceToString()}")
+               logger.warn("error running encoder server: ${e.stackTraceToString()}")
             }
-            process.destroy()
+            process!!.destroy()
             numberOfRetry.incrementAndGet()
             return false
         }
@@ -120,12 +119,16 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun getCommand (): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
+        val isGpuEnabled = CodeWhispererSettings.getInstance().isProjectContextGpu()
         val map = mutableMapOf<String, String>()
         map["PORT"] = currentPort
         map["START_AMAZONQ_LSP"] = "true"
         map["Q_WORKER_THREADS"] = threadCount.toString()
         map["CACHE_DIR"] = cachePath.toString()
         map["MODEL_DIR"] = cachePath.resolve("qserver").toString()
+        if(isGpuEnabled) {
+            map["Q_ENABLE_GPU"] = "true"
+        }
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME).toString()
         val command = GeneralCommandLine(nodePath, "--inspect", jsPath)
@@ -149,7 +152,7 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun close() {
         if (isRunning.getAndSet(false)) {
-            process.let { ProcessCloseUtil.close(it) }
+            process?.let { ProcessCloseUtil.close(it) }
         }
     }
 
@@ -253,12 +256,11 @@ class EncoderServer (val project: Project): Disposable {
         }
     }
 
-
     private fun downloadFromRemote(url: String, path: Path) {
         try{
             HttpRequests.request(url).saveToFile(path, null)
         } catch (e: IOException) {
-            logger.info("error downloading from remote ${e.message}")
+            logger.warn("error downloading from remote ${e.message}")
         }
     }
 
@@ -269,6 +271,6 @@ class EncoderServer (val project: Project): Disposable {
     companion object {
         private val logger = getLogger<EncoderServer>()
 
-        fun getInstance(project: Project) = project.service<EncoderServer>()
+        fun getInstance(project: Project) = EncoderServer(project)
     }
 }

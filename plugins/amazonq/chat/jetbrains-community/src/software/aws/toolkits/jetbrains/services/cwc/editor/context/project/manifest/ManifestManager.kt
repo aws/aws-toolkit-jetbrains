@@ -101,7 +101,6 @@ class ManifestManager {
         return target.contents?.find{content -> content?.filename?.contains("node") == true }
     }
 
-
     fun getZipContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
         return target.contents?.find{content -> content?.filename?.contains("qserver") == true }
@@ -112,17 +111,17 @@ class ManifestManager {
             val response= HttpRequests.request(cloudFrontUrl).readString()
             return readManifestFile(response)
         } catch(e: Exception) {
+            logger.warn("failed to save manifest from remote: ${e.message}")
             return null
-            logger.info("failed to save manifest from remote: ${e.message}")
         }
     }
 
     fun getOs() : String {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            return "windows"
+        return if (SystemUtils.IS_OS_WINDOWS) {
+            "windows"
         } else if (SystemUtils.IS_OS_MAC) {
-            return "darwin"
-        } else return "linux"
+            "darwin"
+        } else "linux"
     }
 
     companion object {

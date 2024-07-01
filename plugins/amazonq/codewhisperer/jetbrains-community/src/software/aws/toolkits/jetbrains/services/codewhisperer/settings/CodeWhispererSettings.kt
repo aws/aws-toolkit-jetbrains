@@ -50,7 +50,13 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
 
-    fun getProjectContextIndexThreadCount() :Int = state.intValue.getOrDefault(
+    fun isProjectContextGpu() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextGpu, false)
+
+    fun toggleProjectContextGpu(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsProjectContextGpu] = value
+    }
+
+    fun getProjectContextIndexThreadCount(): Int = state.intValue.getOrDefault(
         CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount,
         0
     )
@@ -90,6 +96,7 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateNotificationEnabled,
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
+    IsProjectContextGpu,
 }
 
 enum class CodeWhispererIntConfigurationType {

@@ -106,7 +106,9 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
 
             row {
-                intTextField(range = IntRange(1, 10)).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
+                intTextField(
+                    range = IntRange(1, 10)
+                ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
                     .align(AlignX.FILL).apply {
                         connect.subscribe(
                             ToolkitConnectionManagerListener.TOPIC,
@@ -117,7 +119,22 @@ class CodeWhispererConfigurable(private val project: Project) :
                             }
                         )
                         enabled(invoke)
-                }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
+                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
+            }
+
+            row {
+                checkBox(message("aws.settings.codewhisperer.project_context_gpu")).apply {
+                    connect.subscribe(
+                        ToolkitConnectionManagerListener.TOPIC,
+                        object : ToolkitConnectionManagerListener {
+                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                enabled(isCodeWhispererEnabled(project))
+                            }
+                        }
+                    )
+                    enabled(invoke)
+                    bindSelected(codeWhispererSettings::isProjectContextGpu, codeWhispererSettings::toggleProjectContextGpu)
+                }.comment(message("aws.settings.codewhisperer.project_context_gpu.tooltip"))
             }
         }
 

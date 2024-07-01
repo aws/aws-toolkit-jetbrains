@@ -163,7 +163,6 @@ class ChatController private constructor(
         val fileContext = lastRequest?.activeFileContext ?: ActiveFileContext(null, null)
 
         // Re-use the editor context when making the follow-up request
-        // TODO: add last project context
         handleChat(
             tabId = message.tabId,
             triggerId = UUID.randomUUID().toString(),
@@ -339,7 +338,6 @@ class ChatController private constructor(
             return
         }
 
-        // TODO: add project context
         val inputPrompt = modelPrompt ?: prompt
         handleChat(
             tabId = tabId,
