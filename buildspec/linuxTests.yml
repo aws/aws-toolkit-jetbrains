@@ -13,6 +13,8 @@ env:
 phases:
   install:
     commands:
+      - export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto.x86_64
+      - alternatives --set java ${JAVA_HOME}/bin/java && alternatives --set javac ${JAVA_HOME}/bin/javac
       - useradd codebuild-user
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output

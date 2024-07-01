@@ -51,12 +51,10 @@ dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core", "pluginZip"))
         testFramework(TestFrameworkType.Bundled)
-        testFramework(TestFrameworkType.Plugin.ReSharper)
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))
 
-    testImplementation(project(":plugin-toolkit:jetbrains-core"))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
 }
@@ -334,4 +332,15 @@ tasks.integrationTest {
 // fix implicit dependency on generated source
 tasks.withType<DetektCreateBaselineTask> {
     dependsOn(generateModels)
+}
+
+configurations.all {
+    if (name.contains("detekt")) {
+        return@all
+    }
+
+    // test runner not happy with coroutines, but not clear where it's coming from:
+    //   java.lang.Throwable: Thread context was already set: InstalledThreadContext(snapshot=null, context=EmptyCoroutineContext).
+    //   Most likely, you are using 'runBlocking' instead of 'runBlockingCancellable' somewhere in the asynchronous stack.
+    exclude("org.jetbrains.kotlinx")
 }
