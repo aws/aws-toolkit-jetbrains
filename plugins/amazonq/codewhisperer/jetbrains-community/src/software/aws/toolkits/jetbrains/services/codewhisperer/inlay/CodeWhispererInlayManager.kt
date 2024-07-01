@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 
 import com.intellij.codeInsight.inline.completion.render.InlineBlockElementRenderer
-import com.intellij.codeInsight.inline.completion.render.InlineSuffixRenderer
+import com.intellij.codeInsight.inline.completion.render.InlineCompletionLineRendererFactory
 import com.intellij.idea.AppMode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -46,7 +46,7 @@ class CodeWhispererInlayManager {
                 if (!AppMode.isRemoteDevHost()) {
                     CodeWhispererInlayInlineRenderer(firstLine)
                 } else {
-                    InlineSuffixRenderer(editor, firstLine)
+                    InlineCompletionLineRendererFactory.create(editor, firstLine)
                 }
             val inlineInlay = editor.inlayModel.addInlineElement(startOffset, true, firstLineRenderer)
             inlineInlay?.let {
