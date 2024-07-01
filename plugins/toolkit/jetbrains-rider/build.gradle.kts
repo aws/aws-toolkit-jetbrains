@@ -322,6 +322,7 @@ tasks.integrationTest {
     // test detection is broken for tests inheriting from JB test framework: https://youtrack.jetbrains.com/issue/IDEA-278926
     setScanForTestClasses(false)
     include("**/*Test.class")
+    include("**/*IntegrationTest.class")
 }
 
 // fix implicit dependency on generated source
