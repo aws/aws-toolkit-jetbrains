@@ -19,7 +19,6 @@ import com.intellij.util.io.DigestUtil
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.FullHttpRequest
-import io.netty.handler.codec.http.HttpMethod.GET
 import io.netty.handler.codec.http.QueryStringDecoder
 import org.jetbrains.ide.BuiltInServerManager
 import org.jetbrains.ide.RestService
@@ -183,7 +182,7 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         return AcceptCodeHandleResult.Redirect(urlBase.addParameters(params))
     }
 
-    override fun isSupported(request: FullHttpRequest): Boolean = request.method() == GET && request.uri().trim('/').startsWith("oauth/callback")
+    override fun isSupported(request: FullHttpRequest): Boolean = request.uri().trim('/').startsWith("oauth/callback")
 }
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
