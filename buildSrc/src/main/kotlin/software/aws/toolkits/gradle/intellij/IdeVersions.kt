@@ -138,25 +138,25 @@ object IdeVersions {
             name = "2024.2",
             gateway = ProductProfile(
                 sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "242.18071-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "242.19533-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "242.18071-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "242.19533-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "PythonCore:242.18071.24",
-                    "Docker:242.18071.27"
+                    "PythonCore:242.19533.56",
+                    "Docker:242.19533.60"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "242.18071-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "242.19533-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -164,16 +164,16 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:242.18071.24",
-                    "org.jetbrains.plugins.go:242.18071.24",
+                    "Pythonid:242.19533.56",
+                    "org.jetbrains.plugins.go:242.19533.56",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-EAP4-SNAPSHOT",
+                sdkVersion = "2024.2-EAP5-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0-eap04"
+                nugetVersion = " 2024.2.0-eap05"
             )
         ),
 
