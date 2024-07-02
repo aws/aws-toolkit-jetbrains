@@ -28,6 +28,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
+import java.awt.Toolkit
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -329,7 +330,8 @@ class SsoAccessTokenProvider(
             try {
                 sleepWithCancellation(Duration.ofMillis(100), progressIndicator)
             } catch (e: ProcessCanceledException) {
-                future.cancel(true)
+//                future.cancel(true)
+                ToolkitOAuthService.getInstance().cancel()
                 _authorization.set(null)
                 throw ProcessCanceledException(IllegalStateException(message("credentials.pending.user_cancel.message")))
             }
