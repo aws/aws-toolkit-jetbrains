@@ -7,21 +7,14 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: corretto17
-
     commands:
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
             Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
         }
-      - dotnet --list-sdks
-      - |
-        $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
-        $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
-        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
-        dotnet codeartifact-creds install
+      - choco install -fy dotnet-6.0-sdk
+      - choco install -fy dotnet-8.0-sdk
       - dotnet --list-sdks
 
   build:
