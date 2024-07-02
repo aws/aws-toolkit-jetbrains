@@ -55,8 +55,8 @@
             "output":{"shape":"GenerateTaskAssistPlanResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
-                {"shape":"ConflictException"},
                 {"shape":"ServiceQuotaExceededException"},
+                {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
@@ -69,52 +69,9 @@
             "type":"structure",
             "required":["message"],
             "members":{
-                "message":{"shape":"String"},
-                "reason":{"shape":"AccessDeniedExceptionReason"}
+                "message":{"shape":"String"}
             },
             "exception":true
-        },
-        "AccessDeniedExceptionReason":{
-            "type":"string",
-            "enum":["UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS"]
-        },
-        "AppStudioState":{
-            "type":"structure",
-            "required":[
-                "namespace",
-                "propertyName",
-                "propertyContext"
-            ],
-            "members":{
-                "namespace":{"shape":"AppStudioStateNamespaceString"},
-                "propertyName":{"shape":"AppStudioStatePropertyNameString"},
-                "propertyValue":{"shape":"AppStudioStatePropertyValueString"},
-                "propertyContext":{"shape":"AppStudioStatePropertyContextString"}
-            }
-        },
-        "AppStudioStateNamespaceString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
-        },
-        "AppStudioStatePropertyContextString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
-        },
-        "AppStudioStatePropertyNameString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
-        },
-        "AppStudioStatePropertyValueString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
         },
         "ArtifactId":{
             "type":"string",
@@ -140,7 +97,7 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "messageId":{"shape":"MessageId"},
+                "messageId":{"shape":"AssistantResponseMessageMessageIdString"},
                 "content":{"shape":"AssistantResponseMessageContentString"},
                 "supplementaryWebLinks":{"shape":"SupplementaryWebLinks"},
                 "references":{"shape":"References"},
@@ -152,6 +109,11 @@
             "max":4096,
             "min":0,
             "sensitive":true
+        },
+        "AssistantResponseMessageMessageIdString":{
+            "type":"string",
+            "max":128,
+            "min":0
         },
         "BinaryMetadataEvent":{
             "type":"structure",
@@ -194,7 +156,7 @@
                 "codeReferenceEvent":{"shape":"CodeReferenceEvent"},
                 "supplementaryWebLinksEvent":{"shape":"SupplementaryWebLinksEvent"},
                 "followupPromptEvent":{"shape":"FollowupPromptEvent"},
-                "invalidStateEvent":{"shape":"InvalidStateEvent"},
+                "invalidStateEvent": {"shape":  "InvalidStateEvent"},
                 "error":{"shape":"InternalServerException"}
             },
             "eventstream":true
@@ -253,7 +215,7 @@
                 "history":{"shape":"ChatHistory"},
                 "currentMessage":{"shape":"ChatMessage"},
                 "chatTriggerType":{"shape":"ChatTriggerType"},
-                "customizationArn":{"shape":"ResourceArn"}
+                "customizationArn":{"shape": "ResourceArn"}
             }
         },
         "CursorState":{
@@ -313,54 +275,8 @@
             "type":"structure",
             "members":{
                 "document":{"shape":"TextDocument"},
-                "cursorState":{"shape":"CursorState"},
-                "relevantDocuments":{"shape":"RelevantDocumentList"}
+                "cursorState":{"shape":"CursorState"}
             }
-        },
-        "EnvState":{
-            "type":"structure",
-            "members":{
-                "operatingSystem":{"shape":"EnvStateOperatingSystemString"},
-                "currentWorkingDirectory":{"shape":"EnvStateCurrentWorkingDirectoryString"},
-                "environmentVariables":{"shape":"EnvironmentVariables"}
-            }
-        },
-        "EnvStateCurrentWorkingDirectoryString":{
-            "type":"string",
-            "max":256,
-            "min":1,
-            "sensitive":true
-        },
-        "EnvStateOperatingSystemString":{
-            "type":"string",
-            "max":32,
-            "min":1,
-            "pattern":"(macos|linux|windows)"
-        },
-        "EnvironmentVariable":{
-            "type":"structure",
-            "members":{
-                "key":{"shape":"EnvironmentVariableKeyString"},
-                "value":{"shape":"EnvironmentVariableValueString"}
-            }
-        },
-        "EnvironmentVariableKeyString":{
-            "type":"string",
-            "max":256,
-            "min":1,
-            "sensitive":true
-        },
-        "EnvironmentVariableValueString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
-        },
-        "EnvironmentVariables":{
-            "type":"list",
-            "member":{"shape":"EnvironmentVariable"},
-            "max":100,
-            "min":0
         },
         "ExportContext":{
             "type":"structure",
@@ -420,8 +336,7 @@
             "type":"structure",
             "required":["conversationState"],
             "members":{
-                "conversationState":{"shape":"ConversationState"},
-                "profileArn":{"shape":"ProfileArn"}
+                "conversationState":{"shape":"ConversationState"}
             }
         },
         "GenerateAssistantResponseResponse":{
@@ -452,18 +367,6 @@
                 "planningResponseStream":{"shape":"ChatResponseStream"}
             }
         },
-        "GitState":{
-            "type":"structure",
-            "members":{
-                "status":{"shape":"GitStateStatusString"}
-            }
-        },
-        "GitStateStatusString":{
-            "type":"string",
-            "max":4096,
-            "min":0,
-            "sensitive":true
-        },
         "Integer":{
             "type":"integer",
             "box":true
@@ -480,20 +383,11 @@
         },
         "InvalidStateEvent":{
             "type":"structure",
-            "required":[
-                "reason",
-                "message"
-            ],
             "members":{
                 "reason":{"shape":"InvalidStateReason"},
-                "message":{"shape":"InvalidStateEventMessageString"}
+                "message":{"shape": "String"}
             },
             "event":true
-        },
-        "InvalidStateEventMessageString":{
-            "type":"string",
-            "max":10240,
-            "min":0
         },
         "InvalidStateReason":{
             "type":"string",
@@ -502,11 +396,6 @@
         "Long":{
             "type":"long",
             "box":true
-        },
-        "MessageId":{
-            "type":"string",
-            "max":128,
-            "min":0
         },
         "MessageMetadataEvent":{
             "type":"structure",
@@ -537,12 +426,6 @@
                 "character":{"shape":"Integer"}
             }
         },
-        "ProfileArn":{
-            "type":"string",
-            "max":950,
-            "min":0,
-            "pattern":"arn:[-.a-z0-9]{1,63}:codewhisperer:([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
-        },
         "ProgrammingLanguage":{
             "type":"structure",
             "required":["languageName"],
@@ -554,7 +437,7 @@
             "type":"string",
             "max":128,
             "min":1,
-            "pattern":"(python|javascript|java|csharp|typescript|c|cpp|go|kotlin|php|ruby|rust|scala|shell|sql|json|yaml|vue|tf|tsx|jsx|plaintext)"
+            "pattern":"(python|javascript|java|csharp|typescript|c|cpp|go|kotlin|php|ruby|rust|scala|shell|sql|json|yaml|vue|tf)"
         },
         "Range":{
             "type":"structure",
@@ -596,40 +479,6 @@
             "member":{"shape":"Reference"},
             "max":10,
             "min":0
-        },
-        "RelevantDocumentList":{
-            "type":"list",
-            "member":{"shape":"RelevantTextDocument"},
-            "max":5,
-            "min":0
-        },
-        "RelevantTextDocument":{
-            "type":"structure",
-            "required":["relativeFilePath"],
-            "members":{
-                "relativeFilePath":{"shape":"RelevantTextDocumentRelativeFilePathString"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "text":{"shape":"RelevantTextDocumentTextString"},
-                "documentSymbols":{"shape":"DocumentSymbols"}
-            }
-        },
-        "RelevantTextDocumentRelativeFilePathString":{
-            "type":"string",
-            "max":4096,
-            "min":1,
-            "sensitive":true
-        },
-        "RelevantTextDocumentTextString":{
-            "type":"string",
-            "max":10240,
-            "min":0,
-            "sensitive":true
-        },
-        "ResourceArn":{
-            "type":"string",
-            "max":1224,
-            "min":0,
-            "pattern":"arn:([-.a-z0-9]{1,63}:){2}([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
         },
         "ResourceNotFoundException":{
             "type":"structure",
@@ -676,69 +525,6 @@
         "SensitiveString":{
             "type":"string",
             "sensitive":true
-        },
-        "ServiceQuotaExceededException":{
-            "type":"structure",
-            "required":["message"],
-            "members":{
-                "message":{"shape":"String"}
-            },
-            "exception":true
-        },
-        "ShellHistory":{
-            "type":"list",
-            "member":{"shape":"ShellHistoryEntry"},
-            "max":20,
-            "min":0
-        },
-        "ShellHistoryEntry":{
-            "type":"structure",
-            "required":["command"],
-            "members":{
-                "command":{"shape":"ShellHistoryEntryCommandString"},
-                "directory":{"shape":"ShellHistoryEntryDirectoryString"},
-                "exitCode":{"shape":"Integer"},
-                "stdout":{"shape":"ShellHistoryEntryStdoutString"},
-                "stderr":{"shape":"ShellHistoryEntryStderrString"}
-            }
-        },
-        "ShellHistoryEntryCommandString":{
-            "type":"string",
-            "max":1024,
-            "min":1,
-            "sensitive":true
-        },
-        "ShellHistoryEntryDirectoryString":{
-            "type":"string",
-            "max":256,
-            "min":1,
-            "sensitive":true
-        },
-        "ShellHistoryEntryStderrString":{
-            "type":"string",
-            "max":4096,
-            "min":0,
-            "sensitive":true
-        },
-        "ShellHistoryEntryStdoutString":{
-            "type":"string",
-            "max":4096,
-            "min":0,
-            "sensitive":true
-        },
-        "ShellState":{
-            "type":"structure",
-            "required":["shellName"],
-            "members":{
-                "shellName":{"shape":"ShellStateShellNameString"},
-                "shellHistory":{"shape":"ShellHistory"}
-            }
-        },
-        "ShellStateShellNameString":{
-            "type":"string",
-            "max":32,
-            "min":1,
-            "pattern":"(zsh|bash|fish|pwsh|nu)"
         },
         "Span":{
             "type":"structure",
@@ -862,6 +648,15 @@
             "exception":true,
             "retryable":{"throttling":true}
         },
+        "ServiceQuotaExceededException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true,
+            "retryable":{"throttling":true}
+        },
         "TransformationDownloadArtifactType":{
             "type":"string",
             "enum":[
@@ -904,10 +699,6 @@
             "type":"structure",
             "members":{
                 "editorState":{"shape":"EditorState"},
-                "shellState":{"shape":"ShellState"},
-                "gitState":{"shape":"GitState"},
-                "envState":{"shape":"EnvState"},
-                "appStudioContext":{"shape":"AppStudioState"},
                 "diagnostic":{"shape":"Diagnostic"}
             }
         },
@@ -920,8 +711,7 @@
                 "SHOW_EXAMPLES",
                 "CITE_SOURCES",
                 "EXPLAIN_LINE_BY_LINE",
-                "EXPLAIN_CODE_SELECTION",
-                "GENERATE_CLOUDFORMATION_TEMPLATE"
+                "EXPLAIN_CODE_SELECTION"
             ]
         },
         "ValidationException":{
@@ -935,10 +725,7 @@
         },
         "ValidationExceptionReason":{
             "type":"string",
-            "enum":[
-                "INVALID_CONVERSATION_ID",
-                "CONTENT_LENGTH_EXCEEDS_THRESHOLD"
-            ]
+            "enum":["INVALID_CONVERSATION_ID"]
         },
         "WorkspaceState":{
             "type":"structure",
