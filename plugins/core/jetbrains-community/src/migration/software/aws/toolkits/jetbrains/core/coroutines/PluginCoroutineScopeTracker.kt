@@ -7,13 +7,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ThreadContextElement
 import kotlinx.coroutines.cancel
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
@@ -33,7 +31,7 @@ class PluginCoroutineScopeTracker : Disposable {
 private class BackgroundThreadPoolScope(coroutineName: String, disposable: Disposable) : CoroutineScope {
     override val coroutineContext = SupervisorJob() +
         CoroutineName(coroutineName) +
-        PluginResolverDispatcher(getCoroutineBgContext() as ExecutorCoroutineDispatcher, PluginResolver.fromCurrentThread())
+        PluginResolverThreadContextElement(PluginResolver.fromCurrentThread())
 
     init {
         Disposer.register(disposable) {
@@ -42,17 +40,18 @@ private class BackgroundThreadPoolScope(coroutineName: String, disposable: Dispo
     }
 }
 
-private class PluginResolverDispatcher(
-    private val delegate: CoroutineDispatcher,
-    private val pluginResolver: PluginResolver
-) : CoroutineDispatcher() {
-    override fun dispatch(context: CoroutineContext, block: Runnable) {
-        val wrappedBlock = Runnable {
-            PluginResolver.setThreadLocal(pluginResolver)
-            block.run()
-        }
-        delegate.dispatch(context, wrappedBlock)
+private class PluginResolverThreadContextElement(val pluginResolver: PluginResolver) : ThreadContextElement<PluginResolver> {
+    companion object Key : CoroutineContext.Key<PluginResolverThreadContextElement>
+
+    override val key = Key
+
+    override fun updateThreadContext(context: CoroutineContext): PluginResolver {
+        val oldPluginResolver = PluginResolver.fromCurrentThread()
+        PluginResolver.setThreadLocal(pluginResolver)
+        return oldPluginResolver
     }
 
-    override fun isDispatchNeeded(context: CoroutineContext): Boolean = delegate.isDispatchNeeded(context)
+    override fun restoreThreadContext(context: CoroutineContext, oldState: PluginResolver) {
+        PluginResolver.setThreadLocal(oldState)
+    }
 }
