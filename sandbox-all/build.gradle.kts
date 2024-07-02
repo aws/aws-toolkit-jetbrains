@@ -15,6 +15,10 @@ toolkitIntelliJ.apply {
     ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
 }
 
+tasks.verifyPlugin {
+    isEnabled = false
+}
+
 tasks.buildPlugin {
     doFirst {
         throw StopActionException("This project does not produce an artifact. Use project-specific command, e.g. :plugin-toolkit:intellij-standalone:runIde")
