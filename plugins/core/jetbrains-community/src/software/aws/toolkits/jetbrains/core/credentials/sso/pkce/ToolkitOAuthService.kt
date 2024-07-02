@@ -35,16 +35,19 @@ import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 
 const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override val name: String = "aws/toolkit"
+    private val isCanceled: AtomicBoolean = AtomicBoolean(false)
 
     fun hasPendingRequest() = currentRequest.get() != null
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
+        isCanceled.set(false)
         val currentRequest = currentRequest.get()
         val toolkitRequest = currentRequest?.request as? ToolkitOAuthRequest
 
@@ -77,6 +80,15 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override fun revokeToken(token: String) {
         TODO("Not yet implemented")
     }
+
+    fun cancel() {
+        if (hasPendingRequest()) {
+            isCanceled.set(true)
+//            this.currentRequest.set(null)
+        }
+    }
+
+    fun isCanceled() = this.isCanceled.get()
 
     companion object {
         fun getInstance() = service<ToolkitOAuthService>()
@@ -129,6 +141,11 @@ internal class ToolkitOauthCredentialsAcquirer(
     private val redirectUri: String,
 ) : OAuthCredentialsAcquirer<AccessToken> {
     override fun acquireCredentials(code: String): OAuthCredentialsAcquirer.AcquireCredentialsResult<AccessToken> {
+        if (ToolkitOAuthService.getInstance().isCanceled()) {
+            return OAuthCredentialsAcquirer.AcquireCredentialsResult.Error("user canceled")
+        }
+
+
         val token = buildUnmanagedSsoOidcClient(registration.region).use { client ->
             client.createToken {
                 it.clientId(registration.clientId)
@@ -184,9 +201,9 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
 
     override fun isSupported(request: FullHttpRequest): Boolean {
         // only handle if we're actively waiting on a redirect
-        if (!oauthService().hasPendingRequest()) {
-            return false
-        }
+//        if (!oauthService().hasPendingRequest()) {
+//            return false
+//        }
 
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
