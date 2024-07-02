@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ThreadContextElement
 import kotlinx.coroutines.cancel
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
@@ -31,6 +32,7 @@ class PluginCoroutineScopeTracker : Disposable {
 private class BackgroundThreadPoolScope(coroutineName: String, disposable: Disposable) : CoroutineScope {
     override val coroutineContext = SupervisorJob() +
         CoroutineName(coroutineName) +
+        getCoroutineBgContext() +
         PluginResolverThreadContextElement(PluginResolver.fromCurrentThread())
 
     init {
