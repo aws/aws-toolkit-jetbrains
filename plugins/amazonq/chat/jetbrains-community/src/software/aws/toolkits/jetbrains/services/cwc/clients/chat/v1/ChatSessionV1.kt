@@ -291,7 +291,6 @@ class ChatSessionV1(
         UserIntent.EXPLAIN_CODE_SELECTION -> FollowUpType.ExplainInDetail
         UserIntent.UNKNOWN_TO_SDK_VERSION -> FollowUpType.Generated
         null -> FollowUpType.Generated
-        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> FollowUpType.Generated // TODO: not sure what this is supposed to be
     }
 
     companion object {

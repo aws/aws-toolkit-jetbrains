@@ -51,7 +51,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         UserIntent.EXPLAIN_LINE_BY_LINE -> CwsprChatUserIntent.ExplainLineByLine
         UserIntent.EXPLAIN_CODE_SELECTION -> CwsprChatUserIntent.ExplainCodeSelection
         UserIntent.UNKNOWN_TO_SDK_VERSION -> CwsprChatUserIntent.Unknown
-        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> CwsprChatUserIntent.ShowExample // TODO: not sure what this is supposed to be
     }
 
     private fun getTelemetryTriggerType(triggerType: TriggerType): CwsprChatTriggerInteraction = when (triggerType) {
