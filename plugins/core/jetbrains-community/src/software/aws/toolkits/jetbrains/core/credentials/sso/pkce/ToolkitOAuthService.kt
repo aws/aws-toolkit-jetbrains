@@ -84,7 +84,7 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     fun cancel() {
         if (hasPendingRequest()) {
             isCanceled.set(true)
-            this.currentRequest.set(null)
+//            this.currentRequest.set(null)
         }
     }
 
@@ -201,9 +201,9 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
 
     override fun isSupported(request: FullHttpRequest): Boolean {
         // only handle if we're actively waiting on a redirect
-        if (!oauthService().hasPendingRequest()) {
-            return false
-        }
+//        if (!oauthService().hasPendingRequest()) {
+//            return false
+//        }
 
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
