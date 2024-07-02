@@ -215,7 +215,7 @@
                 "history":{"shape":"ChatHistory"},
                 "currentMessage":{"shape":"ChatMessage"},
                 "chatTriggerType":{"shape":"ChatTriggerType"},
-                "customizationArn":{"shape": "CustomizationArn"}
+                "customizationArn":{"shape": "ResourceArn"}
             }
         },
         "CursorState":{
