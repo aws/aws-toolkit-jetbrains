@@ -3,6 +3,7 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.aware.RunnableIdeAware
+import org.jetbrains.intellij.platform.gradle.tasks.aware.TestableAware
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 
@@ -44,7 +45,7 @@ ciOnly {
         maxParallelUsages = 4
     }
 
-    tasks.matching { it is RunnableIdeAware }.all {
+    tasks.matching { it is RunnableIdeAware || it is TestableAware }.all {
         usesService(noopService)
     }
 }
