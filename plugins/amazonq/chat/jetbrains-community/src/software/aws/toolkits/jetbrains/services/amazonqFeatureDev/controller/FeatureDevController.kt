@@ -486,8 +486,6 @@ class FeatureDevController(
                 )
                 messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
             }
-            
-
             is CodeIterationLimitError -> {
                 messenger.sendError(
                     tabId = tabId,

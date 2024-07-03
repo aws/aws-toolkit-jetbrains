@@ -121,14 +121,14 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int, phase: SessionStatePhase? = null, conversationId: String? = null) {
+suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retries: Int,  conversationId: String? = null, showDefaultMessage: Boolean? = false) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
 
     if (retries == 0) {
         this.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
-            message = message("amazonqFeatureDev.no_retries.error_text") + conversationIdText,
+            message = if (showDefaultMessage == true) errMessage else  message("amazonqFeatureDev.no_retries.error_text") + conversationIdText,
         )
 
         this.sendAnswer(
@@ -145,22 +145,11 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String, retrie
         return
     }
 
-    when (phase) {
-        SessionStatePhase.APPROACH -> {
-            this.sendErrorMessage(
-                tabId = tabId,
-                title = message("amazonqFeatureDev.approach_gen.error_text"),
-                message = errMessage + conversationIdText,
-            )
-        }
-        else -> {
-            this.sendErrorMessage(
-                tabId = tabId,
-                title = message("amazonqFeatureDev.error_text"),
-                message = errMessage + conversationIdText,
-            )
-        }
-    }
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = FeatureDevMessageType.Answer,
+        message = errMessage + conversationIdText,
+    )
 
     this.sendAnswer(
         tabId = tabId,
