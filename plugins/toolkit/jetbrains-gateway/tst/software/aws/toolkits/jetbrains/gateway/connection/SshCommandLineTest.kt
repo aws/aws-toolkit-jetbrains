@@ -46,7 +46,7 @@ class SshCommandLineTest {
     @Test
     fun `known hosts added`() {
         val hostFile = tempFolder.newFile().toPath()
-        SshCommandLine("localhost", port = sshServer.server.port)
+        SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(hostFile)
             .executeAndGetOutput()
 
@@ -63,7 +63,7 @@ class SshCommandLineTest {
 
         // redirect localhost:localPort to localhost:wireMockPort
         // ideally, we would bind wiremock to a different loopback address, but macOS doesn't allow this by default
-        SshCommandLine("localhost", port = sshServer.server.port)
+        SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(tempFolder.newFile().toPath())
             .localPortForward(localPort, wireMockPort)
             .executeInBackground(
@@ -99,7 +99,7 @@ class SshCommandLineTest {
 
     @Test
     fun `execute command`() {
-        val output = SshCommandLine("localhost", port = sshServer.server.port)
+        val output = SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(tempFolder.newFile().toPath())
             // server rewrites to this to `ls`; we're testing that the command is runnable on the machine
             .addToRemoteCommand("some complicated command { wow }")
