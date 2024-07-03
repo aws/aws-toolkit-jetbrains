@@ -146,7 +146,6 @@ val cleanGenerateModels = tasks.register<Delete>("cleanGenerateModels") {
 // Backend
 val backendGroup = "backend"
 val codeArtifactNugetUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_NUGET_URL")
-val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
 val prepareBuildProps = tasks.register("prepareBuildProps") {
     val riderSdkVersionPropsPath = File(resharperPluginPath, "RiderSdkPackageVersion.props")
     group = backendGroup
@@ -197,20 +196,6 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
             }
         }
     </packageSources>
-    ${
-            if (codeArtifactToken.isPresent) {
-                """
-       |<packageSourceCredentials>
-       |  <codeartifact-nuget>
-       |    <add key="Username" value="aws" />
-       |    <add key="Password" value="${codeArtifactToken.get()}" />
-       |  </codeartifact-nuget>
-       |</packageSourceCredentials>
-        """.trimMargin("|")
-            } else {
-                ""
-            }
-        }
   </configuration>
 """
         val configText = """<?xml version="1.0" encoding="utf-8"?>
