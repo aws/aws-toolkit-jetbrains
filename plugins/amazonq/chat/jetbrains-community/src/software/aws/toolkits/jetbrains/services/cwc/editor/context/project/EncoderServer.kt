@@ -213,7 +213,7 @@ class EncoderServer (val project: Project): Disposable {
         }
     }
 
-    private fun validateHash (expectedHash: String?, input: ByteArray): Boolean {
+     fun validateHash (expectedHash: String?, input: ByteArray): Boolean {
         if (expectedHash == null) { return false}
         val sha384 = DigestUtils.sha384Hex(input)
         val isValid = ("sha384:$sha384") == expectedHash

@@ -175,6 +175,7 @@ class ChatSessionV1(
 
                 val client = AwsClientManager.getInstance().getClient<CodeWhispererStreamingAsyncClient>(connection.getConnectionSettings())
                 val request = data.toChatRequest()
+                logger.info("chat resquest: ${request.toString()}")
                 logger.info { "Request from tab: ${data.tabId}, conversationId: $conversationId, request: $request" }
                 client.generateAssistantResponse(request, responseHandler).await()
             }

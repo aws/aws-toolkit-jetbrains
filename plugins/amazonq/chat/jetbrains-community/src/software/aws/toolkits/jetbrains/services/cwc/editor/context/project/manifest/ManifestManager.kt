@@ -15,8 +15,8 @@ import java.net.URL
 
 
 class ManifestManager {
-    private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/temp/manifest.json"
-    val SERVER_VERSION = "0.0.5"
+    private val cloudFrontUrl = "https://ducvaeoffl85c.cloudfront.net/manifest.json"
+    val SERVER_VERSION = "0.0.6"
     val currentOs = getOs()
     private val arch = System.getProperty("os.arch")
 

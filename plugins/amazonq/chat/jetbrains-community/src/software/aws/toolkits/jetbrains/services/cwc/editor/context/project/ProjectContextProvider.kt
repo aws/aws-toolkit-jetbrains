@@ -113,6 +113,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                 try {
                     isInitSuccess = initEncryption()
                     if (isInitSuccess) {
+                        logger.info("project context index starting")
                         index()
                     }
                 } catch (e: Exception) {
@@ -124,24 +125,25 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                         shouldRetryInit.set(false)
                     }
                 }
-
             }
-            isInitializationSuccess.set(isInitSuccess)
+//            isInitializationSuccess.set(isInitSuccess)
         }
     }
 
     private fun initEncryption() : Boolean {
+        logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
         val url = URL("http://localhost:${encoderServer.currentPort}/initialize")
         val payload = encoderServer.getEncryptionRequest()
         return with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
             setConnectionRequest(this, payload)
-            logger.info("project context initialize response code: $responseCode")
+            logger.info("project context initialize response code: $responseCode for ${project.guessProjectDir()}")
             if (responseCode == 200) return true else false
         }
     }
 
     fun index() : Boolean {
+        logger.info("project context: indexing ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
         val indexStartTime = System.currentTimeMillis()
         val url = URL("http://localhost:${encoderServer.currentPort}/indexFiles")
         val filesResult = collectFiles()
@@ -152,7 +154,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         return with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
             setConnectionRequest(this, encrypted)
-            logger.info("project context index response code: $responseCode")
+            logger.info("project context index response code: $responseCode for ${project.guessProjectDir()}")
             val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
             val startUrl = getStartUrl(project)
             if (responseCode == 200) {
@@ -167,10 +169,11 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     fun query(prompt: String): List<RelevantDocument> {
-        if(!isInitializationSuccess.get()) {
-            logger.warn("Skipping query for Project context because initialization failed")
-            return emptyList()
-        }
+//        if(!isInitializationSuccess.get()) {
+//            logger.warn("Skipping query for Project context because initialization failed")
+//            return emptyList()
+//        }
+        logger.info("project context: querying ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
         val url = URL("http://localhost:${encoderServer.currentPort}/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
@@ -182,12 +185,13 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         setConnectionRequest(connection, encrypted)
 
         val responseCode = connection.responseCode
-        logger.info("project context query response code: $responseCode")
+        logger.info("project context query response code: $responseCode for $prompt")
         val responseBody = if (responseCode == 200) {
             connection.inputStream.bufferedReader().use { reader -> reader.readText() }
         } else {
             ""
         }
+        logger.info("project context query response for $prompt: $responseBody")
         connection.disconnect()
         val mapper = ObjectMapper()
         try {
@@ -200,12 +204,13 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     private fun getUsage(): Usage? {
+        logger.info("project context: getting usage for ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
         val url = URL("http://localhost:${encoderServer.currentPort}/getUsage")
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         val responseCode = connection.responseCode
 
-        logger.info("project context getUsage response code: $responseCode")
+        logger.info("project context getUsage response code: $responseCode for ${project.guessProjectDir()} ")
         val responseBody = if (responseCode == 200) {
             connection.inputStream.bufferedReader().use { reader -> reader.readText() }
         } else {
@@ -223,10 +228,11 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     fun updateIndex(filePath: String) {
-        if(!isInitializationSuccess.get()) {
-            logger.warn("Skipping updating index for Project context because initialization failed")
-            return
-        }
+//        if(!isInitializationSuccess.get()) {
+//            logger.warn("Skipping updating index for Project context because initialization failed")
+//            return
+//        }
+        logger.info("project context: updating index for ${filePath} on port ${encoderServer.currentPort}")
         val url = URL("http://localhost:${encoderServer.currentPort}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
         val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
@@ -235,7 +241,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             setConnectionProperties(this)
             setConnectionRequest(this, encrypted)
             val responseCode = responseCode
-            logger.debug("project context update index response code: $responseCode")
+            logger.debug("project context update index response code: $responseCode for ${filePath}")
             return
         }
     }

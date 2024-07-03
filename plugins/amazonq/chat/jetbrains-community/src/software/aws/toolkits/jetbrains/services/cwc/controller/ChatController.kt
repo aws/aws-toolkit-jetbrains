@@ -65,7 +65,6 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
@@ -133,6 +132,7 @@ class ChatController private constructor(
             if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
                 prompt = prompt.drop(10)
                 queryResult = projectContextController.query(prompt)
+                logger.info("project context result relevant document count: ${queryResult.size}")
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
