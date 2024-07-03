@@ -437,9 +437,9 @@ class FeatureDevController(
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
 
-    private suspend fun processErrorChatMessage(err: Exception, message: String, session: Session?, tabId: String ) {
+    private suspend fun processErrorChatMessage(err: Exception, message: String, session: Session?, tabId: String) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
-        when(err) {
+        when (err) {
             is RepoSizeError -> {
                 messenger.sendError(
                     tabId = tabId,
@@ -508,6 +508,27 @@ class FeatureDevController(
 
             else -> {
                 val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
+                val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
+                var defaultMessage: String? = null
+                when (session?.sessionState?.phase) {
+                    SessionStatePhase.APPROACH -> {
+                        if (isDenyListedError) {
+                            defaultMessage = message("amazonqFeatureDev.plan_generation.deny_listed_error.failed_generation")
+                        } else {
+                            defaultMessage = message("amazonqFeatureDev.plan_generation.failed_generation")
+                        }
+                    }
+                    SessionStatePhase.CODEGEN -> {
+                        if (retriesRemaining(session) > 0) {
+                            defaultMessage = message("amazonqFeatureDev.code_generation.error_message")
+                        } else {
+                            defaultMessage = message("amazonqFeatureDev.code_generation.no_retries.error_message")
+                        }
+                    }
+                    else -> {
+                        defaultMessage = null
+                    }
+                }
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = msg ?: message("amazonqFeatureDev.exception.request_failed"),
@@ -545,7 +566,7 @@ class FeatureDevController(
                 else -> null
             }
         } catch (err: Exception) {
-            processErrorChatMessage(err, message, session, tabId);
+            processErrorChatMessage(err, message, session, tabId)
 
             // Lock the chat input until they explicitly click one of the follow-ups
             messenger.sendChatInputEnabledMessage(tabId, enabled = false)
