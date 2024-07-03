@@ -111,10 +111,13 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             var isInitSuccess = false
             while (isInitSuccess == false && shouldRetryInit.get() == true && retryCount.get() < 5) {
                 try {
+                    logger.info("project context: about to init key")
                     isInitSuccess = initEncryption()
                     if (isInitSuccess) {
                         logger.info("project context index starting")
+                        delay(300)
                         index()
+                        break
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
@@ -123,6 +126,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                         delay(5000)
                     } else {
                         shouldRetryInit.set(false)
+                        break
                     }
                 }
             }
@@ -134,12 +138,11 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
         val url = URL("http://localhost:${encoderServer.currentPort}/initialize")
         val payload = encoderServer.getEncryptionRequest()
-        return with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionRequest(this, payload)
-            logger.info("project context initialize response code: $responseCode for ${project.guessProjectDir()}")
-            if (responseCode == 200) return true else false
-        }
+        val connection = url.openConnection() as HttpURLConnection
+        setConnectionProperties(connection)
+        setConnectionRequest(connection, payload)
+        logger.info("project context initialize response code: $connection.responseCode for ${project.guessProjectDir()}")
+        return connection.responseCode == 200
     }
 
     fun index() : Boolean {
@@ -151,20 +154,20 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val payload = IndexRequestPayload(filesResult.files, projectRoot, true)
         val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
-        return with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionRequest(this, encrypted)
-            logger.info("project context index response code: $responseCode for ${project.guessProjectDir()}")
-            val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
-            val startUrl = getStartUrl(project)
-            if (responseCode == 200) {
-                val usage = getUsage()
-                TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
-                return true
-            } else {
-                TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
-                return false
-            }
+
+        val connection = url.openConnection() as HttpURLConnection
+        setConnectionProperties(connection)
+        setConnectionRequest(connection, encrypted)
+        logger.info("project context index response code: $connection.responseCode for ${project.guessProjectDir()}")
+        val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
+        val startUrl = getStartUrl(project)
+        if (connection.responseCode == 200) {
+            val usage = getUsage()
+            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            return true
+        } else {
+            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
+            return false
         }
     }
 
