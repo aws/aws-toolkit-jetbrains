@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "This update introduces textual changes in the error strings and a more granular handling for specific error scenarios defined by the technical writer."
+}
