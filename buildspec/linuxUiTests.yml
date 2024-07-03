@@ -41,7 +41,6 @@ phases:
       - AWS_CONFIG_FILE=`mktemp`
       - |        
         >$AWS_CONFIG_FILE echo "[default]
-        role_arn=$ASSUME_ROLE_ARN
         credential_source=EcsContainer"
         
       - chmod +x gradlew
