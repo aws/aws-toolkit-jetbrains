@@ -67,7 +67,6 @@ dependencies {
     intellijPlatform {
         pluginVerifier()
 
-        testFramework(TestFrameworkType.JUnit5)
         testFramework(TestFrameworkType.Bundled)
     }
 
