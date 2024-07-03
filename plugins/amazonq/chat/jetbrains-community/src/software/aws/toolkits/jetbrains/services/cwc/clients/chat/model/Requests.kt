@@ -22,8 +22,8 @@ data class ChatRequestData(
     val activeFileContext: ActiveFileContext,
     val userIntent: UserIntent?,
     val triggerType: TriggerType,
-    val customization: CodeWhispererCustomization?
-    val relevantDocuments: List<RelevantDocument>
+    val customization: CodeWhispererCustomization?,
+    val relevantTextDocuments: List<RelevantDocument>
 )
 
 interface CodeNames {

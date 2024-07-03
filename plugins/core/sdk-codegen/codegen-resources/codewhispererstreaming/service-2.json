@@ -276,7 +276,7 @@
             "members":{
                 "document":{"shape":"TextDocument"},
                 "cursorState":{"shape":"CursorState"},
-                "relevantTextDocuments": {"shape": "RelevantTextDocumentList"}
+                "relevantDocuments": {"shape": "RelevantDocumentList"}
             }
         },
         "ExportContext":{
@@ -493,7 +493,7 @@
                 "documentSymbols": {"shape": "DocumentSymbols"}
             }
         },
-        "RelevantTextDocumentList": {
+        "RelevantDocumentList": {
             "type": "list",
             "member": {"shape": "RelevantTextDocument"},
             "max": 5,

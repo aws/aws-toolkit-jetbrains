@@ -13,10 +13,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
@@ -40,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
@@ -73,6 +76,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FocusType
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInteractionMessage
+import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
@@ -124,19 +128,19 @@ class ChatController private constructor(
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
         var prompt = message.chatMessage
         var queryResult: List<RelevantDocument> = emptyList()
-        if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
-            if(prompt.startsWith("@ws")){
-                prompt = prompt.drop(3)
-                queryResult = projectContextController.query(prompt)
-            } else if (prompt.startsWith("@workspace")){
+        val triggerId = UUID.randomUUID().toString()
+        if (prompt.startsWith("@workspace")){
+            if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
                 prompt = prompt.drop(10)
                 queryResult = projectContextController.query(prompt)
+            } else {
+                sendOpenSettingsMessage(message.tabId)
             }
         }
 
         handleChat(
             tabId = message.tabId,
-            triggerId = UUID.randomUUID().toString(),
+            triggerId = triggerId,
             message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
@@ -178,6 +182,12 @@ class ChatController private constructor(
 
     override suspend fun processCodeWasCopiedToClipboard(message: IncomingCwcMessage.CopyCodeToClipboard) {
         telemetryHelper.recordInteractWithMessage(message)
+    }
+
+    override suspend fun processOpenSettings(message: IncomingCwcMessage.OpenSettings) {
+        runInEdt {
+            ShowSettingsUtil.getInstance().showSettingsDialog(context.project, CodeWhispererConfigurable::class.java)
+        }
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
@@ -442,6 +452,13 @@ class ChatController private constructor(
         val message = QuickActionMessage(
             triggerId = triggerId,
             message = prompt.message,
+        )
+        messagePublisher.publish(message)
+    }
+
+    private suspend fun sendOpenSettingsMessage(tabId: String) {
+        val message = OpenSettingsMessage(
+            tabId = tabId
         )
         messagePublisher.publish(message)
     }

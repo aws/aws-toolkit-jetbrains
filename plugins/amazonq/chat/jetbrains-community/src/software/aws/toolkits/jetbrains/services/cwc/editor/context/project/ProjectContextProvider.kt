@@ -112,6 +112,9 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             while (isInitSuccess == false && shouldRetryInit.get() == true && retryCount.get() < 5) {
                 try {
                     isInitSuccess = initEncryption()
+                    if (isInitSuccess) {
+                        index()
+                    }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
                         shouldRetryInit.set(true)
@@ -124,11 +127,6 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
 
             }
             isInitializationSuccess.set(isInitSuccess)
-            if (!isInitSuccess) {
-                logger.warn("Skipping index for Project context because initialization failed")
-                return@launch
-            }
-            index()
         }
     }
 

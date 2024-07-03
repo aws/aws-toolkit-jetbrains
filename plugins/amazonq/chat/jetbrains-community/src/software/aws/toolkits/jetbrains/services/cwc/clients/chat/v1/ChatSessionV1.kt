@@ -199,7 +199,7 @@ class ChatSessionV1(
     private fun ChatRequestData.toChatRequest(): GenerateAssistantResponseRequest {
         val userInputMessageContextBuilder = UserInputMessageContext.builder()
         if (activeFileContext.fileContext != null) {
-            userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantDocuments))
+            userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantTextDocuments))
         }
         val userInputMessageContext = userInputMessageContextBuilder.build()
 
@@ -285,7 +285,7 @@ class ChatSessionV1(
         return EditorState.builder()
             .cursorState(cursorStateBuilder.build())
             .document(documentBuilder.build())
-            .relevantTextDocuments(documents)
+            .relevantDocuments(documents)
             .build()
     }
 
