@@ -29,6 +29,7 @@ interface ActionProvider<T> {
     val documentation: T
 }
 
+@SuppressWarnings("UnusedParameter")
 fun <T> buildActionListForInlineSuggestions(project: Project, actionProvider: ActionProvider<T>): List<T> {
     val manager = CodeWhispererExplorerActionManager.getInstance()
 
