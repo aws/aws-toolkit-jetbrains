@@ -31,7 +31,6 @@ interface ActionProvider<T> {
 
 fun <T> buildActionListForInlineSuggestions(project: Project, actionProvider: ActionProvider<T>): List<T> {
     val manager = CodeWhispererExplorerActionManager.getInstance()
-    val activeConnectionType = manager.checkActiveCodeWhispererConnectionType(project)
 
     return buildList {
         if (manager.isAutoEnabled()) {
