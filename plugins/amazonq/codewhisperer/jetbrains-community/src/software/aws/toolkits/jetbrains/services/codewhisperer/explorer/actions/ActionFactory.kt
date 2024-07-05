@@ -70,7 +70,6 @@ fun <T> buildActionListForOtherFeatures(project: Project, actionProvider: Action
             add(actionProvider.openChatPanel)
         }
 
-        // We only show this customization node to SSO users who are in CodeWhisperer Gated Preview list
         val isIdC = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()).let { conn ->
             conn != null && !conn.isSono()
         }
