@@ -13,10 +13,10 @@ phases:
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
             Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
         }
-      - choco install -fy dotnet-8.0-sdk
+      - rm -fo "C:\codebuild\global.json"
+      - rm -r -fo "C:\Program Files\dotnet\sdk"
       - choco install -fy dotnet-6.0-sdk
       - dotnet --list-sdks
-      - dotnet new globaljson --sdk-version 6.0.0 --roll-forward latestMinor
 
   build:
     commands:
