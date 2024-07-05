@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
@@ -38,7 +37,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     private val scope = disposableCoroutineScope(this)
     private val shouldRetryInit = AtomicBoolean(true)
     private val retryCount = AtomicInteger(0)
-    private val isInitializationSuccess = AtomicBoolean(false)
+    private val mapper = jacksonObjectMapper()
     init {
         scope.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
@@ -102,17 +101,16 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
        val next: String?= null,
         @JsonProperty("relativePath")
        val relativePath: String?= null,
-        @JsonProperty("programmingLanguage?")
+        @JsonProperty("programmingLanguage")
         val programmingLanguage: String?= null,
    )
 
     private fun initAndIndex () {
         scope.launch {
-            var isInitSuccess = false
-            while (isInitSuccess == false && shouldRetryInit.get() == true && retryCount.get() < 5) {
+            while (shouldRetryInit.get() == true && retryCount.get() < 5) {
                 try {
                     logger.info("project context: about to init key")
-                    isInitSuccess = initEncryption()
+                    val isInitSuccess = initEncryption()
                     if (isInitSuccess) {
                         logger.info("project context index starting")
                         delay(300)
@@ -123,42 +121,41 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                     if (e.stackTraceToString().contains("Connection refused")) {
                         shouldRetryInit.set(true)
                         retryCount.incrementAndGet()
-                        delay(5000)
+                        delay(10000)
                     } else {
                         shouldRetryInit.set(false)
                         break
                     }
                 }
             }
-//            isInitializationSuccess.set(isInitSuccess)
         }
     }
 
     private fun initEncryption() : Boolean {
-        logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
-        val url = URL("http://localhost:${encoderServer.currentPort}/initialize")
+        logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}")
+        val url = URL("http://localhost:${encoderServer.port}/initialize")
         val payload = encoderServer.getEncryptionRequest()
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         setConnectionRequest(connection, payload)
-        logger.info("project context initialize response code: $connection.responseCode for ${project.guessProjectDir()}")
+        logger.info("project context initialize response code: ${connection.responseCode} for ${project.name}")
         return connection.responseCode == 200
     }
 
     fun index() : Boolean {
-        logger.info("project context: indexing ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
+        logger.info("project context: indexing ${project.name} on port ${encoderServer.port}")
         val indexStartTime = System.currentTimeMillis()
-        val url = URL("http://localhost:${encoderServer.currentPort}/indexFiles")
+        val url = URL("http://localhost:${encoderServer.port}/indexFiles")
         val filesResult = collectFiles()
         val projectRoot = project.guessProjectDir()?.path ?: return false
         val payload = IndexRequestPayload(filesResult.files, projectRoot, true)
-        val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
+        val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         setConnectionRequest(connection, encrypted)
-        logger.info("project context index response code: $connection.responseCode for ${project.guessProjectDir()}")
+        logger.info("project context index response code: ${connection.responseCode} for ${project.name}")
         val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         val startUrl = getStartUrl(project)
         if (connection.responseCode == 200) {
@@ -172,14 +169,10 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     fun query(prompt: String): List<RelevantDocument> {
-//        if(!isInitializationSuccess.get()) {
-//            logger.warn("Skipping query for Project context because initialization failed")
-//            return emptyList()
-//        }
-        logger.info("project context: querying ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
-        val url = URL("http://localhost:${encoderServer.currentPort}/query")
+        logger.info("project context: querying ${project.name} on port ${encoderServer.port}")
+        val url = URL("http://localhost:${encoderServer.port}/query")
         val payload = QueryRequestPayload(prompt)
-        val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
+        val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
         val connection = url.openConnection() as HttpURLConnection
@@ -194,9 +187,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         } else {
             ""
         }
-        logger.info("project context query response for $prompt: $responseBody")
         connection.disconnect()
-        val mapper = ObjectMapper()
         try {
             val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
             return queryResultToRelevantDocuments(parsedResponse)
@@ -207,20 +198,19 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     private fun getUsage(): Usage? {
-        logger.info("project context: getting usage for ${project.guessProjectDir()} on port ${encoderServer.currentPort}")
-        val url = URL("http://localhost:${encoderServer.currentPort}/getUsage")
+        logger.info("project context: getting usage for ${project.guessProjectDir()} on port ${encoderServer.port}")
+        val url = URL("http://localhost:${encoderServer.port}/getUsage")
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         val responseCode = connection.responseCode
 
-        logger.info("project context getUsage response code: $responseCode for ${project.guessProjectDir()} ")
+        logger.info("project context getUsage response code: $responseCode for ${project.name} ")
         val responseBody = if (responseCode == 200) {
             connection.inputStream.bufferedReader().use { reader -> reader.readText() }
         } else {
             ""
         }
         connection.disconnect()
-        val mapper = ObjectMapper()
         try {
             val parsedResponse = mapper.readValue<Usage>(responseBody)
             return parsedResponse
@@ -231,14 +221,10 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     fun updateIndex(filePath: String) {
-//        if(!isInitializationSuccess.get()) {
-//            logger.warn("Skipping updating index for Project context because initialization failed")
-//            return
-//        }
-        logger.info("project context: updating index for ${filePath} on port ${encoderServer.currentPort}")
-        val url = URL("http://localhost:${encoderServer.currentPort}/updateIndex")
+        logger.info("project context: updating index for ${filePath} on port ${encoderServer.port}")
+        val url = URL("http://localhost:${encoderServer.port}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
-        val payloadJson = jacksonObjectMapper().writeValueAsString(payload)
+        val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
         with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
@@ -338,25 +324,22 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             }
         }
         val documents: MutableList<RelevantDocument> = mutableListOf()
-        chunksMap.forEach{filePath, chunkList ->
-        run {
+        chunksMap.forEach{ (filePath, chunkList) ->
             var text = ""
             chunkList.forEach() { chunk -> text += (chunk.context ?: chunk.content)}
             val document = RelevantDocument(filePath, text)
             documents.add(document)
-        }}
+        }
         return documents
     }
 
     override fun dispose() {
         shouldRetryInit.set(true)
         retryCount.set(0)
-        isInitializationSuccess.set(false)
     }
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
-        fun getInstance(project: Project, encoderServer: EncoderServer) = ProjectContextProvider(project, encoderServer)
     }
 
 }

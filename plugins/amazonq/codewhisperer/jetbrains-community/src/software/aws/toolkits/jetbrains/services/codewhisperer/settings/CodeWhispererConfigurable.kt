@@ -107,7 +107,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row {
                 intTextField(
-                    range = IntRange(1, 10)
+                    range = IntRange(0, 1000)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
                     .align(AlignX.FILL).apply {
                         connect.subscribe(

@@ -7,18 +7,21 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.HttpRequests
-import org.apache.commons.lang3.SystemUtils
+import com.intellij.util.system.CpuArch
 import software.aws.toolkits.core.utils.getLogger
 import java.net.HttpURLConnection
 import java.net.URL
 
 
 class ManifestManager {
-    private val cloudFrontUrl = "https://ducvaeoffl85c.cloudfront.net/manifest.json"
-    val SERVER_VERSION = "0.0.6"
+    // TODO: switch to prod url
+    private val cloudFrontUrl = "https://ducvaeoffl85c.cloudfront.net/manifest10.json"
+    val SERVER_VERSION = "0.0.10"
     val currentOs = getOs()
-    private val arch = System.getProperty("os.arch")
+    private val arch = CpuArch.CURRENT
+    private val mapper = ObjectMapper()
 
 
     data class TargetContent (
@@ -76,13 +79,11 @@ class ManifestManager {
     }
 
     private fun readManifestFile(content: String) : Manifest? {
-        val mapper = ObjectMapper()
         try {
-            val parsedResponse = mapper.readValue<Manifest>(content)
-            return parsedResponse
+            return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
-            return null
             logger.warn("error parsing manifest file for project context ${e.message}")
+            return null
         }
     }
 
@@ -92,18 +93,18 @@ class ManifestManager {
         if (targets.isNullOrEmpty()) {
             return null
         }
-        val targetArch = if(currentOs != "windows" && (arch.contains("arm") || arch == "aarch64")) "arm64" else "x64"
-        return targets!!.find{ target -> target.platform == currentOs && target.arch == targetArch }
+        val targetArch = if(currentOs != "windows" && arch == CpuArch.ARM64) "arm64" else "x64"
+        return targets.find{ target -> target.platform == currentOs && target.arch == targetArch }
     }
 
     fun getNodeContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
-        return target.contents?.find{content -> content?.filename?.contains("node") == true }
+        return target.contents?.find{content -> content.filename?.contains("node") == true }
     }
 
     fun getZipContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
-        return target.contents?.find{content -> content?.filename?.contains("qserver") == true }
+        return target.contents?.find{content -> content.filename?.contains("qserver") == true }
     }
 
     private fun fetchFromRemoteAndSave(): Manifest? {
@@ -117,17 +118,15 @@ class ManifestManager {
     }
 
     fun getOs() : String {
-        return if (SystemUtils.IS_OS_WINDOWS) {
-            "windows"
-        } else if (SystemUtils.IS_OS_MAC) {
-            "darwin"
-        } else "linux"
+        return when {
+            SystemInfo.isWindows -> "windows"
+            SystemInfo.isMac -> "darwin"
+            SystemInfo.isLinux -> "linux"
+            else -> "linux"
+        }
     }
 
     companion object {
         private val logger = getLogger<ManifestManager>()
-        private val instance = ManifestManager()
-
-        fun getInstance(): ManifestManager = instance
     }
 }

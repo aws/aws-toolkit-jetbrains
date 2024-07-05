@@ -60,9 +60,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         TriggerType.ContextMenu, TriggerType.Hotkeys -> CwsprChatTriggerInteraction.ContextMenu
     }
 
-    private fun getIsProjectContextEnabled() : Boolean {
-        return CodeWhispererSettings.getInstance().isProjectContextEnabled()
-    }
+    private fun getIsProjectContextEnabled() = CodeWhispererSettings.getInstance().isProjectContextEnabled()
 
     // When chat panel is focused
     fun recordEnterFocusChat() {

@@ -5,6 +5,10 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.KillableProcessHandler
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -12,6 +16,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.process.ProcessCloseUtil
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
+import com.intellij.util.net.NetUtils
 import com.nimbusds.jose.JOSEObjectType
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
@@ -42,24 +47,22 @@ import javax.crypto.spec.SecretKeySpec
 class EncoderServer (val project: Project): Disposable {
     private val cachePath = Paths.get(
         UserHomeDirectoryUtils.userHomeDirectory()).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
-    private val manifestManager = ManifestManager.getInstance()
+    private val manifestManager = ManifestManager()
     private val SERVER_DIRECTORY_NAME = "qserver-${manifestManager.SERVER_VERSION}.zip"
     private val isRunning = AtomicBoolean(false)
-    private val portManager: EncoderServerPortManager = EncoderServerPortManager.getInstance()
     private var numberOfRetry = AtomicInteger(0)
-    lateinit var currentPort: String
+    val port by lazy { NetUtils.findAvailableSocketPort() }
     private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
-    private val MAX_NUMBER_OF_RETRIES: Int = 10
+    private val MAX_NUMBER_OF_RETRIES: Int = 3
     val key = generateHmacKey()
-    private var process : Process? = null
+    private var processHandler : KillableProcessHandler? = null
 
     fun downloadArtifactsAndStartServer () {
-        portManager.getPort().also { currentPort = it }
         downloadArtifactsIfNeeded()
         start()
     }
 
-    fun isNodeProcessRunning () = process != null && process!!.isAlive
+    fun isNodeProcessRunning () = processHandler != null && processHandler?.process?.isAlive == true
 
     private fun generateHmacKey(): Key {
         val keyBytes = ByteArray(32)
@@ -96,22 +99,18 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun runCommand (command: GeneralCommandLine) : Boolean {
         try {
-            logger.info("starting encoder server for project context")
-            process = command.createProcess()
-            val exitCode = process!!.waitFor()
-            if(exitCode != 0) {
-                val error = process!!.errorStream.bufferedReader().use { it.readText() }
-                throw Exception(error)
-            }
-            return true
-        } catch (e: Exception){
-            if(e.stackTraceToString().contains("address already in use")) {
-               portManager.addUsedPort(currentPort)
-               currentPort = portManager.getPort()
+            logger.info("starting encoder server for project context on $port for ${project.name}")
+//            process = command.createProcess()
+            processHandler = KillableProcessHandler(command)
+            val exitCode = processHandler!!.waitFor()
+            if (exitCode) {
+                throw Exception("Encoder server exited with code $exitCode")
             } else {
-               logger.warn("error running encoder server: ${e.stackTraceToString()}")
+                return true
             }
-            process!!.destroy()
+        } catch (e: Exception){
+            logger.warn("error running encoder server: ${e.stackTraceToString()}")
+            processHandler?.destroyProcess()
             numberOfRetry.incrementAndGet()
             return false
         }
@@ -121,7 +120,7 @@ class EncoderServer (val project: Project): Disposable {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val isGpuEnabled = CodeWhispererSettings.getInstance().isProjectContextGpu()
         val map = mutableMapOf<String, String>()
-        map["PORT"] = currentPort
+        map["PORT"] = port.toString()
         map["START_AMAZONQ_LSP"] = "true"
         map["Q_WORKER_THREADS"] = threadCount.toString()
         map["CACHE_DIR"] = cachePath.toString()
@@ -131,7 +130,7 @@ class EncoderServer (val project: Project): Disposable {
         }
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME).toString()
-        val command = GeneralCommandLine(nodePath, "--inspect", jsPath)
+        val command = GeneralCommandLine(nodePath, jsPath)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withEnvironment(map)
         return command
@@ -152,7 +151,7 @@ class EncoderServer (val project: Project): Disposable {
 
     private fun close() {
         if (isRunning.getAndSet(false)) {
-            process?.let { ProcessCloseUtil.close(it) }
+            processHandler?.destroyProcess()
         }
     }
 
@@ -224,7 +223,7 @@ class EncoderServer (val project: Project): Disposable {
     }
 
     private fun makeFileExecutable(filePath: Path) {
-        val permissions = mutableSetOf(
+        val permissions = setOf(
             PosixFilePermission.OWNER_READ,
             PosixFilePermission.OWNER_WRITE,
             PosixFilePermission.OWNER_EXECUTE,
@@ -270,7 +269,5 @@ class EncoderServer (val project: Project): Disposable {
 
     companion object {
         private val logger = getLogger<EncoderServer>()
-
-        fun getInstance(project: Project) = EncoderServer(project)
     }
 }

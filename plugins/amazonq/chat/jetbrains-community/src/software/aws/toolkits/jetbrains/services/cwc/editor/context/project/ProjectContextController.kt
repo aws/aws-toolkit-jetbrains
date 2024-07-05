@@ -14,8 +14,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController (val project: Project) : Disposable {
-    private val encoderServer: EncoderServer = EncoderServer.getInstance(project)
-    private val projectContextProvider : ProjectContextProvider = ProjectContextProvider.getInstance(project, encoderServer)
+    private val encoderServer: EncoderServer = EncoderServer(project)
+    private val projectContextProvider : ProjectContextProvider = ProjectContextProvider(project, encoderServer)
     private val scope = disposableCoroutineScope(this)
     init {
         scope.launch{
@@ -26,32 +26,25 @@ class ProjectContextController (val project: Project) : Disposable {
     }
 
     fun query(prompt: String) : List<RelevantDocument> {
-       if (encoderServer?.isNodeProcessRunning() != true) {
-           logger.debug("encoder server is not running, skipping query for project context")
-           return emptyList()
-       }
         try {
-            return projectContextProvider!!.query(prompt)
+            return projectContextProvider.query(prompt)
         } catch (e: Exception) {
-            return emptyList()
             logger.warn("error while querying for project context $e.message")
+            return emptyList()
         }
     }
 
     fun updateIndex(filePath: String) {
-        if (encoderServer?.isNodeProcessRunning() != true) {
-            logger.debug("encoder server is not running, skipping update index for project context")
-        }
         try {
-            return projectContextProvider!!.updateIndex(filePath)
+            return projectContextProvider.updateIndex(filePath)
         } catch (e: Exception) {
             logger.warn("error while updating index for project context $e.message")
         }
     }
 
     override fun dispose() {
-        encoderServer?.dispose()
-        projectContextProvider?.dispose()
+        encoderServer.dispose()
+        projectContextProvider.dispose()
     }
 
     companion object {

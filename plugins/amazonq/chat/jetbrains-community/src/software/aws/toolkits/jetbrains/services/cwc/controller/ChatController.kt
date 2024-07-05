@@ -128,11 +128,11 @@ class ChatController private constructor(
         var prompt = message.chatMessage
         var queryResult: List<RelevantDocument> = emptyList()
         val triggerId = UUID.randomUUID().toString()
-        if (prompt.startsWith("@workspace")){
+        if (prompt.contains("@workspace")){
             if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
-                prompt = prompt.drop(10)
+                prompt = prompt.replace("@workspace", "")
                 queryResult = projectContextController.query(prompt)
-                logger.info("project context result relevant document count: ${queryResult.size}")
+                logger.info("project context relevant document count: ${queryResult.size}")
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
@@ -145,7 +145,7 @@ class ChatController private constructor(
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
-            queryResult
+            projectContextQueryResult = queryResult
         )
     }
 
@@ -174,7 +174,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromFollowupType(message.followUp.type),
             TriggerType.Click,
-            emptyList()
+            projectContextQueryResult = emptyList()
         )
 
         telemetryHelper.recordInteractWithMessage(message)
@@ -277,7 +277,7 @@ class ChatController private constructor(
             activeFileContext = context,
             userIntent = intentRecognizer.getUserIntentFromOnboardingPageInteraction(message),
             triggerType = TriggerType.Click, // todo trigger type,
-            emptyList()
+            projectContextQueryResult = emptyList()
         )
     }
 
@@ -356,7 +356,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
             TriggerType.CodeScanButton,
-            emptyList()
+            projectContextQueryResult = emptyList()
         )
     }
 
@@ -391,7 +391,7 @@ class ChatController private constructor(
             userIntent = userIntent,
             triggerType = triggerType,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
-            projectContextQueryResult
+            relevantTextDocuments = projectContextQueryResult
         )
 
         val sessionInfo = getSessionInfo(tabId)

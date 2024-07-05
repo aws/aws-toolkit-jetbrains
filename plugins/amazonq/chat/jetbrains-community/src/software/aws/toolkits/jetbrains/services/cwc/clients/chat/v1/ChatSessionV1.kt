@@ -199,9 +199,7 @@ class ChatSessionV1(
      */
     private fun ChatRequestData.toChatRequest(): GenerateAssistantResponseRequest {
         val userInputMessageContextBuilder = UserInputMessageContext.builder()
-        if (activeFileContext.fileContext != null) {
-            userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantTextDocuments))
-        }
+        userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantTextDocuments))
         val userInputMessageContext = userInputMessageContextBuilder.build()
 
         val userInput = UserInputMessage.builder()
@@ -221,73 +219,73 @@ class ChatSessionV1(
     }
 
     private fun ActiveFileContext.toEditorState(relevantDocuments: List<RelevantDocument>): EditorState {
-        // Cursor State
-        val start = focusAreaContext?.codeSelectionRange?.start
-        val end = focusAreaContext?.codeSelectionRange?.end
+        val editorStateBuilder = EditorState.builder()
+        if (fileContext != null) {
+            val cursorStateBuilder = CursorState.builder()
+            // Cursor State
+            val start = focusAreaContext?.codeSelectionRange?.start
+            val end = focusAreaContext?.codeSelectionRange?.end
 
-        val cursorStateBuilder = CursorState.builder()
+            if (start != null && end != null) {
+                cursorStateBuilder.range(
+                    Range.builder()
+                        .start(
+                            Position.builder()
+                                .line(start.row)
+                                .character(start.column)
+                                .build(),
+                        )
+                        .end(
+                            Position.builder()
+                                .line(end.row)
+                                .character(end.column)
+                                .build(),
+                        ).build(),
+                )
+            }
+            editorStateBuilder.cursorState(cursorStateBuilder.build())
 
-        if (start != null && end != null) {
-            cursorStateBuilder.range(
-                Range.builder()
-                    .start(
-                        Position.builder()
-                            .line(start.row)
-                            .character(start.column)
-                            .build(),
-                    )
-                    .end(
-                        Position.builder()
-                            .line(end.row)
-                            .character(end.column)
-                            .build(),
-                    ).build(),
-            )
+            // Code Names -> DocumentSymbols
+            val documentBuilder = TextDocument.builder()
+            val codeNames = focusAreaContext?.codeNames
+
+            val documentSymbolList = codeNames?.fullyQualifiedNames?.used?.map {
+                DocumentSymbol.builder()
+                    .name(it.symbol?.joinToString(separator = "."))
+                    .type(SymbolType.USAGE)
+                    .source(it.source?.joinToString(separator = "."))
+                    .build()
+            }?.filter { it.name().length in ChatConstants.FQN_SIZE_MIN until ChatConstants.FQN_SIZE_LIMIT }.orEmpty()
+            documentBuilder.documentSymbols(documentSymbolList)
+
+            // File Text
+            val trimmedFileText = focusAreaContext?.trimmedSurroundingFileText
+            documentBuilder.text(trimmedFileText)
+
+            // Programming Language
+            val programmingLanguage = fileContext?.fileLanguage
+            if (programmingLanguage != null && validLanguages.contains(programmingLanguage)) {
+                documentBuilder.programmingLanguage(
+                    ProgrammingLanguage.builder()
+                        .languageName(programmingLanguage).build(),
+                )
+            }
+
+            // Relative File Path
+            val filePath = fileContext?.filePath
+            if (filePath != null) {
+                documentBuilder.relativeFilePath(filePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT))
+            }
+            editorStateBuilder.document(documentBuilder.build())
         }
 
-        // Code Names -> DocumentSymbols
-        val codeNames = focusAreaContext?.codeNames
-        val documentBuilder = TextDocument.builder()
-
-        val documentSymbolList = codeNames?.fullyQualifiedNames?.used?.map {
-            DocumentSymbol.builder()
-                .name(it.symbol?.joinToString(separator = "."))
-                .type(SymbolType.USAGE)
-                .source(it.source?.joinToString(separator = "."))
-                .build()
-        }?.filter { it.name().length in ChatConstants.FQN_SIZE_MIN until ChatConstants.FQN_SIZE_LIMIT }.orEmpty()
-        documentBuilder.documentSymbols(documentSymbolList)
-
-        // File Text
-        val trimmedFileText = focusAreaContext?.trimmedSurroundingFileText
-        documentBuilder.text(trimmedFileText)
-
-        // Programming Language
-        val programmingLanguage = fileContext?.fileLanguage
-        if (programmingLanguage != null && validLanguages.contains(programmingLanguage)) {
-            documentBuilder.programmingLanguage(
-                ProgrammingLanguage.builder()
-                    .languageName(programmingLanguage).build(),
-            )
+        // Relevant Documents
+        val documents: List<RelevantTextDocument> = relevantDocuments.map{ doc ->
+            RelevantTextDocument.builder().text(doc.text).relativeFilePath(doc.relativeFilePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT)).build()
         }
 
-        // Relative File Path
-        val filePath = fileContext?.filePath
-        if (filePath != null) {
-            documentBuilder.relativeFilePath(filePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT))
-        }
-
-        val documents: MutableList<RelevantTextDocument> = mutableListOf()
-        relevantDocuments.forEach{doc -> run {
-            val document = RelevantTextDocument.builder().text(doc.text).relativeFilePath(doc.relativeFilePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT)).build()
-            documents.add(document)
-        }}
-
-        return EditorState.builder()
-            .cursorState(cursorStateBuilder.build())
-            .document(documentBuilder.build())
-            .relevantDocuments(documents)
-            .build()
+        editorStateBuilder.relevantDocuments(documents)
+        return editorStateBuilder.build()
     }
 
     private fun UserIntent?.toFollowUpType() = when (this) {
