@@ -49,6 +49,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
+                        contentManager.removeAllContents(true)
                         val content = contentManager.factory.createContent(AmazonQToolWindow.getInstance(project).component, null, false).also {
                             it.isCloseable = true
                             it.isPinnable = true
@@ -56,6 +57,24 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
                         runInEdt {
                             contentManager.removeAllContents(true)
+                            contentManager.addContent(content)
+                        }
+                    } else if (providerId == "refresh") {
+                        // re-eval
+                        println("re-eval toolwindow")
+                        runInEdt {
+                            contentManager.removeAllContents(true)
+                            val component = if (isQConnected(project) && !isQExpired(project)) {
+                                AmazonQToolWindow.getInstance(project).component
+                            } else {
+                                QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+                                QWebviewPanel.getInstance(project).component
+                            }
+
+                            val content = contentManager.factory.createContent(component, null, false).also {
+                                it.isCloseable = true
+                                it.isPinnable = true
+                            }
                             contentManager.addContent(content)
                         }
                     }

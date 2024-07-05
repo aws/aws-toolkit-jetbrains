@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
@@ -14,7 +15,7 @@ typealias MessageReceiver = Function<String, JBCefJSQuery.Response>
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable) {
+class Browser(parent: Disposable): Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -38,6 +39,10 @@ class Browser(parent: Disposable) {
         jcefBrowser
             .cefBrowser
             .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
+
+    override fun dispose() {
+        Disposer.dispose(jcefBrowser)
+    }
 
     // Load the chat web app into the jcefBrowser
     private fun loadWebView(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {

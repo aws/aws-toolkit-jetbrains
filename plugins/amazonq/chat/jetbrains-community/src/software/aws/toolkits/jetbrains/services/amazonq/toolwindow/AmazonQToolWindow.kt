@@ -48,6 +48,11 @@ class AmazonQToolWindow private constructor(
         connectApps()
     }
 
+    fun refresh() {
+        println("dispose and try recreate Q chat panel")
+        chatPanel.disposeAndRecreate()
+    }
+
     private fun sendMessage(message: AmazonQMessage, tabType: String) {
         appConnections.filter { it.app.tabTypes.contains(tabType) }.forEach {
             scope.launch {
