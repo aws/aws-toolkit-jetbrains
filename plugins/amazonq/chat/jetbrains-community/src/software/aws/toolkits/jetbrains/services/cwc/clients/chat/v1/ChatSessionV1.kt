@@ -175,7 +175,6 @@ class ChatSessionV1(
 
                 val client = AwsClientManager.getInstance().getClient<CodeWhispererStreamingAsyncClient>(connection.getConnectionSettings())
                 val request = data.toChatRequest()
-                logger.info("chat resquest: ${request.toString()}")
                 logger.info { "Request from tab: ${data.tabId}, conversationId: $conversationId, request: $request" }
                 client.generateAssistantResponse(request, responseHandler).await()
             }
@@ -280,7 +279,7 @@ class ChatSessionV1(
         }
 
         // Relevant Documents
-        val documents: List<RelevantTextDocument> = relevantDocuments.map{ doc ->
+        val documents: List<RelevantTextDocument> = relevantDocuments.map { doc ->
             RelevantTextDocument.builder().text(doc.text).relativeFilePath(doc.relativeFilePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT)).build()
         }
 

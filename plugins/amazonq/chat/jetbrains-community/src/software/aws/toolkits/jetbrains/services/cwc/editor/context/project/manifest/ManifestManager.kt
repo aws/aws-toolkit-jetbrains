@@ -14,7 +14,6 @@ import software.aws.toolkits.core.utils.getLogger
 import java.net.HttpURLConnection
 import java.net.URL
 
-
 class ManifestManager {
     // TODO: switch to prod url
     private val cloudFrontUrl = "https://ducvaeoffl85c.cloudfront.net/manifest10.json"
@@ -23,53 +22,52 @@ class ManifestManager {
     private val arch = CpuArch.CURRENT
     private val mapper = ObjectMapper()
 
-
-    data class TargetContent (
+    data class TargetContent(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filename")
-        val filename: String ?= null,
+        val filename: String? = null,
         @JsonProperty("url")
-        val url: String ?= null,
+        val url: String? = null,
         @JsonProperty("hashes")
-        val hashes: List<String> ?= emptyList(),
+        val hashes: List<String>? = emptyList(),
         @JsonProperty("bytes")
-        val bytes: Number ?= null
+        val bytes: Number? = null
     )
 
-    data class VersionTarget (
+    data class VersionTarget(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("platform")
-        val platform: String ?= null,
+        val platform: String? = null,
         @JsonProperty("arch")
-        val arch: String ?= null,
+        val arch: String? = null,
         @JsonProperty("contents")
-        val contents: List<TargetContent> ?= emptyList()
+        val contents: List<TargetContent>? = emptyList()
     )
-    data class Version (
+    data class Version(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("serverVersion")
-        val serverVersion: String ?= null,
+        val serverVersion: String? = null,
         @JsonProperty("isDelisted")
-        val isDelisted: Boolean ?= null,
+        val isDelisted: Boolean? = null,
         @JsonProperty("targets")
-        val targets: List<VersionTarget> ?= emptyList()
+        val targets: List<VersionTarget>? = emptyList()
     )
 
-    data class Manifest (
+    data class Manifest(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("manifestSchemaVersion")
-        val manifestSchemaVersion: String ?= null,
+        val manifestSchemaVersion: String? = null,
         @JsonProperty("artifactId")
-        val artifactId: String ?= null,
+        val artifactId: String? = null,
         @JsonProperty("artifactDescription")
-        val artifactDescription: String ?= null,
+        val artifactDescription: String? = null,
         @JsonProperty("isManifestDeprecated")
-        val isManifestDeprecated: Boolean ?= null,
+        val isManifestDeprecated: Boolean? = null,
         @JsonProperty("versions")
-        val versions: List<Version> ?= emptyList()
+        val versions: List<Version>? = emptyList()
     )
 
-    fun getManifest () : Manifest? {
+    fun getManifest(): Manifest? {
         val url = URL(cloudFrontUrl)
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -78,7 +76,7 @@ class ManifestManager {
         return fetchFromRemoteAndSave()
     }
 
-    private fun readManifestFile(content: String) : Manifest? {
+    private fun readManifestFile(content: String): Manifest? {
         try {
             return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
@@ -87,37 +85,36 @@ class ManifestManager {
         }
     }
 
-
     private fun getTargetFromManifest(manifest: Manifest): VersionTarget? {
-        val targets = manifest.versions?.find{version -> version.serverVersion != null && (version.serverVersion.contains(SERVER_VERSION))}?.targets
+        val targets = manifest.versions?.find { version -> version.serverVersion != null && (version.serverVersion.contains(SERVER_VERSION)) }?.targets
         if (targets.isNullOrEmpty()) {
             return null
         }
-        val targetArch = if(currentOs != "windows" && arch == CpuArch.ARM64) "arm64" else "x64"
-        return targets.find{ target -> target.platform == currentOs && target.arch == targetArch }
+        val targetArch = if (currentOs != "windows" && arch == CpuArch.ARM64) "arm64" else "x64"
+        return targets.find { target -> target.platform == currentOs && target.arch == targetArch }
     }
 
     fun getNodeContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
-        return target.contents?.find{content -> content.filename?.contains("node") == true }
+        return target.contents?.find { content -> content.filename?.contains("node") == true }
     }
 
     fun getZipContentFromManifest(manifest: Manifest): TargetContent? {
         val target = getTargetFromManifest(manifest) ?: return null
-        return target.contents?.find{content -> content.filename?.contains("qserver") == true }
+        return target.contents?.find { content -> content.filename?.contains("qserver") == true }
     }
 
     private fun fetchFromRemoteAndSave(): Manifest? {
         try {
-            val response= HttpRequests.request(cloudFrontUrl).readString()
+            val response = HttpRequests.request(cloudFrontUrl).readString()
             return readManifestFile(response)
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             logger.warn("failed to save manifest from remote: ${e.message}")
             return null
         }
     }
 
-    fun getOs() : String {
+    fun getOs(): String {
         return when {
             SystemInfo.isWindows -> "windows"
             SystemInfo.isMac -> "darwin"

@@ -34,9 +34,19 @@ class ProjectContextProviderTest {
 
     @Test
     fun `test index payload is encrypted`() {
-        whenever(encoderServer.currentPort).thenReturn("3000")
+        whenever(encoderServer.port).thenReturn(3000)
         try {
             sut.index()
+        } catch (e: ConnectException) {
+            // no-op
+        }
+        verify(encoderServer, times(1)).encrypt(any())
+    }
+
+    fun `test query payload is encrypted`() {
+        whenever(encoderServer.port).thenReturn(3000)
+        try {
+            sut.query("what does this project do")
         } catch (e: ConnectException) {
             // no-op
         }

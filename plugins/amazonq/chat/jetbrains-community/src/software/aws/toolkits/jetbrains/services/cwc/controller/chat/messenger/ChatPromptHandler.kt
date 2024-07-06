@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -50,6 +51,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         triggerId: String,
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
+        shouldAddIndexInProgressMessage: Boolean
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
@@ -113,11 +115,11 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 }
             }
             .collect { responseEvent ->
-                processChatEvent(tabId, triggerId, responseEvent)?.let { emit(it) }
+                processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
             }
     }
 
-    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent): ChatMessage? {
+    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
 
@@ -172,12 +174,17 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         return if (event.token != null) {
             responseText.append(event.token)
             telemetryHelper.setResponseStreamTimeForChunks(tabId)
+            val message = if (shouldAddIndexInProgressMessage) {
+                "$responseText \n\n${ChatConstants.INDEX_INPROGRESS_MSG}"
+            } else {
+                responseText.toString()
+            }
             ChatMessage(
                 tabId = tabId,
                 triggerId = triggerId,
                 messageId = event.requestId,
                 messageType = ChatMessageType.AnswerPart,
-                message = responseText.toString(),
+                message = message,
                 codeReference = codeReferences,
             )
         } else {

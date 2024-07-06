@@ -128,10 +128,12 @@ class ChatController private constructor(
         var prompt = message.chatMessage
         var queryResult: List<RelevantDocument> = emptyList()
         val triggerId = UUID.randomUUID().toString()
-        if (prompt.contains("@workspace")){
-            if(CodeWhispererSettings.getInstance().isProjectContextEnabled()){
+        var shouldAddIndexInProgressMessage: Boolean = false
+        if (prompt.contains("@workspace")) {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 prompt = prompt.replace("@workspace", "")
                 queryResult = projectContextController.query(prompt)
+                if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info("project context relevant document count: ${queryResult.size}")
             } else {
                 sendOpenSettingsMessage(message.tabId)
@@ -145,7 +147,8 @@ class ChatController private constructor(
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
-            projectContextQueryResult = queryResult
+            projectContextQueryResult = queryResult,
+            shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage
         )
     }
 
@@ -372,7 +375,8 @@ class ChatController private constructor(
         activeFileContext: ActiveFileContext,
         userIntent: UserIntent?,
         triggerType: TriggerType,
-        projectContextQueryResult: List<RelevantDocument>
+        projectContextQueryResult: List<RelevantDocument>,
+        shouldAddIndexInProgressMessage: Boolean? = false
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {
@@ -398,13 +402,12 @@ class ChatController private constructor(
 
         // Save the request in the history
         sessionInfo.history.add(requestData)
-
         telemetryHelper.recordEnterFocusConversation(tabId)
         telemetryHelper.recordStartConversation(tabId, requestData)
 
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
-        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo)
+        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage ?: false)
             .catch { handleError(tabId, it) }
             .onEach { context.messagesFromAppToUi.publish(it) }
             .launchIn(sessionInfo.scope)

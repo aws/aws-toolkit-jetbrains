@@ -13,19 +13,21 @@ import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
-class ProjectContextController (val project: Project) : Disposable {
+class ProjectContextController(val project: Project) : Disposable {
     private val encoderServer: EncoderServer = EncoderServer(project)
-    private val projectContextProvider : ProjectContextProvider = ProjectContextProvider(project, encoderServer)
+    private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer)
     private val scope = disposableCoroutineScope(this)
     init {
-        scope.launch{
-            if(CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                   encoderServer.downloadArtifactsAndStartServer()
+        scope.launch {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+                encoderServer.downloadArtifactsAndStartServer()
             }
         }
     }
 
-    fun query(prompt: String) : List<RelevantDocument> {
+    fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
+
+    fun query(prompt: String): List<RelevantDocument> {
         try {
             return projectContextProvider.query(prompt)
         } catch (e: Exception) {

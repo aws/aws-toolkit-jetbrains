@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
-data class RelevantDocument (
+data class RelevantDocument(
     val relativeFilePath: String,
     val text: String
 )

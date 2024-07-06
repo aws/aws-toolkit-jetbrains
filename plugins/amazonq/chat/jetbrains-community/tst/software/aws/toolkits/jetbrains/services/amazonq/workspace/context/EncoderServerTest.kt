@@ -28,7 +28,7 @@ class EncoderServerTest {
     }
 
     @Test
-    fun `test download artifacts validate hash if it does not match` () {
+    fun `test download artifacts validate hash if it does not match`() {
         val inputBytes = HttpRequests.request(testUrl).readBytes(null)
         val wrongHash = "sha384:ad527e9583d3dc4be3d302bac17f8d5a64eb8f5ab536717982620232e4e4bad82d1041fb73ae27899e9e802f07f61567"
 
@@ -37,7 +37,7 @@ class EncoderServerTest {
     }
 
     @Test
-    fun `test download artifacts validate hash if it matches` () {
+    fun `test download artifacts validate hash if it matches`() {
         val inputBytes = HttpRequests.request(testUrl).readBytes(null)
         val rightHash = "sha384:${DigestUtils.sha384Hex(inputBytes)}"
 

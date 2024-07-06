@@ -6,14 +6,8 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableProcessHandler
-import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.process.ProcessListener
-import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.process.ProcessCloseUtil
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
 import com.intellij.util.net.NetUtils
@@ -44,9 +38,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
 import javax.crypto.spec.SecretKeySpec
 
-class EncoderServer (val project: Project): Disposable {
+class EncoderServer(val project: Project) : Disposable {
     private val cachePath = Paths.get(
-        UserHomeDirectoryUtils.userHomeDirectory()).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
+        UserHomeDirectoryUtils.userHomeDirectory()
+    ).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
     private val manifestManager = ManifestManager()
     private val SERVER_DIRECTORY_NAME = "qserver-${manifestManager.SERVER_VERSION}.zip"
     private val isRunning = AtomicBoolean(false)
@@ -55,14 +50,14 @@ class EncoderServer (val project: Project): Disposable {
     private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val MAX_NUMBER_OF_RETRIES: Int = 3
     val key = generateHmacKey()
-    private var processHandler : KillableProcessHandler? = null
+    private var processHandler: KillableProcessHandler? = null
 
-    fun downloadArtifactsAndStartServer () {
+    fun downloadArtifactsAndStartServer() {
         downloadArtifactsIfNeeded()
         start()
     }
 
-    fun isNodeProcessRunning () = processHandler != null && processHandler?.process?.isAlive == true
+    fun isNodeProcessRunning() = processHandler != null && processHandler?.process?.isAlive == true
 
     private fun generateHmacKey(): Key {
         val keyBytes = ByteArray(32)
@@ -70,8 +65,7 @@ class EncoderServer (val project: Project): Disposable {
         return SecretKeySpec(keyBytes, "HmacSHA256")
     }
 
-
-    fun encrypt( data: String ): String {
+    fun encrypt(data: String): String {
         val header = JWSHeader.Builder(JWSAlgorithm.HS256)
             .type(JOSEObjectType.JWT)
             .build()
@@ -86,18 +80,18 @@ class EncoderServer (val project: Project): Disposable {
         return signedJWT.serialize()
     }
 
-    data class EncryptionRequest (
+    data class EncryptionRequest(
         val version: String = "1.0",
         val mode: String = "JWT",
         val key: String,
     )
 
-    fun getEncryptionRequest () : String {
+    fun getEncryptionRequest(): String {
         val request = EncryptionRequest(key = Base64.getUrlEncoder().withoutPadding().encodeToString(key.encoded))
         return jacksonObjectMapper().writeValueAsString(request)
     }
 
-    private fun runCommand (command: GeneralCommandLine) : Boolean {
+    private fun runCommand(command: GeneralCommandLine): Boolean {
         try {
             logger.info("starting encoder server for project context on $port for ${project.name}")
 //            process = command.createProcess()
@@ -108,7 +102,7 @@ class EncoderServer (val project: Project): Disposable {
             } else {
                 return true
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             logger.warn("error running encoder server: ${e.stackTraceToString()}")
             processHandler?.destroyProcess()
             numberOfRetry.incrementAndGet()
@@ -116,7 +110,7 @@ class EncoderServer (val project: Project): Disposable {
         }
     }
 
-    private fun getCommand (): GeneralCommandLine {
+    private fun getCommand(): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val isGpuEnabled = CodeWhispererSettings.getInstance().isProjectContextGpu()
         val map = mutableMapOf<String, String>()
@@ -125,7 +119,7 @@ class EncoderServer (val project: Project): Disposable {
         map["Q_WORKER_THREADS"] = threadCount.toString()
         map["CACHE_DIR"] = cachePath.toString()
         map["MODEL_DIR"] = cachePath.resolve("qserver").toString()
-        if(isGpuEnabled) {
+        if (isGpuEnabled) {
             map["Q_ENABLE_GPU"] = "true"
         }
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
@@ -155,45 +149,45 @@ class EncoderServer (val project: Project): Disposable {
         }
     }
 
-    private fun downloadArtifactsIfNeeded (){
+    private fun downloadArtifactsIfNeeded() {
         val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME)
         val zipFilePath = cachePath.resolve(SERVER_DIRECTORY_NAME)
         val manifest = manifestManager.getManifest() ?: return
         try {
-            if(!Files.exists(nodePath)) {
+            if (!Files.exists(nodePath)) {
                 val nodeContent = manifestManager.getNodeContentFromManifest(manifest)
-                if(nodeContent?.url != null) {
+                if (nodeContent?.url != null) {
                     val bytes = HttpRequests.request(nodeContent.url).readBytes(null)
-                    if(validateHash(nodeContent.hashes?.first(), bytes)) {
+                    if (validateHash(nodeContent.hashes?.first(), bytes)) {
                         downloadFromRemote(nodeContent.url, nodePath)
                     }
                 }
             }
-            if(manifestManager.currentOs != "windows") {
+            if (manifestManager.currentOs != "windows") {
                 makeFileExecutable(nodePath)
             }
             val files = cachePath.toFile().listFiles()
-            if(files.isNotEmpty()) {
+            if (files.isNotEmpty()) {
                 val filenames = files.map { it.name }
-                if(filenames.contains(SERVER_DIRECTORY_NAME)) {
+                if (filenames.contains(SERVER_DIRECTORY_NAME)) {
                     return
                 }
                 tryDeleteOldArtifacts(filenames)
             }
 
             val serverContent = manifestManager.getZipContentFromManifest(manifest)
-            if(serverContent?.url != null) {
-                if(validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
+            if (serverContent?.url != null) {
+                if (validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
                     downloadFromRemote(serverContent.url, zipFilePath)
                     unzipFile(zipFilePath, cachePath)
                 }
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             logger.warn("error downloading artifacts ${e.stackTraceToString()}")
         }
     }
 
-    private fun tryDeleteOldArtifacts (filenames: List<String>) {
+    private fun tryDeleteOldArtifacts(filenames: List<String>) {
         try {
             filenames.forEach { filename ->
                 run {
@@ -207,13 +201,13 @@ class EncoderServer (val project: Project): Disposable {
                     }
                 }
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             logger.warn("error deleting old artifacts $e.stackTraceToString()")
         }
     }
 
-     fun validateHash (expectedHash: String?, input: ByteArray): Boolean {
-        if (expectedHash == null) { return false}
+    fun validateHash(expectedHash: String?, input: ByteArray): Boolean {
+        if (expectedHash == null) { return false }
         val sha384 = DigestUtils.sha384Hex(input)
         val isValid = ("sha384:$sha384") == expectedHash
         if (!isValid) {
@@ -250,13 +244,13 @@ class EncoderServer (val project: Project): Disposable {
                         }
                     }.toList()
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             logger.warn("error while unzipping project context artifact: ${e.message}")
         }
     }
 
     private fun downloadFromRemote(url: String, path: Path) {
-        try{
+        try {
             HttpRequests.request(url).saveToFile(path, null)
         } catch (e: IOException) {
             logger.warn("error downloading from remote ${e.message}")

@@ -33,10 +33,11 @@ import java.util.Stack
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProjectContextProvider (val project: Project, private val encoderServer: EncoderServer) : Disposable{
+class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer) : Disposable {
     private val scope = disposableCoroutineScope(this)
     private val shouldRetryInit = AtomicBoolean(true)
     private val retryCount = AtomicInteger(0)
+    val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
     init {
         scope.launch {
@@ -60,20 +61,20 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val refresh: Boolean
     )
 
-    data class FileCollectionResult (
+    data class FileCollectionResult(
         val files: List<String>,
         val fileSize: Int
     )
 
-    data class QueryRequestPayload (
+    data class QueryRequestPayload(
         val query: String
     )
 
-    data class UpdateIndexRequestPayload (
+    data class UpdateIndexRequestPayload(
         val filePath: String
     )
 
-    data class Usage (
+    data class Usage(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
         val memoryUsage: Int? = null,
@@ -81,31 +82,31 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         val cpuUsage: Int? = null
     )
 
-   data class Chunk (
+    data class Chunk(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
-       val filePath: String ?= null,
+        val filePath: String? = null,
         @JsonProperty("content")
-       val content: String?= null,
+        val content: String? = null,
         @JsonProperty("id")
-       val id: String?= null,
+        val id: String? = null,
         @JsonProperty("index")
-       val index: String?= null,
+        val index: String? = null,
         @JsonProperty("vec")
-       val vec: List<String>?= null,
+        val vec: List<String>? = null,
         @JsonProperty("context")
-       val context: String?= null,
+        val context: String? = null,
         @JsonProperty("prev")
-       val prev: String?= null,
+        val prev: String? = null,
         @JsonProperty("next")
-       val next: String?= null,
+        val next: String? = null,
         @JsonProperty("relativePath")
-       val relativePath: String?= null,
+        val relativePath: String? = null,
         @JsonProperty("programmingLanguage")
-        val programmingLanguage: String?= null,
-   )
+        val programmingLanguage: String? = null,
+    )
 
-    private fun initAndIndex () {
+    private fun initAndIndex() {
         scope.launch {
             while (shouldRetryInit.get() == true && retryCount.get() < 5) {
                 try {
@@ -114,7 +115,8 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                     if (isInitSuccess) {
                         logger.info("project context index starting")
                         delay(300)
-                        index()
+                        val isIndexSuccess = index()
+                        if (isIndexSuccess) isIndexComplete.set(true)
                         break
                     }
                 } catch (e: Exception) {
@@ -131,7 +133,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         }
     }
 
-    private fun initEncryption() : Boolean {
+    private fun initEncryption(): Boolean {
         logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}")
         val url = URL("http://localhost:${encoderServer.port}/initialize")
         val payload = encoderServer.getEncryptionRequest()
@@ -142,7 +144,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         return connection.responseCode == 200
     }
 
-    fun index() : Boolean {
+    fun index(): Boolean {
         logger.info("project context: indexing ${project.name} on port ${encoderServer.port}")
         val indexStartTime = System.currentTimeMillis()
         val url = URL("http://localhost:${encoderServer.port}/indexFiles")
@@ -161,6 +163,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
         if (connection.responseCode == 200) {
             val usage = getUsage()
             TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            logger.info("project context index finished for ${project.name}, list of files indexed: ${filesResult.files.joinToString(",")}")
             return true
         } else {
             TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
@@ -221,7 +224,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     }
 
     fun updateIndex(filePath: String) {
-        logger.info("project context: updating index for ${filePath} on port ${encoderServer.port}")
+        logger.info("project context: updating index for $filePath on port ${encoderServer.port}")
         val url = URL("http://localhost:${encoderServer.port}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
         val payloadJson = mapper.writeValueAsString(payload)
@@ -230,23 +233,23 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
             setConnectionProperties(this)
             setConnectionRequest(this, encrypted)
             val responseCode = responseCode
-            logger.debug("project context update index response code: $responseCode for ${filePath}")
+            logger.debug("project context update index response code: $responseCode for $filePath")
             return
         }
     }
 
-    private fun setConnectionTimeout (connection: HttpURLConnection) {
+    private fun setConnectionTimeout(connection: HttpURLConnection) {
         connection.connectTimeout = 5000 // 5 seconds
         connection.readTimeout = 10000 // 10 second
     }
 
-    private fun setConnectionProperties( connection: HttpURLConnection) {
+    private fun setConnectionProperties(connection: HttpURLConnection) {
         connection.requestMethod = "POST"
         connection.setRequestProperty("Content-Type", "text/plain")
         connection.setRequestProperty("Accept", "text/plain")
     }
 
-    private fun setConnectionRequest (connection: HttpURLConnection, payload: String) {
+    private fun setConnectionRequest(connection: HttpURLConnection, payload: String) {
         connection.doOutput = true
         connection.outputStream.use { outputStream ->
             OutputStreamWriter(outputStream).use { writer ->
@@ -258,7 +261,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean =
         currentTotalFileSize.let { totalSize -> totalSize > (200 * 1024 * 1024 - currentFileSize) }
 
-    private fun isBuildOrBin (filePath: String): Boolean {
+    private fun isBuildOrBin(filePath: String): Boolean {
         val regex = Regex("""[/\\](bin|build|node_modules|env|\.idea)[/\\]""", RegexOption.IGNORE_CASE)
         return regex.find(filePath) != null
     }
@@ -276,7 +279,7 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
 
                     if (!current.isDirectory) {
                         if (current.isFile) {
-                            if(isBuildOrBin(current.path) || current.length > 10 * 1024 * 102){
+                            if (isBuildOrBin(current.path) || current.length > 10 * 1024 * 102) {
                                 continue
                             }
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -307,26 +310,26 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
                 }
             }
         }
-        return FileCollectionResult (
+        return FileCollectionResult(
             files = files.toList(),
             fileSize = (currentTotalFileSize / 1024 / 102).toInt()
         )
     }
 
-    private fun queryResultToRelevantDocuments(queryResult: List<Chunk>) : List<RelevantDocument> {
+    private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
         val chunksMap: MutableMap<String, MutableList<Chunk>> = mutableMapOf()
         queryResult.forEach { chunk ->
             run {
-                if(chunk.relativePath == null) return@forEach
+                if (chunk.relativePath == null) return@forEach
                 val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.relativePath)) chunksMap[chunk.relativePath]!! else mutableListOf()
                 list.add(chunk)
                 chunksMap[chunk.relativePath] = list
             }
         }
         val documents: MutableList<RelevantDocument> = mutableListOf()
-        chunksMap.forEach{ (filePath, chunkList) ->
+        chunksMap.forEach { (filePath, chunkList) ->
             var text = ""
-            chunkList.forEach() { chunk -> text += (chunk.context ?: chunk.content)}
+            chunkList.forEach { chunk -> text += (chunk.context ?: chunk.content) }
             val document = RelevantDocument(filePath, text)
             documents.add(document)
         }
@@ -341,5 +344,4 @@ class ProjectContextProvider (val project: Project, private val encoderServer: E
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
     }
-
 }

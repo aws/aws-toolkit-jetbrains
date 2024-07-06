@@ -31,7 +31,6 @@ import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
 import software.aws.toolkits.telemetry.CwsprChatUserIntent
 import software.aws.toolkits.telemetry.FeedbackTelemetry
-import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent as CWClientUserIntent
@@ -380,7 +379,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                 duration = duration,
                 amazonqIndexFileCount = fileCount,
                 amazonqIndexFileSizeInMB = fileSize,
-                success=isSuccess,
+                success = isSuccess,
                 amazonqIndexMemoryUsageInMB = memoryUsage,
                 amazonqIndexCpuUsagePercentage = cpuUsage,
                 credentialStartUrl = startUrl
