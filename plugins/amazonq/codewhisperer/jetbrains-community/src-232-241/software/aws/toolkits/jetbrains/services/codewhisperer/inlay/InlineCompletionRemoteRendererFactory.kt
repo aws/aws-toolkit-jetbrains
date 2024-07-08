@@ -22,8 +22,11 @@ object InlineCompletionRemoteRendererFactory {
                 hasOldLineConstructor = false
                 Class.forName("com.intellij.codeInsight.inline.completion.render.InlineCompletionLineRenderer")
             }
-        if (hasOldLineConstructor) clazz.getConstructor(Editor::class.java, String::class.java)
-        else clazz.getConstructor(Editor::class.java, String::class.java, TextAttributes::class.java)
+        if (hasOldLineConstructor) {
+            clazz.getConstructor(Editor::class.java, String::class.java)
+        } else {
+            clazz.getConstructor(Editor::class.java, String::class.java, TextAttributes::class.java)
+        }
     }
     private var hasNewBlockConstructor = true
     private val blockConstructor = run {
@@ -37,16 +40,17 @@ object InlineCompletionRemoteRendererFactory {
         clazz.getConstructor(Editor::class.java, List::class.java)
     }
 
-    fun createLineInlay(editor: Editor, text: String): EditorCustomElementRenderer {
-        return (if (hasOldLineConstructor)
-            lineConstructor.newInstance(editor, text)
-        else
-            lineConstructor.newInstance(editor, text, editor.colorsScheme.getAttributes(DebuggerColors.INLINED_VALUES_EXECUTION_LINE)))
-            as EditorCustomElementRenderer
-    }
+    fun createLineInlay(editor: Editor, text: String): EditorCustomElementRenderer =
+        (
+            if (hasOldLineConstructor) {
+                lineConstructor.newInstance(editor, text)
+            } else {
+                lineConstructor.newInstance(editor, text, editor.colorsScheme.getAttributes(DebuggerColors.INLINED_VALUES_EXECUTION_LINE))
+            }
+            ) as EditorCustomElementRenderer
 
-    fun createBlockInlays(editor: Editor, block: List<String>): List<EditorCustomElementRenderer> {
-        return if (hasNewBlockConstructor) {
+    fun createBlockInlays(editor: Editor, block: List<String>): List<EditorCustomElementRenderer> =
+        if (hasNewBlockConstructor) {
             // 241.2+
             val textBlockClazz = Class.forName("com.intellij.codeInsight.inline.completion.render.InlineCompletionRenderTextBlock")
             val textBlockConstructor = textBlockClazz.getConstructor(String::class.java, TextAttributes::class.java)
@@ -59,5 +63,4 @@ object InlineCompletionRemoteRendererFactory {
         } else {
             listOf(InlineBlockElementRenderer(editor, block))
         }
-    }
 }
