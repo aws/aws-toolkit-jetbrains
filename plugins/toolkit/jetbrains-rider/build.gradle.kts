@@ -212,12 +212,12 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 }
 
 val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
+    doFirst {
+        // remove env variable ASSUME_ROLE_ARN
+        System.clearProperty("ASSUME_ROLE_ARN")
+    }
     group = backendGroup
     description = "Builds the full ReSharper backend plugin solution"
-    // remove env variable ASSUME_ROLE_ARN
-    if (assumeRoleArn.isNotEmpty()) {
-        (this as ExecSpec).environment.remove("ASSUME_ROLE_ARN")
-    }
     dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
 
     inputs.dir(resharperPluginPath)
