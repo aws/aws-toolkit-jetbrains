@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.backendStartTimeout
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
@@ -22,8 +24,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
 
     @BeforeMethod
     fun skipTestsOnWindows() {
-        val ideVersion = System.getProperty("org.gradle.project.ideProfileName")
-        if (System.getProperty("os.name").contains("Windows") && ideVersion == "2023.2") {
+        if (SystemInfo.isWindows && ApplicationInfo.getInstance().build.baselineVersion == 232) {
             throw SkipException("Test skipped because it flakes on Windows 2023.2")
         }
     }
