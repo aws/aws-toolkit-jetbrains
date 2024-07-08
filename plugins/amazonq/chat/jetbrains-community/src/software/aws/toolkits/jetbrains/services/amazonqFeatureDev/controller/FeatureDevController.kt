@@ -458,6 +458,15 @@ class FeatureDevController(
                     ),
                 )
             }
+            is ZipFileError -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = 0,
+                    phase = session?.sessionState?.phase,
+                    conversationId = session?.conversationIdUnsafe
+                )
+            }
             is MonthlyConversationLimitError -> {
                 messenger.sendMonthlyLimitError(tabId = tabId)
                 messenger.sendChatInputEnabledMessage(tabId, enabled = false)
