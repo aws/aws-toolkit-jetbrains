@@ -28,7 +28,9 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
@@ -146,7 +148,15 @@ abstract class LoginBrowser(
     }
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val isReAuth = ToolkitConnectionManager.getInstance(project).activeConnection() != null
+        // assumes scopes contains either Q or non-Q permissions but not both
+        val isReAuth = if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
+            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
+        } else {
+            ToolkitConnectionManager.getInstance(project).activeConnection().let {
+                it != null && it != ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+            }
+        }
+
         val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
             val message = ssoErrorMessageFromException(e)
             if (!tryHandleUserCanceledLogin(e)) {
