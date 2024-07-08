@@ -215,8 +215,8 @@ val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
     group = backendGroup
     description = "Builds the full ReSharper backend plugin solution"
     // remove env variable ASSUME_ROLE_ARN
-    if (assumeRoleArn != "") {
-        System.getenv().remove("ASSUME_ROLE_ARN")
+    if (assumeRoleArn.isNotEmpty()) {
+        (this as ExecSpec).environment.remove("ASSUME_ROLE_ARN")
     }
     dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
 
@@ -321,7 +321,7 @@ tasks.test {
 
 tasks.integrationTest {
     // Add assume role arn to the environment
-    if (assumeRoleArn != "") {
+    if (assumeRoleArn.isNotEmpty()) {
         environment("ASSUME_ROLE_ARN", assumeRoleArn)
     }
     useTestNG()
