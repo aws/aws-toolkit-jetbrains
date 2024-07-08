@@ -284,12 +284,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Create Upload URL failed: ${e.message}" }
-
-        val errorMessage = when {
-            e.message?.contains("Your account is not authorized to make this call.") == true -> "Your account is not authorized to make this call."
-            e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
-            else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-        }
+        val errorMessage = getTelemetryErrorMessage(e)
         throw codeScanServerException("CreateUploadUrlException: $errorMessage")
     }
 
@@ -323,7 +318,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             }
         } catch (e: Exception) {
             LOG.debug { "Artifact failed to upload in the S3 bucket: ${e.message}" }
-            throw codeScanServerException("UploadArtifactToS3Exception: " + e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
+            val errorMessage = getTelemetryErrorMessage(e)
+            throw codeScanServerException("UploadArtifactToS3Exception: $errorMessage")
         }
     }
 
@@ -345,14 +341,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             )
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
-            val errorMessage = when {
-                e.message?.contains("Too many requests, please wait before trying again.") == true -> "Too many requests, please wait before trying again."
-                e.message?.contains("Improperly formed request.") == true -> "Improperly formed request."
-                e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
-                e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true ->
-                    "Encountered an unexpected error when processing the request, please try again."
-                else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-            }
+            val errorMessage = getTelemetryErrorMessage(e)
             throw codeScanServerException("CreateCodeScanException: $errorMessage")
         }
     }
@@ -365,7 +354,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Getting security scan failed: ${e.message}" }
-        throw codeScanServerException("GetCodeScanException: " + e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
+        val errorMessage = getTelemetryErrorMessage(e)
+        throw codeScanServerException("GetCodeScanException: $errorMessage")
     }
 
     fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeScanFindingsResponse = try {
@@ -378,7 +368,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Listing security scan failed: ${e.message}" }
-        throw codeScanServerException("ListCodeScanFindingsException: " + e.message?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
+        val errorMessage = getTelemetryErrorMessage(e)
+        throw codeScanServerException("ListCodeScanFindingsException: $errorMessage")
     }
 
     fun mapToCodeScanIssues(recommendations: List<String>): List<CodeWhispererCodeScanIssue> {
@@ -452,6 +443,17 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 issue.rangeHighlighter = issue.addRangeHighlighter()
             }
         }
+    }
+
+    fun getTelemetryErrorMessage(e: Exception): String = when {
+        e.message?.contains("Resource not found.") == true -> "Resource not found."
+        e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
+        e.message?.contains("Service returned HTTP status code 403") == true -> "Service returned HTTP status code 403"
+        e.message?.contains("invalid_grant: Invalid token provided") == true -> "invalid_grant: Invalid token provided"
+        e.message?.contains("Connect timed out") == true -> "Unable to execute HTTP request: Connect timed out" // Error: Connect to host failed
+        e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true ->
+            "Encountered an unexpected error when processing the request, please try again."
+        else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
     }
 
     fun sleepThread() {
