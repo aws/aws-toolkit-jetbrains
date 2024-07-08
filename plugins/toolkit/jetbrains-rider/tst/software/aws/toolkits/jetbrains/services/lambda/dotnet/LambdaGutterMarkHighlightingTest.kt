@@ -4,12 +4,9 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.backendStartTimeout
-import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
 import com.jetbrains.rider.test.base.BaseTestWithMarkup
-import org.testng.SkipException
-import org.testng.annotations.BeforeMethod
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
@@ -19,13 +16,6 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
 
     companion object {
         private const val LAMBDA_RUN_MARKER_ATTRIBUTE_ID = "AWS Lambda Run Method Gutter Mark"
-    }
-
-    @BeforeMethod
-    fun skipTestsOnWindows() {
-        if (SystemInfo.isWindows) {
-            throw SkipException("Test flakes on Windows")
-        }
     }
 
     override val backendLoadedTimeout: Duration = backendStartTimeout
