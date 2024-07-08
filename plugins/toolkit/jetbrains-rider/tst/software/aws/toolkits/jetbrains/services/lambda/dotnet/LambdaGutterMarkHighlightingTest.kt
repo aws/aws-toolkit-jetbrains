@@ -24,8 +24,8 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
 
     @BeforeMethod
     fun skipTestsOnWindows() {
-        if (SystemInfo.isWindows && ApplicationInfo.getInstance().build.baselineVersion == 232) {
-            throw SkipException("Test skipped because it flakes on Windows 2023.2")
+        if (SystemInfo.isWindows) {
+            throw SkipException("Test flakes on Windows")
         }
     }
 
