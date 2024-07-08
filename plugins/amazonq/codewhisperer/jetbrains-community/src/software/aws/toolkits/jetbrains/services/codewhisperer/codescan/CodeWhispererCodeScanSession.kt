@@ -445,6 +445,10 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         }
     }
 
+    fun sleepThread() {
+        sleep(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
+    }
+
     fun getTelemetryErrorMessage(e: Exception): String = when {
         e.message?.contains("Resource not found.") == true -> "Resource not found."
         e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
@@ -454,10 +458,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true ->
             "Encountered an unexpected error when processing the request, please try again."
         else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-    }
-
-    fun sleepThread() {
-        sleep(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
     }
 
     private fun isProjectScope(): Boolean = sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.PROJECT
