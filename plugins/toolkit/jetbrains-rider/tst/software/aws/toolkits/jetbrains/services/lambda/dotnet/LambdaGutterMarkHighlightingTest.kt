@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.backendStartTimeout
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
