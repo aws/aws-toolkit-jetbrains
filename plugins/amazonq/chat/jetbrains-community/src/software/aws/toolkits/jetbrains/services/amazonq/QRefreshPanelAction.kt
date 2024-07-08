@@ -3,22 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
-import com.intellij.openapi.wm.ToolWindowFactory
-import com.intellij.openapi.wm.ToolWindowManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.isDeveloperMode
-import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 
-class QRefreshPanelAction : DumbAwareAction("Refresh Q Webview Browser") {
+class QRefreshPanelAction : DumbAwareAction("Refresh Q ToolWindow", null, AllIcons.Actions.Refresh) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        println("refreshing Q window")
 
-//        AmazonQToolWindow.getInstance(project).refresh()
+        // recreate chat browser
+        AmazonQToolWindow.getInstance(project).disposeAndRecreate()
+
+        // recreate signin browser
         QWebviewPanel.getInstance(project).disposeAndRecreate()
 
         BearerTokenProviderListener.notifyCredUpdate("refresh")

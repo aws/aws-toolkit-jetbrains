@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -20,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
@@ -33,6 +35,11 @@ import java.awt.event.ComponentEvent
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        if (toolWindow is ToolWindowEx && isDeveloperMode()) {
+            val actionManager = ActionManager.getInstance()
+            toolWindow.setTitleActions(listOf(actionManager.getAction("aws.q.toolwindow.titleBar")))
+        }
+
         val contentManager = toolWindow.contentManager
 
         project.messageBus.connect().subscribe(
