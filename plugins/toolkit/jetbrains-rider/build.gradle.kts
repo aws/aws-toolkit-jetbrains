@@ -312,7 +312,7 @@ tasks.withType<Detekt> {
 tasks.test {
     if (SystemInfo.isWindows) {
         // extremely flaky
-        filter.excludeTest("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest", null)
+        filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
     }
 
     useTestNG()
