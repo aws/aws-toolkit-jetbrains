@@ -8,10 +8,9 @@ import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.xdebugger.ui.DebuggerColors
 
-// from 232-241.1, we have `InlineSuffixRenderer`, but with 241.2+ it becomes `InlineCompletionLineRenderer`,
-// for both line and block inlays
-// Also InlineBlockElementRenderer is deprecated
-// TODO: Remove this ugly piece once we drop 233(241?)
+// from 232-241.1, we have `InlineSuffixRenderer`, but with 241.2+ it becomes `InlineCompletionLineRenderer`
+// for both line and block inlays. Also InlineBlockElementRenderer is deprecated
+// 242 is not yet handled by this
 object InlineCompletionRemoteRendererFactory {
     private var hasOldLineConstructor = true
     private val lineConstructor = run {

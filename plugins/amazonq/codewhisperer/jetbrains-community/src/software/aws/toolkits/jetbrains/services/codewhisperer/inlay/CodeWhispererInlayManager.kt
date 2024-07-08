@@ -63,7 +63,7 @@ class CodeWhispererInlayManager {
                 InlineCompletionRemoteRendererFactory.createBlockInlays(editor, otherLines.split("\n"))
             }
 
-        otherLinesRenderers.forEachIndexed { index, otherLinesRenderer ->
+        otherLinesRenderers.forEach { otherLinesRenderer ->
             val blockInlay = editor.inlayModel.addBlockElement(
                 startOffset,
                 true,
