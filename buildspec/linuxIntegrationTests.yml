@@ -26,6 +26,7 @@ phases:
 
   build:
     commands:
+      - dotnet codeartifact-creds configure set profile nuget_profile
       - |
         if [ "$CODEARTIFACT_DOMAIN_NAME" ] && [ "$CODEARTIFACT_REPO_NAME" ]; then
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
@@ -37,6 +38,9 @@ phases:
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn=$ASSUME_ROLE_ARN
+        credential_source=EcsContainer
+        
+        [profile nuget_profile]
         credential_source=EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE

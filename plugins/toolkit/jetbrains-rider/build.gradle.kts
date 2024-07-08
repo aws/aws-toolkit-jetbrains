@@ -145,7 +145,6 @@ val cleanGenerateModels = tasks.register<Delete>("cleanGenerateModels") {
 
 // Backend
 val backendGroup = "backend"
-val assumeRoleArn = System.getenv("ASSUME_ROLE_ARN") ?: ""
 val codeArtifactNugetUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_NUGET_URL")
 val prepareBuildProps = tasks.register("prepareBuildProps") {
     val riderSdkVersionPropsPath = File(resharperPluginPath, "RiderSdkPackageVersion.props")
@@ -212,10 +211,6 @@ val prepareNuGetConfig = tasks.register("prepareNuGetConfig") {
 }
 
 val buildReSharperPlugin = tasks.register("buildReSharperPlugin") {
-    doFirst {
-        // remove env variable ASSUME_ROLE_ARN
-        System.clearProperty("ASSUME_ROLE_ARN")
-    }
     group = backendGroup
     description = "Builds the full ReSharper backend plugin solution"
     dependsOn(generateModels, prepareBuildProps, prepareNuGetConfig)
@@ -320,10 +315,6 @@ tasks.test {
 }
 
 tasks.integrationTest {
-    // Add assume role arn to the environment
-    if (assumeRoleArn.isNotEmpty()) {
-        environment("ASSUME_ROLE_ARN", assumeRoleArn)
-    }
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
