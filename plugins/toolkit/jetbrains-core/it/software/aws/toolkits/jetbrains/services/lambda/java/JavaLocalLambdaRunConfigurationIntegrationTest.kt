@@ -98,6 +98,9 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         MockCredentialsManager.getInstance().reset()
     }
 
+    /* Building in a container ensures consistency with the AWS Lambda runtime, reducing errors
+     and providing isolated environments to avoid conflicts with local dependencies or configurations */
+
     @Test
     fun samIsExecuted() {
         val runConfiguration = createHandlerBasedRunConfiguration(
