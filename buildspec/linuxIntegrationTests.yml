@@ -14,6 +14,8 @@ env:
 phases:
   install:
     commands:
+      - rm -rf ~/.dotnet/tools/.store/aws.codeartifact.nuget.credentialprovider
+      - dotnet nuget locals all --clear
       - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider --version 1.0.1
       - dotnet codeartifact-creds install
       - startDocker.sh
