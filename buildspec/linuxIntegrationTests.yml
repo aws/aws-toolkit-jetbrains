@@ -41,6 +41,7 @@ phases:
         credential_source=EcsContainer
         
         [profile nuget_profile]
+        source_profile=default
         credential_source=EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
