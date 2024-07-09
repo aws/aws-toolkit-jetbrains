@@ -88,7 +88,6 @@ class ChatController private constructor(
     private val contextExtractor: ActiveFileContextExtractor,
     private val intentRecognizer: UserIntentRecognizer,
     private val authController: AuthController,
-    private val projectContextController: ProjectContextController,
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
@@ -101,7 +100,6 @@ class ChatController private constructor(
         contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
-        projectContextController = ProjectContextController.getInstance(context.project),
     )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
@@ -131,6 +129,7 @@ class ChatController private constructor(
         var shouldAddIndexInProgressMessage: Boolean = false
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+                val projectContextController = ProjectContextController.getInstance(context.project)
                 prompt = prompt.replace("@workspace", "")
                 queryResult = projectContextController.query(prompt)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
@@ -394,7 +393,7 @@ class ChatController private constructor(
             activeFileContext = activeFileContext,
             userIntent = userIntent,
             triggerType = triggerType,
-            customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
+            customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project),
             relevantTextDocuments = projectContextQueryResult
         )
 

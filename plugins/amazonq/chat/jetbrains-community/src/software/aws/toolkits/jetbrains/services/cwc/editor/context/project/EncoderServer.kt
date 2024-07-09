@@ -94,7 +94,6 @@ class EncoderServer(val project: Project) : Disposable {
     private fun runCommand(command: GeneralCommandLine): Boolean {
         try {
             logger.info("starting encoder server for project context on $port for ${project.name}")
-//            process = command.createProcess()
             processHandler = KillableProcessHandler(command)
             val exitCode = processHandler!!.waitFor()
             if (exitCode) {
