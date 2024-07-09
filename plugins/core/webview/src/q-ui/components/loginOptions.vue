@@ -2,8 +2,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <template>
-    <QOptions v-if="app === 'AMAZONQ'" @stageChanged="stageChanged" @login="login" @sendTelemetry="sendTelemetry"/>
-    <ToolkitOptions v-if="app === 'TOOLKIT'" @stageChanged="stageChanged" @login="login" @sendTelemetry="sendTelemetry"/>
+    <QOptions v-if="app === 'AMAZONQ'" @stageChanged="stageChanged" @login="login"/>
+    <ToolkitOptions v-if="app === 'TOOLKIT'" @stageChanged="stageChanged" @login="login"/>
 </template>
 
 <script lang="ts">
@@ -36,9 +36,6 @@ export default defineComponent({
         },
         login(type: LoginOption) {
             this.$emit('login', type)
-        },
-        sendTelemetry() {
-            this.$emit('sendTelemetry')
         }
     }
 })

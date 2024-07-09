@@ -90,7 +90,6 @@ export default defineComponent({
             this.$emit('backToMenu')
         },
         async handleContinueClick() {
-            this.$emit('sendTelemetry')
             if (this.selectedLoginOption === LoginIdentifier.BUILDER_ID) {
                 this.$emit('login', new BuilderId())
             } else if (this.selectedLoginOption === LoginIdentifier.ENTERPRISE_SSO) {
