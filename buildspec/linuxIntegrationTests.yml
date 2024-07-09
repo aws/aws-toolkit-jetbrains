@@ -14,8 +14,10 @@ env:
 phases:
   install:
     commands:
-      - rm -rf ~/.dotnet/tools/.store/aws.codeartifact.nuget.credentialprovider
+      # List and uninstall conflicting tools
+      - dotnet tool uninstall -g AWS.CodeArtifact.NuGet.CredentialProvider
       - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider --version 1.0.1
+      - dotnet codeartifact-creds install
       - startDocker.sh
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
