@@ -74,7 +74,6 @@ class DefaultToolkitAuthManagerTest {
         telemetryService = spy(TestTelemetryService(batcher = batcher))
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
-
     }
 
     @AfterEach
