@@ -518,25 +518,22 @@ class FeatureDevController(
             else -> {
                 val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
                 val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
-                var defaultMessage: String? = null
-                when (session?.sessionState?.phase) {
+                val defaultMessage: String? = when (session?.sessionState?.phase) {
                     SessionStatePhase.APPROACH -> {
                         if (isDenyListedError) {
-                            defaultMessage = message("amazonqFeatureDev.plan_generation.deny_listed_error.failed_generation")
+                            message("amazonqFeatureDev.plan_generation.deny_listed_error.failed_generation")
                         } else {
-                            defaultMessage = message("amazonqFeatureDev.plan_generation.failed_generation")
+                            message("amazonqFeatureDev.plan_generation.failed_generation")
                         }
                     }
                     SessionStatePhase.CODEGEN -> {
                         if (retriesRemaining(session) > 0) {
-                            defaultMessage = message("amazonqFeatureDev.code_generation.error_message")
+                            message("amazonqFeatureDev.code_generation.error_message")
                         } else {
-                            defaultMessage = message("amazonqFeatureDev.code_generation.no_retries.error_message")
+                            message("amazonqFeatureDev.code_generation.no_retries.error_message")
                         }
                     }
-                    else -> {
-                        defaultMessage = null
-                    }
+                    else -> null
                 }
                 messenger.sendError(
                     tabId = tabId,
