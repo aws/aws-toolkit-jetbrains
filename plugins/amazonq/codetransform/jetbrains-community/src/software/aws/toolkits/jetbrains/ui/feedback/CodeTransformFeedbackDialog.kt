@@ -24,6 +24,7 @@ class CodeTransformFeedbackDialog(project: Project) : FeedbackDialog(project) {
         TelemetryService.getInstance().sendFeedback(
             sentiment,
             "Amazon Q onboarding: $commentText",
-            mapOf(FEEDBACK_SOURCE to "Amazon Q onboarding", "JobId" to jobId, FEEDBACK_ENTRYPOINT to productName()))
+            mapOf(FEEDBACK_SOURCE to "Amazon Q onboarding", "JobId" to jobId, FEEDBACK_ENTRYPOINT to productName())
+        )
     }
 }

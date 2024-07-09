@@ -21,3 +21,5 @@ class CodeWhispererFeedbackDialog(project: Project) : FeedbackDialog(project) {
         )
     }
 }
+
+
