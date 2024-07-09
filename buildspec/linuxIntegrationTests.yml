@@ -42,6 +42,7 @@ phases:
         
         [profile nuget_profile]
         source_profile=default
+        role_arn=$ASSUME_ROLE_ARN
         credential_source=EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
