@@ -131,12 +131,19 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
             }
             CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
             CodeGenerationWorkflowStatus.FAILED -> {
-
-                when(true) {
-                    codeGenerationResultState.codeGenerationStatusDetail().contains("Guardrails") -> featureDevServiceError("amazonqFeatureDev.exception.guardrails")
-                    codeGenerationResultState.codeGenerationStatusDetail().contains("PromptRefusal") -> featureDevServiceError("amazonqFeatureDev.exception.prompt_refusal")
-                    codeGenerationResultState.codeGenerationStatusDetail().contains("EmptyPatch") -> featureDevServiceError("amazonqFeatureDev.exception.guardrails")
-                    codeGenerationResultState.codeGenerationStatusDetail().contains("Throttling") -> featureDevServiceError("amazonqFeatureDev.exception.throttling")
+                when (true) {
+                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                        "Guardrails"
+                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                        "PromptRefusal"
+                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
+                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                        "EmptyPatch"
+                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                        "Throttling"
+                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
                     else -> codeGenerationFailedError()
                 }
             }
