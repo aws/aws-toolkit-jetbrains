@@ -8,6 +8,7 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.process.ProcessCloseUtil
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
 import com.intellij.util.net.NetUtils
@@ -142,7 +143,7 @@ class EncoderServer(val project: Project) : Disposable {
     }
 
     private fun close() {
-        processHandler?.destroyProcess()
+        processHandler?.process?.let { ProcessCloseUtil.close(it) }
     }
 
     private fun downloadArtifactsIfNeeded() {

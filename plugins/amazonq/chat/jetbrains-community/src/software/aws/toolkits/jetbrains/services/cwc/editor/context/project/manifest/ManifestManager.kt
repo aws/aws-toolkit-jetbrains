@@ -12,8 +12,7 @@ import com.intellij.util.io.HttpRequests
 import com.intellij.util.system.CpuArch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import java.net.HttpURLConnection
-import java.net.URL
+import software.aws.toolkits.jetbrains.core.getTextFromUrl
 
 class ManifestManager {
     private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/q-context/manifest.json"
@@ -68,11 +67,6 @@ class ManifestManager {
     )
 
     fun getManifest(): Manifest? {
-        val url = URL(cloudFrontUrl)
-        val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Accept", "application/json")
-        connection.setRequestProperty("Content-Type", "application/json")
         return fetchFromRemoteAndSave()
     }
 
@@ -106,7 +100,7 @@ class ManifestManager {
 
     private fun fetchFromRemoteAndSave(): Manifest? {
         try {
-            val response = HttpRequests.request(cloudFrontUrl).readString()
+            val response = getTextFromUrl(cloudFrontUrl)
             return readManifestFile(response)
         } catch (e: Exception) {
             logger.warn { "failed to save manifest from remote: ${e.message}" }

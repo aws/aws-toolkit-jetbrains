@@ -18,14 +18,12 @@ import java.math.BigInteger
 class EncoderServerTest {
     @Rule @JvmField
     val projectRule: CodeInsightTestFixtureRule = JavaCodeInsightTestFixtureRule()
-    internal lateinit var project: Project
     private lateinit var encoderServer: EncoderServer
     private val inputBytes = BigInteger(32, DigestUtil.random).toByteArray()
 
     @Before
     open fun setup() {
-        project = projectRule.project
-        encoderServer = EncoderServer(project)
+        encoderServer = EncoderServer(projectRule.project)
     }
 
     @Test
