@@ -340,6 +340,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             chunkList.forEach { chunk -> text += (chunk.context ?: chunk.content) }
             val document = RelevantDocument(filePath, text)
             documents.add(document)
+            logger.info { "project context: query retrieved document $filePath with content: ${text.take(200)}" }
         }
         return documents
     }
