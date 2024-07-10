@@ -33,7 +33,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMER_OF_LINE_IN_CHUNK
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -123,7 +123,7 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
 fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
     var prevChunk: String? = null
     inputStream.bufferedReader(Charsets.UTF_8).useLines {
-        val iter = it.chunked(NUMER_OF_LINE_IN_CHUNK).iterator()
+        val iter = it.chunked(NUMBER_OF_LINE_IN_CHUNK).iterator()
         while (iter.hasNext()) {
             val currentChunk = iter.next().joinToString("\n").trimEnd()
 
