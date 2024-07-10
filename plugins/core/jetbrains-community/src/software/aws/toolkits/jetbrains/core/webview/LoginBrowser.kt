@@ -115,6 +115,18 @@ abstract class LoginBrowser(
         else -> ""
     }
 
+    private fun isReAuth(scopes: List<String>): Boolean = if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
+    } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
+    } else {
+        ToolkitConnectionManager.getInstance(project).activeConnection().let {
+            val ccCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
+            val qCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+            it != null && it != ccCon && it != qCon
+        }
+    }
+
     open fun loginBuilderId(scopes: List<String>) {
         val onError: (Exception) -> Unit = { e ->
             tryHandleUserCanceledLogin(e)
@@ -151,17 +163,7 @@ abstract class LoginBrowser(
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
         // assumes scopes contains either Q or non-Q permissions but not both
-        val isReAuth = if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
-            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
-        } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
-            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
-        } else {
-            ToolkitConnectionManager.getInstance(project).activeConnection().let {
-                val ccCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
-                val qCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-                it != null && it != ccCon && it != qCon
-            }
-        }
+        val isReAuth = isReAuth(scopes)
 
         val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
             val message = ssoErrorMessageFromException(e)
