@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.util.io.HttpRequests
 import com.intellij.util.system.CpuArch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -66,9 +65,7 @@ class ManifestManager {
         val versions: List<Version>? = emptyList()
     )
 
-    fun getManifest(): Manifest? {
-        return fetchFromRemoteAndSave()
-    }
+    fun getManifest(): Manifest? = fetchFromRemoteAndSave()
 
     private fun readManifestFile(content: String): Manifest? {
         try {

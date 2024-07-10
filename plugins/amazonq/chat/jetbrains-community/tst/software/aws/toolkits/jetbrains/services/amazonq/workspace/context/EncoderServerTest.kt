@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
-import com.intellij.openapi.project.Project
 import com.intellij.util.io.DigestUtil
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
