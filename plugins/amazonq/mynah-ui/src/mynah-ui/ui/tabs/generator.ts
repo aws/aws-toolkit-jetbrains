@@ -78,7 +78,7 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
             contextCommands: [
                 {
-                    groupName: 'Metion code',
+                    groupName: 'Mention code',
                     commands: [
                         {
                             command: '@workspace',

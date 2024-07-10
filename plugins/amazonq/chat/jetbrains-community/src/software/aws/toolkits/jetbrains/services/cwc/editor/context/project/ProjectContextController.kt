@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -46,8 +47,8 @@ class ProjectContextController(val project: Project) : Disposable {
     }
 
     override fun dispose() {
-        encoderServer.dispose()
-        projectContextProvider.dispose()
+        Disposer.dispose(encoderServer)
+        Disposer.dispose(projectContextProvider)
     }
 
     companion object {

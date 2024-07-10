@@ -114,12 +114,13 @@ class EncoderServer(val project: Project) : Disposable {
     private fun getCommand(): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val isGpuEnabled = CodeWhispererSettings.getInstance().isProjectContextGpu()
-        val map = mutableMapOf<String, String>()
-        map["PORT"] = port.toString()
-        map["START_AMAZONQ_LSP"] = "true"
-        map["Q_WORKER_THREADS"] = threadCount.toString()
-        map["CACHE_DIR"] = cachePath.toString()
-        map["MODEL_DIR"] = cachePath.resolve("qserver").toString()
+        val map = mutableMapOf<String, String>(
+            "PORT" to port.toString(),
+            "START_AMAZONQ_LSP" to "true",
+            "Q_WORKER_THREADS" to threadCount.toString(),
+            "CACHE_DIR" to cachePath.toString(),
+            "MODEL_DIR" to cachePath.resolve("qserver").toString()
+        )
         if (isGpuEnabled) {
             map["Q_ENABLE_GPU"] = "true"
         }
@@ -135,7 +136,7 @@ class EncoderServer(val project: Project) : Disposable {
         while (numberOfRetry.get() < maxRetry) {
             val isSuccess = runCommand(getCommand())
             if (isSuccess) {
-                break
+                return
             }
         }
     }
@@ -186,19 +187,17 @@ class EncoderServer(val project: Project) : Disposable {
     private fun tryDeleteOldArtifacts(filenames: List<String>) {
         try {
             filenames.forEach { filename ->
-                run {
-                    if (filename.contains("qserver")) {
-                        val parts = filename.split("-")
-                        val version = if (parts.size > 1) parts[1] else null
-                        if (version != null && version != "${manifestManager.currentVersion}.zip") {
-                            Files.deleteIfExists(cachePath.resolve(filename))
-                            Files.deleteIfExists(cachePath.resolve("qserver"))
-                        }
+                if (filename.contains("qserver")) {
+                    val parts = filename.split("-")
+                    val version = if (parts.size > 1) parts[1] else null
+                    if (version != null && version != "${manifestManager.currentVersion}.zip") {
+                        Files.deleteIfExists(cachePath.resolve(filename))
+                        Files.deleteIfExists(cachePath.resolve("qserver"))
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.warn { "error deleting old artifacts $e.stackTraceToString()" }
+            logger.warn { "error deleting old artifacts ${e.stackTraceToString()}" }
         }
     }
 
