@@ -30,12 +30,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWi
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpIcons
@@ -221,7 +223,6 @@ class FeatureDevController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    phase = session.sessionState.phase,
                     conversationId = session.conversationIdUnsafe
                 )
             }
@@ -271,7 +272,6 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe
             )
         }
@@ -306,7 +306,6 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = err.message,
                     retries = 0,
-                    phase = session.sessionState.phase,
                     conversationId = session.conversationIdUnsafe
                 )
             } else {
@@ -315,7 +314,6 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                     retries = retriesRemaining(session),
-                    phase = session.sessionState.phase,
                     conversationId = session.conversationIdUnsafe
                 )
             }
@@ -386,7 +384,6 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.insert_code_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe
             )
         }
@@ -463,7 +460,6 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = err.message,
                     retries = 0,
-                    phase = session?.sessionState?.phase,
                     conversationId = session?.conversationIdUnsafe
                 )
             }
@@ -494,6 +490,14 @@ class FeatureDevController(
                     ),
                 )
                 messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
+            }
+            is FeatureDevException -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
             }
             is CodeIterationLimitError -> {
                 messenger.sendError(
@@ -539,7 +543,6 @@ class FeatureDevController(
                     tabId = tabId,
                     errMessage = msg ?: message("amazonqFeatureDev.exception.request_failed"),
                     retries = retriesRemaining(session),
-                    phase = session?.sessionState?.phase,
                     conversationId = session?.conversationIdUnsafe
                 )
             }
@@ -639,7 +642,6 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe,
             )
         } finally {
