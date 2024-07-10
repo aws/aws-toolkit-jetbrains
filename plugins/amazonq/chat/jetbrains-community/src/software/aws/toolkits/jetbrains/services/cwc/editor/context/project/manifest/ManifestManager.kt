@@ -15,9 +15,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class ManifestManager {
-    // TODO: switch to prod url
-    private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/temp/manifest.json"
-    val currentVersion = "0.1.0"
+    private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/q-context/manifest.json"
+    val currentVersion = "0.1.2"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
     private val mapper = jacksonObjectMapper()

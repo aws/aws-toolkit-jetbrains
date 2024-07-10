@@ -44,12 +44,13 @@ class EncoderServer(val project: Project) : Disposable {
     ).resolve(".aws").resolve("amazonq").resolve("cache")
     val manifestManager = ManifestManager()
     private val serverDirectoryName = "qserver-${manifestManager.currentVersion}.zip"
-    private var numberOfRetry = AtomicInteger(0)
+    private val numberOfRetry = AtomicInteger(0)
     val port by lazy { NetUtils.findAvailableSocketPort() }
     private val nodeRunnableName = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val maxRetry: Int = 3
     val key = generateHmacKey()
     private var processHandler: KillableProcessHandler? = null
+    private val mapper = jacksonObjectMapper()
 
     fun downloadArtifactsAndStartServer() {
         downloadArtifactsIfNeeded()
@@ -87,7 +88,7 @@ class EncoderServer(val project: Project) : Disposable {
 
     fun getEncryptionRequest(): String {
         val request = EncryptionRequest(key = Base64.getUrlEncoder().withoutPadding().encodeToString(key.encoded))
-        return jacksonObjectMapper().writeValueAsString(request)
+        return mapper.writeValueAsString(request)
     }
 
     private fun runCommand(command: GeneralCommandLine): Boolean {

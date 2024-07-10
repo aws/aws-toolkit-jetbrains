@@ -133,7 +133,7 @@ class ChatController private constructor(
                 prompt = prompt.replace("@workspace", "")
                 queryResult = projectContextController.query(prompt)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
-                logger.info("project context relevant document count: ${queryResult.size}")
+                logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
