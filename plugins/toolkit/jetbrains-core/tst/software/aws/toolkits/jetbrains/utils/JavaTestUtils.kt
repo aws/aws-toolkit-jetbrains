@@ -51,9 +51,10 @@ import kotlin.io.path.isDirectory
 fun HeavyJavaCodeInsightTestFixtureRule.setUpJdk(jdkName: String = "Real JDK"): String {
     // attempt to find a JDK that works for gradle
     val jdkHome = JavaSdk.getInstance().suggestHomePaths().firstOrNull {
-        println(it)
-        SdkVersionUtil.getJdkVersionInfo(it)?.version in GradleJvmSupportMatrix.getAllSupportedJavaVersionsByIdea()
+        val version = SdkVersionUtil.getJdkVersionInfo(it)?.version ?: return@firstOrNull false
+        version < GradleJvmSupportMatrix.getAllSupportedJavaVersionsByIdea().max()
     } ?: IdeaTestUtil.requireRealJdkHome()
+    LOG.info { "Using $jdkHome as JDK home" }
 
     runInEdtAndWait {
         runWriteAction {
