@@ -40,6 +40,8 @@ import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.junit.Assert.fail
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
@@ -54,7 +56,7 @@ fun HeavyJavaCodeInsightTestFixtureRule.setUpJdk(jdkName: String = "Real JDK"): 
         val version = SdkVersionUtil.getJdkVersionInfo(it)?.version ?: return@firstOrNull false
         version < GradleJvmSupportMatrix.getAllSupportedJavaVersionsByIdea().max()
     } ?: IdeaTestUtil.requireRealJdkHome()
-    LOG.info { "Using $jdkHome as JDK home" }
+    getLogger<HeavyJavaCodeInsightTestFixtureRule>().info { "Using $jdkHome as JDK home" }
 
     runInEdtAndWait {
         runWriteAction {

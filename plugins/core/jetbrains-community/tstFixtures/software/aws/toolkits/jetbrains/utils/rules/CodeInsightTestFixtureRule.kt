@@ -96,7 +96,7 @@ open class CodeInsightTestFixtureRule(protected val testDescription: LightProjec
     protected val testDataPath: String
         get() = Paths.get("testdata", testClass.simpleName, testName).toString()
 
-    protected companion object {
+    private companion object {
         val LOG = getLogger<CodeInsightTestFixtureRule>()
     }
 }
