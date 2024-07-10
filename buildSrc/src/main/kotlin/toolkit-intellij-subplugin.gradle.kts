@@ -89,9 +89,6 @@ dependencies {
             create(type, version)
         }
 
-        testFramework(TestFrameworkType.Platform, DependencyVersion.Closest)
-        testFramework(TestFrameworkType.JUnit5, DependencyVersion.Closest)
-
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
     }
