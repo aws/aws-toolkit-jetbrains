@@ -26,7 +26,7 @@ repositories {
         snapshots()
         marketplace()
         jetbrainsRuntime()
-        // binary releases take lowest priority
+        // binary releases take the lowest priority
         // but maybe this is only needed for rider?
         jetBrainsCdn()
     }

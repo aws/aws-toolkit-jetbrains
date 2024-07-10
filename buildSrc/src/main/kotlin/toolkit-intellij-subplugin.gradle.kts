@@ -1,18 +1,12 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import org.gradle.internal.os.OperatingSystem
-import org.gradle.testing.jacoco.plugins.JacocoTaskExtension.Output
+import org.jetbrains.intellij.platform.gradle.DependencyVersion
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
-import software.aws.toolkits.gradle.buildMetadata
-import software.aws.toolkits.gradle.ciOnly
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.findFolders
-import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
-import software.aws.toolkits.gradle.isCi
 
 val ideProfile = IdeVersions.ideProfile(project)
 
@@ -38,13 +32,6 @@ sourceSets {
 }
 
 configurations {
-    runtimeClasspath {
-        // Exclude dependencies that ship with iDE
-        exclude(group = "org.slf4j")
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-    }
-
     all {
         // IDE provides netty
         exclude("io.netty")
@@ -52,6 +39,12 @@ configurations {
         if (name.startsWith("detekt")) {
             return@all
         }
+
+        // Exclude dependencies that ship with iDE
+        exclude(group = "org.slf4j")
+        // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
+        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
+        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
 
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
@@ -88,7 +81,7 @@ dependencies {
     intellijPlatform {
         instrumentationTools()
 
-        // annoying resolution issue that we dont wan't to bother fixing
+        // annoying resolution issue that we don't want to bother fixing
         if (!project.name.contains("jetbrains-gateway")) {
             val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
             val version = toolkitIntelliJ.version()
@@ -96,7 +89,9 @@ dependencies {
             create(type, version)
         }
 
-        jetbrainsRuntime()
+        testFramework(TestFrameworkType.Platform, DependencyVersion.Closest)
+        testFramework(TestFrameworkType.JUnit5, DependencyVersion.Closest)
+
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
     }
@@ -122,10 +117,4 @@ tasks.withType<Test>().all {
 
 tasks.withType<JavaExec> {
     systemProperty("aws.toolkits.enableTelemetry", false)
-}
-
-private fun throwIfSubmodule(message: String) {
-    if (project.depth > 1 && !project.name.contains("gateway")) {
-        throw GradleException(message)
-    }
 }

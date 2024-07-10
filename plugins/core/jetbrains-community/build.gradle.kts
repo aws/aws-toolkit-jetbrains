@@ -55,8 +55,6 @@ configurations.testFixturesApi {
 dependencies {
     intellijPlatform {
         // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1677
-        testFramework(TestFrameworkType.Platform, DependencyVersion.Closest)
-        testFramework(TestFrameworkType.JUnit5, DependencyVersion.Closest)
         testFramework(TestFrameworkType.Plugin.Java, DependencyVersion.Closest)
     }
 
