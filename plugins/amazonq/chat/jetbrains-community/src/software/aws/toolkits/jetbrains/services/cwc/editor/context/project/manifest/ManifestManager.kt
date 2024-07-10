@@ -11,6 +11,7 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.system.CpuArch
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -79,7 +80,7 @@ class ManifestManager {
         try {
             return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
-            logger.warn("error parsing manifest file for project context ${e.message}")
+            logger.warn { "error parsing manifest file for project context ${e.message}" }
             return null
         }
     }
@@ -108,7 +109,7 @@ class ManifestManager {
             val response = HttpRequests.request(cloudFrontUrl).readString()
             return readManifestFile(response)
         } catch (e: Exception) {
-            logger.warn("failed to save manifest from remote: ${e.message}")
+            logger.warn { "failed to save manifest from remote: ${e.message}" }
             return null
         }
     }

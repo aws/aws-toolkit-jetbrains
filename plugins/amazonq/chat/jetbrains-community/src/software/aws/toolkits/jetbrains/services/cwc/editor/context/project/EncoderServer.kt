@@ -22,7 +22,9 @@ import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.manifest.ManifestManager
 import java.io.FileOutputStream
@@ -93,16 +95,16 @@ class EncoderServer(val project: Project) : Disposable {
 
     private fun runCommand(command: GeneralCommandLine): Boolean {
         try {
-            logger.info("starting encoder server for project context on $port for ${project.name}")
+            logger.info { "starting encoder server for project context on $port for ${project.name}" }
             processHandler = KillableProcessHandler(command)
-            val exitCode = processHandler!!.waitFor()
-            if (exitCode) {
+            val exitCode = processHandler?.waitFor()
+            if (exitCode == true) {
                 throw Exception("Encoder server exited")
             } else {
                 return true
             }
         } catch (e: Exception) {
-            logger.warn("error running encoder server: ${e.stackTraceToString()}")
+            logger.warn { "error running encoder server: ${e.stackTraceToString()}" }
             processHandler?.destroyProcess()
             numberOfRetry.incrementAndGet()
             return false
@@ -177,7 +179,7 @@ class EncoderServer(val project: Project) : Disposable {
                 }
             }
         } catch (e: Exception) {
-            logger.warn("error downloading artifacts ${e.stackTraceToString()}")
+            logger.warn { "error downloading artifacts ${e.stackTraceToString()}" }
         }
     }
 
@@ -196,7 +198,7 @@ class EncoderServer(val project: Project) : Disposable {
                 }
             }
         } catch (e: Exception) {
-            logger.warn("error deleting old artifacts $e.stackTraceToString()")
+            logger.warn { "error deleting old artifacts $e.stackTraceToString()" }
         }
     }
 
@@ -205,7 +207,7 @@ class EncoderServer(val project: Project) : Disposable {
         val sha384 = DigestUtils.sha384Hex(input)
         val isValid = ("sha384:$sha384") == expectedHash
         if (!isValid) {
-            logger.warn("failed validating hash for artifacts $expectedHash")
+            logger.warn { "failed validating hash for artifacts $expectedHash" }
         }
         return isValid
     }
@@ -239,7 +241,7 @@ class EncoderServer(val project: Project) : Disposable {
                     }.toList()
             }
         } catch (e: Exception) {
-            logger.warn("error while unzipping project context artifact: ${e.message}")
+            logger.warn { "error while unzipping project context artifact: ${e.message}" }
         }
     }
 
@@ -247,7 +249,7 @@ class EncoderServer(val project: Project) : Disposable {
         try {
             HttpRequests.request(url).saveToFile(path, null)
         } catch (e: IOException) {
-            logger.warn("error downloading from remote ${e.message}")
+            logger.warn { "error downloading from remote ${e.message}" }
         }
     }
 

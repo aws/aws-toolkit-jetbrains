@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
@@ -110,21 +112,21 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         scope.launch {
             while (retryCount.get() < 5) {
                 try {
-                    logger.info("project context: about to init key")
+                    logger.info { "project context: about to init key" }
                     val isInitSuccess = initEncryption()
                     if (isInitSuccess) {
-                        logger.info("project context index starting")
+                        logger.info { "project context index starting" }
                         delay(300)
                         val isIndexSuccess = index()
                         if (isIndexSuccess) isIndexComplete.set(true)
-                        break
+                        return@launch
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
                         retryCount.incrementAndGet()
                         delay(10000)
                     } else {
-                        break
+                        return@launch
                     }
                 }
             }
@@ -132,18 +134,18 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun initEncryption(): Boolean {
-        logger.info("project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}")
+        logger.info { "project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/initialize")
         val payload = encoderServer.getEncryptionRequest()
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         setConnectionRequest(connection, payload)
-        logger.info("project context initialize response code: ${connection.responseCode} for ${project.name}")
+        logger.info { "project context initialize response code: ${connection.responseCode} for ${project.name}" }
         return connection.responseCode == 200
     }
 
     fun index(): Boolean {
-        logger.info("project context: indexing ${project.name} on port ${encoderServer.port}")
+        logger.info { "project context: indexing ${project.name} on port ${encoderServer.port}" }
         val indexStartTime = System.currentTimeMillis()
         val url = URL("http://localhost:${encoderServer.port}/indexFiles")
         val filesResult = collectFiles()
@@ -155,13 +157,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         setConnectionRequest(connection, encrypted)
-        logger.info("project context index response code: ${connection.responseCode} for ${project.name}")
+        logger.info { "project context index response code: ${connection.responseCode} for ${project.name}" }
         val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         val startUrl = getStartUrl(project)
         if (connection.responseCode == 200) {
             val usage = getUsage()
             TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
-            logger.info("project context index finished for ${project.name}, list of files indexed: ${filesResult.files.joinToString(",")}")
+            logger.info { "project context index finished for ${project.name}, list of files indexed: ${filesResult.files.joinToString(",")}" }
             return true
         } else {
             TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
@@ -170,7 +172,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun query(prompt: String): List<RelevantDocument> {
-        logger.info("project context: querying ${project.name} on port ${encoderServer.port}")
+        logger.info { "project context: querying ${project.name} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/query")
         val payload = QueryRequestPayload(prompt)
         val payloadJson = mapper.writeValueAsString(payload)
@@ -182,7 +184,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         setConnectionRequest(connection, encrypted)
 
         val responseCode = connection.responseCode
-        logger.info("project context query response code: $responseCode for $prompt")
+        logger.info { "project context query response code: $responseCode for $prompt" }
         val responseBody = if (responseCode == 200) {
             connection.inputStream.bufferedReader().use { reader -> reader.readText() }
         } else {
@@ -193,19 +195,19 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
             return queryResultToRelevantDocuments(parsedResponse)
         } catch (e: Exception) {
-            logger.warn("error parsing query response ${e.message}")
+            logger.warn { "error parsing query response ${e.message}" }
             return emptyList()
         }
     }
 
     private fun getUsage(): Usage? {
-        logger.info("project context: getting usage for ${project.name} on port ${encoderServer.port}")
+        logger.info { "project context: getting usage for ${project.name} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/getUsage")
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
         val responseCode = connection.responseCode
 
-        logger.info("project context getUsage response code: $responseCode for ${project.name} ")
+        logger.info { "project context getUsage response code: $responseCode for ${project.name} " }
         val responseBody = if (responseCode == 200) {
             connection.inputStream.bufferedReader().use { reader -> reader.readText() }
         } else {
@@ -216,13 +218,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             val parsedResponse = mapper.readValue<Usage>(responseBody)
             return parsedResponse
         } catch (e: Exception) {
-            logger.warn("error parsing query response ${e.message}")
+            logger.warn { "error parsing query response ${e.message}" }
             return null
         }
     }
 
     fun updateIndex(filePath: String) {
-        logger.info("project context: updating index for $filePath on port ${encoderServer.port}")
+        logger.info { "project context: updating index for $filePath on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
         val payloadJson = mapper.writeValueAsString(payload)
@@ -231,7 +233,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             setConnectionProperties(this)
             setConnectionRequest(this, encrypted)
             val responseCode = responseCode
-            logger.debug("project context update index response code: $responseCode for $filePath")
+            logger.debug { "project context update index response code: $responseCode for $filePath" }
             return
         }
     }
@@ -266,6 +268,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return regex.find(filePath) != null
     }
 
+    // TODO: this code needs to be refactored and shared with code scan
+    @Suppress("LoopWithTooManyJumpStatements")
     private fun collectFiles(): FileCollectionResult {
         val files = mutableSetOf<String>()
         val traversedDirectories = mutableSetOf<VirtualFile>()
@@ -321,7 +325,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         queryResult.forEach { chunk ->
             run {
                 if (chunk.relativePath == null) return@forEach
-                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.relativePath)) chunksMap[chunk.relativePath]!! else mutableListOf()
+                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.relativePath)) {
+                    chunksMap[chunk.relativePath] ?: mutableListOf()
+                } else {
+                    mutableListOf()
+                }
                 list.add(chunk)
                 chunksMap[chunk.relativePath] = list
             }

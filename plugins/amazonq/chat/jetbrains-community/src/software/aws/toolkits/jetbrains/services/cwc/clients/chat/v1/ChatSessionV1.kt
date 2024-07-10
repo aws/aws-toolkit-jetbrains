@@ -262,7 +262,7 @@ class ChatSessionV1(
             documentBuilder.text(trimmedFileText)
 
             // Programming Language
-            val programmingLanguage = fileContext?.fileLanguage
+            val programmingLanguage = fileContext.fileLanguage
             if (programmingLanguage != null && validLanguages.contains(programmingLanguage)) {
                 documentBuilder.programmingLanguage(
                     ProgrammingLanguage.builder()
@@ -271,7 +271,7 @@ class ChatSessionV1(
             }
 
             // Relative File Path
-            val filePath = fileContext?.filePath
+            val filePath = fileContext.filePath
             if (filePath != null) {
                 documentBuilder.relativeFilePath(filePath.take(ChatConstants.FILE_PATH_SIZE_LIMIT))
             }

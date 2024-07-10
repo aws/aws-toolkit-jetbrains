@@ -9,6 +9,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
@@ -31,7 +32,7 @@ class ProjectContextController(val project: Project) : Disposable {
         try {
             return projectContextProvider.query(prompt)
         } catch (e: Exception) {
-            logger.warn("error while querying for project context $e.message")
+            logger.warn { "error while querying for project context $e.message" }
             return emptyList()
         }
     }
@@ -40,7 +41,7 @@ class ProjectContextController(val project: Project) : Disposable {
         try {
             return projectContextProvider.updateIndex(filePath)
         } catch (e: Exception) {
-            logger.warn("error while updating index for project context $e.message")
+            logger.warn { "error while updating index for project context $e.message" }
         }
     }
 
