@@ -10,6 +10,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.featureDevServiceError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
@@ -129,7 +130,16 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
                 )
             }
             CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
-            CodeGenerationWorkflowStatus.FAILED -> codeGenerationFailedError()
+            CodeGenerationWorkflowStatus.FAILED -> {
+
+                when(true) {
+                    codeGenerationResultState.codeGenerationStatusDetail().contains("Guardrails") -> featureDevServiceError("I'm sorry, I'm having trouble generating your code. Please try again.")
+                    codeGenerationResultState.codeGenerationStatusDetail().contains("PromptRefusal") -> featureDevServiceError("I'm sorry, I can't generate code for your request. Please make sure your message and code files comply with the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).")
+                    codeGenerationResultState.codeGenerationStatusDetail().contains("EmptyPatch") -> featureDevServiceError("I'm sorry, I'm having trouble generating your code. Please try again.")
+                    codeGenerationResultState.codeGenerationStatusDetail().contains("Throttling") -> featureDevServiceError("I'm sorry, I'm experiencing high demand at the moment and can't generate your code. This attempt won't count toward usage limits. Please try again.")
+                    else -> codeGenerationFailedError()
+                }
+            }
             else -> error("Unknown status: ${codeGenerationResultState.codeGenerationStatus().status()}")
         }
     }
