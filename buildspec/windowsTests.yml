@@ -9,14 +9,6 @@ phases:
   install:
     commands:
       - |
-        $url = 'https://corretto.aws/downloads/resources/21.0.3.9.1/amazon-corretto-21.0.3.9.1-windows-x64.msi';
-        Write-Host ('Downloading from {0}' -f $url);
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
-        Invoke-WebRequest -Uri $url -OutFile 'corretto_jdk_build.msi';
-        Start-Process 'corretto_jdk_build.msi' -PassThru | Wait-Process;
-        Write-Host 'Removing ...';
-        Remove-Item corretto_jdk_build.msi -Force;
-      - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
             Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
@@ -29,7 +21,6 @@ phases:
   build:
     commands:
       - |
-        $Env:JAVA_HOME = "C:\Program Files\Amazon Corretto\jdk21.0.3_9"
         # See https://github.com/NuGet/NuGet.Client/pull/4259
         $Env:NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY = "3,1000"
 
