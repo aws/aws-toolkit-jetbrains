@@ -11,5 +11,4 @@ object ChatConstants {
     const val CUSTOMER_MESSAGE_SIZE_LIMIT = 4_000 // Maximum size of the prompt message in characters (actual API limit: 4096)
     const val FQN_SIZE_MIN = 1 // Minimum length of fully qualified name in characters (inclusive)
     const val FQN_SIZE_LIMIT = 256 // Maximum length of fully qualified name in characters (exclusive, actual API limit: 256)
-    const val INDEX_INPROGRESS_MSG = "By the way, I'm still indexing this project for full context from your workspace. I may have a better response in a few minutes when it's complete if you'd like to try again then."
 }

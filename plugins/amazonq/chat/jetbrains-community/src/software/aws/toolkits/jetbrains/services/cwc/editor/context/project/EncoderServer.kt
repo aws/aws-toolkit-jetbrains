@@ -22,6 +22,7 @@ import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.manifest.ManifestManager
 import java.io.FileOutputStream
@@ -33,7 +34,6 @@ import java.nio.file.attribute.PosixFilePermission
 import java.security.Key
 import java.security.SecureRandom
 import java.util.Base64
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
 import javax.crypto.spec.SecretKeySpec
@@ -41,14 +41,13 @@ import javax.crypto.spec.SecretKeySpec
 class EncoderServer(val project: Project) : Disposable {
     private val cachePath = Paths.get(
         UserHomeDirectoryUtils.userHomeDirectory()
-    ).resolve(".aws").resolve("amazonq").resolve("cache").createDirectories()
-    private val manifestManager = ManifestManager()
-    private val SERVER_DIRECTORY_NAME = "qserver-${manifestManager.SERVER_VERSION}.zip"
-    private val isRunning = AtomicBoolean(false)
+    ).resolve(".aws").resolve("amazonq").resolve("cache")
+    val manifestManager = ManifestManager()
+    private val serverDirectoryName = "qserver-${manifestManager.currentVersion}.zip"
     private var numberOfRetry = AtomicInteger(0)
     val port by lazy { NetUtils.findAvailableSocketPort() }
-    private val NODE_RUNNABLE_NAME = if (manifestManager.getOs() == "windows") "node.exe" else "node"
-    private val MAX_NUMBER_OF_RETRIES: Int = 3
+    private val nodeRunnableName = if (manifestManager.getOs() == "windows") "node.exe" else "node"
+    private val maxRetry: Int = 3
     val key = generateHmacKey()
     private var processHandler: KillableProcessHandler? = null
 
@@ -97,7 +96,7 @@ class EncoderServer(val project: Project) : Disposable {
             processHandler = KillableProcessHandler(command)
             val exitCode = processHandler!!.waitFor()
             if (exitCode) {
-                throw Exception("Encoder server exited with code $exitCode")
+                throw Exception("Encoder server exited")
             } else {
                 return true
             }
@@ -122,7 +121,7 @@ class EncoderServer(val project: Project) : Disposable {
             map["Q_ENABLE_GPU"] = "true"
         }
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
-        val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME).toString()
+        val nodePath = cachePath.resolve(nodeRunnableName).toString()
         val command = GeneralCommandLine(nodePath, jsPath)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withEnvironment(map)
@@ -130,27 +129,22 @@ class EncoderServer(val project: Project) : Disposable {
     }
 
     fun start() {
-        if (!isRunning.getAndSet(true)) {
-            while (numberOfRetry.get() < MAX_NUMBER_OF_RETRIES) {
-                val isSuccess = runCommand(getCommand())
-                if (isSuccess) {
-                    break
-                }
+        while (numberOfRetry.get() < maxRetry) {
+            val isSuccess = runCommand(getCommand())
+            if (isSuccess) {
+                break
             }
-        } else {
-            throw IllegalStateException("Encoder server is already running!")
         }
     }
 
     private fun close() {
-        if (isRunning.getAndSet(false)) {
-            processHandler?.destroyProcess()
-        }
+        processHandler?.destroyProcess()
     }
 
     private fun downloadArtifactsIfNeeded() {
-        val nodePath = cachePath.resolve(NODE_RUNNABLE_NAME)
-        val zipFilePath = cachePath.resolve(SERVER_DIRECTORY_NAME)
+        cachePath.tryDirOp(logger) { createDirectories() }
+        val nodePath = cachePath.resolve(nodeRunnableName)
+        val zipFilePath = cachePath.resolve(serverDirectoryName)
         val manifest = manifestManager.getManifest() ?: return
         try {
             if (!Files.exists(nodePath)) {
@@ -168,7 +162,7 @@ class EncoderServer(val project: Project) : Disposable {
             val files = cachePath.toFile().listFiles()
             if (files.isNotEmpty()) {
                 val filenames = files.map { it.name }
-                if (filenames.contains(SERVER_DIRECTORY_NAME)) {
+                if (filenames.contains(serverDirectoryName)) {
                     return
                 }
                 tryDeleteOldArtifacts(filenames)
@@ -193,7 +187,7 @@ class EncoderServer(val project: Project) : Disposable {
                     if (filename.contains("qserver")) {
                         val parts = filename.split("-")
                         val version = if (parts.size > 1) parts[1] else null
-                        if (version != null && version != "${manifestManager.SERVER_VERSION}.zip") {
+                        if (version != null && version != "${manifestManager.currentVersion}.zip") {
                             Files.deleteIfExists(cachePath.resolve(filename))
                             Files.deleteIfExists(cachePath.resolve("qserver"))
                         }

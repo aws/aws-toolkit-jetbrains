@@ -373,7 +373,15 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name, credentialStartUrl = startUrl)
         }
 
-        fun recordIndexWorkspace(duration: Double, fileCount: Int = 0, fileSize: Int = 0, isSuccess: Boolean, memoryUsage: Int? = 0, cpuUsage: Int? = 0, startUrl: String? = null) {
+        fun recordIndexWorkspace(
+            duration: Double,
+            fileCount: Int = 0,
+            fileSize: Int = 0,
+            isSuccess: Boolean,
+            memoryUsage: Int? = 0,
+            cpuUsage: Int? = 0,
+            startUrl: String? = null
+        ) {
             AmazonqTelemetry.indexWorkspace(
                 project = null,
                 duration = duration,

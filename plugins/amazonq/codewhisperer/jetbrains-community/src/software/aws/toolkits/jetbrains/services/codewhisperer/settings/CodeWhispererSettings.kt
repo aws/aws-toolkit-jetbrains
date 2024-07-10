@@ -65,6 +65,15 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount] = value
     }
 
+    fun getProjectContextIndexMaxSize(): Int = state.intValue.getOrDefault(
+        CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize,
+        200
+    )
+
+    fun setProjectContextIndexMaxSize(value: Int) {
+        state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -100,5 +109,6 @@ enum class CodeWhispererConfigurationType {
 }
 
 enum class CodeWhispererIntConfigurationType {
-    ProjectContextIndexThreadCount
+    ProjectContextIndexThreadCount,
+    ProjectContextIndexMaxSize,
 }

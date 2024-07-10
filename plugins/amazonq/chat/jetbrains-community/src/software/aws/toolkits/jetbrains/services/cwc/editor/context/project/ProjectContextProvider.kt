@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer) : Disposable {
     private val scope = disposableCoroutineScope(this)
-    private val shouldRetryInit = AtomicBoolean(true)
+
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
@@ -108,7 +108,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     private fun initAndIndex() {
         scope.launch {
-            while (shouldRetryInit.get() == true && retryCount.get() < 5) {
+            while (retryCount.get() < 5) {
                 try {
                     logger.info("project context: about to init key")
                     val isInitSuccess = initEncryption()
@@ -121,11 +121,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
-                        shouldRetryInit.set(true)
                         retryCount.incrementAndGet()
                         delay(10000)
                     } else {
-                        shouldRetryInit.set(false)
                         break
                     }
                 }
@@ -201,7 +199,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun getUsage(): Usage? {
-        logger.info("project context: getting usage for ${project.guessProjectDir()} on port ${encoderServer.port}")
+        logger.info("project context: getting usage for ${project.name} on port ${encoderServer.port}")
         val url = URL("http://localhost:${encoderServer.port}/getUsage")
         val connection = url.openConnection() as HttpURLConnection
         setConnectionProperties(connection)
@@ -258,8 +256,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean =
-        currentTotalFileSize.let { totalSize -> totalSize > (200 * 1024 * 1024 - currentFileSize) }
+    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
+        val maxSize = CodeWhispererSettings.getInstance().getProjectContextIndexMaxSize()
+        return currentTotalFileSize.let { totalSize -> totalSize > (maxSize * 1024 * 1024 - currentFileSize) }
+    }
 
     private fun isBuildOrBin(filePath: String): Boolean {
         val regex = Regex("""[/\\](bin|build|node_modules|env|\.idea)[/\\]""", RegexOption.IGNORE_CASE)
@@ -337,7 +337,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     override fun dispose() {
-        shouldRetryInit.set(true)
         retryCount.set(0)
     }
 

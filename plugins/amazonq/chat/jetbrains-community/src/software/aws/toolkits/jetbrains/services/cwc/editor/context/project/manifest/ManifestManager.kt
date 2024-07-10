@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project.mani
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.HttpRequests
@@ -17,10 +17,10 @@ import java.net.URL
 class ManifestManager {
     // TODO: switch to prod url
     private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/temp/manifest.json"
-    val SERVER_VERSION = "0.1.0"
+    val currentVersion = "0.1.0"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
-    private val mapper = ObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     data class TargetContent(
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -86,7 +86,7 @@ class ManifestManager {
     }
 
     private fun getTargetFromManifest(manifest: Manifest): VersionTarget? {
-        val targets = manifest.versions?.find { version -> version.serverVersion != null && (version.serverVersion.contains(SERVER_VERSION)) }?.targets
+        val targets = manifest.versions?.find { version -> version.serverVersion != null && (version.serverVersion.contains(currentVersion)) }?.targets
         if (targets.isNullOrEmpty()) {
             return null
         }
@@ -114,14 +114,13 @@ class ManifestManager {
         }
     }
 
-    fun getOs(): String {
-        return when {
+    fun getOs(): String =
+        when {
             SystemInfo.isWindows -> "windows"
             SystemInfo.isMac -> "darwin"
             SystemInfo.isLinux -> "linux"
             else -> "linux"
         }
-    }
 
     companion object {
         private val logger = getLogger<ManifestManager>()

@@ -105,9 +105,9 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.project_context.tooltip"))
             }
 
-            row {
+            row (message("aws.settings.codewhisperer.project_context_index_thread")){
                 intTextField(
-                    range = IntRange(0, 1000)
+                    range = IntRange(0, 50)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
                     .align(AlignX.FILL).apply {
                         connect.subscribe(
@@ -120,6 +120,23 @@ class CodeWhispererConfigurable(private val project: Project) :
                         )
                         enabled(invoke)
                     }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
+            }
+
+            row (message("aws.settings.codewhisperer.project_context_index_max_size")){
+                intTextField(
+                    range = IntRange(1, 250)
+                ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
+                    .align(AlignX.FILL).apply {
+                        connect.subscribe(
+                            ToolkitConnectionManagerListener.TOPIC,
+                            object : ToolkitConnectionManagerListener {
+                                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                    enabled(isCodeWhispererEnabled(project))
+                                }
+                            }
+                        )
+                        enabled(invoke)
+                    }.comment(message("aws.settings.codewhisperer.project_context_index_max_size.tooltip"))
             }
 
             row {
