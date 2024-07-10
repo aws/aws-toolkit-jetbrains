@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 
+import com.intellij.codeInsight.inline.completion.render.InlineCompletionLineRenderer
+import com.intellij.codeInsight.inline.completion.render.InlineCompletionRenderTextBlock
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.xdebugger.ui.DebuggerColors
-import com.intellij.codeInsight.inline.completion.render.InlineCompletionLineRenderer
-import com.intellij.codeInsight.inline.completion.render.InlineCompletionRenderTextBlock
 
 @Deprecated(
     "Shim is no longer needed in 242+"
