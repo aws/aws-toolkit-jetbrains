@@ -37,7 +37,7 @@ class ScpCommandLineTest {
     @Test
     fun `build command`() {
         val sut = ScpCommandLine(
-            sshServer.server.host,
+            "localhost",
             "/path",
             recursive = true,
             port = 12321
