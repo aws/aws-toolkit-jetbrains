@@ -83,7 +83,7 @@ val patchGatewayPluginXml by tasks.registering {
 
     // jetbrains expects gateway plugin to be dynamic
     doLast {
-        gatewayPluginXml.outputFile.asFile
+        gatewayPluginXml.get().outputFile.asFile
             .map(File::toPath)
             .get()
             .let { path ->
