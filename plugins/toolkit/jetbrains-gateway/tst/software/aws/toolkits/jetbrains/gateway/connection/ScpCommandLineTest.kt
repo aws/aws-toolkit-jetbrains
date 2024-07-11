@@ -114,9 +114,11 @@ class ScpCommandLineTest {
         val paths = mutableListOf<Path?>()
         attachScpListener(paths)
 
-        ExecUtil.execAndGetOutput(
-            this.knownHostsLocation(tempFolder.newFile().toPath())
-                .constructCommandLine()
+        println(
+            ExecUtil.execAndGetOutput(
+                this.knownHostsLocation(tempFolder.newFile().toPath())
+                    .constructCommandLine()
+            )
         )
 
         return paths
