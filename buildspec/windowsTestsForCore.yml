@@ -20,7 +20,7 @@ phases:
       - |
         $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
         $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
-        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider --version 1.0.1
+        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
         dotnet codeartifact-creds install
       - dotnet --list-sdks
 
