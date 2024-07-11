@@ -169,11 +169,11 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-EAP5-SNAPSHOT",
+                sdkVersion = "2024.2-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0-eap05"
+                nugetVersion = " 2024.2.0-eap06"
             )
         ),
 
