@@ -320,6 +320,9 @@ tasks.test {
         filter.excludeTestsMatching("software.aws.toolkits.jetbrains.services.lambda.dotnet.LambdaGutterMarkHighlightingTest*")
     }
 
+    // On Windows, complains that the computeSystemScaleFactor "Must be precomputed"
+    systemProperty("hidpi", false)
+
     useTestNG()
     environment("LOCAL_ENV_RUN", true)
     maxHeapSize = "1024m"
