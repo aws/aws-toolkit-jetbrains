@@ -14,6 +14,8 @@ env:
 phases:
   install:
     commands:
+      - dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider --version 1.0.1
+      - dotnet codeartifact-creds install
       - startDocker.sh
       # login to DockerHub so we don't get throttled
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
@@ -41,7 +43,7 @@ phases:
         credential_source=EcsContainer
         
         [profile nuget_profile]
-        source_profile = default"
+        credential_source=EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
       - chmod +x gradlew
