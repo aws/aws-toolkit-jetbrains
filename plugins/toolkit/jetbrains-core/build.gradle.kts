@@ -6,7 +6,6 @@ import org.jdom2.Document
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
-import org.jetbrains.intellij.platform.gradle.tasks.compaion.ProcessResourcesCompanion
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
