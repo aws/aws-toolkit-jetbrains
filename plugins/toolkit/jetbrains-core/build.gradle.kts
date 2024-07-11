@@ -51,11 +51,16 @@ tasks.compileJava {
 
 // toolkit depends on :plugin-toolkit:jetbrains-core setting the version instead of being defined on the root project
 PatchPluginXmlTask.register(project)
-ProcessResourcesCompanion.register(project)
+val patchPluginXml by tasks.getting(PatchPluginXmlTask::class)
 
 tasks.jar {
-    dependsOn(changelog)
+    dependsOn(patchPluginXml, changelog)
     from(changelog) {
+        into("META-INF")
+    }
+
+    from(patchPluginXml) {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
         into("META-INF")
     }
 }
@@ -65,12 +70,12 @@ tasks.integrationTest {
     systemProperty("aws.dev.useDAG", true)
 }
 
-val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("pluginXmlForGateway") {
+val gatewayPluginXml = tasks.register<PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 }
 
-val patchGatewayPluginXml by tasks.creating {
+val patchGatewayPluginXml by tasks.registering {
     dependsOn(gatewayPluginXml)
 
     val output = temporaryDir.resolve("plugin.xml")

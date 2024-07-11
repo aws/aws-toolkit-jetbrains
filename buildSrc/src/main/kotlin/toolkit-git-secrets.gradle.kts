@@ -43,6 +43,6 @@ val gitSecrets = tasks.register<Exec>("gitSecrets") {
     }
 }
 
-tasks.findByName("check")?.let {
-    it.dependsOn(gitSecrets)
+tasks.matching { it.name == "check" }.configureEach {
+    dependsOn(gitSecrets)
 }
