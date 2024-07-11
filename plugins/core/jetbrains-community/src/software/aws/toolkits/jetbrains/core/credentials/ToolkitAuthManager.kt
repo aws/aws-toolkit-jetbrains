@@ -128,7 +128,17 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
-                    metadata = metadata
+                )
+                recordLoginWithBrowser(
+                    credentialStartUrl = transientConnection.startUrl,
+                    credentialSourceId = metadata?.sourceId,
+                    isReAuth = true,
+                    result = Result.Succeeded
+                )
+                recordAddConnection(
+                    credentialSourceId = metadata?.sourceId,
+                    isReAuth = true,
+                    result = Result.Failed
                 )
             }
         } catch (e: Exception) {
@@ -179,7 +189,6 @@ fun loginSso(
         reauthConnectionIfNeeded(
             project = project,
             connection = connection,
-            metadata = metadata
         )
         return connection
     } ?: run {
@@ -232,20 +241,18 @@ fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
-    metadata: ConnectionMetadata? = null
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
         onPendingToken(tokenProvider)
     }
-    return reauthProviderIfNeeded(
-        project = project,
-        tokenProvider = tokenProvider,
-        connection = connection,
-        metadata = metadata ?: ConnectionMetadata(
-            sourceId = CredentialSourceId.AwsId.toString()
-        )
-    )
+
+    maybeReauthProviderIfNeeded(project, tokenProvider) {
+        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+            tokenProvider.reauthenticate()
+        }
+    }
+    return tokenProvider
 }
 
 private fun reauthProviderIfNeeded(
@@ -256,41 +263,7 @@ private fun reauthProviderIfNeeded(
 ): BearerTokenProvider {
     maybeReauthProviderIfNeeded(project, tokenProvider) {
         runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            try {
-                tokenProvider.reauthenticate()
-
-                if (connection is AwsBearerTokenConnection) {
-                    recordLoginWithBrowser(
-                        credentialStartUrl = connection.startUrl,
-                        credentialSourceId = metadata.sourceId,
-                        isReAuth = true,
-                        result = Result.Succeeded
-                    )
-                }
-                recordAddConnection(
-                    credentialSourceId = metadata.sourceId,
-                    isReAuth = true,
-                    result = Result.Failed
-                )
-            } catch (e: Exception) {
-                if (connection is AwsBearerTokenConnection) {
-                    recordLoginWithBrowser(
-                        credentialStartUrl = connection.startUrl,
-                        credentialSourceId = metadata.sourceId,
-                        isReAuth = true,
-                        result = Result.Failed,
-                        reason = e.message
-                    )
-                }
-                recordAddConnection(
-                    credentialSourceId = metadata.sourceId,
-                    isReAuth = true,
-                    result = Result.Failed,
-                    reason = e.message
-                )
-
-                throw e
-            }
+            tokenProvider.reauthenticate()
         }
     }
 
@@ -344,6 +317,7 @@ private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdenti
     return connection.ssoSessionName
 }
 
+
 private fun recordLoginWithBrowser(
     credentialStartUrl: String? = null,
     credentialSourceId: String? = null,
@@ -390,3 +364,4 @@ private fun recordAddConnection(
 data class ConnectionMetadata(
     val sourceId: String? = null
 )
+

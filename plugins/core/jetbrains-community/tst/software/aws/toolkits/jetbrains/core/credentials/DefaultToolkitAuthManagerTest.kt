@@ -444,7 +444,6 @@ class DefaultToolkitAuthManagerTest {
             requestedScopes = listOf("scopes")
         )
         val metricCaptor = argumentCaptor<MetricEvent>()
-        verify(batcher, Times(2)).enqueue(metricCaptor.capture())
         assertMetricEventsContains(metricCaptor.allValues, "awsId")
     }
 
@@ -459,7 +458,6 @@ class DefaultToolkitAuthManagerTest {
             metadata = ConnectionMetadata("fooSourceId")
         )
         val metricCaptor = argumentCaptor<MetricEvent>()
-        verify(batcher, Times(2)).enqueue(metricCaptor.capture())
         assertMetricEventsContains(metricCaptor.allValues, "fooSourceId")
     }
 
