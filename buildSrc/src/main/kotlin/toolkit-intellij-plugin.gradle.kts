@@ -38,14 +38,14 @@ dependencies {
     }
 }
 
-// CI keeps running out of RAM, so limit IDE instance count to 4
+// CI keeps running out of RAM, so limit IDE instance count to 6
 ciOnly {
     abstract class NoopBuildService : BuildService<BuildServiceParameters.None> {}
     val noopService = gradle.sharedServices.registerIfAbsent("noopService", NoopBuildService::class.java) {
-        maxParallelUsages = 4
+        maxParallelUsages = 6
     }
 
-    tasks.matching { it is RunnableIdeAware || it is TestableAware }.all {
+    tasks.matching { it is TestableAware }.all {
         usesService(noopService)
     }
 }
