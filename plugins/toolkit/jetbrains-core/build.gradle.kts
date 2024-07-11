@@ -6,7 +6,6 @@ import org.jdom2.Document
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
-import org.jetbrains.intellij.platform.gradle.tasks.compaion.ProcessResourcesCompanion
 import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -51,11 +50,19 @@ tasks.compileJava {
 
 // toolkit depends on :plugin-toolkit:jetbrains-core setting the version instead of being defined on the root project
 PatchPluginXmlTask.register(project)
-ProcessResourcesCompanion.register(project)
+val patchPluginXml = tasks.named<PatchPluginXmlTask>("patchPluginXml").configure {
+    val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
+    pluginVersion.set("$toolkitVersion-${ideProfile.shortName}$buildSuffix")
+}
 
 tasks.jar {
-    dependsOn(changelog)
+    dependsOn(patchPluginXml, changelog)
     from(changelog) {
+        into("META-INF")
+    }
+
+    from(patchPluginXml) {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
         into("META-INF")
     }
 }
@@ -65,7 +72,7 @@ tasks.integrationTest {
     systemProperty("aws.dev.useDAG", true)
 }
 
-val gatewayPluginXml = tasks.create<org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask>("pluginXmlForGateway") {
+val gatewayPluginXml = tasks.create<PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 }
