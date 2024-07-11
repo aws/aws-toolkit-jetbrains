@@ -25,7 +25,7 @@ import software.aws.toolkits.jetbrains.utils.waitForTrue
 import software.aws.toolkits.resources.message
 import java.time.Duration
 
-@Ignore("deadlocks IDE")
+@Ignore("deadlocks IDE 242")
 class LogGroupSearchActorTest : BaseCoroutineTest() {
     private lateinit var client: CloudWatchLogsClient
     private lateinit var tableModel: ListTableModel<LogStream>
