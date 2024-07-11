@@ -73,8 +73,8 @@ project.afterEvaluate {
     tasks.check {
         dependsOn(tasks.detekt, tasks.detektMain, tasks.detektTest)
 
-        tasks.matching { it.name == "detektIntegrationTest" }.configureEach {
-            dependsOn(this)
+        tasks.findByName("detektIntegrationTest")?.let {
+            dependsOn(it)
         }
     }
 }
