@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.intellij.platform.gradle.tasks.aware.RunnableIdeAware
 import org.jetbrains.intellij.platform.gradle.tasks.aware.TestableAware
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
@@ -46,6 +45,6 @@ ciOnly {
     }
 
     tasks.matching { it is TestableAware }.all {
-        usesService(noopService)
+    //    usesService(noopService)
     }
 }
