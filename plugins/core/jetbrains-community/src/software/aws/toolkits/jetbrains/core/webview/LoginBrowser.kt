@@ -115,17 +115,19 @@ abstract class LoginBrowser(
         else -> ""
     }
 
-    private fun isReAuth(scopes: List<String>): Boolean = if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
-        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) != null
-    } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
-        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
-    } else {
-        ToolkitConnectionManager.getInstance(project).activeConnection().let {
-            val ccCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
-            val qCon = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-            it != null && it != ccCon && it != qCon
+    private fun isReAuth(scopes: List<String>): Boolean = ToolkitConnectionManager.getInstance(project)
+        .let {
+            if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
+                it.activeConnectionForFeature(QConnection.getInstance()) != null
+            } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
+                it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
+            } else {
+                val activeCon = it.activeConnection()
+                val ccCon = it.activeConnectionForFeature(CodeCatalystConnection.getInstance())
+                val qCon = it.activeConnectionForFeature(QConnection.getInstance())
+                activeCon != null && activeCon != ccCon && activeCon != qCon
+            }
         }
-    }
 
     open fun loginBuilderId(scopes: List<String>) {
         val onError: (Exception) -> Unit = { e ->
