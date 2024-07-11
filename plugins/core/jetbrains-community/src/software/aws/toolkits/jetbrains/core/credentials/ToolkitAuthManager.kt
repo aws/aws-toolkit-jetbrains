@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
@@ -255,21 +254,6 @@ fun reauthConnectionIfNeeded(
     return tokenProvider
 }
 
-private fun reauthProviderIfNeeded(
-    project: Project?,
-    tokenProvider: BearerTokenProvider,
-    connection: ToolkitConnection,
-    metadata: ConnectionMetadata
-): BearerTokenProvider {
-    maybeReauthProviderIfNeeded(project, tokenProvider) {
-        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            tokenProvider.reauthenticate()
-        }
-    }
-
-    return tokenProvider
-}
-
 // Return true if need to re-auth, false otherwise
 fun maybeReauthProviderIfNeeded(
     project: Project?,
@@ -317,7 +301,6 @@ private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdenti
     return connection.ssoSessionName
 }
 
-
 private fun recordLoginWithBrowser(
     credentialStartUrl: String? = null,
     credentialSourceId: String? = null,
@@ -364,4 +347,3 @@ private fun recordAddConnection(
 data class ConnectionMetadata(
     val sourceId: String? = null
 )
-
