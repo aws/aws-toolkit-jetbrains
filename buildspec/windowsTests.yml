@@ -50,7 +50,7 @@ phases:
           }
         }
 
-        copyArtifacts "*\build\idea-sandbox\system*\log" $script:TEST_ARTIFACTS
+        copyArtifacts "*\build\idea-sandbox\*\log*" $script:TEST_ARTIFACTS
         copyArtifacts "*\build\reports" $script:TEST_ARTIFACTS
 
         copyArtifacts "*\test-results" $script:TEST_REPORTS
