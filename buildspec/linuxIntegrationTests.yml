@@ -43,6 +43,7 @@ phases:
         credential_source=EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
+      - export AWS_PROFILE=nuget_profile
       - dotnet codeartifact-creds configure set profile nuget_profile
       - chmod +x gradlew
       - DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --info --console plain
