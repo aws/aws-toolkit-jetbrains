@@ -8,7 +8,7 @@ env:
 phases:
   install:
     commands:
-      # need for 232 tests to pass
+      # FIX_WHEN_MIN_IS_233: 232 does not support jdk21
       - |
         $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
         Write-Host ('Downloading from {0}' -f $url);
