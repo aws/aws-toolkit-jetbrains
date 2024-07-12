@@ -44,7 +44,7 @@ ciOnly {
         maxParallelUsages = 4
     }
 
-    tasks.matching { it is TestableAware }.all {
+    tasks.matching { it is TestableAware }.configureEach {
         usesService(noopService)
     }
 }

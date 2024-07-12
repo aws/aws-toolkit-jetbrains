@@ -298,7 +298,7 @@ intellijPlatform {
     projectName = "aws-toolkit-jetbrains"
 }
 
-tasks.withType<PrepareSandboxTask>().all {
+tasks.withType<PrepareSandboxTask>().configureEach {
     dependsOn(resharperDllsDir)
 
     intoChild(intellijPlatform.projectName.map { "$it/dotnet" })
@@ -309,7 +309,7 @@ tasks.compileKotlin {
     dependsOn(generateModels)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Make sure kotlin code is generated before we execute detekt
     dependsOn(generateModels)
 }
@@ -339,7 +339,7 @@ tasks.integrationTest {
 }
 
 // fix implicit dependency on generated source
-tasks.withType<DetektCreateBaselineTask> {
+tasks.withType<DetektCreateBaselineTask>().configureEach {
     dependsOn(generateModels)
 }
 

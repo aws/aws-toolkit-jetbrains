@@ -73,12 +73,12 @@ tasks.integrationTest {
     systemProperty("aws.dev.useDAG", true)
 }
 
-val gatewayPluginXml = tasks.create<PatchPluginXmlTask>("pluginXmlForGateway") {
+val gatewayPluginXml = tasks.register<PatchPluginXmlTask>("pluginXmlForGateway") {
     val buildSuffix = if (!project.isCi()) "+${buildMetadata()}" else ""
     pluginVersion.set("GW-$toolkitVersion-${ideProfile.shortName}$buildSuffix")
 }
 
-val patchGatewayPluginXml by tasks.creating {
+val patchGatewayPluginXml by tasks.registering {
     dependsOn(gatewayPluginXml)
 
     val output = temporaryDir.resolve("plugin.xml")
@@ -86,7 +86,7 @@ val patchGatewayPluginXml by tasks.creating {
 
     // jetbrains expects gateway plugin to be dynamic
     doLast {
-        gatewayPluginXml.outputFile.asFile
+        gatewayPluginXml.get().outputFile.asFile
             .map(File::toPath)
             .get()
             .let { path ->
