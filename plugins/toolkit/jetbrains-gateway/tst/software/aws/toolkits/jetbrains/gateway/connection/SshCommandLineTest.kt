@@ -65,7 +65,7 @@ class SshCommandLineTest {
         // ideally, we would bind wiremock to a different loopback address, but macOS doesn't allow this by default
         SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(tempFolder.newFile().toPath())
-            .localPortForward(localPort, wireMockPort)
+            .localPortForward(localPort = localPort, destination = sshServer.server.host, remotePort = wireMockPort, noShell = true)
             .executeInBackground(
                 object : ProcessListener {
                     override fun startNotified(event: ProcessEvent) {
