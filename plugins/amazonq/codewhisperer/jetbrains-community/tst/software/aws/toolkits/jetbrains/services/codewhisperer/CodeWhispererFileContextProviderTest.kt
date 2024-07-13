@@ -403,8 +403,8 @@ class CodeWhispererFileContextProviderTest {
      *      A B C D E F
      *   A  x 1 2 2 0 4
      *   B  1 x 1 1 1 3
-     *   C  2 1 x 2 2 2
-     *   D  2 1 2 x 2 2
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */

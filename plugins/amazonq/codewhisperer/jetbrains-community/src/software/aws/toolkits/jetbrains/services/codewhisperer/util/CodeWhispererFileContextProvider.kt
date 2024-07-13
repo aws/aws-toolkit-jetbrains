@@ -126,7 +126,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 }
             }
         } else {
-            neighborFiles(psiFile)
             when (shouldFetchCrossfileContext(language, group)) {
                 true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
                 false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
