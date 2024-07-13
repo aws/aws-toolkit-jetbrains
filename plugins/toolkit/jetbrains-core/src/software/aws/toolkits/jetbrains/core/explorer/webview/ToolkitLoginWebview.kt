@@ -58,6 +58,7 @@ import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactor
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.ActionListener
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -235,6 +236,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             is BrowserMessage.Reauth -> {
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
+
+            is BrowserMessage.SendTelemetry -> {
+                UiTelemetry.click(project, "auth_continueButton")
+            }
         }
     }
 
@@ -304,8 +309,11 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
         val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
             // TODO: telemetry
         }
+        val onIdCSuccess: () -> Unit = {
+            // TODO: telemetry
+        }
 
-        val login = Login.IdC(url, region, scopes, onPendingToken, onIdCError)
+        val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
 
         loginWithBackgroundContext {
             val connection = login.loginIdc(project)
