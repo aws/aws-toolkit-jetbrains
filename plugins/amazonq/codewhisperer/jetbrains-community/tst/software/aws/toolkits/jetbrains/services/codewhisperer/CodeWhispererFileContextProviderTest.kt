@@ -26,6 +26,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
@@ -40,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -380,6 +382,64 @@ class CodeWhispererFileContextProviderTest {
         runBlocking {
             verify(sut, times(0)).extractSupplementalFileContextForSrc(any(), any())
             verify(sut).extractSupplementalFileContextForTst(any(), any())
+        }
+    }
+
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 2
+     *   D  2 1 2 x 2 2
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    @Test
+    fun `neighborFile should return all files except itself with distance less than or equal to 1`() {
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+
+        assertThat(sut.neighborFiles(a)).isEqualTo(setOf(b, e)).also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+        }
+
+        assertThat(sut.neighborFiles(b)).isEqualTo(setOf(a, c, d, e)).also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+        }
+
+        assertThat(sut.neighborFiles(c)).isEqualTo(setOf(b))
+
+        assertThat(sut.neighborFiles(d)).isEqualTo(setOf(b))
+
+        assertThat(sut.neighborFiles(e)).isEqualTo(setOf(a, b))
+
+        assertThat(sut.neighborFiles(f)).isEmpty().also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, a.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, b.virtualFile)).isGreaterThan(1).isEqualTo(3)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, c.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, d.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, e.virtualFile)).isGreaterThan(1).isEqualTo(4)
         }
     }
 

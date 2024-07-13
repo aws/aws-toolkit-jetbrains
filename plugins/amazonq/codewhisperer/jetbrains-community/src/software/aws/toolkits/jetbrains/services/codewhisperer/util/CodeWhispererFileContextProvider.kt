@@ -126,7 +126,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 }
             }
         } else {
-            neighborfiles(psiFile)
+            neighborFiles(psiFile)
             when (shouldFetchCrossfileContext(language, group)) {
                 true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
                 false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
@@ -294,17 +294,28 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      *     3. C: root/util/service/c.ts
      *     4. D: root/d.ts
      *     5. E: root/util/context/e.ts
-     **
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
      *   neighborfiles(A) = [B, E]
-     *   neighborfiles(B) = [A, C, D]
-     *   neighborfiles(C) = []
-     *   neighborfiles(D) = []
-     *   neighborfiles(E) = []
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 2
+     *   D  2 1 2 x 2 2
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
      */
-    fun neighborfiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE)
+    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
 
-    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> {
-        return search(psiFile.containingDirectory, distance, true) + search(psiFile.containingDirectory, distance, false)
+    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
+        search(psiFile.containingDirectory, distance, true) +
+            search(psiFile.containingDirectory, distance, false)
     }
 
     private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
