@@ -542,6 +542,11 @@
                 "currentStage":{"shape":"CodeGenerationWorkflowStage"}
             }
         },
+        "CodeGenerationStatusDetail":{
+            "type":"string",
+            "documentation":"<p>Detailed message about the code generation status</p>",
+            "sensitive":true
+        },
         "CodeGenerationWorkflowStage":{
             "type":"string",
             "enum":[
