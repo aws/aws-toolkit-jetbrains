@@ -22,9 +22,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -273,10 +270,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = project.guessProjectDir()?.let {
             VfsUtil.collectChildrenRecursively(it).filter { child ->
-                val language = child.programmingLanguage()
-                !changeListManager.isIgnoredFile(child) && !isBuildOrBin(child.path) &&
-                    runBlocking { !featureDevSessionContext.ignoreFile(child, scope) } && child.length <= 10 * 1024 * 1024 &&
-                    language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE
+                !changeListManager.isIgnoredFile(child) &&
+                    !isBuildOrBin(child.path) &&
+                    runBlocking { !featureDevSessionContext.ignoreFile(child, scope) } &&
+                    child.length <= 10 * 1024 * 1024
             }
         }.orEmpty()
 

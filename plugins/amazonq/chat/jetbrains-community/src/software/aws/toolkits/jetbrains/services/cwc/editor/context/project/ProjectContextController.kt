@@ -15,7 +15,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
-class ProjectContextController(val project: Project, val scope: CoroutineScope) : Disposable {
+class ProjectContextController(private val project: Project, private val scope: CoroutineScope) : Disposable {
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, scope)
     init {
