@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.test.TestScope
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.kotlin.any
@@ -29,7 +30,8 @@ class ProjectContextProviderTest {
     @Before
     open fun setup() {
         project = projectRule.project
-        sut = ProjectContextProvider(project, encoderServer)
+        val testCoroutineScope = TestScope()
+        sut = ProjectContextProvider(project, encoderServer, testCoroutineScope)
     }
 
     @Test
