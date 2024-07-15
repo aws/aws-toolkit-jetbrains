@@ -271,6 +271,7 @@ open class CodeWhispererCodeModernizerTestBase(
         testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
+        doReturn(exampleGetCodeMigrationResponse.transformationJob()).whenever(testSessionSpy).getJobDetails(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
         doReturn(testSessionSpy).whenever(codeModernizerManagerSpy).createCodeModernizerSession(any(), any())
         testCodeModernizerArtifact =
