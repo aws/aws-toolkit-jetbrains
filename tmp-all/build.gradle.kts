@@ -32,3 +32,7 @@ dependencies {
         testFramework(TestFrameworkType.JUnit5)
     }
 }
+
+intellijPlatform {
+    buildSearchableOptions.set(false)
+}

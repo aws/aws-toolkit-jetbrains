@@ -25,6 +25,10 @@ tasks.buildPlugin {
     }
 }
 
+intellijPlatform {
+    buildSearchableOptions.set(false)
+}
+
 dependencies {
     intellijPlatform {
         val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
