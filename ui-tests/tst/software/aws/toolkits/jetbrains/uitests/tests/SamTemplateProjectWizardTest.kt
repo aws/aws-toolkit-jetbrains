@@ -3,10 +3,13 @@
 
 package software.aws.toolkits.jetbrains.uitests.tests
 
+import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.io.TempDir
@@ -19,11 +22,19 @@ import software.aws.toolkits.jetbrains.uitests.fixtures.projectStructureDialog
 import software.aws.toolkits.jetbrains.uitests.fixtures.welcomeFrame
 import software.aws.toolkits.jetbrains.uitests.utils.setupSamCli
 import java.nio.file.Path
+import java.time.Duration.ofMinutes
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SamTemplateProjectWizardTest {
     @TempDir
     lateinit var tempDir: Path
+
+    private val remoteRobot = RemoteRobot("http://127.0.0.1:8080")
+
+    @BeforeEach
+    fun waitForIde() {
+        waitForIgnoringError(ofMinutes(3)) { remoteRobot.callJs("true") }
+    }
 
     @BeforeAll
     fun setup() {
