@@ -520,7 +520,7 @@ class FeatureDevController(
             }
 
             else -> {
-                val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
+                var msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
                 val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
                 val defaultMessage: String? = when (session?.sessionState?.phase) {
                     SessionStatePhase.APPROACH -> {
@@ -538,6 +538,9 @@ class FeatureDevController(
                         }
                     }
                     else -> null
+                }
+                if (defaultMessage !== null) {
+                    msg = defaultMessage
                 }
                 messenger.sendError(
                     tabId = tabId,
