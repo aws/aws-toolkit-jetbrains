@@ -12,7 +12,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VfsUtil
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -21,6 +20,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
@@ -31,10 +31,11 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer, private val scope: CoroutineScope) : Disposable {
+class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer) : Disposable {
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
+    private val scope = disposableCoroutineScope(this)
     init {
         scope.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
