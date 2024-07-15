@@ -393,7 +393,8 @@
                 "fullResponselatency": { "shape": "Double" },
                 "requestLength": { "shape": "Integer" },
                 "responseLength": { "shape": "Integer" },
-                "numberOfCodeBlocks": { "shape": "Integer" }
+                "numberOfCodeBlocks": { "shape": "Integer" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatHistory":{
@@ -412,7 +413,8 @@
                 "interactionTarget": { "shape": "String" },
                 "acceptedCharacterCount": { "shape": "Integer" },
                 "acceptedLineCount": { "shape": "Integer" },
-                "acceptedSnippetHasReference": { "shape": "Boolean" }
+                "acceptedSnippetHasReference": { "shape": "Boolean" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "CreateTaskAssistConversationRequest": {
@@ -470,7 +472,8 @@
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
-                "modificationPercentage": { "shape": "Double" }
+                "modificationPercentage": { "shape": "Double" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatTriggerType":{
@@ -696,11 +699,36 @@
                 "uploadContext":{"shape":"UploadContext"}
             }
         },
-        "CreateTaskAssistConversationResponse": {
-            "type": "structure",
-            "required": ["conversationId"],
-            "members": {
-                "conversationId": { "shape": "ConversationId" }
+        "CreateUploadUrlRequestContentChecksumString":{
+            "type":"string",
+            "max":512,
+            "min":1,
+            "sensitive":true
+        },
+        "CreateUploadUrlRequestContentLengthLong":{
+            "type":"long",
+            "box":true,
+            "min":1
+        },
+        "CreateUploadUrlRequestContentMd5String":{
+            "type":"string",
+            "max":128,
+            "min":1,
+            "sensitive":true
+        },
+        "CreateUploadUrlResponse":{
+            "type":"structure",
+            "required":[
+                "uploadId",
+                "uploadUrl"
+            ],
+            "members":{
+                "uploadId":{"shape":"UploadId"},
+                "uploadUrl":{"shape":"PreSignedUrl"},
+                "kmsKeyArn":{"shape":"ResourceArn"},
+                "requestHeaders": {
+                    "shape": "RequestHeaders"
+                }
             }
         },
         "CursorState":{
