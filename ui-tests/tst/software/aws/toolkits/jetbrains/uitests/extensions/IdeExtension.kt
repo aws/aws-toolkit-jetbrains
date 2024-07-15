@@ -8,7 +8,7 @@ import com.intellij.remoterobot.stepsProcessing.StepLogger
 import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.utils.waitFor
-import kotlinx.coroutines.runBlocking
+import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -24,6 +24,7 @@ import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
+import java.time.Duration.ofMinutes
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val initialSetup = AtomicBoolean(false)
@@ -49,8 +50,9 @@ class Ide : BeforeAllCallback, AfterAllCallback {
     }
 
     private fun waitForIde() {
+        waitForIgnoringError(ofMinutes(3)) { RemoteRobot("http://127.0.0.1:$robotPort").callJs("true") }
         waitFor(
-            duration = Duration.ofMinutes(20),
+            duration = Duration.ofMinutes(10),
             interval = Duration.ofMillis(500),
             errorMessage = "Could not connect to remote robot in time"
         ) {
@@ -62,15 +64,13 @@ class Ide : BeforeAllCallback, AfterAllCallback {
         }
     }
 
-    private fun canConnectToToRobot(): Boolean = runBlocking {
-        try {
-            Socket().use { socket ->
-                socket.connect(InetSocketAddress("127.0.0.1", robotPort))
-                true
-            }
-        } catch (e: IOException) {
-            false
+    private fun canConnectToToRobot(): Boolean = try {
+        Socket().use { socket ->
+            socket.connect(InetSocketAddress("127.0.0.1", robotPort))
+            true
         }
+    } catch (e: IOException) {
+        false
     }
 
     override fun afterAll(context: ExtensionContext) {
