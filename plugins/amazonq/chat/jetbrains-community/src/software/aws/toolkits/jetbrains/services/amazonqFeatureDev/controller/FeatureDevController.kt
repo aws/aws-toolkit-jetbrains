@@ -539,7 +539,7 @@ class FeatureDevController(
                     }
                     else -> null
                 }
-                if (defaultMessage !== null) {
+                if (defaultMessage != null) {
                     msg = defaultMessage
                 }
                 messenger.sendError(

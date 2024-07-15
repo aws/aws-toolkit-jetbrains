@@ -132,16 +132,16 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
             CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
             CodeGenerationWorkflowStatus.FAILED -> {
                 when (true) {
-                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
-                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
-                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
-                    codeGenerationResultState.codeGenerationStatusDetail().contains(
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Throttling"
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
                     else -> codeGenerationFailedError()
