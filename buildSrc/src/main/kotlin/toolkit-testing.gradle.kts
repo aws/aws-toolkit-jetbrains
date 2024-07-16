@@ -95,7 +95,7 @@ tasks.withType<Test>().all {
         isIncludeNoLocationClasses = true
     }
 
-    jvmArgs("-XX:HeapDumpPath=\"${rootProject.file("build/reports").absolutePath}\"")
+    jvmArgs("-XX:HeapDumpPath=${rootProject.file("build/reports").absolutePath}")
     if (System.getProperty("os.name").contains("indows")) {
         jvmArgs("-XX:OnOutOfMemoryError=\"powershell ${rootProject.file("dump.ps1")}\"")
     }
