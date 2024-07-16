@@ -50,7 +50,7 @@ class Ide : BeforeAllCallback, AfterAllCallback {
     }
 
     private fun waitForIde() {
-        waitForIgnoringError(ofMinutes(3)) { RemoteRobot("http://127.0.0.1:$robotPort").callJs("true") }
+        waitForIgnoringError(ofMinutes(10)) { RemoteRobot("http://127.0.0.1:$robotPort").callJs("true") }
         waitFor(
             duration = Duration.ofMinutes(10),
             interval = Duration.ofMillis(500),
