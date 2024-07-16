@@ -96,7 +96,7 @@ tasks.withType<Test>().all {
     }
 
     jvmArgs("-XX:HeapDumpPath=${rootProject.file("build/reports").absolutePath}")
-    if (System.getProperty("os.name").contains("indows") {
+    if (System.getProperty("os.name").contains("indows")) {
         jvmArgs("-XX:OnOutOfMemoryError=powershell -command \"Get-WmiObject -Query 'Select * from Win32_PerfFormattedData_PerfProc_Process' | Select-Object -Property IDProcess,Name,PageFileBytes,PoolNonpagedBytes,PoolPagedBytes,PrivateBytes,VirtualBytes,WorkingSet,CmdLine | ConvertTo-Csv -NoTypeInformation; get-wmiobject -query 'select * From Win32_Process' | Select-Object -Property ProcessId,Name,CommandLine | ConvertTo-Csv -NoTypeInformation\"")
     }
 }
