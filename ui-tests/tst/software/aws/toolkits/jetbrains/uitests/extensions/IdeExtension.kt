@@ -8,7 +8,6 @@ import com.intellij.remoterobot.stepsProcessing.StepLogger
 import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.utils.waitFor
-import com.intellij.remoterobot.utils.waitForIgnoringError
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -24,18 +23,19 @@ import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
-import java.time.Duration.ofMinutes
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val initialSetup = AtomicBoolean(false)
-val robotPort = System.getProperty("robot-server.port")?.toInt() ?: throw IllegalStateException("System Property 'robot-server.port' is not set")
+
+// val robotPort = System.getProperty("robot-server.port")?.toInt() ?: throw IllegalStateException("System Property 'robot-server.port' is not set")
+const val ROBOT_PORT = 8580
 
 fun uiTest(test: RemoteRobot.() -> Unit) {
     if (!initialSetup.getAndSet(true)) {
         StepWorker.registerProcessor(StepLogger())
     }
 
-    RemoteRobot("http://127.0.0.1:$robotPort").apply(test)
+    RemoteRobot("http://127.0.0.1:$ROBOT_PORT").apply(test)
 }
 
 class Ide : BeforeAllCallback, AfterAllCallback {
@@ -50,7 +50,6 @@ class Ide : BeforeAllCallback, AfterAllCallback {
     }
 
     private fun waitForIde() {
-        waitForIgnoringError(ofMinutes(10)) { RemoteRobot("http://127.0.0.1:$robotPort").callJs("true") }
         waitFor(
             duration = Duration.ofMinutes(10),
             interval = Duration.ofMillis(500),
@@ -66,7 +65,7 @@ class Ide : BeforeAllCallback, AfterAllCallback {
 
     private fun canConnectToToRobot(): Boolean = try {
         Socket().use { socket ->
-            socket.connect(InetSocketAddress("127.0.0.1", robotPort))
+            socket.connect(InetSocketAddress("127.0.0.1", ROBOT_PORT))
             true
         }
     } catch (e: IOException) {

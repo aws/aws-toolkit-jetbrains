@@ -33,12 +33,12 @@ class TestRecorder : AfterTestExecutionCallback {
             }
 
             testReport.resolve("uiHierarchy.html").outputStream().use {
-                URL("http://127.0.0.1:$robotPort/").openStream().copyTo(it)
+                URL("http://127.0.0.1:$ROBOT_PORT/").openStream().copyTo(it)
             }
 
             listOf("scripts.js", "xpathEditor.js", "updateButton.js", "styles.css", "img/locator.png").forEach { file ->
                 testReport.resolve(Paths.get(file)).outputStream().use {
-                    URL("http://127.0.0.1:$robotPort/$file").openStream().copyTo(it)
+                    URL("http://127.0.0.1:$ROBOT_PORT/$file").openStream().copyTo(it)
                 }
             }
         }
