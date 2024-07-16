@@ -36,11 +36,11 @@ phases:
       - AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]
-        role_arn=$ASSUME_ROLE_ARN
-        credential_source=EcsContainer
+        role_arn = $ASSUME_ROLE_ARN
+        credential_source = EcsContainer
         
         [profile nuget]
-        credential_source=EcsContainer"
+        credential_source = EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
       - dotnet codeartifact-creds configure set profile nuget
