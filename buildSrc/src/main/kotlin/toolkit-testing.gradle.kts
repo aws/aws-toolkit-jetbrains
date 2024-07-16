@@ -97,7 +97,7 @@ tasks.withType<Test>().all {
 
     jvmArgs("-XX:HeapDumpPath=build/reports")
     if (System.getProperty("os.name").contains("indows")) {
-        jvmArgs("-XX:OnOutOfMemoryError=powershell.exe ${rootProject.file("dump.ps1")}")
+        jvmArgs("-Xdump:tool:events=systhrow+vmstop+uncaught,exec=powershell.exe ${rootProject.file("dump.ps1")}")
     }
 }
 
