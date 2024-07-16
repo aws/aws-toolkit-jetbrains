@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
+import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.ActionListener
@@ -307,16 +308,19 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
         val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
+            stopBrowserOpenTimer()
             // TODO: telemetry
         }
         val onIdCSuccess: () -> Unit = {
+            stopBrowserOpenTimer()
             // TODO: telemetry
         }
 
-        val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
+        val login = Login.IdC(url, region, scopes, getOnPendingToken(CredentialSourceId.IamIdentityCenter), onIdCSuccess, onIdCError)
 
         loginWithBackgroundContext {
             val connection = login.loginIdc(project)
+
             if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
 
