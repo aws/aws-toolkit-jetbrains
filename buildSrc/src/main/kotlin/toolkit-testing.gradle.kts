@@ -3,6 +3,7 @@
 
 import com.adarshr.gradle.testlogger.theme.ThemeType
 import software.aws.toolkits.gradle.ciOnly
+import sun.font.FontUtilities.isWindows
 
 plugins {
     id("java") // Needed for referencing "implementation" configuration
@@ -96,6 +97,9 @@ tasks.withType<Test>().all {
     }
 
     jvmArgs("-XX:HeapDumpPath=${rootProject.file("build/reports").absolutePath}")
+    if (isWindows) {
+        jvmArgs("-XX:OnOutOfMemoryError=powershell -command \"Get-WmiObject -Query 'Select * from Win32_PerfFormattedData_PerfProc_Process' | Select-Object -Property IDProcess,Name,PageFileBytes,PoolNonpagedBytes,PoolPagedBytes,PrivateBytes,VirtualBytes,WorkingSet,CmdLine | ConvertTo-Csv -NoTypeInformation; get-wmiobject -query 'select * From Win32_Process' | Select-Object -Property ProcessId,Name,CommandLine | ConvertTo-Csv -NoTypeInformation\"")
+    }
 }
 
 // Jacoco configs taken from official Gradle docs: https://docs.gradle.org/current/userguide/structuring_software_products.html
