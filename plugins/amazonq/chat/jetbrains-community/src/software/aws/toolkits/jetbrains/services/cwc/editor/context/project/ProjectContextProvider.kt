@@ -236,7 +236,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     private fun setConnectionTimeout(connection: HttpURLConnection) {
         connection.connectTimeout = 5000 // 5 seconds
-        connection.readTimeout = 10000 // 10 second
+        connection.readTimeout = 5000 // 5 second
     }
 
     private fun setConnectionProperties(connection: HttpURLConnection) {
@@ -310,7 +310,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         chunksMap.forEach { (filePath, chunkList) ->
             var text = ""
             chunkList.forEach { chunk -> text += (chunk.context ?: chunk.content) }
-            val document = RelevantDocument(filePath, text)
+            val document = RelevantDocument(filePath, text.take(10200))
             documents.add(document)
             logger.info { "project context: query retrieved document $filePath with content: ${text.take(200)}" }
         }
