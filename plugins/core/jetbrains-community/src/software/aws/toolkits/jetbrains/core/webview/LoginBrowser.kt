@@ -87,7 +87,19 @@ abstract class LoginBrowser(
         browserOpenTimer?.schedule(
             object : TimerTask() {
                 override fun run() {
-                    recordBrowserLoginTimeoutMetric(credentialSourceId)
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        credentialStartUrl = SONO_URL,
+                        result = Result.Failed,
+                        reason = "Browser authentication idle for more than 15min",
+                        credentialSourceId = credentialSourceId
+                    )
+                    AuthTelemetry.addConnection(
+                        result = Result.Failed,
+                        reason = "Browser authentication idle for more than 15min",
+                        credentialSourceId = credentialSourceId
+                    )
+                    stopBrowserOpenTimer()
                 }
             },
             900000, // 15min
@@ -100,22 +112,6 @@ abstract class LoginBrowser(
             browserOpenTimer?.purge()
             browserOpenTimer = null
         }
-    }
-
-    private fun recordBrowserLoginTimeoutMetric(credentialSourceId: CredentialSourceId) {
-        AwsTelemetry.loginWithBrowser(
-            project = null,
-            credentialStartUrl = SONO_URL,
-            result = Result.Failed,
-            reason = "Browser authentication idle for more than 15min",
-            credentialSourceId = credentialSourceId
-        )
-        AuthTelemetry.addConnection(
-            result = Result.Failed,
-            reason = "Browser authentication idle for more than 15min",
-            credentialSourceId = credentialSourceId
-        )
-        stopBrowserOpenTimer()
     }
 
     protected fun getOnPendingToken(credentialSourceId: CredentialSourceId): (InteractiveBearerTokenProvider) -> Unit = { provider ->
@@ -320,6 +316,7 @@ abstract class LoginBrowser(
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, getOnPendingToken(CredentialSourceId.AwsId))
             }
+            stopBrowserOpenTimer()
         }
     }
 
