@@ -94,6 +94,8 @@ tasks.withType<Test>().all {
         // 221+ uses a custom classloader and jacoco fails to find classes
         isIncludeNoLocationClasses = true
     }
+
+    jvmArgs("-XX:HeapDumpPath=${rootProject.file("build/reports").absolutePath}")
 }
 
 // Jacoco configs taken from official Gradle docs: https://docs.gradle.org/current/userguide/structuring_software_products.html
