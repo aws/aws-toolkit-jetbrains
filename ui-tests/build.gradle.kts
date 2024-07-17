@@ -12,6 +12,7 @@ repositories {
 }
 
 plugins {
+    id("temp-toolkit-intellij-root-conventions")
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
 }
