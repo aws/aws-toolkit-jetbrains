@@ -26,16 +26,14 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val initialSetup = AtomicBoolean(false)
-
-// val robotPort = System.getProperty("robot-server.port")?.toInt() ?: throw IllegalStateException("System Property 'robot-server.port' is not set")
-const val ROBOT_PORT = 8580
+val robotPort = System.getProperty("robot-server.port")?.toInt() ?: throw IllegalStateException("System Property 'robot-server.port' is not set")
 
 fun uiTest(test: RemoteRobot.() -> Unit) {
     if (!initialSetup.getAndSet(true)) {
         StepWorker.registerProcessor(StepLogger())
     }
 
-    RemoteRobot("http://127.0.0.1:$ROBOT_PORT").apply(test)
+    RemoteRobot("http://127.0.0.1:$robotPort").apply(test)
 }
 
 class Ide : BeforeAllCallback, AfterAllCallback {
@@ -65,7 +63,7 @@ class Ide : BeforeAllCallback, AfterAllCallback {
 
     private fun canConnectToToRobot(): Boolean = try {
         Socket().use { socket ->
-            socket.connect(InetSocketAddress("127.0.0.1", ROBOT_PORT))
+            socket.connect(InetSocketAddress("127.0.0.1", robotPort))
             true
         }
     } catch (e: IOException) {
