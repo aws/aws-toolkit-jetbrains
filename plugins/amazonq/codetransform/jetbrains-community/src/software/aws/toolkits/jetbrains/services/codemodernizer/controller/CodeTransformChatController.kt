@@ -19,7 +19,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
@@ -60,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTran
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformTelemetryService
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
@@ -469,11 +469,10 @@ class CodeTransformChatController(
 
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
+            CodeTransformTelemetryService.setCancelledFromChat(false)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = false,
-                ),
+                CodeTransformTelemetryService.getInstance(),
                 success = false,
                 reason = "Runtime Error when trying to resume transformation from HIL",
             )
@@ -563,12 +562,10 @@ class CodeTransformChatController(
 
         try {
             codeModernizerManager.tryResumeWithAlternativeVersion(selectedVersion)
-
+            CodeTransformTelemetryService.setDependencyVersionSelected(selectedVersion)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id as String,
-                HilTelemetryMetaData(
-                    dependencyVersionSelected = selectedVersion,
-                ),
+                CodeTransformTelemetryService.getInstance(),
                 success = true,
                 reason = "User selected version"
             )
@@ -595,12 +592,10 @@ class CodeTransformChatController(
 
         try {
             codeModernizerManager.rejectHil()
-
+            CodeTransformTelemetryService.setCancelledFromChat(true)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = true,
-                ),
+                CodeTransformTelemetryService.getInstance(),
                 success = false,
                 reason = "User cancelled"
             )
@@ -610,11 +605,10 @@ class CodeTransformChatController(
             }
             codeModernizerManager.resumePollingFromHil()
         } catch (e: Exception) {
+            CodeTransformTelemetryService.setCancelledFromChat(false)
             telemetry.logHil(
                 CodeModernizerSessionState.getInstance(context.project).currentJobId?.id.orEmpty(),
-                HilTelemetryMetaData(
-                    cancelledFromChat = false,
-                ),
+                CodeTransformTelemetryService.getInstance(),
                 success = false,
                 reason = "Runtime Error when trying to resume transformation from HIL",
             )
