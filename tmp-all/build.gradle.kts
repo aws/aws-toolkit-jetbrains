@@ -31,6 +31,9 @@ dependencies {
         testFramework(TestFrameworkType.Bundled)
         testFramework(TestFrameworkType.JUnit5)
     }
+
+    // not sure why not plugin not resolving transitive deps
+    testRuntimeOnly(project(":plugin-core"))
 }
 
 intellijPlatform {
