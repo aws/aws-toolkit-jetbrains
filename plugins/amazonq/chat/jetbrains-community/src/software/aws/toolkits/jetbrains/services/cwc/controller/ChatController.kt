@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextRe
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getIsAmazonStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
@@ -127,16 +128,21 @@ class ChatController private constructor(
         var queryResult: List<RelevantDocument> = emptyList()
         val triggerId = UUID.randomUUID().toString()
         var shouldAddIndexInProgressMessage: Boolean = false
+        var shouldUseWorkspaceContext: Boolean = false
         if (prompt.contains("@workspace")) {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                val projectContextController = ProjectContextController.getInstance(context.project)
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled(context.project)) {
+                shouldUseWorkspaceContext = true
                 prompt = prompt.replace("@workspace", "")
+                val projectContextController = ProjectContextController.getInstance(context.project)
                 queryResult = projectContextController.query(prompt)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
+        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled(context.project) && getIsAmazonStartUrl(context.project)) {
+            val projectContextController = ProjectContextController.getInstance(context.project)
+            queryResult = projectContextController.query(prompt)
         }
 
         handleChat(
@@ -147,7 +153,8 @@ class ChatController private constructor(
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
             projectContextQueryResult = queryResult,
-            shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage
+            shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage,
+            shouldUseWorkspaceContext = shouldUseWorkspaceContext
         )
     }
 
@@ -375,7 +382,8 @@ class ChatController private constructor(
         userIntent: UserIntent?,
         triggerType: TriggerType,
         projectContextQueryResult: List<RelevantDocument>,
-        shouldAddIndexInProgressMessage: Boolean? = false
+        shouldAddIndexInProgressMessage: Boolean = false,
+        shouldUseWorkspaceContext: Boolean = false
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {
@@ -394,7 +402,8 @@ class ChatController private constructor(
             userIntent = userIntent,
             triggerType = triggerType,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project),
-            relevantTextDocuments = projectContextQueryResult
+            relevantTextDocuments = projectContextQueryResult,
+            useRelevantDocuments = shouldUseWorkspaceContext,
         )
 
         val sessionInfo = getSessionInfo(tabId)
@@ -406,7 +415,7 @@ class ChatController private constructor(
 
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
-        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage ?: false)
+        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage)
             .catch { handleError(tabId, it) }
             .onEach { context.messagesFromAppToUi.publish(it) }
             .launchIn(sessionInfo.scope)

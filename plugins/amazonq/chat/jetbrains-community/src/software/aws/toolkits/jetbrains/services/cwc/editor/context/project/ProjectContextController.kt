@@ -21,7 +21,7 @@ class ProjectContextController(private val project: Project) : Disposable {
     private val scope = disposableCoroutineScope(this)
     init {
         scope.launch {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled(project)) {
                 encoderServer.downloadArtifactsAndStartServer()
             }
         }

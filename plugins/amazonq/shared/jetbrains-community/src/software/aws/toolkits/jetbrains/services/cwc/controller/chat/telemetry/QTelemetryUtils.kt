@@ -12,3 +12,8 @@ fun getStartUrl(project: Project): String? {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection?
     return connection?.startUrl
 }
+
+fun getIsAmazonStartUrl(project: Project): Boolean {
+    val startUrl = getStartUrl(project)
+    return startUrl != null && startUrl == "https://amzn.awsapps.com/start"
+}

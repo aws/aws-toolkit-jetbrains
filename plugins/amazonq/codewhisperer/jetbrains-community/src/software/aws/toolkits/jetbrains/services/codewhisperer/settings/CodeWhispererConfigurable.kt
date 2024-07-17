@@ -101,7 +101,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         }
                     )
                     enabled(invoke)
-                    bindSelected(codeWhispererSettings::isProjectContextEnabled, codeWhispererSettings::toggleProjectContextEnabled)
+                    bindSelected({ (codeWhispererSettings::isProjectContextEnabled)(project) }, codeWhispererSettings::toggleProjectContextEnabled)
                 }.comment(message("aws.settings.codewhisperer.project_context.tooltip"))
             }
 

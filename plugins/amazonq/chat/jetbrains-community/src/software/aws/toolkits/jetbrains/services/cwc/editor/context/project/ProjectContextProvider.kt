@@ -38,7 +38,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val scope = disposableCoroutineScope(this)
     init {
         scope.launch {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled(project)) {
                 while (true) {
                     if (encoderServer.isNodeProcessRunning()) {
                         // TODO: need better solution for this

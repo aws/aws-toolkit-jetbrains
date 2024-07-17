@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 
 class ProjectContextEditorListener : FileEditorManagerListener {
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+        if (CodeWhispererSettings.getInstance().isProjectContextEnabled(source.project)) {
             ProjectContextController.getInstance(source.project).updateIndex(file.path)
         }
     }

@@ -211,7 +211,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             insertedCode.messageId,
             lang,
             percentage,
-            CodeWhispererSettings.getInstance().isProjectContextEnabled()
+            CodeWhispererSettings.getInstance().isProjectContextEnabled(project)
         )
     }
 
