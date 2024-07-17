@@ -10,6 +10,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.ui.content.Content
+import com.intellij.ui.content.ContentManager
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -56,18 +58,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun onRefresh() {
                     runInEdt {
                         contentManager.removeAllContents(true)
-                        val component = if (isQConnected(project) && !isQExpired(project)) {
-                            AmazonQToolWindow.getInstance(project).component
-                        } else {
-                            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
-                            QWebviewPanel.getInstance(project).component
-                        }
-
-                        val content = contentManager.factory.createContent(component, null, false).also {
-                            it.isCloseable = true
-                            it.isPinnable = true
-                        }
-                        contentManager.addContent(content)
+                        prepareChatContent(project, contentManager)
                     }
                 }
             }
@@ -93,6 +84,16 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
+        val content = prepareChatContent(project, contentManager)
+
+        toolWindow.activate(null)
+        contentManager.setSelectedContent(content)
+    }
+
+    private fun prepareChatContent(
+        project: Project,
+        contentManager: ContentManager
+    ): Content {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
@@ -105,8 +106,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             it.isPinnable = true
         }
         contentManager.addContent(content)
-        toolWindow.activate(null)
-        contentManager.setSelectedContent(content)
+        return content
     }
 
     override fun init(toolWindow: ToolWindow) {
