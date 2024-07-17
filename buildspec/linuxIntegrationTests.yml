@@ -33,7 +33,7 @@ phases:
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
-      - AWS_CONFIG_FILE=`mktemp`
+      - AWS_CONFIG_FILE="~/.aws/config"
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn = $ASSUME_ROLE_ARN
