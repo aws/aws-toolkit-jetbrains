@@ -34,6 +34,8 @@ phases:
         fi
 
       - AWS_CONFIG_FILE="~/.aws/config"
+      - mkdir "~/.aws"
+      - touch "~/.aws/config"
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn = $ASSUME_ROLE_ARN
