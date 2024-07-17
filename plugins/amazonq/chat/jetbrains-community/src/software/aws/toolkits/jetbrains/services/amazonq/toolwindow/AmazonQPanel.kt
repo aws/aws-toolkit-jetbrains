@@ -75,7 +75,7 @@ class AmazonQPanel(
             }
             browser = null
         } else {
-            browser = Browser(parent).also {
+            browser = Browser().also {
                 webviewContainer.add(it.component())
             }
         }

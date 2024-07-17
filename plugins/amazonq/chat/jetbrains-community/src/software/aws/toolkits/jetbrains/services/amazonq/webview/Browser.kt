@@ -15,9 +15,9 @@ typealias MessageReceiver = Function<String, JBCefJSQuery.Response>
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable) : Disposable {
+class Browser() : Disposable {
 
-    val jcefBrowser = createBrowser(parent)
+    val jcefBrowser = createBrowser(this)
 
     val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
 
