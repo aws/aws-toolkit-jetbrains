@@ -94,13 +94,6 @@ tasks.withType<Test>().all {
         // 221+ uses a custom classloader and jacoco fails to find classes
         isIncludeNoLocationClasses = true
     }
-
-    jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
-    if (System.getProperty("os.name").contains("indows")) {
-        jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
-    } else {
-        jvmArgs("-XX:OnError=ps auxww")
-    }
 }
 
 // Jacoco configs taken from official Gradle docs: https://docs.gradle.org/current/userguide/structuring_software_products.html

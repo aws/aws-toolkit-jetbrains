@@ -85,3 +85,16 @@ fun ProjectSettings.taskTriggers(action: TaskTriggersConfig.() -> Unit, ) = (thi
 tasks.coverageReport {
     mustRunAfter(rootProject.subprojects.map { it.tasks.withType<AbstractTestTask>() })
 }
+
+allprojects {
+    tasks.configureEach {
+        if (this is JavaExec) {
+            jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
+            if (System.getProperty("os.name").contains("indows")) {
+                jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
+            } else {
+                jvmArgs("-XX:OnError=ps auxww")
+            }
+        }
+    }
+}
