@@ -115,9 +115,8 @@ abstract class LoginBrowser(
         }
     }
 
-    protected fun getOnPendingToken(credentialSourceId: CredentialSourceId): (InteractiveBearerTokenProvider) -> Unit = { provider ->
-        startBrowserOpenTimer(credentialSourceId)
-        provider
+    protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+        startBrowserOpenTimer(if (provider.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -201,7 +200,7 @@ abstract class LoginBrowser(
 
         loginWithBackgroundContext {
             Login
-                .BuilderId(scopes, getOnPendingToken(CredentialSourceId.AwsId), onError, onSuccess)
+                .BuilderId(scopes, onPendingToken, onError, onSuccess)
                 .loginBuilderId(project)
         }
     }
@@ -250,7 +249,7 @@ abstract class LoginBrowser(
         }
         loginWithBackgroundContext {
             Login
-                .IdC(url, region, scopes, getOnPendingToken(CredentialSourceId.IamIdentityCenter), onSuccess, onError)
+                .IdC(url, region, scopes, onPendingToken, onSuccess, onError)
                 .loginIdc(project)
         }
     }
@@ -316,7 +315,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, getOnPendingToken(CredentialSourceId.AwsId))
+                reauthConnectionIfNeeded(project, connection, onPendingToken)
             }
             stopAndClearBrowserOpenTimer()
         }

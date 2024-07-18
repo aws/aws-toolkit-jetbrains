@@ -316,7 +316,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             // TODO: telemetry
         }
 
-        val login = Login.IdC(url, region, scopes, getOnPendingToken(CredentialSourceId.IamIdentityCenter), onIdCSuccess, onIdCError)
+        val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
 
         loginWithBackgroundContext {
             val connection = login.loginIdc(project)
