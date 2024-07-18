@@ -25,7 +25,6 @@ class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refre
     }
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
-
 }
 
 interface RefreshQChatPanelButtonPressedListener : EventListener {

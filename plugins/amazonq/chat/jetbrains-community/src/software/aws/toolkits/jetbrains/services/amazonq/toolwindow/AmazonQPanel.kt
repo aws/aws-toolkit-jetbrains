@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.intellij.idea.AppMode
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
@@ -17,9 +16,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
 import java.awt.event.ActionListener
 import javax.swing.JButton
 
-class AmazonQPanel(
-    private val parent: Disposable,
-) {
+class AmazonQPanel {
     private val webviewContainer = Wrapper()
     var browser: Browser? = null
         private set
