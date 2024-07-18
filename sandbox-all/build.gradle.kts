@@ -5,9 +5,8 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
-//    id("toolkit-intellij-plugin")
+    id("toolkit-intellij-plugin")
     id("org.jetbrains.intellij")
-    id("temp-toolkit-intellij-root-conventions")
 }
 
 toolkitIntelliJ.apply {

@@ -91,8 +91,6 @@ tasks.withType<RunIdeForUiTestTask>().all {
     systemProperty("apple.laf.useScreenMenuBar", "false")
     systemProperty("ide.mac.file.chooser.native", "false")
 
-    println("Running UI tests with IntelliJ version")
-
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")

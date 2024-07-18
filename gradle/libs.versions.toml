@@ -7,7 +7,7 @@ awsSdk = "2.25.33"
 commonmark = "0.17.1"
 detekt = "1.23.6"
 intellijGradle = "1.17.3"
-intellijRemoteRobot = "0.11.23"
+intellijRemoteRobot = "0.11.22"
 jackson = "2.16.1"
 jacoco = "0.8.12"
 jgit = "6.5.0.202303070854-r"
@@ -31,7 +31,7 @@ sshd = "2.12.1"
 wiremock = "3.3.1"
 undercouch-download = "5.2.1"
 zjsonpatch = "0.4.16"
-nimbus-jose-jwt = "9.24.4"
+nimbus-jose-jwt = "9.40"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
