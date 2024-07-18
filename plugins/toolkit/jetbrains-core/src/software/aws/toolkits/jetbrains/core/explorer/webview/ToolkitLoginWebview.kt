@@ -308,11 +308,11 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
         val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             // TODO: telemetry
         }
         val onIdCSuccess: () -> Unit = {
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             // TODO: telemetry
         }
 

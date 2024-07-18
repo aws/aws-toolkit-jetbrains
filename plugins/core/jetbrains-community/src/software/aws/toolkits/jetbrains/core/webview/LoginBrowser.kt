@@ -46,6 +46,7 @@ import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.Future
@@ -99,14 +100,14 @@ abstract class LoginBrowser(
                         reason = "Browser authentication idle for more than 15min",
                         credentialSourceId = credentialSourceId
                     )
-                    stopBrowserOpenTimer()
+                    stopAndClearBrowserOpenTimer()
                 }
             },
-            900000, // 15min
+            Duration.ofMinutes(15).toMillis(),
         )
     }
 
-    protected fun stopBrowserOpenTimer() {
+    protected fun stopAndClearBrowserOpenTimer() {
         if (browserOpenTimer != null) {
             browserOpenTimer?.cancel()
             browserOpenTimer?.purge()
@@ -116,6 +117,7 @@ abstract class LoginBrowser(
 
     protected fun getOnPendingToken(credentialSourceId: CredentialSourceId): (InteractiveBearerTokenProvider) -> Unit = { provider ->
         startBrowserOpenTimer(credentialSourceId)
+        provider
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -137,7 +139,7 @@ abstract class LoginBrowser(
     protected fun writeValueAsString(o: Any) = objectMapper.writeValueAsString(o)
 
     protected fun cancelLogin() {
-        stopBrowserOpenTimer()
+        stopAndClearBrowserOpenTimer()
         // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
         // status. There might be a risk of race condition here by changing this global, for which effort
         // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
@@ -168,7 +170,7 @@ abstract class LoginBrowser(
 
     open fun loginBuilderId(scopes: List<String>) {
         val onError: (Exception) -> Unit = { e ->
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             tryHandleUserCanceledLogin(e)
             AwsTelemetry.loginWithBrowser(
                 project = null,
@@ -184,7 +186,7 @@ abstract class LoginBrowser(
             )
         }
         val onSuccess: () -> Unit = {
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = SONO_URL,
@@ -209,7 +211,7 @@ abstract class LoginBrowser(
         val isReAuth = isReAuth(scopes)
 
         val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             val message = ssoErrorMessageFromException(e)
             if (!tryHandleUserCanceledLogin(e)) {
                 LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
@@ -230,7 +232,7 @@ abstract class LoginBrowser(
             )
         }
         val onSuccess: () -> Unit = {
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 result = Result.Succeeded,
@@ -316,7 +318,7 @@ abstract class LoginBrowser(
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, getOnPendingToken(CredentialSourceId.AwsId))
             }
-            stopBrowserOpenTimer()
+            stopAndClearBrowserOpenTimer()
         }
     }
 
