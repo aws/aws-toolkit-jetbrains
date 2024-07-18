@@ -14,7 +14,7 @@ import software.aws.toolkits.resources.AmazonQBundle
 import software.aws.toolkits.resources.message
 import java.util.EventListener
 
-class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refresh.panel"), null, AllIcons.Actions.Refresh) {
+class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refresh.panel"), "abcs", AllIcons.Actions.Refresh) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         // recreate chat browser
@@ -25,6 +25,7 @@ class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refre
     }
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
 }
 
 interface RefreshQChatPanelButtonPressedListener : EventListener {
