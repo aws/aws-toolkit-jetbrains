@@ -19,7 +19,7 @@ internal fun cannotFindFile(errorMessage: String, filepath: String): Nothing =
     error(message("codewhisperer.codescan.file_not_found", filepath, errorMessage))
 
 internal fun cannotFindBuildArtifacts(errorMessage: String): Nothing =
-    throw Exception(errorMessage)
+    throw CodeWhispererCodeScanException(errorMessage)
 
 internal fun fileFormatNotSupported(format: String): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_ext_not_supported", format))
