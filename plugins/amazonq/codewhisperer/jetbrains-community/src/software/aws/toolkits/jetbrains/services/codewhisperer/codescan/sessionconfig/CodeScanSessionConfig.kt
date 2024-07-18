@@ -93,9 +93,8 @@ class CodeScanSessionConfig(
 
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${projectRoot.path}" }
 
-        val payloadMetadata: PayloadMetadata
-        try {
-            payloadMetadata = when (selectedFile) {
+        val payloadMetadata: PayloadMetadata = try {
+            when (selectedFile) {
                 null -> getProjectPayloadMetadata()
                 else -> when (scope) {
                     CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
@@ -108,13 +107,11 @@ class CodeScanSessionConfig(
                 }
             }
         } catch (e: Exception) {
-            LOG.debug {
-                "Error creating payload metadata + ${e.message}"
+            val errorMessage = when {
+                e.message?.contains("Illegal repetition near index") == true -> "Illegal repetition near index"
+                else -> e.message
             }
-            var errorMessage = e.message
-            if (e.message?.contains("Illegal repetition near index") == true) {
-                errorMessage = "Illegal repetition near index"
-            }
+            LOG.debug { "Error creating payload metadata: $errorMessage" }
             throw cannotFindBuildArtifacts(errorMessage ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
         }
 
