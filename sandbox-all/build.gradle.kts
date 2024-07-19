@@ -8,6 +8,7 @@ import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 plugins {
     id("toolkit-intellij-plugin")
     id("org.jetbrains.intellij.platform")
+    id("temp-toolkit-intellij-root-conventions")
 }
 
 toolkitIntelliJ.apply {
