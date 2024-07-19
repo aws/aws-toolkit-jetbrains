@@ -19,8 +19,6 @@ phases:
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
-      - mkdir /tmp/testArtifacts
-      - export AWS_CODEARTIFACT_NUGET_LOGFILE=/tmp/testArtifacts/codeArtifactNuGet.log
       # should probably be managed as an extension/rule in any tests that need a screen available
       - /usr/bin/Xvfb :22 -screen 0 1920x1080x24 &
 
@@ -33,9 +31,7 @@ phases:
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
-      - AWS_CONFIG_FILE="~/.aws/config"
-      - mkdir "~/.aws"
-      - touch "~/.aws/config"
+      - AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn = $ASSUME_ROLE_ARN
