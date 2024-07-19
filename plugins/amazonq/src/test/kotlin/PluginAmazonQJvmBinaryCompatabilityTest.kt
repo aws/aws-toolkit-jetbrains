@@ -40,19 +40,20 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
         //       6: getstatic     #72                 // Field migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.Companion:Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator$Companion;
         //       9: invokevirtual #78                 // Method migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator$Companion.getInstance:()Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator;
         //      19: invokestatic  #82                 // InterfaceMethod migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.listCustomizations$default:(Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator;Lcom/intellij/openapi/project/Project;ZILjava/lang/Object;)Ljava/util/List;
+        //      106: invokevirtual #106                // Method software/aws/toolkits/jetbrains/services/codewhisperer/customization/CustomizationUiItem.getCustomization:()Lsoftware/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization;
         //      140: invokeinterface #118,  3          // InterfaceMethod migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.switchCustomization:(Lcom/intellij/openapi/project/Project;Lsoftware/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization;)V
 
         // CodeWhispererModelConfigurator.getInstance()
         assertThat(Class.forName("migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator\$Companion").getMethod("getInstance").returnType)
             .isEqualTo(Class.forName("migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"))
 
-        val modelConfigurator = Class.forName("migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator")
+        val modelConfiguratorClazz = Class.forName("migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator")
         // CodeWhispererModelConfigurator.listCustomizations(...)
         // type erasure :/
         assertThat(
-            modelConfigurator.getMethod(
+            modelConfiguratorClazz.getMethod(
                 "listCustomizations\$default",
-                modelConfigurator,
+                modelConfiguratorClazz,
                 Class.forName("com.intellij.openapi.project.Project"),
                 // can't request primitive type using reflection
                 java.lang.Boolean.TYPE,
@@ -62,11 +63,15 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
         ).isEqualTo(Class.forName("java.util.List"))
 
         // CodeWhispererCustomization fields
-        val customization = Class.forName("software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization")
-        assertThat(customization.getField("arn").type).isEqualTo(Class.forName("java.lang.String"))
-        assertThat(customization.getField("name").type).isEqualTo(Class.forName("java.lang.String"))
+        val customizationClazz = Class.forName("software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization")
+        assertThat(customizationClazz.getField("arn").type).isEqualTo(Class.forName("java.lang.String"))
+        assertThat(customizationClazz.getField("name").type).isEqualTo(Class.forName("java.lang.String"))
+
+        // field CustomizationUiItem.customization
+        val customizationUiItem = Class.forName("software.aws.toolkits.jetbrains.services.codewhisperer.customization.CustomizationUiItem")
+        assertThat(customizationUiItem.getMethod("getCustomization").returnType).isEqualTo(customizationClazz)
 
         // CodeWhispererModelConfigurator.switchCustomization(...)
-        assertThat(modelConfigurator.getMethod("switchCustomization", Class.forName("com.intellij.openapi.project.Project"), customization).returnType).isEqualTo(Void.TYPE)
+        assertThat(modelConfiguratorClazz.getMethod("switchCustomization", Class.forName("com.intellij.openapi.project.Project"), customizationClazz).returnType).isEqualTo(Void.TYPE)
     }
 }
