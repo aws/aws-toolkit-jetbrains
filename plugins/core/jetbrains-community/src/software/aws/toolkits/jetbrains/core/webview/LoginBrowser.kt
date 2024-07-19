@@ -27,7 +27,12 @@ import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
@@ -41,6 +46,9 @@ import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.Future
 import java.util.function.Function
 
@@ -62,7 +70,6 @@ abstract class LoginBrowser(
 
         null
     }
-
     protected var currentAuthorization: PendingAuthorization? = null
 
     @VisibleForTesting
@@ -74,7 +81,42 @@ abstract class LoginBrowser(
 
     protected val selectionSettings = mutableMapOf<String, BearerConnectionSelectionSettings>()
 
+    private var browserOpenTimer: Timer? = null
+
+    private fun startBrowserOpenTimer(credentialSourceId: CredentialSourceId) {
+        browserOpenTimer = Timer()
+        browserOpenTimer?.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    AwsTelemetry.loginWithBrowser(
+                        project = null,
+                        credentialStartUrl = SONO_URL,
+                        result = Result.Failed,
+                        reason = "Browser authentication idle for more than 15min",
+                        credentialSourceId = credentialSourceId
+                    )
+                    AuthTelemetry.addConnection(
+                        result = Result.Failed,
+                        reason = "Browser authentication idle for more than 15min",
+                        credentialSourceId = credentialSourceId
+                    )
+                    stopAndClearBrowserOpenTimer()
+                }
+            },
+            Duration.ofMinutes(15).toMillis(),
+        )
+    }
+
+    protected fun stopAndClearBrowserOpenTimer() {
+        if (browserOpenTimer != null) {
+            browserOpenTimer?.cancel()
+            browserOpenTimer?.purge()
+            browserOpenTimer = null
+        }
+    }
+
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
+        startBrowserOpenTimer(if (provider.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -96,6 +138,7 @@ abstract class LoginBrowser(
     protected fun writeValueAsString(o: Any) = objectMapper.writeValueAsString(o)
 
     protected fun cancelLogin() {
+        stopAndClearBrowserOpenTimer()
         // Essentially Authorization becomes a mutable that allows browser and auth to communicate canceled
         // status. There might be a risk of race condition here by changing this global, for which effort
         // has been made to avoid it (e.g. Cancel button is only enabled if Authorization has been given
@@ -110,8 +153,23 @@ abstract class LoginBrowser(
         else -> ""
     }
 
+    private fun isReAuth(scopes: List<String>): Boolean = ToolkitConnectionManager.getInstance(project)
+        .let {
+            if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
+                it.activeConnectionForFeature(QConnection.getInstance()) != null
+            } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
+                it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
+            } else {
+                val activeCon = it.activeConnection()
+                val ccCon = it.activeConnectionForFeature(CodeCatalystConnection.getInstance())
+                val qCon = it.activeConnectionForFeature(QConnection.getInstance())
+                activeCon != null && activeCon != ccCon && activeCon != qCon
+            }
+        }
+
     open fun loginBuilderId(scopes: List<String>) {
         val onError: (Exception) -> Unit = { e ->
+            stopAndClearBrowserOpenTimer()
             tryHandleUserCanceledLogin(e)
             AwsTelemetry.loginWithBrowser(
                 project = null,
@@ -127,6 +185,7 @@ abstract class LoginBrowser(
             )
         }
         val onSuccess: () -> Unit = {
+            stopAndClearBrowserOpenTimer()
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = SONO_URL,
@@ -140,12 +199,18 @@ abstract class LoginBrowser(
         }
 
         loginWithBackgroundContext {
-            Login.BuilderId(scopes, onPendingToken, onError, onSuccess).loginBuilderId(project)
+            Login
+                .BuilderId(scopes, onPendingToken, onError, onSuccess)
+                .loginBuilderId(project)
         }
     }
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
+        // assumes scopes contains either Q or non-Q permissions but not both
+        val isReAuth = isReAuth(scopes)
+
         val onError: (Exception, AuthProfile) -> Unit = { e, profile ->
+            stopAndClearBrowserOpenTimer()
             val message = ssoErrorMessageFromException(e)
             if (!tryHandleUserCanceledLogin(e)) {
                 LOG.error(e) { "Failed to authenticate: message: $message; profile: $profile" }
@@ -153,19 +218,39 @@ abstract class LoginBrowser(
             AwsTelemetry.loginWithBrowser(
                 project = null,
                 credentialStartUrl = url,
+                isReAuth = isReAuth,
                 result = Result.Failed,
                 reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
+            AuthTelemetry.addConnection(
+                result = Result.Failed,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                reason = message,
+                isReAuth = isReAuth,
+            )
         }
-        loginWithBackgroundContext {
-            Login.IdC(url, region, scopes, onPendingToken, onError).loginIdc(project)
+        val onSuccess: () -> Unit = {
+            stopAndClearBrowserOpenTimer()
             AwsTelemetry.loginWithBrowser(
                 project = null,
-                credentialStartUrl = url,
                 result = Result.Succeeded,
+                isReAuth = isReAuth,
+                credentialType = CredentialType.BearerToken,
+                credentialStartUrl = url,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
+            AuthTelemetry.addConnection(
+                project = null,
+                result = Result.Succeeded,
+                isReAuth = isReAuth,
+                credentialSourceId = CredentialSourceId.IamIdentityCenter
+            )
+        }
+        loginWithBackgroundContext {
+            Login
+                .IdC(url, region, scopes, onPendingToken, onSuccess, onError)
+                .loginIdc(project)
         }
     }
 
@@ -232,6 +317,7 @@ abstract class LoginBrowser(
             loginWithBackgroundContext {
                 reauthConnectionIfNeeded(project, connection, onPendingToken)
             }
+            stopAndClearBrowserOpenTimer()
         }
     }
 
