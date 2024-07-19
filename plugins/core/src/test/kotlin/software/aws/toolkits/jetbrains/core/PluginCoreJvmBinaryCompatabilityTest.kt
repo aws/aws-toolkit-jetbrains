@@ -24,6 +24,7 @@ class PluginCoreJvmBinaryCompatabilityTest {
         //           Ljava/lang/Object;
         //       )Lsoftware/aws/toolkits/jetbrains/core/credentials/AwsBearerTokenConnection;
 
+        // loginSso(...)
         val clazz = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
         val method = clazz.getDeclaredMethod(
             "loginSso\$default",
@@ -49,7 +50,6 @@ class PluginCoreJvmBinaryCompatabilityTest {
         // $ javap -c -classpath aws-toolkit-amazonq-2024.1.jar <...>.amazonq.AmazonQConnectionService
         //   public final void authenticateInternal$aws_toolkit_amazonq(kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>);
         //      15: invokestatic  #91                 // Method software/aws/toolkits/jetbrains/core/credentials/sono/SonoConstantsKt.getCODEWHISPERER_SCOPES:()Ljava/util/List;
-        //      18: checkcast     #93                 // class java/util/Collection
         //      21: invokestatic  #96                 // Method software/aws/toolkits/jetbrains/core/credentials/sono/SonoConstantsKt.getQ_SCOPES:()Ljava/util/List;
 
         // not sure why CODEWHISPERER_SCOPES is being used when Q_SCOPES is a superset
