@@ -88,7 +88,7 @@ tasks.coverageReport {
 
 allprojects {
     tasks.configureEach {
-        if (this is JavaExec) {
+        if (this is JavaForkOptions) {
             jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
             if (System.getProperty("os.name").contains("Windows")) {
                 jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
