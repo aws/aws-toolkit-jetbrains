@@ -22,7 +22,6 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
         assertThat(authControllerClazz.getConstructor().canAccess(null)).isTrue()
 
         // AuthController#getAuthNeededStates
-        // type erasure :/
         assertThat(authControllerClazz.getMethod("getAuthNeededStates", Class.forName("com.intellij.openapi.project.Project")).returnType).isEqualTo(authNeededStatesClazz)
         // AuthNeededStates#getAmazonQ
         assertThat(authNeededStatesClazz.getMethod("getAmazonQ").returnType).isEqualTo(Class.forName("software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState"))
