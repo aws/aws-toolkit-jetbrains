@@ -85,11 +85,6 @@ dependencies {
     resharperDlls(project(":plugin-toolkit:jetbrains-rider", configuration = "resharperDlls"))
 }
 
-// Enable coverage for the UI test target IDE
-ciOnly {
-    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<TestIdeUiTask>())
-}
-
 tasks.withType<TestIdeUiTask>().configureEach {
     systemProperty("robot-server.port", remoteRobotPort)
     // mac magic
