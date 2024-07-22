@@ -15,6 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.utils.test.notNull
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
@@ -52,7 +53,7 @@ class ScpCommandLineTest {
         val file = newFile()
 
         val sut = ScpCommandLine(
-            "localhost",
+            sshServer.server.host,
             tempFolder.newFolder().absolutePath,
             recursive = false,
             port = sshServer.server.port
@@ -71,7 +72,7 @@ class ScpCommandLineTest {
         val file2 = newFile()
 
         val sut = ScpCommandLine(
-            "localhost",
+            sshServer.server.host,
             tempFolder.newFolder().absolutePath,
             recursive = false,
             port = sshServer.server.port
@@ -93,7 +94,7 @@ class ScpCommandLineTest {
 
         val destination = tempFolder.newFolder()
         val sut = ScpCommandLine(
-            "localhost",
+            sshServer.server.host,
             destination.toString(),
             recursive = true,
             port = sshServer.server.port
@@ -102,7 +103,7 @@ class ScpCommandLineTest {
 
         val paths = sut.executeScpTest()
 
-        assertThat(paths).singleElement().notNull.satisfies {
+        assertThat(paths).singleElement().notNull.satisfiesKt {
             assertThat(it.fileName.toString()).isEqualTo(uuid)
             // is nested
             assertThat(it.parent.fileName.toString()).isEqualTo(directory.name)
@@ -113,9 +114,11 @@ class ScpCommandLineTest {
         val paths = mutableListOf<Path?>()
         attachScpListener(paths)
 
-        ExecUtil.execAndGetOutput(
-            this.knownHostsLocation(tempFolder.newFile().toPath())
-                .constructCommandLine()
+        println(
+            ExecUtil.execAndGetOutput(
+                this.knownHostsLocation(tempFolder.newFile().toPath())
+                    .constructCommandLine()
+            )
         )
 
         return paths

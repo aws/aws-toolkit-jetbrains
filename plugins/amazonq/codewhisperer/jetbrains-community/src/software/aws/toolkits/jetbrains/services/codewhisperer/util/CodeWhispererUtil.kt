@@ -32,9 +32,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -120,13 +123,13 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
 fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
     var prevChunk: String? = null
     inputStream.bufferedReader(Charsets.UTF_8).useLines {
-        val iter = it.chunked(10).iterator()
+        val iter = it.chunked(NUMBER_OF_LINE_IN_CHUNK).iterator()
         while (iter.hasNext()) {
             val currentChunk = iter.next().joinToString("\n").trimEnd()
 
             // chunk[0]
             if (prevChunk == null) {
-                val first3Lines = currentChunk.split("\n").take(3).joinToString("\n").trimEnd()
+                val first3Lines = currentChunk.split("\n").take(NUMBER_OF_CHUNK_TO_FETCH).joinToString("\n").trimEnd()
                 yield(Chunk(content = first3Lines, path = path, nextChunk = currentChunk))
             } else {
                 // chunk[1]...chunk[n-1]
@@ -239,7 +242,7 @@ object CodeWhispererUtil {
     fun reconnectCodeWhisperer(project: Project) {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
-        ApplicationManager.getApplication().executeOnPooledThread {
+        pluginAwareExecuteOnPooledThread {
             reauthConnectionIfNeeded(project, connection)
         }
     }

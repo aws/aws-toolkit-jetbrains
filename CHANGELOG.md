@@ -1,3 +1,45 @@
+# _3.18_ (2024-07-19)
+- **(Feature)** Add support for 2024.2
+- **(Bug Fix)** Fix bug when workspace index cache is not loaded
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.1 and for IDEs based on the 2023.2 platform
+
+# _3.17_ (2024-07-15)
+- **(Feature)** Amazon Q/dev: proactively show code generation iterations
+- **(Bug Fix)** Don't allow Q/Core to be installed in the unsupported thin client context ([#4658](https://github.com/aws/aws-toolkit-jetbrains/issues/4658))
+- **(Bug Fix)** AmazonQ chat `@workspace` file indexing respects user's git-ignore
+- **(Bug Fix)** Amazon Q /dev command: improve user error messages
+
+# _3.16_ (2024-07-10)
+- **(Feature)** Add support for [Amazon Q Chat Workspace Context](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/workspace-context.html). Customers can use `@workspace` to ask questions regarding local workspace.
+
+# _3.15_ (2024-07-08)
+- **(Bug Fix)** Amazon Q Chat: Fixed button texts are cropped too short
+- **(Bug Fix)** Amazon Q Chat: Fixed button font sizes are too big
+- **(Bug Fix)** Expose Amazon Q backend validation error message
+- **(Bug Fix)** Amazon Q Security Scans: Fixed unnecessary yellow lines appearing in both auto scans and project scans.
+- **(Bug Fix)** Amazon Q: Fix an issue where inline suggestion will not properly show in JetBrains remote env 2024.1+
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible when multine text inserted with paste
+- **(Bug Fix)** Fix Q Chat not respecting system trust store unless a proxy is configured
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input and selected command horizontal alignment
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible if an html special character is inserted
+- **(Bug Fix)** Amazon Q Chat: Fixed buttons don't show borders inside a message
+
+# _3.14_ (2024-06-27)
+- **(Bug Fix)** Q Code Transform - Add troubleshooting document links to UI messages
+- **(Bug Fix)** Security Scan: Improved telemetry error messages
+- **(Bug Fix)** Feature Development: fix in progress UX during backend calls
+- **(Bug Fix)** Rewrite integration with the New Solution dialog in Rider to use the new API.
+
+# _3.13_ (2024-06-24)
+- **(Bug Fix)** Fix refresh token failure due to null aws error details
+
+# _3.12_ (2024-06-21)
+- **(Bug Fix)** Fix an issue where worker threads are unable to properly resolve the calling plugin, resulting in invalid telemetry data
+- **(Bug Fix)** Amazon Q Chat: Fixed broken code blocks with typewriter text in list items.
+- **(Bug Fix)** Feature Development: update /dev welcome message
+- **(Bug Fix)** Fix IDE auto completion settings potentially overwritten by Q inline suggestion
+- **(Bug Fix)** Fix infinite restart loop on <=241 when an incompatible version of AWS Toolkit is installed alongside Amazon Q ([#4519](https://github.com/aws/aws-toolkit-jetbrains/issues/4519))
+
 # _3.11_ (2024-06-13)
 - **(Feature)** Amazon Q Code Transform: Allow user to view transformation build log
 - **(Bug Fix)** Fix intermittent validation exception from CodeWhisperer service for improperly formed request

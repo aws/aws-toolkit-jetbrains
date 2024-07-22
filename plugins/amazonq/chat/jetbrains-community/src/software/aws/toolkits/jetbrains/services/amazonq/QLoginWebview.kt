@@ -3,14 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -19,19 +18,17 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
+import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
@@ -40,9 +37,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
-import java.util.function.Function
 import javax.swing.JButton
 import javax.swing.JComponent
 
@@ -77,6 +74,19 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 
     init {
+        init()
+    }
+
+    fun disposeAndRecreate() {
+        webviewContainer.removeAll()
+        val toDispose = browser
+        init()
+        if (toDispose != null) {
+            Disposer.dispose(toDispose)
+        }
+    }
+
+    private fun init() {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
@@ -96,88 +106,16 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 }
 
-class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : LoginBrowser(
-    project,
-    QWebviewBrowser.DOMAIN,
-    QWebviewBrowser.WEB_SCRIPT_URI
-) {
+class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) :
+    LoginBrowser(
+        project,
+        QWebviewBrowser.DOMAIN,
+        QWebviewBrowser.WEB_SCRIPT_URI
+    ),
+    Disposable {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(parentDisposable)
     private val query = JBCefJSQuery.create(jcefBrowser)
-    private val objectMapper = jacksonObjectMapper()
-
-    private val handler = Function<String, JBCefJSQuery.Response> {
-        val jsonTree = objectMapper.readTree(it)
-        val command = jsonTree.get("command").asText()
-        LOG.debug { "Data received from Q browser: ${jsonTree.asText()}" }
-
-        when (command) {
-            "prepareUi" -> {
-                this.prepareBrowser(BrowserState(FeatureId.Q, false))
-                WebviewTelemetry.amazonqSignInOpened(
-                    project,
-                    reAuth = isQExpired(project)
-                )
-            }
-
-            "selectConnection" -> {
-                val connId = jsonTree.get("connectionId").asText()
-                this.selectionSettings[connId]?.let { settings ->
-                    settings.onChange(settings.currentSelection)
-                }
-            }
-
-            "loginBuilderId" -> {
-                loginBuilderId(Q_SCOPES)
-            }
-
-            "loginIdC" -> {
-                // TODO: make it type safe, maybe (de)serialize into a data class
-                val url = jsonTree.get("url").asText()
-                val region = jsonTree.get("region").asText()
-                val awsRegion = AwsRegionProvider.getInstance()[region] ?: error("unknown region returned from Q browser")
-
-                val scopes = Q_SCOPES
-
-                loginIdC(url, awsRegion, scopes)
-            }
-
-            "cancelLogin" -> {
-                cancelLogin()
-            }
-
-            "signout" -> {
-                (
-                    ToolkitConnectionManager.getInstance(project)
-                        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-                    )?.let { connection ->
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "qBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
-                        )
-                    )
-                }
-            }
-
-            "reauth" -> {
-                ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { conn ->
-                    if (conn is ManagedBearerSsoConnection) {
-                        ApplicationManager.getApplication().executeOnPooledThread {
-                            reauthConnectionIfNeeded(project, conn, onPendingToken)
-                        }
-                    }
-                }
-            }
-
-            else -> {
-                error("received unknown command from Q browser: $command")
-            }
-        }
-
-        null
-    }
 
     init {
         CefApp.getInstance()
@@ -192,10 +130,76 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         loadWebView(query)
 
-        query.addHandler(handler)
+        query.addHandler(jcefHandler)
+    }
+
+    override fun dispose() {
+        Disposer.dispose(jcefBrowser)
     }
 
     fun component(): JComponent? = jcefBrowser.component
+
+    override fun handleBrowserMessage(message: BrowserMessage?) {
+        if (message == null) {
+            return
+        }
+
+        when (message) {
+            is BrowserMessage.PrepareUi -> {
+                this.prepareBrowser(BrowserState(FeatureId.Q, false))
+                WebviewTelemetry.amazonqSignInOpened(
+                    project,
+                    reAuth = isQExpired(project)
+                )
+            }
+
+            is BrowserMessage.SelectConnection -> {
+                this.selectionSettings[message.connectionId]?.let { settings ->
+                    settings.onChange(settings.currentSelection)
+                }
+            }
+
+            is BrowserMessage.LoginBuilderId -> {
+                loginBuilderId(Q_SCOPES)
+            }
+
+            is BrowserMessage.LoginIdC -> {
+                val awsRegion = AwsRegionProvider.getInstance()[message.region] ?: error("unknown region returned from Q browser")
+                loginIdC(message.url, awsRegion, Q_SCOPES)
+            }
+
+            is BrowserMessage.CancelLogin -> {
+                cancelLogin()
+            }
+
+            is BrowserMessage.Signout -> {
+                (
+                    ToolkitConnectionManager.getInstance(project)
+                        .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                    )?.let { connection ->
+                    SsoLogoutAction(connection).actionPerformed(
+                        AnActionEvent.createFromDataContext(
+                            "qBrowser",
+                            null,
+                            DataContext.EMPTY_CONTEXT
+                        )
+                    )
+                }
+            }
+
+            is BrowserMessage.Reauth -> {
+                reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()))
+            }
+
+            is BrowserMessage.LoginIAM, is BrowserMessage.ToggleBrowser -> {
+                error("QBrowser doesn't support the provided command ${message::class.simpleName}")
+            }
+
+            is BrowserMessage.SendTelemetry -> {
+                UiTelemetry.click(project, "auth_continueButton")
+            }
+        }
+    }
 
     override fun prepareBrowser(state: BrowserState) {
         // TODO: duplicate code in ToolkitLoginWebview
@@ -230,7 +234,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         // available regions
         val regions = AwsRegionProvider.getInstance().allRegionsForService("sso").values.let {
-            objectMapper.writeValueAsString(it)
+            writeValueAsString(it)
         }
 
         // TODO: pass "REAUTH" if connection expires
@@ -251,7 +255,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 },
                 cancellable: ${state.browserCancellable},
                 feature: '${state.feature}',
-                existConnections: ${objectMapper.writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
+                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
             }
         """.trimIndent()
         executeJS("window.ideClient.prepareUi($jsonData)")

@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 
@@ -104,6 +105,7 @@ class SetupAuthenticationDialogTest {
                 UserConfigSsoSessionProfile("", region.id, startUrl, scopes),
                 configFacade,
                 any(),
+                any(),
                 any()
             )
         }
@@ -157,6 +159,7 @@ class SetupAuthenticationDialogTest {
                 projectExtension.project,
                 UserConfigSsoSessionProfile("", region.id, startUrl, scopes + "sso:account:access"),
                 configFacade,
+                any(),
                 any(),
                 any()
             )
@@ -212,7 +215,7 @@ class SetupAuthenticationDialogTest {
                 }
             }
 
-            assertThat(validation).satisfies {
+            assertThat(validation).satisfiesKt {
                 assertThat(it).hasSize(2)
                 assertThat(it).allSatisfy { error ->
                     assertThat(error.message).contains("Must not be empty")
@@ -266,7 +269,7 @@ class SetupAuthenticationDialogTest {
                 }
             }
 
-            assertThat(validation).satisfies {
+            assertThat(validation).satisfiesKt {
                 assertThat(it).hasSize(3)
                 assertThat(it).allSatisfy { error ->
                     assertThat(error.message).contains("Must not be empty")

@@ -8,7 +8,6 @@ import com.intellij.dvcs.repo.ClonePathProvider
 import com.intellij.dvcs.ui.CloneDvcsValidationUtils
 import com.intellij.dvcs.ui.SelectChildTextFieldWithBrowseButton
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -20,12 +19,12 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SearchTextField
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.layout.listCellRenderer
 import com.intellij.util.ui.StatusText
 import com.intellij.util.ui.UIUtil
 import git4idea.checkout.GitCheckoutProvider
@@ -46,6 +45,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
 import software.aws.toolkits.jetbrains.services.caws.pat.generateAndStorePat
 import software.aws.toolkits.jetbrains.services.caws.pat.patExists
 import software.aws.toolkits.jetbrains.ui.connection.CawsLoginOverlay
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodecatalystTelemetry
 import java.net.URI
@@ -64,7 +64,7 @@ class CawsCloneDialogComponent(
     private val repoList = JBList(repoListModel).apply {
         setPaintBusy(true)
         setEmptyText(message("loading_resource.loading"))
-        cellRenderer = listCellRenderer { value, _, _ -> text = value.presentableString }
+        cellRenderer = SimpleListCellRenderer.create("") { it.presentableString }
 
         addListSelectionListener { _ ->
             selectedValue?.let {
@@ -83,7 +83,7 @@ class CawsCloneDialogComponent(
 
     override fun doClone(checkoutListener: CheckoutProvider.Listener) {
         val repository = repoList.selectedValue ?: throw RuntimeException("Repository was not selected")
-        ApplicationManager.getApplication().executeOnPooledThread {
+        pluginAwareExecuteOnPooledThread {
             val userId = lazilyGetUserId()
             try {
                 // TODO: show progress bar here so it doesn't look like we're stuck

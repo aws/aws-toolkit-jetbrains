@@ -393,7 +393,8 @@
                 "fullResponselatency": { "shape": "Double" },
                 "requestLength": { "shape": "Integer" },
                 "responseLength": { "shape": "Integer" },
-                "numberOfCodeBlocks": { "shape": "Integer" }
+                "numberOfCodeBlocks": { "shape": "Integer" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatHistory":{
@@ -412,7 +413,8 @@
                 "interactionTarget": { "shape": "String" },
                 "acceptedCharacterCount": { "shape": "Integer" },
                 "acceptedLineCount": { "shape": "Integer" },
-                "acceptedSnippetHasReference": { "shape": "Boolean" }
+                "acceptedSnippetHasReference": { "shape": "Boolean" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "CreateTaskAssistConversationRequest": {
@@ -456,6 +458,13 @@
                 "DOWNVOTE"
             ]
         },
+        "FeatureDevEvent": {
+            "type": "structure",
+            "required": ["conversationId"],
+            "members": {
+                "conversationId": { "shape":  "ConversationId" }
+            }
+        },
         "ChatUserModificationEvent": {
             "type": "structure",
             "required": ["conversationId", "messageId", "modificationPercentage"],
@@ -463,7 +472,8 @@
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
-                "modificationPercentage": { "shape": "Double" }
+                "modificationPercentage": { "shape": "Double" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatTriggerType":{
@@ -531,6 +541,11 @@
                 "status":{"shape":"CodeGenerationWorkflowStatus"},
                 "currentStage":{"shape":"CodeGenerationWorkflowStage"}
             }
+        },
+        "CodeGenerationStatusDetail":{
+            "type":"string",
+            "documentation":"<p>Detailed message about the code generation status</p>",
+            "sensitive":true
         },
         "CodeGenerationWorkflowStage":{
             "type":"string",
@@ -1009,6 +1024,15 @@
                 },
                 "codeGenerationStatus": {
                     "shape": "CodeGenerationStatus"
+                },
+                "codeGenerationStatusDetail": {
+                    "shape": "CodeGenerationStatusDetail"
+                },
+                "codeGenerationRemainingIterationCount": {
+                    "shape": "Integer"
+                },
+                "codeGenerationTotalIterationCount": {
+                    "shape": "Integer"
                 }
             }
         },
@@ -1593,7 +1617,8 @@
                 "metricData":{"shape":"MetricData"},
                 "chatAddMessageEvent": { "shape": "ChatAddMessageEvent" },
                 "chatInteractWithMessageEvent": { "shape": "ChatInteractWithMessageEvent" },
-                "chatUserModificationEvent": { "shape": "ChatUserModificationEvent" }
+                "chatUserModificationEvent": { "shape": "ChatUserModificationEvent" },
+                "featureDevEvent":  { "shape":  "FeatureDevEvent" }
             },
             "union":true
         },

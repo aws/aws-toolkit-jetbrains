@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeGeneration
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTaskAssistCodeGenerationResponse
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
@@ -70,6 +71,10 @@ open class FeatureDevTestBase(
     internal val testChecksumSha = "test-sha"
     internal val testContentLength: Long = 40
 
+    internal val exampleSendTelemetryEventResponse = SendTelemetryEventResponse.builder()
+        .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
+        .build() as SendTelemetryEventResponse
+
     internal val exampleCreateTaskAssistConversationResponse = CreateTaskAssistConversationResponse.builder()
         .conversationId(testConversationId)
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
@@ -99,6 +104,8 @@ open class FeatureDevTestBase(
     internal val exampleCompleteGetTaskAssistCodeGenerationResponse = GetTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
         .codeGenerationStatus(CodeGenerationStatus.builder().status(CodeGenerationWorkflowStatus.COMPLETE).currentStage("Complete").build())
+        .codeGenerationRemainingIterationCount(2)
+        .codeGenerationTotalIterationCount(3)
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as GetTaskAssistCodeGenerationResponse
 

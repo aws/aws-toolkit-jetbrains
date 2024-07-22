@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
@@ -25,6 +26,9 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CredentialType
+import software.aws.toolkits.telemetry.Result
+import java.time.Instant
 
 sealed interface ToolkitConnection {
     val id: String
@@ -100,6 +104,9 @@ interface ToolkitConnectionManager : Disposable {
 
 /**
  * Individual service should subscribe [ToolkitConnectionManagerListener.TOPIC] to fire their service activation / UX update
+ *
+ * IMPORTANT: Do *not* update this method signature without consultation; an internal partner consumes this method.
+ * Inter-plugin calls require relinking on each method signature change, even if it looks safe from a Kotlin standpoint.
  */
 @Deprecated("Connections created through this function are not written to the user's ~/.aws/config file")
 fun loginSso(
@@ -110,12 +117,28 @@ fun loginSso(
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
     onError: (Exception) -> Unit = {},
     onSuccess: () -> Unit = {},
+    metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
             authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
-                reauthConnectionIfNeeded(project, transientConnection, onPendingToken)
+                reauthConnectionIfNeeded(
+                    project = project,
+                    connection = transientConnection,
+                    onPendingToken = onPendingToken,
+                )
+                recordLoginWithBrowser(
+                    credentialStartUrl = transientConnection.startUrl,
+                    credentialSourceId = metadata?.sourceId,
+                    isReAuth = true,
+                    result = Result.Succeeded
+                )
+                recordAddConnection(
+                    credentialSourceId = metadata?.sourceId,
+                    isReAuth = true,
+                    result = Result.Failed
+                )
             }
         } catch (e: Exception) {
             onError(e)
@@ -162,7 +185,10 @@ fun loginSso(
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
-        reauthConnectionIfNeeded(project, connection)
+        reauthConnectionIfNeeded(
+            project = project,
+            connection = connection,
+        )
         return connection
     } ?: run {
         // No existing connection, start from scratch
@@ -213,22 +239,18 @@ fun AwsBearerTokenConnection.lazyIsUnauthedBearerConnection(): Boolean {
 fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
-    onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {}
+    onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
         onPendingToken(tokenProvider)
     }
-    return reauthProviderIfNeeded(project, tokenProvider)
-}
 
-fun reauthProviderIfNeeded(project: Project?, tokenProvider: BearerTokenProvider): BearerTokenProvider {
     maybeReauthProviderIfNeeded(project, tokenProvider) {
         runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
             tokenProvider.reauthenticate()
         }
     }
-
     return tokenProvider
 }
 
@@ -278,3 +300,50 @@ private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdenti
     connection as ProfileCredentialsIdentifierSso
     return connection.ssoSessionName
 }
+
+private fun recordLoginWithBrowser(
+    credentialStartUrl: String? = null,
+    credentialSourceId: String? = null,
+    reason: String? = null,
+    isReAuth: Boolean,
+    result: Result
+) {
+    TelemetryService.getInstance().record(null as Project?) {
+        datum("aws_loginWithBrowser") {
+            createTime(Instant.now())
+            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            value(1.0)
+            passive(false)
+            credentialSourceId?.let { metadata("credentialSourceId", it) }
+            credentialStartUrl?.let { metadata("credentialStartUrl", it) }
+            metadata("credentialType", CredentialType.BearerToken.toString())
+            metadata("isReAuth", isReAuth.toString())
+            reason?.let { metadata("reason", it) }
+            metadata("result", result.toString())
+        }
+    }
+}
+
+private fun recordAddConnection(
+    credentialSourceId: String? = null,
+    reason: String? = null,
+    isReAuth: Boolean,
+    result: Result
+) {
+    TelemetryService.getInstance().record(null as Project?) {
+        datum("auth_addConnection") {
+            createTime(Instant.now())
+            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            value(1.0)
+            passive(false)
+            credentialSourceId?.let { metadata("credentialSourceId", it) }
+            metadata("isReAuth", isReAuth.toString())
+            reason?.let { metadata("reason", it) }
+            metadata("result", result.toString())
+        }
+    }
+}
+
+data class ConnectionMetadata(
+    val sourceId: String? = null
+)

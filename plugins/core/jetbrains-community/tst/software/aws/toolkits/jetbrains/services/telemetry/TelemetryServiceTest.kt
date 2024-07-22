@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.waitUntilConnectionState
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.sts.StsResources
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -78,9 +79,10 @@ class TelemetryServiceTest {
 
         val changeCountDown = CountDownLatch(1)
         val changeCaptor = argumentCaptor<Boolean>()
+        val onChangeEventCaptor = argumentCaptor<(Boolean) -> Unit>()
 
         val batcher = mock<TelemetryBatcher> {
-            on { onTelemetryEnabledChanged(changeCaptor.capture()) }
+            on { onTelemetryEnabledChanged(changeCaptor.capture(), onChangeEventCaptor.capture()) }
                 .doAnswer {
                     changeCountDown.countDown()
                 }
@@ -89,7 +91,8 @@ class TelemetryServiceTest {
         TestTelemetryService(batcher = batcher)
 
         changeCountDown.await(5, TimeUnit.SECONDS)
-        verify(batcher).onTelemetryEnabledChanged(true)
+        assertThat(onChangeEventCaptor.allValues).hasSize(1)
+        verify(batcher).onTelemetryEnabledChanged(true, onChangeEventCaptor.firstValue)
         assertThat(changeCaptor.allValues).hasSize(1)
         assertThat(changeCaptor.firstValue).isEqualTo(true)
     }
@@ -100,24 +103,33 @@ class TelemetryServiceTest {
 
         val changeCountDown = CountDownLatch(3)
         val changeCaptor = argumentCaptor<Boolean>()
+        val onChangeEventCaptor = argumentCaptor<(Boolean) -> Unit>()
 
         val batcher = mock<TelemetryBatcher>()
 
         batcher.stub {
-            on(batcher.onTelemetryEnabledChanged(changeCaptor.capture()))
+            on(batcher.onTelemetryEnabledChanged(changeCaptor.capture(), onChangeEventCaptor.capture()))
                 .doAnswer {
                     changeCountDown.countDown()
                 }
         }
 
+        val dummyEnabledEvent: (Boolean) -> Unit = {
+            assertThat(it).isTrue()
+        }
+        val dummyDisabledEvent: (Boolean) -> Unit = {
+            assertThat(it).isFalse()
+        }
         val telemetryService = TestTelemetryService(batcher = batcher)
 
-        telemetryService.setTelemetryEnabled(false)
-        telemetryService.setTelemetryEnabled(true)
+        telemetryService.setTelemetryEnabled(false, dummyDisabledEvent)
+        telemetryService.setTelemetryEnabled(true, dummyEnabledEvent)
 
         changeCountDown.await(5, TimeUnit.SECONDS)
-        verify(batcher, times(2)).onTelemetryEnabledChanged(true)
-        verify(batcher).onTelemetryEnabledChanged(false)
+        assertThat(onChangeEventCaptor.allValues).hasSize(3)
+        verify(batcher).onTelemetryEnabledChanged(true, onChangeEventCaptor.firstValue)
+        verify(batcher).onTelemetryEnabledChanged(true, dummyEnabledEvent)
+        verify(batcher).onTelemetryEnabledChanged(false, dummyDisabledEvent)
         assertThat(changeCaptor.allValues).hasSize(3)
         assertThat(changeCaptor.firstValue).isEqualTo(true)
         assertThat(changeCaptor.secondValue).isEqualTo(false)
@@ -267,9 +279,11 @@ class TelemetryServiceTest {
     private fun assertMetricEventsContains(events: Collection<MetricEvent>, eventName: String, awsAccount: String, awsRegion: String) {
         assertThat(events).filteredOn { event ->
             event.data.any { it.name == eventName }
-        }.anySatisfy {
-            assertThat(it.awsAccount).isEqualTo(awsAccount)
-            assertThat(it.awsRegion).isEqualTo(awsRegion)
+        }.anySatisfy { element ->
+            assertThat(element).isInstanceOfSatisfying<MetricEvent> {
+                assertThat(it.awsAccount).isEqualTo(awsAccount)
+                assertThat(it.awsRegion).isEqualTo(awsRegion)
+            }
         }
     }
 }
