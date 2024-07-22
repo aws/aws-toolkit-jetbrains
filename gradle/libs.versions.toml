@@ -30,7 +30,7 @@ testRetry = "1.5.10"
 slf4j = "2.0.9"
 sshd = "2.12.1"
 wiremock = "3.3.1"
-undercouch-download = "5.2.1"
+undercouch-download = "5.6.0"
 zjsonpatch = "0.4.16"
 nimbus-jose-jwt = "9.40"
 
