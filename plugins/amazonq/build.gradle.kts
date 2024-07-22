@@ -11,6 +11,7 @@ plugins {
     id("toolkit-publishing-conventions")
     id("toolkit-publish-root-conventions")
     id("toolkit-jvm-conventions")
+    id("toolkit-testing")
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
@@ -35,22 +36,8 @@ dependencies {
     implementation(project(":plugin-amazonq:codewhisperer"))
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(project(":plugin-amazonq:shared"))
-}
 
-val moduleOnlyJar = tasks.create<Jar>("moduleOnlyJar") {
-    archiveClassifier.set("module-only")
-    // empty jar
-}
-
-val moduleOnlyJars by configurations.creating {
-    isCanBeConsumed = true
-    isCanBeResolved = false
-    // If you want this configuration to share the same dependencies, otherwise omit this line
-    extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
-}
-
-artifacts {
-    add("moduleOnlyJars", moduleOnlyJar)
+    testImplementation(project(":plugin-core"))
 }
 
 tasks.check {
