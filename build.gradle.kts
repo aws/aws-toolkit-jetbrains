@@ -91,9 +91,9 @@ allprojects {
         if (this is JavaForkOptions) {
             jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
             if (System.getProperty("os.name").contains("Windows")) {
-                jvmArgs("-XX:OnOutOfMemoryError=powershell.exe ${rootProject.file("dump.ps1")}")
+                jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
             } else {
-                jvmArgs("-XX:OnOutOfMemoryError=ps auxww")
+                jvmArgs("-XX:OnError=ps auxww")
             }
         }
     }
