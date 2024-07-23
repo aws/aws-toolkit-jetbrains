@@ -129,7 +129,7 @@ class PluginUpdateManager : Disposable {
                         id = "autoUpdateActionRestart",
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = "autoUpdateActionRestart"
+                        action = "restart"
                     )
                     ApplicationManager.getApplication().restart()
                 },
@@ -141,7 +141,7 @@ class PluginUpdateManager : Disposable {
                         id = "autoUpdateActionNotNow",
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = "autoUpdateActionNotNow"
+                        action = "notNow"
                     )
                 },
                 NotificationAction.createSimple(message("aws.notification.auto_update.settings.title")) {
@@ -152,7 +152,7 @@ class PluginUpdateManager : Disposable {
                         id = ID_ACTION_AUTO_UPDATE_SETTINGS,
                         source = SOURCE_AUTO_UPDATE_FINISH_NOTIFY,
                         component = Component.Filesystem,
-                        action = ID_ACTION_AUTO_UPDATE_SETTINGS
+                        action = "showSettingsDialog"
                     )
                     ShowSettingsUtil.getInstance().showSettingsDialog(null, AwsSettingsSharedConfigurable::class.java)
                 }
@@ -173,7 +173,7 @@ class PluginUpdateManager : Disposable {
                         id = ID_ACTION_AUTO_UPDATE_SETTINGS,
                         source = SOURCE_AUTO_UPDATE_FEATURE_INTRO_NOTIFY,
                         component = Component.Filesystem,
-                        action = ID_ACTION_AUTO_UPDATE_SETTINGS
+                        action = "showSettingsDialog"
                     )
                     ShowSettingsUtil.getInstance().showSettingsDialog(project, AwsSettingsSharedConfigurable::class.java)
                 }
