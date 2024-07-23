@@ -1,19 +1,22 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
     id("toolkit-publishing-conventions")
-    id("toolkit-patch-plugin-xml-conventions")
+    id("toolkit-publish-root-conventions")
     id("toolkit-jvm-conventions")
+    id("toolkit-testing")
 }
 
 val changelog = tasks.register<GeneratePluginChangeLog>("pluginChangeLog") {
     includeUnreleased.set(true)
-    changeLogFile.set(project.file("$buildDir/changelog/change-notes.xml"))
+    changeLogFile.value(layout.buildDirectory.file("changelog/change-notes.xml"))
 }
 
 tasks.jar {
@@ -23,36 +26,18 @@ tasks.jar {
     }
 }
 
-intellij {
-    plugins.set(
-        listOf(
-            project(":plugin-core")
-        )
-    )
-}
-
 dependencies {
+    intellijPlatform {
+        localPlugin(project(":plugin-core"))
+    }
+
     implementation(project(":plugin-amazonq:chat"))
     implementation(project(":plugin-amazonq:codetransform"))
     implementation(project(":plugin-amazonq:codewhisperer"))
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(project(":plugin-amazonq:shared"))
-}
 
-val moduleOnlyJar = tasks.create<Jar>("moduleOnlyJar") {
-    archiveClassifier.set("module-only")
-    // empty jar
-}
-
-val moduleOnlyJars by configurations.creating {
-    isCanBeConsumed = true
-    isCanBeResolved = false
-    // If you want this configuration to share the same dependencies, otherwise omit this line
-    extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
-}
-
-artifacts {
-    add("moduleOnlyJars", moduleOnlyJar)
+    testImplementation(project(":plugin-core"))
 }
 
 tasks.check {
@@ -62,7 +47,5 @@ tasks.check {
         subDirs.forEach { insideService->
             dependsOn(":plugin-amazonq:${serviceSubDir.name}:${insideService.name}:check")
         }
-
     }
-
 }

@@ -145,7 +145,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val url = URL("http://localhost:${encoderServer.port}/indexFiles")
         val filesResult = collectFiles()
         val projectRoot = project.guessProjectDir()?.path ?: return false
-        val payload = IndexRequestPayload(filesResult.files, projectRoot, true)
+        val payload = IndexRequestPayload(filesResult.files, projectRoot, false)
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
@@ -227,6 +227,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val encrypted = encoderServer.encrypt(payloadJson)
         with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
+            setConnectionTimeout(this)
             setConnectionRequest(this, encrypted)
             val responseCode = responseCode
             logger.debug { "project context update index response code: $responseCode for $filePath" }

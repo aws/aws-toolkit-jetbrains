@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
@@ -16,9 +17,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
 import java.awt.event.ActionListener
 import javax.swing.JButton
 
-class AmazonQPanel(
-    parent: Disposable,
-) {
+class AmazonQPanel(private val parent: Disposable) {
     private val webviewContainer = Wrapper()
     var browser: Browser? = null
         private set
@@ -52,6 +51,19 @@ class AmazonQPanel(
     }
 
     init {
+        init()
+    }
+
+    fun disposeAndRecreate() {
+        webviewContainer.removeAll()
+        val toDispose = browser
+        init()
+        if (toDispose != null) {
+            Disposer.dispose(toDispose)
+        }
+    }
+
+    private fun init() {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
             if (AppMode.isRemoteDevHost()) {
