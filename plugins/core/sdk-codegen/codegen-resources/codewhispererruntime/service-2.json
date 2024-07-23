@@ -378,24 +378,24 @@
             "type":"boolean",
             "box":true
         },
-        "ChatAddMessageEvent":{
-            "type":"structure",
-            "required":["conversationId", "messageId"],
-            "members":{
-                "conversationId":{"shape":"ConversationId"},
-                "messageId":{"shape":"MessageId"},
-                "customizationArn":{"shape":"CustomizationArn"},
-                "userIntent":{"shape":"UserIntent"},
-                "hasCodeSnippet":{"shape":"Boolean"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "activeEditorTotalCharacters":{"shape":"Integer"},
-                "timeToFirstChunkMilliseconds":{"shape":"Double"},
+        "ChatAddMessageEvent": {
+            "type": "structure",
+            "required": ["conversationId", "messageId"],
+            "members": {
+                "conversationId": { "shape": "ConversationId" },
+                "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
+                "userIntent": { "shape": "UserIntent" },
+                "hasCodeSnippet": { "shape": "Boolean" },
+                "programmingLanguage": { "shape": "ProgrammingLanguage" },
+                "activeEditorTotalCharacters": { "shape": "Integer" },
+                "timeToFirstChunkMilliseconds": { "shape": "Double" },
                 "timeBetweenChunks": { "shape": "TimeBetweenChunks" },
-                "fullResponselatency":{"shape":"Double"},
-                "requestLength":{"shape":"Integer"},
-                "responseLength":{"shape":"Integer"},
-                "numberOfCodeBlocks":{"shape":"Integer"},
-                "hasProjectLevelContext":{"shape":"Boolean"}
+                "fullResponselatency": { "shape": "Double" },
+                "requestLength": { "shape": "Integer" },
+                "responseLength": { "shape": "Integer" },
+                "numberOfCodeBlocks": { "shape": "Integer" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatHistory":{
@@ -404,19 +404,19 @@
             "max":10,
             "min":0
         },
-        "ChatInteractWithMessageEvent":{
-            "type":"structure",
-            "required":["conversationId", "messageId"],
-            "members":{
-                "conversationId":{"shape":"ConversationId"},
-                "messageId":{"shape":"MessageId"},
-                "customizationArn":{"shape":"CustomizationArn"},
+        "ChatInteractWithMessageEvent": {
+            "type": "structure",
+            "required": ["conversationId", "messageId"],
+            "members": {
+                "conversationId": { "shape": "ConversationId" },
+                "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
                 "interactionType": { "shape": "ChatMessageInteractionType" },
                 "interactionTarget": { "shape": "String" },
-                "acceptedCharacterCount":{"shape":"Integer"},
-                "acceptedLineCount":{"shape":"Integer"},
-                "acceptedSnippetHasReference":{"shape":"Boolean"},
-                "hasProjectLevelContext":{"shape":"Boolean"}
+                "acceptedCharacterCount": { "shape": "Integer" },
+                "acceptedLineCount": { "shape": "Integer" },
+                "acceptedSnippetHasReference": { "shape": "Boolean" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "CreateTaskAssistConversationRequest": {
@@ -467,16 +467,16 @@
                 "conversationId": { "shape":  "ConversationId" }
             }
         },
-        "ChatUserModificationEvent":{
-            "type":"structure",
-            "required":["conversationId", "messageId", "modificationPercentage"],
-            "members":{
-                "conversationId":{"shape":"ConversationId"},
+        "ChatUserModificationEvent": {
+            "type": "structure",
+            "required": ["conversationId", "messageId", "modificationPercentage"],
+            "members": {
+                "conversationId": { "shape": "ConversationId" },
                 "customizationArn":{"shape":"CustomizationArn"},
-                "messageId":{"shape":"MessageId"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "modificationPercentage":{"shape":"Double"},
-                "hasProjectLevelContext":{"shape":"Boolean"}
+                "messageId": { "shape": "MessageId" },
+                "programmingLanguage": { "shape": "ProgrammingLanguage" },
+                "modificationPercentage": { "shape": "Double" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatTriggerType":{
