@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
+import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
@@ -12,6 +13,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
@@ -40,6 +42,9 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
+
+    private val customization: CodeWhispererCustomization?
+        get() = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
 
     fun getConversationId(tabId: String): String? = sessionStorage.getSession(tabId)?.session?.conversationId
 
@@ -129,7 +134,8 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             data.message.length,
             responseLength,
             numberOfCodeBlocks,
-            getIsProjectContextEnabled()
+            getIsProjectContextEnabled(),
+            data.customization
         )
     }
 
@@ -276,6 +282,12 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             }
 
             else -> null
+        }?.let {
+            customization?.let { myCustomization ->
+                it.toBuilder()
+                    .customizationArn(myCustomization.arn)
+                    .build()
+            }
         }
 
         event?.let { CodeWhispererClientAdaptor.getInstance(context.project).sendChatInteractWithMessageTelemetry(it) }

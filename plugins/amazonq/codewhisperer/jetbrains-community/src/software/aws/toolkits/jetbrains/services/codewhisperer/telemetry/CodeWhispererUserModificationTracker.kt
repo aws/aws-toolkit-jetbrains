@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import info.debatty.java.stringsimilarity.Levenshtein
+import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -211,7 +212,8 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             insertedCode.messageId,
             lang,
             percentage,
-            CodeWhispererSettings.getInstance().isProjectContextEnabled()
+            CodeWhispererSettings.getInstance().isProjectContextEnabled(),
+            CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
         )
     }
 
