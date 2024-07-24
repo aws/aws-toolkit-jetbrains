@@ -1,19 +1,12 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.invoke
-import org.gradle.kotlin.dsl.project
-import org.gradle.kotlin.dsl.provideDelegate
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
-import org.jetbrains.intellij.platform.gradle.plugins.project.DownloadRobotServerPluginTask
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdeUiTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
@@ -99,6 +92,8 @@ tasks.withType<TestIdeUiTask>().configureEach {
     systemProperty("ide.mac.file.chooser.native", "false")
 
     systemProperty("jb.consents.confirmation.enabled", "false")
+    // Disable auto-imports
+    systemProperty("ide.importingSettings.auto", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
     systemProperty("ide.show.tips.on.startup.default.value", false)
