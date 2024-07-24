@@ -17,6 +17,7 @@ import com.intellij.util.Url
 import com.intellij.util.Urls.newFromEncoded
 import com.intellij.util.io.DigestUtil
 import io.netty.buffer.Unpooled
+import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.QueryStringDecoder
@@ -38,6 +39,22 @@ import java.util.concurrent.CompletableFuture
 
 const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 
+// TODO: stupid short term way to mitigate 404 not found (tcp connection not closed after success/failure/cancellation)
+private var channel: Channel? = null
+
+private fun closeIfChannelExist() {
+    try {
+        channel?.let {
+            it.close().apply {
+                sync()
+                println("closing channel ${it}")
+            }
+        }
+    } catch (e: Exception) {
+        println("error while attempting to close netty channel, ${e.message}")
+    }
+}
+
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override val name: String = "aws/toolkit"
@@ -45,6 +62,8 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     fun hasPendingRequest() = currentRequest.get() != null
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
+        closeIfChannelExist()
+        currentRequest.set(null)
         val currentRequest = currentRequest.get()
         val toolkitRequest = currentRequest?.request as? ToolkitOAuthRequest
 
@@ -183,13 +202,14 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
     }
 
     override fun isSupported(request: FullHttpRequest): Boolean {
-        // only handle if we're actively waiting on a redirect
-        if (!oauthService().hasPendingRequest()) {
-            return false
-        }
-
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
+    }
+
+    override fun execute(urlDecoder: QueryStringDecoder, request: FullHttpRequest, context: ChannelHandlerContext): String? {
+        channel = context.channel()
+        println("set channel = ${context.channel()}")
+        return super.execute(urlDecoder, request, context)
     }
 }
 

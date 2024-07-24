@@ -330,6 +330,7 @@ class SsoAccessTokenProvider(
                 sleepWithCancellation(Duration.ofMillis(100), progressIndicator)
             } catch (e: ProcessCanceledException) {
                 future.cancel(true)
+//                future.completeExceptionally(e)
                 _authorization.set(null)
                 throw ProcessCanceledException(IllegalStateException(message("credentials.pending.user_cancel.message")))
             }
