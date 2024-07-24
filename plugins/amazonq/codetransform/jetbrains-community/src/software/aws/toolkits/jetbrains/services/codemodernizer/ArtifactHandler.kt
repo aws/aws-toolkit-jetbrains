@@ -203,13 +203,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-                // TODO: add artifact type to telemetry to differentiate downloads for client instructions vs logs
-                telemetry.jobArtifactDownloadAndDeserializeTime(
-                    downloadStartTime,
-                    job,
-                    totalDownloadBytes,
-                    telemetryErrorMessage,
-                )
+                telemetry.downloadArtifact(artifactType, downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
             }
         } catch (e: Exception) {
             if (isPreFetch) return DownloadArtifactResult.Skipped
@@ -254,11 +248,10 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             )
             dialog.isModal = true
 
-            telemetry.vcsDiffViewerVisible(jobId) // download succeeded
             if (dialog.showAndGet()) {
-                telemetry.vcsViewerSubmitted(jobId)
+                telemetry.viewArtifact(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, jobId, "Submit")
             } else {
-                telemetry.vscViewerCancelled(jobId)
+                telemetry.viewArtifact(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, jobId, "Cancel")
             }
         }
     }
@@ -353,7 +346,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     fun displayDiffAction(jobId: JobId) = runReadAction {
-        telemetry.vcsViewerClicked(jobId)
         projectCoroutineScope(project).launch {
             displayDiff(jobId)
         }

@@ -173,13 +173,11 @@ data class CodeModernizerSessionContext(
         }
 
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
-        val telemetry = CodeTransformTelemetryManager.getInstance(project)
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
-            telemetry.dependenciesCopied()
             copyResult.dependencyDirectory
         } else {
             null

@@ -90,7 +90,9 @@ class CodeTransformChatController(
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
         telemetry.prepareForNewJobSubmission()
+
         if (!checkForAuth(message.tabId)) {
+            telemetry.initiateTransform("User is not authenticated")
             return
         }
 
@@ -101,6 +103,9 @@ class CodeTransformChatController(
                 return
             }
         }
+
+        // Publish a metric when transform is first initiated from chat prompt.
+        telemetry.initiateTransform()
 
         codeTransformChatHelper.addNewMessage(
             buildCheckingValidProjectChatContent()
@@ -117,7 +122,6 @@ class CodeTransformChatController(
             codeTransformChatHelper.addNewMessage(
                 buildStartNewTransformFollowup()
             )
-
             return
         }
 
@@ -126,8 +130,6 @@ class CodeTransformChatController(
         )
 
         codeTransformChatHelper.chatDelayShort()
-
-        telemetry.jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
@@ -178,8 +180,12 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
         if (!checkForAuth(message.tabId)) {
+            telemetry.submitSelection("Cancel", null, "User is not authenticated")
             return
         }
+
+        // Publish metric for user selection
+        telemetry.submitSelection("Cancel")
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserCancelledChatContent())
@@ -189,6 +195,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
         if (!checkForAuth(message.tabId)) {
+            telemetry.submitSelection("Confirm", null, "User is not authenticated")
             return
         }
 
@@ -199,7 +206,6 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
-
             addNewMessage(buildCompileLocalInProgressChatContent())
         }
 
@@ -212,6 +218,9 @@ class CodeTransformChatController(
             sourceJdk,
             JavaSdkVersion.JDK_17
         )
+
+        // Publish metric to capture user selection before local build starts
+        telemetry.submitSelection("Confirm", selection)
 
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
     }

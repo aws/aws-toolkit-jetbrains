@@ -151,16 +151,7 @@ class GumbyClient(private val project: Project) {
             return result
         } catch (e: Exception) {
             LOG.error(e) { "$apiName failed: ${e.message}" }
-            telemetry.apiError(e.message.toString(), apiName, jobId)
             throw e // pass along error to callee
-        } finally {
-            telemetry.logApiLatency(
-                apiName,
-                startTime,
-                codeTransformUploadId = uploadId,
-                codeTransformJobId = jobId,
-                codeTransformRequestId = result?.responseMetadata()?.requestId(),
-            )
         }
     }
 
