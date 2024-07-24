@@ -117,15 +117,19 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             currentCoroutineContext.ensureActive()
             val artifactsUploadStartTime = now()
             val codeScanName = UUID.randomUUID().toString()
-            val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode", codeScanName)
-            if (isProjectScope()) {
-                LOG.debug {
-                    "Successfully uploaded source zip to s3: " +
-                        "Upload id: ${sourceZipUploadResponse.uploadId()} " +
-                        "Request id: ${sourceZipUploadResponse.responseMetadata().requestId()}"
+            try {
+                val sourceZipUploadResponse = createUploadUrlAndUpload(sourceZip, "SourceCode", codeScanName)
+                if (isProjectScope()) {
+                    LOG.debug {
+                        "Successfully uploaded source zip to s3: " +
+                            "Upload id: ${sourceZipUploadResponse.uploadId()} " +
+                            "Request id: ${sourceZipUploadResponse.responseMetadata().requestId()}"
+                    }
                 }
+                urlResponse[ArtifactType.SOURCE_CODE] = sourceZipUploadResponse
+            } finally {
+                sourceZip.delete()
             }
-            urlResponse[ArtifactType.SOURCE_CODE] = sourceZipUploadResponse
             currentCoroutineContext.ensureActive()
             val artifactsUploadDuration = now() - artifactsUploadStartTime
             codeScanResponseContext = codeScanResponseContext.copy(
