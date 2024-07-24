@@ -249,20 +249,12 @@ internal val DEFAULT_PREFETCH_DURATION = Duration.ofMinutes(20)
 val ssoOidcClientConfigurationBuilder: (ClientOverrideConfiguration.Builder) -> ClientOverrideConfiguration.Builder = { configuration ->
     configuration.nullDefaultProfileFile()
 
-    // Get the existing RetryPolicy
-    val existingRetryPolicy = configuration.retryPolicy()
-
     // Add InvalidGrantException to the RetryOnExceptionsCondition
-    val updatedRetryPolicy = existingRetryPolicy.toBuilder()
-        .retryCondition(
-            OrRetryCondition.create(
-                existingRetryPolicy.retryCondition(),
-                RetryOnExceptionsCondition.create(setOf(InvalidGrantException::class.java)),
-            )
-        ).build()
-
-    // Update the RetryPolicy in the configuration
-    configuration.retryPolicy(updatedRetryPolicy)
+    configuration.retryStrategy { strategy ->
+        strategy.retryOnException {
+            it is InvalidGrantException
+        }
+    }
 
     configuration.addExecutionInterceptor(object : ExecutionInterceptor {
         override fun modifyException(context: Context.FailedExecution, executionAttributes: ExecutionAttributes): Throwable {
