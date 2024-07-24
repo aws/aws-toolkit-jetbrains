@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWi
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -136,7 +137,11 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             numberOfCodeBlocks,
             getIsProjectContextEnabled(),
             data.customization
-        )
+        ).also {
+            logger.debug {
+                "Successfully sendTelemetryEvent for ChatAddMessage with requestId=${it.responseMetadata().requestId()}"
+            }
+        }
     }
 
     fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int) {
@@ -283,14 +288,20 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
             else -> null
         }?.let {
+            // override request and add customizationArn if it's not null, else return itself
             customization?.let { myCustomization ->
                 it.toBuilder()
                     .customizationArn(myCustomization.arn)
                     .build()
-            }
+            } ?: it
         }
 
-        event?.let { CodeWhispererClientAdaptor.getInstance(context.project).sendChatInteractWithMessageTelemetry(it) }
+        event?.let {
+            val steResponse = CodeWhispererClientAdaptor.getInstance(context.project).sendChatInteractWithMessageTelemetry(it)
+            logger.debug {
+                "Successfully sendTelemetryEvent for ChatInteractWithMessage with requestId=${steResponse.responseMetadata().requestId()}"
+            }
+        }
     }
 
     private suspend fun recordFeedback(message: IncomingCwcMessage.ChatItemFeedback) {

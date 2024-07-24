@@ -214,7 +214,9 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             percentage,
             CodeWhispererSettings.getInstance().isProjectContextEnabled(),
             CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
-        )
+        ).also {
+            LOG.debug { "Successfully sendTelemetryEvent for ChatModificationWithChat with requestId: ${it.responseMetadata().requestId()}" }
+        }
     }
 
 // temp disable user modfication event for further discussion on metric calculation
