@@ -449,6 +449,21 @@ class DefaultToolkitAuthManagerTest {
     }
 
     @Test
+    fun `loginSso telemetry contains no source by default`() {
+        AwsSettings.getInstance().isTelemetryEnabled = true
+        loginSso(
+            project = projectRule.project,
+            startUrl = "foo",
+            region = "us-east-1",
+            requestedScopes = listOf("scopes")
+        )
+        val metricCaptor = argumentCaptor<MetricEvent>()
+        assertThat(metricCaptor.allValues).allSatisfy { event ->
+            assertThat(event.data.all { it.metadata["source"] == null }).isTrue()
+        }
+    }
+
+    @Test
     fun `loginSso telemetry contains provided source`() {
         AwsSettings.getInstance().isTelemetryEnabled = true
         loginSso(
