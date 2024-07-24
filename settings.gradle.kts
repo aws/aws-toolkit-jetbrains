@@ -49,12 +49,15 @@ if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
 }
 
 plugins {
-    id("com.gradle.enterprise").version("3.17.5")
+    id("com.gradle.develocity").version("3.17.5")
     id("com.github.burrunan.s3-build-cache").version("1.5")
 }
 
 develocity {
     buildScan {
+        // only publish with `--scan` argument
+        publishing.onlyIf { false }
+
         if (System.getenv("CI") == "true") {
             termsOfUseUrl = "https://gradle.com/help/legal-terms-of-use"
             termsOfUseAgree = "yes"
