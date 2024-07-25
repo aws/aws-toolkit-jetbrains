@@ -51,6 +51,7 @@ val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
 
 listOf(
     "intellijPlatformDependency",
+    "intellijPlatformDependency_integrationTest",
     "intellijPluginVerifierIdesDependency",
 ).forEach { configurationName ->
     configurations[configurationName].dependencies.addLater(
