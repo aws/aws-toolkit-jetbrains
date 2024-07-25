@@ -92,11 +92,9 @@ tasks.withType<TestIdeUiTask>().configureEach {
     systemProperty("ide.mac.file.chooser.native", "false")
 
     systemProperty("jb.consents.confirmation.enabled", "false")
-    // Disable auto-imports
-    systemProperty("ide.importingSettings.auto", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
-    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-    systemProperty("ide.show.tips.on.startup.default.value", false)
+//    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
+//    systemProperty("ide.show.tips.on.startup.default.value", false)
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
