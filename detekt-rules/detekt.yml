@@ -4,9 +4,6 @@ build:
 config:
   validation: true
 
-detekt:
-  jvmArgs: [ '-Xmx4096m' ]
-
 processors:
   active: true
   exclude:
