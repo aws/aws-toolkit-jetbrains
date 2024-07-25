@@ -476,6 +476,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.responseLength(responseLength)
                 it.numberOfCodeBlocks(numberOfCodeBlocks)
                 it.hasProjectLevelContext(hasProjectLevelContext)
+                customization?.arn?.let { arn ->
+                    it.customizationArn(arn)
+                }
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
@@ -528,6 +531,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
                 it.modificationPercentage(modificationPercentage)
                 it.hasProjectLevelContext(hasProjectLevelContext)
+                customization?.arn?.let { arn ->
+                    it.customizationArn(arn)
+                }
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
