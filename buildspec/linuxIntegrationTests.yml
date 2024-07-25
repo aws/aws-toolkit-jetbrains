@@ -11,6 +11,7 @@ env:
     LOCAL_ENV_RUN: true
     AWS_STS_REGIONAL_ENDPOINTS: regional
     AWS_CONFIG_FILE: /tmp/aws_conf
+    AWS_SDK_LOAD_CONFIG: 1
 
 phases:
   install:
