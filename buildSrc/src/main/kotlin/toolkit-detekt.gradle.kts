@@ -41,6 +41,16 @@ tasks.withType<Detekt>().configureEach {
         html.required.set(true) // Human readable report
         xml.required.set(true) // Checkstyle like format for CI tool integrations
     }
+
+    doLast {
+        System.gc()
+    }
+
+    doLast {
+        exec {
+            commandLine("sh", "-c", "ps -eo pmem,pcpu,vsize,pid,command | sort -k 1 -nr | head -5")
+        }
+    }
 }
 
 tasks.withType<DetektCreateBaselineTask>().configureEach {
