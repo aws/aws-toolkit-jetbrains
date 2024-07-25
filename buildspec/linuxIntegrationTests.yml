@@ -10,6 +10,7 @@ env:
     CI: true
     LOCAL_ENV_RUN: true
     AWS_STS_REGIONAL_ENDPOINTS: regional
+    AWS_CONFIG_FILE: /tmp/aws_conf
 
 phases:
   install:
@@ -33,7 +34,8 @@ phases:
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
-      - AWS_CONFIG_FILE=`mktemp`
+      - touch $AWS_CONFIG_FILE
+      - # AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn = $ASSUME_ROLE_ARN
