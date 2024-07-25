@@ -14,7 +14,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
-import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
+import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -118,8 +118,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         return MavenCopyCommandsResult.Failure
     } finally {
         // emit telemetry
-        // TODO: replace CodeTransformMavenBuildCommand with CodeTransformBuildCommand
-        telemetry.localBuildProject(CodeTransformMavenBuildCommand.IDEBundledMaven, telemetryErrorMessage, telemetryIsCancelled)
+        telemetry.localBuildProject(CodeTransformBuildCommand.IDEBundledMaven, telemetryErrorMessage, telemetryIsCancelled)
     }
     // When all commands executed successfully, show the transformation hub
     return MavenCopyCommandsResult.Success(destinationDir.toFile())

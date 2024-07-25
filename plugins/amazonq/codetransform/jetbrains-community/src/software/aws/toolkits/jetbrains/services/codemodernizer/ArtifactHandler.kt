@@ -43,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTrouble
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -203,7 +204,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-                telemetry.downloadArtifact(artifactType, downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
+                telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
             }
         } catch (e: Exception) {
             if (isPreFetch) return DownloadArtifactResult.Skipped
@@ -249,9 +250,9 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.viewArtifact(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, jobId, "Submit")
+                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit")
             } else {
-                telemetry.viewArtifact(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS, jobId, "Cancel")
+                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel")
             }
         }
     }
@@ -399,6 +400,14 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     is DownloadArtifactResult.Skipped -> {}
                 }
             }
+        }
+    }
+
+    private fun mapArtifactTypes(artifactType: TransformationDownloadArtifactType) : CodeTransformArtifactType {
+        return when (artifactType) {
+            TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> CodeTransformArtifactType.ClientInstructions
+            TransformationDownloadArtifactType.LOGS -> CodeTransformArtifactType.Logs
+            TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> CodeTransformArtifactType.Unknown
         }
     }
 

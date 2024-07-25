@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.Transformati
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationExportContext
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -47,6 +48,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_A
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.net.HttpURLConnection
@@ -178,10 +180,9 @@ class GumbyClient(private val project: Project) {
         },
         { e ->
             LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
-            telemetry.apiError(e.localizedMessage, CodeTransformApiNames.ExportResultArchive, jobId.id)
         },
         { startTime ->
-            telemetry.logApiLatency(CodeTransformApiNames.ExportResultArchive, startTime, codeTransformJobId = jobId.id)
+            LOG.info { "${CodeTransformApiNames.ExportResultArchive} latency: ${calculateTotalLatency(startTime, Instant.now())}" }
         }
     )
 

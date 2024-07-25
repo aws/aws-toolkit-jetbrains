@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findLineNumberByString
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReport
@@ -77,6 +78,7 @@ import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyStickyError
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import java.io.File
@@ -172,15 +174,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
             val validatedBuildFiles = project.getSupportedBuildFilesWithSupportedJdk(supportedBuildFileNames, supportedJavaMappings)
             return if (validatedBuildFiles.isNotEmpty()) {
-                ValidationResult(true, validatedBuildFiles = validatedBuildFiles, validatedProjectJdkName = projectJdk?.description.orEmpty())
+                ValidationResult(
+                    true,
+                    validatedBuildFiles = validatedBuildFiles,
+                    validatedProjectJdkName = projectJdk?.description.orEmpty(),
+                    buildSystem = CodeTransformBuildSystem.Maven,
+                    buildSystemVersion = getMavenVersion(project)
+                )
             } else {
                 ValidationResult(
                     false,
-                    message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
-                    InvalidTelemetryReason(
+                    invalidReason = message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
+                    invalidTelemetryReason = InvalidTelemetryReason(
                         CodeTransformPreValidationError.NonMavenProject,
                         if (isGradleProject(project)) "Gradle build" else "other build"
-                    )
+                    ),
+                    buildSystem = if (isGradleProject(project)) CodeTransformBuildSystem.Gradle else CodeTransformBuildSystem.Unknown
                 )
             }
         }

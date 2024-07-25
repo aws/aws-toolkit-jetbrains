@@ -8,7 +8,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
@@ -22,7 +21,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaVersionFromProjectSetting
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
-import software.aws.toolkits.telemetry.CodeTransformApiNames
+import software.aws.toolkits.telemetry.CodeTransformArtifactType
+import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
@@ -66,11 +66,11 @@ class CodeTransformTelemetryManager(private val project: Project) {
         }
 
         CodetransformTelemetry.validateProject(
+            buildSystemVersion = validationResult.buildSystemVersion,
             codeTransformLocalJavaVersion = project.tryGetJdk().toString(),
             codeTransformPreValidationError = validationError,
-            codeTransformBuildSystem = ,
+            codeTransformBuildSystem = validationResult.buildSystem,
             codeTransformSessionId = sessionId,
-            localBuildSystemVersion = ,
             result = if (validationResult.valid) Result.Succeeded else Result.Failed,
             reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additonalInfo,
         )
@@ -111,21 +111,21 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun jobStart(transformStartTime: Instant, jobId: JobId?, telemetryErrorMessage: String? = null) = CodetransformTelemetry.jobStart(
         codeTransformSessionId = sessionId,
-        codeTransformJobId = jobId?.toString(),
-        codeTransformRuntimelatency = calculateTotalLatency(transformStartTime, Instant.now()), // subtract current time by project start time
+        codeTransformJobId = jobId?.id.orEmpty(),
+        codeTransformRunTimeLatency = calculateTotalLatency(transformStartTime, Instant.now()), // subtract current time by project start time
         result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
         reason = telemetryErrorMessage,
     )
 
     fun downloadArtifact(
-        artifactType: TransformationDownloadArtifactType,
+        artifactType: CodeTransformArtifactType,
         downloadStartTime: Instant,
         jobId: JobId,
         totalDownloadBytes: Int,
         telemetryErrorMessage: String?
     ) {
         CodetransformTelemetry.downloadArtifact(
-            codeTransformArtifactType = artifactType,  // TODO: convert TransformationDownloadArtifactType to CodeTransformArtifactType
+            codeTransformArtifactType = artifactType,
             codeTransformJobId = jobId.id,
             codeTransformRuntimeError = telemetryErrorMessage,
             codeTransformRunTimeLatency = calculateTotalLatency(downloadStartTime, Instant.now()),
@@ -136,9 +136,9 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun viewArtifact(artifactType: TransformationDownloadArtifactType, jobId: JobId, userChoice: String, telemetryErrorMessage: String? = null) {
+    fun viewArtifact(artifactType: CodeTransformArtifactType, jobId: JobId, userChoice: String, telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.viewArtifact(
-            codeTransformArtifactType = artifactType, // TODO: convert TransformationDownloadArtifactType to CodeTransformArtifactType
+            codeTransformArtifactType = artifactType,
             // TODO: this was default to ToastNotification, but should capture chat vs toast
             codeTransformVCSViewerSrcComponents = CodeTransformVCSViewerSrcComponents.ToastNotification,
             codeTransformSessionId = sessionId,
@@ -188,32 +188,6 @@ class CodeTransformTelemetryManager(private val project: Project) {
     fun error(errorMessage: String) = CodetransformTelemetry.logGeneralError(
         codeTransformApiErrorMessage = errorMessage,
         codeTransformSessionId = sessionId,
-    )
-
-    // TODO: Delete
-    fun apiError(errorMessage: String, apiName: CodeTransformApiNames, jobId: String?) = CodetransformTelemetry.logApiError(
-        codeTransformApiErrorMessage = errorMessage,
-        codeTransformApiNames = apiName,
-        codeTransformSessionId = sessionId,
-        codeTransformJobId = jobId,
-    )
-
-    // TODO: Delete
-    fun logApiLatency(
-        apiName: CodeTransformApiNames,
-        startTime: Instant,
-        codeTransformTotalByteSize: Int? = null,
-        codeTransformUploadId: String? = null,
-        codeTransformJobId: String? = null,
-        codeTransformRequestId: String? = null
-    ) = CodetransformTelemetry.logApiLatency(
-        codeTransformApiNames = apiName,
-        codeTransformSessionId = sessionId,
-        codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()),
-        codeTransformUploadId = codeTransformUploadId,
-        codeTransformJobId = codeTransformJobId,
-        codeTransformTotalByteSize = codeTransformTotalByteSize,
-        codeTransformRequestId = codeTransformRequestId
     )
 
     fun jobStatusChanged(jobId: JobId, newStatus: String, previousStatus: String) = CodetransformTelemetry.jobStatusChanged(

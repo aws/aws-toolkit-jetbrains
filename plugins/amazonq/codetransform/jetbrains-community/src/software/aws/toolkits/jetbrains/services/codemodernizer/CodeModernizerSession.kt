@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModerniz
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_INITIAL_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTER_STARTED
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
@@ -218,12 +219,12 @@ class CodeModernizerSession(
         } catch (e: ConnectException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            telemetryErrorMessage = e.localizedMessage.toString()
+            telemetryErrorMessage = e.localizedMessage
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
         } catch (e: SSLHandshakeException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            telemetryErrorMessage = e.localizedMessage.toString()
+            telemetryErrorMessage = e.localizedMessage
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
         } catch (e: HttpRequests.HttpStatusException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
@@ -244,31 +245,31 @@ class CodeModernizerSession(
             } else {
                 state.putJobHistory(sessionContext, TransformationStatus.FAILED)
                 state.currentJobStatus = TransformationStatus.FAILED
-                telemetryErrorMessage = e.localizedMessage.toString()
-                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+                telemetryErrorMessage = e.localizedMessage
+                return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
             }
         } catch (e: SsoOidcException) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            telemetryErrorMessage = e.localizedMessage.toString()
+            telemetryErrorMessage = e.localizedMessage
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
         } catch (e: SdkClientException) {
             // Errors from code whisperer client will always be thrown as SdkClientException
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            telemetryErrorMessage = e.localizedMessage.toString()
+            telemetryErrorMessage = e.localizedMessage
             return if (e.message.toString().contains(CONNECTION_REFUSED_ERROR)) {
                 CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED)
             } else if (e.message.toString().contains(SSL_HANDSHAKE_ERROR)) {
                 CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.SSL_HANDSHAKE_ERROR)
             } else {
-                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+                CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
             }
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
-            telemetryErrorMessage = e.localizedMessage.toString()
-            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage.toString()))
+            telemetryErrorMessage = e.localizedMessage
+            return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
             if (payload != null) {
@@ -279,25 +280,21 @@ class CodeModernizerSession(
         // Send upload completion message to chat (only if successful)
         CodeTransformMessageListener.instance.onUploadResult()
 
-        val startJobResponse: StartTransformationResponse
-        val sessionState = CodeModernizerSessionState.getInstance(sessionContext.project)
-        val creationTime = sessionState.currentJobCreationTime
-
         return try {
             if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-            startJobResponse = startJob(uploadId)
+            val startJobResponse = startJob(uploadId)
             state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
+            telemetry.jobStart(startTime, JobId(startJobResponse.transformationJobId()))
             CodeModernizerStartJobResult.Started(JobId(startJobResponse.transformationJobId()))
-            telemetry.jobStart(creationTime, JobId(startJobResponse.transformationJobId()))
         } catch (e: Exception) {
             state.putJobHistory(sessionContext, TransformationStatus.FAILED)
             state.currentJobStatus = TransformationStatus.FAILED
+            telemetry.jobStart(startTime, null, e.localizedMessage)
             CodeModernizerStartJobResult.UnableToStartJob(e.message.toString())
-            telemetry.jobStart(creationTime, null, e.localizedMessage.toString())
         }
     }
 
@@ -375,19 +372,11 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading hil artifact to S3: ${e.localizedMessage}"
-            LOG.error { errorMessage }
-            telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
+            LOG.error { "Unexpected error when uploading hil artifact to S3: ${e.localizedMessage}" }
             throw e
         }
         if (!shouldStop.get()) {
-            telemetry.logApiLatency(
-                CodeTransformApiNames.UploadZip,
-                uploadStartTime,
-                payload.length().toInt(),
-                createUploadUrlResponse.responseMetadata().requestId(),
-            )
-            LOG.warn { "Upload hil artifact complete" }
+            LOG.info { "Uploaded hil artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms"}
         }
         return createUploadUrlResponse.uploadId()
     }
@@ -420,20 +409,11 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         } catch (e: Exception) {
-            val errorMessage = "Unexpected error when uploading project artifact to S3: $e"
-            LOG.error { errorMessage }
-            // emit this metric here manually since we don't use callApi(), which emits its own metric
-            telemetry.apiError(errorMessage, CodeTransformApiNames.UploadZip, createUploadUrlResponse.uploadId())
+            LOG.error { "Unexpected error when uploading project artifact to S3: $e" }
             throw e // pass along error to callee
         }
         if (!shouldStop.get()) {
-            telemetry.logApiLatency(
-                CodeTransformApiNames.UploadZip,
-                uploadStartTime,
-                payload.length().toInt(),
-                createUploadUrlResponse.responseMetadata().requestId(),
-            )
-            LOG.warn { "Upload complete" }
+            LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms"}
         }
         return createUploadUrlResponse.uploadId()
     }
