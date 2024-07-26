@@ -17,6 +17,8 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 
 class NoOpTelemetryService : TelemetryService(publisher, spy(DefaultTelemetryBatcher(publisher))) {
+    fun batcher() = super.batcher
+
     private companion object {
         private val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
     }
@@ -45,7 +47,7 @@ sealed class MockTelemetryServiceBase : ExternalResource() {
     }
 
     fun telemetryService() = mockTelemetryService
-    fun batcher() = mockTelemetryService.batcher
+    fun batcher() = mockTelemetryService.batcher()
 }
 
 class MockTelemetryServiceRule : MockTelemetryServiceBase()

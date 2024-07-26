@@ -6,7 +6,6 @@ package migration.software.aws.toolkits.jetbrains.services.telemetry
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
@@ -24,7 +23,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryListener
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.util.concurrent.atomic.AtomicBoolean
 
-abstract class TelemetryService(private val publisher: TelemetryPublisher, @VisibleForTesting val batcher: TelemetryBatcher) : Disposable {
+abstract class TelemetryService(private val publisher: TelemetryPublisher, protected val batcher: TelemetryBatcher) : Disposable {
     private val isDisposing = AtomicBoolean(false)
     private val listeners = mutableSetOf<TelemetryListener>()
 
