@@ -33,7 +33,6 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -63,8 +62,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
@@ -72,11 +70,6 @@ import software.aws.toolkits.telemetry.CwsprChatUserIntent
 import kotlin.test.assertNotNull
 
 class TelemetryHelperTest {
-    private class NoOpToolkitTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
     // sut
     private lateinit var sut: TelemetryHelper
 
@@ -84,7 +77,6 @@ class TelemetryHelperTest {
     private lateinit var sessionStorage: ChatSessionStorage
 
     // dependencies
-    private lateinit var mockTelemetryService: TelemetryService
     private lateinit var mockBatcher: TelemetryBatcher
     private lateinit var mockClient: CodeWhispererClientAdaptor
     private lateinit var mockConnectionManager: ToolkitConnectionManager
@@ -97,6 +89,10 @@ class TelemetryHelperTest {
     @JvmField
     @RegisterExtension
     val mockClientManager = MockClientManagerExtension()
+
+    @JvmField
+    @RegisterExtension
+    val mockTelemetryService = MockTelemetryServiceExtension()
 
     @TestDisposable
     private lateinit var disposable: Disposable
@@ -200,9 +196,7 @@ class TelemetryHelperTest {
         project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, disposable)
 
         // set up telemetry service
-        mockBatcher = mock()
-        mockTelemetryService = NoOpToolkitTelemetryService(batcher = mockBatcher)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, disposable)
+        mockBatcher = mockTelemetryService.batcher()
 
         // set up client
         mockClient = mock()

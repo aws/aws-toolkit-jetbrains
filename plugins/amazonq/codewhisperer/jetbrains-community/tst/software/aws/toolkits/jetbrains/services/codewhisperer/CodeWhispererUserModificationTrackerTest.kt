@@ -17,8 +17,8 @@ import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.any
@@ -33,7 +33,6 @@ import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -41,25 +40,22 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import java.time.Instant
 import kotlin.test.assertNotNull
 
 class CodeWhispererUserModificationTrackerTest {
-    private class NoOpToolkitTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
     @TestDisposable
     private lateinit var disposable: Disposable
+
+    @JvmField
+    @RegisterExtension
+    val mockTelemetryService = MockTelemetryServiceExtension()
 
     // sut
     private lateinit var sut: CodeWhispererUserModificationTracker
 
     // dependencies
-    private lateinit var mockTelemetryService: TelemetryService
     private lateinit var mockBatcher: TelemetryBatcher
     private lateinit var mockClient: CodeWhispererClientAdaptor
     private lateinit var mockModelConfigurator: CodeWhispererModelConfigurator
@@ -93,9 +89,7 @@ class CodeWhispererUserModificationTrackerTest {
         sut = CodeWhispererUserModificationTracker(project)
 
         // set up telemetry service
-        mockBatcher = mock()
-        mockTelemetryService = NoOpToolkitTelemetryService(batcher = mockBatcher)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, disposable)
+        mockBatcher = mockTelemetryService.batcher()
 
         // set up client
         mockClient = mock()
