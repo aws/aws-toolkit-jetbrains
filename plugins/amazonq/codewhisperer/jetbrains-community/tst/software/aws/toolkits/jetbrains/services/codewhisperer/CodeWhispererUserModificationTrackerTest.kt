@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.junit.jupiter.api.fail
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -45,6 +44,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.In
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.time.Instant
+import kotlin.test.assertNotNull
 
 class CodeWhispererUserModificationTrackerTest {
     private class NoOpToolkitTelemetryService(
@@ -158,12 +158,9 @@ class CodeWhispererUserModificationTrackerTest {
 
         argumentCaptor<MetricEvent> {
             verify(mockBatcher).enqueue(capture())
-            val event = allValues.first().data.find { it.name == "amazonq_modifyCode" }
-            if (event == null) {
-                fail("event not found")
-            }
+            val event = firstValue.data.find { it.name == "amazonq_modifyCode" }
+            assertNotNull(event)
             assertThat(event)
-                .isNotNull
                 .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "cwsprChatConversationId doesn't match")
                 .matches({ it.metadata["cwsprChatMessageId"] == messageId }, "cwsprChatMessageId doesn't match")
                 .matches(

@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
-import org.assertj.core.util.VisibleForTesting
+import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
@@ -40,7 +40,6 @@ import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent as CWClientUserIntent
 
 class TelemetryHelper(private val context: AmazonQAppInitContext, private val sessionStorage: ChatSessionStorage) {
-
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
