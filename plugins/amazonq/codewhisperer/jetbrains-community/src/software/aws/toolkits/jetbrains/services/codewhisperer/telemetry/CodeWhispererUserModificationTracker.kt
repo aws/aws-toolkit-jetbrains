@@ -16,6 +16,7 @@ import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import info.debatty.java.stringsimilarity.Levenshtein
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import org.assertj.core.util.VisibleForTesting
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -166,7 +167,8 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
      * Use Levenshtein distance to check how
      * Levenshtein distance was preferred over Jaro–Winkler distance for simplicity
      */
-    private fun checkDiff(currString: String?, acceptedString: String?): Double {
+    @VisibleForTesting
+    internal fun checkDiff(currString: String?, acceptedString: String?): Double {
         if (currString == null || acceptedString == null || acceptedString.isEmpty() || currString.isEmpty()) {
             return 1.0
         }

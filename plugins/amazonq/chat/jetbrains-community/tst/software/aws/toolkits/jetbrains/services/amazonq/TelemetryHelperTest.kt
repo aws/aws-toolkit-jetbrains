@@ -4,12 +4,10 @@
 package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.intellij.openapi.Disposable
-import com.intellij.testFramework.ProjectExtension
-import com.intellij.testFramework.junit5.TestDisposable
-import org.junit.jupiter.api.extension.RegisterExtension
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -18,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.fail
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -25,19 +24,34 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.http.SdkHttpResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
+import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedName
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.FocusAreaContext
@@ -45,25 +59,11 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.UIC
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.UICodeSelectionRange
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import org.mockito.kotlin.verify
-import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
-import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
-import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
-import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedName
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
+import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
@@ -91,7 +91,6 @@ class TelemetryHelperTest {
     private lateinit var mockConnection: ToolkitConnection
     private val project: Project
         get() = projectExtension.project
-
 
     @JvmField
     @RegisterExtension
@@ -271,8 +270,10 @@ class TelemetryHelperTest {
                 )
                 .matches({ it.metadata["cwsprChatUserIntent"] == CwsprChatUserIntent.ImproveCode.toString() }, "user intent doesn't match")
                 .matches({
-                    it.metadata["cwsprChatHasCodeSnippet"] == (data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty()
-                        ?: false).toString()
+                    it.metadata["cwsprChatHasCodeSnippet"] == (
+                        data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty()
+                            ?: false
+                        ).toString()
                 }, "has code snippet doesn't match")
                 .matches({ it.metadata["cwsprChatProgrammingLanguage"] == "java" }, "language doesn't match")
                 .matches(
@@ -280,7 +281,10 @@ class TelemetryHelperTest {
                     "total characters doesn't match"
                 )
                 .matches(
-                    { it.metadata["cwsprChatActiveEditorImportCount"] == data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toString() },
+                    {
+                        it.metadata["cwsprChatActiveEditorImportCount"] ==
+                            data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toString()
+                    },
                     "import count doesn't match"
                 )
                 .matches(
@@ -338,7 +342,6 @@ class TelemetryHelperTest {
             )
         )
 
-
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
             verify(mockBatcher).enqueue(capture())
@@ -383,7 +386,6 @@ class TelemetryHelperTest {
                 }.build()
             )
         )
-
 
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
@@ -445,7 +447,6 @@ class TelemetryHelperTest {
                 }.build()
             )
         )
-
 
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
@@ -516,7 +517,6 @@ class TelemetryHelperTest {
             )
         )
 
-
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
             verify(mockBatcher).enqueue(capture())
@@ -582,7 +582,6 @@ class TelemetryHelperTest {
                 }.build()
             )
         )
-
 
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
