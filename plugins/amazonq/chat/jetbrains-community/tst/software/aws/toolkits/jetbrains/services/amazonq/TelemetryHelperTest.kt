@@ -628,6 +628,8 @@ class TelemetryHelperTest {
             )
         }
 
+        // TODO: STE, not implemented yet
+
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
             verify(mockBatcher).enqueue(capture())
