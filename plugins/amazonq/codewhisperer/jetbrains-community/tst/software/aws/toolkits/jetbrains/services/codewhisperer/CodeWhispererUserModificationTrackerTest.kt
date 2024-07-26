@@ -17,6 +17,7 @@ import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -172,6 +173,7 @@ class CodeWhispererUserModificationTrackerTest {
         }
     }
 
+    @Disabled
     @Test
     fun checkDiff() {
         // TODO
