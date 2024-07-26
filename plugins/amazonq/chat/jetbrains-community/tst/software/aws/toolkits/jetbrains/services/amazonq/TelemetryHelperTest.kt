@@ -49,6 +49,7 @@ import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
@@ -61,8 +62,10 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedName
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
+import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.telemetry.CwsprChatConversationType
+import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
 import software.aws.toolkits.telemetry.CwsprChatUserIntent
 
@@ -149,6 +152,17 @@ class TelemetryHelperTest {
             messageId = messageId,
             followUps = listOf(mock(), mock())
         )
+        private val mockSteResponse = SendTelemetryEventResponse.builder()
+            .apply {
+                this.sdkHttpResponse(
+                    SdkHttpResponse.builder().build()
+                )
+                this.responseMetadata(
+                    DefaultAwsResponseMetadata.create(
+                        mapOf(AWS_REQUEST_ID to messageId)
+                    )
+                )
+            }.build()
     }
 
     @BeforeEach
@@ -205,16 +219,7 @@ class TelemetryHelperTest {
         mockClient.stub {
             on {
                 sendChatAddMessageTelemetry(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
-            } doReturn SendTelemetryEventResponse.builder().apply {
-                this.sdkHttpResponse(
-                    SdkHttpResponse.builder().build()
-                )
-                this.responseMetadata(
-                    DefaultAwsResponseMetadata.create(
-                        mapOf(AWS_REQUEST_ID to steRequestId)
-                    )
-                )
-            }.build()
+            } doReturn mockSteResponse
         }
 
         // set up request data
@@ -312,26 +317,29 @@ class TelemetryHelperTest {
     }
 
     @Test
-    fun recordInteractWithMessageTest() {
+    fun `recordInteractWithMessage - ChatItemVoted`() {
         mockClient.stub {
-            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn SendTelemetryEventResponse.builder()
-                .apply {
-                    this.sdkHttpResponse(
-                        SdkHttpResponse.builder().build()
-                    )
-                    this.responseMetadata(
-                        DefaultAwsResponseMetadata.create(
-                            mapOf(AWS_REQUEST_ID to messageId)
-                        )
-                    )
-                }.build()
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
 
         runBlocking {
-            sut.recordInteractWithMessage(IncomingCwcMessage.ChatItemVoted(tabId, "messageId", "upvote"))
+            sut.recordInteractWithMessage(IncomingCwcMessage.ChatItemVoted(tabId, messageId, "upvote"))
         }
 
+        // STE
+        verify(mockClient).sendChatInteractWithMessageTelemetry(
+            eq(
+                ChatInteractWithMessageEvent.builder().apply {
+                    conversationId(conversationId)
+                    messageId(messageId)
+                    interactionType(ChatMessageInteractionType.UPVOTE)
+                    customizationArn(customizationArn)
+                }.build()
+            )
+        )
 
+
+        // Toolkit telemetry
         argumentCaptor<MetricEvent> {
             verify(mockBatcher).enqueue(capture())
             val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
@@ -339,16 +347,264 @@ class TelemetryHelperTest {
             if (event == null) {
                 fail("amazonq_interactWithMessage must not be null")
             }
+
+            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.Upvote.toString() },
+                "interaction type doesn't match"
+            )
+            assertThat(event).matches({ it.metadata["credentialStartUrl"] == mockUrl }, "startUrl doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                "hasProjectContext doesn't match"
+            )
         }
     }
 
     @Test
-    fun `t3`() {
+    fun `recordInteractWithMessage - FollowupClicked`() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
+        }
 
+        runBlocking {
+            sut.recordInteractWithMessage(IncomingCwcMessage.FollowupClicked(mock(), tabId, messageId, "command", "tabType"))
+        }
+
+        // STE
+        verify(mockClient).sendChatInteractWithMessageTelemetry(
+            eq(
+                ChatInteractWithMessageEvent.builder().apply {
+                    conversationId(conversationId)
+                    messageId(messageId)
+                    interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
+                    customizationArn(customizationArn)
+                }.build()
+            )
+        )
+
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
+
+            if (event == null) {
+                fail("amazonq_interactWithMessage must not be null")
+            }
+
+            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.ClickFollowUp.toString() },
+                "interaction type doesn't match"
+            )
+            assertThat(event).matches({ it.metadata["credentialStartUrl"] == mockUrl }, "startUrl doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                "hasProjectContext doesn't match"
+            )
+        }
     }
 
     @Test
-    fun `t4`() {
+    fun `recordInteractWithMessage - CopyCodeToClipboard`() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
+        }
 
+        val codeBlockIndex = 1
+        val totalCodeBlocks = 10
+
+        runBlocking {
+            sut.recordInteractWithMessage(
+                IncomingCwcMessage.CopyCodeToClipboard(
+                    "command",
+                    tabId,
+                    messageId,
+                    "println()",
+                    "insertionTargetType",
+                    "eventId",
+                    codeBlockIndex,
+                    totalCodeBlocks
+                )
+            )
+        }
+
+        // STE
+        verify(mockClient).sendChatInteractWithMessageTelemetry(
+            eq(
+                ChatInteractWithMessageEvent.builder().apply {
+                    conversationId(conversationId)
+                    messageId(messageId)
+                    interactionType(ChatMessageInteractionType.COPY_SNIPPET)
+                    interactionTarget("insertionTargetType")
+                    acceptedCharacterCount("println()".length)
+                    customizationArn(customizationArn)
+                }.build()
+            )
+        )
+
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
+
+            if (event == null) {
+                fail("amazonq_interactWithMessage must not be null")
+            }
+
+            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.CopySnippet.toString() },
+                "interaction type doesn't match"
+            )
+            assertThat(event).matches({ it.metadata["cwsprChatAcceptedCharactersLength"] == "println()".length.toString() }, "acceptedCharLength doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatInteractionTarget"] == "insertionTargetType" }, "insertionTargetType doesn't match")
+            assertThat(event).matches({ it.metadata["credentialStartUrl"] == mockUrl }, "startUrl doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatCodeBlockIndex"] == codeBlockIndex.toString() }, "cwsprChatCodeBlockIndex doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatTotalCodeBlocks"] == totalCodeBlocks.toString() }, "cwsprChatTotalCodeBlocks doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                "hasProjectContext doesn't match"
+            )
+        }
+    }
+
+    @Test
+    fun `recordInteractWithMessage - InsertCodeAtCursorPosition`() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
+        }
+
+        val codeBlockIndex = 1
+        val totalCodeBlocks = 10
+        val inserTionTargetType = "insertionTargetType"
+        val eventId = "eventId"
+        val code = "println()"
+
+        runBlocking {
+            sut.recordInteractWithMessage(
+                IncomingCwcMessage.InsertCodeAtCursorPosition(
+                    tabId,
+                    messageId,
+                    code,
+                    inserTionTargetType,
+                    emptyList(),
+                    eventId,
+                    codeBlockIndex,
+                    totalCodeBlocks
+                )
+            )
+        }
+
+        // STE
+        verify(mockClient).sendChatInteractWithMessageTelemetry(
+            eq(
+                ChatInteractWithMessageEvent.builder().apply {
+                    conversationId(conversationId)
+                    messageId(messageId)
+                    interactionType(ChatMessageInteractionType.INSERT_AT_CURSOR)
+                    interactionTarget(inserTionTargetType)
+                    acceptedCharacterCount(code.length)
+                    acceptedLineCount(code.lines().size)
+                    customizationArn(customizationArn)
+                }.build()
+            )
+        )
+
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
+
+            if (event == null) {
+                fail("amazonq_interactWithMessage must not be null")
+            }
+
+            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.InsertAtCursor.toString() },
+                "interaction type doesn't match"
+            )
+            assertThat(event).matches(
+                { it.metadata["cwsprChatAcceptedCharactersLength"] == code.length.toString() },
+                "cwsprChatAcceptedCharactersLength doesn't match"
+            )
+            assertThat(event).matches(
+                { it.metadata["cwsprChatAcceptedNumberOfLines"] == code.lines().size.toString() },
+                "cwsprChatAcceptedNumberOfLines doesn't match"
+            )
+            assertThat(event).matches({ it.metadata["cwsprChatInteractionTarget"] == inserTionTargetType }, "cwsprChatInteractionTarget doesn't match")
+            assertThat(event).matches({ it.metadata["credentialStartUrl"] == mockUrl }, "credentialStartUrl doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatCodeBlockIndex"] == codeBlockIndex.toString() }, "cwsprChatCodeBlockIndex doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatTotalCodeBlocks"] == totalCodeBlocks.toString() }, "cwsprChatTotalCodeBlocks doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                "hasProjectContext doesn't match"
+            )
+        }
+    }
+
+    @Test
+    fun `recordInteractWithMessage - ClickedLink`() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
+        }
+
+        val link = "https://foo.bar.com"
+
+        runBlocking {
+            sut.recordInteractWithMessage(
+                IncomingCwcMessage.ClickedLink(
+                    LinkType.SourceLink,
+                    tabId,
+                    messageId,
+                    link
+                )
+            )
+        }
+
+        // STE
+        verify(mockClient).sendChatInteractWithMessageTelemetry(
+            eq(
+                ChatInteractWithMessageEvent.builder().apply {
+                    conversationId(conversationId)
+                    messageId(messageId)
+                    interactionType(ChatMessageInteractionType.CLICK_LINK)
+                    interactionTarget(link)
+                    customizationArn(customizationArn)
+                }.build()
+            )
+        )
+
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
+
+            if (event == null) {
+                fail("amazonq_interactWithMessage must not be null")
+            }
+
+            assertThat(event).matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversationId doesn't match")
+            assertThat(event).matches({ it.metadata["cwsprChatMessageId"] == messageId }, "messageId doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatInteractionType"] == CwsprChatInteractionType.ClickLink.toString() },
+                "interaction type doesn't match"
+            )
+            assertThat(event).matches({ it.metadata["cwsprChatInteractionTarget"] == link }, "cwsprChatInteractionTarget doesn't match")
+            assertThat(event).matches({ it.metadata["credentialStartUrl"] == mockUrl }, "credentialStartUrl doesn't match")
+            assertThat(event).matches(
+                { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                "hasProjectContext doesn't match"
+            )
+        }
     }
 }
