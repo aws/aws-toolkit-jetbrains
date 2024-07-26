@@ -159,7 +159,7 @@ class TelemetryHelperTest {
                 )
                 this.responseMetadata(
                     DefaultAwsResponseMetadata.create(
-                        mapOf(AWS_REQUEST_ID to messageId)
+                        mapOf(AWS_REQUEST_ID to steRequestId)
                     )
                 )
             }.build()
@@ -605,6 +605,39 @@ class TelemetryHelperTest {
                 { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
                 "hasProjectContext doesn't match"
             )
+        }
+    }
+
+    @Test
+    fun `recordInteractWithMessage - ChatItemFeedback`() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
+        }
+
+        val selectedOption = "foo"
+        val comment = "bar"
+
+        runBlocking {
+            sut.recordInteractWithMessage(
+                IncomingCwcMessage.ChatItemFeedback(
+                    tabId,
+                    selectedOption,
+                    comment,
+                    messageId,
+                )
+            )
+        }
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "feedback_result" }
+
+            if (event == null) {
+                fail("feedback_result must not be null")
+            }
+
+            assertThat(event).matches { it.metadata["result"] == "Succeeded" }
         }
     }
 }
