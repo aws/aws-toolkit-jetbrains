@@ -8,10 +8,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
-import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
 import org.junit.jupiter.api.BeforeEach
@@ -204,13 +205,15 @@ class TelemetryHelperTest {
 
         // set up client
         mockClient = mock()
-        project.replaceService(CodeWhispererClientAdaptor::class.java, mockClient, disposable)
+        // TODO: use registerService instead of replace service because it's codewhisperer package, and replaceService will fail in 232
+        project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClient)
 
         // set up customization
         mockModelConfigurator = mock {
             on { activeCustomization(project) } doReturn mockCustomization
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockModelConfigurator, disposable)
+        // TODO: use registerService instead of replace service because it's codewhisperer package, and replaceService will fail in 232
+        ApplicationManager.getApplication().registerServiceInstance(CodeWhispererModelConfigurator::class.java, mockModelConfigurator)
     }
 
     @Test

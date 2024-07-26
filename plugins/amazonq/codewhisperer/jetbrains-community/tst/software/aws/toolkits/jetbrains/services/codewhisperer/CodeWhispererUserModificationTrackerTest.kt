@@ -15,8 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.junit5.TestDisposable
 import com.intellij.testFramework.replaceService
-import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
 import org.junit.jupiter.api.BeforeEach
@@ -38,11 +36,13 @@ import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.time.Instant
 
 class CodeWhispererUserModificationTrackerTest {

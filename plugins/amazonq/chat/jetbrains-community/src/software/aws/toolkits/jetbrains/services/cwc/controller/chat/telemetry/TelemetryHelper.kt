@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
-import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import org.assertj.core.util.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
@@ -16,6 +15,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
