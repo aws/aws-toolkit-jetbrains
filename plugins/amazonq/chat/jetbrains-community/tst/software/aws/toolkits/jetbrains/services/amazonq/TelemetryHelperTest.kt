@@ -1,0 +1,354 @@
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+package software.aws.toolkits.jetbrains.services.amazonq
+
+import com.intellij.openapi.Disposable
+import com.intellij.testFramework.ProjectExtension
+import com.intellij.testFramework.junit5.TestDisposable
+import org.junit.jupiter.api.extension.RegisterExtension
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
+import com.intellij.testFramework.replaceService
+import kotlinx.coroutines.runBlocking
+import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import org.assertj.core.api.Assertions.assertThat
+import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.http.SdkHttpResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
+import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.aws.toolkits.core.telemetry.MetricEvent
+import software.aws.toolkits.core.telemetry.TelemetryBatcher
+import software.aws.toolkits.core.telemetry.TelemetryPublisher
+import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.FocusAreaContext
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.UICodeSelectionLineRange
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea.UICodeSelectionRange
+import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
+import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
+import org.mockito.kotlin.verify
+import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
+import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
+import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedName
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
+import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
+import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
+import software.aws.toolkits.telemetry.CwsprChatConversationType
+import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
+import software.aws.toolkits.telemetry.CwsprChatUserIntent
+
+class TelemetryHelperTest {
+    private class NoOpToolkitTelemetryService(
+        publisher: TelemetryPublisher = NoOpPublisher(),
+        batcher: TelemetryBatcher
+    ) : TelemetryService(publisher, batcher)
+
+    // sut
+    private lateinit var sut: TelemetryHelper
+
+    private lateinit var appInitContext: AmazonQAppInitContext
+    private lateinit var sessionStorage: ChatSessionStorage
+
+    // dependencies
+    private lateinit var mockTelemetryService: TelemetryService
+    private lateinit var mockBatcher: TelemetryBatcher
+    private lateinit var mockClient: CodeWhispererClientAdaptor
+    private lateinit var mockConnectionManager: ToolkitConnectionManager
+    private lateinit var mockModelConfigurator: CodeWhispererModelConfigurator
+
+    private lateinit var mockConnection: ToolkitConnection
+    private val project: Project
+        get() = projectExtension.project
+
+
+    @JvmField
+    @RegisterExtension
+    val mockClientManager = MockClientManagerExtension()
+
+    @TestDisposable
+    private lateinit var disposable: Disposable
+
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+
+        private const val mockUrl = "mockUrl"
+        private const val mockRegion = "us-east-1"
+        private const val tabId = "tabId"
+        private const val messageId = "messageId"
+        private const val conversationId = "conversationId"
+        private const val triggerId = "triggerId"
+        private const val customizationArn = "customizationArn"
+        private const val steRequestId = "sendTelemetryEventRequestId"
+        private const val lang = "java"
+        private val mockCustomization = CodeWhispererCustomization(customizationArn, "name", "description")
+        private val data = ChatRequestData(
+            tabId = tabId,
+            message = "foo",
+            activeFileContext = ActiveFileContext(
+                FileContext(lang, "~/foo/bar/baz", null),
+                FocusAreaContext(
+                    codeSelection = "",
+                    codeSelectionRange = UICodeSelectionRange(
+                        UICodeSelectionLineRange(1, 2),
+                        UICodeSelectionLineRange(3, 4)
+                    ),
+                    trimmedSurroundingFileText = "",
+                    codeNames = CodeNamesImpl(
+                        listOf("simpleName_1"),
+                        FullyQualifiedNames(
+                            listOf(
+                                FullyQualifiedName(
+                                    listOf("source_1"),
+                                    listOf("symbol_1")
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            userIntent = UserIntent.IMPROVE_CODE,
+            triggerType = TriggerType.Hotkeys,
+            customization = mockCustomization,
+            relevantTextDocuments = listOf()
+        )
+        private val response = ChatMessage(
+            tabId = tabId,
+            triggerId = triggerId,
+            messageType = ChatMessageType.Prompt,
+            messageId = messageId,
+            followUps = listOf(mock(), mock())
+        )
+    }
+
+    @BeforeEach
+    fun setup() {
+        // set up sut
+        appInitContext = AmazonQAppInitContext(
+            project = project,
+            messagesFromAppToUi = mock(),
+            messagesFromUiToApp = mock(),
+            messageTypeRegistry = mock(),
+            fqnWebviewAdapter = mock()
+        )
+        val mockSession = mock<ChatSession> {
+            on { this.conversationId } doReturn conversationId
+        }
+        sessionStorage = mock {
+            on { this.getSession(eq(tabId)) } doReturn ChatSessionInfo(session = mockSession, scope = mock(), history = mutableListOf())
+        }
+        sut = TelemetryHelper(appInitContext, sessionStorage)
+
+        // set up client
+        mockClientManager.create<SsoOidcClient>()
+
+        // set up connection
+        mockConnection = LegacyManagedBearerSsoConnection(
+            mockUrl,
+            mockRegion,
+            Q_SCOPES,
+            mock()
+        )
+        mockConnectionManager = mock {
+            on { activeConnectionForFeature(eq(QConnection.getInstance())) } doReturn mockConnection
+        }
+        project.replaceService(ToolkitConnectionManager::class.java, mockConnectionManager, disposable)
+
+        // set up telemetry service
+        mockBatcher = mock()
+        mockTelemetryService = NoOpToolkitTelemetryService(batcher = mockBatcher)
+        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, disposable)
+
+        // set up client
+        mockClient = mock()
+        project.replaceService(CodeWhispererClientAdaptor::class.java, mockClient, disposable)
+
+        // set up customization
+        mockModelConfigurator = mock {
+            on { activeCustomization(project) } doReturn mockCustomization
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockModelConfigurator, disposable)
+    }
+
+    @Test
+    fun recordAddMessageTest() {
+        mockClient.stub {
+            on {
+                sendChatAddMessageTelemetry(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            } doReturn SendTelemetryEventResponse.builder().apply {
+                this.sdkHttpResponse(
+                    SdkHttpResponse.builder().build()
+                )
+                this.responseMetadata(
+                    DefaultAwsResponseMetadata.create(
+                        mapOf(AWS_REQUEST_ID to steRequestId)
+                    )
+                )
+            }.build()
+        }
+
+        // set up request data
+        val responseLength = 10
+        val statusCode = 400
+        val numberOfCodeBlocks = 1
+
+        sut.recordAddMessage(
+            data = data,
+            response = response,
+            responseLength = responseLength,
+            statusCode = statusCode,
+            numberOfCodeBlocks = numberOfCodeBlocks
+        )
+
+        // Q STE
+        verify(mockClient).sendChatAddMessageTelemetry(
+            sessionId = eq(conversationId),
+            requestId = eq(messageId),
+            userIntent = eq(software.amazon.awssdk.services.codewhispererruntime.model.UserIntent.fromValue(data.userIntent?.name)),
+            hasCodeSnippet = any(),
+            programmingLanguage = eq(lang),
+            activeEditorTotalCharacters = eq(data.activeFileContext.focusAreaContext?.codeSelection?.length),
+            timeToFirstChunkMilliseconds = eq(sut.getResponseStreamTimeToFirstChunk(tabId)),
+            timeBetweenChunks = eq(sut.getResponseStreamTimeBetweenChunks(tabId)),
+            fullResponselatency = any(), // TODO
+            requestLength = eq(data.message.length),
+            responseLength = eq(responseLength),
+            numberOfCodeBlocks = eq(numberOfCodeBlocks),
+            hasProjectLevelContext = eq(CodeWhispererSettings.getInstance().isProjectContextEnabled()),
+            customization = eq(mockCustomization)
+        )
+
+        // Toolkit telemetry
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_addMessage" }
+
+            if (event == null) {
+                fail("amazonq_addMessage must not be null")
+            }
+
+            assertThat(event)
+                .matches({ it.metadata["cwsprChatConversationId"] == conversationId }, "conversation id doesn't match")
+                .matches({ it.metadata["cwsprChatMessageId"] == "messageId" }, "message id doesn't match")
+                .matches(
+                    { it.metadata["cwsprChatTriggerInteraction"] == CwsprChatTriggerInteraction.ContextMenu.toString() },
+                    "trigger type doesn't match"
+                )
+                .matches({ it.metadata["cwsprChatUserIntent"] == CwsprChatUserIntent.ImproveCode.toString() }, "user intent doesn't match")
+                .matches({
+                    it.metadata["cwsprChatHasCodeSnippet"] == (data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty()
+                        ?: false).toString()
+                }, "has code snippet doesn't match")
+                .matches({ it.metadata["cwsprChatProgrammingLanguage"] == "java" }, "language doesn't match")
+                .matches(
+                    { it.metadata["cwsprChatActiveEditorTotalCharacters"] == data.activeFileContext.focusAreaContext?.codeSelection?.length?.toString() },
+                    "total characters doesn't match"
+                )
+                .matches(
+                    { it.metadata["cwsprChatActiveEditorImportCount"] == data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toString() },
+                    "import count doesn't match"
+                )
+                .matches(
+                    { it.metadata["cwsprChatResponseCodeSnippetCount"] == numberOfCodeBlocks.toString() },
+                    "number of code blocks doesn't match"
+                )
+                .matches({ it.metadata["cwsprChatResponseCode"] == statusCode.toString() }, "response code doesn't match")
+                .matches(
+                    { it.metadata["cwsprChatSourceLinkCount"] == response.relatedSuggestions?.size?.toString() },
+                    "source link count doesn't match"
+                )
+                .matches({ it.metadata["cwsprChatFollowUpCount"] == response.followUps?.size?.toString() }, "follow up count doesn't match")
+                .matches(
+                    { it.metadata["cwsprChatTimeToFirstChunk"] == sut.getResponseStreamTimeToFirstChunk(response.tabId).toInt().toString() },
+                    "time to first chunk doesn't match"
+                )
+                .matches({
+                    it.metadata["cwsprChatTimeBetweenChunks"] == "[${
+                        sut.getResponseStreamTimeBetweenChunks(response.tabId).joinToString(", ")
+                    }]"
+                }, "time between chunks doesn't match")
+                .matches({ it.metadata["cwsprChatRequestLength"] == data.message.length.toString() }, "request length doesn't match")
+                .matches({ it.metadata["cwsprChatResponseLength"] == responseLength.toString() }, "response length doesn't match")
+                .matches(
+                    { it.metadata["cwsprChatConversationType"] == CwsprChatConversationType.Chat.toString() },
+                    "conversation type doesn't match"
+                )
+                .matches({ it.metadata["codewhispererCustomizationArn"] == "customizationArn" }, "user intent doesn't match")
+                .matches({
+                    it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString()
+                }, "customization description doesn't match")
+//                .matches({  it.metadata["cwsprChatFullResponseLatency"] == "" }, "latency") TODO
+        }
+    }
+
+    @Test
+    fun recordInteractWithMessageTest() {
+        mockClient.stub {
+            on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn SendTelemetryEventResponse.builder()
+                .apply {
+                    this.sdkHttpResponse(
+                        SdkHttpResponse.builder().build()
+                    )
+                    this.responseMetadata(
+                        DefaultAwsResponseMetadata.create(
+                            mapOf(AWS_REQUEST_ID to messageId)
+                        )
+                    )
+                }.build()
+        }
+
+        runBlocking {
+            sut.recordInteractWithMessage(IncomingCwcMessage.ChatItemVoted(tabId, "messageId", "upvote"))
+        }
+
+
+        argumentCaptor<MetricEvent> {
+            verify(mockBatcher).enqueue(capture())
+            val event = allValues.first().data.find { it.name == "amazonq_interactWithMessage" }
+
+            if (event == null) {
+                fail("amazonq_interactWithMessage must not be null")
+            }
+        }
+    }
+
+    @Test
+    fun `t3`() {
+
+    }
+
+    @Test
+    fun `t4`() {
+
+    }
+}

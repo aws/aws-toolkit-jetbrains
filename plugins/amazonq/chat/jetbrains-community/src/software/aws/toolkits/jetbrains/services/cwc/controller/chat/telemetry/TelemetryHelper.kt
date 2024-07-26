@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import org.assertj.core.util.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
@@ -364,13 +365,15 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         responseStreamTotalTime[tabId] = totalTime
     }
 
-    private fun getResponseStreamTimeToFirstChunk(tabId: String): Double {
+    @VisibleForTesting
+    fun getResponseStreamTimeToFirstChunk(tabId: String): Double {
         val chunkTimes = responseStreamTimeForChunks[tabId] ?: return 0.0
         if (chunkTimes.size == 1) return Duration.between(chunkTimes[0], Instant.now()).toMillis().toDouble()
         return Duration.between(chunkTimes[0], chunkTimes[1]).toMillis().toDouble()
     }
 
-    private fun getResponseStreamTimeBetweenChunks(tabId: String): List<Double> = try {
+    @VisibleForTesting
+    fun getResponseStreamTimeBetweenChunks(tabId: String): List<Double> = try {
         val chunkDeltaTimes = mutableListOf<Double>()
         val chunkTimes = responseStreamTimeForChunks[tabId] ?: listOf(Instant.now())
         for (idx in 0 until (chunkTimes.size - 1)) {
