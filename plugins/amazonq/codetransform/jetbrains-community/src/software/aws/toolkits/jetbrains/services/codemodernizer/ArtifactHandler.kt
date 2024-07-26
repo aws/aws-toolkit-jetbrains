@@ -44,6 +44,7 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
+import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -61,12 +62,12 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
 
-    internal suspend fun displayDiff(job: JobId) {
+    internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-                displayDiffUsingPatch(result.artifact.patch, job)
+                displayDiffUsingPatch(result.artifact.patch, job, source)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -231,7 +232,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     /**
      * Opens the built-in patch dialog to display the diff and allowing users to apply the changes locally.
      */
-    internal fun displayDiffUsingPatch(patchFile: VirtualFile, jobId: JobId) {
+    internal fun displayDiffUsingPatch(patchFile: VirtualFile, jobId: JobId, source: CodeTransformVCSViewerSrcComponents) {
         runInEdt {
             val dialog = ApplyPatchDifferentiatedDialog(
                 project,
@@ -250,9 +251,9 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit")
+                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
             } else {
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel")
+                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)
             }
         }
     }
@@ -346,9 +347,9 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         )
     }
 
-    fun displayDiffAction(jobId: JobId) = runReadAction {
+    fun displayDiffAction(jobId: JobId, source: CodeTransformVCSViewerSrcComponents) = runReadAction {
         projectCoroutineScope(project).launch {
-            displayDiff(jobId)
+            displayDiff(jobId, source)
         }
     }
 
@@ -403,13 +404,12 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         }
     }
 
-    private fun mapArtifactTypes(artifactType: TransformationDownloadArtifactType) : CodeTransformArtifactType {
-        return when (artifactType) {
+    private fun mapArtifactTypes(artifactType: TransformationDownloadArtifactType): CodeTransformArtifactType =
+        when (artifactType) {
             TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> CodeTransformArtifactType.ClientInstructions
             TransformationDownloadArtifactType.LOGS -> CodeTransformArtifactType.Logs
             TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> CodeTransformArtifactType.Unknown
         }
-    }
 
     companion object {
         val LOG = getLogger<ArtifactHandler>()

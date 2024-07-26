@@ -90,10 +90,18 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     // Replace the input as needed to support Gradle and other transformation types.
     fun localBuildProject(buildCommand: CodeTransformBuildCommand, telemetryErrorMessage: String?, isCanceled: Boolean = false) {
+        val result: Result = if (telemetryErrorMessage.isNullOrEmpty()) {
+            Result.Succeeded
+        } else if (isCanceled) {
+            Result.Cancelled
+        } else {
+            Result.Failed
+        }
+
         CodetransformTelemetry.localBuildProject(
             codeTransformBuildCommand = buildCommand,
             codeTransformSessionId = sessionId,
-            result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
+            result = result,
             reason = telemetryErrorMessage,
         )
     }
@@ -136,11 +144,16 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun viewArtifact(artifactType: CodeTransformArtifactType, jobId: JobId, userChoice: String, telemetryErrorMessage: String? = null) {
+    fun viewArtifact(
+        artifactType: CodeTransformArtifactType,
+        jobId: JobId,
+        userChoice: String,
+        source: CodeTransformVCSViewerSrcComponents,
+        telemetryErrorMessage: String? = null
+    ) {
         CodetransformTelemetry.viewArtifact(
             codeTransformArtifactType = artifactType,
-            // TODO: this was default to ToastNotification, but should capture chat vs toast
-            codeTransformVCSViewerSrcComponents = CodeTransformVCSViewerSrcComponents.ToastNotification,
+            codeTransformVCSViewerSrcComponents = source,
             codeTransformSessionId = sessionId,
             codeTransformJobId = jobId.id,
             codeTransformStatus = currentJobStatus,

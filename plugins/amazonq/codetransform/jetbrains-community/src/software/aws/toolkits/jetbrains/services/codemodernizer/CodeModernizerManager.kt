@@ -81,6 +81,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Path
 import java.time.Instant
@@ -184,7 +185,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             } else {
                 ValidationResult(
                     false,
-                    invalidReason = message("codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files", supportedBuildFileNames.joinToString()),
+                    invalidReason = message(
+                        "codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files",
+                        supportedBuildFileNames.joinToString()
+                    ),
                     invalidTelemetryReason = InvalidTelemetryReason(
                         CodeTransformPreValidationError.NonMavenProject,
                         if (isGradleProject(project)) "Gradle build" else "other build"
@@ -554,7 +558,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
         message("codemodernizer.notification.info.modernize_complete.view_diff")
     ) {
-        artifactHandler.displayDiffAction(jobId)
+        artifactHandler.displayDiffAction(jobId, CodeTransformVCSViewerSrcComponents.ToastNotification)
     }
 
     private fun displaySummaryNotificationAction(jobId: JobId) =
@@ -747,7 +751,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun showDiff() {
         val job = codeTransformationSession?.getActiveJobId() ?: return
-        artifactHandler.displayDiffAction(job)
+        // Use "TreeViewHeader" for Hub
+        artifactHandler.displayDiffAction(job, CodeTransformVCSViewerSrcComponents.TreeViewHeader)
     }
 
     fun handleCredentialsChanged() {

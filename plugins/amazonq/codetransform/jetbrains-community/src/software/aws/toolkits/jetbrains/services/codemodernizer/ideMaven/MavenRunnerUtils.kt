@@ -35,7 +35,7 @@ fun runHilMavenCopyDependency(
 
         // run copy dependencies
         val copyDependenciesRunnable =
-            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir.toPath(), logger, telemetry)
+            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir.toPath(), logger)
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
@@ -67,7 +67,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
 
         // run copy dependencies
         val copyDependenciesRunnable =
-            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir, logger, telemetry)
+            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir, logger)
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
@@ -82,7 +82,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         }
 
         // Run clean
-        val cleanRunnable = runMavenClean(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry, destinationDir)
+        val cleanRunnable = runMavenClean(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir)
         cleanRunnable.await()
         buildlogBuilder.appendLine(cleanRunnable.getOutput())
         if (cleanRunnable.isComplete()) {
@@ -97,7 +97,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         }
 
         // Run install
-        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry, destinationDir)
+        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir)
         installRunnable.await()
         buildlogBuilder.appendLine(installRunnable.getOutput())
         if (installRunnable.isComplete()) {
@@ -131,7 +131,6 @@ private fun runMavenCopyDependencies(
     transformMavenRunner: TransformMavenRunner,
     destinationDir: Path,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven dependency:copy-dependencies")
     val copyCommandList = listOf(
@@ -169,7 +168,6 @@ private fun runMavenClean(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven clean")
@@ -186,7 +184,7 @@ private fun runMavenClean(
         try {
             transformMavenRunner.run(cleanParams, mvnSettings, cleanTransformRunnable)
         } catch (t: Throwable) {
-            val error = "Maven Clean: Unexpected error when executing bundled Maven clean"
+            logger.error { "Maven Clean: Unexpected error when executing bundled Maven clean" }
             cleanTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven clean failed: ${t.message}")
         }
@@ -200,7 +198,6 @@ private fun runMavenInstall(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
     destinationDir: Path
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven install")
@@ -217,7 +214,7 @@ private fun runMavenInstall(
         try {
             transformMavenRunner.run(installParams, mvnSettings, installTransformRunnable)
         } catch (t: Throwable) {
-            val error = "Maven Install: Unexpected error when executing bundled Maven install"
+            logger.error { "Maven Install: Unexpected error when executing bundled Maven install" }
             installTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven install failed: ${t.message}")
         }
@@ -261,7 +258,6 @@ private fun runMavenDependencyUpdatesReport(
 }
 
 fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
-    val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
 
     val transformMvnRunner = TransformMavenRunner(project)

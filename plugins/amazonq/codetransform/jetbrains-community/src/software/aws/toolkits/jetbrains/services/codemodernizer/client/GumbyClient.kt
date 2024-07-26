@@ -46,7 +46,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.telemetry.CodeTransformApiNames
@@ -56,7 +55,6 @@ import java.time.Instant
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
-    private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         ?: error("Attempted to use connection while one does not exist")
 
@@ -97,7 +95,7 @@ class GumbyClient(private val project: Project) {
 
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
         val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
-        return callApi({ bearerClient().getTransformation(request) }, apiName = CodeTransformApiNames.GetTransformation, jobId = jobId)
+        return callApi({ bearerClient().getTransformation(request) }, apiName = CodeTransformApiNames.GetTransformation)
     }
 
     fun startCodeModernization(
@@ -116,7 +114,7 @@ class GumbyClient(private val project: Project) {
                     .target { it.language(targetLanguage) }
             }
             .build()
-        return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation, uploadId = uploadId)
+        return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation)
     }
 
     fun resumeCodeTransformation(
@@ -127,26 +125,23 @@ class GumbyClient(private val project: Project) {
             .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
             .build()
-        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation, jobId = jobId.id)
+        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation)
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
         val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
-        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan, jobId = jobId.id)
+        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan)
     }
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
         val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()
-        return callApi({ bearerClient().stopTransformation(request) }, apiName = CodeTransformApiNames.StopTransformation, jobId = transformationJobId)
+        return callApi({ bearerClient().stopTransformation(request) }, apiName = CodeTransformApiNames.StopTransformation)
     }
 
     private fun <T : CodeWhispererRuntimeResponse> callApi(
         apiCall: () -> T,
         apiName: CodeTransformApiNames,
-        jobId: String? = null,
-        uploadId: String? = null,
     ): T {
-        val startTime = Instant.now()
         var result: CodeWhispererRuntimeResponse? = null
         try {
             result = apiCall()

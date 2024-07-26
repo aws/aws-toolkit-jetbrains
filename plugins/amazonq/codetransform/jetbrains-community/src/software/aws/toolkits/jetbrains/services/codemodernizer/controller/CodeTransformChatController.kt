@@ -76,6 +76,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -276,7 +277,10 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
-        artifactHandler.displayDiffAction(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+        artifactHandler.displayDiffAction(
+            CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
+            CodeTransformVCSViewerSrcComponents.Chat
+        )
     }
 
     override suspend fun processCodeTransformViewSummary(message: IncomingCodeTransformMessage.CodeTransformViewSummary) {
