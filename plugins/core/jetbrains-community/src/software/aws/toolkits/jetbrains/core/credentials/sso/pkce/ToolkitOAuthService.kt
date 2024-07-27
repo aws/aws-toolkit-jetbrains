@@ -16,6 +16,7 @@ import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.Url
 import com.intellij.util.Urls.newFromEncoded
 import com.intellij.util.io.DigestUtil
+import com.jetbrains.rd.util.AtomicReference
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
@@ -39,21 +40,8 @@ import java.util.concurrent.CompletableFuture
 
 const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 
-// TODO: stupid short term way to mitigate 404 not found (tcp connection not closed after success/failure/cancellation)
-private var channel: Channel? = null
-
-private fun closeIfChannelExist() {
-    try {
-        channel?.let {
-            it.close().apply {
-                sync()
-                println("closing channel ${it}")
-            }
-        }
-    } catch (e: Exception) {
-        println("error while attempting to close netty channel, ${e.message}")
-    }
-}
+// TODO: naive short term way to mitigate 404 not found (tcp connection is kept alive after success/failure/cancellation)
+private var channel: AtomicReference<Channel?> = AtomicReference(null)
 
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
@@ -62,8 +50,12 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     fun hasPendingRequest() = currentRequest.get() != null
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
-        closeIfChannelExist()
-        currentRequest.set(null)
+        channel.get()?.let {
+            if (it.isOpen) {
+                it.close().sync()
+            }
+        }
+
         val currentRequest = currentRequest.get()
         val toolkitRequest = currentRequest?.request as? ToolkitOAuthRequest
 
@@ -205,16 +197,11 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
     }
-
-    override fun execute(urlDecoder: QueryStringDecoder, request: FullHttpRequest, context: ChannelHandlerContext): String? {
-        channel = context.channel()
-        println("set channel = ${context.channel()}")
-        return super.execute(urlDecoder, request, context)
-    }
 }
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
     override fun execute(urlDecoder: QueryStringDecoder, request: FullHttpRequest, context: ChannelHandlerContext): String? {
+        channel.getAndSet(context.channel())
         val path = urlDecoder.path().substringAfter(getServiceName()).trim('/')
         val type = when {
             path.endsWith(".css") -> "text/css"
