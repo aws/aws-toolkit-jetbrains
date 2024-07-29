@@ -200,6 +200,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
         val result = validateCore(project)
 
+        // TODO: deprecated metric - remove after BI started using new metric
+        telemetry.sendValidationResult(result)
+
         telemetry.validateProject(result)
 
         return result
@@ -376,6 +379,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
+        // TODO: deprecated metric - remove after BI started using new metric
+        telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
+
         // Create and set a session
         codeTransformationSession = null
         val session = createCodeModernizerSession(customerSelection, project)
@@ -488,7 +494,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     /**
      * Silently try to resume the job, informs users only when job successfully resumed, suppresses exceptions.
      */
-    fun tryResumeJob() = projectCoroutineScope(project).launch {
+    fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
             // If the job is already running, compareAndSet will return false because the expected
@@ -499,6 +505,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
+
+            // Gather project details
+            // TODO: deprecated metric - remove after BI started using new metric
+            if (onProjectFirstOpen) {
+                val validationResult = validate(project)
+                telemetry.sendValidationResult(validationResult, onProjectFirstOpen)
+            }
 
             val context = managerState.toSessionContext(project)
             val session = CodeModernizerSession(context)

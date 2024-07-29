@@ -132,6 +132,9 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.chatDelayShort()
 
+        // TODO: deprecated metric - remove after BI started using new metric
+        telemetry.jobIsStartedFromChatPrompt()
+
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
         )
