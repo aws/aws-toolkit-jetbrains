@@ -205,7 +205,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-
                 // TODO: Deprecated - remove once BI starts using new metric
                 telemetry.jobArtifactDownloadAndDeserializeTime(
                     downloadStartTime,
