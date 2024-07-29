@@ -60,11 +60,6 @@ configurations {
                 useVersion(versionCatalog.findVersion("kotlin").get().toString())
                 because("resolve kotlin version conflicts in favor of local version catalog")
             }
-
-            if (requested.group == "org.jetbrains.intellij.plugins" && requested.name.startsWith("structure-intellij")) {
-                useVersion("3.280")
-                because("broken")
-            }
         }
     }
 }
