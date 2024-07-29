@@ -34,7 +34,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.keystrokeInput
@@ -64,8 +63,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceRule
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -83,11 +81,6 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         invocationCount: Int = 0,
     ) : CodeWhispererCodeCoverageTracker(project, timeWindowInSec, language, rangeMarkers, codeCoverageTokens, AtomicInteger(invocationCount))
 
-    protected class TestTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
     @Rule
     @JvmField
     val projectRule: CodeInsightTestFixtureRule
@@ -100,9 +93,12 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
     @JvmField
     val mockClientManagerRule = MockClientManagerRule()
 
+    @Rule
+    @JvmField
+    val mockTelemetryServiceRule = MockTelemetryServiceRule()
+
     protected lateinit var project: Project
     protected lateinit var fixture: CodeInsightTestFixture
-    protected lateinit var telemetryServiceSpy: TelemetryService
     protected lateinit var batcher: TelemetryBatcher
     protected lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
     protected lateinit var sut: CodeWhispererCodeCoverageTracker
@@ -115,15 +111,13 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         this.project = projectRule.project
         this.fixture = projectRule.fixture
         AwsSettings.getInstance().isTelemetryEnabled = true
-        batcher = mock()
-        telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
+        batcher = mockTelemetryServiceRule.batcher()
 
         exploreActionManagerMock = mock {
             on { checkActiveCodeWhispererConnectionType(any()) } doReturn CodeWhispererLoginType.Sono
         }
 
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreActionManagerMock, disposableRule.disposable)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
     }
 
     @After

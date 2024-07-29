@@ -3,13 +3,8 @@
 
 package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationExtension
-import com.intellij.testFramework.junit5.TestDisposable
-import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -33,13 +28,12 @@ class AwsSettingsTest {
     private lateinit var awsConfiguration: AwsConfiguration
 
     @BeforeEach
-    fun setup(@TestDisposable disposable: Disposable) {
+    fun setup() {
         batcher = mockTelemetryService.batcher()
-        telemetryService = spy(mockTelemetryService.telemetryService())
+        telemetryService = mockTelemetryService.telemetryService()
         awsSettings = spy(DefaultAwsSettings())
         awsConfiguration = spy(AwsConfiguration())
         awsSettings.loadState(awsConfiguration)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
     }
 
     @Test

@@ -50,7 +50,6 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Duration
 import kotlin.random.Random
 
-// TODO: add more tests
 class CodeWhispererTelemetryServiceTest {
     @Rule
     @JvmField

@@ -40,6 +40,8 @@ class SendFeedbackWithExperimentsMetadataTest {
 
         sendFeedbackWithExperimentsMetadata(Sentiment.NEGATIVE, comment)
 
-        verify(mockTelemetryService.publisher()).sendFeedback(Sentiment.NEGATIVE, comment, mapOf(ENABLED_EXPERIMENTS to "${fooExperiment.id},${barExperiment.id}"))
+        verify(
+            mockTelemetryService.publisher()
+        ).sendFeedback(Sentiment.NEGATIVE, comment, mapOf(ENABLED_EXPERIMENTS to "${fooExperiment.id},${barExperiment.id}"))
     }
 }

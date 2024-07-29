@@ -60,7 +60,7 @@ class DefaultToolkitAuthManagerTest {
     private var isTelemetryEnabledDefault: Boolean = false
 
     @BeforeEach
-    fun setUp(@TestDisposable disposable: Disposable) {
+    fun setUp() {
         mockClientManager.create<SsoOidcClient>()
         sut = DefaultToolkitAuthManager()
         connectionManager = DefaultToolkitConnectionManager()
