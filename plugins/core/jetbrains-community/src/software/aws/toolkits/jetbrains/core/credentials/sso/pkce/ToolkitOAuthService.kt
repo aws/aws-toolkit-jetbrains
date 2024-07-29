@@ -194,6 +194,16 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
     }
 
     override fun isSupported(request: FullHttpRequest): Boolean {
+        /**
+         * comment this out because if we return false early here the TCP connection will be still kept alive by the IDE. In this state, users
+         * following login attempts will keep seeing 404 not found page, which could be only resolved by (1) re-start the IDE (2) wait until the TCP connection
+         * between browsers and IDE is closed
+         */
+        // only handle if we're actively waiting on a redirect
+//        if (!oauthService().hasPendingRequest()) {
+//            return false
+//        }
+
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
     }
