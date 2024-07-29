@@ -3,6 +3,7 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -37,43 +38,57 @@ intellijToolkit {
     ideFlavor.set(IdeFlavor.IC)
 }
 
-// delete when fully split
-val dummyPluginJar = tasks.register<Jar>("dummyPluginJar") {
-    archiveFileName.set("dummy.jar")
-
-    from(project(":plugin-core").file("src/main/resources"))
+// expose intellij test framework to fixture consumers
+configurations.testFixturesCompileOnlyApi {
+    extendsFrom(
+        configurations.intellijPlatformTestDependencies.get()
+    )
 }
 
-tasks.prepareTestingSandbox {
-    dependsOn(dummyPluginJar)
-
-    intoChild(pluginName.map { "$it/lib" })
-        .from(dummyPluginJar)
+// intellij java-test-framework pollutes test classpath with extracted java plugins
+configurations.testFixturesApi {
+    exclude("com.jetbrains.intellij.java", "java")
+    exclude("com.jetbrains.intellij.java", "java-impl")
 }
 
 dependencies {
-    compileOnlyApi(project(":plugin-core:sdk-codegen"))
-    compileOnlyApi(libs.aws.apacheClient)
+    intellijPlatform {
+        testFramework(TestFrameworkType.Plugin.Java)
+        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
+    }
 
-    testFixturesApi(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
-    testFixturesApi(libs.mockk)
-    testFixturesApi(libs.kotlin.coroutinesTest)
-    testFixturesApi(libs.kotlin.coroutinesDebug)
+    compileOnlyApi(project(":plugin-core:core"))
+    compileOnlyApi(libs.aws.apacheClient)
+    compileOnlyApi(libs.aws.nettyClient)
+
+    api(libs.aws.iam)
+
+    testFixturesApi(project(path = ":plugin-core:core", configuration = "testArtifacts"))
+    testFixturesApi(project(":plugin-core:resources"))
     testFixturesApi(libs.wiremock) {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
     }
 
-    // delete when fully split
-    compileOnlyApi(project(":plugin-toolkit:core"))
-    runtimeOnly(project(":plugin-toolkit:core"))
+    testImplementation(project(":plugin-core:core"))
+    testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 }
 
 // fix implicit dependency on generated source
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     dependsOn(generateTelemetry)
 }
 
-tasks.withType<DetektCreateBaselineTask> {
+tasks.withType<DetektCreateBaselineTask>().configureEach {
     dependsOn(generateTelemetry)
+}
+
+// hack because our test structure currently doesn't make complete sense
+tasks.prepareTestSandbox {
+    val pluginXmlJar = project(":plugin-core").tasks.jar
+
+    dependsOn(pluginXmlJar)
+    intoChild(intellijPlatform.projectName.map { "$it/lib" })
+        .from(pluginXmlJar)
 }

@@ -57,6 +57,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitCredentialProcessProvider
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.SsoCache
 import software.aws.toolkits.jetbrains.core.region.getDefaultRegion
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
@@ -923,8 +927,24 @@ class ProfileCredentialProviderFactoryTest {
         )
 
         val ssoCache = mock<SsoCache> {
-            on { loadAccessToken(("ValidUrl")) }.thenReturn(mock())
-            on { loadAccessToken(("ExpiredUrl")) }.thenReturn(null)
+            on { loadAccessToken(any()) }.thenAnswer { invocation ->
+                val arg = invocation.arguments[0]
+                when (arg) {
+                    is DeviceGrantAccessTokenCacheKey -> {
+                        when (arg.startUrl) {
+                            "ValidUrl" -> mock<DeviceAuthorizationGrantToken>()
+                            else -> null
+                        }
+                    }
+                    is PKCEAccessTokenCacheKey -> {
+                        when (arg.issuerUrl) {
+                            "ValidUrl" -> mock<PKCEAuthorizationGrantToken>()
+                            else -> null
+                        }
+                    }
+                    else -> null
+                }
+            }
         }
 
         createProviderFactory(ssoCache)

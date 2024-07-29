@@ -3,14 +3,16 @@
 
 package software.aws.toolkits.jetbrains.core
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkits.core.utils.UrlFetcher
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
+
+typealias RemoteResourceResolverProvider = migration.software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 
 class DefaultRemoteResourceResolverProvider : RemoteResourceResolverProvider {
     override fun get() = RESOLVER_INSTANCE
@@ -21,7 +23,7 @@ class DefaultRemoteResourceResolverProvider : RemoteResourceResolverProvider {
 
             DefaultRemoteResourceResolver(HttpRequestUrlFetcher, cachePath) {
                 val future = CompletableFuture<Path>()
-                ApplicationManager.getApplication().executeOnPooledThread {
+                pluginAwareExecuteOnPooledThread {
                     try {
                         future.complete(it.call())
                     } catch (e: Exception) {

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import java.time.Instant
 import java.util.UUID
@@ -69,6 +71,13 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         val filePath: String,
         val deleted: Boolean
     ) : IncomingFeatureDevMessage
+
+    data class FileClicked(
+        @JsonProperty("tabID") val tabId: String,
+        val filePath: String,
+        val messageId: String,
+        val actionName: String
+    ) : IncomingFeatureDevMessage
 }
 
 // === UI -> App Messages ===
@@ -98,6 +107,7 @@ data class FeatureDevMessage(
     val message: String? = null,
     val followUps: List<FollowUp>? = null,
     val canBeVoted: Boolean,
+    val snapToTop: Boolean
 
 ) : UiMessage(
     tabId = tabId,
@@ -119,6 +129,16 @@ data class UpdatePlaceholderMessage(
 ) : UiMessage(
     tabId = tabId,
     type = "updatePlaceholderMessage"
+)
+
+data class FileComponent(
+    @JsonProperty("tabID") override val tabId: String,
+    val filePaths: List<NewFileZipInfo>,
+    val deletedFiles: List<DeletedFileInfo>,
+    val messageId: String
+) : UiMessage(
+    tabId = tabId,
+    type = "updateFileComponent"
 )
 
 data class ChatInputEnabledMessage(
@@ -162,9 +182,9 @@ data class AuthNeededException(
 data class CodeResultMessage(
     @JsonProperty("tabID") override val tabId: String,
     val conversationId: String,
-    val filePaths: List<String>,
-    val deletedFiles: List<String>,
-    val references: List<ReducedCodeReference>
+    val filePaths: List<NewFileZipInfo>,
+    val deletedFiles: List<DeletedFileInfo>,
+    val references: List<CodeReference>
 ) : UiMessage(
     tabId = tabId,
     type = "codeResultMessage"

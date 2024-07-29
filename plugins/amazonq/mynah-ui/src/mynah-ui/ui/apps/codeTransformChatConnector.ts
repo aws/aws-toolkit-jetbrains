@@ -3,31 +3,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItem, ChatItemAction, ChatItemType, NotificationType } from '@aws/mynah-ui-chat'
-import { ExtensionMessage } from '../commands'
-import { TabsStorage } from '../storages/tabsStorage'
-import { FollowUpGenerator } from '../followUps/generator'
-import { FormButtonIds } from '../forms/constants'
+import {ChatItem, ChatItemAction, ChatItemType, NotificationType} from '@aws/mynah-ui-chat'
+import {ExtensionMessage} from '../commands'
+import {TabsStorage, TabType} from '../storages/tabsStorage'
+import {FollowUpGenerator} from '../followUps/generator'
+import {FormButtonIds} from '../forms/constants'
 
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onCodeTransformChatDisabled: (tabID: string) => void
-    onCodeTransformMessageReceived: (tabID: string, message: ChatItem) => void
+    onCodeTransformMessageReceived: (tabID: string, message: ChatItem, isLoading: boolean, clearPreviousItemButtons?: boolean) => void
+    onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
     onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     tabsStorage: TabsStorage
+    onNewTab: (tabType: TabType) => void
 }
 
 export class CodeTransformChatConnector {
     private readonly sendMessageToExtension
     private readonly onCodeTransformChatDisabled
     private readonly onCodeTransformMessageReceived
+    private readonly onCodeTransformMessageUpdated
     private readonly onCodeTransformCommandMessageReceived
     private readonly onNotification
     private readonly onStartNewTransform
     private readonly onUpdateAuthentication
+    private readonly onNewTab
     private readonly tabsStorage
     private readonly followUpGenerator: FollowUpGenerator
 
@@ -36,11 +40,13 @@ export class CodeTransformChatConnector {
         this.onStartNewTransform = props.onStartNewTransform
         this.onCodeTransformChatDisabled = props.onCodeTransformChatDisabled
         this.onCodeTransformMessageReceived = props.onCodeTransformMessageReceived
+        this.onCodeTransformMessageUpdated = props.onCodeTransformMessageUpdate
         this.onCodeTransformCommandMessageReceived = props.onCodeTransformCommandMessageReceived
         this.onNotification = props.onNotification
         this.onUpdateAuthentication = props.onUpdateAuthentication
         this.tabsStorage = props.tabsStorage
         this.followUpGenerator = new FollowUpGenerator()
+        this.onNewTab = props.onNewTab
     }
 
     followUpClicked = (tabID: string, followUp: ChatItemAction): void => {
@@ -72,13 +78,15 @@ export class CodeTransformChatConnector {
         }
 
         const tabID = messageData.tabID
-        const isAddingNewItem = messageData.isAddingNewItem
+        const isAddingNewItem: boolean = messageData.isAddingNewItem
+        const isLoading: boolean = messageData.isLoading
+        const clearPreviousItemButtons: boolean = messageData.clearPreviousItemButtons
         const type = messageData.messageType
 
         if (isAddingNewItem && type === ChatItemType.ANSWER_PART) {
             this.onCodeTransformMessageReceived(tabID, {
                 type: ChatItemType.ANSWER_STREAM,
-            })
+            }, isLoading)
         }
 
         const chatItem: ChatItem = {
@@ -98,7 +106,33 @@ export class CodeTransformChatConnector {
                       }
                     : undefined,
         }
-        this.onCodeTransformMessageReceived(tabID, chatItem)
+        this.onCodeTransformMessageReceived(tabID, chatItem, isLoading, clearPreviousItemButtons)
+    }
+
+    private processChatUpdateMessage = (messageData: any): void => {
+        if (this.onCodeTransformMessageUpdated === undefined) {
+            return
+        }
+
+        const tabID = messageData.tabID
+        const targetMessageId = messageData.targetMessageId
+
+        const updatedItem: Partial<ChatItem> = {
+            body: messageData.message ?? undefined,
+            relatedContent: undefined,
+            canBeVoted: messageData.canBeVoted,
+            formItems: messageData.formItems,
+            buttons:
+                messageData.buttons !== undefined && messageData.buttons.length > 0 ? messageData.buttons : undefined,
+            followUp:
+                messageData.followUps !== undefined && messageData.followUps.length > 0
+                    ? {
+                          text: '',
+                          options: messageData.followUps,
+                      }
+                    : undefined,
+        }
+        this.onCodeTransformMessageUpdated(tabID, targetMessageId, updatedItem)
     }
 
     private processAuthNeededException = async (messageData: any): Promise<void> => {
@@ -113,7 +147,7 @@ export class CodeTransformChatConnector {
             body: messageData.message,
             followUp: this.followUpGenerator.generateAuthFollowUps('codetransform', messageData.authType),
             canBeVoted: false,
-        })
+        }, false)
 
         return
     }
@@ -141,6 +175,16 @@ export class CodeTransformChatConnector {
 
         if (messageData.type === 'authenticationUpdateMessage') {
             this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
+            return
+        }
+
+        if (messageData.type === 'codeTransformChatUpdateMessage') {
+            this.processChatUpdateMessage(messageData)
+            return
+        }
+
+        if (messageData.type === 'codeTransformCreateTab') {
+            this.onNewTab('codetransform')
             return
         }
     }
@@ -196,6 +240,31 @@ export class CodeTransformChatConnector {
         } else if (action.id === FormButtonIds.CodeTransformViewSummary) {
             this.sendMessageToExtension({
                 command: 'codetransform-view-summary',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.CodeTransformViewBuildLog) {
+            this.sendMessageToExtension({
+                command: 'codetransform-view-build-log',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.ConfirmHilSelection) {
+            this.sendMessageToExtension({
+                command: 'codetransform-confirm-hil-selection',
+                tabID,
+                tabType: 'codetransform',
+                version: action.formItemValues?.dependencyVersion,
+            })
+        } else if (action.id === FormButtonIds.RejectHilSelection) {
+            this.sendMessageToExtension({
+                command: 'codetransform-reject-hil-selection',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.OpenDependencyErrorPom) {
+            this.sendMessageToExtension({
+                command: 'codetransform-pom-file-open-click',
                 tabID,
                 tabType: 'codetransform',
             })

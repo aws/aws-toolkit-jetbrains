@@ -1,7 +1,10 @@
 <!-- Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-<idea-plugin>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include href="/META-INF/ext-rider-wizard.xml">
+        <xi:fallback/>
+    </xi:include>
 
     <project-components>
         <component>
@@ -18,7 +21,6 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectTemplateProvider implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectProvider" order="last"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.icons.RiderAwsIconsPatcherRegistrar"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.settings.RiderSyncSettings"/>
     </extensions>
@@ -29,12 +31,11 @@
         <handlerResolver id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetLambdaHandlerResolver"/>
         <handlerCompletion id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.completion.DotNetHandlerCompletion"/>
         <sam.runtimeDebugSupport id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetRuntimeDebugSupport"/>
-        <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet50ImageDebug"/>
         <sam.imageDebuggerSupport implementation="software.aws.toolkits.jetbrains.services.lambda.dotnet.Dotnet60ImageDebug"/>
         <sam.projectWizard id="DOTNET" implementationClass="software.aws.toolkits.jetbrains.services.lambda.dotnet.DotNetSamProjectWizard"/>
     </extensions>
 
-    <extensions defaultExtensionNs="aws.toolkit.codewhisperer">
+    <extensions defaultExtensionNs="amazon.q.codewhisperer">
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp"/>
     </extensions>
 

@@ -41,11 +41,13 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.AccessTokenCacheKey
-import software.aws.toolkits.jetbrains.core.credentials.sso.ClientRegistration
-import software.aws.toolkits.jetbrains.core.credentials.sso.ClientRegistrationCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistration
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationClientRegistrationCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
+import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAccessTokenCacheKey
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -106,6 +108,7 @@ class InteractiveBearerTokenProviderTest {
                 )
 
         MockClientManager.useRealImplementations(disposableRule.disposable)
+        oidcClient.close()
         oidcClient = spy(buildUnmanagedSsoOidcClientForTests("us-east-1"))
         val registerClientResponse = oidcClient.registerClient {
             it.clientType("public")
@@ -128,10 +131,38 @@ class InteractiveBearerTokenProviderTest {
     }
 
     @Test
+    fun `oidcClient has detailed error message on InvalidGrantException failure`() {
+        fun buildUnmanagedSsoOidcClientForTests(region: String): SsoOidcClient =
+            AwsClientManager.getInstance()
+                .createUnmanagedClient(
+                    AnonymousCredentialsProvider.create(),
+                    Region.of(region),
+                    clientCustomizer = { _, _, _, _, configuration ->
+                        ssoOidcClientConfigurationBuilder(configuration)
+                    }
+                )
+
+        MockClientManager.useRealImplementations(disposableRule.disposable)
+        oidcClient.close()
+        oidcClient = spy(buildUnmanagedSsoOidcClientForTests("us-east-1"))
+        val exception = assertThrows<InvalidGrantException> {
+            oidcClient.createToken {
+                it.clientId("test")
+                it.clientSecret("test")
+                it.deviceCode("invalid for test")
+                it.grantType("urn:ietf:params:oauth:grant-type:device_code")
+            }
+        }
+
+        assertThat(exception.message)
+            .isEqualTo("invalid_grant: Invalid device code provided (Service: SsoOidc, Status Code: 400, Request ID: ${exception.requestId()})")
+    }
+
+    @Test
     fun `resolveToken does't refresh if token was retrieved recently`() {
         stubClientRegistration()
-        whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "accessToken",
@@ -176,13 +207,17 @@ class InteractiveBearerTokenProviderTest {
         sut.invalidate()
 
         // initial load
-        verify(diskCache).loadAccessToken(any<AccessTokenCacheKey>())
+        verify(diskCache).loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())
+        verify(diskCache).invalidateClientRegistration(region)
+        verify(diskCache).invalidateAccessToken(startUrl)
 
         // clears out on-disk token
-        verify(diskCache).invalidateAccessToken(
+        verify(diskCache, times(2)).invalidateAccessToken(
             argThat<AccessTokenCacheKey> {
-                val (_, url, scopes) = this
-                url == startUrl && scopes == this.scopes
+                when (this) {
+                    is DeviceGrantAccessTokenCacheKey -> startUrl == this.startUrl && scopes == this.scopes
+                    is PKCEAccessTokenCacheKey -> startUrl == this.issuerUrl && scopes == this.scopes
+                }
             }
         )
 
@@ -200,8 +235,8 @@ class InteractiveBearerTokenProviderTest {
 
         // and now instead of trying to stub out the entire OIDC device flow, abuse the fact that we short-circuit and read from disk if available
         Mockito.reset(diskCache)
-        whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "access1",
@@ -238,8 +273,8 @@ class InteractiveBearerTokenProviderTest {
     )
 
     private fun stubClientRegistration() {
-        whenever(diskCache.loadClientRegistration(any<ClientRegistrationCacheKey>())).thenReturn(
-            ClientRegistration(
+        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>())).thenReturn(
+            DeviceAuthorizationClientRegistration(
                 "",
                 "",
                 Instant.MAX
@@ -248,8 +283,8 @@ class InteractiveBearerTokenProviderTest {
     }
 
     private fun stubAccessToken() {
-        whenever(diskCache.loadAccessToken(any<AccessTokenCacheKey>())).thenReturn(
-            AccessToken(
+        whenever(diskCache.loadAccessToken(any<DeviceGrantAccessTokenCacheKey>())).thenReturn(
+            DeviceAuthorizationGrantToken(
                 startUrl = startUrl,
                 region = region,
                 accessToken = "accessToken",

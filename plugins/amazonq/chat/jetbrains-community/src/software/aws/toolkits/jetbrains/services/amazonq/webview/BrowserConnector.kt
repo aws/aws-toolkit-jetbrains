@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import org.cef.browser.CefBrowser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -26,7 +27,7 @@ class BrowserConnector(
     private val serializer: MessageSerializer = MessageSerializer.getInstance(),
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
 ) {
-    val uiReady = CompletableDeferred<Boolean>()
+    var uiReady = CompletableDeferred<Boolean>()
 
     suspend fun connect(
         browser: Browser,
@@ -60,13 +61,16 @@ class BrowserConnector(
     }
 
     suspend fun connectTheme(
-        browser: Browser,
-        themeSource: Flow<AmazonQTheme>,
+        chatBrowser: CefBrowser,
+        loginBrowser: CefBrowser,
+        themeSource: Flow<AmazonQTheme>
     ) = coroutineScope {
-        uiReady.await()
         themeSource
             .distinctUntilChanged()
-            .onEach { themeBrowserAdapter.updateThemeInBrowser(browser.jcefBrowser.cefBrowser, it) }
+            .onEach {
+                themeBrowserAdapter.updateLoginThemeInBrowser(loginBrowser, it)
+                themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it, uiReady)
+            }
             .launchIn(this)
     }
 

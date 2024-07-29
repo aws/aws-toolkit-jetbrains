@@ -1,9 +1,11 @@
 .gradle
+.intellijPlatform
 out/
 target/
 .idea
 !.run/
 build/
+gradle_build/
 *.iml
 .DS_Store
 Build/
@@ -21,7 +23,7 @@ unload-*
 jetbrains-core/bin/
 jetbrains-ultimate/bin/
 resources/bin/
-jetbrains-rider/**/NuGet.config
+**/jetbrains-rider/**/NuGet.config
 RiderSdkPackageVersion.props
 *.Generated.cs
 core/bin

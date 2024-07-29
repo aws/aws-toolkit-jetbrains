@@ -3,14 +3,12 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import software.aws.toolkits.gradle.jvmTarget
-import software.aws.toolkits.gradle.kotlinTarget
 
 plugins {
-    id("java")
-    kotlin("jvm")
+    id("java-library")
     id("toolkit-detekt")
+    id("toolkit-jvm-conventions")
 }
 
 // TODO: https://github.com/gradle/gradle/issues/15383
@@ -22,7 +20,13 @@ dependencies {
     implementation(versionCatalog.findBundle("kotlin").get())
     implementation(versionCatalog.findLibrary("kotlin-coroutines").get())
 
-    testImplementation(versionCatalog.findLibrary("kotlin-test").get())
+    testFixturesApi(versionCatalog.findLibrary("kotlin-test").get())
+    testFixturesApi(versionCatalog.findLibrary("kotlin-coroutinesDebug").get()) {
+        // IDE provides JNA and results in conflicts
+        exclude(group = "net.java.dev.jna", module = "jna")
+    }
+    testFixturesApi(versionCatalog.findLibrary("kotlin-coroutinesTest").get())
+    testFixturesApi(versionCatalog.findLibrary("mockk").get())
 }
 
 sourceSets {
@@ -46,19 +50,6 @@ sourceSets {
 }
 
 val javaVersion = project.jvmTarget().get()
-java {
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-}
-
-tasks.withType<KotlinCompile>().all {
-    kotlinOptions {
-        jvmTarget = javaVersion.majorVersion
-        apiVersion = project.kotlinTarget().get()
-        languageVersion = project.kotlinTarget().get()
-        freeCompilerArgs = listOf("-Xjvm-default=all")
-    }
-}
 
 tasks.withType<Detekt>().configureEach {
     jvmTarget = javaVersion.majorVersion

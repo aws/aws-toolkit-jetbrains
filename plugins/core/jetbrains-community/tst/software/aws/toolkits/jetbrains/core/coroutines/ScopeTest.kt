@@ -20,6 +20,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Ignore
@@ -27,6 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestName
+import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import java.time.Duration
 import java.util.concurrent.CancellationException
@@ -150,6 +152,18 @@ class ScopeTest {
     @Test
     fun `disposableCoroutineScope can't take an application`() {
         assertThatThrownBy { disposableCoroutineScope(ApplicationManager.getApplication()) }.isInstanceOf<IllegalStateException>()
+    }
+
+    @Test
+    fun `coroutine inherits PluginResolver from parent`() {
+        val pluginResolver = PluginResolver.fromCurrentThread()
+        PluginResolver.setThreadLocal(pluginResolver)
+
+        runBlocking {
+            withContext(applicationCoroutineScope().coroutineContext) {
+                assertThat(PluginResolver.fromCurrentThread()).isEqualTo(pluginResolver)
+            }
+        }
     }
 
     private fun createFakePluginScope(componentManager: ComponentManager = ApplicationManager.getApplication()): Disposable {

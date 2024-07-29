@@ -4,8 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 
 data class SessionStateAction(
     val task: String,
@@ -32,26 +33,41 @@ enum class SessionStatePhase(
 
 data class SessionStateConfig(
     val conversationId: String,
-    val proxyClient: FeatureDevClient,
     val repoContext: FeatureDevSessionContext,
+    val featureDevService: FeatureDevService
 )
 
 data class NewFileZipInfo(
     val zipFilePath: String,
     val fileContent: String,
+    var rejected: Boolean
+)
+
+data class DeletedFileInfo(
+    val zipFilePath: String, // The string is the path of the file to be deleted
+    var rejected: Boolean
 )
 
 data class CodeGenerationResult(
     var newFiles: List<NewFileZipInfo>,
-    var deletedFiles: List<String>, // The string is the path of the file to be deleted
-    var references: List<CodeReference>,
+    var deletedFiles: List<DeletedFileInfo>,
+    var references: List<CodeReferenceGenerated>,
+    var codeGenerationRemainingIterationCount: Int? = null,
+    var codeGenerationTotalIterationCount: Int? = null
+)
+
+data class CodeReferenceGenerated(
+    val licenseName: String? = null,
+    val repository: String? = null,
+    val url: String? = null,
+    val recommendationContentSpan: RecommendationContentSpan? = null,
 )
 
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.
 data class CodeGenerationStreamResult(
     var new_file_contents: Map<String, String>,
     var deleted_files: List<String>,
-    var references: List<CodeReference>,
+    var references: List<CodeReferenceGenerated>,
 )
 
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.

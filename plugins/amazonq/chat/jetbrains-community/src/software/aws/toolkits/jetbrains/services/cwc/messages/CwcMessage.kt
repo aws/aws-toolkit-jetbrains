@@ -67,6 +67,9 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val messageId: String,
         val code: String,
         val insertionTargetType: String?,
+        val eventId: String?,
+        val codeBlockIndex: Int?,
+        val totalCodeBlocks: Int?
     ) : IncomingCwcMessage
 
     data class InsertCodeAtCursorPosition(
@@ -75,6 +78,9 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val code: String,
         val insertionTargetType: String?,
         val codeReference: List<CodeReference>?,
+        val eventId: String?,
+        val codeBlockIndex: Int?,
+        val totalCodeBlocks: Int?
     ) : IncomingCwcMessage
 
     data class TriggerTabIdReceived(
@@ -116,6 +122,10 @@ sealed interface IncomingCwcMessage : CwcMessage {
     data class AuthFollowUpWasClicked(
         @JsonProperty("tabID") val tabId: String,
         val authType: AuthFollowUpType,
+    ) : IncomingCwcMessage
+
+    data class OpenSettings(
+        @JsonProperty("tabID") val tabId: String? = null,
     ) : IncomingCwcMessage
 }
 
@@ -249,4 +259,11 @@ data class OnboardingPageInteractionMessage(
 ) : UiMessage(
     tabId = null,
     type = "editorContextCommandMessage",
+)
+
+data class OpenSettingsMessage(
+    @JsonProperty("tabID") override val tabId: String,
+) : UiMessage(
+    tabId = tabId,
+    type = "openSettingsMessage",
 )

@@ -1,9 +1,15 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+@file:OptIn(kotlin.io.encoding.ExperimentalEncodingApi::class)
 
 import net.bytebuddy.utility.RandomString
-import org.jetbrains.intellij.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
+import kotlin.io.encoding.Base64
 
 plugins {
     id("toolkit-kotlin-conventions")
@@ -11,37 +17,75 @@ plugins {
     id("toolkit-testing")
     id("toolkit-intellij-subplugin")
     id("toolkit-integration-testing")
-}
-
-intellij {
-    pluginName.set("aws-toolkit-jetbrains")
-    type.set("GW")
+    id("toolkit-publishing-conventions")
 }
 
 intellijToolkit {
     ideFlavor.set(IdeFlavor.GW)
 }
 
-val gatewayRunOnly by configurations.creating {
+intellijPlatform {
+    projectName = "aws-toolkit-jetbrains"
+}
+
+sourceSets {
+    create("gatewayOnly") {
+        java {
+            resources {
+                srcDir("resources-gatewayOnly")
+            }
+        }
+    }
+}
+
+val gatewayOnlyRuntimeOnly by configurations.getting {
     extendsFrom(configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME))
-    isCanBeResolved = true
+}
+
+val gatewayOnlyRuntimeClasspath by configurations.existing
+val processGatewayOnlyResources by tasks.existing
+val gatewayOnlyResourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("gatewayOnlyResources")
+    from(processGatewayOnlyResources)
+}
+
+listOf(
+    "intellijPlatformDependency",
+    "intellijPluginVerifierIdesDependency",
+).forEach { configurationName ->
+    configurations[configurationName].dependencies.addLater(
+        toolkitIntelliJ.version().map {
+            dependencies.create(
+                group = "com.jetbrains.gateway",
+                name = "JetBrainsGateway",
+                version = it,
+            )
+        }
+    )
 }
 
 dependencies {
+    intellijPlatform {
+        pluginVerifier()
+
+        testFramework(TestFrameworkType.Bundled)
+    }
+
     // link against :j-c: and rely on :intellij:buildPlugin to pull in :j-c:instrumentedJar, but gateway variant when runIde/buildPlugin from :jetbrains-gateway
     compileOnly(project(":plugin-toolkit:jetbrains-core"))
-    gatewayRunOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
-
+    gatewayOnlyRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
     // delete when fully split
-    implementation(project(":plugin-core:jetbrains-community"))
+    gatewayOnlyRuntimeOnly(project(":plugin-core:core"))
+    gatewayOnlyRuntimeOnly(project(":plugin-core:jetbrains-community"))
+    gatewayOnlyRuntimeOnly(project(":plugin-core:resources"))
+    gatewayOnlyRuntimeOnly(project(":plugin-core:sdk-codegen"))
 
-    testImplementation(project(path = ":plugin-toolkit:core", configuration = "testArtifacts"))
+    testImplementation(project(path = ":plugin-core:core", configuration = "testArtifacts"))
+    testImplementation(project(":plugin-core:core"))
     testCompileOnly(project(":plugin-toolkit:jetbrains-core"))
     testRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-core", configuration = "testArtifacts"))
-    testImplementation(libs.kotlin.coroutinesTest)
-    testImplementation(libs.kotlin.coroutinesDebug)
     testImplementation(libs.wiremock)
     testImplementation(libs.bundles.sshd)
 }
@@ -100,13 +144,28 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
-tasks.withType<PrepareSandboxTask>().all {
-    intoChild(pluginName.map { "$it/gateway-resources" })
+tasks.withType<PrepareSandboxTask>().configureEach {
+    intoChild(intellijPlatform.projectName.map { "$it/gateway-resources" })
         .from(gatewayResourcesDir)
 }
 
-tasks.prepareSandbox {
-    runtimeClasspathFiles.set(gatewayRunOnly)
+listOf(
+    tasks.prepareSandbox,
+    tasks.prepareTestSandbox
+).forEach {
+    it.configure {
+        runtimeClasspath.setFrom(gatewayOnlyRuntimeClasspath)
+
+        dependsOn(gatewayOnlyResourcesJar)
+        intoChild(intellijPlatform.projectName.map { "$it/lib" })
+            .from(gatewayOnlyResourcesJar)
+    }
+}
+
+tasks.jarSearchableOptions {
+    dependsOn(":plugin-toolkit:jetbrains-core:pluginXmlForGateway")
+
+    pluginXml.set(project(":plugin-toolkit:jetbrains-core").tasks.maybeCreate<PatchPluginXmlTask>("pluginXmlForGateway").outputFile)
 }
 
 tasks.buildPlugin {
@@ -119,14 +178,24 @@ tasks.buildPlugin {
     archiveClassifier.set(classifier)
 }
 
-val publishToken: String by project
-val publishChannel: String by project
-tasks.publishPlugin {
-    token.set(publishToken)
-    channels.set(publishChannel.split(",").map { it.trim() })
-}
-
 tasks.integrationTest {
     val testToken = RandomString.make(32)
     environment("CWM_HOST_STATUS_OVER_HTTP_TOKEN", testToken)
+}
+
+tasks.verifyPlugin {
+    doFirst {
+        ides.forEach { ide ->
+            val productInfo = ide.resolve("product-info.json")
+            val moduleDescriptors = ide.resolve("modules").resolve("module-descriptors.jar")
+            if (productInfo.isFile && !moduleDescriptors.isFile) {
+                logger.warn("modules/module-descriptors.jar does not exist in $ide. This is probably a JetBrains platform bug")
+                moduleDescriptors.ensureParentDirsCreated()
+                // hack create an empty zip
+                moduleDescriptors.outputStream().use {
+                    it.write(Base64.decode("UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA=="))
+                }
+            }
+        }
+    }
 }

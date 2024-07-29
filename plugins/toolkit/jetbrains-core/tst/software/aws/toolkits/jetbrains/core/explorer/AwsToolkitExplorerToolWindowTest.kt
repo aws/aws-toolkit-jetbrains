@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.explorer
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ProjectExtension
 import com.intellij.testFramework.runInEdtAndGet
@@ -25,11 +26,13 @@ class AwsToolkitExplorerToolWindowTest {
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
         val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
 
-        sut.selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
-        assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
+        runInEdt {
+            sut.selectTab(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID)
 
-        sut.selectTab(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)
-        assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)
+            sut.selectTab(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID)
+        }
     }
 
     @Test
@@ -37,22 +40,23 @@ class AwsToolkitExplorerToolWindowTest {
         (ToolWindowManager.getInstance(projectExtension.project) as ToolWindowHeadlessManagerImpl)
             .doRegisterToolWindow(AwsToolkitExplorerFactory.TOOLWINDOW_ID)
         val sut = runInEdtAndGet { AwsToolkitExplorerToolWindow(projectExtension.project) }
+        runInEdt {
+            sut.loadState(
+                AwsToolkitExplorerToolWindowState().apply {
+                    selectedTab =
+                        AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID
+                }
+            )
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
 
-        sut.loadState(
-            AwsToolkitExplorerToolWindowState().apply {
-                selectedTab =
-                    AwsToolkitExplorerToolWindow.EXPLORER_TAB_ID
-            }
-        )
-        assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.CODEWHISPERER_Q_TAB_ID)
-
-        sut.loadState(
-            AwsToolkitExplorerToolWindowState().apply {
-                selectedTab =
-                    AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID
-            }
-        )
-        assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.CODEWHISPERER_Q_TAB_ID)
+            sut.loadState(
+                AwsToolkitExplorerToolWindowState().apply {
+                    selectedTab =
+                        AwsToolkitExplorerToolWindow.DEVTOOLS_TAB_ID
+                }
+            )
+            assertThat(sut.state.selectedTab).isEqualTo(AwsToolkitExplorerToolWindow.Q_TAB_ID)
+        }
     }
 
     @Test

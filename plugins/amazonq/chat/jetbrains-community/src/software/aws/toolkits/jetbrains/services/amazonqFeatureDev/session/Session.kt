@@ -5,19 +5,20 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.APPROACH_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.createConversation
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
-import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.writeBytes
 
 class Session(val tabID: String, val project: Project) {
     var context: FeatureDevSessionContext
@@ -29,6 +30,7 @@ class Session(val tabID: String, val project: Project) {
     private var _latestMessage: String = ""
     private var task: String = ""
     private val proxyClient: FeatureDevClient
+    private val featureDevService: FeatureDevService
 
     // retry session state vars
     private var approachRetries: Int
@@ -38,9 +40,10 @@ class Session(val tabID: String, val project: Project) {
     var isAuthenticating: Boolean
 
     init {
-        _state = ConversationNotStartedState("", tabID)
-        context = FeatureDevSessionContext(project)
+        context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
+        featureDevService = FeatureDevService(proxyClient, project)
+        _state = ConversationNotStartedState("", tabID)
         isAuthenticating = false
         approachRetries = APPROACH_RETRY_LIMIT
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
@@ -53,8 +56,8 @@ class Session(val tabID: String, val project: Project) {
         if (!preloaderFinished) {
             setupConversation(msg)
             preloaderFinished = true
-
             messenger.sendAsyncEventProgress(tabId = this.tabID, inProgress = true)
+            featureDevService.sendFeatureDevEvent(this.conversationId)
         }
     }
 
@@ -65,7 +68,7 @@ class Session(val tabID: String, val project: Project) {
         // Store the initial message when setting up the conversation so that if it fails we can retry with this message
         _latestMessage = msg
 
-        _conversationId = createConversation(proxyClient)
+        _conversationId = featureDevService.createConversation()
         val sessionStateConfig = getSessionStateConfig().copy(conversationId = this.conversationId)
         _state = PrepareRefinementState("", tabID, sessionStateConfig)
     }
@@ -87,30 +90,23 @@ class Session(val tabID: String, val project: Project) {
         )
         this._latestMessage = ""
 
-        AmazonqTelemetry.isApproachAccepted(amazonqConversationId = conversationId, enabled = true)
+        AmazonqTelemetry.isApproachAccepted(amazonqConversationId = conversationId, enabled = true, credentialStartUrl = getStartUrl(project = context.project))
     }
 
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<String>, references: List<CodeReference>) {
-        val projectRootPath = context.projectRoot.toNioPath()
+    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
-        filePaths.forEach {
-            val filePath = projectRootPath.resolve(it.zipFilePath)
-            filePath.parent.createDirectories() // Create directories if needed
-            filePath.writeBytes(it.fileContent.toByteArray(Charsets.UTF_8))
-        }
+        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
 
-        deletedFiles.forEach {
-            val deleteFilePath = projectRootPath.resolve(it)
-            deleteFilePath.deleteIfExists()
-        }
+        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
 
         ReferenceLogController.addReferenceLog(references, project)
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
-        VfsUtil.markDirtyAndRefresh(true, true, true, context.projectRoot)
+        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
     }
 
     suspend fun send(msg: String): Interaction {
@@ -144,8 +140,8 @@ class Session(val tabID: String, val project: Project) {
 
     private fun getSessionStateConfig(): SessionStateConfig = SessionStateConfig(
         conversationId = this.conversationId,
-        proxyClient = this.proxyClient,
         repoContext = this.context,
+        featureDevService = this.featureDevService,
     )
 
     val conversationId: String
@@ -156,6 +152,10 @@ class Session(val tabID: String, val project: Project) {
                 return _conversationId as String
             }
         }
+
+    val conversationIdUnsafe: String?
+        get() = _conversationId
+
     val sessionState: SessionState
         get() {
             if (_state == null) {

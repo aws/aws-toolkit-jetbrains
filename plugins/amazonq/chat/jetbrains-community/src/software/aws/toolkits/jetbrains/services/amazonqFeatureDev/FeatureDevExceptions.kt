@@ -3,21 +3,29 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev
 
+import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.resources.message
 
 open class FeatureDevException(override val message: String?, override val cause: Throwable? = null) : RuntimeException()
 
-class ContentLengthError(override val message: String, override val cause: Throwable?) : RuntimeException()
+class ContentLengthError(override val message: String, override val cause: Throwable?) : RepoSizeError, RuntimeException()
+
+class ZipFileError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
 class PlanIterationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
 class CodeIterationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
+class MonthlyConversationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
+
+internal fun featureDevServiceError(message: String?): Nothing =
+    throw FeatureDevException(message)
+
 internal fun codeGenerationFailedError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.code_generation.failed_generation"))
 
 internal fun uploadCodeError(): Nothing =
-    throw FeatureDevException(message("amazonqFeatureDev.exception.uploadCode"))
+    throw FeatureDevException(message("amazonqFeatureDev.exception.upload_code"))
 
 internal fun userMessageNotFound(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.exception.message_not_found"))

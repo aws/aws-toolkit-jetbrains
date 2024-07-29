@@ -7,24 +7,24 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      java: corretto17
-
     commands:
+      # FIX_WHEN_MIN_IS_233: 232 does not support jdk21
+      - |
+        $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
+        Write-Host ('Downloading from {0}' -f $url);
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+        Invoke-WebRequest -Uri $url -OutFile 'corretto_jdk_build.msi';
+        Start-Process 'corretto_jdk_build.msi' -PassThru | Wait-Process;
+        Write-Host 'Removing ...';
+        Remove-Item corretto_jdk_build.msi -Force;
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
             Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
         }
-      - dotnet --list-sdks
-      - |
-        Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1';
-        ./dotnet-install.ps1 -Verbose -InstallDir 'C:\Program Files\dotnet' -Channel '5.0'
-      - |
-        $DOTNET_ROOT = "$Env:USERPROFILE\.dotnet"
-        $Env:PATH = "$Env:PATH;$DOTNET_ROOT;$DOTNET_ROOT\tools"
-        dotnet tool install -g AWS.CodeArtifact.NuGet.CredentialProvider
-        dotnet codeartifact-creds install
+      - if (Test-Path "C:\codebuild\global.json") { rm -fo "C:\codebuild\global.json" }
+      - rm -r -fo "C:\Program Files\dotnet\sdk"
+      - choco install -fy dotnet-6.0-sdk
       - dotnet --list-sdks
 
   build:
@@ -35,17 +35,17 @@ phases:
 
         if ($Env:CODEARTIFACT_DOMAIN_NAME -and $Env:CODEARTIFACT_REPO_NAME) {
           $Env:CODEARTIFACT_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text
-          $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
+          # $Env:CODEARTIFACT_NUGET_URL=aws codeartifact get-repository-endpoint --domain $Env:CODEARTIFACT_DOMAIN_NAME --repository $Env:CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text
           $Env:CODEARTIFACT_AUTH_TOKEN=aws codeartifact get-authorization-token --domain $Env:CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600
         }
 
-         # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
-        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :plugin-toolkit:jetbrains-rider:compileTestKotlin -x :plugin-toolkit:jetbrains-rider:test --info --console plain --continue
+        # Rider is very expensive (spikes our CI jobs to 50% CPU, so let it do the prep work in parallel, but run tests later
+        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" check :plugin-toolkit:jetbrains-rider:compileTestKotlin -x :plugin-toolkit:jetbrains-rider:check --info --console plain --continue --stacktrace
         if ($LastExitCode -ne 0) {
           Write-Host "Command failed with exit code $LastExitCode"
           exit -1
         }
-       # ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:jetbrains-rider:check coverageReport --info --console plain
+        ./gradlew -PideProfileName="$Env:ALTERNATIVE_IDE_PROFILE_NAME" :plugin-toolkit:jetbrains-rider:check coverageReport --info --console plain
 
   post_build:
     commands:
@@ -53,22 +53,16 @@ phases:
         $script:TEST_ARTIFACTS=Join-Path $env:TEMP testArtifacts
         $script:TEST_REPORTS=Join-Path $script:TEST_ARTIFACTS test-reports
 
-        function copyFolder($basedir, $subdir, $destdir) {
-          $src = Join-Path "." -ChildPath $basedir | Join-Path -ChildPath $subdir
-          $dest = Join-Path $destdir -ChildPath $basedir | Join-Path -ChildPath $subDir
-          if( (Get-ChildItem $src -ErrorAction SilentlyContinue | Measure-Object).Count -ne 0) {
-            Copy-Item $src $dest -Recurse -Force -ErrorAction SilentlyContinue
+        function copyArtifacts($filter, $destdir) {
+          Get-ChildItem -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.FullName -Like "$filter" } | ForEach-Object {
+              Copy-Item -Path $_.FullName -Destination "$destdir/$(Resolve-Path -Relative $_.FullName)" -Recurse -Container
           }
         }
 
-        function copyArtifacts($root) {
-            copyFolder $root "build/reports/" $script:TEST_ARTIFACTS
-            copyFolder $root "build/idea-sandbox/system-test/log/" $script:TEST_ARTIFACTS
-            copyFolder $root "build/test-results/test/" $script:TEST_REPORTS
-        }
+        copyArtifacts "*\build\idea-sandbox\*\log*" $script:TEST_ARTIFACTS
+        copyArtifacts "*\build\reports" $script:TEST_ARTIFACTS
 
-        copyArtifacts "."
-        Get-ChildItem -Directory | ForEach-Object { copyArtifacts $_.Name }
+        copyArtifacts "*\test-results" $script:TEST_REPORTS
 
         if(-Not($Env:CODEBUILD_BUILD_SUCCEEDING -eq "0" -Or $Env:CODE_COV_TOKEN -eq $null)) {
           $env:VCS_COMMIT_ID=$Env:CODEBUILD_RESOLVED_SOURCE_VERSION;

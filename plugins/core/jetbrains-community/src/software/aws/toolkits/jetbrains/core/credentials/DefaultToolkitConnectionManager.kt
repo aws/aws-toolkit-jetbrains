@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.ide.ActivityTracker
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -11,6 +12,8 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 
 // TODO: unify with AwsConnectionManager
@@ -29,10 +32,13 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             }
         )
     }
+
     private val project: Project?
+
     constructor(project: Project) {
         this.project = project
     }
+
     constructor() {
         this.project = null
     }
@@ -71,12 +77,20 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 
             null
         } ?: defaultConnection?.let {
+            if (ApplicationInfo.getInstance().build.productCode == "GW") return null
             if (feature.supportsConnectionType(it)) {
                 return it
             }
 
             null
         }
+    }
+
+    override fun connectionStateForFeature(feature: FeatureWithPinnedConnection): BearerTokenAuthState {
+        val conn = activeConnectionForFeature(feature) as? AwsBearerTokenConnection? ?: return BearerTokenAuthState.NOT_AUTHENTICATED
+        val provider = conn.getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider ?: return BearerTokenAuthState.NOT_AUTHENTICATED
+
+        return provider.state()
     }
 
     override fun getState() = ToolkitConnectionManagerState(
@@ -117,6 +131,15 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
                                     )
                             )
                     ) {
+                        featuresToPin.add(it)
+                    } else if (
+                        newConnection is AwsBearerTokenConnection &&
+                        oldConnection is AwsBearerTokenConnection &&
+                        oldConnection.id == newConnection.id &&
+                        oldConnection.scopes.all { s -> s in newConnection.scopes }
+                    ) {
+                        // TODO: ugly
+                        // scope update case
                         featuresToPin.add(it)
                     }
                 }

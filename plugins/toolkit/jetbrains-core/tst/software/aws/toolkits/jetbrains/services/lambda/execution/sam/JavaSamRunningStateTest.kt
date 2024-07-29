@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.execution.sam
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.testFramework.IdeaTestUtil
+import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
@@ -42,6 +44,9 @@ class JavaSamRunningStateTest {
         projectRule.fixture
         credentialManager.addCredentials(mockCredsId)
 
+        // FIX_WHEN_MIN_IS_241: jdk21 known offender: https://github.com/JetBrains/intellij-community/commit/1bdcfa5340969ba84c0ecf88d48f6e27d3de8a54
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "process reaper")
+
         val sdk = IdeaTestUtil.getMockJdk18()
         runInEdtAndWait {
             runWriteAction {
@@ -58,7 +63,7 @@ class JavaSamRunningStateTest {
         val template = projectRule.fixture.addSamTemplate(
             logicalName = logicalId,
             codeUri = "/some/dummy/code/location",
-            runtime = LambdaRuntime.JAVA8,
+            runtime = LambdaRuntime.JAVA8_AL2,
             handler = "com.example.LambdaHandler::handleRequest"
         )
 
@@ -96,7 +101,7 @@ class JavaSamRunningStateTest {
 
         val runConfig = createHandlerBasedRunConfiguration(
             project = projectRule.project,
-            runtime = LambdaRuntime.JAVA8.toSdkRuntime(),
+            runtime = LambdaRuntime.JAVA8_AL2.toSdkRuntime(),
             input = "\"Hello World\"",
             credentialsProviderId = mockCredsId
         )

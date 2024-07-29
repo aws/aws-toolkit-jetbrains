@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
+import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -21,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.jetbrains.services.cwc.messages.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
+import software.aws.toolkits.resources.message
 
 class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
 
@@ -32,11 +34,24 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private var requestId: String = ""
     private var statusCode: Int = 0
 
+    companion object {
+        private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
+    }
+
+    private fun countTotalNumberOfCodeBlocks(message: StringBuilder): Int {
+        if (message.isEmpty()) {
+            return 0
+        }
+        val htmlInString = convertMarkdownToHTML(message.toString())
+        return CODE_BLOCK_PATTERN.findAll(htmlInString).count()
+    }
+
     fun handle(
         tabId: String,
         triggerId: String,
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
+        shouldAddIndexInProgressMessage: Boolean
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
@@ -75,7 +90,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
 
                 telemetryHelper.setResponseStreamTotalTime(tabId)
-                telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode)
+                telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
             }
             .catch { exception ->
@@ -100,11 +115,11 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 }
             }
             .collect { responseEvent ->
-                processChatEvent(tabId, triggerId, responseEvent)?.let { emit(it) }
+                processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
             }
     }
 
-    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent): ChatMessage? {
+    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
 
@@ -159,12 +174,17 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         return if (event.token != null) {
             responseText.append(event.token)
             telemetryHelper.setResponseStreamTimeForChunks(tabId)
+            val message = if (shouldAddIndexInProgressMessage) {
+                "$responseText \n\n${message("amazonqChat.project_context.index_in_progress")}"
+            } else {
+                responseText.toString()
+            }
             ChatMessage(
                 tabId = tabId,
                 triggerId = triggerId,
                 messageId = event.requestId,
                 messageType = ChatMessageType.AnswerPart,
-                message = responseText.toString(),
+                message = message,
                 codeReference = codeReferences,
             )
         } else {

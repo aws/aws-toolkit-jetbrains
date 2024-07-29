@@ -23,6 +23,8 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformViewSummary(message: IncomingCodeTransformMessage.CodeTransformViewSummary)
 
+    suspend fun processCodeTransformViewBuildLog(message: IncomingCodeTransformMessage.CodeTransformViewBuildLog)
+
     suspend fun processCodeTransformNewAction(message: IncomingCodeTransformMessage.CodeTransformNew)
 
     suspend fun processCodeTransformCommand(message: CodeTransformActionMessage)
@@ -34,4 +36,10 @@ interface InboundAppMessagesHandler {
     suspend fun processAuthFollowUpClick(message: IncomingCodeTransformMessage.AuthFollowUpWasClicked)
 
     suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked)
+
+    suspend fun processConfirmHilSelection(message: IncomingCodeTransformMessage.ConfirmHilSelection)
+
+    suspend fun processRejectHilSelection(message: IncomingCodeTransformMessage.RejectHilSelection)
+
+    suspend fun processOpenPomFileHilClicked(message: IncomingCodeTransformMessage.OpenPomFileHilClicked)
 }

@@ -23,9 +23,8 @@ pluginManagement {
 buildscript {
     // match with version catalog, s3-build-cache has silent classpath conflict with codegen task
     // also since this is a settings plugin, we can't use a version catalog
-    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
     dependencies {
-        classpath(platform("software.amazon.awssdk:bom:2.20.111"))
+        classpath(platform("software.amazon.awssdk:bom:2.26.25"))
     }
 }
 
@@ -33,6 +32,7 @@ val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
 val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
 val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
 if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
+    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
     buildCache {
         local {
             isEnabled = false
@@ -49,12 +49,20 @@ if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
 }
 
 plugins {
-    id("com.gradle.enterprise").version("3.15.1")
+    id("com.gradle.develocity").version("3.17.5")
     id("com.github.burrunan.s3-build-cache").version("1.5")
 }
 
-gradleEnterprise {
+develocity {
     buildScan {
+        // only publish with `--scan` argument
+        publishing.onlyIf { false }
+
+        if (System.getenv("CI") == "true") {
+            termsOfUseUrl = "https://gradle.com/help/legal-terms-of-use"
+            termsOfUseAgree = "yes"
+        }
+
         obfuscation {
             username { "<username>" }
             hostname { "<hostname>" }
@@ -68,6 +76,10 @@ rootProject.name = "aws-toolkit-jetbrains"
 
 include("detekt-rules")
 include("ui-tests")
+include("sandbox-all")
+when (providers.gradleProperty("ideProfileName").get()) {
+    "2023.2", "2023.3", "2024.1" -> include("tmp-all")
+}
 
 /*
 plugins/
@@ -121,7 +133,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.1", "2023.2" -> {
+                    "2023.2", "2023.3" -> {
                         return@forEach
                     }
                 }

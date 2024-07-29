@@ -1,6 +1,7 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import com.adarshr.gradle.testlogger.theme.ThemeType
 import software.aws.toolkits.gradle.ciOnly
 
 plugins {
@@ -20,6 +21,7 @@ dependencies {
     // Everything uses junit4/5 except rider, which uses TestNG
     testFixturesApi(platform(versionCatalog.findLibrary("junit5-bom").get()))
     testFixturesApi(versionCatalog.findLibrary("junit5-jupiterApi").get())
+    testFixturesApi(versionCatalog.findLibrary("junit5-jupiterParams").get())
 
     testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterEngine").get())
     testRuntimeOnly(versionCatalog.findLibrary("junit5-jupiterVintage").get())
@@ -58,13 +60,13 @@ artifacts {
     add("testArtifacts", testJar)
 }
 
-tasks.withType<Test>().all {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 
     ciOnly {
         retry {
             failOnPassedAfterRetry.set(false)
-            maxFailures.set(5)
+            maxFailures.set(50)
             maxRetries.set(2)
         }
     }
@@ -75,6 +77,7 @@ tasks.withType<Test>().all {
     }
 
     testlogger {
+        theme = ThemeType.STANDARD_PARALLEL
         showFullStackTraces = true
         showStandardStreams = true
         showPassedStandardStreams = false
@@ -102,7 +105,7 @@ tasks.jacocoTestReport.configure {
 
 // Share the coverage data to be aggregated for the whole product
 // this can be removed once we're using jvm-test-suites properly
-configurations.create("coverageDataElements") {
+configurations.register("coverageDataElements") {
     isVisible = false
     isCanBeResolved = false
     isCanBeConsumed = true
@@ -112,7 +115,7 @@ configurations.create("coverageDataElements") {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
         attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named("jacoco-coverage-data"))
     }
-    tasks.withType<Test> {
+    tasks.withType<Test>().configureEach {
         outgoing.artifact(extensions.getByType<JacocoTaskExtension>().destinationFile!!)
     }
 }
