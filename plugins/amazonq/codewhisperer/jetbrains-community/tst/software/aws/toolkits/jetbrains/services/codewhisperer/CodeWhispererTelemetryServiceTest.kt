@@ -29,7 +29,6 @@ import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
@@ -44,8 +43,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupStates
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceRule
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
@@ -54,11 +52,6 @@ import kotlin.random.Random
 
 // TODO: add more tests
 class CodeWhispererTelemetryServiceTest {
-    private class NoOpToolkitTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
     @Rule
     @JvmField
     val applicationRule = ApplicationRule()
@@ -71,8 +64,11 @@ class CodeWhispererTelemetryServiceTest {
     @JvmField
     val disposableRule = DisposableRule()
 
+    @Rule
+    @JvmField
+    val mockTelemetryService = MockTelemetryServiceRule()
+
     private lateinit var sut: CodeWhispererTelemetryService
-    private lateinit var telemetryServiceSpy: TelemetryService
     private lateinit var batcher: TelemetryBatcher
     private lateinit var mockClient: CodeWhispererClientAdaptor
 
@@ -82,10 +78,7 @@ class CodeWhispererTelemetryServiceTest {
 
         sut = spy(CodeWhispererTelemetryService.getInstance())
 
-        batcher = mock()
-
-        telemetryServiceSpy = NoOpToolkitTelemetryService(batcher = batcher)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
+        batcher = mockTelemetryService.batcher()
 
         val groupSettings = CodeWhispererUserGroupSettings().apply {
             loadState(
