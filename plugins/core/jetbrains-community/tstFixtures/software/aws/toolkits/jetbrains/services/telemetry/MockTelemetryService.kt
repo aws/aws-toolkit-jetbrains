@@ -8,19 +8,15 @@ import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.rules.ExternalResource
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.reset
-import org.mockito.kotlin.spy
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
-import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 
-class NoOpTelemetryService : TelemetryService(publisher, spy(DefaultTelemetryBatcher(publisher))) {
+class NoOpTelemetryService : TelemetryService(mock(), mock()) {
     fun batcher() = super.batcher
-
-    private companion object {
-        private val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
-    }
+    fun publisher() = super.publisher
 }
 
 class NoOpPublisher : TelemetryPublisher {
@@ -41,6 +37,7 @@ sealed class MockTelemetryServiceBase : ExternalResource() {
 
     fun telemetryService() = mockTelemetryService
     fun batcher() = mockTelemetryService.batcher()
+    fun publisher() = mockTelemetryService.publisher()
 }
 
 class MockTelemetryServiceRule : MockTelemetryServiceBase()
