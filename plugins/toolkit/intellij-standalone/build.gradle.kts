@@ -26,12 +26,6 @@ dependencies {
     }
 }
 
-tasks.jarSearchableOptions {
-    dependsOn(":plugin-toolkit:jetbrains-core:${Tasks.PATCH_PLUGIN_XML}")
-
-    pluginXml.set(project(":plugin-toolkit:jetbrains-core").tasks.maybeCreate<PatchPluginXmlTask>(Tasks.PATCH_PLUGIN_XML).outputFile)
-}
-
 tasks.check {
     val serviceSubdirs = project(":plugin-toolkit").subprojects
         .map { it.name }.filter { it != "intellij" }.filter { it != "intellij-standalone" }

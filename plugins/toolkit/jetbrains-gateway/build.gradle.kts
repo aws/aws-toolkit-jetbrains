@@ -163,12 +163,6 @@ listOf(
     }
 }
 
-tasks.jarSearchableOptions {
-    dependsOn(":plugin-toolkit:jetbrains-core:pluginXmlForGateway")
-
-    pluginXml.set(project(":plugin-toolkit:jetbrains-core").tasks.maybeCreate<PatchPluginXmlTask>("pluginXmlForGateway").outputFile)
-}
-
 tasks.buildPlugin {
     val classifier = if (archiveClassifier.get().isNullOrBlank()) {
         "GW"
