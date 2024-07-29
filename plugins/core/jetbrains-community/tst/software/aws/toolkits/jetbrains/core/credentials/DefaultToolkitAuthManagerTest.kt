@@ -20,7 +20,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -29,7 +28,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerExtension
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessionIdentifier
@@ -38,19 +36,13 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 class DefaultToolkitAuthManagerTest {
-    private class TestTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
     @ExtendWith(MockRegionProviderExtension::class)
     val regionProvider = MockRegionProviderRule()
 
@@ -58,10 +50,13 @@ class DefaultToolkitAuthManagerTest {
     @RegisterExtension
     val mockClientManager = MockClientManagerExtension()
 
+    @JvmField
+    @RegisterExtension
+    val mockTelemetryService = MockTelemetryServiceExtension()
+
     private lateinit var sut: DefaultToolkitAuthManager
     private lateinit var connectionManager: ToolkitConnectionManager
     private lateinit var batcher: TelemetryBatcher
-    private lateinit var telemetryService: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
 
     @BeforeEach
@@ -69,15 +64,12 @@ class DefaultToolkitAuthManagerTest {
         mockClientManager.create<SsoOidcClient>()
         sut = DefaultToolkitAuthManager()
         connectionManager = DefaultToolkitConnectionManager()
-        batcher = mock()
-        telemetryService = spy(TestTelemetryService(batcher = batcher))
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
+        batcher = mockTelemetryService.batcher()
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
 
     @AfterEach
     fun tearDown() {
-        telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
     }
 
