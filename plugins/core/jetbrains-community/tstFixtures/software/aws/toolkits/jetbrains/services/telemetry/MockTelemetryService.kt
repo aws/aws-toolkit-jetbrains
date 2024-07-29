@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.components.service
-import com.intellij.openapi.util.Disposer
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -32,18 +31,12 @@ class NoOpPublisher : TelemetryPublisher {
     override fun close() {}
 }
 
-private fun getMockInstance() = service<TelemetryService>() as NoOpTelemetryService
-
 sealed class MockTelemetryServiceBase : ExternalResource() {
-    private lateinit var mockTelemetryService: NoOpTelemetryService
-
-    override fun before() {
-        mockTelemetryService = getMockInstance()
-    }
+    private val mockTelemetryService: NoOpTelemetryService
+        get() = service<TelemetryService>() as NoOpTelemetryService
 
     override fun after() {
         reset(batcher())
-        Disposer.dispose(mockTelemetryService)
     }
 
     fun telemetryService() = mockTelemetryService
