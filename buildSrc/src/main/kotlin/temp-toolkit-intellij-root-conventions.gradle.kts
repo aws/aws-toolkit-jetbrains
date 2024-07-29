@@ -73,7 +73,6 @@ dependencies {
         create(type, version, useInstaller = false)
     }
 
-    implementation(project(":plugin-toolkit:jetbrains-core"))
     implementation(project(":plugin-toolkit:jetbrains-ultimate"))
     project.findProject(":plugin-toolkit:jetbrains-gateway")?.let {
         // does this need to be the instrumented variant?
