@@ -30,6 +30,12 @@ intellijPlatform {
     buildSearchableOptions.set(false)
 }
 
+val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    plugins {
+        robotServerPlugin("0.11.22")
+    }
+}
+
 dependencies {
     intellijPlatform {
         val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }

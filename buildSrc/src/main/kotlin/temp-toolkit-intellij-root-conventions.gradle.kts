@@ -3,6 +3,7 @@
 
 import org.gradle.kotlin.dsl.invoke
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdeUiTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
@@ -80,10 +81,10 @@ dependencies {
 
 // Enable coverage for the UI test target IDE
 ciOnly {
-    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<TestIdeUiTask>())
+    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeTask>())
 }
 
-tasks.withType<TestIdeUiTask>().configureEach {
+tasks.withType<RunIdeTask>().configureEach {
     systemProperty("robot-server.port", remoteRobotPort)
     // mac magic
     systemProperty("ide.mac.message.dialogs.as.sheets", "false")
@@ -93,8 +94,8 @@ tasks.withType<TestIdeUiTask>().configureEach {
 
     systemProperty("jb.consents.confirmation.enabled", "false")
     // This does some magic in EndUserAgreement.java to make it not show the privacy policy
-//    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-//    systemProperty("ide.show.tips.on.startup.default.value", false)
+    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
+    systemProperty("ide.show.tips.on.startup.default.value", false)
 
     systemProperty("aws.telemetry.skip_prompt", "true")
     systemProperty("aws.suppress_deprecation_prompt", true)
