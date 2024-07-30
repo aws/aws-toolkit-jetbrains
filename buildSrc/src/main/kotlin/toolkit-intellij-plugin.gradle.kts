@@ -34,7 +34,7 @@ dependencies {
 ciOnly {
     abstract class NoopBuildService : BuildService<BuildServiceParameters.None> {}
     val noopService = gradle.sharedServices.registerIfAbsent("noopService", NoopBuildService::class.java) {
-        maxParallelUsages = 4
+        maxParallelUsages = 2
     }
 
     tasks.matching { it is Test || it is SandboxAware }.configureEach {
