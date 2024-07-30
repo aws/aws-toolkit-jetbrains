@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Occasional NPE when reauthenticate for Q"
+}
