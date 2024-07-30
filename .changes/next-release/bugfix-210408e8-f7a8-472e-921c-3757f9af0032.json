@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Occasional NPE when reauthenticate for Q"
+  "description" : "Fix NullPointerException that may happen when re-authenticating to Amazon Q"
 }
