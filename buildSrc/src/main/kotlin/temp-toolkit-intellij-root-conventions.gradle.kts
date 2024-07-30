@@ -1,19 +1,13 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.invoke
-import org.gradle.kotlin.dsl.project
-import org.gradle.kotlin.dsl.provideDelegate
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
-import org.jetbrains.intellij.platform.gradle.plugins.project.DownloadRobotServerPluginTask
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 import org.jetbrains.intellij.platform.gradle.tasks.TestIdeUiTask
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import software.aws.toolkits.gradle.intellij.ToolkitIntelliJExtension
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
@@ -87,10 +81,10 @@ dependencies {
 
 // Enable coverage for the UI test target IDE
 ciOnly {
-    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<TestIdeUiTask>())
+    extensions.getByType<JacocoPluginExtension>().applyTo(tasks.withType<RunIdeTask>())
 }
 
-tasks.withType<TestIdeUiTask>().configureEach {
+tasks.withType<RunIdeTask>().configureEach {
     systemProperty("robot-server.port", remoteRobotPort)
     // mac magic
     systemProperty("ide.mac.message.dialogs.as.sheets", "false")

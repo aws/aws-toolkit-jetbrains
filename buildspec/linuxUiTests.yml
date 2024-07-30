@@ -34,7 +34,7 @@ phases:
       - |
         if [ "$CODEARTIFACT_DOMAIN_NAME" ] && [ "$CODEARTIFACT_REPO_NAME" ]; then
           CODEARTIFACT_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format maven --query repositoryEndpoint --output text)
-          CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text) 
+          # CODEARTIFACT_NUGET_URL=$(aws codeartifact get-repository-endpoint --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --format nuget --query repositoryEndpoint --output text)
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
@@ -48,7 +48,7 @@ phases:
       - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :sandbox-all:prepareTestIdeUiSandbox --console plain --info
 
       - ffmpeg -loglevel quiet -nostdin -f x11grab -video_size ${SCREEN_WIDTH}x${SCREEN_HEIGHT} -i ${DISPLAY} -codec:v libx264 -pix_fmt yuv420p -vf drawtext="fontsize=48:box=1:boxcolor=black@0.75:boxborderw=5:fontcolor=white:x=0:y=h-text_h:text='%{gmtime\:%H\\\\\:%M\\\\\:%S}'" -framerate 12 -g 12 /tmp/screen_recording.mp4 &
-      - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME uiTestCore coverageReport --console plain --info
+      - ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :ui-tests:uiTestCore --tests "software.aws.toolkits.jetbrains.uitests.tests.SamTemplateProjectWizardTest" coverageReport --console plain --info
 
   post_build:
     commands:

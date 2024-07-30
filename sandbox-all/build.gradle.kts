@@ -8,6 +8,7 @@ import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 plugins {
     id("toolkit-intellij-plugin")
     id("org.jetbrains.intellij.platform")
+    id("temp-toolkit-intellij-root-conventions")
 }
 
 toolkitIntelliJ.apply {
@@ -27,6 +28,12 @@ tasks.buildPlugin {
 
 intellijPlatform {
     buildSearchableOptions.set(false)
+}
+
+val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    plugins {
+        robotServerPlugin("0.11.22")
+    }
 }
 
 dependencies {
