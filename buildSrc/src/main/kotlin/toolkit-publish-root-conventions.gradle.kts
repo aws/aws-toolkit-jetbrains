@@ -5,6 +5,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
+import software.aws.toolkits.gradle.useInstaller
 
 // publish-root should imply publishing-conventions, but we keep separate so that gateway always has the GW flavor
 plugins {
@@ -20,7 +21,7 @@ tasks.withType<PatchPluginXmlTask>().configureEach {
 intellijPlatform {
     instrumentCode = false
 
-    verifyPlugin {
+    pluginVerification {
         ides {
             // recommended() appears to resolve latest EAP for a product?
             ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
@@ -59,8 +60,8 @@ dependencies {
                 provider { IntelliJPlatformType.IntellijIdeaCommunity } to toolkitIntelliJ.version()
             }
 
-            create(type, version, useInstaller = false)
-            jetbrainsRuntime()
+            // we could just always use the installer, but this allows us to avoid having multiple rider download/transforms
+            create(type, version, useInstaller(type))
         }
     }
 }

@@ -7,6 +7,9 @@ import org.eclipse.jgit.api.Git
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.the
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion as KotlinVersionEnum
 
@@ -62,3 +65,13 @@ fun Project.buildMetadata() =
 
         "unknownCommit"
     }
+
+fun IntelliJPlatformDependenciesExtension.useInstaller(provider: Provider<IntelliJPlatformType>) = provider.map { platform ->
+    // use binaries for everything except rider
+    (platform != IntelliJPlatformType.Rider).also {
+        // if rider, then pull in the JBR dependency too
+        if (!it) {
+            jetbrainsRuntime()
+        }
+    }
+}
