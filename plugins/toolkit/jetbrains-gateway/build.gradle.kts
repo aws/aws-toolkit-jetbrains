@@ -140,6 +140,10 @@ artifacts {
     add(gatewayResources.name, gatewayResourcesDir)
 }
 
+tasks.prepareJarSearchableOptions {
+    enabled = false
+}
+
 tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
