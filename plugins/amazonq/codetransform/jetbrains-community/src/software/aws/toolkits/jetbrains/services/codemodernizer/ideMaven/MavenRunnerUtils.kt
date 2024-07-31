@@ -88,7 +88,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
             telemetryIsCancelled = true
             return MavenCopyCommandsResult.Cancelled
         } else {
-            telemetryErrorMessage = "Maven Copy: bundled Maven failed: exitCode ${copyDependenciesRunnable.isComplete()}"
+            logger.info { "Maven copy-dependencies command failed, but still continuing with transformation" }
 
             // TODO: deprecated metric - remove after BI started using new metric
             emitMavenFailure("Maven Copy: bundled Maven failed: exitCode ${copyDependenciesRunnable.isComplete()}", logger, telemetry)
