@@ -213,7 +213,9 @@ class CodeTransformChatController(
             addNewMessage(buildCompileLocalInProgressChatContent())
         }
 
-        // Currently only support JDK language level from project level setting. TODO: Support for module language version.
+        // Currently only support JDK language level from project level setting across QCT. TODO: Support module language version.
+        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project)
+        logger.info("Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion")
         val sourceJdk = context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
 
         val selection = CustomerSelection(

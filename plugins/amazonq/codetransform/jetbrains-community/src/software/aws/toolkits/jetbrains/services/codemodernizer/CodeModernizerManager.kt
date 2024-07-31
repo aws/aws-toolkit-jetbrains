@@ -12,6 +12,7 @@ import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.roots.ProjectRootManager
@@ -199,6 +200,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
 
         val result = validateCore(project)
+        LOG.info("Transform project validation result: $result")
 
         // TODO: deprecated metric - remove after BI started using new metric
         telemetry.sendValidationResult(result)
