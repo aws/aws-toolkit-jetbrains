@@ -66,8 +66,6 @@ listOf(
 
 dependencies {
     intellijPlatform {
-        pluginModule(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
-
         pluginVerifier()
 
         testFramework(TestFrameworkType.Bundled)
@@ -75,6 +73,7 @@ dependencies {
 
     // link against :j-c: and rely on :intellij-standalone:composeJar to pull in :j-c:instrumentedJar, but gateway variant when from :jetbrains-gateway
     compileOnly(project(":plugin-toolkit:jetbrains-core"))
+    gatewayOnlyRuntimeOnly(project(":plugin-toolkit:jetbrains-core", "gatewayArtifacts"))
     // delete when fully split
     gatewayOnlyRuntimeOnly(project(":plugin-core:core"))
     gatewayOnlyRuntimeOnly(project(":plugin-core:jetbrains-community"))
