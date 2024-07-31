@@ -91,7 +91,7 @@ dependencies {
             val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
             val version = toolkitIntelliJ.version()
 
-            create(type, version, useInstaller(type))
+            create(type, version, useInstaller(type, version))
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })

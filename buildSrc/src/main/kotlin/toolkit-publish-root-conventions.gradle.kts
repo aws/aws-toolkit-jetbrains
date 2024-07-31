@@ -61,7 +61,7 @@ dependencies {
             }
 
             // we could just always use the installer, but this allows us to avoid having multiple rider download/transforms
-            create(type, version, useInstaller(type))
+            create(type, version, useInstaller(type, version))
         }
     }
 }
