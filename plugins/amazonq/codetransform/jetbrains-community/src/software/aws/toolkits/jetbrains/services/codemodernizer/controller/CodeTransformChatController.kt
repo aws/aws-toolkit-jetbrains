@@ -214,8 +214,9 @@ class CodeTransformChatController(
         }
 
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
-        val sourceJdk = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project) ?: context.project.tryGetJdk()
-            ?: throw RuntimeException("Unable to determine source JDK version")
+        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project)
+        logger.info("Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized.")
+        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
 
         val selection = CustomerSelection(
             moduleVirtualFile,

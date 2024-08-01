@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFea
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
@@ -218,20 +219,12 @@ class CodeTransformTelemetryManager(private val project: Project) {
     }
 
     // Replace the input as needed to support Gradle and other transformation types.
-    fun localBuildProject(buildCommand: CodeTransformBuildCommand, telemetryErrorMessage: String?, isCanceled: Boolean = false) {
-        val result: Result = if (telemetryErrorMessage.isNullOrEmpty()) {
-            Result.Succeeded
-        } else if (isCanceled) {
-            Result.Cancelled
-        } else {
-            Result.Failed
-        }
-
+    fun localBuildProject(buildCommand: CodeTransformBuildCommand, localBuildResult: Result, telemetryErrorMessage: String?) {
         CodetransformTelemetry.localBuildProject(
             codeTransformBuildCommand = buildCommand,
             codeTransformSessionId = sessionId,
-            result = result,
-            reason = telemetryErrorMessage,
+            result = localBuildResult,
+            reason = if (telemetryErrorMessage.isNullOrEmpty()) null else telemetryErrorMessage,
         )
     }
 
