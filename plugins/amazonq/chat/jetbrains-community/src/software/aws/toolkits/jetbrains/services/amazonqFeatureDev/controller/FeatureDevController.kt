@@ -744,7 +744,7 @@ class FeatureDevController(
             )
 
             messenger.sendChatInputEnabledMessage(tabId, enabled = false)
-            messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.retry_or_add_new_prompt"))
+            messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.write_new_prompt"))
         }
 
         AmazonqTelemetry.modifySourceFolder(
