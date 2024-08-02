@@ -151,7 +151,7 @@ private fun JavaCodeInsightTestFixture.addFile(
     module: Module,
     type: JpsModuleSourceRootType<*>,
     fileName: String,
-    content: String
+    content: String,
 ): PsiFile {
     val sourceRoot = ModuleRootManager.getInstance(module).getSourceRoots(type).first()
     val fullPath = Paths.get(sourceRoot.path, fileName).toString()

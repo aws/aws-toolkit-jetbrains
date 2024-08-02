@@ -67,7 +67,7 @@ private val CFN_CREATE_FAILURE_TERMINAL_STATES = setOf(
 fun CloudFormationClient.waitForStackCreateComplete(
     stackName: String,
     maxAttempts: Int = 720,
-    delay: Duration = Duration.ofSeconds(5)
+    delay: Duration = Duration.ofSeconds(5),
 ) {
     wait(
         call = { this.describeStacks(DescribeStacksRequest.builder().stackName(stackName).build()).stacks()[0] },
@@ -100,7 +100,7 @@ private val CFN_UPDATE_FAILURE_TERMINAL_STATES = setOf(
 fun CloudFormationClient.waitForStackUpdateComplete(
     stackName: String,
     maxAttempts: Int = 720,
-    delay: Duration = Duration.ofSeconds(5)
+    delay: Duration = Duration.ofSeconds(5),
 ) {
     wait(
         call = { this.describeStacks(DescribeStacksRequest.builder().stackName(stackName).build()).stacks()[0] },
@@ -136,7 +136,7 @@ private val CFN_DELETE_FAILURE_TERMINAL_STATES = setOf(
 fun CloudFormationClient.waitForStackDeletionComplete(
     stackName: String,
     maxAttempts: Int = 120,
-    delay: Duration = Duration.ofSeconds(20)
+    delay: Duration = Duration.ofSeconds(20),
 ) {
     wait(
         call = { this.describeStacks(DescribeStacksRequest.builder().stackName(stackName).build()).stacks()[0] },
@@ -159,7 +159,7 @@ fun CloudFormationClient.waitForChangeSetCreateComplete(
     stackName: String,
     changeSetName: String,
     maxAttempts: Int = 120,
-    delay: Duration = Duration.ofSeconds(2)
+    delay: Duration = Duration.ofSeconds(2),
 ) {
     wait(
         call = {

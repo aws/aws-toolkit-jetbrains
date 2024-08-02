@@ -30,7 +30,7 @@ class SaveQueryDialog(
     private val project: Project,
     private val connectionSettings: ConnectionSettings,
     private val query: String,
-    private val logGroups: List<String>
+    private val logGroups: List<String>,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     val view = EnterQueryName()

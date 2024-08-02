@@ -34,7 +34,7 @@ import javax.swing.JComponent
 @Service(Service.Level.PROJECT)
 class AmazonQToolWindow private constructor(
     private val project: Project,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
 ) : Disposable {
     private val appSource = AppSource()
     private val browserConnector = BrowserConnector()

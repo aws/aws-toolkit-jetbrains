@@ -23,7 +23,7 @@ class FeedbackTest {
     private class TestFeedbackDialog(
         project: Project,
         initialSentiment: Sentiment,
-        initialComment: String
+        initialComment: String,
     ) : FeedbackDialog(project, initialSentiment, initialComment) {
         override fun notificationTitle() = "title"
         override fun productName() = "product"

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 
 enum class OnboardingPageInteractionType(
-    @field:JsonValue val json: String
+    @field:JsonValue val json: String,
 ) {
     CwcButtonClick("onboarding-page-cwc-button-clicked"),
 }

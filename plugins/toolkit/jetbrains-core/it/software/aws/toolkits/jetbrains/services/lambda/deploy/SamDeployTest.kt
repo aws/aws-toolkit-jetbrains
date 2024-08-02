@@ -245,7 +245,7 @@ class SamDeployTest {
         stackName: String,
         hasImage: Boolean,
         parameters: Map<String, String> = emptyMap(),
-        tags: Map<String, String> = emptyMap()
+        tags: Map<String, String> = emptyMap(),
     ): String? {
         val bucket = bucketRule.createBucket(stackName)
         val ecrRepo = if (hasImage) repositoryRule.createRepository(stackName).repositoryUri() else null

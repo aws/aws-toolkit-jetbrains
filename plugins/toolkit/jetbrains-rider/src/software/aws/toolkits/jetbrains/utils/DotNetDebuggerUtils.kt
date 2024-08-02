@@ -33,7 +33,7 @@ object DotNetDebuggerUtils {
         processHandler: ProcessHandler,
         protocol: IProtocol,
         sessionModel: DotNetDebuggerSessionModel,
-        outputEventsListener: IDebuggerOutputListener
+        outputEventsListener: IDebuggerOutputListener,
     ): XDebugProcessStarter {
         val fireInitializedManually = env.getUserData(DotNetDebugRunner.FIRE_INITIALIZED_MANUALLY) ?: false
 

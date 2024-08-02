@@ -23,7 +23,7 @@ class PythonAwsConnectionExtension : PythonRunConfigurationExtension() {
         configuration: AbstractPythonRunConfiguration<*>,
         runnerSettings: RunnerSettings?,
         cmdLine: GeneralCommandLine,
-        runnerId: String
+        runnerId: String,
     ) {
         if (isEnabled()) {
             delegate.addEnvironmentVariables(configuration, cmdLine, runtimeString = { configuration.getSdk()?.versionString })

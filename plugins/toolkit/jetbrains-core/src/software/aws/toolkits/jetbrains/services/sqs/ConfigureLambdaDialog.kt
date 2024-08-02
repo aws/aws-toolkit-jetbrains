@@ -31,7 +31,7 @@ import javax.swing.JComponent
 
 class ConfigureLambdaDialog(
     private val project: Project,
-    private val queue: Queue
+    private val queue: Queue,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private val lambdaClient: LambdaClient = project.awsClient()

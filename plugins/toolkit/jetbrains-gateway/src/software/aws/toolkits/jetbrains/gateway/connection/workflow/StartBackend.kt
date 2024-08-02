@@ -35,7 +35,7 @@ class StartBackend(
     private val executor: CawsCommandExecutor,
     private val lifetime: LifetimeDefinition,
     private val envId: String,
-    private val isSmallInstance: Boolean
+    private val isSmallInstance: Boolean,
 ) : Step() {
     override val stepName: String = message("gateway.connection.workflow.start_ide")
 

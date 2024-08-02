@@ -29,7 +29,7 @@ class DotNetLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(
         project: Project,
         handler: String,
-        searchScope: GlobalSearchScope
+        searchScope: GlobalSearchScope,
     ): Array<NavigatablePsiElement> {
         val fieldId = getFieldIdByHandlerName(project, handler)
         if (fieldId < 0) return emptyArray()

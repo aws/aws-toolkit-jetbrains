@@ -34,7 +34,7 @@ class AwsToolkitExplorerToolWindowState : BaseState() {
 
 @State(name = "explorerToolWindow", storages = [Storage("aws.xml")])
 class AwsToolkitExplorerToolWindow(
-    private val project: Project
+    private val project: Project,
 ) : SimpleToolWindowPanel(true, true), PersistentStateComponent<AwsToolkitExplorerToolWindowState> {
     private val tabPane = JBTabbedPane()
 

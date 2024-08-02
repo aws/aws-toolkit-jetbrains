@@ -59,7 +59,7 @@ internal class MockEventsGenerator {
 
 internal fun MockClientManagerRule.createMock(
     events: MockEventsGenerator,
-    postprocess: (CloudFormationClient) -> Unit = { }
+    postprocess: (CloudFormationClient) -> Unit = { },
 ) = create<CloudFormationClient>().apply {
     whenever(describeStackEvents(Mockito.any<DescribeStackEventsRequest>())).then { invocation ->
         events.getEvents((invocation.arguments[0] as DescribeStackEventsRequest))

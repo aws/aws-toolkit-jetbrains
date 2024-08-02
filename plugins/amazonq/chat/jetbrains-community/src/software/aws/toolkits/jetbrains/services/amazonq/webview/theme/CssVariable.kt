@@ -7,7 +7,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.webview.theme
  * Enumeration of CSS variables that used by MynahUi to theme the chat experience.
  */
 enum class CssVariable(
-    val varName: String
+    val varName: String,
 ) {
     FontSize("--vscode-font-size"),
     FontFamily("--mynah-font-family"),
@@ -55,5 +55,5 @@ enum class CssVariable(
     MainBackground("--mynah-color-main"),
     MainForeground("--mynah-color-main-reverse"),
 
-    CardBackground("--mynah-card-bg")
+    CardBackground("--mynah-card-bg"),
 }

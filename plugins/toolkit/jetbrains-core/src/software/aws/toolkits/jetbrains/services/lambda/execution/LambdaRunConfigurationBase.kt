@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets
 abstract class LambdaRunConfigurationBase<T : BaseLambdaOptions>(
     project: Project,
     private val configFactory: ConfigurationFactory,
-    id: String
+    id: String,
 ) : AwsConnectionsRunConfigurationBase<T>(project, configFactory, id),
     RunConfigurationWithSuppressedDefaultRunAction,
     RunConfigurationWithSuppressedDefaultDebugAction {

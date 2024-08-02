@@ -227,7 +227,7 @@ object EcsExecUtils {
         connection: ConnectionSettings,
         container: ContainerDetails,
         task: String,
-        command: String
+        command: String,
     ): GeneralCommandLine {
         val client = connection.awsClient<EcsClient>()
         val path = SsmPlugin.getOrInstallTool(project).path.toAbsolutePath().toString()

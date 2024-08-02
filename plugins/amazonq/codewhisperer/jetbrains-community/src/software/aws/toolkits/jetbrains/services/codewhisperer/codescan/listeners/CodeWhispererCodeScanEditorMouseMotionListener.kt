@@ -327,7 +327,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         component: String?,
         reason: String?,
         result: String?,
-        includesFix: Boolean?
+        includesFix: Boolean?,
     ) {
         runIfIdcConnectionOrTelemetryEnabled(project) {
             pluginAwareExecuteOnPooledThread {

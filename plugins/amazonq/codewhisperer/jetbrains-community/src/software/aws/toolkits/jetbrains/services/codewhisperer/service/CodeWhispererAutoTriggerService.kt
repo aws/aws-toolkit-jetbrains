@@ -139,7 +139,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     fun shouldTriggerClassifier(
         editor: Editor,
-        automatedTriggerType: CodewhispererAutomatedTriggerType = CodewhispererAutomatedTriggerType.Classifier // TODO: need this?
+        automatedTriggerType: CodewhispererAutomatedTriggerType = CodewhispererAutomatedTriggerType.Classifier, // TODO: need this?
     ): ClassifierResult {
         val caretContext = runReadAction { CodeWhispererEditorUtil.extractCaretContext(editor) }
         val language = runReadAction {
@@ -305,7 +305,7 @@ private enum class VariableTypeNeedNormalize {
     },
     LineDiff {
         override fun normalize(value: Double): Double = 0.0
-    };
+    }, ;
 
     abstract fun normalize(toDouble: Double): Double
 

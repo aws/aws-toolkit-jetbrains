@@ -63,7 +63,7 @@ class BrowserConnector(
     suspend fun connectTheme(
         chatBrowser: CefBrowser,
         loginBrowser: CefBrowser,
-        themeSource: Flow<AmazonQTheme>
+        themeSource: Flow<AmazonQTheme>,
     ) = coroutineScope {
         themeSource
             .distinctUntilChanged()

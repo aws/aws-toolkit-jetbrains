@@ -28,7 +28,7 @@ import javax.swing.JComponent
 
 class SubscribeSnsDialog(
     private val project: Project,
-    private val queue: Queue
+    private val queue: Queue,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private val snsClient: SnsClient = project.awsClient()

@@ -77,7 +77,7 @@ data class DefaultMetricEvent internal constructor(
     override val awsRegion: String,
     override val awsProduct: AWSProduct,
     override val awsVersion: String,
-    override val data: Iterable<MetricEvent.Datum>
+    override val data: Iterable<MetricEvent.Datum>,
 ) : MetricEvent {
 
     class BuilderImpl : MetricEvent.Builder {
@@ -137,7 +137,7 @@ data class DefaultMetricEvent internal constructor(
         override val value: Double,
         override val unit: MetricUnit,
         override val passive: Boolean,
-        override val metadata: Map<String, String>
+        override val metadata: Map<String, String>,
     ) : MetricEvent.Datum {
         class BuilderImpl(private var name: String) : MetricEvent.Datum.Builder {
             private var value: Double = 0.0

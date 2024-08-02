@@ -33,7 +33,7 @@ class JavaRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
 }
 
@@ -45,7 +45,7 @@ abstract class JavaImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = createDebugProcess(environment, debugHost, debugPorts)
 }
 
@@ -94,7 +94,7 @@ private val edtContext = getCoroutineUiContext()
 private suspend fun createDebugProcess(
     environment: ExecutionEnvironment,
     debugHost: String,
-    debugPorts: List<Int>
+    debugPorts: List<Int>,
 ): XDebugProcessStarter {
     val connection = RemoteConnection(true, debugHost, debugPorts.first().toString(), false)
     val debugEnvironment = RemotePortDebugEnvironment(environment, connection)

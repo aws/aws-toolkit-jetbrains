@@ -409,7 +409,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 
 fun buildTransformDependencyErrorChatContent(
     hilDownloadArtifact: CodeTransformHilDownloadArtifact,
-    showButton: Boolean = true
+    showButton: Boolean = true,
 ) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
         "\n\n```xml" +

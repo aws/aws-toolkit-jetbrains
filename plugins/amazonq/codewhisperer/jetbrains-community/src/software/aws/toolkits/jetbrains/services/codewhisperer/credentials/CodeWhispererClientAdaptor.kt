@@ -71,22 +71,22 @@ interface CodeWhispererClientAdaptor : Disposable {
     ): Sequence<GenerateCompletionsResponse>
 
     fun createUploadUrl(
-        request: CreateUploadUrlRequest
+        request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
 
     fun createCodeScan(
         request: CreateCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): CreateCodeScanResponse
 
     fun getCodeScan(
         request: GetCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): GetCodeScanResponse
 
     fun listCodeScanFindings(
         request: ListCodeScanFindingsRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): ListCodeScanFindingsResponse
 
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
@@ -98,7 +98,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
         lineCount: Int,
-        numberOfRecommendations: Int
+        numberOfRecommendations: Int,
     ): SendTelemetryEventResponse
 
     fun sendCodePercentageTelemetry(
@@ -106,7 +106,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         customizationArn: String?,
         acceptedTokenCount: Int,
         totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        unmodifiedAcceptedTokenCount: Int?,
     ): SendTelemetryEventResponse
 
     fun sendUserModificationTelemetry(
@@ -114,13 +114,13 @@ interface CodeWhispererClientAdaptor : Disposable {
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double
+        modificationPercentage: Double,
     ): SendTelemetryEventResponse
 
     fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ): SendTelemetryEventResponse
 
     fun sendCodeScanRemediationTelemetry(
@@ -132,7 +132,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         component: String?,
         reason: String?,
         result: String?,
-        includesFix: Boolean?
+        includesFix: Boolean?,
     ): SendTelemetryEventResponse
     fun listFeatureEvaluations(): ListFeatureEvaluationsResponse
 
@@ -152,7 +152,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse
 
     fun sendChatInteractWithMessageTelemetry(
@@ -173,7 +173,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse
 
     companion object {
@@ -299,7 +299,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
         lineCount: Int,
-        numberOfRecommendations: Int
+        numberOfRecommendations: Int,
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
@@ -339,7 +339,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         customizationArn: String?,
         acceptedTokenCount: Int,
         totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        unmodifiedAcceptedTokenCount: Int?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeCoverageEvent {
@@ -360,7 +360,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double
+        modificationPercentage: Double,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.userModificationEvent {
@@ -381,7 +381,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanEvent {
@@ -405,7 +405,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         component: String?,
         reason: String?,
         result: String?,
-        includesFix: Boolean?
+        includesFix: Boolean?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanRemediationsEvent {
@@ -459,7 +459,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatAddMessageEvent {
@@ -492,7 +492,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         interactionTarget: String?,
         acceptedCharacterCount: Int?,
         acceptedSnippetHasReference: Boolean?,
-        hasProjectLevelContext: Boolean?
+        hasProjectLevelContext: Boolean?,
     ): SendTelemetryEventResponse = sendChatInteractWithMessageTelemetry(
         ChatInteractWithMessageEvent.builder().apply {
             conversationId(sessionId)
@@ -520,7 +520,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatUserModificationEvent {

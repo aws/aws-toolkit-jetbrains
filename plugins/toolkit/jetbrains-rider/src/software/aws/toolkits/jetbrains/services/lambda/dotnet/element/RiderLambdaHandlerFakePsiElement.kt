@@ -28,7 +28,7 @@ class RiderLambdaHandlerFakePsiElement(
     private val project: Project,
     private val myName: String,
     private val fileId: Int,
-    private val icon: Icon? = null
+    private val icon: Icon? = null,
 ) : FakePsiElement() {
     override fun getParent() = null
 

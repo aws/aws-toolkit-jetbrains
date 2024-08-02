@@ -28,5 +28,5 @@ class GettingStartedSettings : PersistentStateComponent<GettingStartedSettingsCo
     }
 }
 data class GettingStartedSettingsConfiguration(
-    var shouldDisplayPage: Boolean = true
+    var shouldDisplayPage: Boolean = true,
 )

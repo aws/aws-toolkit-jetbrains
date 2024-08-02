@@ -29,7 +29,7 @@ import javax.swing.JComponent
 class AwsConnectionSettingsEditor<T : AwsConnectionsRunConfigurationBase<*>>(
     project: Project,
     serviceName: String? = null,
-    settingsChangedListener: (AwsRegion?, String?) -> Unit = { _, _ -> }
+    settingsChangedListener: (AwsRegion?, String?) -> Unit = { _, _ -> },
 ) : SettingsEditor<T>() {
     private val awsConnectionSelector = AwsConnectionSettingsSelector(project, serviceName) {
         // TODO: Undo this unwrapping
@@ -56,7 +56,7 @@ fun <T : AwsConnectionsRunConfigurationBase<*>> SettingsEditorGroup<T>.addAwsCon
 abstract class AwsConnectionsRunConfigurationBase<T : BaseAwsConnectionOptions>(
     project: Project,
     configFactory: ConfigurationFactory,
-    id: String?
+    id: String?,
 ) : LocatableConfigurationBase<T>(project, configFactory, id) {
 
     abstract val serializableOptions: T

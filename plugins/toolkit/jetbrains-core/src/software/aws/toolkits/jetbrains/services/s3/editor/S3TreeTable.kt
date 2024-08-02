@@ -44,7 +44,7 @@ class S3TreeTable(
     private val treeTableModel: S3TreeTableModel,
     val rootNode: S3TreeDirectoryNode,
     val bucket: S3VirtualBucket,
-    private val project: Project
+    private val project: Project,
 ) : JBTreeTable(treeTableModel) {
     private val coroutineScope = projectCoroutineScope(project)
 

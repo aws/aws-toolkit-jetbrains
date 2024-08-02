@@ -42,3 +42,8 @@ dependencies {
         localPlugin(project(":plugin-toolkit:intellij-standalone"))
     }
 }
+val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
+    plugins {
+        robotServerPlugin("0.11.22")
+    }
+}

@@ -34,7 +34,7 @@ import javax.swing.JPanel
 
 class CloudWatchLogGroup(
     private val project: Project,
-    private val logGroup: String
+    private val logGroup: String,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     lateinit var content: JPanel

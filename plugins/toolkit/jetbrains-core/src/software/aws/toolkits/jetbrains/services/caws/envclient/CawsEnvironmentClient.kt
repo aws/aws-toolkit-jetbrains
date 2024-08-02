@@ -35,7 +35,7 @@ import software.aws.toolkits.resources.message
 @Service
 class CawsEnvironmentClient(
     private val endpoint: String = System.getenv(CawsConstants.CAWS_ENV_API_ENDPOINT).nullize(true) ?: CawsConstants.DEFAULT_CAWS_ENV_API_ENDPOINT,
-    private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
+    private val httpClient: CloseableHttpClient = HttpClientBuilder.create().build(),
 ) : Disposable {
     init {
         LOG.info { "Initialized with endpoint: $endpoint" }

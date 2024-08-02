@@ -16,7 +16,7 @@ class ProgressMonitorInputStream(
     indicator: ProgressIndicator,
     delegate: InputStream,
     length: Long,
-    cancelable: Boolean = true
+    cancelable: Boolean = true,
 ) : FilterInputStream(delegate) {
 
     private val monitor = ProgressMonitor(indicator, length, cancelable)
@@ -42,7 +42,7 @@ class ProgressMonitorInputStream(
     companion object {
         fun fromFile(
             indicator: ProgressIndicator,
-            path: Path
+            path: Path,
         ): InputStream = ProgressMonitorInputStream(indicator, FileInputStream(path.toFile()), path.fileSize())
     }
 }

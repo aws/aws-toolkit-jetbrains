@@ -25,7 +25,7 @@ class RemoteLambdaRunConfigurationProducer : LazyRunConfigurationProducer<Remote
     override fun setupConfigurationFromContext(
         configuration: RemoteLambdaRunConfiguration,
         context: ConfigurationContext,
-        sourceElement: Ref<PsiElement>
+        sourceElement: Ref<PsiElement>,
     ): Boolean {
         val location = context.location as? RemoteLambdaLocation ?: return false
         val function = location.lambdaFunction
@@ -44,7 +44,7 @@ class RemoteLambdaRunConfigurationProducer : LazyRunConfigurationProducer<Remote
 
     override fun isConfigurationFromContext(
         configuration: RemoteLambdaRunConfiguration,
-        context: ConfigurationContext
+        context: ConfigurationContext,
     ): Boolean {
         val location = context.location as? RemoteLambdaLocation ?: return false
         val function = location.lambdaFunction

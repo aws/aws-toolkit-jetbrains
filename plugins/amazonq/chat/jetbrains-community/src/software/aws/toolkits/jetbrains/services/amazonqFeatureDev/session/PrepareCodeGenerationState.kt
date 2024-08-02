@@ -29,7 +29,7 @@ class PrepareCodeGenerationState(
     private val currentIteration: Int,
     private var messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {

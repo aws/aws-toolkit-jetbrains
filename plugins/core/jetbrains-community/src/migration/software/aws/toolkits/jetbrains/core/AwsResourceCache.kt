@@ -37,7 +37,7 @@ interface AwsResourceCache {
         region: AwsRegion,
         credentialProvider: ToolkitCredentialsProvider,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): CompletionStage<T>
 
     /**
@@ -48,7 +48,7 @@ interface AwsResourceCache {
         region: AwsRegion,
         tokenProvider: ToolkitBearerTokenProvider,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): CompletionStage<T>
 
     /**
@@ -58,7 +58,7 @@ interface AwsResourceCache {
         resource: Resource<T>,
         connectionSettings: ClientConnectionSettings<*>,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): CompletionStage<T> = when (connectionSettings) {
         is ConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.credentials, useStale, forceFetch)
         is TokenConnectionSettings -> getResource(resource, connectionSettings.region, connectionSettings.tokenProvider, useStale, forceFetch)
@@ -76,7 +76,7 @@ interface AwsResourceCache {
         credentialProvider: ToolkitCredentialsProvider,
         timeout: Duration = DEFAULT_TIMEOUT,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): T = wait(timeout) { getResource(resource, region, credentialProvider, useStale, forceFetch) }
 
     /**
@@ -88,7 +88,7 @@ interface AwsResourceCache {
         tokenProvider: ToolkitBearerTokenProvider,
         timeout: Duration = DEFAULT_TIMEOUT,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): T = wait(timeout) { getResource(resource, region, tokenProvider, useStale, forceFetch) }
 
     /**
@@ -99,7 +99,7 @@ interface AwsResourceCache {
         connectionSettings: ClientConnectionSettings<*>,
         timeout: Duration = DEFAULT_TIMEOUT,
         useStale: Boolean = true,
-        forceFetch: Boolean = false
+        forceFetch: Boolean = false,
     ): T = when (connectionSettings) {
         is ConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.credentials, timeout, useStale, forceFetch)
         is TokenConnectionSettings -> getResourceNow(resource, connectionSettings.region, connectionSettings.tokenProvider, timeout, useStale, forceFetch)

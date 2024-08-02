@@ -191,7 +191,7 @@ class ToolkitSettingsConfigurable :
         executableName: String,
         executableType: ExecutableType<*>,
         saved: String?,
-        currentInput: String?
+        currentInput: String?,
     ) {
         // If input is null, wipe out input and try to autodiscover
         if (currentInput == null) {

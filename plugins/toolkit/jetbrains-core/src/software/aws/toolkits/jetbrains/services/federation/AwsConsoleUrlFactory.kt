@@ -180,12 +180,12 @@ private data class GetSigninTokenRequest(
     @JsonProperty("sessionKey")
     val sessionKey: String,
     @JsonProperty("sessionToken")
-    val sessionToken: String
+    val sessionToken: String,
 )
 
 private data class GetSigninTokenResponse(
     @JsonProperty("SigninToken")
-    val signinToken: String
+    val signinToken: String,
 )
 
 private fun UrlEncodedFormEntity.toUrlEncodedString() = this.content.bufferedReader().readText()

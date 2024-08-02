@@ -122,7 +122,7 @@ private class StackNodeDescriptor(
     private var statusType: StatusType,
     private var status: String,
     parent: StackNodeDescriptor? = null,
-    var physicalId: String? = null
+    var physicalId: String? = null,
 ) : NodeDescriptor<String>(project, parent) {
 
     init {

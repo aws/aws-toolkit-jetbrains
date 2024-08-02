@@ -178,7 +178,7 @@ class IamAuthTest {
         hasCredentials: Boolean = true,
         hasHost: Boolean = true,
         hasClusterId: Boolean = true,
-        hasPort: Boolean = true
+        hasPort: Boolean = true,
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn if (hasUrl) {

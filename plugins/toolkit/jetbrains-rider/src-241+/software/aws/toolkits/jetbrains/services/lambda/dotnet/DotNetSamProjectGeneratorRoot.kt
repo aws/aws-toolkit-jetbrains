@@ -24,7 +24,7 @@ import javax.swing.JComponent
 abstract class DotNetSamProjectGeneratorRoot(
     lifetime: Lifetime,
     private val context: NewProjectDialogContext,
-    sharedModel: ProjectTemplatesSharedModel
+    sharedModel: ProjectTemplatesSharedModel,
 ) : ProjectTemplateGeneratorBase(
     lifetime,
     context,

@@ -16,13 +16,13 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class SchemaSearchExecutor(
     private val project: Project,
-    private val schemasClient: SchemasClient = project.awsClient()
+    private val schemasClient: SchemasClient = project.awsClient(),
 ) {
     fun searchSchemasInRegistry(
         registryName: String,
         searchText: String,
         incrementalResultsCallback: OnSearchResultReturned,
-        registrySearchErrorCallback: OnSearchResultError
+        registrySearchErrorCallback: OnSearchResultError,
     ) {
         pluginAwareExecuteOnPooledThread {
             try {
@@ -38,7 +38,7 @@ class SchemaSearchExecutor(
     fun searchSchemasAcrossAllRegistries(
         searchText: String,
         incrementalResultsCallback: OnSearchResultReturned,
-        registrySearchErrorCallback: OnSearchResultError
+        registrySearchErrorCallback: OnSearchResultError,
     ) {
         project.getResource(SchemasResources.LIST_REGISTRIES)
             .thenApply {
@@ -51,7 +51,7 @@ class SchemaSearchExecutor(
 
     private fun doSingleSearch(
         registryName: String,
-        searchText: String
+        searchText: String,
     ): List<SchemaSearchResultWithRegistry> {
         val searchRequest = SearchSchemasRequest.builder()
             .registryName(registryName)

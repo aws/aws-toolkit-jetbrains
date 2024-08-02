@@ -49,7 +49,7 @@ class CodeWhispererTypeaheadTest : CodeWhispererTestBase() {
     private fun testTypingTypeaheadWithLeadingSpaceShouldMatchTypeaheadStateCorrectly(
         expectedTypeaheadOriginal: String,
         expectedNumOfValidRecommendation: Int,
-        expectedSelectedAfterBackspace: Int
+        expectedSelectedAfterBackspace: Int,
     ) {
         withCodeWhispererServiceInvokedAndWait { states ->
             val editor = projectRule.fixture.editor

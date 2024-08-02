@@ -5,14 +5,14 @@ package software.aws.toolkits.jetbrains.gateway.connection
 
 sealed class SshAgent
 sealed class SocketBasedSshAgent(
-    open val socket: String
+    open val socket: String,
 ) : SshAgent()
 
 object WindowsServiceSshAgent : SshAgent()
 data class ExistingSshAgent(override val socket: String) : SocketBasedSshAgent(socket)
 data class ProcessBasedSshAgent(
     val pid: Int,
-    override val socket: String
+    override val socket: String,
 ) : SocketBasedSshAgent(socket) {
 
     companion object {

@@ -23,7 +23,7 @@ class QueryResultPanel(
     private val project: Project,
     fields: List<String>,
     queryId: String,
-    private val queryDetails: QueryDetails
+    private val queryDetails: QueryDetails,
 ) : SimpleToolWindowPanel(false, true), Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     init {

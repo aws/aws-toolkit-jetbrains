@@ -45,7 +45,7 @@ import kotlin.io.path.relativeTo
 class CodeScanSessionConfig(
     private val selectedFile: VirtualFile?,
     private val project: Project,
-    private val scope: CodeAnalysisScope
+    private val scope: CodeAnalysisScope,
 ) {
     var projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
@@ -251,7 +251,7 @@ class CodeScanSessionConfig(
 
 data class Payload(
     val context: PayloadContext,
-    val srcZip: File
+    val srcZip: File,
 )
 
 data class PayloadContext(
@@ -262,12 +262,12 @@ data class PayloadContext(
     val scannedFiles: List<VirtualFile>,
     val srcPayloadSize: Long,
     val srcZipFileSize: Long,
-    val buildPayloadSize: Long? = null
+    val buildPayloadSize: Long? = null,
 )
 
 data class PayloadMetadata(
     val sourceFiles: Set<String>,
     val payloadSize: Long,
     val linesScanned: Long,
-    val language: CodewhispererLanguage
+    val language: CodewhispererLanguage,
 )

@@ -164,7 +164,7 @@ class RemoteResourceResolverTest {
             urls: List<String> = listOf(PRIMARY_URL),
             ttl: Duration? = Duration.ofMillis(1000),
             initialValue: InputStream? = null,
-            remoteResolveParser: RemoteResolveParser? = LambdaManifestValidator
+            remoteResolveParser: RemoteResolveParser? = LambdaManifestValidator,
         ) = object : RemoteResource {
             override val urls: List<String> = urls
             override val name: String = name

@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.caws
 
 data class CawsProject(
     val space: String,
-    val project: String
+    val project: String,
 )

@@ -10,5 +10,5 @@ data class SecretsManagerDbSecret(
     val password: String?,
     val engine: String?,
     val host: String?,
-    val port: String?
+    val port: String?,
 )

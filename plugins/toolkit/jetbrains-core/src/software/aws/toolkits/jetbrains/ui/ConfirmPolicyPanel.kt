@@ -12,7 +12,7 @@ import javax.swing.JPanel
 
 class ConfirmPolicyPanel(
     private val project: Project,
-    warning: String
+    warning: String,
 ) {
     lateinit var component: JPanel
         private set

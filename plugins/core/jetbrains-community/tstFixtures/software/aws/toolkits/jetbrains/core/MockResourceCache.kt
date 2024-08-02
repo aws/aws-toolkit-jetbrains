@@ -31,7 +31,7 @@ class MockResourceCache : AwsResourceCache {
         resource: Resource<T>,
         region: AwsRegion,
         credentialProvider: ToolkitCredentialsProvider,
-        useStale: Boolean
+        useStale: Boolean,
     ): T? = when (resource) {
         is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, credentialProvider)?.let { resource.doMap(it, region) }
         is Resource.Cached<T> -> mockResourceIfPresent(resource, region, credentialProvider)
@@ -42,7 +42,7 @@ class MockResourceCache : AwsResourceCache {
         region: AwsRegion,
         credentialProvider: ToolkitCredentialsProvider,
         useStale: Boolean,
-        forceFetch: Boolean
+        forceFetch: Boolean,
     ): CompletionStage<T> = when (resource) {
         is Resource.View<*, T> -> getResource(resource.underlying, region, credentialProvider, useStale, forceFetch).thenApply {
             resource.doMap(it as Any, region)
@@ -56,7 +56,7 @@ class MockResourceCache : AwsResourceCache {
         resource: Resource<T>,
         region: AwsRegion,
         tokenProvider: ToolkitBearerTokenProvider,
-        useStale: Boolean
+        useStale: Boolean,
     ): T? = when (resource) {
         is Resource.View<*, T> -> getResourceIfPresent(resource.underlying, region, tokenProvider)?.let { resource.doMap(it, region) }
         is Resource.Cached<T> -> mockResourceIfPresent(resource, region, tokenProvider)
@@ -67,7 +67,7 @@ class MockResourceCache : AwsResourceCache {
         region: AwsRegion,
         tokenProvider: ToolkitBearerTokenProvider,
         useStale: Boolean,
-        forceFetch: Boolean
+        forceFetch: Boolean,
     ): CompletionStage<T> = when (resource) {
         is Resource.View<*, T> -> getResource(resource.underlying, region, tokenProvider, useStale, forceFetch).thenApply {
             resource.doMap(it as Any, region)
@@ -80,7 +80,7 @@ class MockResourceCache : AwsResourceCache {
     private fun <T> mockResourceIfPresent(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitAuthenticationProvider
+        credentials: ToolkitAuthenticationProvider,
     ): T? = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> if (value.isDone) value.get() as T else null
         else -> value as? T?
@@ -89,7 +89,7 @@ class MockResourceCache : AwsResourceCache {
     private fun <T> mockResource(
         resource: Resource.Cached<T>,
         region: AwsRegion,
-        credentials: ToolkitAuthenticationProvider
+        credentials: ToolkitAuthenticationProvider,
     ) = when (val value = map[CacheKey(resource.id, region.id, credentials.id)]) {
         is CompletableFuture<*> -> value as CompletionStage<T>
         else -> {

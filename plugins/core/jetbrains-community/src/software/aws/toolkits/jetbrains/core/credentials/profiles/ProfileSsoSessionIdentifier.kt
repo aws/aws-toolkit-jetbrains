@@ -9,7 +9,7 @@ data class ProfileSsoSessionIdentifier(
     val profileName: String,
     override val startUrl: String,
     override val ssoRegion: String,
-    override val scopes: Set<String>
+    override val scopes: Set<String>,
 ) : SsoSessionIdentifier {
     override val id = "${SsoSessionConstants.SSO_SESSION_SECTION_NAME}:$profileName"
 }

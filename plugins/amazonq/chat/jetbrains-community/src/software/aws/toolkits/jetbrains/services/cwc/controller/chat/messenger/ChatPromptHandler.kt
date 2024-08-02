@@ -51,7 +51,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         triggerId: String,
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
-        shouldAddIndexInProgressMessage: Boolean
+        shouldAddIndexInProgressMessage: Boolean,
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)

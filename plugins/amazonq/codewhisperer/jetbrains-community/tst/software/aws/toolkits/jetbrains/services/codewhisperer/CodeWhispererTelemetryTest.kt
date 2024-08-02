@@ -85,7 +85,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     private lateinit var telemetryService: TelemetryService
@@ -852,7 +852,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             name: String,
             count: Int,
             vararg keyValues: Pair<String, Any?>,
-            atLeast: Boolean = false
+            atLeast: Boolean = false,
         ) {
             assertThat(events).filteredOn { event ->
                 event.data.any {

@@ -50,7 +50,7 @@ suspend fun MessagePublisher.sendAnswerPart(
 
 suspend fun MessagePublisher.sendSystemPrompt(
     tabId: String,
-    followUp: List<FollowUp>
+    followUp: List<FollowUp>,
 ) {
     this.sendAnswer(
         tabId = tabId,
@@ -176,7 +176,7 @@ suspend fun MessagePublisher.sendCodeResult(
     uploadId: String,
     filePaths: List<NewFileZipInfo>,
     deletedFiles: List<DeletedFileInfo>,
-    references: List<CodeReferenceGenerated>
+    references: List<CodeReferenceGenerated>,
 ) {
     val refs = references.map { ref ->
         CodeReference(

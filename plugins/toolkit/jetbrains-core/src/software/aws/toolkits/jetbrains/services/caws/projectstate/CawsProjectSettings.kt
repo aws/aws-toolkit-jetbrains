@@ -19,5 +19,5 @@ class CawsProjectSettings(private val project: Project) {
 
 data class CawsProjectSettingsState(
     var cawsProject: CawsProject? = null,
-    var codeRepo: CawsCodeRepository? = null
+    var codeRepo: CawsCodeRepository? = null,
 )

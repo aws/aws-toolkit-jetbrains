@@ -33,7 +33,7 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 
 data class IdcRolePopupState(
-    var roleInfo: RoleInfo? = null
+    var roleInfo: RoleInfo? = null,
 )
 
 class IdcRolePopup(
@@ -42,7 +42,7 @@ class IdcRolePopup(
     private val sessionName: String,
     private val tokenProvider: SdkTokenProvider,
     val state: IdcRolePopupState = IdcRolePopupState(),
-    private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade()
+    private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
 ) : DialogWrapper(project) {
     init {
         title = message("gettingstarted.setup.idc.role.title")

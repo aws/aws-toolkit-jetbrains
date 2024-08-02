@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 
 data class RelevantDocument(
     val relativeFilePath: String,
-    val text: String
+    val text: String,
 )

@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.session
 
 data class Session(
-    val tabId: String
+    val tabId: String,
 ) {
     var isAuthenticating: Boolean = false
     var authNeededNotified: Boolean = false

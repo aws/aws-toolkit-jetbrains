@@ -15,7 +15,7 @@ fun createRunConfiguration(
     inputIsFile: Boolean = false,
     regionId: AwsRegion? = getDefaultRegion(),
     credentialId: String? = "MockCredentials",
-    functionName: String? = "DummyFunction"
+    functionName: String? = "DummyFunction",
 ): RemoteLambdaRunConfiguration {
     val runManager = RunManager.getInstance(project)
     val factory = LambdaRunConfigurationType.getInstance()

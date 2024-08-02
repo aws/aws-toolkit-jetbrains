@@ -27,7 +27,7 @@ data class ConnectionSettings(val credentials: ToolkitCredentialsProvider, overr
 
 data class TokenConnectionSettings(
     val tokenProvider: ToolkitBearerTokenProvider,
-    override val region: AwsRegion
+    override val region: AwsRegion,
 ) : ClientConnectionSettings<TokenConnectionSettings> {
     override val providerId: String
         get() = tokenProvider.id

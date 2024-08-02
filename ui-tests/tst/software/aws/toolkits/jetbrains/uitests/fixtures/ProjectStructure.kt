@@ -14,7 +14,7 @@ import java.time.Duration
 
 fun IdeaFrame.projectStructureDialog(
     timeout: Duration = Duration.ofSeconds(20),
-    function: ProjectStructureDialog.() -> Unit
+    function: ProjectStructureDialog.() -> Unit,
 ) {
     step("Project Structure dialog") {
         if (remoteRobot.isMac()) {
@@ -36,5 +36,5 @@ fun IdeaFrame.projectStructureDialog(
 @FixtureName("ProjectStructure")
 open class ProjectStructureDialog(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : DialogFixture(remoteRobot, remoteComponent)

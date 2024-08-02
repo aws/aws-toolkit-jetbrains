@@ -13,13 +13,13 @@ data class AppBasedZipTemplate(
     val runtime: LambdaRuntime,
     val architecture: LambdaArchitecture,
     val appTemplate: String,
-    val dependencyManager: String
+    val dependencyManager: String,
 ) : TemplateParameters()
 data class AppBasedImageTemplate(
     val name: String,
     val baseImage: String,
     val architecture: LambdaArchitecture,
     val appTemplate: String,
-    val dependencyManager: String
+    val dependencyManager: String,
 ) : TemplateParameters()
 data class LocationBasedTemplate(val location: String) : TemplateParameters()

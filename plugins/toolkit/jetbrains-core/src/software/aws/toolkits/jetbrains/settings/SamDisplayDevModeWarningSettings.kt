@@ -30,5 +30,5 @@ class SamDisplayDevModeWarningSettings : PersistentStateComponent<SamDevModeWarn
 }
 
 data class SamDevModeWarningConfiguration(
-    var showDevModeWarning: Boolean = true
+    var showDevModeWarning: Boolean = true,
 )

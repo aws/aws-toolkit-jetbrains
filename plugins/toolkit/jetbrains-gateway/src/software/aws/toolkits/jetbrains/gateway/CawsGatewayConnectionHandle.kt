@@ -11,7 +11,7 @@ import javax.swing.JComponent
 class CawsGatewayConnectionHandle(
     lifetime: Lifetime,
     private val envId: String,
-    private val componentProvider: (GatewayConnectionHandle) -> JComponent
+    private val componentProvider: (GatewayConnectionHandle) -> JComponent,
 ) : GatewayConnectionHandle(lifetime) {
     // framework does not call componentProvider in test mode
     private val component = componentProvider(this)

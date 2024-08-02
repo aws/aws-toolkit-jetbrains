@@ -19,7 +19,7 @@ fun <T : EditorNotificationProvider, U : EditorNotificationPanel> getEditorNotif
     project: Project,
     editor: FileEditor,
     provider: Class<T>,
-    key: Key<U>
+    key: Key<U>,
 ): JComponent? {
     PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
     NonBlockingReadActionImpl.waitForAsyncTaskCompletion()

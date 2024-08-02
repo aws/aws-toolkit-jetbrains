@@ -26,7 +26,7 @@ interface SamDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter
 
     companion object {

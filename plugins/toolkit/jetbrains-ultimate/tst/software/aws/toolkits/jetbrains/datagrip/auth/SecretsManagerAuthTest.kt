@@ -156,7 +156,7 @@ class SecretsManagerAuthTest {
         hasUsername: Boolean = true,
         hasPassword: Boolean = true,
         hasHost: Boolean = true,
-        hasPort: Boolean = true
+        hasPort: Boolean = true,
     ): SecretsManagerClient {
         val client = clientManager.create<SecretsManagerClient>()
         val secretMap = mutableMapOf<String, String>()
@@ -193,7 +193,7 @@ class SecretsManagerAuthTest {
         hasPort: Boolean = true,
         hasSecret: Boolean = true,
         usesSshTunnel: Boolean = false,
-        usesUrlFromSecret: Boolean = false
+        usesUrlFromSecret: Boolean = false,
     ): DatabaseConnectionInterceptor.ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doAnswer {

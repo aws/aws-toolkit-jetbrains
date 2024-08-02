@@ -28,7 +28,7 @@ class RunCommandRunProfile(
     private val connection: ConnectionSettings,
     private val container: ContainerDetails,
     private val task: String,
-    private val command: String
+    private val command: String,
 ) : RunProfile {
 
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState = RunCommandRunProfileState(environment)

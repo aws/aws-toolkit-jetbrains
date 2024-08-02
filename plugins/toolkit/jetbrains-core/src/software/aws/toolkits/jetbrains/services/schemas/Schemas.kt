@@ -12,12 +12,13 @@ enum class SchemaCodeLangs(
     val apiValue: String,
     val text: String,
     val extension: String,
-    val runtimeGroupId: String
+    val runtimeGroupId: String,
 ) {
     JAVA8("Java8", message("schemas.schema.language.java8"), "java", BuiltInRuntimeGroups.Java),
     PYTHON3_6("Python36", message("schemas.schema.language.python3_6"), "py", BuiltInRuntimeGroups.Python),
     TYPESCRIPT("TypeScript3", message("schemas.schema.language.typescript"), "ts", BuiltInRuntimeGroups.NodeJs),
-    GO1("Go1", message("schemas.schema.language.go1"), "go", BuiltInRuntimeGroups.Go);
+    GO1("Go1", message("schemas.schema.language.go1"), "go", BuiltInRuntimeGroups.Go),
+    ;
 
     override fun toString() = text
 }
@@ -33,7 +34,7 @@ data class SchemaSummary(val name: String, val registryName: String) {
 data class SchemaTemplateParameters(
     val schema: software.aws.toolkits.jetbrains.services.schemas.SchemaSummary,
     val schemaVersion: String,
-    val templateExtraContext: SchemaTemplateExtraContext
+    val templateExtraContext: SchemaTemplateExtraContext,
 )
 
 // This matches the extra_content parameters to Schema-based templates in both key and value names in cookiecutter.json in the templates used by
@@ -62,7 +63,7 @@ data class SchemaTemplateExtraContext(
 
     // Need to provide user agent to SAM CLI so that it will enable appTemplate-based
     @get:JsonProperty("user_agent")
-    val userAgent: String = "AWSToolkit"
+    val userAgent: String = "AWSToolkit",
 )
 
 fun SchemaSummary.toDataClass(registryName: String) = Schema(

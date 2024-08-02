@@ -49,7 +49,7 @@ abstract class ToolkitClientManager {
     data class AwsClientKey(
         val providerId: String,
         val region: AwsRegion,
-        val serviceClass: KClass<out SdkClient>
+        val serviceClass: KClass<out SdkClient>,
     )
 
     private val cachedClients = ConcurrentHashMap<AwsClientKey, SdkClient>()
@@ -104,7 +104,7 @@ abstract class ToolkitClientManager {
         credProvider: AwsCredentialsProvider,
         region: Region,
         endpointOverride: String? = null,
-        clientCustomizer: ToolkitClientCustomizer? = null
+        clientCustomizer: ToolkitClientCustomizer? = null,
     ): T = createUnmanagedClient(T::class, credProvider, region, endpointOverride, clientCustomizer)
 
     /**
@@ -115,7 +115,7 @@ abstract class ToolkitClientManager {
         credProvider: AwsCredentialsProvider,
         region: Region,
         endpointOverride: String?,
-        clientCustomizer: ToolkitClientCustomizer? = null
+        clientCustomizer: ToolkitClientCustomizer? = null,
     ): T = constructAwsClient(sdkClass, credProvider = credProvider, region = region, endpointOverride = endpointOverride, clientCustomizer = clientCustomizer)
 
     protected abstract fun getRegionProvider(): ToolkitRegionProvider
@@ -128,7 +128,7 @@ abstract class ToolkitClientManager {
         tokenProvider: SdkTokenProvider?,
         regionId: String,
         builder: AwsClientBuilder<*, *>,
-        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder,
     ) {}
 
     /**
@@ -151,7 +151,7 @@ abstract class ToolkitClientManager {
         tokenProvider: SdkTokenProvider? = null,
         region: Region,
         endpointOverride: String? = null,
-        clientCustomizer: ToolkitClientCustomizer? = null
+        clientCustomizer: ToolkitClientCustomizer? = null,
     ): T {
         checkNotNull(credProvider ?: tokenProvider) { "Either a credential provider or a bearer token provider must be provided" }
 
@@ -197,7 +197,7 @@ abstract class ToolkitClientManager {
                 clientOverrideConfig.addExecutionInterceptor(object : ExecutionInterceptor {
                     override fun modifyRequest(
                         context: Context.ModifyRequest,
-                        executionAttributes: ExecutionAttributes
+                        executionAttributes: ExecutionAttributes,
                     ): SdkRequest {
                         val request = context.request()
                         if (request !is AwsRequest) {

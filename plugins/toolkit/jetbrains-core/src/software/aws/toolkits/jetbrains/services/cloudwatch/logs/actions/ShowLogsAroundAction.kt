@@ -21,7 +21,7 @@ class ShowLogsAroundActionGroup(
     private val project: Project,
     private val logGroup: String,
     private val logStream: String,
-    private val treeTable: TableView<LogStreamEntry>
+    private val treeTable: TableView<LogStreamEntry>,
 ) : ActionGroup(message("cloudwatch.logs.show_logs_around"), null, null), DumbAware {
     init {
         isPopup = true
@@ -40,7 +40,7 @@ private class ShowLogsAround(
     private val logStream: String,
     private val treeTable: TableView<LogStreamEntry>,
     timeMessage: String,
-    private val duration: Duration
+    private val duration: Duration,
 ) : AnAction(timeMessage, null, null), DumbAware {
     override fun actionPerformed(e: AnActionEvent) = runBlocking {
         CloudwatchlogsTelemetry.showEventsAround(project, success = true, value = duration.toMillis().toDouble())

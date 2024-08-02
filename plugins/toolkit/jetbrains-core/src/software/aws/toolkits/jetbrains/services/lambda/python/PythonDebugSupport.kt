@@ -38,7 +38,7 @@ class PythonRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = createDebugProcess(environment, state, debugHost, debugPorts)
 }
 
@@ -55,7 +55,7 @@ abstract class PythonImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = createDebugProcess(environment, state, debugHost, debugPorts)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
@@ -112,7 +112,7 @@ private fun createDebugProcess(
     environment: ExecutionEnvironment,
     state: SamRunningState,
     debugHost: String,
-    debugPorts: List<Int>
+    debugPorts: List<Int>,
 ): XDebugProcessStarter {
     // TODO: We should allow using the module SDK, but we can't easily get the module
     val sdk = ProjectRootManager.getInstance(environment.project).projectSdk?.takeIf { it.sdkType is PythonSdkType }

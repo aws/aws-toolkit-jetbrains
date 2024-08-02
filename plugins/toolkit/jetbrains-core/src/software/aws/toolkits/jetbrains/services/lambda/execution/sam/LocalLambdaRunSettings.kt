@@ -32,7 +32,7 @@ sealed class LocalLambdaRunSettings(
     val samOptions: SamOptions,
     val environmentVariables: Map<String, String>,
     val debugHost: String,
-    val input: String
+    val input: String,
 ) {
     abstract val runtimeGroup: RuntimeGroup
 }
@@ -47,7 +47,7 @@ class TemplateRunSettings(
     connection: ConnectionSettings,
     samOptions: SamOptions,
     debugHost: String,
-    input: String
+    input: String,
 ) : TemplateSettings, ZipSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
     override val runtimeGroup = runtime.runtimeGroup ?: throw IllegalStateException("Attempting to run SAM for unsupported runtime $runtime")
 }
@@ -62,7 +62,7 @@ class HandlerRunSettings(
     connection: ConnectionSettings,
     samOptions: SamOptions,
     debugHost: String,
-    input: String
+    input: String,
 ) : ZipSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
     override val runtimeGroup = runtime.runtimeGroup ?: throw IllegalStateException("Attempting to run SAM for unsupported runtime $runtime")
 }
@@ -77,7 +77,7 @@ class ImageTemplateRunSettings(
     connection: ConnectionSettings,
     samOptions: SamOptions,
     debugHost: String,
-    input: String
+    input: String,
 ) : ImageSettings, TemplateSettings, LocalLambdaRunSettings(connection, samOptions, environmentVariables, debugHost, input) {
     override val runtimeGroup = RuntimeGroup.find { imageDebugger.languageId in it.languageIds }
         ?: throw IllegalStateException("Attempting to run SAM for unsupported language ${imageDebugger.languageId}")

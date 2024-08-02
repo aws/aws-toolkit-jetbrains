@@ -62,7 +62,7 @@ object DotnetDebugUtils {
         environment: ExecutionEnvironment,
         debugHost: String,
         debugPorts: List<Int>,
-        context: Context
+        context: Context,
     ): XDebugProcessStarter {
         val frontendPort = debugPorts[0]
         val backendPort = debugPorts[1]

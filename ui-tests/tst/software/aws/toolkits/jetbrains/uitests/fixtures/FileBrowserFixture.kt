@@ -21,7 +21,7 @@ import java.time.Duration
 fun ContainerFixture.fileBrowser(
     partialTitle: String,
     timeout: Duration = Duration.ofSeconds(20),
-    function: FileBrowserFixture.() -> Unit = {}
+    function: FileBrowserFixture.() -> Unit = {},
 ) {
     step("Search for file explorer with title matching '$partialTitle'") {
         val dialog = find<FileBrowserFixture>(DialogFixture.byTitleContains(partialTitle), timeout)
@@ -39,7 +39,7 @@ fun ContainerFixture.fileBrowser(
 @FixtureName("FileBrowser")
 class FileBrowserFixture(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : DialogFixture(remoteRobot, remoteComponent) {
     private val treeXpath = byXpath("//div[@class='Tree']")
     private val tree by lazy {

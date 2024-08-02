@@ -153,7 +153,7 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
         typing: String,
         brackets: String,
         remaining: String = "",
-        useKeyboard: Boolean = false
+        useKeyboard: Boolean = false,
     ) {
         projectRule.fixture.configureByText(javaFileName, buildContextWithRecommendation(brackets + remaining))
         runInEdtAndWait {

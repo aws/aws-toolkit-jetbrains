@@ -440,7 +440,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     private suspend fun handleJobResumedFromHil(
         jobId: JobId,
-        session: CodeModernizerSession
+        session: CodeModernizerSession,
     ): CodeModernizerJobCompletedResult = session.pollUntilJobCompletion(
         jobId
     ) { new, plan ->

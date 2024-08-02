@@ -98,7 +98,7 @@ class CodeWhispererTelemetryService {
         lastRecommendationIndex: Int,
         invocationSuccess: Boolean,
         latency: Double,
-        exceptionType: String?
+        exceptionType: String?,
     ) {
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
@@ -150,7 +150,7 @@ class CodeWhispererTelemetryService {
         detailContext: DetailContext,
         index: Int,
         suggestionState: CodewhispererSuggestionState,
-        numOfRecommendations: Int
+        numOfRecommendations: Int,
     ) {
         val requestId = detailContext.requestId
         val recommendation = detailContext.recommendation
@@ -197,7 +197,7 @@ class CodeWhispererTelemetryService {
         popupShownTime: Duration?,
         suggestionReferenceCount: Int,
         generatedLineCount: Int,
-        acceptedCharCount: Int
+        acceptedCharCount: Int,
     ) {
         val project = requestContext.project
         val totalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
@@ -367,7 +367,7 @@ class CodeWhispererTelemetryService {
         range: RangeMarker,
         suggestion: String,
         selectedIndex: Int,
-        completionType: CodewhispererCompletionType
+        completionType: CodewhispererCompletionType,
     ) {
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage
         CodeWhispererUserModificationTracker.getInstance(requestContext.project).enqueue(
@@ -395,7 +395,7 @@ class CodeWhispererTelemetryService {
         recommendationContext: RecommendationContext,
         sessionContext: SessionContext,
         hasUserAccepted: Boolean,
-        popupShownTime: Duration? = null
+        popupShownTime: Duration? = null,
     ) {
         val detailContexts = recommendationContext.details
         val decisions = mutableListOf<CodewhispererSuggestionState>()
@@ -533,7 +533,7 @@ class CodeWhispererTelemetryService {
         hasSeen: Boolean,
         hasUserAccepted: Boolean,
         isDiscarded: Boolean,
-        isEmpty: Boolean
+        isEmpty: Boolean,
     ): CodewhispererSuggestionState =
         if (isEmpty) {
             CodewhispererSuggestionState.Empty

@@ -34,13 +34,13 @@ class LogStreamTable(
     client: CloudWatchLogsClient,
     private val logGroup: String,
     private val logStream: String,
-    type: TableType
+    type: TableType,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
 
     enum class TableType {
         LIST,
-        FILTER
+        FILTER,
     }
 
     val component: JComponent

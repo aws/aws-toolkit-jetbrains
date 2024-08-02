@@ -50,7 +50,7 @@ class CodeWhispererRecommendationManager {
 
     fun buildRecommendationChunks(
         recommendation: String,
-        matchingSymbols: List<Pair<Int, Int>>
+        matchingSymbols: List<Pair<Int, Int>>,
     ): List<RecommendationChunk> = matchingSymbols
         .dropLast(1)
         .mapIndexed { index, (offset, inlayOffset) ->
@@ -131,7 +131,7 @@ class CodeWhispererRecommendationManager {
 
     fun findRightContextOverlap(
         requestContext: RequestContext,
-        recommendation: Completion
+        recommendation: Completion,
     ): String {
         val document = requestContext.editor.document
         val caret = requestContext.editor.caretModel.primaryCaret

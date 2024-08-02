@@ -20,7 +20,7 @@ const val DEFAULT_RETRY_LIMIT = 0
 const val MAX_PROJECT_SIZE_BYTES: Long = 200 * 1024 * 1024
 
 enum class ModifySourceFolderErrorReason(
-    private val reasonText: String
+    private val reasonText: String,
 ) {
     ClosedBeforeSelection("ClosedBeforeSelection"),
     NotInWorkspaceFolder("NotInWorkspaceFolder"),

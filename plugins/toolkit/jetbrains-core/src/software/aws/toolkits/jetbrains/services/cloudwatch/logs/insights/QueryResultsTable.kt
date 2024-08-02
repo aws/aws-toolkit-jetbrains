@@ -26,7 +26,7 @@ class QueryResultsTable(
     private val project: Project,
     connectionSettings: ConnectionSettings,
     fields: List<String>,
-    queryId: String
+    queryId: String,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     private val client = let {

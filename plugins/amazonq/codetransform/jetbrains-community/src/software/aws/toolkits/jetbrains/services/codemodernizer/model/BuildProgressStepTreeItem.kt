@@ -9,7 +9,7 @@ data class BuildProgressStepTreeItem(
     val id: ProgressStepId,
     var runtime: String? = null,
     var finishedTime: String? = null,
-    val transformationStepId: Int? = null
+    val transformationStepId: Int? = null,
 )
 
 enum class ProgressStepId(val order: Int) {
@@ -20,5 +20,5 @@ enum class ProgressStepId(val order: Int) {
     PLAN_STEP(5),
     PAUSED(6),
     RESUMED(7),
-    ROOT_STEP(99)
+    ROOT_STEP(99),
 }

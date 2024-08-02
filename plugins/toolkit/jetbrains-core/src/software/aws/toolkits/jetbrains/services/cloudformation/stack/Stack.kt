@@ -71,7 +71,7 @@ private class StackUI(
     private val project: Project,
     private val stackName: String,
     stackId: String,
-    private val toolWindow: ToolkitToolWindow
+    private val toolWindow: ToolkitToolWindow,
 ) : UpdateListener, Disposable {
 
     val toolWindowTab: Content

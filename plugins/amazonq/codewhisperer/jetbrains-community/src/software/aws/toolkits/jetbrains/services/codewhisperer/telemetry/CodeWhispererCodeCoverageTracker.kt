@@ -47,7 +47,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val language: CodeWhispererProgrammingLanguage,
     private val rangeMarkers: MutableList<RangeMarker>,
     private val fileToTokens: MutableMap<Document, CodeCoverageTokens>,
-    private val myServiceInvocationCount: AtomicInteger
+    private val myServiceInvocationCount: AtomicInteger,
 ) : Disposable {
     val percentage: Int?
         get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null

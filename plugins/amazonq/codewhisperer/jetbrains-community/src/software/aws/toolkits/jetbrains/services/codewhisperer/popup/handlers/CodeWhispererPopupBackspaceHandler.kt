@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 
 class CodeWhispererPopupBackspaceHandler(
     private val defaultHandler: EditorActionHandler,
-    states: InvocationContext
+    states: InvocationContext,
 ) : CodeWhispererEditorActionHandler(states) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         val popupManager = CodeWhispererPopupManager.getInstance()

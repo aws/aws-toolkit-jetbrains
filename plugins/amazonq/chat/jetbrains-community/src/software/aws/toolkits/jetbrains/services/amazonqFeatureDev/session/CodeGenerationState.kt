@@ -28,7 +28,7 @@ class CodeGenerationState(
     val repositorySize: Double,
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
@@ -134,16 +134,20 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
                 when (true) {
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"
-                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    ),
+                    -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
-                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
+                    ),
+                    -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
-                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    ),
+                    -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Throttling"
-                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
+                    ),
+                    -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
                     else -> codeGenerationFailedError()
                 }
             }

@@ -33,7 +33,7 @@ class NodeJsRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts)
 }
 
@@ -45,7 +45,7 @@ abstract class NodeJsImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = NodeJsDebugUtils.createDebugProcess(state, debugHost, debugPorts)
 
     override fun containerEnvVars(debugPorts: List<Int>): Map<String, String> = mapOf(
@@ -74,7 +74,7 @@ object NodeJsDebugUtils {
     fun createDebugProcess(
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
             val mappings = createBiMapMappings(state.pathMappings)

@@ -58,12 +58,12 @@ data class Reference(
     val licenseName: String?,
     val repository: String?,
     val url: String?,
-    val recommendationContentSpan: RecommendationContentSpan?
+    val recommendationContentSpan: RecommendationContentSpan?,
 )
 
 data class RecommendationContentSpan(
     val start: Int?,
-    val end: Int?
+    val end: Int?,
 )
 
 data class Header(val sender: String, val responseTo: String, val sequenceId: String)

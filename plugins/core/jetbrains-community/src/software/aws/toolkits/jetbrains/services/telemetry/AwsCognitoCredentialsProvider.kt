@@ -28,7 +28,7 @@ import java.time.temporal.ChronoUnit
 class AwsCognitoCredentialsProvider(
     private val identityPool: String,
     private val cognitoClient: CognitoIdentityClient,
-    cacheStorage: CachedIdentityStorage? = null
+    cacheStorage: CachedIdentityStorage? = null,
 ) : AwsCredentialsProvider, SdkAutoCloseable {
     private val identityIdProvider = AwsCognitoIdentityProvider(cognitoClient, identityPool, cacheStorage)
     private val cacheSupplier = CachedSupplier.builder(this::updateCognitoCredentials)
@@ -68,7 +68,7 @@ class AwsCognitoCredentialsProvider(
 private class AwsCognitoIdentityProvider(
     private val cognitoClient: CognitoIdentityClient,
     private val identityPoolId: String,
-    private val cacheStorage: CachedIdentityStorage? = null
+    private val cacheStorage: CachedIdentityStorage? = null,
 ) {
     val identityId: String by lazy {
         loadFromCache() ?: createNewIdentity()

@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.services.ssm.SsmPlugin
 data class StartSessionResponse(
     val sessionId: String,
     val streamUrl: String,
-    val tokenValue: String
+    val tokenValue: String,
 ) {
     override fun toString() = "StartSessionResponse(sessionId='$sessionId', streamUrl='***', tokenValue='***')"
 }
@@ -24,7 +24,7 @@ class SsmCommandLineFactory(
     private val ssmTarget: String,
     private val sessionParameters: StartSessionResponse,
     private val region: AwsRegion,
-    private val overrideSsmPlugin: String? = null
+    private val overrideSsmPlugin: String? = null,
 ) {
     fun sshCommand(): SshCommandLine {
         val command = SshCommandLine(ssmTarget)
@@ -52,7 +52,7 @@ class SsmCommandLineFactory(
 
     inner class ProxyCommand(
         val exePath: String,
-        val args: List<String>
+        val args: List<String>,
     )
 
     /**

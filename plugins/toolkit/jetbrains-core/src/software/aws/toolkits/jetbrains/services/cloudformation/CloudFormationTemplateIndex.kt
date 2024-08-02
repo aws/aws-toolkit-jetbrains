@@ -95,7 +95,7 @@ class CloudFormationTemplateIndex : FileBasedIndexExtension<String, MutableList<
         fun listResources(
             project: Project,
             resourceTypeFilter: (String) -> Boolean = { true },
-            virtualFile: VirtualFile? = null
+            virtualFile: VirtualFile? = null,
         ): Collection<IndexedResource> {
             val index = FileBasedIndex.getInstance()
             val scope = virtualFile?.let { GlobalSearchScope.fileScope(project, it) } ?: GlobalSearchScope.projectScope(project)

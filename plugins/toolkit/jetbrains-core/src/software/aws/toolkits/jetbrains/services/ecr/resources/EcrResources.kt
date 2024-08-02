@@ -28,5 +28,5 @@ object EcrResources {
 data class Repository(
     val repositoryName: String,
     val repositoryArn: String,
-    val repositoryUri: String
+    val repositoryUri: String,
 )

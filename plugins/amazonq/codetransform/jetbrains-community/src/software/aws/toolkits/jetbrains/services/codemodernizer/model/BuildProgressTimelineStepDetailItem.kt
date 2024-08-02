@@ -8,5 +8,5 @@ data class BuildProgressTimelineStepDetailItem(
     val description: String,
     val status: BuildStepStatus,
     var runtime: String? = null,
-    var finishedTime: String? = null
+    var finishedTime: String? = null,
 )

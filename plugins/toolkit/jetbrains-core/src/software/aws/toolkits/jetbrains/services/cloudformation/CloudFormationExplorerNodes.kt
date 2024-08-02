@@ -30,7 +30,7 @@ class CloudFormationStackNode(
     project: Project,
     val stackName: String,
     private val stackStatus: StackStatus,
-    val stackId: String
+    val stackId: String,
 ) : AwsExplorerResourceNode<String>(
     project,
     CloudFormationClient.SERVICE_NAME,

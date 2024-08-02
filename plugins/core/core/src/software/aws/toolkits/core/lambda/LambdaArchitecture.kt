@@ -10,7 +10,8 @@ enum class LambdaArchitecture(
     val minSam: String? = null,
 ) {
     X86_64(Architecture.X86_64),
-    ARM64(Architecture.ARM64, minSam = "1.33.0");
+    ARM64(Architecture.ARM64, minSam = "1.33.0"),
+    ;
 
     override fun toString() = architecture.toString()
 

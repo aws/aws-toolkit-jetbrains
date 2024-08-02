@@ -60,7 +60,7 @@ class SyncSettings : PersistentStateComponent<SyncConfigs> {
 }
 
 data class SyncConfigs(
-    var samConfigs: MutableMap<String, SyncSamConfig> = mutableMapOf()
+    var samConfigs: MutableMap<String, SyncSamConfig> = mutableMapOf(),
 )
 
 data class SyncSamConfig(
@@ -70,5 +70,5 @@ data class SyncSamConfig(
     var useContainer: Boolean = false,
     var enabledCapabilities: List<CreateCapabilities>? = null,
     var tags: Map<String, String>? = null,
-    var tempParameterOverrides: Map<String, String>? = null
+    var tempParameterOverrides: Map<String, String>? = null,
 )

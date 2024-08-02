@@ -13,7 +13,7 @@ import java.awt.event.MouseEvent
 open class AnActionTreeNode(
     project: Project,
     private val place: String,
-    private val action: AnAction
+    private val action: AnAction,
 ) : AbstractActionTreeNode(
     project,
     action.templatePresentation.text,

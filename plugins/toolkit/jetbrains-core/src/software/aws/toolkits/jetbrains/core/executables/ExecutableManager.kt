@@ -274,7 +274,7 @@ sealed class ExecutableInstance {
         override val executablePath: Path,
         override val version: String,
         override val autoResolved: Boolean,
-        private val executableType: ExecutableType<*>
+        private val executableType: ExecutableType<*>,
     ) : ExecutableInstance(), ExecutableWithPath {
         // TODO get executable name as part of this
         fun getCommandLine(): GeneralCommandLine =
@@ -285,7 +285,7 @@ sealed class ExecutableInstance {
         override val executablePath: Path,
         override val version: String?,
         override val autoResolved: Boolean,
-        override val validationError: String
+        override val validationError: String,
     ) : ExecutableInstance(), ExecutableWithPath, BadExecutable
 
     class UnresolvedExecutable(override val validationError: String) : ExecutableInstance(), BadExecutable {
@@ -295,12 +295,12 @@ sealed class ExecutableInstance {
 
 // PersistentStateComponent requires a bean, so we wrap the List
 data class ExecutableStateList(
-    var value: List<ExecutableState> = listOf()
+    var value: List<ExecutableState> = listOf(),
 )
 
 data class ExecutableState(
     var id: String? = null,
     var executablePath: String? = null,
     var autoResolved: Boolean? = false,
-    var lastKnownFileTime: Long? = null
+    var lastKnownFileTime: Long? = null,
 )

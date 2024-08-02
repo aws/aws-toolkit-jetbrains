@@ -18,7 +18,8 @@ import java.util.prefs.Preferences
 enum class ProfilesNotification(private val description: String) {
     Always(message("settings.profiles.always")),
     OnFailure(message("settings.profiles.on_failure")),
-    Never(message("settings.profiles.never"));
+    Never(message("settings.profiles.never")),
+    ;
 
     override fun toString(): String = description
 }
@@ -26,7 +27,8 @@ enum class ProfilesNotification(private val description: String) {
 enum class UseAwsCredentialRegion(private val description: String) {
     Always(message("settings.credentials.prompt_for_default_region_switch.always.description")),
     Prompt(message("settings.credentials.prompt_for_default_region_switch.ask.description")),
-    Never(message("settings.credentials.prompt_for_default_region_switch.never.description"));
+    Never(message("settings.credentials.prompt_for_default_region_switch.never.description")),
+    ;
 
     override fun toString(): String = description
 }
@@ -134,5 +136,5 @@ data class AwsConfiguration(
     var isAutoUpdateEnabled: Boolean? = null,
     var isAutoUpdateNotificationEnabled: Boolean? = null,
     var isAutoUpdateFeatureNotificationShownOnce: Boolean? = null,
-    var isQMigrationNotificationShownOnce: Boolean? = null
+    var isQMigrationNotificationShownOnce: Boolean? = null,
 )

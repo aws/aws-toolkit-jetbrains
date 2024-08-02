@@ -44,7 +44,7 @@ class LogStreamDownloadTask(
     private val edt: CoroutineContext,
     val client: CloudWatchLogsClient,
     val logGroup: String,
-    val logStream: String
+    val logStream: String,
 ) : Task.Backgroundable(project, message("cloudwatch.logs.opening_in_editor", logStream), true) {
 
     override fun run(indicator: ProgressIndicator) = runBlocking {
@@ -126,7 +126,7 @@ class LogStreamDownloadToFileTask(
     private val logGroup: String,
     private val logStream: String,
     private val buffer: String,
-    private val request: GetLogEventsRequest? = null
+    private val request: GetLogEventsRequest? = null,
 ) : Task.Backgroundable(project, message("cloudwatch.logs.saving_to_disk", logStream), true) {
     private val edt = getCoroutineUiContext()
 

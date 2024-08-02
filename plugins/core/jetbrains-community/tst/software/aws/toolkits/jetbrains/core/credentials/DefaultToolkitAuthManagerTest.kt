@@ -48,7 +48,7 @@ import software.aws.toolkits.jetbrains.utils.satisfiesKt
 class DefaultToolkitAuthManagerTest {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     @ExtendWith(MockRegionProviderExtension::class)
@@ -276,7 +276,7 @@ class DefaultToolkitAuthManagerTest {
 
     @Test
     fun `loginSso with an existing connection that token is invalid and there's no refresh token, should re-authenticate`(
-        @TestDisposable disposable: Disposable
+        @TestDisposable disposable: Disposable,
     ) {
         val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
         regionProvider.addRegion(Region.US_EAST_1)

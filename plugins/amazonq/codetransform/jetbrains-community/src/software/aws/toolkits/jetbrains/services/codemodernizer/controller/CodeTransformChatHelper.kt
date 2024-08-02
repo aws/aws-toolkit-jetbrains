@@ -17,7 +17,7 @@ import java.util.UUID
 
 class CodeTransformChatHelper(
     private val messagePublisher: MessagePublisher,
-    private val chatSessionStorage: ChatSessionStorage
+    private val chatSessionStorage: ChatSessionStorage,
 ) {
     private var activeCodeTransformTabId: String? = null
     private var hilPomItemId: String? = null
@@ -48,7 +48,7 @@ class CodeTransformChatHelper(
     suspend fun addNewMessage(
         content: CodeTransformChatMessageContent,
         messageIdOverride: String? = null,
-        clearPreviousItemButtons: Boolean? = true
+        clearPreviousItemButtons: Boolean? = true,
     ) {
         if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId as String).isAuthenticating) {
             return
@@ -95,7 +95,7 @@ class CodeTransformChatHelper(
 
     suspend fun updateExistingMessage(
         targetMessageId: String,
-        content: CodeTransformChatMessageContent
+        content: CodeTransformChatMessageContent,
     ) {
         messagePublisher.publish(
             CodeTransformChatUpdateMessage(

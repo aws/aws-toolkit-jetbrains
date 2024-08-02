@@ -27,7 +27,7 @@ class StartBackendV2(
     private val lifetime: Lifetime,
     private val indicator: ProgressIndicator,
     private val identifier: WorkspaceIdentifier,
-    private val remoteProjectName: String? = null
+    private val remoteProjectName: String? = null,
 ) : Step() {
     override val stepName: String = message("gateway.connection.workflow.start_ide")
 

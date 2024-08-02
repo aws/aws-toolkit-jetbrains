@@ -74,7 +74,7 @@ fun CodeInsightTestFixture.addGoLambdaHandler(
         
     func handler() { 
     }
-    """.trimIndent()
+    """.trimIndent(),
 ): PsiElement {
     val psiFile = this.addFileToProject("$subPath/$fileName.go", fileContent) as GoFile
 
@@ -90,7 +90,7 @@ fun CodeInsightTestFixture.addGoModFile(
         require github.com/aws/aws-lambda-go v1.13.3
 
         module hello-world
-        """.trimIndent()
+        """.trimIndent(),
 ): PsiFile = this.addFileToProject("$subPath/go.mod", content)
 
 fun runGoModTidy(goModFile: VirtualFile) {

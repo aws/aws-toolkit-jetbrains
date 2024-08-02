@@ -393,7 +393,7 @@ class ExplorerToolWindow(private val project: Project) :
             expanded: Boolean,
             leaf: Boolean,
             row: Int,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ) {
             super.customizeCellRenderer(tree, value, selected, expanded, leaf, row, hasFocus)
             if (value is DefaultMutableTreeNode && value.userObject is NodeDescriptor<*>) {

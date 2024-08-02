@@ -24,7 +24,7 @@ data class Partition(
     val partition: String,
     val partitionName: String,
     val regions: Map<String, PartitionRegion>,
-    val services: Map<String, Service>
+    val services: Map<String, Service>,
 )
 
 data class PartitionRegion(val description: String)

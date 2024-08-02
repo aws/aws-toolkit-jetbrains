@@ -124,7 +124,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     suspend fun downloadArtifact(
         job: JobId,
         artifactType: TransformationDownloadArtifactType,
-        isPreFetch: Boolean = false
+        isPreFetch: Boolean = false,
     ): DownloadArtifactResult {
         isCurrentlyDownloading.set(true)
         val downloadStartTime = Instant.now()

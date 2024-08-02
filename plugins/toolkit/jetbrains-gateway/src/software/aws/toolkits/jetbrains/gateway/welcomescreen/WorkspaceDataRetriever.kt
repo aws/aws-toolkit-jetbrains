@@ -27,7 +27,7 @@ import kotlin.concurrent.write
 
 class WorkspaceDataRetriever(
     private val client: CodeCatalystClient,
-    private val spaceName: String
+    private val spaceName: String,
 ) : WorkspaceList, WorkspaceListStateChangeListener, Disposable {
     private val listeners = mutableListOf<Runnable>()
 

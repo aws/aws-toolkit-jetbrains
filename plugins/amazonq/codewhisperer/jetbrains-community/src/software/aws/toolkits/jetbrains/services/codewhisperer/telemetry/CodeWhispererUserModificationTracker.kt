@@ -54,7 +54,7 @@ data class AcceptedSuggestionEntry(
     val codewhispererLanguage: CodeWhispererProgrammingLanguage,
     val codewhispererRuntime: CodewhispererRuntime?,
     val codewhispererRuntimeSource: String?,
-    val connection: ToolkitConnection?
+    val connection: ToolkitConnection?,
 ) : UserModificationTrackingEntry
 
 @Service(Service.Level.PROJECT)

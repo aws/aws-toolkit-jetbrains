@@ -32,7 +32,7 @@ interface ToolkitToolWindow {
         component: JComponent,
         activate: Boolean = false,
         id: String = title,
-        additionalDisposable: Disposable? = null
+        additionalDisposable: Disposable? = null,
     ): Content {
         val toolWindow = toolWindow()
         val contentManager = toolWindow.contentManager

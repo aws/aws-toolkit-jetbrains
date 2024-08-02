@@ -14,7 +14,7 @@ suspend fun MavenProjectsManager.addManagedFilesWithProfiles(
     profiles: MavenExplicitProfiles,
     nothing: Nothing?,
     nothing1: Nothing?,
-    nothing3: Boolean
+    nothing3: Boolean,
 ) {
     resetManagedFilesAndProfilesInTests(poms, profiles)
     runInEdtAndWait {

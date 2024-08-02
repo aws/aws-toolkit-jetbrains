@@ -334,7 +334,7 @@ class ChatController private constructor(
         message: ContextMenuActionMessage,
         triggerId: String,
         fileContext: ActiveFileContext,
-        modelPrompt: String? = null
+        modelPrompt: String? = null,
     ) {
         messagePublisher.publish(
             EditorContextCommandMessage(
@@ -378,7 +378,7 @@ class ChatController private constructor(
         userIntent: UserIntent?,
         triggerType: TriggerType,
         projectContextQueryResult: List<RelevantDocument>,
-        shouldAddIndexInProgressMessage: Boolean? = false
+        shouldAddIndexInProgressMessage: Boolean? = false,
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {

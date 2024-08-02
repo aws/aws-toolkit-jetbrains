@@ -38,7 +38,7 @@ class AuthController {
     private fun getAuthNeededState(
         amazonqConnectionState: ActiveConnection,
         codeWhispererConnectionState: ActiveConnection,
-        onlyIamIdcConnection: Boolean = false
+        onlyIamIdcConnection: Boolean = false,
     ): AuthNeededState? =
         when (amazonqConnectionState) {
             ActiveConnection.NotConnected -> {
@@ -85,7 +85,8 @@ class AuthController {
         when (type) {
             AuthFollowUpType.MissingScopes,
             AuthFollowUpType.Unsupported,
-            AuthFollowUpType.FullAuth -> runInEdt {
+            AuthFollowUpType.FullAuth,
+            -> runInEdt {
                 UiTelemetry.click(project, "amazonq_chatAuthenticate")
                 requestCredentialsForQ(project, connectionInitiatedFromQChatPanel = true)
             }

@@ -40,7 +40,7 @@ class CloudWatchLogStream(
     private val logStream: String,
     private val previousEvent: LogStreamEntry? = null,
     private val duration: Duration? = null,
-    streamLogs: Boolean = false
+    streamLogs: Boolean = false,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     lateinit var content: JPanel

@@ -9,5 +9,5 @@ import kotlinx.coroutines.CoroutineScope
 suspend fun <T> withBackgroundProgress(
     project: Project,
     title: @ProgressTitle String,
-    action: suspend CoroutineScope.() -> T
+    action: suspend CoroutineScope.() -> T,
 ): T = com.intellij.openapi.progress.withBackgroundProgress(project, title, action)

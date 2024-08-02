@@ -9,7 +9,7 @@ fun gatewayManifest(): GatewayManifest = GatewayManifest(LATEST_ECR)
 
 data class GatewayManifest(
     @JsonProperty("images")
-    private val latestImages: List<GatewayProduct>
+    private val latestImages: List<GatewayProduct>,
 ) {
     val images = latestImages
 }
@@ -24,7 +24,7 @@ data class GatewayProduct(
     @JsonProperty("marketingName")
     val fullName: String,
     @JsonProperty("tags")
-    val tags: List<String>
+    val tags: List<String>,
 ) {
     val apiType = when (productCode) {
         "IU" -> "IntelliJ"

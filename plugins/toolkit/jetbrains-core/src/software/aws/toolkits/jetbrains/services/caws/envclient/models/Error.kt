@@ -8,5 +8,5 @@ package software.aws.toolkits.jetbrains.services.caws.envclient.models
  */
 data class Error(
     /* A description of the error condition */
-    val message: String? = null
+    val message: String? = null,
 )

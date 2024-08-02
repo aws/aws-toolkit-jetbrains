@@ -20,7 +20,7 @@ private class ProjectFileBrowseListener<T : JComponent>(
     component: ComponentWithBrowseButton<T>,
     fileChooserDescriptor: FileChooserDescriptor,
     textComponentAccessor: TextComponentAccessor<T>,
-    private val onChosen: ((VirtualFile) -> String?)? = null
+    private val onChosen: ((VirtualFile) -> String?)? = null,
 ) : ComponentWithBrowseButton.BrowseFolderActionListener<T>(
     /* title */
     null,
@@ -61,7 +61,7 @@ fun <T : JComponent> installProjectFileRootedCompletionAndBrowseDialog(
     textField: JTextField?,
     fileChooserDescriptor: FileChooserDescriptor,
     textComponentAccessor: TextComponentAccessor<T>,
-    onChosen: ((VirtualFile) -> String)? = null
+    onChosen: ((VirtualFile) -> String)? = null,
 ) {
     component.addActionListener(
         ProjectFileBrowseListener(project, component, fileChooserDescriptor, textComponentAccessor, onChosen)
@@ -82,7 +82,7 @@ fun installTextFieldProjectFileBrowseListener(
     project: Project,
     component: ComponentWithBrowseButton<JTextField>,
     fileChooserDescriptor: FileChooserDescriptor,
-    onChosen: ((VirtualFile) -> String)? = null
+    onChosen: ((VirtualFile) -> String)? = null,
 ) {
     installProjectFileRootedCompletionAndBrowseDialog(
         project = project,
@@ -100,7 +100,7 @@ fun installComboBoxProjectFileBrowseListener(
     project: Project,
     component: ComboboxWithBrowseButton,
     fileChooserDescriptor: FileChooserDescriptor,
-    onChosen: ((VirtualFile) -> String)? = null
+    onChosen: ((VirtualFile) -> String)? = null,
 ) {
     installProjectFileRootedCompletionAndBrowseDialog(
         project = project,

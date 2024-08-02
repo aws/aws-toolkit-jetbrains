@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 @file:Suppress("BannedPattern")
+
 package software.aws.toolkits.gradle.detekt.rules
 
 import io.gitlab.arturbosch.detekt.test.lint

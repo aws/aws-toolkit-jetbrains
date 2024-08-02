@@ -14,7 +14,7 @@ class DynamicResourceSchemaMapping {
 
     fun addResourceSchemaMapping(
         project: Project,
-        file: DynamicResourceVirtualFile
+        file: DynamicResourceVirtualFile,
     ) {
         val configuration = JsonSchemaMappingsProjectConfiguration.getInstance(project).findMappingForFile(file)
         if (configuration == null) {

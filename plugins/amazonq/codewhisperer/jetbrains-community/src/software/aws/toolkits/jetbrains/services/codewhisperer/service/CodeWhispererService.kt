@@ -102,7 +102,7 @@ class CodeWhispererService : Disposable {
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ) {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
@@ -506,7 +506,7 @@ class CodeWhispererService : Disposable {
         responseContext: ResponseContext,
         response: GenerateCompletionsResponse,
         caretMovement: CaretMovement,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext? {
         val requestId = response.responseMetadata().requestId()
         val recommendations = response.completions()
@@ -551,7 +551,7 @@ class CodeWhispererService : Disposable {
 
     private fun updateStates(
         states: InvocationContext,
-        response: GenerateCompletionsResponse
+        response: GenerateCompletionsResponse,
     ): InvocationContext {
         val recommendationContext = states.recommendationContext
         val details = recommendationContext.details
@@ -593,7 +593,7 @@ class CodeWhispererService : Disposable {
     private fun sendDiscardedUserDecisionEventForAll(
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        recommendations: List<Completion>
+        recommendations: List<Completion>,
     ) {
         val detailContexts = recommendations.map {
             DetailContext("", it, it, true, false, "", getCompletionType(it))
@@ -614,7 +614,7 @@ class CodeWhispererService : Disposable {
         editor: Editor,
         project: Project,
         psiFile: PsiFile,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ): RequestContext {
         // 1. file context
         val fileContext: FileContextInfo = runReadAction { FileContextProvider.getInstance(project).extractFileContext(editor, psiFile) }
@@ -682,7 +682,7 @@ class CodeWhispererService : Disposable {
         requestContext: RequestContext,
         responseContext: ResponseContext,
         recommendationContext: RecommendationContext,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext {
         addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -710,7 +710,7 @@ class CodeWhispererService : Disposable {
         responseContext: ResponseContext,
         recommendations: List<Completion>,
         latency: Double?,
-        exceptionType: String?
+        exceptionType: String?,
     ) {
         val recommendationLogs = recommendations.map { it.content().trimEnd() }
             .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
@@ -785,7 +785,7 @@ class CodeWhispererService : Disposable {
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
-            customizationArn: String?
+            customizationArn: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -828,7 +828,7 @@ data class RequestContext(
     val supplementalContext: SupplementalContextInfo?,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
-    val customizationArn: String?
+    val customizationArn: String?,
 )
 
 data class ResponseContext(

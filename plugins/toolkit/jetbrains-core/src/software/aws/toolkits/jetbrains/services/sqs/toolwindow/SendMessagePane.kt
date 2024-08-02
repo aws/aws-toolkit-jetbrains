@@ -30,7 +30,7 @@ class SendMessagePane(
     private val project: Project,
     private val client: SqsClient,
     private val queue: Queue,
-    disposable: Disposable
+    disposable: Disposable,
 ) {
     private val coroutineScope = disposableCoroutineScope(disposable)
 

@@ -91,7 +91,7 @@ class InteractiveBearerTokenProvider(
     region: String,
     val scopes: List<String>,
     id: String,
-    cache: DiskCache = diskCache
+    cache: DiskCache = diskCache,
 ) : BearerTokenProvider, BearerTokenLogoutSupport, Disposable {
     override val id = id
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
@@ -192,7 +192,7 @@ class NoTokenInitializedException(message: String) : Exception(message)
 public enum class BearerTokenAuthState {
     AUTHORIZED,
     NEEDS_REFRESH,
-    NOT_AUTHENTICATED
+    NOT_AUTHENTICATED,
 }
 
 class ProfileSdkTokenProviderWrapper(private val sessionName: String, region: String) : BearerTokenProvider, Disposable {

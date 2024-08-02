@@ -28,7 +28,7 @@ import javax.swing.JComponent
 class ConfirmUserCodeLoginDialog(
     private val authCode: String,
     private val dialogTitle: String,
-    private val credentialType: CredentialType
+    private val credentialType: CredentialType,
 ) : DialogWrapper(null) {
 
     private val pane = panel {

@@ -24,7 +24,7 @@ class WorkspaceListPanel(
     private val ssoSettings: SsoSettings?,
     private val setContentCallback: (Component) -> Unit,
     private val refreshCallback: () -> Unit,
-    private val lifetime: Lifetime
+    private val lifetime: Lifetime,
 ) : BorderLayoutPanel() {
     private val searchField = createSearchField()
     private val compatibleFilter = FilteringWorkspaceList(dataRetriever) { it.isCompatible }

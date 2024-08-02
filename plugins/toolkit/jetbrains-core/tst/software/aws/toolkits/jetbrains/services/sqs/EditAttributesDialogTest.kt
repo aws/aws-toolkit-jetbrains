@@ -110,7 +110,7 @@ class EditAttributesDialogTest {
         maxDeliveryDelay: Int = MAX_DELIVERY_DELAY,
         waitTime: Int = MAX_WAIT_TIME,
         testRetentionPeriod: Int? = MAX_RETENTION_PERIOD,
-        testMessageSize: Int? = MAX_MESSAGE_SIZE_LIMIT
+        testMessageSize: Int? = MAX_MESSAGE_SIZE_LIMIT,
     ) = EditAttributesDialog(projectRule.project, client, queue, mapOf()).apply {
         view.visibilityTimeout.value = visibilityTimeout
         view.messageSize.text = testMessageSize?.toString() ?: ""

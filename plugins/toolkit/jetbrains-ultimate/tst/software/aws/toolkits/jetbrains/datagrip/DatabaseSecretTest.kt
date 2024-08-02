@@ -160,7 +160,7 @@ class DatabaseSecretTest {
     }
 
     private fun buildMockRedshiftNode(
-        validEndpoint: Boolean = true
+        validEndpoint: Boolean = true,
     ): RedshiftExplorerNode = mock {
         on { cluster } doAnswer {
             mock {
@@ -171,7 +171,7 @@ class DatabaseSecretTest {
 
     private fun buildMockRdsNode(
         validEndpoint: Boolean = true,
-        validEngine: Boolean = true
+        validEngine: Boolean = true,
     ): RdsNode = mock {
         on { database } doAnswer {
             RdsDatabase(
@@ -193,6 +193,6 @@ class DatabaseSecretTest {
         password: String? = "password",
         engine: String? = randomEngine,
         host: String? = randomHost,
-        port: String? = "5000"
+        port: String? = "5000",
     ) = SecretsManagerDbSecret(username, password, engine, host, port)
 }

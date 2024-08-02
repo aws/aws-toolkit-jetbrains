@@ -35,7 +35,7 @@ fun S3Client.upload(
     bucket: String,
     key: String,
     message: String = message("s3.upload.object.progress", key),
-    startInBackground: Boolean = true
+    startInBackground: Boolean = true,
 ): CompletionStage<PutObjectResponse> = upload(project, RequestBody.fromFile(source), bucket, key, message, startInBackground)
 
 private fun S3Client.upload(
@@ -44,7 +44,7 @@ private fun S3Client.upload(
     bucket: String,
     key: String,
     message: String = message("s3.upload.object.progress", key),
-    startInBackground: Boolean = true
+    startInBackground: Boolean = true,
 ): CompletionStage<PutObjectResponse> {
     val future = CompletableFuture<PutObjectResponse>()
     val request = PutObjectRequest.builder().bucket(bucket).key(key).build()
@@ -75,7 +75,7 @@ private fun S3Client.upload(
 private class ProgressTrackingContentProvider(
     private val progressIndicator: ProgressIndicator,
     private val underlyingInputStreamProvider: ContentStreamProvider,
-    private val length: Long
+    private val length: Long,
 ) : ContentStreamProvider {
     private var currentStream: InputStream? = null
 
@@ -99,7 +99,7 @@ fun S3Client.download(
     versionId: String?,
     destination: Path,
     message: String = message("s3.download.object.progress", key),
-    startInBackground: Boolean = true
+    startInBackground: Boolean = true,
 ): CompletionStage<GetObjectResponse> = download(project, bucket, key, versionId, destination.outputStream(), message, startInBackground)
 
 fun S3Client.download(
@@ -109,7 +109,7 @@ fun S3Client.download(
     versionId: String?,
     destination: OutputStream,
     message: String = message("s3.download.object.progress", key),
-    startInBackground: Boolean = true
+    startInBackground: Boolean = true,
 ): CompletionStage<GetObjectResponse> {
     val future = CompletableFuture<GetObjectResponse>()
     val requestBuilder = GetObjectRequest.builder().bucket(bucket).key(key)

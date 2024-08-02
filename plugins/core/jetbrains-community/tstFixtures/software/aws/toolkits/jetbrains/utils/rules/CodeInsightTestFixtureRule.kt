@@ -165,7 +165,7 @@ fun CodeInsightTestFixture.addModule(moduleName: String): Module {
 fun CodeInsightTestFixture.addFileToModule(
     module: Module,
     relativePath: String,
-    fileText: String
+    fileText: String,
 ): PsiFile = runInEdtAndGet {
     val file = try {
         val contentRoot = ModuleRootManager.getInstance(module).contentRoots[0]

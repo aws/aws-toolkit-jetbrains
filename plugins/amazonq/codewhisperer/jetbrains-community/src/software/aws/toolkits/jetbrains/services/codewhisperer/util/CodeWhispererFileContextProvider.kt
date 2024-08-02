@@ -310,7 +310,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererJavaScript,
                 is CodeWhispererTypeScript,
                 is CodeWhispererJsx,
-                is CodeWhispererTsx -> true
+                is CodeWhispererTsx,
+                -> true
 
                 else -> userGroup == CodeWhispererUserGroup.CrossFile
             }

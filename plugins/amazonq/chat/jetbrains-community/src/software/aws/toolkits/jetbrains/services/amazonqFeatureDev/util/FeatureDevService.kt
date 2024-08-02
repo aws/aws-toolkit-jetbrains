@@ -114,7 +114,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         conversationId: String,
         uploadId: String,
         message: String,
-        currentIteration: Int
+        currentIteration: Int,
     ): GenerateTaskAssistPlanResult {
         val startTime = System.currentTimeMillis()
         var failureReason: String? = null

@@ -48,7 +48,7 @@ data class DeviceAuthorizationGrantToken(
     override val accessToken: String,
     override val refreshToken: String? = null,
     override val expiresAt: Instant,
-    override val createdAt: Instant = Instant.EPOCH
+    override val createdAt: Instant = Instant.EPOCH,
 ) : AccessToken {
     override val ssoUrl: String
         get() = startUrl
@@ -62,7 +62,7 @@ data class PKCEAuthorizationGrantToken(
     override val accessToken: String,
     override val refreshToken: String,
     override val expiresAt: Instant,
-    override val createdAt: Instant
+    override val createdAt: Instant,
 ) : AccessToken {
     override val ssoUrl: String
         get() = issuerUrl
@@ -84,11 +84,11 @@ sealed interface AccessTokenCacheKey {
 data class DeviceGrantAccessTokenCacheKey(
     val connectionId: String,
     val startUrl: String,
-    override val scopes: List<String>
+    override val scopes: List<String>,
 ) : AccessTokenCacheKey
 
 data class PKCEAccessTokenCacheKey(
     val issuerUrl: String,
     val region: String,
-    override val scopes: List<String>
+    override val scopes: List<String>,
 ) : AccessTokenCacheKey

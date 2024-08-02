@@ -43,7 +43,7 @@ class LogStreamsStreamColumnRenderer : TableCellRenderer {
 
 class LogStreamsDateColumn(
     private val sortable: Boolean,
-    val format: SyncDateFormat? = null
+    val format: SyncDateFormat? = null,
 ) : ColumnInfo<LogStream, String>(message("cloudwatch.logs.last_event_time")) {
     private val renderer = ResizingTextColumnRenderer()
     override fun valueOf(item: LogStream?): String? = TimeFormatConversion.convertEpochTimeToStringDateTime(

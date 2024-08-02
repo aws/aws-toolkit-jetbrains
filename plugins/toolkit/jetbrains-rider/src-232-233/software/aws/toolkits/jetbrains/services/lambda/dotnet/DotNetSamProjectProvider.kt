@@ -35,7 +35,7 @@ class DotNetSamProjectProvider : RiderProjectTemplateProvider {
 
         override fun createGenerator(
             context: ProjectTemplateDialogContext,
-            transferableModel: ProjectTemplateTransferableModel
+            transferableModel: ProjectTemplateTransferableModel,
         ): RiderProjectTemplateGenerator =
             DotNetSamProjectGenerator(
                 context = context,

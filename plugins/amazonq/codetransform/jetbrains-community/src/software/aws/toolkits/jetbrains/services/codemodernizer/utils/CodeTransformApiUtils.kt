@@ -30,7 +30,7 @@ data class PollingResult(
     val succeeded: Boolean,
     val jobDetails: TransformationJob?,
     val state: TransformationStatus,
-    val transformationPlan: TransformationPlan?
+    val transformationPlan: TransformationPlan?,
 )
 
 /**

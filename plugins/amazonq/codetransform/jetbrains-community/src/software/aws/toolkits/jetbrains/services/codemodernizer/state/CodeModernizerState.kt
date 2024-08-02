@@ -19,7 +19,7 @@ enum class JobDetails {
 }
 
 enum class StateFlags {
-    IS_ONGOING
+    IS_ONGOING,
 }
 
 fun buildState(context: CodeModernizerSessionContext, isJobOngoing: Boolean, jobId: JobId) = CodeModernizerState().apply {

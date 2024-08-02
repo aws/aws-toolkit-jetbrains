@@ -11,7 +11,7 @@ enum class LambdaRuntime(
     val minSamInit: String? = null,
     val minSamDebugging: String? = null,
     val architectures: List<LambdaArchitecture>? = listOf(LambdaArchitecture.DEFAULT),
-    private val runtimeOverride: String? = null
+    private val runtimeOverride: String? = null,
 ) {
     GO1_X(
         Runtime.GO1_X,
@@ -31,7 +31,8 @@ enum class LambdaRuntime(
     PYTHON3_10(Runtime.PYTHON3_10, minSamDebugging = "1.78.0", minSamInit = "1.78.0", architectures = ARM_COMPATIBLE),
     PYTHON3_11(Runtime.PYTHON3_11, minSamDebugging = "1.87.0", minSamInit = "1.87.0", architectures = ARM_COMPATIBLE),
     PYTHON3_12(Runtime.PYTHON3_12, minSamDebugging = "1.103.0", minSamInit = "1.103.0", architectures = ARM_COMPATIBLE),
-    DOTNET6_0(Runtime.DOTNET6, minSamDebugging = "1.40.1", minSamInit = "1.40.1", architectures = ARM_COMPATIBLE);
+    DOTNET6_0(Runtime.DOTNET6, minSamDebugging = "1.40.1", minSamInit = "1.40.1", architectures = ARM_COMPATIBLE),
+    ;
 
     override fun toString() = runtime?.toString() ?: runtimeOverride ?: throw IllegalStateException("LambdaRuntime has no runtime or override string")
 

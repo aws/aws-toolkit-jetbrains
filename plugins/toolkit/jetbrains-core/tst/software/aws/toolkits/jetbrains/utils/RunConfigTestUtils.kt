@@ -216,7 +216,7 @@ fun readProject(
     relativePath: String,
     sourceFileName: String,
     projectRule: CodeInsightTestFixtureRule,
-    templatePatches: Map<String, String> = emptyMap()
+    templatePatches: Map<String, String> = emptyMap(),
 ): Pair<VirtualFile, VirtualFile> {
     val testDataPath = Paths.get(System.getProperty("testDataPath"), relativePath).toFile()
     val (source, template) = testDataPath.walk().fold<File, Pair<VirtualFile?, VirtualFile?>>(Pair(null, null)) { acc, file ->
@@ -262,7 +262,7 @@ fun samImageRunDebugTest(
     mockCredentialsId: String,
     input: String,
     expectedOutput: String? = input.uppercase(),
-    addBreakpoint: (() -> Unit)? = null
+    addBreakpoint: (() -> Unit)? = null,
 ) {
     assumeImageSupport()
     val (_, template) = readProject(relativePath, sourceFileName, projectRule, templatePatches)

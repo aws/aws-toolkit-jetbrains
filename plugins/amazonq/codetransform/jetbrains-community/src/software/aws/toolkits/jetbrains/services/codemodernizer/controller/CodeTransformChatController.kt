@@ -81,7 +81,7 @@ import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
-    private val chatSessionStorage: ChatSessionStorage
+    private val chatSessionStorage: ChatSessionStorage,
 ) : InboundAppMessagesHandler {
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi

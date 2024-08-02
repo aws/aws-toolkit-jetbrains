@@ -11,5 +11,5 @@ data class DeployServerlessApplicationSettings(
     val parameters: Map<String, String>,
     val tags: Map<String, String>,
     val useContainer: Boolean,
-    val capabilities: List<CreateCapabilities>
+    val capabilities: List<CreateCapabilities>,
 )

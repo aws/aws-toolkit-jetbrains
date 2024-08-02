@@ -33,5 +33,5 @@ class LambdaSettings(private val project: Project) : PersistentStateComponent<La
 }
 
 data class LambdaConfiguration(
-    var showAllHandlerGutterIcons: Boolean = false
+    var showAllHandlerGutterIcons: Boolean = false,
 )

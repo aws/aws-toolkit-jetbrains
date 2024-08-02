@@ -24,7 +24,7 @@ interface RemoteResolveParser {
 class DefaultRemoteResourceResolver(
     private val urlFetcher: UrlFetcher,
     private val cacheBasePath: Path,
-    private val executor: (Callable<Path>) -> CompletionStage<Path>
+    private val executor: (Callable<Path>) -> CompletionStage<Path>,
 ) : RemoteResourceResolver {
 
     override fun resolve(resource: RemoteResource): CompletionStage<Path> = executor(Callable { internalResolve(resource) })

@@ -27,7 +27,7 @@ object SamInitRunner {
     fun execute(
         outputDir: VirtualFile,
         templateParameters: TemplateParameters,
-        schemaParameters: SchemaTemplateParameters?
+        schemaParameters: SchemaTemplateParameters?,
     ) {
         // set output to a temp dir
         val tempDir = createTempDir()

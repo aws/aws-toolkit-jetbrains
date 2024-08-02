@@ -82,7 +82,7 @@ internal class CodeWhispererCodeScanHighlightingFilesPanel(private val project: 
             expanded: Boolean,
             leaf: Boolean,
             row: Int,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ) {
             value as DefaultMutableTreeNode
             val file = value.userObject as? VirtualFile

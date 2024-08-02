@@ -30,7 +30,7 @@ abstract class DotNetSamProjectGeneratorRoot(
     private val context: ProjectTemplateDialogContext,
     group: String,
     categoryName: String,
-    model: ProjectTemplateTransferableModel
+    model: ProjectTemplateTransferableModel,
 ) : ReSharperTemplateGeneratorBase(
     model = model,
     createSolution = true,

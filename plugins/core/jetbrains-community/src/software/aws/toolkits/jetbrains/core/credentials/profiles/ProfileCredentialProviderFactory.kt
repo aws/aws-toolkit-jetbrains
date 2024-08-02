@@ -82,7 +82,7 @@ private class ProfileCredentialsIdentifierLegacySso(
     override val ssoCache: SsoCache,
     override val ssoUrl: String,
     override val ssoRegion: String,
-    credentialType: CredentialType?
+    credentialType: CredentialType?,
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials,
     PostValidateInteractiveCredential {
@@ -110,7 +110,7 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
     profileName: String,
     val ssoSessionName: String,
     defaultRegionId: String?,
-    credentialType: CredentialType?
+    credentialType: CredentialType?,
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), PostValidateInteractiveCredential, SsoSessionBackedCredentialIdentifier {
     override val sessionIdentifier = "$SSO_SESSION_SECTION_NAME:$ssoSessionName"
 
@@ -497,7 +497,7 @@ private fun Profile.toCredentialType(): CredentialType? = when {
 
 private data class ProfileHolder(
     val profiles: MutableMap<String, Profile> = mutableMapOf(),
-    val ssoSessions: MutableMap<String, Profile> = mutableMapOf()
+    val ssoSessions: MutableMap<String, Profile> = mutableMapOf(),
 ) {
     fun snapshot() = copy(
         profiles = profiles.toMutableMap(),

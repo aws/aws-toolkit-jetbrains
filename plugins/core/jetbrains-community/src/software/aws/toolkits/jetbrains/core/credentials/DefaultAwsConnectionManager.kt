@@ -17,7 +17,7 @@ data class ConnectionSettingsState(
     var activeProfile: String? = null,
     var activeRegion: String? = null,
     var recentlyUsedProfiles: List<String> = mutableListOf(),
-    var recentlyUsedRegions: List<String> = mutableListOf()
+    var recentlyUsedRegions: List<String> = mutableListOf(),
 )
 
 @State(name = "accountSettings", storages = [Storage("aws.xml")])

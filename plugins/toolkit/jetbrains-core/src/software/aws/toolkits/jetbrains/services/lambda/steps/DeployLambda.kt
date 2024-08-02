@@ -17,7 +17,7 @@ class DeployLambda(
     private val packagedTemplateFile: Path,
     private val envVars: Map<String, String>,
     private val settings: DeployServerlessApplicationSettings,
-    region: AwsRegion
+    region: AwsRegion,
 ) : SamCliStep() {
     override val stepName = message("serverless.application.deploy.step_name.create_change_set")
     private val changeSetRegex = "(arn:${region.partitionId}:cloudformation:.*changeSet/[^\\s]*)".toRegex()

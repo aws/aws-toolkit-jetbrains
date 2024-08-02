@@ -157,5 +157,5 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
 }
 
 data class ToolkitConnectionManagerState(
-    var activeConnectionId: String? = null
+    var activeConnectionId: String? = null,
 )

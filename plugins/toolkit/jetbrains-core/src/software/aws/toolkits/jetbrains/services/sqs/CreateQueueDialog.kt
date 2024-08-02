@@ -24,7 +24,7 @@ import javax.swing.JComponent
 
 class CreateQueueDialog(
     private val project: Project,
-    private val client: SqsClient
+    private val client: SqsClient,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     val view = CreateQueuePanel()

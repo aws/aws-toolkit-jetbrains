@@ -130,7 +130,7 @@ class WorkspaceConfigurationDialog private constructor(cawsClient: CodeCatalystC
             cawsClient: CodeCatalystClient,
             ws: Workspace,
             context: ReconfigureWorkspaceSettings,
-            workspaceList: WorkspaceList
+            workspaceList: WorkspaceList,
         ) {
             val oldSettings = ReconfigureWorkspaceSettings(ws)
             if (oldSettings == context) {
@@ -203,7 +203,7 @@ data class ReconfigureWorkspaceSettings(
     var alias: String,
     var gatewayProduct: GatewayProduct?,
     var instanceType: InstanceType,
-    var inactivityTimeout: InactivityTimeout
+    var inactivityTimeout: InactivityTimeout,
 ) {
     constructor(ws: Workspace) :
         this(

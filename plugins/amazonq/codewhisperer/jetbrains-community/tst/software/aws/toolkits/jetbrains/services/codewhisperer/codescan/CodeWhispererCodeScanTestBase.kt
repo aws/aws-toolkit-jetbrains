@@ -115,7 +115,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         filePath: Path,
         startLine: Int,
         endLine: Int,
-        codeSnippets: List<Pair<Int, String>>
+        codeSnippets: List<Pair<Int, String>>,
     ): String {
         val codeSnippetJson = codeSnippets.joinToString(",\n") { (number, content) ->
             """
@@ -313,7 +313,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         includedSourceFilesSize: Long,
         totalSize: Long,
         expectedTotalLines: Long,
-        payloadLanguage: CodewhispererLanguage
+        payloadLanguage: CodewhispererLanguage,
     ) {
         val payloadMetadata = sessionConfigSpy.getProjectPayloadMetadata()
         assertNotNull(payloadMetadata)
@@ -333,7 +333,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         expectedTotalLines: Long,
         expectedTotalFiles: Int,
         expectedTotalSize: Long,
-        expectedTotalIssues: Int
+        expectedTotalIssues: Int,
     ) {
         val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))

@@ -46,7 +46,7 @@ import java.nio.file.Paths
 
 class SamRunningState(
     val environment: ExecutionEnvironment,
-    val settings: LocalLambdaRunSettings
+    val settings: LocalLambdaRunSettings,
 ) : RunProfileState {
     lateinit var pathMappings: List<PathMapping>
 
@@ -126,7 +126,7 @@ class SamRunningState(
         settings: LocalLambdaRunSettings,
         state: SamRunningState,
         buildRequest: BuildLambdaRequest,
-        buildView: BuildView
+        buildView: BuildView,
     ): ProcessHandler {
         val startSam = SamRunnerStep(environment, settings, environment.isDebug())
 
@@ -222,7 +222,7 @@ class SamRunningState(
             lambdaBuilder: LambdaBuilder,
             templateFile: VirtualFile,
             logicalId: String,
-            samOptions: SamOptions
+            samOptions: SamOptions,
         ): BuildLambdaRequest {
             val templatePath = Paths.get(templateFile.path)
             val buildDir = templatePath.resolveSibling(".aws-sam").resolve("build")

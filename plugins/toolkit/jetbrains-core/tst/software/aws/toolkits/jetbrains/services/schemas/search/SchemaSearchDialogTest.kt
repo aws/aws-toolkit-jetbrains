@@ -407,7 +407,7 @@ class SchemaSearchDialogTest {
     private fun assertSearchResultsDialogState(
         dialog: SchemasSearchDialogBase,
         expectedResults: Collection<SchemaSearchResultWithRegistry>,
-        searchErrors: Collection<SchemaSearchError>
+        searchErrors: Collection<SchemaSearchError>,
     ) {
         assertThat(dialog.getDownloadButton()?.isEnabled).isFalse()
         assertThat(dialog.previewText.text.isEmpty()).isTrue()
@@ -422,7 +422,7 @@ class SchemaSearchDialogTest {
         dialog: SchemasSearchDialogBase,
         schemaContents: String,
         versions: Collection<String>,
-        selectedVersion: String
+        selectedVersion: String,
     ) {
         assertThat(dialog.getDownloadButton()?.isEnabled).isTrue()
         assertThat(dialog.previewText.text).isEqualTo(schemaContents)

@@ -137,7 +137,7 @@ class SsoAccessTokenProvider(
     private val client: SsoOidcClient,
     private val isAlwaysShowDeviceCode: Boolean = false,
     override val scopes: List<String> = emptyList(),
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.systemUTC(),
 ) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
     init {
         check(scopes.isNotEmpty()) { "Scopes should not be empty" }
@@ -340,7 +340,7 @@ class SsoAccessTokenProvider(
         currentToken: AccessToken,
         reason: String,
         reasonDesc: String,
-        requestId: String? = null
+        requestId: String? = null,
     ) {
         val tokenCreationTime = currentToken.createdAt
         val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)

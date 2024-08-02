@@ -48,7 +48,7 @@ interface ToolManager {
     fun <T : Version> validateCompatability(
         tool: Tool<ToolType<T>>?,
         stricterMinVersion: T? = null,
-        project: Project? = null
+        project: Project? = null,
     ): Validity
 
     companion object {
@@ -69,7 +69,7 @@ fun <T : Version> ToolManager.validateCompatability(
     path: Path,
     type: ToolType<T>,
     stricterMinVersion: T? = null,
-    project: Project? = null
+    project: Project? = null,
 ): Validity = validateCompatability(getToolForPath(type, path), stricterMinVersion, project)
 
 fun <V : Version> ToolType<V>.getTool(): Tool<ToolType<V>>? = ToolManager.getInstance().getTool(this)

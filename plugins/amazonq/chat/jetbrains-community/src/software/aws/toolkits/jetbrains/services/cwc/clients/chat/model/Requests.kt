@@ -13,7 +13,7 @@ enum class TriggerType {
     Click,
     ContextMenu,
     Hotkeys,
-    CodeScanButton
+    CodeScanButton,
 }
 
 data class ChatRequestData(
@@ -23,7 +23,7 @@ data class ChatRequestData(
     val userIntent: UserIntent?,
     val triggerType: TriggerType,
     val customization: CodeWhispererCustomization?,
-    val relevantTextDocuments: List<RelevantDocument>
+    val relevantTextDocuments: List<RelevantDocument>,
 )
 
 interface CodeNames {

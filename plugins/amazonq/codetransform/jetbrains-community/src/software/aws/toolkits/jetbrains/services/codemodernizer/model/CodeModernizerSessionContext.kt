@@ -115,7 +115,7 @@ data class CodeModernizerSessionContext(
     }
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
-        buildLogBuilder: StringBuilder
+        buildLogBuilder: StringBuilder,
     ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =

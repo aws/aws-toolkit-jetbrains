@@ -91,7 +91,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun prepareChatContent(
         project: Project,
-        contentManager: ContentManager
+        contentManager: ContentManager,
     ): Content {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component

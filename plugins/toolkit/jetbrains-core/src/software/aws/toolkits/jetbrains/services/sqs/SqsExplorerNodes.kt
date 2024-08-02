@@ -23,7 +23,7 @@ class SqsServiceNode(project: Project, service: AwsExplorerServiceNode) :
 
 class SqsQueueNode(
     project: Project,
-    val queueUrl: String
+    val queueUrl: String,
 ) : AwsExplorerResourceNode<String>(
     project,
     SqsClient.SERVICE_NAME,

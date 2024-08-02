@@ -273,7 +273,7 @@ object CodeWhispererUtil {
     fun <T> debounce(
         waitMs: Long = 300L,
         coroutineScope: CoroutineScope,
-        destinationFunction: (T) -> Unit
+        destinationFunction: (T) -> Unit,
     ): (T) -> Unit {
         var debounceJob: Job? = null
         return { param: T ->

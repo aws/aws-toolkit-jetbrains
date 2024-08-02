@@ -85,7 +85,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
 
     protected class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     @Rule

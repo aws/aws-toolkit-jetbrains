@@ -14,7 +14,7 @@ data class CredentialsChangeEvent(
 
     val ssoAdded: List<SsoSessionIdentifier> = emptyList(),
     val ssoModified: List<SsoSessionIdentifier> = emptyList(),
-    val ssoRemoved: List<SsoSessionIdentifier> = emptyList()
+    val ssoRemoved: List<SsoSessionIdentifier> = emptyList(),
 )
 
 typealias CredentialsChangeListener = (changeEvent: CredentialsChangeEvent) -> Unit

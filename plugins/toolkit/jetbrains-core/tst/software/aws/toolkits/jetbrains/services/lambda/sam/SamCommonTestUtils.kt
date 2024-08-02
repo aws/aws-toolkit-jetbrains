@@ -61,7 +61,7 @@ object SamCommonTestUtils {
         logicalName: String = "Function",
         codeUri: String,
         handler: String,
-        runtime: LambdaRuntime
+        runtime: LambdaRuntime,
     ): PsiFile = this.addFileToProject(
         "template.yaml",
         """

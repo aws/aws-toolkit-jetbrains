@@ -105,7 +105,7 @@ class DefaultToolManager @NonInjectable internal constructor(private val clock: 
     override fun <T : Version> validateCompatability(
         tool: Tool<ToolType<T>>?,
         stricterMinVersion: T?,
-        project: Project?
+        project: Project?,
     ): Validity {
         tool ?: return Validity.NotInstalled
 

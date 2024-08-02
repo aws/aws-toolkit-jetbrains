@@ -19,7 +19,7 @@ class PythonAwsConnectionCommandLineTargetEnvironmentProvider : PythonCommandLin
         project: Project,
         helpersAwareTargetRequest: HelpersAwareTargetEnvironmentRequest,
         pythonExecution: PythonExecution,
-        runParams: PythonRunParams
+        runParams: PythonRunParams,
     ) {
         if (!PythonAwsConnectionExperiment.isEnabled() && Registry.`is`("python.use.targets.api", true)) {
             return

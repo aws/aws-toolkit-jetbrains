@@ -11,7 +11,7 @@ object InsightsUtils {
         connectionSettings: ConnectionSettings,
         logGroups: List<String> = listOf("logGroup"),
         timeRange: TimeRange = TimeRange.RelativeRange(1, ChronoUnit.DAYS),
-        query: QueryString = QueryString.InsightsQueryString("query")
+        query: QueryString = QueryString.InsightsQueryString("query"),
     ) = QueryDetails(
         connectionSettings = connectionSettings,
         logGroups = logGroups,

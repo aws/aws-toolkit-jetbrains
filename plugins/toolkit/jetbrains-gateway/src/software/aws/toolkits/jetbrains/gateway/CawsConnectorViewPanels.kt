@@ -105,7 +105,7 @@ class CawsSettings(
     // intermediate values
     var connectionSettings: ClientConnectionSettings<*>? = null,
     var branchCloneType: BranchCloneType = BranchCloneType.EXISTING,
-    var is3P: Boolean = false
+    var is3P: Boolean = false,
 )
 
 fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = MultistagePanelContainer(
@@ -618,12 +618,12 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 enum class CawsWizardCloneType {
     CAWS,
     UNLINKED_3P,
-    NONE
+    NONE,
 }
 
 enum class BranchCloneType {
     EXISTING,
-    NEW_FROM_EXISTING
+    NEW_FROM_EXISTING,
 }
 
 class PersistentStorageOptions(items: List<Int>, private val subscriptionIsFreeTier: Boolean) : CollectionComboBoxModel<Int>(items) {

@@ -15,5 +15,5 @@ data class ZipManifest(
     val buildLogs: String = BUILD_LOG_PATH,
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION.toString(),
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
-    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1)
+    val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
 )

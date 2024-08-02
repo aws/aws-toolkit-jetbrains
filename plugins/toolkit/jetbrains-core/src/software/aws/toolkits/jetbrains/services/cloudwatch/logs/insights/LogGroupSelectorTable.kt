@@ -11,7 +11,7 @@ import software.aws.toolkits.resources.message
 
 data class LogGroup(
     var selected: Boolean = false,
-    var name: String
+    var name: String,
 )
 
 class LogGroupSelectorTable : TableView<LogGroup>(model) {

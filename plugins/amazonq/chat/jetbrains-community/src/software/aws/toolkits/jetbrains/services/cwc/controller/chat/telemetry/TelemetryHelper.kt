@@ -405,7 +405,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             isSuccess: Boolean,
             memoryUsage: Int? = 0,
             cpuUsage: Int? = 0,
-            startUrl: String? = null
+            startUrl: String? = null,
         ) {
             AmazonqTelemetry.indexWorkspace(
                 project = null,

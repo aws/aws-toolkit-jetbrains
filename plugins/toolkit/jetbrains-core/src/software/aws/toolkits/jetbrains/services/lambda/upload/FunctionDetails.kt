@@ -20,7 +20,7 @@ data class FunctionDetails(
     val envVars: Map<String, String>,
     val timeout: Int,
     val memorySize: Int,
-    val xrayEnabled: Boolean
+    val xrayEnabled: Boolean,
 ) {
     val tracingMode: TracingMode =
         if (xrayEnabled) {

@@ -26,7 +26,7 @@ class EditAttributesDialog(
     private val project: Project,
     private val client: SqsClient,
     private val queue: Queue,
-    private val attributes: Map<QueueAttributeName, String>
+    private val attributes: Map<QueueAttributeName, String>,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     val view = EditAttributesPanel()

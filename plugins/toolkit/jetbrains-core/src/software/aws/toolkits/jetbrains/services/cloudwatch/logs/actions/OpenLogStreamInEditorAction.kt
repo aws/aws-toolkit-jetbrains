@@ -20,7 +20,7 @@ class OpenLogStreamInEditorAction(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
-    private val logStream: String?
+    private val logStream: String?,
 ) : AnAction(message("cloudwatch.logs.open_in_editor"), null, AllIcons.Actions.MenuOpen), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         logStream ?: return

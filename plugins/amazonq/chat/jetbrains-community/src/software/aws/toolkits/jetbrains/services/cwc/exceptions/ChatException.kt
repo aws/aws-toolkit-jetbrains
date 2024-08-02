@@ -8,5 +8,5 @@ package software.aws.toolkits.jetbrains.services.cwc.exceptions
  */
 open class ChatException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : Exception(message, cause)

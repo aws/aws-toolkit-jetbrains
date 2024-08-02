@@ -16,7 +16,7 @@ class SamSchemaDownloadPostCreationAction {
         schemaSourceRoot: Path,
         language: SchemaCodeLangs,
         connectionSettings: ConnectionSettings,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         val codeGenDownloader = SchemaCodeDownloader.create(connectionSettings)
 

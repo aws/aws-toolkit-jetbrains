@@ -96,7 +96,7 @@ private class PullFromEcrTask(
     private val ecrLogin: EcrLogin,
     private val repository: Repository,
     private val image: String,
-    private val dockerRuntime: DockerRuntimeFacade
+    private val dockerRuntime: DockerRuntimeFacade,
 ) : Task.Backgroundable(project, message("ecr.pull.progress", repository.repositoryUri, image)) {
     private var task: OngoingProcess? = null
 

@@ -28,7 +28,7 @@ class DefaultTelemetryBatcher(
     private val publisher: TelemetryPublisher,
     private val maxBatchSize: Int = DEFAULT_MAX_BATCH_SIZE,
     maxQueueSize: Int = DEFAULT_MAX_QUEUE_SIZE,
-    private val executor: ScheduledExecutorService = createDefaultExecutor()
+    private val executor: ScheduledExecutorService = createDefaultExecutor(),
 ) : TelemetryBatcher {
     private val isTelemetryEnabled: AtomicBoolean = AtomicBoolean(false)
     private val isShuttingDown: AtomicBoolean = AtomicBoolean(false)

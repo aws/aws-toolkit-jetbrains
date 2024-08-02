@@ -19,7 +19,7 @@ class DeleteResourceDialog(
     project: Project,
     private val resourceType: String,
     private val resourceName: String,
-    private val comment: String = ""
+    private val comment: String = "",
 ) : DialogWrapper(project) {
     private val deleteResourceConfirmation = JBTextField().apply {
         emptyText.text = message("delete_resource.confirmation_text")

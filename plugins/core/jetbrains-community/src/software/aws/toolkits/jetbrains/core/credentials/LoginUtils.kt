@@ -39,7 +39,7 @@ sealed interface Login {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         val onError: (Exception) -> Unit,
-        val onSuccess: () -> Unit
+        val onSuccess: () -> Unit,
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
@@ -55,7 +55,7 @@ sealed interface Login {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         val onSuccess: () -> Unit,
-        val onError: (Exception, AuthProfile) -> Unit
+        val onError: (Exception, AuthProfile) -> Unit,
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
         private val configFilesFacade = DefaultConfigFilesFacade()
@@ -90,7 +90,7 @@ sealed interface Login {
     data class LongLivedIAM(
         val profileName: String,
         val accessKey: String,
-        val secretKey: String
+        val secretKey: String,
     ) : Login {
         override val id: CredentialSourceId = CredentialSourceId.SharedCredentials
         private val configFilesFacade = DefaultConfigFilesFacade()
@@ -99,7 +99,7 @@ sealed interface Login {
             project: Project,
             onConfigFileFacadeError: (Exception) -> Unit,
             onProfileAlreadyExist: () -> Unit,
-            onConnectionValidationError: () -> Unit
+            onConnectionValidationError: () -> Unit,
         ): Boolean {
             val existingProfiles = try {
                 configFilesFacade.readAllProfiles()
@@ -156,7 +156,7 @@ fun authAndUpdateConfig(
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
     onSuccess: () -> Unit,
-    onError: (Exception, AuthProfile) -> Unit
+    onError: (Exception, AuthProfile) -> Unit,
 ): AwsBearerTokenConnection? {
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()

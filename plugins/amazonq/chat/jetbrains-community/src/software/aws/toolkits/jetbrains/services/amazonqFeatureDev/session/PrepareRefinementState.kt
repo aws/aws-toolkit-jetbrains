@@ -16,7 +16,7 @@ private val logger = getLogger<PrepareCodeGenerationState>()
 class PrepareRefinementState(
     override var approach: String,
     override var tabID: String,
-    var config: SessionStateConfig
+    var config: SessionStateConfig,
 ) : SessionState {
     override val phase = SessionStatePhase.APPROACH
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {

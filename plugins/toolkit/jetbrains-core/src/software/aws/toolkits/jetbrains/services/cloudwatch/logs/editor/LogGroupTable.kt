@@ -39,7 +39,7 @@ class LogGroupTable(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
-    type: TableType
+    type: TableType,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     val component: JComponent
@@ -49,7 +49,7 @@ class LogGroupTable(
 
     enum class TableType {
         LIST,
-        FILTER
+        FILTER,
     }
 
     init {

@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.services.amazonq.auth
 
 data class AuthNeededState(
     val message: String,
-    val authType: AuthFollowUpType
+    val authType: AuthFollowUpType,
 )
 
 data class AuthNeededStates(
     val chat: AuthNeededState? = null,
-    val amazonQ: AuthNeededState? = null
+    val amazonQ: AuthNeededState? = null,
 )

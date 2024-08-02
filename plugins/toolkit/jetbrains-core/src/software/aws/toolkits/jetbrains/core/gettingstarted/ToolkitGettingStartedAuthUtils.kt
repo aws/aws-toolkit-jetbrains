@@ -28,7 +28,7 @@ fun requestCredentialsForCodeCatalyst(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
     if (JBCefApp.isSupported() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
@@ -120,7 +120,7 @@ fun requestCredentialsForExplorer(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
     if (JBCefApp.isSupported()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data

@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients
 
 data class GenerateTaskAssistPlanResult(
     val approach: String,
-    val succeededPlanning: Boolean
+    val succeededPlanning: Boolean,
 )

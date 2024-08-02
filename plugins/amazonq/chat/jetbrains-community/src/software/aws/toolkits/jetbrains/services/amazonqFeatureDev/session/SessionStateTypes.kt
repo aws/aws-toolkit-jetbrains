@@ -15,12 +15,12 @@ data class SessionStateAction(
 
 data class Interaction(
     val content: String?,
-    val interactionSucceeded: Boolean
+    val interactionSucceeded: Boolean,
 )
 
 data class SessionStateInteraction(
     val nextState: SessionState? = null,
-    val interaction: Interaction
+    val interaction: Interaction,
 )
 
 enum class SessionStatePhase(
@@ -34,18 +34,18 @@ enum class SessionStatePhase(
 data class SessionStateConfig(
     val conversationId: String,
     val repoContext: FeatureDevSessionContext,
-    val featureDevService: FeatureDevService
+    val featureDevService: FeatureDevService,
 )
 
 data class NewFileZipInfo(
     val zipFilePath: String,
     val fileContent: String,
-    var rejected: Boolean
+    var rejected: Boolean,
 )
 
 data class DeletedFileInfo(
     val zipFilePath: String, // The string is the path of the file to be deleted
-    var rejected: Boolean
+    var rejected: Boolean,
 )
 
 data class CodeGenerationResult(
@@ -53,7 +53,7 @@ data class CodeGenerationResult(
     var deletedFiles: List<DeletedFileInfo>,
     var references: List<CodeReferenceGenerated>,
     var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null,
 )
 
 data class CodeReferenceGenerated(
@@ -72,5 +72,5 @@ data class CodeGenerationStreamResult(
 
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.
 data class ExportTaskAssistResultArchiveStreamResult(
-    var code_generation_result: CodeGenerationStreamResult
+    var code_generation_result: CodeGenerationStreamResult,
 )

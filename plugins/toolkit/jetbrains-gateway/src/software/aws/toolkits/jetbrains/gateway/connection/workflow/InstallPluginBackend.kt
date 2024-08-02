@@ -34,7 +34,7 @@ import java.util.UUID
 abstract class InstallPluginBackend(
     protected val commandExecutor: AbstractSsmCommandExecutor,
     protected val remoteScriptPath: String,
-    protected val idePath: String
+    protected val idePath: String,
 ) : CliBasedStep() {
     override val stepName: String = message("gateway.connection.workflow.install_toolkit")
 
@@ -53,7 +53,7 @@ abstract class InstallPluginBackend(
         commandExecutor: AbstractSsmCommandExecutor,
         remoteScriptPath: String,
         idePath: String,
-        private val marketplaceUrl: String = "https://plugins.jetbrains.com"
+        private val marketplaceUrl: String = "https://plugins.jetbrains.com",
     ) : InstallPluginBackend(commandExecutor, remoteScriptPath, idePath) {
         override fun buildDownloadUrl(): String? {
             val baseUrl = "$marketplaceUrl/pluginManager?action=download&id=aws.toolkit&build="
@@ -76,7 +76,7 @@ abstract class InstallPluginBackend(
         private val installSettings: ToolkitInstallSettings.UseArbitraryLocalPath,
         commandExecutor: AbstractSsmCommandExecutor,
         remoteScriptPath: String,
-        idePath: String
+        idePath: String,
     ) : InstallPluginBackend(commandExecutor, remoteScriptPath, idePath) {
         override fun buildDownloadUrl(): String? {
             val credId = CredentialManager.getInstance().getCredentialIdentifierById("profile:default") ?: error("Default profile not available")
@@ -129,7 +129,7 @@ abstract class InstallPluginBackend(
 fun installBundledPluginBackend(
     commandExecutor: AbstractSsmCommandExecutor,
     remoteScriptPath: String,
-    idePath: String
+    idePath: String,
 ): Step {
     val remotePluginPath = "/tmp/${UUID.randomUUID()}.zip"
 
@@ -143,7 +143,7 @@ fun installBundledPluginBackend(
 
 private class ZipAndCopyBundledPlugin(
     private val remotePluginPath: String,
-    private val commandExecutor: AbstractSsmCommandExecutor
+    private val commandExecutor: AbstractSsmCommandExecutor,
 ) : CliBasedStep() {
     override val stepName: String = "Zip and copy bundled plugin"
     override fun constructCommandLine(context: Context): GeneralCommandLine? {
@@ -163,7 +163,7 @@ private class InstallBundledPluginBackend(
     private val remotePluginPath: String,
     commandExecutor: AbstractSsmCommandExecutor,
     remoteScriptPath: String,
-    idePath: String
+    idePath: String,
 ) : InstallPluginBackend(commandExecutor, remoteScriptPath, idePath) {
     override fun buildDownloadUrl(): String? = "file://$remotePluginPath"
 }

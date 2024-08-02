@@ -32,6 +32,6 @@ interface CredentialProviderFactory {
      */
     fun createAwsCredentialProvider(
         providerId: CredentialIdentifier,
-        region: AwsRegion
+        region: AwsRegion,
     ): AwsCredentialsProvider
 }

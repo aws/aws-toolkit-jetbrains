@@ -84,7 +84,7 @@ fun GeneralCommandLine.samBuildCommand(
     logicalId: String? = null,
     buildDir: Path,
     environmentVariables: Map<String, String>,
-    samOptions: SamOptions
+    samOptions: SamOptions,
 ) = this.apply {
     withEnvironment(environmentVariables)
     withWorkDirectory(templatePath.toAbsolutePath().parent.toString())
@@ -127,7 +127,7 @@ fun GeneralCommandLine.samPackageCommand(
     templatePath: Path,
     packagedTemplatePath: Path,
     s3Bucket: String?,
-    ecrRepo: String?
+    ecrRepo: String?,
 ) = this.apply {
     withEnvironment(environmentVariables)
     withWorkDirectory(templatePath.parent.toAbsolutePath().toString())
@@ -150,7 +150,7 @@ fun GeneralCommandLine.samPackageCommand(
 fun GeneralCommandLine.samDeployCommand(
     environmentVariables: Map<String, String>,
     templatePath: Path,
-    settings: DeployServerlessApplicationSettings
+    settings: DeployServerlessApplicationSettings,
 ) = this.apply {
     withEnvironment(environmentVariables)
     withWorkDirectory(templatePath.parent.toAbsolutePath().toString())
@@ -209,7 +209,7 @@ private fun escapeParameter(param: String): String {
 fun GeneralCommandLine.samInitCommand(
     outputDir: Path,
     parameters: TemplateParameters,
-    extraContext: Map<String, String>
+    extraContext: Map<String, String>,
 ) = this.apply {
     addParameter("init")
     addParameter("--no-input")
@@ -264,7 +264,7 @@ fun GeneralCommandLine.samInitCommand(
 fun GeneralCommandLine.samSyncCommand(
     environmentVariables: Map<String, String>,
     templatePath: Path,
-    settings: SyncServerlessApplicationSettings
+    settings: SyncServerlessApplicationSettings,
 ) = this.apply {
     withEnvironment(environmentVariables)
     withWorkDirectory(templatePath.toAbsolutePath().parent.toString())

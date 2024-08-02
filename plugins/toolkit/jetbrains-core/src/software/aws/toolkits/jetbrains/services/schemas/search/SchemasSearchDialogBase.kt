@@ -52,7 +52,7 @@ abstract class SchemasSearchDialogBase(
     protected val project: Project,
     private val schemaViewer: SchemaViewer,
     private val headerText: String,
-    private val onCancelCallback: (SchemaSearchDialogState) -> Unit
+    private val onCancelCallback: (SchemaSearchDialogState) -> Unit,
 ) : SchemaSearchDialog, DialogWrapper(project) {
     val searchTextField = JTextField()
     private val searchTextAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this.disposable)
@@ -320,7 +320,7 @@ abstract class SchemasSearchDialogBase(
     abstract fun searchSchemas(
         searchText: String,
         incrementalResultsCallback: OnSearchResultReturned,
-        registrySearchErrorCallback: OnSearchResultError
+        registrySearchErrorCallback: OnSearchResultError,
     )
 
     override fun createCenterPanel(): JComponent? = contentPanel

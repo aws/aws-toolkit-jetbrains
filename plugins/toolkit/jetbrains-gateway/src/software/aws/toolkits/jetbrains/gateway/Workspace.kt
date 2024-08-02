@@ -29,7 +29,7 @@ data class Workspace(
     val branch: String?,
     val lastUpdated: Instant,
     val labels: List<String>,
-    val ides: List<Ide>
+    val ides: List<Ide>,
 ) {
     val ide = ides.firstOrNull { it.runtime()?.contains(JB_ECR_DOMAIN) ?: false }
     val isCompatible = ide != null

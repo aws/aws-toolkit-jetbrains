@@ -10,7 +10,7 @@ import software.aws.toolkits.core.utils.warn
 
 data class RemoteRef(
     val obj: String,
-    val ref: String
+    val ref: String,
 )
 
 object GitWrappers {

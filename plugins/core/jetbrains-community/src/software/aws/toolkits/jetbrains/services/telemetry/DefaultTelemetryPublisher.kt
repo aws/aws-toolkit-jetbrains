@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 
 class DefaultTelemetryPublisher(
     private val clientProvider: () -> ToolkitTelemetryClient,
-    private val clientMetadataProvider: (AWSProduct, String) -> ClientMetadata
+    private val clientMetadataProvider: (AWSProduct, String) -> ClientMetadata,
 ) : TelemetryPublisher {
     constructor() : this(
         clientProvider = { createDefaultTelemetryClient() },

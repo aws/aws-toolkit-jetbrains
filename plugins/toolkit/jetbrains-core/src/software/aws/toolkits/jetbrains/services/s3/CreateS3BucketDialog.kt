@@ -22,7 +22,7 @@ import javax.swing.JComponent
 class CreateS3BucketDialog(
     private val project: Project,
     private val s3Client: S3Client,
-    parent: Component? = null
+    parent: Component? = null,
 ) : DialogWrapper(project, parent, false, IdeModalityType.IDE) {
 
     val view = CreateBucketPanel()

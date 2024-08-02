@@ -62,7 +62,7 @@ object GoDebugHelper {
     suspend fun createGoDebugProcess(
         debugHost: String,
         debugPorts: List<Int>,
-        context: Context
+        context: Context,
     ): XDebugProcessStarter = object : XDebugProcessStarter() {
         override fun start(session: XDebugSession): XDebugProcess {
             val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.KILL), null, true)

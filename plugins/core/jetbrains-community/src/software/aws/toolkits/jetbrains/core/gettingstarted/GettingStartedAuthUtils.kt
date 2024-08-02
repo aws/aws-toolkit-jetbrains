@@ -36,7 +36,7 @@ fun requestCredentialsForCodeWhisperer(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -123,7 +123,7 @@ fun requestCredentialsForQ(
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
-    connectionInitiatedFromQChatPanel: Boolean = false
+    connectionInitiatedFromQChatPanel: Boolean = false,
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
     val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())

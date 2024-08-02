@@ -20,7 +20,7 @@ fun rolePopupFromConnection(
     project: Project,
     connection: AwsBearerTokenConnection,
     configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
-    isFirstInstance: Boolean = false
+    isFirstInstance: Boolean = false,
 ) {
     runInEdt {
         if (!connection.id.startsWith(SsoSessionConstants.SSO_SESSION_SECTION_NAME)) {

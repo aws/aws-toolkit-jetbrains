@@ -19,7 +19,7 @@ data class BuildLambdaRequest(
     val buildDir: Path,
     val buildEnvVars: Map<String, String> = emptyMap(),
     val samOptions: SamOptions,
-    val preBuildSteps: List<Step> = emptyList()
+    val preBuildSteps: List<Step> = emptyList(),
 )
 
 class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
@@ -50,5 +50,5 @@ class BuildLambda(private val request: BuildLambdaRequest) : SamCliStep() {
  */
 data class BuiltLambda(
     val templateLocation: Path,
-    val logicalId: String?
+    val logicalId: String?,
 )

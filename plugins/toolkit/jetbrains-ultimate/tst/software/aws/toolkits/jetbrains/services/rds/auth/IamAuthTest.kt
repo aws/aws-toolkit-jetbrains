@@ -204,7 +204,7 @@ class IamAuthTest {
         hasBadHost: Boolean = false,
         hasSslConfig: Boolean = true,
         dbmsType: Dbms = Dbms.POSTGRES,
-        credentialId: String = this.credentialId
+        credentialId: String = this.credentialId,
     ): ProtoConnection {
         val mockConnection = mock<LocalDataSource> {
             on { url } doReturn "jdbc:postgresql://$dbHost:$connectionPort/dev"

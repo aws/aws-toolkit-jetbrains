@@ -38,7 +38,7 @@ class ResourceSelector<T> private constructor(
     customRenderer: ListCellRenderer<T>?,
     loadOnCreate: Boolean,
     private val sortOnLoad: Boolean,
-    private val connectionSettingsSupplier: ConnectionSettingsSupplier
+    private val connectionSettingsSupplier: ConnectionSettingsSupplier,
 ) : ComboBox<T>(comboBoxModel) {
     private val loading = message("loading_resource.loading")
 
@@ -209,7 +209,7 @@ class ResourceSelector<T> private constructor(
     private enum class Status {
         NOT_LOADED,
         LOADING,
-        LOADED
+        LOADED,
     }
 
     companion object {

@@ -39,26 +39,26 @@ class MockCredentialsManager : CredentialManager() {
     fun addCredentials(
         id: String,
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
-        regionId: String? = null
+        regionId: String? = null,
     ): CredentialIdentifier = addCredentials(id, StaticCredentialsProvider.create(credentials), regionId)
 
     fun addCredentials(
         id: String,
         credentials: AwsCredentialsProvider,
-        regionId: String? = null
+        regionId: String? = null,
     ): MockCredentialIdentifier = MockCredentialIdentifier(id, credentials, regionId).also {
         addProvider(it)
     }
 
     fun addCredentials(
-        credentialIdentifier: CredentialIdentifier
+        credentialIdentifier: CredentialIdentifier,
     ): CredentialIdentifier {
         addProvider(credentialIdentifier)
         return credentialIdentifier
     }
 
     fun addSsoProvider(
-        ssoSessionIdentifier: SsoSessionIdentifier
+        ssoSessionIdentifier: SsoSessionIdentifier,
     ): SsoSessionIdentifier {
         super.addSsoSession(ssoSessionIdentifier)
         return ssoSessionIdentifier
@@ -67,7 +67,7 @@ class MockCredentialsManager : CredentialManager() {
     fun createCredentialProvider(
         id: String = aString(),
         credentials: AwsCredentials,
-        region: AwsRegion
+        region: AwsRegion,
     ): ToolkitCredentialsProvider {
         val credentialIdentifier = MockCredentialIdentifier(id, StaticCredentialsProvider.create(credentials), null)
 
@@ -102,7 +102,7 @@ class MockCredentialsManager : CredentialManager() {
 
         override fun createAwsCredentialProvider(
             providerId: CredentialIdentifier,
-            region: AwsRegion
+            region: AwsRegion,
         ): ToolkitCredentialsProvider = ToolkitCredentialsProvider(providerId, (providerId as MockCredentialIdentifier).credentials)
     }
 }
@@ -119,28 +119,28 @@ open class MockCredentialManagerRule : ApplicationRule() {
     fun addCredentials(
         id: String = aString(),
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
-        region: AwsRegion? = null
+        region: AwsRegion? = null,
     ): CredentialIdentifier = credentialManager.addCredentials(id, credentials, region?.id)
 
     fun addCredentials(
         id: String,
         credentials: AwsCredentialsProvider,
-        regionId: String? = null
+        regionId: String? = null,
     ): MockCredentialsManager.MockCredentialIdentifier = credentialManager.addCredentials(id, credentials, regionId)
 
     fun addCredentials(
-        credentialIdentifier: CredentialIdentifier
+        credentialIdentifier: CredentialIdentifier,
     ): CredentialIdentifier = credentialManager.addCredentials(credentialIdentifier)
 
     fun addSsoProvider(
-        ssoSessionIdentifier: SsoSessionIdentifier
+        ssoSessionIdentifier: SsoSessionIdentifier,
     ): SsoSessionIdentifier = credentialManager.addSsoProvider(ssoSessionIdentifier)
 
     fun createCredentialProvider(
         id: String = aString(),
         credentials: AwsCredentials = AwsBasicCredentials.create("Access", "Secret"),
         // Do not store this value as we should be able to dynamically change it
-        region: AwsRegion = getDefaultRegion()
+        region: AwsRegion = getDefaultRegion(),
     ): ToolkitCredentialsProvider = credentialManager.createCredentialProvider(id, credentials, region)
 
     fun getAwsCredentialProvider(providerId: CredentialIdentifier, region: AwsRegion): ToolkitCredentialsProvider =

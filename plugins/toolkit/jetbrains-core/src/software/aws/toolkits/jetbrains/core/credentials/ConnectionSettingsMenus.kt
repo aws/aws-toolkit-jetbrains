@@ -37,7 +37,7 @@ enum class ChangeSettingsMode(val showRegions: Boolean, val showCredentials: Boo
     NONE(false, false),
     CREDENTIALS(false, true),
     REGIONS(true, false),
-    BOTH(true, true)
+    BOTH(true, true),
 }
 
 /**

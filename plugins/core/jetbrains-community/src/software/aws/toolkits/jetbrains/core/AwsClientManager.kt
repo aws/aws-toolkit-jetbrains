@@ -77,7 +77,7 @@ open class AwsClientManager : ToolkitClientManager(), Disposable {
         tokenProvider: SdkTokenProvider?,
         regionId: String,
         builder: AwsClientBuilder<*, *>,
-        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder,
     ) {
         CUSTOMIZER_EP.extensionList.forEach { it.customize(credentialProvider, tokenProvider, regionId, builder, clientOverrideConfiguration) }
     }

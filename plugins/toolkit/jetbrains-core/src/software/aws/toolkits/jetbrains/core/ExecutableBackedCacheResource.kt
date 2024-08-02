@@ -17,7 +17,7 @@ class ExecutableBackedCacheResource<ReturnType, ExecType : ExecutableType<*>>(
     private val executableTypeClass: KClass<ExecType>,
     override val id: String,
     private val expiry: Duration? = null,
-    private val fetchCall: GeneralCommandLine.() -> ReturnType
+    private val fetchCall: GeneralCommandLine.() -> ReturnType,
 ) : Resource.Cached<ReturnType>() {
 
     override fun fetch(connectionSettings: ClientConnectionSettings<*>): ReturnType {

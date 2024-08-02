@@ -124,7 +124,7 @@ enum class HelpIds(shortId: String, val url: String) {
     TOOLKIT_ADD_CONNECTIONS_DIALOG(
         "ToolkitAddConnectionsDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
-    )
+    ),
     ;
 
     val id = "$HELP_ID_PREFIX.$shortId"

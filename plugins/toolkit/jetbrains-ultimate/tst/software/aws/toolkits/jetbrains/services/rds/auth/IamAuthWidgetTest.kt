@@ -111,7 +111,7 @@ class IamAuthWidgetTest {
 
     private fun buildDataSource(
         hasCredentials: Boolean = true,
-        hasRegion: Boolean = true
+        hasRegion: Boolean = true,
     ): LocalDataSource = mock {
         on { additionalProperties } doAnswer {
             val m = mutableMapOf<String, String>()

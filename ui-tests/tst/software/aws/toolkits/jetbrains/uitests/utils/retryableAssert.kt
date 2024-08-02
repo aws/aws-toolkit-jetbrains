@@ -11,7 +11,7 @@ import java.time.Duration
 fun recheckAssert(
     timeout: Duration = Duration.ofSeconds(1),
     interval: Duration = Duration.ofMillis(100),
-    assertion: () -> Unit
+    assertion: () -> Unit,
 ) {
     runBlocking {
         withTimeout(timeout.toMillis()) {
@@ -30,7 +30,7 @@ fun recheckAssert(
 fun reattemptAssert(
     maxAttempts: Int = 5,
     interval: Duration = Duration.ofSeconds(1),
-    assertion: () -> Unit
+    assertion: () -> Unit,
 ) {
     for (i in 0..maxAttempts) {
         try {

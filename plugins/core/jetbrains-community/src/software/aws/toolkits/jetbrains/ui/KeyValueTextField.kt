@@ -29,7 +29,7 @@ import javax.swing.event.DocumentEvent
  * Inheriting system env vars is not supported, but rest of UX is generally the same
  */
 class KeyValueTextField(
-    @Nls dialogTitle: String = message("environment.variables.dialog.title")
+    @Nls dialogTitle: String = message("environment.variables.dialog.title"),
 ) : TextFieldWithBrowseButton(), UserActivityProviderComponent {
     private var data = EnvironmentVariablesData.create(emptyMap(), false)
     private val listeners = CopyOnWriteArrayList<ChangeListener>()

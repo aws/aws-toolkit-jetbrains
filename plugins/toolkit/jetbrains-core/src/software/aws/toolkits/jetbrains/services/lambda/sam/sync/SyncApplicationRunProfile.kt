@@ -35,7 +35,7 @@ class SyncApplicationRunProfile(
     private val project: Project,
     private val settings: SyncServerlessApplicationSettings,
     private val connection: ConnectionSettings,
-    private val templatePath: Path
+    private val templatePath: Path,
 ) : RunProfile {
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState = SyncApplicationRunProfileState(environment)
 

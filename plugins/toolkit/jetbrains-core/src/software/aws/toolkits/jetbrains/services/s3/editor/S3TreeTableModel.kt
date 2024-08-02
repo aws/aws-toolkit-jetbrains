@@ -21,7 +21,7 @@ import javax.swing.tree.TreePath
 class S3TreeTableModel(
     private val delegate: AsyncTreeModel,
     private val columns: Array<ColumnInfo<Any?, Any?>>,
-    val structureTreeModel: StructureTreeModel<SimpleTreeStructure>
+    val structureTreeModel: StructureTreeModel<SimpleTreeStructure>,
 ) : TreeTableModel, TreeModel by delegate, TreeVisitor.Acceptor {
 
     override fun getColumnCount(): Int = columns.size

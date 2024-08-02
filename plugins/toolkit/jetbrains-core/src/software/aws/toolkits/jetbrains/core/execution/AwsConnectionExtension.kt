@@ -121,7 +121,7 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
 fun <T : RunConfigurationBase<*>> AwsConnectionRunConfigurationExtension<T>.addEnvironmentVariables(
     configuration: T,
     cmdLine: GeneralCommandLine,
-    runtimeString: () -> String? = { null }
+    runtimeString: () -> String? = { null },
 ) = addEnvironmentVariables(configuration, cmdLine.environment, runtimeString)
 
 fun <T : RunConfigurationBase<*>> connectionSettingsEditor(configuration: T): AwsConnectionExtensionSettingsEditor<T> =
@@ -135,7 +135,7 @@ val AWS_CONNECTION_RUN_CONFIGURATION_KEY =
 data class AwsCredentialInjectionOptions(
     var useCurrentConnection: Boolean = false,
     var region: String? = null,
-    var credential: String? = null
+    var credential: String? = null,
 ) {
     companion object {
         operator fun invoke(block: AwsCredentialInjectionOptions.() -> Unit) = AwsCredentialInjectionOptions().apply(block)

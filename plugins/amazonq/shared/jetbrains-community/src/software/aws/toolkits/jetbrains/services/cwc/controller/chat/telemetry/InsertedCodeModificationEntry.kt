@@ -14,5 +14,5 @@ data class InsertedCodeModificationEntry(
     override val time: Instant,
     val vFile: VirtualFile?,
     val range: RangeMarker,
-    val originalString: String
+    val originalString: String,
 ) : UserModificationTrackingEntry

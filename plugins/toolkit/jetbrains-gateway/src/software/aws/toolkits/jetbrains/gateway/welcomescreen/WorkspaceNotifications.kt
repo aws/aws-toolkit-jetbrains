@@ -11,7 +11,7 @@ object WorkspaceNotifications {
 }
 
 data class WorkspaceListStateChangeContext(
-    val wsId: WorkspaceIdentifier
+    val wsId: WorkspaceIdentifier,
 )
 
 interface WorkspaceListStateChangeListener {

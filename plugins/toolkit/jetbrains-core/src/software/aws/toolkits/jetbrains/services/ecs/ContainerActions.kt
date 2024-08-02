@@ -39,7 +39,7 @@ import software.aws.toolkits.resources.message
 
 class ContainerActions(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
 ) : ActionGroup(container.containerDefinition.name(), null, null) {
 
     init {
@@ -83,7 +83,7 @@ class ServiceContainerActions : SingleExplorerNodeActionGroup<EcsServiceNode>("C
 @Suppress("ComponentNotRegistered")
 class ContainerLogsAction(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
 ) : DumbAwareAction(message("ecs.service.container_logs.action_label"), null, AwsIcons.Resources.CloudWatch.LOGS) {
 
     private val logConfiguration: Pair<String, String>? by lazy {
@@ -137,7 +137,7 @@ class ContainerLogsAction(
 
 class ExecuteCommandAction(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
 ) : DumbAwareAction(message("ecs.execute_command_run"), null, null) {
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {
@@ -164,7 +164,7 @@ class ExecuteCommandAction(
 
 class ExecuteCommandInShellAction(
     private val project: Project,
-    private val container: ContainerDetails
+    private val container: ContainerDetails,
 ) : DumbAwareAction(message("ecs.execute_command_run_command_in_shell"), null, null) {
     private val coroutineScope = projectCoroutineScope(project)
     override fun actionPerformed(e: AnActionEvent) {

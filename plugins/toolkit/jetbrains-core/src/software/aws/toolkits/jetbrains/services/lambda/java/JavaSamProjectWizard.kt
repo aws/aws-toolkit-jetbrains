@@ -72,7 +72,7 @@ abstract class JavaMavenSamProjectTemplate : JavaSamProjectTemplate() {
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         val pomFile = locateBuildFile(contentRoot, "pom.xml") ?: return
@@ -90,7 +90,7 @@ abstract class JavaGradleSamProjectTemplate : JavaSamProjectTemplate() {
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         val buildFile = locateBuildFile(contentRoot, "build.gradle") ?: return
 

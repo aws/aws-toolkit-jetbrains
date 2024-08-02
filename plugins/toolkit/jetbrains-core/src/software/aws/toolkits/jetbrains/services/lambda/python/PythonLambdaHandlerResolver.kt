@@ -25,7 +25,7 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(
         project: Project,
         handler: String,
-        searchScope: GlobalSearchScope
+        searchScope: GlobalSearchScope,
     ): Array<NavigatablePsiElement> {
         if (!handler.contains('.')) {
             return NavigatablePsiElement.EMPTY_NAVIGATABLE_ELEMENT_ARRAY
@@ -52,7 +52,7 @@ class PythonLambdaHandlerResolver : LambdaHandlerResolver {
     private fun validateHandlerPath(
         pyModule: PyFile,
         parentModuleFolders: List<String>,
-        parentFolders: List<String>
+        parentFolders: List<String>,
     ): Boolean {
         // Start matching to see if the parent folders align
         var directory = pyModule.containingDirectory

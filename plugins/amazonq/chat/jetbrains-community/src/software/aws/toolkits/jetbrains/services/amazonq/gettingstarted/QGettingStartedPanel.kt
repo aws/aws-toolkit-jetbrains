@@ -14,7 +14,7 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 
 class QGettingStartedPanel(
-    val project: Project
+    val project: Project,
 ) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: QGettingStartedContent? = null

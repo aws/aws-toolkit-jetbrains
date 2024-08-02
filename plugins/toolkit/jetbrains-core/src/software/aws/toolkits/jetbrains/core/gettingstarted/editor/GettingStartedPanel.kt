@@ -77,7 +77,7 @@ import javax.swing.JLabel
 class GettingStartedPanel(
     private val project: Project,
     private val isFirstInstance: Boolean = false,
-    private val connectionInitiatedFromExplorer: Boolean = false
+    private val connectionInitiatedFromExplorer: Boolean = false,
 ) : BorderLayoutPanel(), Disposable {
     private val infoBanner = ConnectionInfoBanner()
     private val featureSetPanel = FeatureColumns()
@@ -1197,7 +1197,7 @@ class GettingStartedPanel(
     data class AuthPanelBullet(
         val enable: Boolean,
         val titleName: String,
-        val comment: String
+        val comment: String,
     )
 
     private inner class FeatureColumns : BorderLayoutPanel(10, 0) {

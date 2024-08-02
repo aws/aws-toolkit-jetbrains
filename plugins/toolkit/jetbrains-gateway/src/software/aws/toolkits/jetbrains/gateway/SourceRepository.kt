@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.gateway
 import software.amazon.awssdk.services.codecatalyst.model.ListSourceRepositoriesItem
 
 data class SourceRepository(
-    val name: String
+    val name: String,
 )
 
 fun ListSourceRepositoriesItem.toSourceRepository() = SourceRepository(
@@ -15,5 +15,5 @@ fun ListSourceRepositoriesItem.toSourceRepository() = SourceRepository(
 
 data class BranchSummary(
     val name: String,
-    val headCommitId: String
+    val headCommitId: String,
 )

@@ -50,7 +50,7 @@ class CloudWatchLogWindow(override val project: Project) : ToolkitToolWindow {
         logStream: String,
         previousEvent: LogStreamEntry? = null,
         duration: Duration? = null,
-        streamLogs: Boolean = false
+        streamLogs: Boolean = false,
     ) {
         var result = Result.Succeeded
         try {

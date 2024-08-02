@@ -7,5 +7,5 @@ data class SchemaSearchDialogState(
     val searchText: String,
     val searchResults: List<SchemaSearchResultWithRegistry>,
     val selectedResult: SchemaSearchResultWithRegistry?,
-    val selectedVersion: String?
+    val selectedVersion: String?,
 )

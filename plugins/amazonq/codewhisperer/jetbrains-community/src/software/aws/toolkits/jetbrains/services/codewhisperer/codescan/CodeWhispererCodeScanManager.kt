@@ -186,7 +186,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         scope: CodeWhispererConstants.CodeAnalysisScope,
         isPluginStarting: Boolean = false,
         waitMs: Long = CodeWhispererConstants.AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS * 1000,
-        coroutineScope: CoroutineScope = defaultScope
+        coroutineScope: CoroutineScope = defaultScope,
     ) {
         if (this::debouncedCodeScanJob.isInitialized && debouncedCodeScanJob.isActive) {
             debouncedCodeScanJob.cancel()
@@ -536,7 +536,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         project: Project,
         programmingLanguage: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ) {
         runIfIdcConnectionOrTelemetryEnabled(project) {
             try {
@@ -675,7 +675,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
     suspend fun renderResponseOnUIThread(
         issues: List<CodeWhispererCodeScanIssue>,
         scannedFiles: List<VirtualFile>,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ) {
         withContext(getCoroutineUiContext()) {
             var root: DefaultMutableTreeNode? = null
@@ -735,7 +735,7 @@ data class CodeWhispererCodeScanIssue(
     val codeSnippet: List<CodeLine>,
     val issueSeverity: HighlightDisplayLevel = HighlightDisplayLevel.WARNING,
     val isInvalid: Boolean = false,
-    var rangeHighlighter: RangeHighlighterEx? = null
+    var rangeHighlighter: RangeHighlighterEx? = null,
 ) {
     override fun toString(): String = title
 
@@ -763,7 +763,7 @@ data class CodeWhispererCodeScanIssue(
      */
     fun addRangeHighlighter(
         markupModel: MarkupModel? =
-            DocumentMarkupModel.forDocument(document, project, false)
+            DocumentMarkupModel.forDocument(document, project, false),
     ): RangeHighlighterEx? {
         if (!ApplicationManager.getApplication().isDispatchThread) return null
         return markupModel?.let {

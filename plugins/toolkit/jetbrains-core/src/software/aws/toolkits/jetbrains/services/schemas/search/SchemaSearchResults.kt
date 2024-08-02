@@ -10,7 +10,7 @@ typealias OnSearchResultError = (SchemaSearchError) -> Unit
 data class SchemaSearchResultWithRegistry(
     val name: String,
     val versions: List<String>,
-    val registry: String
+    val registry: String,
 )
 
 data class SchemaSearchError(val registryName: String, val errorMessage: String)

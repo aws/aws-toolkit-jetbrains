@@ -48,10 +48,10 @@ class GatewayEcrVersionsKtTest {
 }
 
 data class EcrPublicToken(
-    val token: String
+    val token: String,
 )
 
 data class EcrPublicListTagsResponse(
     val name: String,
-    val tags: List<String>
+    val tags: List<String>,
 )
