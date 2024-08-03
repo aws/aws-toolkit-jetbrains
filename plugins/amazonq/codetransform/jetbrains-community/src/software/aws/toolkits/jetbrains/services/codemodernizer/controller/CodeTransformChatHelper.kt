@@ -48,7 +48,7 @@ class CodeTransformChatHelper(
     suspend fun addNewMessage(
         content: CodeTransformChatMessageContent,
         messageIdOverride: String? = null,
-        clearPreviousItemButtons: Boolean? = false
+        clearPreviousItemButtons: Boolean? = true
     ) {
         if (activeCodeTransformTabId == null || chatSessionStorage.getSession(activeCodeTransformTabId as String).isAuthenticating) {
             return
