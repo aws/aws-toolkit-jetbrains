@@ -27,6 +27,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -67,6 +69,25 @@ data class CodeModernizerSessionContext(
     fun File.isIdeaFolder(): Boolean {
         val isIdea = this.isDirectory && this.name == IDEA_DIRECTORY_NAME
         return isIdea
+    }
+
+    fun parseBuildFile(): Boolean {
+        val absolutePaths = mutableListOf("users/", "system/", "volumes/", "c:", "d:")
+        val alias = System.getProperty("user.home").substringAfterLast(File.separator)
+        absolutePaths.add(alias)
+        val buildFile = configurationFile
+        if (buildFile.exists()) {
+            val buildFileContents = buildFile.content().lowercase()
+            if (absolutePaths.any { path -> buildFileContents.contains(path) }) {
+                notifyStickyWarn(
+                    "Absolute path detected",
+                    "We detected what may be an absolute path in this file: ${buildFile.path.substringAfterLast(File.separator)}, which may cause issues during our backend build. You will see error logs open if this happens.",
+                )
+                LOG.info("CodeTransformation: absolute path potentially in build file")
+                return true
+            }
+        }
+        return false
     }
 
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {

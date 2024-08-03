@@ -49,6 +49,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCode
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileInputStream
@@ -151,6 +153,13 @@ class CodeModernizerSession(
         val startTime = Instant.now()
         var telemetryErrorMessage: String? = null
         var dependenciesCopied = false
+
+        // show user a non-blocking warning if their build file contains an absolute path
+        try {
+            sessionContext.parseBuildFile()
+        } catch (e: Exception) {
+            // swallow error and move on
+        }
 
         try {
             // Generate zip file
