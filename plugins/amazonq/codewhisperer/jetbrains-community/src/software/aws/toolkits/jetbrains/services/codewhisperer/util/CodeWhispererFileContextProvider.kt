@@ -9,6 +9,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.util.gist.GistManager
 import com.intellij.util.io.DataExternalizer
@@ -34,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
@@ -284,6 +286,71 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         } ?: run {
             return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
         }
+    }
+
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
+
+    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
+        search(psiFile.containingDirectory, distance, true) +
+            search(psiFile.containingDirectory, distance, false)
+    }
+
+    private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
+        var d = distance
+        val res = mutableListOf<PsiFile>()
+        val pendingVisit = mutableListOf(psiDir)
+        val visisted = mutableMapOf(psiDir to false)
+
+        while (d >= 0 && pendingVisit.isNotEmpty()) {
+            var toVisit = emptyList<PsiDirectory>()
+            for (dir in pendingVisit) {
+                if (visisted[dir] == true) {
+                    continue
+                }
+
+                val fs = dir.files
+                res.addAll(fs)
+
+                val dirs = if (goDown) {
+                    dir.subdirectories.toList()
+                } else {
+                    dir.parentDirectory?.let {
+                        listOf(it)
+                    } ?: emptyList()
+                }
+
+                toVisit = dirs
+                visisted[dir] = true
+            }
+
+            pendingVisit.addAll(toVisit)
+            d--
+        }
+
+        return res.toSet()
     }
 
     companion object {
