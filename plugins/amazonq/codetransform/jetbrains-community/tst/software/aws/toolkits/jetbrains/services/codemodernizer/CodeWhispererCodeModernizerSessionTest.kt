@@ -401,10 +401,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     fun `CodeModernizerSession can detect absolute paths in build file`() {
         val module = projectRule.module
         val fileText = "<project><properties><path>system/name/here</path></properties></project>"
-        projectRule.fixture.addFileToModule(module, "src/pom.xml", fileText)
+        projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
         val rootManager = ModuleRootManager.getInstance(module)
-        val root = rootManager.contentRoots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
+        val pom = rootManager.contentRoots[0].children.first { it.name == "pom.xml" }
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
         assertEquals(true, context.parseBuildFile())
     }
 
