@@ -9,6 +9,7 @@ import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
@@ -133,8 +134,11 @@ object CodeWhispererConstants {
         }
     }
     object CrossFile {
-        const val CHUNK_SIZE = 60
-        const val NUMBER_OF_LINE_IN_CHUNK = 10
+        val CHUNK_SIZE
+            get() = if (isDeveloperMode()) 200 else 60
+        val NUMBER_OF_LINE_IN_CHUNK
+            get() = if (isDeveloperMode()) 50 else 10
+        // TODO: 3 -> 10 when service side CR is done
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
         const val NEIGHBOR_FILES_DISTANCE = 1
     }
