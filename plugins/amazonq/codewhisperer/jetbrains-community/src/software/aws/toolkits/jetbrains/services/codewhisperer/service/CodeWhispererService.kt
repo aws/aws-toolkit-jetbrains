@@ -21,7 +21,9 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -43,7 +45,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingExce
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -91,7 +92,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererService : Disposable {
+class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
@@ -193,7 +194,6 @@ class CodeWhispererService : Disposable {
         // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
         // It's possible and ok that coroutine will keep running until the next time we check it's state.
         // As long as we don't show to the user extra info we are good.
-        val coroutineScope = disposableCoroutineScope(popup)
 
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
@@ -624,27 +624,29 @@ class CodeWhispererService : Disposable {
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
         val supplementalContext = runBlocking {
-            try {
-                withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
-                }
-            } catch (e: Exception) {
-                if (e is TimeoutCancellationException) {
-                    LOG.debug {
-                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
+            coroutineScope.async {
+                try {
+                    withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
+                        FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
                     }
-                    SupplementalContextInfo(
-                        isUtg = isTstFile,
-                        contents = emptyList(),
-                        latency = System.currentTimeMillis() - startFetchingTimestamp,
-                        targetFileName = fileContext.filename,
-                        strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
-                    )
-                } else {
-                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                    null
+                } catch (e: Exception) {
+                    if (e is TimeoutCancellationException) {
+                        LOG.debug {
+                            "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
+                        }
+                        SupplementalContextInfo(
+                            isUtg = isTstFile,
+                            contents = emptyList(),
+                            latency = System.currentTimeMillis() - startFetchingTimestamp,
+                            targetFileName = fileContext.filename,
+                            strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
+                        )
+                    } else {
+                        LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                        null
+                    }
                 }
-            }
+            }.await()
         }
 
         // 3. caret position

@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
+import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
@@ -109,6 +110,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      * for the most relevant file -> we extract "keywords" from files opened in editor then get the one with the highest similarity with target file
      */
     override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo? {
+        assertIsNonDispatchThread()
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = isTestFile(psiFile)
         val language = targetContext.programmingLanguage
