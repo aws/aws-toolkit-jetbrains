@@ -212,8 +212,8 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val module = projectRule.module
         val fileText = "<project><properties><path>system/name/here</path></properties></project>"
         val file = projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
-        val expectedWarning = "We detected 1 absolute path(s) (system/) in this file: pom.xml, " +
-            "which may cause issues during our backend build. You will see error logs open if this happens."
+        val expectedWarning = "I detected 1 absolute file path(s) in your pom.xml file: **system/**. " +
+            "Absolute file paths might cause issues when I build your code. Any errors will show up in the build log."
         assertThat(parseBuildFile(file.virtualFile)).isEqualTo(expectedWarning)
     }
 }

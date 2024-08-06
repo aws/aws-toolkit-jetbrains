@@ -91,8 +91,8 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
                 message(
                     "codemodernizer.chat.message.absolute_path_detected",
                     detectedPaths.size,
+                    buildFile.name,
                     detectedPaths.joinToString(", "),
-                    buildFile.name
                 )
             LOG.info { "CodeTransformation: absolute path potentially in build file" }
             return warningMessage
