@@ -21,9 +21,11 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CredentialSourceId
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -73,8 +75,28 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     // key "0" reserved for job statistics table
                     // comes from "name" field of each progressUpdate in step zero of plan
                     if ("0" in tableMapping) {
+                        val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
+                        val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
+                        if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
+                            val billingText = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>$linesOfCode lines of code submitted for transformation, maximum charge of this transformation is $${
+                                String.format("%.2f", linesOfCode.times(0.003))
+                            } (this charge applies only after the free limit in your organization's subscriptions is exhausted). " +
+                                "To prevent the charge, you can stop the job before the transformation completes.<br></body></html>"
+                            val billingTextComponent =
+                                JEditorPane("text/html", billingText).apply {
+                                    isEditable = false
+                                    isOpaque = false
+                                    alignmentX = Component.LEFT_ALIGNMENT
+                                    font =
+                                        font.deriveFont(
+                                            CodeModernizerUIConstants.FONT_CONSTRAINTS.BOLD,
+                                            CodeModernizerUIConstants.PLAN_CONSTRAINTS.SUBTITLE_FONT_SIZE,
+                                        )
+                                }
+                            add(billingTextComponent, CodeModernizerUIConstants.transformationPlanPlaneConstraint)
+                        }
                         add(
-                            transformationPlanInfo(mapper.readValue(tableMapping["0"], PlanTable::class.java)),
+                            transformationPlanInfo(planTable),
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }

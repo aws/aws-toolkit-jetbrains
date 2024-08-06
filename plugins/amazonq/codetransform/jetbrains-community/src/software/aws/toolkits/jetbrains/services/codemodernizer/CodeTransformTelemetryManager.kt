@@ -18,6 +18,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationR
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaVersionFromProjectSetting
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
@@ -157,14 +158,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     fun dependenciesCopied() = CodetransformTelemetry.dependenciesCopied(codeTransformSessionId = sessionId)
 
     fun jobIsStartedFromChatPrompt() {
-        val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-        var authType: CredentialSourceId? = null
-        if (connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer) {
-            authType = CredentialSourceId.IamIdentityCenter
-        } else if (connection.connectionType == ActiveConnectionType.BUILDER_ID && connection is ActiveConnection.ValidBearer) {
-            authType = CredentialSourceId.AwsId
-        }
-        CodetransformTelemetry.jobIsStartedFromChatPrompt(codeTransformSessionId = sessionId, credentialSourceId = authType)
+        CodetransformTelemetry.jobIsStartedFromChatPrompt(codeTransformSessionId = sessionId, credentialSourceId = getAuthType(project))
     }
 
     /**
@@ -172,16 +166,9 @@ class CodeTransformTelemetryManager(private val project: Project) {
      */
 
     fun initiateTransform(telemetryErrorMessage: String? = null) {
-        val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-        var authType: CredentialSourceId? = null
-        if (connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer) {
-            authType = CredentialSourceId.IamIdentityCenter
-        } else if (connection.connectionType == ActiveConnectionType.BUILDER_ID && connection is ActiveConnection.ValidBearer) {
-            authType = CredentialSourceId.AwsId
-        }
         CodetransformTelemetry.initiateTransform(
             codeTransformSessionId = sessionId,
-            credentialSourceId = authType,
+            credentialSourceId = getAuthType(project),
             result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
             reason = telemetryErrorMessage,
         )
