@@ -18,11 +18,11 @@ import com.intellij.ui.components.JBScrollPane
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
@@ -39,7 +39,6 @@ import java.awt.Panel
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
-import java.util.Locale
 import java.util.Vector
 import javax.swing.BorderFactory
 import javax.swing.Box
@@ -79,9 +78,8 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     if ("0" in tableMapping) {
                         val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
-                        if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
-                            val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))
-                            val billingText = message("codemodernizer.migration_plan.header.billing_text", linesOfCode, BILLING_RATE, estimatedCost)
+                        if (linesOfCode != null && linesOfCode > 100 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
+                            val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
                                     isEditable = false

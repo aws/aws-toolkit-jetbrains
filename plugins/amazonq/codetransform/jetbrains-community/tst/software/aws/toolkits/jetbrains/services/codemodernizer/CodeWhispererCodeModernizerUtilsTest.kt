@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedEx
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
@@ -202,6 +203,17 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val step0Update3 = TransformationProgressUpdate.builder().name("-1").status("COMPLETED").description(fileChanges).build()
         val actual = getTableMapping(listOf(step0Update0, step0Update1, step0Update2, step0Update3))
         val expected = mapOf("0" to jobStats, "1" to depChanges, "2" to apiChanges, "-1" to fileChanges)
+        assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `getBillingText on small project returns correct String`() {
+        val expected = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
+            "376 lines of code submitted for transformation, maximum charge of this transformation is 376 * $0.003 = $1.13" +
+            " (for latest pricing, see https://aws.amazon.com/q/developer/pricing/). This charge applies only after the free " +
+            "limit in your organization's subscriptions is exhausted. To prevent the charge, you can stop the job before the " +
+            "transformation completes.<br></body></html>"
+        val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
     }
 }
