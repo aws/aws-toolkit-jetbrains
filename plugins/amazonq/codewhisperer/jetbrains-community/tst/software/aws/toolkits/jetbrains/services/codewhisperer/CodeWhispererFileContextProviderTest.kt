@@ -14,11 +14,13 @@ import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -68,6 +70,19 @@ class CodeWhispererFileContextProviderTest {
         project = projectRule.project
 
         sut = FileContextProvider.getInstance(project) as DefaultCodeWhispererFileContextProvider
+    }
+
+    @Test
+    fun `extractSupplementalFileContext should be run in the background`() {
+        val psiFiles = setupFixture(fixture)
+        val psi = psiFiles[0]
+        assertThrows<RuntimeException>(message = "Access from event dispatch thread is not allowed.") {
+            runInEdtAndWait {
+                runTest {
+                    sut.extractSupplementalFileContext(psi, aFileContextInfo())
+                }
+            }
+        }
     }
 
     @Test
