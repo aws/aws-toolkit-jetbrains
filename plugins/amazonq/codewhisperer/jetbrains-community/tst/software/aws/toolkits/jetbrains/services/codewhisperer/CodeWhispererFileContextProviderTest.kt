@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -95,29 +96,29 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `shouldFetchUtgContext - no support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
     }
 
     @Test
@@ -160,20 +161,20 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `shouldFetchCrossfileContext - no support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.CrossFile)).isFalse
     }
 
     @Test
@@ -184,12 +185,12 @@ class CodeWhispererFileContextProviderTest {
         runBlocking {
             var context = aFileContextInfo(CodeWhispererCsharp.INSTANCE)
 
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isInstanceOf(SupplementalContextResult.NotSupported::class.java)
+            assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isInstanceOf(SupplementalContextResult.NotSupported::class.java)
 
             context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
+            assertThat(sut.extractSupplementalFileContextForSrc(psi, context)).isInstanceOf(SupplementalContextResult.NotSupported::class.java)
+            assertThat(sut.extractSupplementalFileContextForTst(psi, context)).isInstanceOf(SupplementalContextResult.NotSupported::class.java)
         }
     }
 
@@ -320,7 +321,7 @@ class CodeWhispererFileContextProviderTest {
             val fileContext = sut.extractFileContext(fixture.editor, psiFiles[0])
 
             val supplementalContext = runBlocking { sut.extractSupplementalFileContext(psiFiles[0], fileContext) }
-            assertThat(supplementalContext?.contents).isNotNull.isNotEmpty
+            assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
         }
 
         runBlocking {
@@ -367,14 +368,20 @@ class CodeWhispererFileContextProviderTest {
             val supplementalContext = runBlocking {
                 sut.extractSupplementalFileContext(tstFile, fileContext)
             }
-            assertThat(supplementalContext?.contents)
-                .isNotNull
-                .isNotEmpty
-                .hasSize(1)
 
-            assertThat(supplementalContext?.contents?.get(0)?.content)
-                .isNotNull
-                .isEqualTo("UTG\n$JAVA_MAIN")
+            assertThat(supplementalContext)
+                .isInstanceOf(SupplementalContextResult.Success::class.java)
+                .matches {
+                    it as SupplementalContextResult.Success
+                    it.contents.size == 1
+                }
+
+            assertThat(supplementalContext)
+                .isInstanceOf(SupplementalContextResult.Success::class.java)
+                .matches {
+                    it as SupplementalContextResult.Success
+                    it.contents[0].content == "UTG\n$JAVA_MAIN"
+                }
         }
 
         runBlocking {

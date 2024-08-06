@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata.AWS_REQUEST_ID
 import org.mockito.kotlin.mock
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
@@ -45,7 +47,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -211,7 +213,7 @@ object CodeWhispererTestUtil {
 fun aRequestContext(
     project: Project,
     myFileContextInfo: FileContextInfo? = null,
-    mySupplementalContextInfo: SupplementalContextInfo? = null
+    mySupplementalContextInfo: SupplementalContextResult? = null
 ): RequestContext {
     val triggerType = aTriggerType()
     val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {
@@ -231,7 +233,11 @@ fun aRequestContext(
         TriggerTypeInfo(triggerType, automatedTriggerType),
         CaretPosition(Random.nextInt(), Random.nextInt()),
         fileContextInfo = myFileContextInfo ?: aFileContextInfo(),
-        supplementalContext = mySupplementalContextInfo ?: aSupplementalContextInfo(),
+        supplementalContextDeferred = runBlocking {
+            async {
+                mySupplementalContextInfo ?: aSupplementalContextInfo()
+            }
+        },
         null,
         LatencyContext(
             Random.nextLong(),
@@ -251,7 +257,7 @@ fun aRequestContext(
     )
 }
 
-fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? = null, myLatency: Long? = null): SupplementalContextInfo {
+fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? = null, myLatency: Long? = null): SupplementalContextResult.Success {
     val contents = mutableListOf<Chunk>()
     val numberOfContent = Random.nextInt(1, 4)
     repeat(numberOfContent) {
@@ -266,7 +272,7 @@ fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? 
     val isUtg = Random.nextBoolean()
     val latency = Random.nextLong(from = 0L, until = 100L)
 
-    return SupplementalContextInfo(
+    return SupplementalContextResult.Success(
         isUtg = myIsUtg ?: isUtg,
         latency = myLatency ?: latency,
         contents = myContents ?: contents,

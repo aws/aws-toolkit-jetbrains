@@ -31,13 +31,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
+import kotlin.Exception
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
@@ -84,7 +85,7 @@ private object CodeWhispererCodeChunkExternalizer : DataExternalizer<List<Chunk>
 interface FileContextProvider {
     fun extractFileContext(editor: Editor, psiFile: PsiFile): FileContextInfo
 
-    suspend fun extractSupplementalFileContext(psiFile: PsiFile, fileContext: FileContextInfo): SupplementalContextInfo?
+    suspend fun extractSupplementalFileContext(psiFile: PsiFile, fileContext: FileContextInfo): SupplementalContextResult
 
     suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk>
 
@@ -109,7 +110,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      * for focal files, e.g. "MainTest.java" -> "Main.java", "test_main.py" -> "main.py"
      * for the most relevant file -> we extract "keywords" from files opened in editor then get the one with the highest similarity with target file
      */
-    override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo? {
+    override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextResult {
         assertIsNonDispatchThread()
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = isTestFile(psiFile)
@@ -119,44 +120,44 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val supplementalContext = if (isTst) {
             when (shouldFetchUtgContext(language, group)) {
                 true -> extractSupplementalFileContextForTst(psiFile, targetContext)
-                false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
-                null -> {
-                    LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
-                    null
-                }
+                false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
             }
         } else {
             when (shouldFetchCrossfileContext(language, group)) {
                 true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-                false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
-                null -> {
-                    LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
-                    null
-                }
+                false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
             }
         }
 
-        return supplementalContext?.let {
-            if (it.contents.isNotEmpty()) {
+        when (supplementalContext) {
+            is SupplementalContextResult.Success -> run {
+                supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
                 LOG.info { "Successfully fetched supplemental context." }
-                it.contents.forEachIndexed { index, chunk ->
+                supplementalContext.contents.forEachIndexed { index, chunk ->
                     LOG.info {
                         """
                             |---------------------------------------------------------------
                             | Chunk $index:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
-                            |    content = ${chunk.content}
+                            |    contentLength = ${chunk.content.length}
                             |----------------------------------------------------------------
                         """.trimMargin()
                     }
                 }
-            } else {
-                LOG.warn { "Failed to fetch supplemental context, empty list." }
             }
 
-            it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
+            is SupplementalContextResult.Failure -> run {
+                supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
+                LOG.warn { "Failed to fetch supplemental context, error message: ${supplementalContext.error.message}" }
+            }
+
+            is SupplementalContextResult.NotSupported -> run {
+                LOG.debug { "${if (isTst) "UTG" else "Crossfile"} is not supporting ${targetContext.programmingLanguage.languageId}" }
+            }
         }
+
+        return supplementalContext
     }
 
     override suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk> {
@@ -189,9 +190,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     override fun isTestFile(psiFile: PsiFile) = psiFile.programmingLanguage().fileCrawler.isTestFile(psiFile.virtualFile, psiFile.project)
 
     @VisibleForTesting
-    suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+    suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextResult {
         if (!targetContext.programmingLanguage.isSupplementalContextSupported()) {
-            return SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+            return SupplementalContextResult.NotSupported(false, targetContext.programmingLanguage, targetContext.filename)
         }
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
@@ -211,7 +212,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 "0 chunks was found for supplemental context, fileName=${targetContext.filename}, " +
                     "programmingLanaugage: ${targetContext.programmingLanguage}"
             }
-            return SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+            return SupplementalContextResult.Failure(isUtg = false, Exception("No code chunk was found from crossfile candidates"), targetContext.filename)
         }
 
         // we need to keep the reference to Chunk object because we will need to get "nextChunk" later after calculation
@@ -236,18 +237,18 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
         }
 
-        return SupplementalContextInfo(
+        return SupplementalContextResult.Success(
             isUtg = false,
             contents = crossfileContext,
             targetFileName = targetContext.filename,
-            strategy = CrossFileStrategy.OpenTabsBM25
+            strategy = CrossFileStrategy.OpenTabsBM25,
         )
     }
 
     @VisibleForTesting
-    fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+    fun extractSupplementalFileContextForTst(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextResult {
         if (!targetContext.programmingLanguage.isUTGSupported()) {
-            return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
+            return SupplementalContextResult.NotSupported(true, targetContext.programmingLanguage, targetContext.filename)
         }
 
         val utgCandidateResult = targetContext.programmingLanguage.fileCrawler.listUtgCandidate(psiFile)
@@ -275,7 +276,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                     )
                 }
 
-                SupplementalContextInfo(
+                SupplementalContextResult.Success(
                     isUtg = true,
                     contents = utgContext,
                     targetFileName = targetContext.filename,
@@ -283,16 +284,16 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 )
             }
         } ?: run {
-            return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
+            return SupplementalContextResult.Failure(isUtg = true, Exception("Focal file not found"), targetContext.filename)
         }
     }
 
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()
 
-        fun shouldFetchUtgContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+        fun shouldFetchUtgContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean {
             if (!language.isUTGSupported()) {
-                return null
+                return false
             }
 
             return when (language) {
@@ -301,9 +302,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
         }
 
-        fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+        fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean {
             if (!language.isSupplementalContextSupported()) {
-                return null
+                return false
             }
 
             return when (language) {

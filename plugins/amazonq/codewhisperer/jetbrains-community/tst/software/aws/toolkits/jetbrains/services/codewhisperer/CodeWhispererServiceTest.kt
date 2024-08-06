@@ -21,12 +21,12 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -86,20 +86,11 @@ class CodeWhispererServiceTest {
         )
 
         assertThat(actual.customizationArn).isEqualTo("fake-arn")
-        actual.supplementalContext.let {
-            assertThat(it).isNotNull
-            assertThat(it?.isProcessTimeout)
-                .isNotNull
-                .isEqualTo(
-                    it?.latency?.let { latency ->
-                        latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
-                    }
-                )
-
-            assertThat(it?.contents).isNotNull.isEmpty()
+        actual.supplementalContext().let {
+            it as SupplementalContextResult.Failure
+            assertThat(it.error).isInstanceOf(TimeoutCancellationException::class.java)
+            assertThat(it.isTimeoutFailure()).isTrue
         }
-
-        assertThat(actual.supplementalContext).isNotNull
     }
 
     @Ignore("need update language type since Java is fully supported")
@@ -120,8 +111,10 @@ class CodeWhispererServiceTest {
             LatencyContext()
         )
 
-        assertThat(actual.supplementalContext).isNotNull
-        assertThat(actual.supplementalContext?.contents).isEmpty()
-        assertThat(actual.supplementalContext?.contentLength).isEqualTo(0)
+        actual.supplementalContext().let {
+            it as SupplementalContextResult.Success
+            assertThat(it.contents).isEmpty()
+            assertThat(it.contentLength).isEqualTo(0)
+        }
     }
 }
