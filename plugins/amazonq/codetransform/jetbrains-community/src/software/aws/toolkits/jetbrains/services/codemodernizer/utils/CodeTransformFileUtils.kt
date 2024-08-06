@@ -87,7 +87,12 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
             }
         }
         if (detectedPaths.size > 0) {
-            val warningMessage = message("codemodernizer.chat.message.absolute_path_detected", detectedPaths.size, detectedPaths.joinToString(", "), buildFile.path.substringAfterLast(File.separator))
+            val warningMessage =
+                message("codemodernizer.chat.message.absolute_path_detected",
+                    detectedPaths.size,
+                    detectedPaths.joinToString(", "),
+                    buildFile.path.substringAfterLast(File.separator)
+                )
             LOG.info { "CodeTransformation: absolute path potentially in build file" }
             return warningMessage
         }
