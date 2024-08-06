@@ -622,9 +622,9 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
-        val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
         val supplementalContext = runBlocking {
             coroutineScope.async {
+                val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
                 try {
                     withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
                         FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
