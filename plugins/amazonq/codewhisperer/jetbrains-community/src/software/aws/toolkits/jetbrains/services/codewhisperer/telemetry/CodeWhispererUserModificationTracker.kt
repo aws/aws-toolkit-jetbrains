@@ -61,13 +61,15 @@ data class CodeInsertionDiff(
     val original: String,
     val modified: String,
     val diff: Double
-) {
-    val percentage: Double
-        get() = if (modified.isEmpty() || original.isEmpty()) {
-            1.0
-        } else {
-            min(1.0, (diff / original.length))
-        }
+)
+
+fun CodeInsertionDiff?.percentage(): Double {
+    if (this == null) return 1.0
+    return if (modified.isEmpty() || original.isEmpty()) {
+        1.0
+    } else {
+        min(1.0, (diff / original.length))
+    }
 }
 
 @Service(Service.Level.PROJECT)
@@ -200,7 +202,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             project = project,
             codewhispererCompletionType = suggestion.completionType,
             codewhispererLanguage = suggestion.codewhispererLanguage.toTelemetryType(),
-            codewhispererModificationPercentage = diff?.percentage ?: 1.0,
+            codewhispererModificationPercentage = diff.percentage(),
             codewhispererRequestId = suggestion.requestId,
             codewhispererRuntime = suggestion.codewhispererRuntime,
             codewhispererRuntimeSource = suggestion.codewhispererRuntimeSource,
@@ -218,7 +220,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
         AmazonqTelemetry.modifyCode(
             cwsprChatConversationId = insertedCode.conversationId,
             cwsprChatMessageId = insertedCode.messageId,
-            cwsprChatModificationPercentage = diff?.percentage ?: 1.0,
+            cwsprChatModificationPercentage = diff.percentage(),
             credentialStartUrl = getStartUrl(project)
         )
         val lang = insertedCode.vFile?.programmingLanguage() ?: CodeWhispererUnknownLanguage.INSTANCE
@@ -229,7 +231,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             insertedCode.conversationId,
             insertedCode.messageId,
             lang,
-            diff?.percentage ?: 1.0,
+            diff.percentage(),
             CodeWhispererSettings.getInstance().isProjectContextEnabled(),
             CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
         ).also {
