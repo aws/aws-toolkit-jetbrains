@@ -398,17 +398,6 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizerSession can detect absolute paths in build file`() {
-        val module = projectRule.module
-        val fileText = "<project><properties><path>system/name/here</path></properties></project>"
-        projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
-        val rootManager = ModuleRootManager.getInstance(module)
-        val pom = rootManager.contentRoots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
-        assertEquals(true, context.parseBuildFile())
-    }
-
-    @Test
     fun `CodeModernizer can create modernization job`() {
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())

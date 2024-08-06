@@ -152,13 +152,6 @@ class CodeModernizerSession(
         var telemetryErrorMessage: String? = null
         var dependenciesCopied = false
 
-        // show user a non-blocking warning if their build file contains an absolute path
-        try {
-            sessionContext.parseBuildFile()
-        } catch (e: Exception) {
-            // swallow error and move on
-        }
-
         try {
             // Generate zip file
             if (!isValidCodeTransformConnection(sessionContext.project)) {

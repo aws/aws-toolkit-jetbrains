@@ -71,34 +71,6 @@ data class CodeModernizerSessionContext(
         return isIdea
     }
 
-    fun parseBuildFile(): Boolean {
-        val absolutePaths = mutableListOf("users/", "system/", "volumes/", "c:", "d:")
-        val alias = System.getProperty("user.home").substringAfterLast(File.separator)
-        absolutePaths.add(alias)
-        val buildFile = configurationFile
-        if (buildFile.exists()) {
-            val buildFileContents = buildFile.content().lowercase()
-            val detectedPaths: MutableList<String> = mutableListOf()
-            for (path in absolutePaths) {
-                if (buildFileContents.contains(path)) {
-                    detectedPaths.add(path)
-                }
-            }
-            if (detectedPaths.size > 0) {
-                val warningMessage = "We detected ${detectedPaths.size} absolute ${if (detectedPaths.size == 1) "path" else "paths"} " +
-                    "(${detectedPaths.joinToString(", ")}) in this file: ${buildFile.path.substringAfterLast(File.separator)}, " +
-                    "which may cause issues during our backend build. You will see error logs open if this happens."
-                notifyStickyWarn(
-                    "Absolute path detected",
-                    warningMessage,
-                )
-                LOG.info { "CodeTransformation: absolute path potentially in build file" }
-                return true
-            }
-        }
-        return false
-    }
-
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
