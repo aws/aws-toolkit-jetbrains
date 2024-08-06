@@ -396,9 +396,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun parseBuildFile(): String? {
-        return parseBuildFile(codeTransformationSession?.sessionContext?.configurationFile)
-    }
+    fun parseBuildFile(): String? = parseBuildFile(codeTransformationSession?.sessionContext?.configurationFile)
 
     internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult =
         when (val result = session.createModernizationJob(copyResult)) {
