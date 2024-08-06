@@ -15,6 +15,8 @@ import javax.swing.BorderFactory
 
 const val FEATURE_NAME = "Amazon Q Transform"
 
+const val BILLING_RATE = 0.003
+
 class CodeModernizerUIConstants {
 
     object HEADER {

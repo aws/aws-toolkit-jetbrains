@@ -18,6 +18,7 @@ import com.intellij.ui.components.JBScrollPane
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
@@ -79,11 +80,8 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                         val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
                         if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
-                            val billingText = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
-                                "$linesOfCode lines of code submitted for transformation, maximum charge of this transformation is $${
-                                    String.format(Locale.US, "%.2f", linesOfCode.times(0.003))
-                                } (this charge applies only after the free limit in your organization's subscriptions is exhausted). " +
-                                "To prevent the charge, you can stop the job before the transformation completes.<br></body></html>"
+                            val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))
+                            val billingText = message("codemodernizer.migration_plan.header.billing_text", linesOfCode, BILLING_RATE, estimatedCost)
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
                                     isEditable = false
