@@ -9,7 +9,6 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -23,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -54,7 +55,7 @@ class CodeWhispererServiceTest {
         userGroupSetting = mock {
             on { getUserGroup() } doReturn CodeWhispererUserGroup.Control
         }
-        customizationConfig = mock() {
+        customizationConfig = mock {
             on { activeCustomization(any()) } doReturn CodeWhispererCustomization(
                 "fake-arn",
                 "fake-name",
@@ -63,10 +64,11 @@ class CodeWhispererServiceTest {
         }
 
         file = projectRule.fixture.addFileToProject(
-            "Main.java", """
+            "Main.java",
+            """
                   public class Main {
                       public static void main
-                """.trimIndent()
+            """.trimIndent()
         )
         runInEdtAndWait {
             projectRule.fixture.openFileInEditor(file.virtualFile)
@@ -79,8 +81,7 @@ class CodeWhispererServiceTest {
     @Test
     fun getRequestContext() = runInEdtAndWait {
         val crossfileCandidate = projectRule.fixture.addFileToProject("Util.java", "public class Util {}")
-        println(file.virtualFile)
-        println(crossfileCandidate.virtualFile)
+
         runInEdtAndWait {
             projectRule.fixture.openFileInEditor(crossfileCandidate.virtualFile)
             projectRule.fixture.openFileInEditor(file.virtualFile)
@@ -114,6 +115,11 @@ class CodeWhispererServiceTest {
 
         val supplementalContext = actual.supplementalContext()
         assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
+        supplementalContext as SupplementalContextResult.Success
+        assertThat(supplementalContext.contents).isNotEmpty
+        assertThat(supplementalContext.contents.first()).isEqualTo(Chunk(content = "public class Util {}", path = "Util.java"))
+        assertThat(supplementalContext.contentLength).isGreaterThan(0)
+        assertThat(supplementalContext.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
     }
 
     @Test

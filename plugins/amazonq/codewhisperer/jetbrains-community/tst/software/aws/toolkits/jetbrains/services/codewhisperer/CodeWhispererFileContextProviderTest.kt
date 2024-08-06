@@ -6,13 +6,13 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
@@ -43,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Supplemental
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -261,22 +262,11 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `test extractCodeChunksFromFiles should read files from file producers to get 60 chunks`() {
+    fun `test extractCodeChunksFromFiles should read files from file producers to get 60 chunks`() = runTest {
         val psiFiles = setupFixture(fixture)
         val virtualFiles = psiFiles.mapNotNull { it.virtualFile }
-        val javaMainPsiFile = psiFiles.first()
-
-        val fileProducer1: suspend (PsiFile) -> List<VirtualFile> = { psiFile ->
-            listOf(virtualFiles[1])
-        }
-
-        val fileProducer2: suspend (PsiFile) -> List<VirtualFile> = { psiFile ->
-            listOf(virtualFiles[2])
-        }
-
-        val result = runBlocking {
-            sut.extractCodeChunksFromFiles(javaMainPsiFile, listOf(fileProducer1, fileProducer2))
-        }
+        val files = listOf(virtualFiles[1], virtualFiles[2])
+        val result = sut.extractCodeChunksFromFiles(files)
 
         assertThat(result[0].content).isEqualTo(
             """public class UtilClass {
@@ -325,24 +315,65 @@ class CodeWhispererFileContextProviderTest {
      *          - MainTest.java
      *
      */
-    // TODO: fix this test, in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile) { psiFile -> ... }
-    @Ignore
     @Test
-    fun `extractSupplementalFileContext from src file should extract src`() {
+    fun `extractSupplementalFileContext should return successful result if there are files opened`() = runTest {
         val psiFiles = setupFixture(fixture)
+
+        runInEdtAndWait {
+            // simulate user opening files
+            fixture.openFileInEditor(psiFiles[1].virtualFile)
+            fixture.openFileInEditor(psiFiles[2].virtualFile)
+
+            // current active editor
+            fixture.openFileInEditor(psiFiles[0].virtualFile)
+        }
+
         sut = spy(sut)
 
-        runReadAction {
-            val fileContext = sut.extractFileContext(fixture.editor, psiFiles[0])
+        val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
+        val supplementalContext = runReadAction {
+            async {
+                sut.extractSupplementalFileContext(psiFiles[0], fileContext)
+            }
+        }.await()
 
-            val supplementalContext = runBlocking { sut.extractSupplementalFileContext(psiFiles[0], fileContext) }
-            assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
+        assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
+        supplementalContext as SupplementalContextResult.Success
+        assertThat(supplementalContext.contentLength).isGreaterThan(0)
+        assertThat(supplementalContext.isUtg).isFalse
+        assertThat(supplementalContext.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
+        assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
+        verify(sut).extractSupplementalFileContextForSrc(any(), any())
+        verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
+    }
+
+    @Test
+    fun `extractSupplementalFileContext should return failure result if there is no file opened`() = runTest {
+        val psiFiles = setupFixture(fixture)
+
+        runInEdtAndWait {
+            // current active editor
+            fixture.openFileInEditor(psiFiles[0].virtualFile)
         }
 
-        runBlocking {
-            verify(sut).extractSupplementalFileContextForSrc(any(), any())
-            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
+        sut = spy(sut)
+
+        val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
+        val supplementalContext = runReadAction {
+            async {
+                sut.extractSupplementalFileContext(psiFiles[0], fileContext)
+            }
+        }.await()
+
+        assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Failure::class.java)
+        supplementalContext as SupplementalContextResult.Failure
+        assertThat(supplementalContext.error.message).matches {
+            it.contains("No code chunk was found from crossfile candidates")
         }
+        assertThat(supplementalContext.isUtg).isFalse
+        assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
+        verify(sut).extractSupplementalFileContextForSrc(any(), any())
+        verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }
 
     /**

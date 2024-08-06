@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.ide.actions.CopyContentRootPathProvider
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -45,9 +46,7 @@ private val contentRootPathProvider = CopyContentRootPathProvider()
 private val codewhispererCodeChunksIndex = GistManager.getInstance()
     .newPsiFileGist("psi to code chunk index", 0, CodeWhispererCodeChunkExternalizer) { psiFile ->
         runBlocking {
-            val fileCrawler = psiFile.programmingLanguage().fileCrawler
-            val fileProducers = listOf<suspend (PsiFile) -> List<VirtualFile>> { psiFile -> fileCrawler.listCrossFileCandidate(psiFile) }
-            FileContextProvider.getInstance(psiFile.project).extractCodeChunksFromFiles(psiFile, fileProducers)
+            FileContextProvider.getInstance(psiFile.project).extractCodeChunksForFile(psiFile)
         }
     }
 
@@ -87,7 +86,7 @@ interface FileContextProvider {
 
     suspend fun extractSupplementalFileContext(psiFile: PsiFile, fileContext: FileContextInfo): SupplementalContextResult
 
-    suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk>
+    suspend fun extractCodeChunksForFile(psiFile: PsiFile): List<Chunk>
 
     /**
      * It will actually delegate to invoke corresponding [CodeWhispererFileCrawler.isTestFile] for each language
@@ -163,26 +162,28 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         return supplementalContext
     }
 
-    override suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk> {
+    override suspend fun extractCodeChunksForFile(psiFile: PsiFile): List<Chunk> {
+        val fileCrawler = psiFile.programmingLanguage().fileCrawler
+        val files = fileCrawler.listCrossFileCandidate(psiFile)
+        return extractCodeChunksFromFiles(files)
+    }
+
+    suspend fun extractCodeChunksFromFiles(files: List<VirtualFile>): List<Chunk> {
         val parseFilesStart = System.currentTimeMillis()
         val hasUsed = Collections.synchronizedSet(mutableSetOf<VirtualFile>())
         val chunks = mutableListOf<Chunk>()
 
-        for (fileProducer in fileProducers) {
+        files.forEach { file ->
             yield()
-            val files = fileProducer(psiFile)
-            files.forEach { file ->
-                yield()
-                if (hasUsed.contains(file)) {
-                    return@forEach
-                }
-                val relativePath = runReadAction { contentRootPathProvider.getPathToElement(project, file, null) ?: file.path }
-                chunks.addAll(file.toCodeChunk(relativePath))
-                hasUsed.add(file)
-                if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
-                    LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
-                    return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
-                }
+            if (hasUsed.contains(file)) {
+                return@forEach
+            }
+            val relativePath = runReadAction { contentRootPathProvider.getPathToElement(project, file, null) ?: file.path }
+            chunks.addAll(file.toCodeChunk(relativePath))
+            hasUsed.add(file)
+            if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
+                LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
+                return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
             }
         }
 
@@ -203,7 +204,16 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
-            runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
+            runReadAction {
+                if (ApplicationManager.getApplication().isUnitTestMode) {
+                    // TODO: hacky way to make test work, in test env, psiFile.virtualFile will be null with gist
+                    runBlocking {
+                        extractCodeChunksForFile(psiFile)
+                    }
+                } else {
+                    codewhispererCodeChunksIndex.getFileData(psiFile)
+                }
+            }
         } catch (e: TimeoutCancellationException) {
             throw e
         }
