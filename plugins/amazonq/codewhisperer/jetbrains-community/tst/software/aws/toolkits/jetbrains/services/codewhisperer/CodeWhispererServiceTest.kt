@@ -18,11 +18,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
@@ -79,7 +81,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun getRequestContext() = runInEdtAndWait {
+    fun `getRequestContext should collect file context, supplemental context and customization`() = runInEdtAndWait {
         val crossfileCandidate = projectRule.fixture.addFileToProject("Util.java", "public class Util {}")
 
         runInEdtAndWait {
@@ -123,7 +125,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() {
+    fun `getRequestContext should still collect file context and customizatioArn even if supplemental context fetching fails`() {
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
             onBlocking { this.extractSupplementalFileContext(any(), any()) } doThrow TimeoutCancellationException::class
@@ -145,6 +147,81 @@ class CodeWhispererServiceTest {
             it as SupplementalContextResult.Failure
             assertThat(it.error).isInstanceOf(TimeoutCancellationException::class.java)
             assertThat(it.isTimeoutFailure()).isTrue
+        }
+    }
+
+    @Test
+    fun buildGenerateCompletionRequest() {
+        val fileContext = FileContextInfo(
+            CaretContext(
+                leftFileContext = "left",
+                rightFileContext = "right",
+                leftContextOnCurrentLine = "l"
+            ),
+            filename = "Main.java",
+            programmingLanguage = CodeWhispererJava.INSTANCE
+        )
+        val supplementalContext = SupplementalContextResult.Success(
+            isUtg = false,
+            contents = listOf(
+                Chunk(content = "foo", path = "Foo.java"),
+                Chunk(content = "bar", path = "Bar.java"),
+                Chunk(content = "baz", path = "Baz.java")
+            ),
+            strategy = CrossFileStrategy.OpenTabsBM25,
+            targetFileName = "Main.java",
+            latency = 20,
+        )
+        val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(projectRule.project)?.arn
+        CodeWhispererService.buildCodeWhispererRequest(fileContext, supplementalContext, customizationArn).let {
+            assertThat(it.customizationArn()).isEqualTo("fake-arn")
+            assertThat(it.supplementalContexts()).matches { supContext ->
+                supContext.size == supplementalContext.contents.size &&
+                    supContext[0].content() == "foo" &&
+                    supContext[0].filePath() == "Foo.java" &&
+                    supContext[1].content() == "bar" &&
+                    supContext[1].filePath() == "Bar.java" &&
+                    supContext[2].content() == "baz" &&
+                    supContext[2].filePath() == "Baz.java"
+            }
+            assertThat(it.fileContext()).matches { fileContext ->
+                fileContext.filename() == "Main.java" &&
+                    fileContext.programmingLanguage().languageName() == CodeWhispererJava.INSTANCE.toCodeWhispererRuntimeLanguage().languageId &&
+                    fileContext.leftFileContent() == "left" &&
+                    fileContext.rightFileContent() == "right"
+            }
+        }
+    }
+
+    @Test
+    fun `buildGenerateCompletionRequest when there is no customization arn and no supplemental context`() {
+        val fileContext = FileContextInfo(
+            CaretContext(
+                leftFileContext = "left",
+                rightFileContext = "right",
+                leftContextOnCurrentLine = "l"
+            ),
+            filename = "Main.java",
+            programmingLanguage = CodeWhispererJava.INSTANCE
+        )
+        val supplementalContext = SupplementalContextResult.Failure(
+            isUtg = false,
+            targetFileName = "Main.java",
+            latency = 20,
+            error = Exception("unknown error")
+        )
+
+        customizationConfig.stub { on { activeCustomization(any()) } doReturn null }
+        val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(projectRule.project)?.arn
+        CodeWhispererService.buildCodeWhispererRequest(fileContext, supplementalContext, customizationArn).let {
+            assertThat(it.customizationArn()).isNull()
+            assertThat(it.supplementalContexts()).isEmpty()
+            assertThat(it.fileContext()).matches { fileContext ->
+                fileContext.filename() == "Main.java" &&
+                    fileContext.programmingLanguage().languageName() == CodeWhispererJava.INSTANCE.toCodeWhispererRuntimeLanguage().languageId &&
+                    fileContext.leftFileContent() == "left" &&
+                    fileContext.rightFileContent() == "right"
+            }
         }
     }
 
