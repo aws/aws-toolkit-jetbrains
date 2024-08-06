@@ -13,7 +13,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfBIDConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
-import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.services.amazonq.isQExpired
 
 @Service
 class CodeWhispererFeatureConfigService {

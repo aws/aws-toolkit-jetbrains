@@ -34,8 +34,6 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import software.aws.toolkits.jetbrains.utils.isQConnected
-import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry

@@ -80,7 +80,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStra
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
-import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.services.amazonq.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread

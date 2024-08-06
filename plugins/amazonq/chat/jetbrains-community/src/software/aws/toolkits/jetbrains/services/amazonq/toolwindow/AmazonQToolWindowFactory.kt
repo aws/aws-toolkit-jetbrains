@@ -27,8 +27,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
 import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
-import software.aws.toolkits.jetbrains.utils.isQConnected
-import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.services.amazonq.isQConnected
+import software.aws.toolkits.jetbrains.services.amazonq.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
