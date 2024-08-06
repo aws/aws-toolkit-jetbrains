@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPL
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
+import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
@@ -86,9 +87,7 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
             }
         }
         if (detectedPaths.size > 0) {
-            val warningMessage = "We detected ${detectedPaths.size} absolute ${if (detectedPaths.size == 1) "path" else "paths"} " +
-                "(${detectedPaths.joinToString(", ")}) in this file: ${buildFile.path.substringAfterLast(File.separator)}, " +
-                "which may cause issues during our backend build. You will see error logs open if this happens."
+            val warningMessage = message("codemodernizer.chat.message.absolute_path_detected", detectedPaths.size, detectedPaths.joinToString(", "), buildFile.path.substringAfterLast(File.separator))
             LOG.info { "CodeTransformation: absolute path potentially in build file" }
             return warningMessage
         }
