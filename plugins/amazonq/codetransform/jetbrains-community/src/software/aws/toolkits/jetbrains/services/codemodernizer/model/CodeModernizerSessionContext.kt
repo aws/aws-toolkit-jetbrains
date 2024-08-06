@@ -27,8 +27,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
-import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException

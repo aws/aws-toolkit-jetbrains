@@ -8,7 +8,6 @@ import io.mockk.mockkStatic
 import io.mockk.runs
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -26,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.test.assertNotNull
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Before
@@ -214,6 +212,6 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val module = projectRule.module
         val fileText = "<project><properties><path>system/name/here</path></properties></project>"
         val file = projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
-        assertNotNull(parseBuildFile(file.virtualFile))
+        assertThat(parseBuildFile(file.virtualFile)).isNotNull()
     }
 }
