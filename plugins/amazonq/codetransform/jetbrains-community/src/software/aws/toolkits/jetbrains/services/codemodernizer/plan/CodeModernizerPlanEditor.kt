@@ -81,8 +81,8 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                         if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
                                 "$linesOfCode lines of code submitted for transformation, maximum charge of this transformation is $${
-                                String.format(Locale.US, "%.2f", linesOfCode.times(0.003))
-                            } (this charge applies only after the free limit in your organization's subscriptions is exhausted). " +
+                                    String.format(Locale.US, "%.2f", linesOfCode.times(0.003))
+                                } (this charge applies only after the free limit in your organization's subscriptions is exhausted). " +
                                 "To prevent the charge, you can stop the job before the transformation completes.<br></body></html>"
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
