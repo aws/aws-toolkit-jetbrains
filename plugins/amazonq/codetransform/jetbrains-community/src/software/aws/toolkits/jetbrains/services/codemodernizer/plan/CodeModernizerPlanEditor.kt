@@ -38,6 +38,7 @@ import java.awt.Panel
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.beans.PropertyChangeListener
+import java.util.Locale
 import java.util.Vector
 import javax.swing.BorderFactory
 import javax.swing.Box
@@ -78,8 +79,9 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                         val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
                         if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
-                            val billingText = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>$linesOfCode lines of code submitted for transformation, maximum charge of this transformation is $${
-                                String.format("%.2f", linesOfCode.times(0.003))
+                            val billingText = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
+                                "$linesOfCode lines of code submitted for transformation, maximum charge of this transformation is $${
+                                String.format(Locale.US, "%.2f", linesOfCode.times(0.003))
                             } (this charge applies only after the free limit in your organization's subscriptions is exhausted). " +
                                 "To prevent the charge, you can stop the job before the transformation completes.<br></body></html>"
                             val billingTextComponent =
