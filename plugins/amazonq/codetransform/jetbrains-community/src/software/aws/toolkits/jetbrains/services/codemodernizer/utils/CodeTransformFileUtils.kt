@@ -88,7 +88,8 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
         }
         if (detectedPaths.size > 0) {
             val warningMessage =
-                message("codemodernizer.chat.message.absolute_path_detected",
+                message(
+                    "codemodernizer.chat.message.absolute_path_detected",
                     detectedPaths.size,
                     detectedPaths.joinToString(", "),
                     buildFile.path.substringAfterLast(File.separator)
