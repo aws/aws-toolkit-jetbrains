@@ -78,7 +78,7 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     if ("0" in tableMapping) {
                         val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
-                        if (linesOfCode != null && linesOfCode > 100 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
+                        if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
