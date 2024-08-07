@@ -5,7 +5,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
-import software.aws.toolkits.gradle.useInstaller
+import software.aws.toolkits.gradle.createWithInstaller
 
 val ideProfile = IdeVersions.ideProfile(project)
 
@@ -91,7 +91,7 @@ dependencies {
             val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
             val version = toolkitIntelliJ.version()
 
-            create(type, version, useInstaller(type, version))
+            createWithInstaller(type, version)
         }
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })

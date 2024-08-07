@@ -3,6 +3,7 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
+import software.aws.toolkits.gradle.createWithInstaller
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 import software.aws.toolkits.gradle.useInstaller
@@ -60,8 +61,7 @@ dependencies {
                 provider { IntelliJPlatformType.IntellijIdeaCommunity } to toolkitIntelliJ.version()
             }
 
-            // we could just always use the installer, but this allows us to avoid having multiple rider download/transforms
-            create(type, version, useInstaller(type, version))
+            createWithInstaller(type, version)
         }
     }
 }

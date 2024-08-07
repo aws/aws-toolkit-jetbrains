@@ -66,15 +66,15 @@ fun Project.buildMetadata() =
         "unknownCommit"
     }
 
-fun IntelliJPlatformDependenciesExtension.useInstaller(
+fun IntelliJPlatformDependenciesExtension.createWithInstaller(
     typeProvider: Provider<IntelliJPlatformType>,
     versionProvider: Provider<String>
-) = typeProvider.zip(versionProvider) { type, version ->
-    // use binaries for all non-snapshot except rider
-    !(version.contains("SNAPSHOT") || type == IntelliJPlatformType.Rider).also {
-        // if rider, then pull in the JBR dependency too
-        if (!it) {
-            jetbrainsRuntime()
-        }
+) {
+    val useInstaller = (typeProvider.get() == IntelliJPlatformType.Rider || versionProvider.get().contains("SNAPSHOT"))
+
+    create(typeProvider, versionProvider, useInstaller)
+
+    if (useInstaller) {
+        jetbrainsRuntime()
     }
 }
