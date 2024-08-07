@@ -104,11 +104,6 @@
             "description": "Programming language associated with the message"
         },
         {
-            "name": "codewhispererCharactersModified",
-            "type": "int",
-            "description": "number of characters modified by users in the accepted codewhisperer suggestion"
-        },
-        {
             "name": "cwsprChatConversationType",
             "type": "string",
             "allowedValues": [
@@ -415,55 +410,6 @@
                 },
                 {
                     "type": "codecatalyst_devEnvironmentWorkflowError",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "codewhisperer_userModification",
-            "description": "Percentage of user modifications for the selected suggestion until a fixed period of time",
-            "metadata": [
-                {
-                    "type": "codewhispererCharactersAccepted"
-                },
-                {
-                    "type": "codewhispererCharactersModified"
-                },
-                {
-                    "type": "codewhispererCompletionType"
-                },
-                {
-                    "type": "codewhispererLanguage"
-                },
-                {
-                    "type": "codewhispererModificationPercentage"
-                },
-                {
-                    "type": "codewhispererRequestId"
-                },
-                {
-                    "type": "codewhispererRuntime",
-                    "required": false
-                },
-                {
-                    "type": "codewhispererRuntimeSource",
-                    "required": false
-                },
-                {
-                    "type": "codewhispererSessionId",
-                    "required": false
-                },
-                {
-                    "type": "codewhispererSuggestionIndex"
-                },
-                {
-                    "type": "codewhispererTriggerType"
-                },
-                {
-                    "type": "codewhispererUserGroup"
-                },
-                {
-                    "type": "credentialStartUrl",
                     "required": false
                 }
             ]
