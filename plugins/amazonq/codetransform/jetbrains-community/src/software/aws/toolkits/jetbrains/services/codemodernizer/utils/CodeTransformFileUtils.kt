@@ -75,7 +75,7 @@ fun findBuildFiles(sourceFolder: File, supportedBuildFileNames: List<String>): L
 }
 
 fun parseBuildFile(buildFile: VirtualFile?): String? {
-    val absolutePaths = mutableListOf("users/", "system/", "volumes/", "c:", "d:")
+    val absolutePaths = mutableListOf("users/", "system/", "volumes/", "c:\\", "d:\\")
     val alias = System.getProperty("user.home").substringAfterLast(File.separator)
     absolutePaths.add(alias)
     if (buildFile != null && buildFile.exists()) {
