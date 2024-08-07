@@ -54,9 +54,9 @@ import javax.swing.event.HyperlinkEvent
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
-class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
+class CodeModernizerPlanEditor(val project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     val plan = virtualFile.getUserData(MIGRATION_PLAN_KEY) ?: throw RuntimeException("Migration plan not found")
-    val tableMapping =
+    private val tableMapping =
         if (!plan.transformationSteps()[0].progressUpdates().isNullOrEmpty()) {
             getTableMapping(plan.transformationSteps()[0].progressUpdates())
         } else {
@@ -75,8 +75,8 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     )
                     // key "0" reserved for job statistics table
                     // comes from "name" field of each progressUpdate in step zero of plan
-                    if ("0" in tableMapping) {
-                        val planTable = mapper.readValue(tableMapping["0"], PlanTable::class.java)
+                    if (JOB_STATISTICS_TABLE_KEY in tableMapping) {
+                        val planTable = mapper.readValue(tableMapping[JOB_STATISTICS_TABLE_KEY], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
                         if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
@@ -105,9 +105,9 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                     }
                     add(transformationPlanPanel(plan), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
                     // key "-1" reserved for appendix table
-                    if ("-1" in tableMapping) {
+                    if (APPENDIX_TABLE_KEY in tableMapping) {
                         add(
-                            transformationPlanAppendix(mapper.readValue(tableMapping["-1"], PlanTable::class.java)),
+                            transformationPlanAppendix(mapper.readValue(tableMapping[APPENDIX_TABLE_KEY], PlanTable::class.java)),
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }
@@ -516,4 +516,9 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
             bottomPadding,
             CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_PADDING_RIGHT,
         )
+
+    companion object {
+        private const val APPENDIX_TABLE_KEY = "-1"
+        private const val JOB_STATISTICS_TABLE_KEY = "0"
+    }
 }
