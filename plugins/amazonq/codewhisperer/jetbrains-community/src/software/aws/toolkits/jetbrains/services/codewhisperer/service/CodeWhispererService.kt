@@ -150,7 +150,7 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         val requestContext = try {
             getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
         } catch (e: Exception) {
-            LOG.error { "Unable to retrieve users' file context for inline suggestion request ${e.message.toString()}" }
+            LOG.error { "Unable to retrieve users' file context for inline suggestion request ${e.message}" }
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
@@ -631,7 +631,6 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
                 }
             } catch (e: TimeoutCancellationException) {
                 LOG.debug { "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms" }
-
                 SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             } catch (e: Exception) {
                 LOG.error { "Run into unexpected error while fetching supplemental context, error: ${e.message}" }
