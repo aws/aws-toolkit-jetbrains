@@ -44,6 +44,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFou
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
@@ -149,7 +150,7 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         val requestContext = try {
             getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
         } catch (e: Exception) {
-            LOG.debug { e.message.toString() }
+            LOG.error { "Unable to retrieve users' file context for inline suggestion request ${e.message.toString()}" }
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
@@ -622,24 +623,19 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
-        val supplementalContext = runBlocking {
-            coroutineScope.async {
-                val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-                try {
-                    withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-                        FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
-                    }
-                } catch (e: Exception) {
-                    LOG.debug {
-                        if (e is TimeoutCancellationException) {
-                            "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                        } else {
-                            "Run into unexpected error when fetching supplemental context, error: ${e.message}"
-                        }
-                    }
-
-                    SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
+        val supplementalContext = coroutineScope.async {
+            val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
+            try {
+                withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
+                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
                 }
+            } catch (e: TimeoutCancellationException) {
+                LOG.debug { "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms" }
+
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
+            } catch (e: Exception) {
+                LOG.error { "Run into unexpected error while fetching supplemental context, error: ${e.message}" }
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             }
         }
 
