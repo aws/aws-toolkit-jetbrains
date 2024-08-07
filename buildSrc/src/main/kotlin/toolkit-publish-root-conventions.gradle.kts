@@ -6,7 +6,6 @@ import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
 import software.aws.toolkits.gradle.createWithInstaller
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
-import software.aws.toolkits.gradle.useInstaller
 
 // publish-root should imply publishing-conventions, but we keep separate so that gateway always has the GW flavor
 plugins {
