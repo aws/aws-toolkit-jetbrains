@@ -70,7 +70,8 @@ fun IntelliJPlatformDependenciesExtension.createWithInstaller(
     typeProvider: Provider<IntelliJPlatformType>,
     versionProvider: Provider<String>
 ) {
-    val useInstaller = (typeProvider.get() == IntelliJPlatformType.Rider || versionProvider.get().contains("SNAPSHOT"))
+    val isEAP = versionProvider.get().contains("SNAPSHOT")
+    val useInstaller = (isEAP || typeProvider.get() == IntelliJPlatformType.Rider)
 
     create(typeProvider, versionProvider, useInstaller)
 
