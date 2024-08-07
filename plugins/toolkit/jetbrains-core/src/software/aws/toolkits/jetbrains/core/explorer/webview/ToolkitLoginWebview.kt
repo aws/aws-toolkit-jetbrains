@@ -12,6 +12,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
@@ -47,6 +48,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
@@ -306,8 +308,13 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     }
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
+        val onIdCError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
+            if (!isUserCancellation(e)) {
+                runInEdt {
+                    Messages.showErrorDialog(jcefBrowser.component, ssoErrorMessageFromException(e), "Failed to Authenticate")
+                }
+            }
             // TODO: telemetry
         }
         val onIdCSuccess: () -> Unit = {
@@ -318,7 +325,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
         val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
 
         loginWithBackgroundContext {
-            val connection = login.loginIdc(project)
+            val connection = login.login(project)
 
             if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
                 val tokenProvider = connection.getConnectionSettings().tokenProvider

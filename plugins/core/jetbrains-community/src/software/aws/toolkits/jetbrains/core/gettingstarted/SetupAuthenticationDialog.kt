@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
+import software.aws.toolkits.jetbrains.core.credentials.messageFromConfigFacadeError
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
@@ -277,7 +278,7 @@ class SetupAuthenticationDialog(
                     scopes = scopes
                 )
 
-                val connection = authAndUpdateConfig(project, profile, configFilesFacade, {}, {}) { e, _ ->
+                val connection = authAndUpdateConfig(project, profile, configFilesFacade, {}, {}) { e ->
                     Messages.showErrorDialog(project, e.message, title)
                     AuthTelemetry.addConnection(
                         project,
@@ -430,12 +431,7 @@ class SetupAuthenticationDialog(
     }
 
     private fun handleConfigFacadeError(e: Exception) {
-        // we'll consider nested exceptions and exception loops to be out of scope
-        val (errorTemplate, errorType) = if (e.stackTrace.any { it.className == ProfileFileReader::class.java.canonicalName }) {
-            "gettingstarted.auth.config.issue" to "ConfigParseError"
-        } else {
-            "codewhisperer.credential.login.exception.general" to e::class.java.name
-        }
+        val (errorMessage, errorType) = messageFromConfigFacadeError(e)
 
         AuthTelemetry.addConnection(
             project,
@@ -448,9 +444,8 @@ class SetupAuthenticationDialog(
             reason = errorType
         )
 
-        val error = message(errorTemplate, e.localizedMessage ?: e::class.java.name)
-        LOG.error(e) { error }
-        Messages.showErrorDialog(project, error, title)
+        LOG.error(e) { errorMessage }
+        Messages.showErrorDialog(project, errorMessage, title)
     }
 
     companion object {
