@@ -84,6 +84,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
         codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()),
     )
 
+    @Suppress("UNUSED_PARAMETER")
     fun apiError(errorMessage: String, apiName: CodeTransformApiNames, jobId: String?) = CodetransformTelemetry.logApiError(
         reason = errorMessage,
         codeTransformSessionId = sessionId,
