@@ -452,9 +452,8 @@ class CodeTransformChatController(
         BrowserUtil.browse(message.link)
     }
 
-    private suspend fun handleAbsolutePathDetected(warning: String) {
+    private suspend fun handleAbsolutePathDetected(warning: String) =
         codeTransformChatHelper.addNewMessage(buildAbsolutePathWarning(warning))
-    }
 
     private suspend fun handleCodeTransformUploadCompleted() {
         codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
