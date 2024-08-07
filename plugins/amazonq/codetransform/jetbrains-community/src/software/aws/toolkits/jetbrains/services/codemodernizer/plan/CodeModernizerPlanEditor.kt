@@ -18,7 +18,10 @@ import com.intellij.ui.components.JBScrollPane
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.APPENDIX_TABLE_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.LOC_THRESHOLD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
@@ -516,10 +519,4 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
             bottomPadding,
             CodeModernizerUIConstants.PLAN_CONSTRAINTS.TABLE_PADDING_RIGHT,
         )
-
-    companion object {
-        private const val APPENDIX_TABLE_KEY = "-1"
-        private const val JOB_STATISTICS_TABLE_KEY = "0"
-        private const val LOC_THRESHOLD = 100000
-    }
 }
