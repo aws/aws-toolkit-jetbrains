@@ -209,7 +209,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     @Test
     fun `getBillingText on small project returns correct String`() {
         val expected = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
-            "376 lines of code were submitted for transformation. If you reach the quote for lines of code included " +
+            "376 lines of code were submitted for transformation. If you reach the quota for lines of code included " +
             "in your subscription, you will be charged $0.003 for each additional line of code. You might be charged up " +
             "to $1.13 for this transformation. To avoid being charged, stop the transformation job before it completes. " +
             "For more information on pricing and quotas, see <a href=\"https://aws.amazon.com/q/developer/pricing/\">" +
