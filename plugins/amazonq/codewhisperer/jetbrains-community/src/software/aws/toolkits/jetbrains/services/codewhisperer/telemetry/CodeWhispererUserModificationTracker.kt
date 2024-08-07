@@ -63,14 +63,15 @@ data class CodeInsertionDiff(
     val diff: Double
 )
 
-fun CodeInsertionDiff?.percentage(): Double {
-    if (this == null) return 1.0
-    return if (modified.isEmpty() || original.isEmpty()) {
-        1.0
-    } else {
-        min(1.0, (diff / original.length))
-    }
+fun CodeInsertionDiff?.percentage(): Double = when {
+    this == null -> 1.0
+
+    // TODO: should revisit this case
+    original.isEmpty() || modified.isEmpty() -> 1.0
+
+    else -> min(1.0, (diff / original.length))
 }
+
 
 @Service(Service.Level.PROJECT)
 class CodeWhispererUserModificationTracker(private val project: Project) : Disposable {
