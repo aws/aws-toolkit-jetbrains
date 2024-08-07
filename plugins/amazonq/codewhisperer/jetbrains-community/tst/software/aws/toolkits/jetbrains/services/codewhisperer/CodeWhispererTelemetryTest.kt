@@ -16,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -38,7 +39,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.emptyListResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.keystrokeInput
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.listOfEmptyRecommendationResponse
@@ -65,8 +65,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceRule
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererRuntime
@@ -76,6 +75,10 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 
 class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
+    @JvmField
+    @Rule
+    val mockTelemetryServiceRule = MockTelemetryServiceRule()
+
     private val userDecision = "codewhisperer_userDecision"
     private val userModification = "codewhisperer_userModification"
     private val serviceInvocation = "codewhisperer_serviceInvocation"
@@ -83,23 +86,13 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     private val awsModifySetting = "aws_modifySetting"
     private val codewhispererSuggestionState = "codewhispererSuggestionState"
 
-    private class TestTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
-
-    private lateinit var telemetryService: TelemetryService
     private lateinit var batcher: TelemetryBatcher
-    private lateinit var telemetryServiceSpy: TelemetryService
     private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
     override fun setUp() {
         super.setUp()
-        batcher = mock<TelemetryBatcher>()
-        telemetryService = TestTelemetryService(batcher = batcher)
-        telemetryServiceSpy = spy(telemetryService)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
+        batcher = mockTelemetryServiceRule.batcher()
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
         AwsSettings.getInstance().isTelemetryEnabled = true
     }
@@ -840,7 +833,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @After
     override fun tearDown() {
         super.tearDown()
-        telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
         CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
     }

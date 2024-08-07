@@ -3,31 +3,24 @@
 
 package software.aws.toolkits.jetbrains.settings
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationExtension
-import com.intellij.testFramework.junit5.TestDisposable
-import com.intellij.testFramework.replaceService
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.inOrder
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
-import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
+import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 
 @ExtendWith(ApplicationExtension::class)
 class AwsSettingsTest {
-    private class TestTelemetryService(
-        publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
-    ) : TelemetryService(publisher, batcher)
+    @JvmField
+    @RegisterExtension
+    val mockTelemetryService = MockTelemetryServiceExtension()
 
     private lateinit var telemetryService: TelemetryService
     private lateinit var batcher: TelemetryBatcher
@@ -35,18 +28,12 @@ class AwsSettingsTest {
     private lateinit var awsConfiguration: AwsConfiguration
 
     @BeforeEach
-    fun setup(@TestDisposable disposable: Disposable) {
-        batcher = mock()
-        telemetryService = spy(TestTelemetryService(batcher = batcher))
+    fun setup() {
+        batcher = mockTelemetryService.batcher()
+        telemetryService = mockTelemetryService.telemetryService()
         awsSettings = spy(DefaultAwsSettings())
         awsConfiguration = spy(AwsConfiguration())
         awsSettings.loadState(awsConfiguration)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
-    }
-
-    @AfterEach
-    fun tearDown() {
-        telemetryService.dispose()
     }
 
     @Test

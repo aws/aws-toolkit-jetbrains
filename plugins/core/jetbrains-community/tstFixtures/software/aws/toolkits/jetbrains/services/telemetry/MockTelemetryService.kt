@@ -3,24 +3,23 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
-import com.intellij.openapi.components.service
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
+import com.intellij.testFramework.replaceService
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.rules.ExternalResource
-import org.mockito.kotlin.reset
-import org.mockito.kotlin.spy
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
-import software.aws.toolkits.core.telemetry.DefaultTelemetryBatcher
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 
-class NoOpTelemetryService : TelemetryService(publisher, spy(DefaultTelemetryBatcher(publisher))) {
+class NoOpTelemetryService : TelemetryService(mock(), mock()) {
     fun batcher() = super.batcher
-
-    private companion object {
-        private val publisher: TelemetryPublisher by lazy { NoOpPublisher() }
-    }
+    fun publisher() = super.publisher
 }
 
 class NoOpPublisher : TelemetryPublisher {
@@ -32,15 +31,23 @@ class NoOpPublisher : TelemetryPublisher {
 }
 
 sealed class MockTelemetryServiceBase : ExternalResource() {
-    private val mockTelemetryService: NoOpTelemetryService
-        get() = service<TelemetryService>() as NoOpTelemetryService
+    private lateinit var mockTelemetryService: NoOpTelemetryService
+    private lateinit var parentDisposable: Disposable
+
+    override fun before() {
+        parentDisposable = Disposer.newDisposable()
+        mockTelemetryService = spy(NoOpTelemetryService())
+        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, parentDisposable)
+    }
 
     override fun after() {
-        reset(batcher())
+        Disposer.dispose(parentDisposable)
+        Disposer.dispose(mockTelemetryService)
     }
 
     fun telemetryService() = mockTelemetryService
     fun batcher() = mockTelemetryService.batcher()
+    fun publisher() = mockTelemetryService.publisher()
 }
 
 class MockTelemetryServiceRule : MockTelemetryServiceBase()
