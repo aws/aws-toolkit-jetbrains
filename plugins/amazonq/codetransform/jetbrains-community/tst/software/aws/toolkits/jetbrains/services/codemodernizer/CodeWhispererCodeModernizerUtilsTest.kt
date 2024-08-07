@@ -209,10 +209,11 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     @Test
     fun `getBillingText on small project returns correct String`() {
         val expected = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
-            "376 lines of code submitted for transformation, maximum charge of this transformation is 376 * $0.003 = $1.13" +
-            " (for latest pricing, see https://aws.amazon.com/q/developer/pricing/). This charge applies only after the free " +
-            "limit in your organization's subscriptions is exhausted. To prevent the charge, you can stop the job before the " +
-            "transformation completes.<br></body></html>"
+            "376 lines of code were submitted for transformation. If you reach the quote for lines of code included " +
+            "in your subscription, you will be charged $0.003 for each additional line of code. You might be charged up " +
+            "to $1.13 for this transformation. To avoid being charged, stop the transformation job before it completes. " +
+            "For more information on pricing and quotas, see <a href=\"https://aws.amazon.com/q/developer/pricing/\">" +
+            "Amazon Q Developer pricing</a>.</p>"
         val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
     }

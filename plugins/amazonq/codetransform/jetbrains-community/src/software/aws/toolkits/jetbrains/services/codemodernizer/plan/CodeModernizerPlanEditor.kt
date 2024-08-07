@@ -82,6 +82,11 @@ class CodeModernizerPlanEditor(val project: Project, val virtualFile: VirtualFil
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
+                                    addHyperlinkListener { he ->
+                                        if (he.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                                            BrowserUtil.browse(he.url)
+                                        }
+                                    }
                                     isEditable = false
                                     isOpaque = false
                                     alignmentX = Component.LEFT_ALIGNMENT
