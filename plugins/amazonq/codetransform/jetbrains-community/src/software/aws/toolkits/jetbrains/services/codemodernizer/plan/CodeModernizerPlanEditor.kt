@@ -78,7 +78,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                     if (JOB_STATISTICS_TABLE_KEY in tableMapping) {
                         val planTable = mapper.readValue(tableMapping[JOB_STATISTICS_TABLE_KEY], PlanTable::class.java)
                         val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
-                        if (linesOfCode != null && linesOfCode > 100000 && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
+                        if (linesOfCode != null && linesOfCode > LOC_THRESHOLD && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
                                 JEditorPane("text/html", billingText).apply {
@@ -520,5 +520,6 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
     companion object {
         private const val APPENDIX_TABLE_KEY = "-1"
         private const val JOB_STATISTICS_TABLE_KEY = "0"
+        private const val LOC_THRESHOLD = 100000
     }
 }
