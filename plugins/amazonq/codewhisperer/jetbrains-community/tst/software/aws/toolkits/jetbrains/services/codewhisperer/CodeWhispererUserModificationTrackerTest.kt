@@ -214,7 +214,7 @@ class CodeWhispererUserModificationTrackerTest {
 
                 original.isEmpty() || modified.isEmpty() -> 1.0
 
-                else -> min(1.0, (levenshtein.distance(modified, original)/original.length))
+                else -> min(1.0, (levenshtein.distance(modified, original) / original.length))
             }
 
             val actual = diff.percentage()

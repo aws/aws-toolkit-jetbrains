@@ -72,7 +72,6 @@ fun CodeInsertionDiff?.percentage(): Double = when {
     else -> min(1.0, (diff / original.length))
 }
 
-
 @Service(Service.Level.PROJECT)
 class CodeWhispererUserModificationTracker(private val project: Project) : Disposable {
     private val acceptedSuggestions = LinkedBlockingDeque<UserModificationTrackingEntry>(DEFAULT_MAX_QUEUE_SIZE)
