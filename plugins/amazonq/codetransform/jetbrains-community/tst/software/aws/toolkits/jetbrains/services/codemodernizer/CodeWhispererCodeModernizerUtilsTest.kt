@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedEx
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
@@ -215,5 +216,17 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val expectedWarning = "I detected 1 potential absolute file path(s) in your pom.xml file: **system/**. " +
             "Absolute file paths might cause issues when I build your code. Any errors will show up in the build log."
         assertThat(parseBuildFile(file.virtualFile)).isEqualTo(expectedWarning)
+    }
+
+    @Test
+    fun `getBillingText on small project returns correct String`() {
+        val expected = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
+            "376 lines of code were submitted for transformation. If you reach the quota for lines of code included " +
+            "in your subscription, you will be charged $0.003 for each additional line of code. You might be charged up " +
+            "to $1.13 for this transformation. To avoid being charged, stop the transformation job before it completes. " +
+            "For more information on pricing and quotas, see <a href=\"https://aws.amazon.com/q/developer/pricing/\">" +
+            "Amazon Q Developer pricing</a>.</p>"
+        val actual = getBillingText(376)
+        assertThat(expected).isEqualTo(actual)
     }
 }
