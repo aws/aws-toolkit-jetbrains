@@ -189,9 +189,9 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
         }
         val diff = checker.distance(currString, acceptedString)
         return CodeInsertionDiff(
-            acceptedString,
-            currString,
-            diff
+            original = acceptedString,
+            modified = currString,
+            diff = diff
         )
     }
 
@@ -211,8 +211,8 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             codewhispererTriggerType = suggestion.triggerType,
             credentialStartUrl = startUrl,
             codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
-            codewhispererCharacterModified = diff?.modified?.length ?: 0,
-            codewhispererCharacterTotal = diff?.original?.length ?: 0
+            codewhispererCharactersModified = diff?.modified?.length ?: 0,
+            codewhispererCharactersAccepted = diff?.original?.length ?: 0
         )
     }
 

@@ -104,14 +104,9 @@
             "description": "Programming language associated with the message"
         },
         {
-            "name": "codewhispererCharacterModified",
+            "name": "codewhispererCharactersModified",
             "type": "int",
             "description": "number of characters modified by users in the accepted codewhisperer suggestion"
-        },
-        {
-            "name": "codewhispererCharacterTotal",
-            "type": "int",
-            "description": "length of the codewhisperer suggestion accepted by users"
         },
         {
             "name": "cwsprChatConversationType",
@@ -429,10 +424,10 @@
             "description": "Percentage of user modifications for the selected suggestion until a fixed period of time",
             "metadata": [
                 {
-                    "type": "codewhispererCharacterModified"
+                    "type": "codewhispererCharactersAccepted"
                 },
                 {
-                    "type": "codewhispererCharacterTotal"
+                    "type": "codewhispererCharactersModified"
                 },
                 {
                     "type": "codewhispererCompletionType"
