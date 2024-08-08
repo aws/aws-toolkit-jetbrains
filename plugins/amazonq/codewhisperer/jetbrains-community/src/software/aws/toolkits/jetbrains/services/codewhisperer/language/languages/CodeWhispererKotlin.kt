@@ -13,6 +13,8 @@ class CodeWhispererKotlin private constructor() : CodeWhispererProgrammingLangua
 
     override fun isCodeCompletionSupported(): Boolean = true
 
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "kotlin"
 

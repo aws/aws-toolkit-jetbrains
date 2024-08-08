@@ -114,7 +114,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val language = targetContext.programmingLanguage
         val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
-        val supplementalContext = if (isTst) {
+        // if utg is not supported, use crossfile context as fallback
+        val supplementalContext = if (isTst && language.isUTGSupported()) {
             when (shouldFetchUtgContext(language, group)) {
                 true -> extractSupplementalFileContextForTst(psiFile, targetContext)
                 false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
@@ -299,6 +300,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
         }
 
+        @Suppress("UNUSED_PARAMETER")
         fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
             if (!language.isSupplementalContextSupported()) {
                 return null
@@ -312,7 +314,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererJsx,
                 is CodeWhispererTsx -> true
 
-                else -> userGroup == CodeWhispererUserGroup.CrossFile
+                // TODO: languages under A/B, should read feature flag from [CodeWhispererFeatureConfigService]
+                else -> false
             }
         }
     }

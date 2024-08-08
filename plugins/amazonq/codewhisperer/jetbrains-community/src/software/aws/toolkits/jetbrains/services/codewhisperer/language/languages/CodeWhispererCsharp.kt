@@ -17,6 +17,8 @@ class CodeWhispererCsharp private constructor() : CodeWhispererProgrammingLangua
 
     override fun isAutoFileScanSupported(): Boolean = true
 
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "csharp"
 

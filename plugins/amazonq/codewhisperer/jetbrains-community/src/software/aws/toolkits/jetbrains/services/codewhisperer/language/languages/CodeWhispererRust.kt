@@ -13,6 +13,8 @@ class CodeWhispererRust private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isCodeCompletionSupported(): Boolean = true
 
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "rust"
 
