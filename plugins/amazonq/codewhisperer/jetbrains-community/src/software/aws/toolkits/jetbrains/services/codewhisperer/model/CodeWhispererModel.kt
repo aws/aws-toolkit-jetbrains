@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.TimeoutCancellationException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -17,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -45,38 +45,27 @@ data class FileContextInfo(
     val programmingLanguage: CodeWhispererProgrammingLanguage
 )
 
-data class SupplementalContextInfo(
-    val isUtg: Boolean,
-    val contents: List<Chunk>,
-    val targetFileName: String,
-    val strategy: SupplementalContextStrategy,
-    val latency: Long = 0L,
-) {
-    val contentLength: Int
-        get() = contents.fold(0) { acc, chunk ->
-            acc + chunk.content.length
-        }
+sealed interface SupplementalContextResult {
+    val isUtg: Boolean
 
-    val isProcessTimeout: Boolean
-        get() = latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
-
-    companion object {
-        fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = false,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = CrossFileStrategy.Empty,
-            latency = 0L
-        )
-
-        fun emptyUtgFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = true,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = UtgStrategy.Empty,
-            latency = 0L
-        )
+    data class Success(
+        override val isUtg: Boolean,
+        val contents: List<Chunk>,
+        val targetFileName: String,
+        val strategy: SupplementalContextStrategy,
+        var latency: Long = 0L,
+    ) : SupplementalContextResult {
+        val contentLength: Int
+            get() = contents.fold(0) { acc, chunk ->
+                acc + chunk.content.length
+            }
     }
+
+    data class Failure(override val isUtg: Boolean, val error: Exception, val targetFileName: String, var latency: Long = 0L) : SupplementalContextResult {
+        fun isTimeoutFailure() = error is TimeoutCancellationException
+    }
+
+    data class NotSupported(override val isUtg: Boolean, val language: CodeWhispererProgrammingLanguage, val targetFileName: String) : SupplementalContextResult
 }
 
 data class RecommendationContext(

@@ -21,7 +21,10 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,9 +44,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFou
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -62,7 +65,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -76,9 +79,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
@@ -91,7 +92,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererService : Disposable {
+class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
@@ -149,7 +150,7 @@ class CodeWhispererService : Disposable {
         val requestContext = try {
             getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
         } catch (e: Exception) {
-            LOG.debug { e.message.toString() }
+            LOG.error { "Unable to retrieve users' file context for inline suggestion request ${e.message}" }
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
@@ -193,19 +194,19 @@ class CodeWhispererService : Disposable {
         // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
         // It's possible and ok that coroutine will keep running until the next time we check it's state.
         // As long as we don't show to the user extra info we are good.
-        val coroutineScope = disposableCoroutineScope(popup)
 
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
-        val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-            buildCodeWhispererRequest(
-                requestContext.fileContextInfo,
-                requestContext.supplementalContext,
-                requestContext.customizationArn
-            )
-        )
         coroutineScope.launch {
+            val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
+                buildCodeWhispererRequest(
+                    requestContext.fileContextInfo,
+                    requestContext.supplementalContext(),
+                    requestContext.customizationArn
+                )
+            )
+
             try {
                 var startTime = System.nanoTime()
                 requestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
@@ -622,28 +623,18 @@ class CodeWhispererService : Disposable {
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
-        val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = runBlocking {
+        val supplementalContext = coroutineScope.async {
+            val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
             try {
                 withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
                     FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
                 }
+            } catch (e: TimeoutCancellationException) {
+                LOG.debug { "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms" }
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             } catch (e: Exception) {
-                if (e is TimeoutCancellationException) {
-                    LOG.debug {
-                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                    }
-                    SupplementalContextInfo(
-                        isUtg = isTstFile,
-                        contents = emptyList(),
-                        latency = System.currentTimeMillis() - startFetchingTimestamp,
-                        targetFileName = fileContext.filename,
-                        strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
-                    )
-                } else {
-                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                    null
-                }
+                LOG.error { "Run into unexpected error while fetching supplemental context, error: ${e.message}" }
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             }
         }
 
@@ -784,7 +775,7 @@ class CodeWhispererService : Disposable {
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextInfo?,
+            supplementalContext: SupplementalContextResult,
             customizationArn: String?
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
@@ -796,12 +787,18 @@ class CodeWhispererService : Disposable {
                 .filename(fileContextInfo.filename)
                 .programmingLanguage(programmingLanguage)
                 .build()
-            val supplementalContexts = supplementalContext?.contents?.map {
-                SupplementalContext.builder()
-                    .content(it.content)
-                    .filePath(it.path)
-                    .build()
-            }.orEmpty()
+
+            val cwsprSupplementalContext = if (supplementalContext is SupplementalContextResult.Success) {
+                supplementalContext.contents.map {
+                    SupplementalContext.builder()
+                        .content(it.content)
+                        .filePath(it.path)
+                        .build()
+                }
+            } else {
+                emptyList()
+            }
+
             val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
                 RecommendationsWithReferencesPreference.ALLOW
             } else {
@@ -810,7 +807,7 @@ class CodeWhispererService : Disposable {
 
             return GenerateCompletionsRequest.builder()
                 .fileContext(fileContext)
-                .supplementalContexts(supplementalContexts)
+                .supplementalContexts(cwsprSupplementalContext)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
@@ -825,11 +822,23 @@ data class RequestContext(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    val supplementalContext: SupplementalContextInfo?,
+    private val supplementalContextDeferred: Deferred<SupplementalContextResult>,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
-    val customizationArn: String?
-)
+    val customizationArn: String?,
+) {
+    private var supplementalContext: SupplementalContextResult? = null
+
+    fun supplementalContext(): SupplementalContextResult = if (supplementalContext != null) {
+        supplementalContext as SupplementalContextResult
+    } else {
+        runBlocking {
+            supplementalContextDeferred.await().also {
+                supplementalContext = it
+            }
+        }
+    }
+}
 
 data class ResponseContext(
     val sessionId: String,
