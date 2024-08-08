@@ -145,21 +145,21 @@ object IdeVersions {
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "242.20224.38-EAP-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.33",
-                    "PythonCore:242.20224.38",
-                    "Docker:242.20224.44"
+                    "org.toml.lang:242.20224.155",
+                    "PythonCore:242.20224.300",
+                    "Docker:242.20224.237"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "242.20224.38-EAP-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -167,17 +167,17 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.33",
-                    "Pythonid:242.20224.38",
-                    "org.jetbrains.plugins.go:242.20224.38",
+                    "org.toml.lang:242.20224.155",
+                    "Pythonid:242.20224.300",
+                    "org.jetbrains.plugins.go:242.20224.300",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-EAP7-SNAPSHOT",
+                sdkVersion = "2024.2-RC1-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0-eap07"
+                nugetVersion = " 2024.2.0-rc01"
             )
         ),
 
