@@ -21,7 +21,7 @@ class ToolkitFeedbackDialog(project: Project) : FeedbackDialog(project) {
     override fun getHelpId() = HelpIds.AWS_TOOLKIT_GETTING_STARTED.id
 
     override suspend fun sendFeedback() {
-        sendFeedbackWithExperimentsMetadata(sentiment, commentText)
+        sendFeedbackWithExperimentsMetadata(sentiment, commentText, mapOf(FEEDBACK_ENTRYPOINT to productName()))
     }
 }
 

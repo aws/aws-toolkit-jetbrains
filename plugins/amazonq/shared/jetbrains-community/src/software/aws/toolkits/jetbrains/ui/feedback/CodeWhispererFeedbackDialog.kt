@@ -17,7 +17,9 @@ class CodeWhispererFeedbackDialog(project: Project) : FeedbackDialog(project) {
         TelemetryService.getInstance().sendFeedback(
             sentiment,
             "CodeWhisperer onboarding: $commentText",
-            mapOf(FEEDBACK_SOURCE to "CodeWhisperer onboarding")
+            mapOf(FEEDBACK_SOURCE to "CodeWhisperer onboarding", FEEDBACK_ENTRYPOINT to productName())
         )
     }
 }
+
+
