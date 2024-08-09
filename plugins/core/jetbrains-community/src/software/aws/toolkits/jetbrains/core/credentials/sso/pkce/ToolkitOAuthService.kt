@@ -16,7 +16,9 @@ import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.Url
 import com.intellij.util.Urls.newFromEncoded
 import com.intellij.util.io.DigestUtil
+import com.jetbrains.rd.util.AtomicReference
 import io.netty.buffer.Unpooled
+import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.QueryStringDecoder
@@ -38,6 +40,9 @@ import java.util.concurrent.CompletableFuture
 
 const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 
+// TODO: naive short term way to mitigate 404 not found (tcp connection is kept alive after success/failure/cancellation)
+private var channel: AtomicReference<Channel?> = AtomicReference(null)
+
 @Service
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override val name: String = "aws/toolkit"
@@ -45,6 +50,12 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     fun hasPendingRequest() = currentRequest.get() != null
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {
+        channel.get()?.let {
+            if (it.isOpen) {
+                it.close().sync()
+            }
+        }
+
         val currentRequest = currentRequest.get()
         val toolkitRequest = currentRequest?.request as? ToolkitOAuthRequest
 
@@ -183,10 +194,15 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
     }
 
     override fun isSupported(request: FullHttpRequest): Boolean {
+        /**
+         * comment this out because if we return false early here the TCP connection will be still kept alive by the IDE. In this state, users
+         * following login attempts will keep seeing 404 not found page, which could be only resolved by (1) re-start the IDE (2) wait until the TCP connection
+         * between browsers and IDE is closed
+         */
         // only handle if we're actively waiting on a redirect
-        if (!oauthService().hasPendingRequest()) {
-            return false
-        }
+//        if (!oauthService().hasPendingRequest()) {
+//            return false
+//        }
 
         // only handle the /oauth/callback endpoint
         return request.uri().trim('/').startsWith("oauth/callback")
@@ -195,6 +211,7 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
 
 internal class ToolkitOAuthCallbackResultService : RestService() {
     override fun execute(urlDecoder: QueryStringDecoder, request: FullHttpRequest, context: ChannelHandlerContext): String? {
+        channel.getAndSet(context.channel())
         val path = urlDecoder.path().substringAfter(getServiceName()).trim('/')
         val type = when {
             path.endsWith(".css") -> "text/css"
