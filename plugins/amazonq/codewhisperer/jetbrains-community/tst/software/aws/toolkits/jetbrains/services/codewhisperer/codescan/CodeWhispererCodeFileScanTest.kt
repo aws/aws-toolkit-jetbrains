@@ -43,7 +43,10 @@ import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureR
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.lang.management.ManagementFactory
 import java.util.Base64
+import java.util.Random
 import java.util.UUID
 import java.util.zip.ZipFile
 import kotlin.io.path.relativeTo
@@ -164,6 +167,131 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
             onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
         }
+    }
+
+    @Test
+    fun `test run() - measure CPU and memory usage`() {
+        // Create a mock payload file of 198KB in bytes
+        val mockPayloadFile = createMockPayloadFile(198 * 1024)
+
+        // Set up the mock payload
+        val mockPayloadContext = PayloadContext(
+            CodewhispererLanguage.Python,
+            1,
+            1,
+            10,
+            listOf(),
+            600,
+            199 * 1024
+        )
+        val mockPayload = Payload(mockPayloadContext, mockPayloadFile)
+
+        sessionConfigSpy.stub {
+            onGeneric { sessionConfigSpy.createPayload() }.thenReturn(mockPayload)
+        }
+
+        // Set up CPU and Memory monitoring
+        val runtime = Runtime.getRuntime()
+        val bean = ManagementFactory.getThreadMXBean()
+        val startCpuTime = bean.getCurrentThreadCpuTime()
+        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val startSystemTime = System.nanoTime()
+
+        // Run the code scan
+        runBlocking {
+            codeScanSessionSpy.run()
+        }
+
+        // Calculate CPU and memory usage
+        val endCpuTime = bean.getCurrentThreadCpuTime()
+        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val endSystemTime = System.nanoTime()
+
+        val cpuTimeUsedNanos = endCpuTime - startCpuTime
+        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
+        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
+
+        val memoryUsed = endMemoryUsage - startMemoryUsage
+        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
+
+        // Calculate CPU usage in percentage
+        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
+
+        println("CPU Usage: $cpuUsagePercentage%")
+
+        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
+        assertThat(cpuUsagePercentage).isLessThan(30.0)
+        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
+    }
+
+    @Test
+    fun `test run() - measure CPU and memory usage with payload of 150KB`() {
+        // Create a mock payload file of 198KB in bytes
+        val mockPayloadFile = createMockPayloadFile(150 * 1024)
+
+        // Set up the mock payload
+        val mockPayloadContext = PayloadContext(
+            CodewhispererLanguage.Python,
+            1,
+            1,
+            10,
+            listOf(),
+            600,
+            150 * 1024
+        )
+        val mockPayload = Payload(mockPayloadContext, mockPayloadFile)
+
+        sessionConfigSpy.stub {
+            onGeneric { sessionConfigSpy.createPayload() }.thenReturn(mockPayload)
+        }
+
+        // Set up CPU and Memory monitoring
+        val runtime = Runtime.getRuntime()
+        val bean = ManagementFactory.getThreadMXBean()
+        val startCpuTime = bean.getCurrentThreadCpuTime()
+        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val startSystemTime = System.nanoTime()
+
+        // Run the code scan
+        runBlocking {
+            codeScanSessionSpy.run()
+        }
+
+        // Calculate CPU and memory usage
+        val endCpuTime = bean.getCurrentThreadCpuTime()
+        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val endSystemTime = System.nanoTime()
+
+        val cpuTimeUsedNanos = endCpuTime - startCpuTime
+        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
+        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
+
+        val memoryUsed = endMemoryUsage - startMemoryUsage
+        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
+
+        // Calculate CPU usage in percentage
+        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
+
+        println("CPU Usage: $cpuUsagePercentage%")
+
+        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
+        assertThat(cpuUsagePercentage).isLessThan(30.0)
+        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
+    }
+
+    private fun createMockPayloadFile(sizeInBytes: Int): File {
+        val tempFile = File.createTempFile("mockPayload", ".js")
+        tempFile.deleteOnExit()
+
+        FileOutputStream(tempFile).use { fos ->
+            val helloWorldBytes = "Hello world".toByteArray()
+            val remainingBytes = ByteArray(sizeInBytes - helloWorldBytes.size)
+            Random().nextBytes(remainingBytes)
+
+            fos.write(helloWorldBytes)
+            fos.write(remainingBytes)
+        }
+        return tempFile
     }
 
     @Test
