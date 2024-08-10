@@ -43,10 +43,8 @@ import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureR
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.lang.management.ManagementFactory
 import java.util.Base64
-import java.util.Random
 import java.util.UUID
 import java.util.zip.ZipFile
 import kotlin.io.path.relativeTo
