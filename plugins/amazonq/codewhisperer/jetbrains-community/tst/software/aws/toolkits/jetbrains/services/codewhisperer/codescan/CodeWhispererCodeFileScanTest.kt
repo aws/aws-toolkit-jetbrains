@@ -145,7 +145,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         file4 = virtualFile4.toNioPath().toFile()
 
         // Create a 200KB file
-        val content = "a".repeat(200 * 1024) // 200KB of 'a' characters
+        val content = "a".repeat(200 * 1024)
         psifile5 = projectRule.fixture.addFileToProject("test.txt", content)
         file5 = psifile5.virtualFile.toNioPath().toFile()
 
@@ -159,7 +159,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         setupResponse(psifile5.virtualFile.toNioPath().relativeTo(sessionConfigSpy3.projectRoot.toNioPath()))
 
         // Create a 150KB file
-        val codeContentForPayload = "a".repeat(150 * 1024) // 150KB of 'a' characters
+        val codeContentForPayload = "a".repeat(150 * 1024)
         psifile6 = projectRule.fixture.addFileToProject("test.txt", codeContentForPayload)
         file6 = psifile6.virtualFile.toNioPath().toFile()
 
@@ -242,8 +242,6 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         // Calculate CPU usage in percentage
         val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
 
-        println("CPU Usage: $cpuUsagePercentage%")
-
         assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
         assertThat(cpuUsagePercentage).isLessThan(30.0)
         assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
@@ -278,26 +276,9 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         // Calculate CPU usage in percentage
         val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
 
-        println("CPU Usage: $cpuUsagePercentage%")
-
         assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
         assertThat(cpuUsagePercentage).isLessThan(30.0)
         assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
-    }
-
-    private fun createMockPayloadFile(sizeInBytes: Int): File {
-        val tempFile = File.createTempFile("mockPayload", ".js")
-        tempFile.deleteOnExit()
-
-        FileOutputStream(tempFile).use { fos ->
-            val helloWorldBytes = "Hello world".toByteArray()
-            val remainingBytes = ByteArray(sizeInBytes - helloWorldBytes.size)
-            Random().nextBytes(remainingBytes)
-
-            fos.write(helloWorldBytes)
-            fos.write(remainingBytes)
-        }
-        return tempFile
     }
 
     @Test
