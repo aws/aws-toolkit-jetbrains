@@ -57,14 +57,14 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     private lateinit var psifile2: PsiFile
     private lateinit var psifile3: PsiFile
     private lateinit var psifile4: PsiFile
-    private lateinit var psifile5: PsiFile
-    private lateinit var psifile6: PsiFile
+    private lateinit var psifilePerformanceTest: PsiFile
+    private lateinit var psifilePerformanceTest2: PsiFile
     private lateinit var file: File
     private lateinit var file2: File
     private lateinit var file3: File
     private lateinit var file4: File
-    private lateinit var file5: File
-    private lateinit var file6: File
+    private lateinit var performanceTestfileWithPayload200KB: File
+    private lateinit var performanceTestfileWithPayload150KB: File
     private lateinit var virtualFile3: VirtualFile
     private lateinit var virtualFile4: VirtualFile
     private lateinit var sessionConfigSpy: CodeScanSessionConfig
@@ -146,31 +146,31 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
         // Create a 200KB file
         val content = "a".repeat(200 * 1024)
-        psifile5 = projectRule.fixture.addFileToProject("test.txt", content)
-        file5 = psifile5.virtualFile.toNioPath().toFile()
+        psifilePerformanceTest = projectRule.fixture.addFileToProject("test.txt", content)
+        performanceTestfileWithPayload200KB = psifilePerformanceTest.virtualFile.toNioPath().toFile()
 
         sessionConfigSpy3 = spy(
             CodeScanSessionConfig.create(
-                psifile5.virtualFile,
+                psifilePerformanceTest.virtualFile,
                 project,
                 CodeWhispererConstants.CodeAnalysisScope.FILE
             )
         )
-        setupResponse(psifile5.virtualFile.toNioPath().relativeTo(sessionConfigSpy3.projectRoot.toNioPath()))
+        setupResponse(psifilePerformanceTest.virtualFile.toNioPath().relativeTo(sessionConfigSpy3.projectRoot.toNioPath()))
 
         // Create a 150KB file
         val codeContentForPayload = "a".repeat(150 * 1024)
-        psifile6 = projectRule.fixture.addFileToProject("test.txt", codeContentForPayload)
-        file6 = psifile6.virtualFile.toNioPath().toFile()
+        psifilePerformanceTest2 = projectRule.fixture.addFileToProject("test.txt", codeContentForPayload)
+        performanceTestfileWithPayload150KB = psifilePerformanceTest2.virtualFile.toNioPath().toFile()
 
         sessionConfigSpy4 = spy(
             CodeScanSessionConfig.create(
-                psifile6.virtualFile,
+                psifilePerformanceTest2.virtualFile,
                 project,
                 CodeWhispererConstants.CodeAnalysisScope.FILE
             )
         )
-        setupResponse(psifile6.virtualFile.toNioPath().relativeTo(sessionConfigSpy4.projectRoot.toNioPath()))
+        setupResponse(psifilePerformanceTest2.virtualFile.toNioPath().relativeTo(sessionConfigSpy4.projectRoot.toNioPath()))
         sessionConfigSpy = spy(
             CodeScanSessionConfig.create(
                 psifile.virtualFile,
