@@ -264,7 +264,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun isBuildOrBin(filePath: String): Boolean {
-        val regex = Regex("""[/\\](bin|build|node_modules|venv|.venv|env|\.idea)[/\\]""", RegexOption.IGNORE_CASE)
+        val regex = Regex("""[/\\](bin|build|node_modules|venv|.venv|env|\.idea|.conda)[/\\]""", RegexOption.IGNORE_CASE)
         return regex.find(filePath) != null
     }
 
@@ -272,7 +272,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val collectedFiles = mutableListOf<String>()
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
-        val allFiles: MutableList<VirtualFile> = ArrayList()
+        val allFiles = mutableListOf<VirtualFile>()
         project.guessProjectDir()?.let {
             VfsUtilCore.visitChildrenRecursively(
                 it,
