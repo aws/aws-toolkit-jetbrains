@@ -35,7 +35,12 @@ phases:
       - |
         >$AWS_CONFIG_FILE echo "[default]
         role_arn=$ASSUME_ROLE_ARN
-        credential_source=EcsContainer"
+        credential_source=EcsContainer
+        [profile container]
+        credential_source=EcsContainer
+        [profile nuget]
+        credential_process=aws configure export-credentials --profile container"
+      - dotnet codeartifact-creds configure set profile nuget
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
       - chmod +x gradlew
