@@ -1,3 +1,29 @@
+# _3.22_ (2024-08-08)
+- **(Feature)** feat(Amazon Q Code Transformation): warn user if absolute path found in pom.xml
+- **(Feature)** feat(Amazon Q Code Transformation): show pro tier users estimated cost of /transform on projects over 100K lines
+- **(Bug Fix)** fix(Amazon Q Code Transformation): prevent empty chat bubble from appearing when starting or cancelling a transformation
+- **(Bug Fix)** Amazon Q /dev: include a retry option for the same prompt after folder reselection
+- **(Bug Fix)** Fix inability to open files on double click and open context menu on right click in the S3 bucket viewer
+- **(Bug Fix)** fix(amazonq): Amazon Q chat `@workspace` uses more than 20% cpu
+- **(Bug Fix)** Fix 'Cannot create extension' in AWS Toolkit
+
+# _3.21_ (2024-08-01)
+- **(Bug Fix)** Fix NullPointerException that may happen when re-authenticating to Amazon Q
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with the max tabs notification not being dismissible
+- **(Bug Fix)** Fix Amazon Q chat context menu actions show up in all chat windows
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with an incorrect input cursor position in the prompt text box
+- **(Bug Fix)** Amazon Q Chat: Showing/hiding the scrollbars is now controlled by the OS settings
+
+# _3.20_ (2024-07-26)
+- **(Bug Fix)** Fix Q chat not responding in 2023.2 and 2023.3
+
+# _3.19_ (2024-07-25)
+- **(Feature)** Q feature dev: Use common code extensions to filter relevant files
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug where multiline user input appears like a code block instead of a paragraph
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug when the prompt input exceeds the width of the chat box it's not always wrapped correctly.
+- **(Bug Fix)** Fix 'ContainerDisposedException' when attempting to sign-in to Amazon Q
+- **(Bug Fix)** Fix Q window reauthenticate button not functioning due to illegal function call outisde of EDT
+
 # _3.18_ (2024-07-19)
 - **(Feature)** Add support for 2024.2
 - **(Bug Fix)** Fix bug when workspace index cache is not loaded

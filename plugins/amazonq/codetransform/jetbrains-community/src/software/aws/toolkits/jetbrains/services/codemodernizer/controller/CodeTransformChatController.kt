@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
@@ -25,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAbsolutePathWarning
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
@@ -76,6 +78,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -90,7 +93,9 @@ class CodeTransformChatController(
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
         telemetry.prepareForNewJobSubmission()
+
         if (!checkForAuth(message.tabId)) {
+            telemetry.initiateTransform("User is not authenticated")
             return
         }
 
@@ -101,6 +106,9 @@ class CodeTransformChatController(
                 return
             }
         }
+
+        // Publish a metric when transform is first initiated from chat prompt.
+        telemetry.initiateTransform()
 
         codeTransformChatHelper.addNewMessage(
             buildCheckingValidProjectChatContent()
@@ -117,7 +125,6 @@ class CodeTransformChatController(
             codeTransformChatHelper.addNewMessage(
                 buildStartNewTransformFollowup()
             )
-
             return
         }
 
@@ -127,6 +134,7 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.chatDelayShort()
 
+        // TODO: deprecated metric - remove after BI started using new metric
         telemetry.jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
@@ -178,8 +186,12 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
         if (!checkForAuth(message.tabId)) {
+            telemetry.submitSelection("Cancel", null, "User is not authenticated")
             return
         }
+
+        // Publish metric for user selection
+        telemetry.submitSelection("Cancel")
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserCancelledChatContent())
@@ -189,6 +201,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
         if (!checkForAuth(message.tabId)) {
+            telemetry.submitSelection("Confirm", null, "User is not authenticated")
             return
         }
 
@@ -199,19 +212,22 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
-
             addNewMessage(buildCompileLocalInProgressChatContent())
         }
 
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
-        val sourceJdk = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project) ?: context.project.tryGetJdk()
-            ?: throw RuntimeException("Unable to determine source JDK version")
+        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project)
+        logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
+        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
 
         val selection = CustomerSelection(
             moduleVirtualFile,
             sourceJdk,
             JavaSdkVersion.JDK_17
         )
+
+        // Publish metric to capture user selection before local build starts
+        telemetry.submitSelection("Confirm", selection)
 
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
     }
@@ -229,6 +245,16 @@ class CodeTransformChatController(
 
         codeTransformChatHelper.run {
             updateLastPendingMessage(buildCompileLocalSuccessChatContent())
+        }
+
+        // show user a non-blocking warning if their build file contains an absolute path
+        try {
+            val warningMessage = codeModernizerManager.parseBuildFile()
+            if (warningMessage != null) {
+                handleAbsolutePathDetected(warningMessage)
+            }
+        } catch (e: Exception) {
+            // swallow error and move on
         }
 
         runInEdt {
@@ -267,7 +293,10 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
-        artifactHandler.displayDiffAction(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+        artifactHandler.displayDiffAction(
+            CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
+            CodeTransformVCSViewerSrcComponents.Chat
+        )
     }
 
     override suspend fun processCodeTransformViewSummary(message: IncomingCodeTransformMessage.CodeTransformViewSummary) {
@@ -424,6 +453,9 @@ class CodeTransformChatController(
     override suspend fun processBodyLinkClicked(message: IncomingCodeTransformMessage.BodyLinkClicked) {
         BrowserUtil.browse(message.link)
     }
+
+    private suspend fun handleAbsolutePathDetected(warning: String) =
+        codeTransformChatHelper.addNewMessage(buildAbsolutePathWarning(warning))
 
     private suspend fun handleCodeTransformUploadCompleted() {
         codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())

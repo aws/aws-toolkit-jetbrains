@@ -7,10 +7,6 @@ import software.aws.toolkits.gradle.jacoco.RemoteCoverage.Companion.enableRemote
 val remoteRobotPort: String by project
 val ideProfileName: String by project
 
-repositories {
-    maven { url = uri("https://cache-redirector.jetbrains.com/intellij-dependencies") }
-}
-
 plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-testing")
@@ -43,8 +39,8 @@ tasks.test {
 }
 
 tasks.register<Test>("uiTestCore") {
-    dependsOn(":sandbox-all:prepareUiTestingSandbox")
-    inputs.files(":sandbox-all:prepareUiTestingSandbox")
+    dependsOn(":sandbox-all:prepareTestIdeUiSandbox")
+    inputs.files(":sandbox-all:prepareTestIdeUiSandbox")
 
     systemProperty("ide.experimental.ui", false)
     systemProperty("org.gradle.project.ideProfileName", ideProfileName)
