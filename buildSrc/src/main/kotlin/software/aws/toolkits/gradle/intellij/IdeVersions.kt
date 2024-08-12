@@ -173,7 +173,7 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-RC1-SNAPSHOT",
+                sdkVersion = "2024.2-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
