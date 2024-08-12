@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.uiDesigner.core.GridLayoutManager
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
+import software.aws.toolkits.jetbrains.UiConstraints
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.datagrip.CREDENTIAL_ID_PROPERTY
@@ -19,8 +20,6 @@ import software.aws.toolkits.jetbrains.datagrip.REGION_ID_PROPERTY
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.message
 import javax.swing.JPanel
-
-typealias UiConstraints = com.intellij.database.dataSource.url.ui.DatabaseUIUtils
 
 @Deprecated("Use AwsAuthWidget shim instead") // FIX_WHEN_MIN_IS_221
 abstract class AwsAuthWidgetBase(private val userFieldEnabled: Boolean) : DatabaseCredentialsAuthProviderUi.UserWidget() {
