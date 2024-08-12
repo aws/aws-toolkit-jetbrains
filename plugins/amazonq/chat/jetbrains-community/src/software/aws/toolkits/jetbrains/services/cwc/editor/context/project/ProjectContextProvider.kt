@@ -276,7 +276,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         project.guessProjectDir()?.let {
             VfsUtilCore.visitChildrenRecursively(
                 it,
-                object : VirtualFileVisitor<Void?>(NO_FOLLOW_SYMLINKS) {
+                object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                    // TODO: refactor this along with /dev & codescan file traversing logic
                     override fun visitFile(file: VirtualFile): Boolean {
                         if ((file.isDirectory && isBuildOrBin(file.name)) ||
                             runBlocking { featureDevSessionContext.ignoreFile(file.name, scope) } ||
