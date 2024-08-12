@@ -27,7 +27,6 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.profiles.Profile
-import software.amazon.awssdk.profiles.internal.ProfileFileReader
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.region.AwsRegion

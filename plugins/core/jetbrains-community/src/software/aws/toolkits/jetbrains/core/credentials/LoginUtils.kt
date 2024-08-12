@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
-import org.jetbrains.annotations.PropertyKey
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.profiles.Profile
@@ -19,7 +18,6 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
@@ -125,7 +123,7 @@ sealed class Login<T> {
                 return false
             }
 
-            val callerIdentity = try {
+            try {
                 runUnderProgressIfNeeded(project, message("settings.states.validating.short"), cancelable = true) {
                     AwsClientManager.getInstance().createUnmanagedClient<StsClient>(
                         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)),
