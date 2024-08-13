@@ -81,6 +81,7 @@
         See PluginManagerCore#mergeOptionalConfigs -->
     <!-- However, required deps declared though XIncludes are acceptable as long as they can be resolved in the same JAR -->
     <depends>com.intellij.modules.platform</depends>
+    <depends config-file="ext-json.xml">com.intellij.modules.json</depends>
 
     <!-- platform-specific required dependencies go in their respective includes -->
     <!-- Gateway build will drop plugin-intellij and insert its own patched XML -->
@@ -105,7 +106,6 @@
     <depends optional="true" config-file="ext-docker.xml">Docker</depends>
     <depends optional="true" config-file="ext-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="ext-python.xml">com.intellij.modules.python</depends>
-    <depends optional="true" config-file="ext-json.xml">com.intellij.modules.json</depends>
     <depends optional="true" config-file="ext-gateway.xml">com.jetbrains.gateway</depends>
 
     <xi:include href="services/caws.xml" xpointer="xpointer(/idea-plugin/*)">
