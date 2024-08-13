@@ -145,6 +145,8 @@ class CodeWhispererFileCrawlerTest {
      */
     @Test
     fun `neighborFile should return all files except itself with distance less than or equal to 1`() {
+        sut = JavaCodeWhispererFileCrawler
+
         val a = fixture.addFileToProject("root/util/context/a.java", aString())
         val b = fixture.addFileToProject("root/util/b.java", aString())
         val c = fixture.addFileToProject("root/util/service/c.java", aString())
