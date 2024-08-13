@@ -82,6 +82,19 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
+    fun getCrissfileConfig(): String {
+        // TODO: use key instead of random
+//        val key = getFeatureValueForKey(CROSSFILE_KEY).stringValue()
+        val randomNum = Math.random()
+        val group = if (randomNum < 1 / 2.0) {
+            "control"
+        } else {
+            "experiment"
+        }
+
+        return group
+    }
+
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean true.
     private fun getFeatureValueForKey(name: String): FeatureValue =
@@ -92,6 +105,7 @@ class CodeWhispererFeatureConfigService {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        const val CROSSFILE_KEY = "crossfile"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later

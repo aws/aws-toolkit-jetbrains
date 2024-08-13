@@ -138,6 +138,7 @@ object CodeWhispererConstants {
             get() = if (isDeveloperMode()) 200 else 60
         val NUMBER_OF_LINE_IN_CHUNK
             get() = if (isDeveloperMode()) 50 else 10
+
         // TODO: 3 -> 10 when service side CR is done
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
         const val NEIGHBOR_FILES_DISTANCE = 1

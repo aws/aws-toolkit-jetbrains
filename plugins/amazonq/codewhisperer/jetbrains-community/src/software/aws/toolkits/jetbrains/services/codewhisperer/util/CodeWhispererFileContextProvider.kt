@@ -23,16 +23,27 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererKotlin
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPhp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRust
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererScala
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererShell
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import java.io.DataInput
@@ -332,7 +343,17 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererJsx,
                 is CodeWhispererTsx -> true
 
-                // TODO: languages under A/B, should read feature flag from [CodeWhispererFeatureConfigService]
+                is CodeWhispererC,
+                is CodeWhispererGo,
+                is CodeWhispererPhp,
+                is CodeWhispererRust,
+                is CodeWhispererKotlin,
+                is CodeWhispererCpp,
+                is CodeWhispererCsharp,
+                is CodeWhispererRuby,
+                is CodeWhispererShell,
+                is CodeWhispererScala -> CodeWhispererFeatureConfigService.getInstance().getCrissfileConfig() == "experiment"
+
                 else -> false
             }
         }
