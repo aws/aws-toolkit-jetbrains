@@ -84,6 +84,9 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
+    // TODO: call real service
+    fun getCrossfileConfig() = CONTROL
+
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean true.
     private fun getFeatureValueForKey(name: String): FeatureValue =
@@ -95,6 +98,9 @@ class CodeWhispererFeatureConfigService {
         private const val TEST_FEATURE_NAME = "testFeature"
         private const val DATA_COLLECTION_FEATURE = "IDEProjectContextDataCollection"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+
+        // TODO: update string value after service change is done
+        const val CONTROL = "control"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
