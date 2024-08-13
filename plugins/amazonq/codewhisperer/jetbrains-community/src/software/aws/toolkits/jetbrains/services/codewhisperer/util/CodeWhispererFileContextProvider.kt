@@ -136,19 +136,19 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         return supplementalContext?.let {
             if (it.contents.isNotEmpty()) {
-                LOG.info { "Successfully fetched supplemental context." }
+                var logStr = "Successfully fetched supplemental context."
                 it.contents.forEachIndexed { index, chunk ->
-                    LOG.info {
-                        """
-                            |---------------------------------------------------------------
-                            | Chunk $index:
+                    logStr += """
+                            |
+                            | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
-                            |    content = ${chunk.content}
-                            |----------------------------------------------------------------
-                        """.trimMargin()
-                    }
+                            |    contentLength = ${chunk.content.length}
+                            |
+                    """.trimMargin()
                 }
+
+                LOG.info { logStr }
             } else {
                 LOG.warn { "Failed to fetch supplemental context, empty list." }
             }
