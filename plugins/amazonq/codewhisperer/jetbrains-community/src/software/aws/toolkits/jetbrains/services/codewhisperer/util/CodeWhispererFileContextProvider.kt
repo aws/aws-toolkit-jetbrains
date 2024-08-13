@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.ide.actions.CopyContentRootPathProvider
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -204,7 +205,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
-            runReadAction {
+            readAction {
                 if (ApplicationManager.getApplication().isUnitTestMode) {
                     // TODO: hacky way to make test work, in test env, psiFile.virtualFile will be null with gist
                     runBlocking {
