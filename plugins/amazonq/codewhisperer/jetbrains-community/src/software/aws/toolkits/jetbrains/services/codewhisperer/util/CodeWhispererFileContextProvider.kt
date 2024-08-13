@@ -136,16 +136,18 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         return supplementalContext?.let {
             if (it.contents.isNotEmpty()) {
-                var logStr = "Successfully fetched supplemental context."
-                it.contents.forEachIndexed { index, chunk ->
-                    logStr += """
+                val logStr = buildString {
+                    append("Successfully fetched supplemental context.")
+                    it.contents.forEachIndexed { index, chunk ->
+                        append("""
                             |
                             | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
                             |
-                    """.trimMargin()
+                    """.trimMargin())
+                    }
                 }
 
                 LOG.info { logStr }
