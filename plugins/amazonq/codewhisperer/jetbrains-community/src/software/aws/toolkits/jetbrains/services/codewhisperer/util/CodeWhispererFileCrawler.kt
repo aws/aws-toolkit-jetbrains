@@ -218,7 +218,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                 } else {
                     dir.parentDirectory?.let {
                         listOf(it)
-                    } ?: emptyList()
+                    }.orEmpty()
                 }
 
                 toVisit = dirs
