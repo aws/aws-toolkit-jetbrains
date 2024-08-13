@@ -9,38 +9,35 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.project.modules
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Stack
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer) : Disposable {
-    private val scope = disposableCoroutineScope(this)
-
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
+    private val scope = disposableCoroutineScope(this)
     init {
         scope.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
@@ -150,7 +147,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val url = URL("http://localhost:${encoderServer.port}/indexFiles")
         val filesResult = collectFiles()
         val projectRoot = project.guessProjectDir()?.path ?: return false
-        val payload = IndexRequestPayload(filesResult.files, projectRoot, true)
+        val payload = IndexRequestPayload(filesResult.files, projectRoot, false)
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
@@ -160,6 +157,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.info { "project context index response code: ${connection.responseCode} for ${project.name}" }
         val duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         val startUrl = getStartUrl(project)
+        logger.debug { "project context index time: ${duration}ms" }
         if (connection.responseCode == 200) {
             val usage = getUsage()
             TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
@@ -224,6 +222,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun updateIndex(filePath: String) {
+        if (!isIndexComplete.get()) return
         logger.info { "project context: updating index for $filePath on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/updateIndex")
         val payload = UpdateIndexRequestPayload(filePath)
@@ -231,6 +230,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val encrypted = encoderServer.encrypt(payloadJson)
         with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
+            setConnectionTimeout(this)
             setConnectionRequest(this, encrypted)
             val responseCode = responseCode
             logger.debug { "project context update index response code: $responseCode for $filePath" }
@@ -240,7 +240,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     private fun setConnectionTimeout(connection: HttpURLConnection) {
         connection.connectTimeout = 5000 // 5 seconds
-        connection.readTimeout = 10000 // 10 second
+        connection.readTimeout = 5000 // 5 second
     }
 
     private fun setConnectionProperties(connection: HttpURLConnection) {
@@ -264,83 +264,61 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun isBuildOrBin(filePath: String): Boolean {
-        val regex = Regex("""[/\\](bin|build|node_modules|env|\.idea)[/\\]""", RegexOption.IGNORE_CASE)
+        val regex = Regex("""[/\\](bin|build|node_modules|venv|.venv|env|\.idea|.conda)[/\\]""", RegexOption.IGNORE_CASE)
         return regex.find(filePath) != null
     }
 
-    // TODO: this code needs to be refactored and shared with code scan
-    @Suppress("LoopWithTooManyJumpStatements")
     private fun collectFiles(): FileCollectionResult {
-        val files = mutableSetOf<String>()
-        val traversedDirectories = mutableSetOf<VirtualFile>()
+        val collectedFiles = mutableListOf<String>()
         var currentTotalFileSize = 0L
-        val stack = Stack<VirtualFile>()
-        moduleLoop@ for (module in project.modules) {
-            if (module.guessModuleDir() != null) {
-                stack.push(module.guessModuleDir())
-                while (stack.isNotEmpty()) {
-                    val current = stack.pop()
-
-                    if (!current.isDirectory) {
-                        if (current.isFile) {
-                            if (isBuildOrBin(current.path) || current.length > 10 * 1024 * 102) {
-                                continue
-                            }
-                            if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
-                                break
-                            } else {
-                                try {
-                                    val language = current.programmingLanguage()
-                                    if (language != CodeWhispererPlainText.INSTANCE && language != CodeWhispererUnknownLanguage.INSTANCE) {
-                                        files.add(current.path)
-                                        currentTotalFileSize += current.length
-                                    }
-                                } catch (e: Exception) {
-                                    logger.debug { "Error parsing the file: ${current.path} with error: ${e.message}" }
-                                    continue
-                                }
-                            }
-                        }
-                    } else {
-                        if (
-                            !traversedDirectories.contains(current) && current.isValid
+        val featureDevSessionContext = FeatureDevSessionContext(project)
+        val allFiles = mutableListOf<VirtualFile>()
+        project.guessProjectDir()?.let {
+            VfsUtilCore.visitChildrenRecursively(
+                it,
+                object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                    // TODO: refactor this along with /dev & codescan file traversing logic
+                    override fun visitFile(file: VirtualFile): Boolean {
+                        if ((file.isDirectory && isBuildOrBin(file.name)) ||
+                            runBlocking { featureDevSessionContext.ignoreFile(file.name, scope) } ||
+                            (file.isFile && file.length > 10 * 1024 * 1024)
                         ) {
-                            for (child in current.children) {
-                                stack.push(child)
-                            }
+                            return false
                         }
-                        traversedDirectories.add(current)
+                        if (file.isFile) {
+                            allFiles.add(file)
+                            return false
+                        }
+                        return true
                     }
                 }
-            }
+            )
         }
+
+        for (file in allFiles) {
+            if (willExceedPayloadLimit(currentTotalFileSize, file.length)) {
+                break
+            }
+            collectedFiles.add(file.path)
+            currentTotalFileSize += file.length
+        }
+
         return FileCollectionResult(
-            files = files.toList(),
-            fileSize = (currentTotalFileSize / 1024 / 102).toInt()
+            files = collectedFiles.toList(),
+            fileSize = (currentTotalFileSize / 1024 / 1024).toInt()
         )
     }
 
     private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
-        val chunksMap: MutableMap<String, MutableList<Chunk>> = mutableMapOf()
+        val documents: MutableList<RelevantDocument> = mutableListOf()
         queryResult.forEach { chunk ->
             run {
-                if (chunk.relativePath == null) return@forEach
-                val list: MutableList<Chunk> = if (chunksMap.containsKey(chunk.relativePath)) {
-                    chunksMap[chunk.relativePath] ?: mutableListOf()
-                } else {
-                    mutableListOf()
-                }
-                list.add(chunk)
-                chunksMap[chunk.relativePath] = list
+                val path = chunk.relativePath.orEmpty()
+                val text = chunk.context ?: chunk.content.orEmpty()
+                val document = RelevantDocument(path, text.take(10240))
+                documents.add(document)
+                logger.info { "project context: query retrieved document $path with content: ${text.take(200)}" }
             }
-        }
-        val documents: MutableList<RelevantDocument> = mutableListOf()
-        chunksMap.forEach { (filePath, chunkList) ->
-            var text = ""
-            chunkList.forEach { chunk -> text += (chunk.context ?: chunk.content) }
-            val document = RelevantDocument(filePath, text)
-            documents.add(document)
-            logger.info { "project context: query retrieved document $filePath with content: ${text.take(200)}" }
         }
         return documents
     }

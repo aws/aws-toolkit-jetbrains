@@ -13,26 +13,10 @@ plugins {
 }
 
 allprojects {
-    repositories {
-        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
-        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
-        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-            maven {
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
-                }
-            }
-        }
-        mavenCentral()
-        gradlePluginPortal()
-    }
-
-    configurations.all {
+    configurations.configureEach {
         resolutionStrategy {
-            failOnDynamicVersions()
-            failOnChangingVersions()
+            // need to figure out how to fail only on non-platform dependencies
+//            failOnNonReproducibleResolution()
         }
     }
 }
@@ -84,4 +68,17 @@ fun ProjectSettings.taskTriggers(action: TaskTriggersConfig.() -> Unit, ) = (thi
 // coverageReport has implicit dependency on 'test' outputs since the task outputs the test.exec file
 tasks.coverageReport {
     mustRunAfter(rootProject.subprojects.map { it.tasks.withType<AbstractTestTask>() })
+}
+
+allprojects {
+    tasks.configureEach {
+        if (this is JavaForkOptions) {
+            jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
+            if (System.getProperty("os.name").contains("Windows")) {
+                jvmArgs("-XX:OnError=powershell.exe ${rootProject.file("dump.ps1")}")
+            } else {
+                jvmArgs("-XX:OnError=ps auxww")
+            }
+        }
+    }
 }
