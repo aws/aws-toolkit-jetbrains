@@ -139,14 +139,16 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 val logStr = buildString {
                     append("Successfully fetched supplemental context.")
                     it.contents.forEachIndexed { index, chunk ->
-                        append("""
+                        append(
+                            """
                             |
                             | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
                             |
-                    """.trimMargin())
+                            """.trimMargin()
+                        )
                     }
                 }
 
