@@ -10,6 +10,7 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfBIDConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
@@ -83,6 +84,9 @@ class CodeWhispererFeatureConfigService {
     fun getIsDataCollectionEnabled(): Boolean = getFeatureValueForKey(DATA_COLLECTION_FEATURE).stringValue() == "data-collection"
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
+
+    // TODO: call real service
+    fun getCrossfileConfig() = isDeveloperMode()
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean true.

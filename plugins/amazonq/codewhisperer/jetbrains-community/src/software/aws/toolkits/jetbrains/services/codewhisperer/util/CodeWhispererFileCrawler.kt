@@ -87,6 +87,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
+<<<<<<< HEAD
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = if (isDeveloperMode()) {
         val previousSelected = listPreviousSelectedFile(target)
         val neighbors = neighborFiles(target).mapNotNull { it.virtualFile }
@@ -117,7 +118,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         val fileToFileDistanceList = runReadAction {
             openedFiles.map {
-                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+                return@map it to CodeWhispererFileCrawler.getFileDistance(fileA = targetFile, fileB = it)
             }
         }
 
@@ -277,15 +278,14 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             }
         }
 
-        // TODO: move to CodeWhispererUtils.kt
         /**
          * For [LocalFileSystem](implementation of virtual file system), the path will be an absolute file path with file separator characters replaced
          * by forward slash "/"
          * @see [VirtualFile.getPath]
          */
-        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile): Int {
-            val targetFilePaths = targetFile.path.split("/").dropLast(1)
-            val candidateFilePaths = candidateFile.path.split("/").dropLast(1)
+        fun getFileDistance(fileA: VirtualFile, fileB: VirtualFile): Int {
+            val targetFilePaths = fileA.path.split("/").dropLast(1)
+            val candidateFilePaths = fileB.path.split("/").dropLast(1)
 
             var i = 0
             while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {
