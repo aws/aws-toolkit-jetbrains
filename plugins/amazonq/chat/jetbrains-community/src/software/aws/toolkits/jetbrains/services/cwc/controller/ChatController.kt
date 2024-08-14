@@ -66,7 +66,9 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextEditorListener
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
+import software.aws.toolkits.jetbrains.services.cwc.inline.ChatCaretListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -89,6 +91,8 @@ class ChatController private constructor(
     private val contextExtractor: ActiveFileContextExtractor,
     private val intentRecognizer: UserIntentRecognizer,
     private val authController: AuthController,
+//    private val editorListener: ProjectContextEditorListener,
+//    private val caretListener: ChatCaretListener,
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
@@ -101,6 +105,8 @@ class ChatController private constructor(
         contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
+//        editorListener = ProjectContextEditorListener(context),
+//        caretListener = ChatCaretListener(context.project, context),
     )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {

@@ -21,3 +21,8 @@ class QOpenPanelAction : AnAction(message("action.q.openchat.text"), null, AwsIc
         ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.activate(null, true)
     }
 }
+
+private fun isQSupportedInThisVersion(): Boolean {
+    return true
+}
+p

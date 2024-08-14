@@ -9,4 +9,4 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 /**
  * Event emitted for context menu editor actions
  */
-data class ContextMenuActionMessage(val command: EditorContextCommand, val project: Project) : AmazonQMessage
+data class ContextMenuActionMessage(val command: EditorContextCommand, val project: Project, val message: String? = null) : AmazonQMessage

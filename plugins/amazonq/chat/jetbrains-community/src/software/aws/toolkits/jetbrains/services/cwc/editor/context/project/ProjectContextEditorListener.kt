@@ -5,9 +5,11 @@ package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
+import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.services.cwc.inline.ChatCaretListener
 
-class ProjectContextEditorListener : FileEditorManagerListener {
+class ProjectContextEditorListener() : FileEditorManagerListener {
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
             ProjectContextController.getInstance(source.project).updateIndex(file.path)
