@@ -337,7 +337,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererCsharp,
                 is CodeWhispererRuby,
                 is CodeWhispererShell,
-                is CodeWhispererScala -> CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig() == "experiment"
+                is CodeWhispererScala -> CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()
 
                 // TODO: languages under A/B, should read feature flag from [CodeWhispererFeatureConfigService]
                 else -> false
