@@ -139,7 +139,7 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `shouldFetchCrossfileContext - partially support should return true if feature flag is enabled`() {
         val mockFeatureConfigService = mock<CodeWhispererFeatureConfigService> {
-            on { getCrossfileConfig() } doReturn "experiment"
+            on { getCrossfileConfig() } doReturn true
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfigService, disposableRule.disposable)
 
@@ -154,7 +154,7 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `shouldFetchCrossfileContext - partially support should return false if feature flag is disabled`() {
         val mockFeatureConfigService = mock<CodeWhispererFeatureConfigService> {
-            on { getCrossfileConfig() } doReturn "control"
+            on { getCrossfileConfig() } doReturn false
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfigService, disposableRule.disposable)
 
