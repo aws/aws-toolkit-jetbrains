@@ -114,7 +114,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val language = targetContext.programmingLanguage
         val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
-        val supplementalContext = if (isTst) {
+        // if utg is not supported, use crossfile context as fallback
+        val supplementalContext = if (isTst && language.isUTGSupported()) {
             when (shouldFetchUtgContext(language, group)) {
                 true -> extractSupplementalFileContextForTst(psiFile, targetContext)
                 false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
