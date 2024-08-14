@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedEx
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat
@@ -135,13 +136,12 @@ object CodeWhispererConstants {
     }
 
     object CrossFile {
-        // TODO: [CodeWhispererFeatureConfigService.getCrossFileConfig]
         val CHUNK_SIZE
-            get() = if (isDeveloperMode()) 200 else 60
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 200 else 60
         val NUMBER_OF_LINE_IN_CHUNK
-            get() = if (isDeveloperMode()) 50 else 10
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 50 else 10
         val NUMBER_OF_CHUNK_TO_FETCH
-            get() = if (isDeveloperMode()) 10 else 3
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 10 else 3
     }
 
     object Utg {
