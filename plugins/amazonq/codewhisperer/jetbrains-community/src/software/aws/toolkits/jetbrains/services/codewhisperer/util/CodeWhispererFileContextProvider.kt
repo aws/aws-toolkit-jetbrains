@@ -132,22 +132,22 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         when (supplementalContext) {
             is SupplementalContextResult.Success -> run {
                 supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
-                LOG.info { "Successfully fetched supplemental context." }
-                LOG.info {
-                    var logStr = ""
+                val logStr = buildString {
+                    append("Successfully fetched supplemental context.")
                     supplementalContext.contents.forEachIndexed { index, chunk ->
-                        logStr += """
+                        append(
+                            """
                             |
                             | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
-                            |    
-                        """.trimMargin()
+                            |
+                            """.trimMargin()
+                        )
                     }
-
-                    logStr
                 }
+                LOG.info { logStr }
             }
 
             is SupplementalContextResult.Failure -> run {
