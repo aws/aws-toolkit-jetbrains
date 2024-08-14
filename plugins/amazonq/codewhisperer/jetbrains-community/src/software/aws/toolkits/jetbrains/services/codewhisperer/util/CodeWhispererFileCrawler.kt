@@ -205,7 +205,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         while (d >= 0 && pendingVisit.isNotEmpty()) {
             val toVisit = mutableListOf<PsiDirectory>()
             for (dir in pendingVisit) {
-
                 val fs = dir.files
                 res.addAll(fs)
 
