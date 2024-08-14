@@ -57,11 +57,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2024.1",
-            gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "241.14494-EAP-CANDIDATE-SNAPSHOT",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2024.1",
