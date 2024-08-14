@@ -55,10 +55,11 @@ sealed interface SupplementalContextResult {
         val strategy: SupplementalContextStrategy,
         var latency: Long = 0L,
     ) : SupplementalContextResult {
-        val contentLength: Int
-            get() = contents.fold(0) { acc, chunk ->
+        val contentLength: Int by lazy {
+            contents.fold(0) { acc, chunk ->
                 acc + chunk.content.length
             }
+        }
     }
 
     data class Failure(override val isUtg: Boolean, val error: Exception, val targetFileName: String, var latency: Long = 0L) : SupplementalContextResult {
