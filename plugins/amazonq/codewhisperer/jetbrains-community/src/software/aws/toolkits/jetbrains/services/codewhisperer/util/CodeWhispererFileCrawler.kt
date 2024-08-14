@@ -201,12 +201,12 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         var d = distance
         val res = mutableListOf<PsiFile>()
         val pendingVisit = mutableListOf(psiDir)
-        val visisted = mutableMapOf(psiDir to false)
+        val visited = mutableMapOf(psiDir to false)
 
         while (d >= 0 && pendingVisit.isNotEmpty()) {
             var toVisit = emptyList<PsiDirectory>()
             for (dir in pendingVisit) {
-                if (visisted[dir] == true) {
+                if (visited[dir] == true) {
                     continue
                 }
 
@@ -222,7 +222,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                 }
 
                 toVisit = dirs
-                visisted[dir] = true
+                visited[dir] = true
             }
 
             pendingVisit.addAll(toVisit)
