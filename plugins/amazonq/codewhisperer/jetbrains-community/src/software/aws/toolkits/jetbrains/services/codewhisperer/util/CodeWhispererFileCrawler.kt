@@ -87,7 +87,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
-<<<<<<< HEAD
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = if (isDeveloperMode()) {
         val previousSelected = listPreviousSelectedFile(target)
         val neighbors = neighborFiles(target).mapNotNull { it.virtualFile }
