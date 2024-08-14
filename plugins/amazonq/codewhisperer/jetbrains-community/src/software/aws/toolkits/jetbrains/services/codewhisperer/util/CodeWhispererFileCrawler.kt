@@ -204,7 +204,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         val visited = mutableMapOf(psiDir to false)
 
         while (d >= 0 && pendingVisit.isNotEmpty()) {
-            var toVisit = emptyList<PsiDirectory>()
+            val toVisit = mutableListOf<PsiDirectory>()
             for (dir in pendingVisit) {
                 if (visited[dir] == true) {
                     continue
@@ -221,7 +221,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                     }.orEmpty()
                 }
 
-                toVisit = dirs
+                toVisit.addAll(dirs)
                 visited[dir] = true
             }
 
