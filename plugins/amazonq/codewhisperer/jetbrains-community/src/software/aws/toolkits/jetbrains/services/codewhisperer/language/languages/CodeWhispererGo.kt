@@ -17,6 +17,8 @@ class CodeWhispererGo private constructor() : CodeWhispererProgrammingLanguage()
 
     override fun isAutoFileScanSupported(): Boolean = true
 
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "go"
 

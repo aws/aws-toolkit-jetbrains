@@ -10,30 +10,19 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
  * since different language has its own way importing other files or its own naming style for test file
  */
 interface FileCrawler {
-    /**
-     * parse the import statements provided a file
-     * @param psiFile of the file we are search with
-     * @return list of file reference from the import statements
-     */
-    suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile>
-
     fun listFilesUnderProjectRoot(project: Project): List<VirtualFile>
-
-    /**
-     * @param psiFile the file we are searching with, aka target file
-     * @return Files under the same package as the given file and exclude the given file
-     */
-    fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile>
 
     /**
      * should be invoked at test files e.g. MainTest.java, or test_main.py
@@ -59,12 +48,9 @@ interface FileCrawler {
 }
 
 class NoOpFileCrawler : FileCrawler {
-    override suspend fun listFilesImported(psiFile: PsiFile): List<VirtualFile> = emptyList()
-
     override fun listFilesUnderProjectRoot(project: Project): List<VirtualFile> = emptyList()
-    override fun listUtgCandidate(target: PsiFile) = ListUtgCandidateResult(null, UtgStrategy.Empty)
 
-    override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = emptyList()
+    override fun listUtgCandidate(target: PsiFile) = ListUtgCandidateResult(null, UtgStrategy.Empty)
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = emptyList()
 
@@ -99,17 +85,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
-    override fun listFilesWithinSamePackage(psiFile: PsiFile): List<VirtualFile> = runReadAction {
-        psiFile.containingDirectory?.files?.mapNotNull {
-            // exclude target file
-            if (it != psiFile) {
-                it.virtualFile
-            } else {
-                null
-            }
-        }.orEmpty()
-    }
-
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
         val targetFile = target.virtualFile
 
@@ -123,7 +98,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         val fileToFileDistanceList = runReadAction {
             openedFiles.map {
-                return@map it to CodeWhispererFileCrawler.getFileDistance(targetFile = targetFile, candidateFile = it)
+                return@map it to CodeWhispererFileCrawler.getFileDistance(fileA = targetFile, fileB = it)
             }
         }
 
@@ -165,6 +140,65 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         dialects.contains(fileExt)
     } ?: false
 
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
+
+    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
+        search(psiFile.containingDirectory, distance, true) +
+            search(psiFile.containingDirectory, distance, false)
+    }
+
+    private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
+        var d = distance
+        val res = mutableListOf<PsiFile>()
+        var pendingVisit = listOf(psiDir)
+
+        while (d >= 0 && pendingVisit.isNotEmpty()) {
+            val toVisit = mutableListOf<PsiDirectory>()
+            for (dir in pendingVisit) {
+                val fs = dir.files
+                res.addAll(fs)
+
+                val dirs = if (goDown) {
+                    dir.subdirectories.toList()
+                } else {
+                    dir.parentDirectory?.let {
+                        listOf(it)
+                    }.orEmpty()
+                }
+
+                toVisit.addAll(dirs)
+            }
+
+            pendingVisit = toVisit
+            d--
+        }
+
+        return res.toSet()
+    }
+
     companion object {
         // TODO: move to CodeWhispererUtils.kt
         /**
@@ -202,15 +236,14 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             }
         }
 
-        // TODO: move to CodeWhispererUtils.kt
         /**
          * For [LocalFileSystem](implementation of virtual file system), the path will be an absolute file path with file separator characters replaced
          * by forward slash "/"
          * @see [VirtualFile.getPath]
          */
-        fun getFileDistance(targetFile: VirtualFile, candidateFile: VirtualFile): Int {
-            val targetFilePaths = targetFile.path.split("/").dropLast(1)
-            val candidateFilePaths = candidateFile.path.split("/").dropLast(1)
+        fun getFileDistance(fileA: VirtualFile, fileB: VirtualFile): Int {
+            val targetFilePaths = fileA.path.split("/").dropLast(1)
+            val candidateFilePaths = fileB.path.split("/").dropLast(1)
 
             var i = 0
             while (i < minOf(targetFilePaths.size, candidateFilePaths.size)) {

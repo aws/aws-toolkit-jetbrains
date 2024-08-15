@@ -6,13 +6,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -117,6 +115,66 @@ class CodeWhispererFileCrawlerTest {
                 psiFile.virtualFile.content().split(" ")
             }
             assertThat(result).isEqualTo(file1.virtualFile)
+        }
+    }
+
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    @Test
+    fun `neighborFile should return all files except itself with distance less than or equal to 1`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+
+        assertThat(sut.neighborFiles(a)).isEqualTo(setOf(b, e)).also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+        }
+
+        assertThat(sut.neighborFiles(b)).isEqualTo(setOf(a, c, d, e)).also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+        }
+
+        assertThat(sut.neighborFiles(c)).isEqualTo(setOf(b))
+
+        assertThat(sut.neighborFiles(d)).isEqualTo(setOf(b))
+
+        assertThat(sut.neighborFiles(e)).isEqualTo(setOf(a, b))
+
+        assertThat(sut.neighborFiles(f)).isEmpty().also {
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, a.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, b.virtualFile)).isGreaterThan(1).isEqualTo(3)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, c.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, d.virtualFile)).isGreaterThan(1).isEqualTo(4)
+            assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, e.virtualFile)).isGreaterThan(1).isEqualTo(4)
         }
     }
 }
@@ -260,81 +318,6 @@ class JavaCodeWhispererFileCrawlerTest {
                 assertThat(expected.contains(it)).isTrue
             }
         }
-    }
-
-    @Test
-    fun `listFilesWithinSamePackage`() {
-        val targetFile = fixture.addFileToProject("/utils/AnotherClass.java", "")
-        val file2Package1 = fixture.addFileToProject("/utils/NotImported.java", "")
-        val file3Package1 = fixture.addFileToProject("/utils/NotImported2.java", "")
-        fixture.addFileToProject("Main.java", "")
-        fixture.addFileToProject("service/controllers/MyController.java", "")
-
-        runReadAction {
-            val actual = sut.listFilesWithinSamePackage(targetFile)
-            val expected = listOf<PsiFile>(file2Package1, file3Package1)
-                .map { it.virtualFile }
-                .toSet()
-
-            assertThat(actual).hasSize(expected.size)
-            actual.forEach {
-                assertThat(expected.contains(it)).isTrue
-            }
-        }
-    }
-
-    @Test
-    fun `findFilesImported`() {
-        val mainClass = fixture.addFileToProject(
-            "Main.java",
-            """
-            package com.cw.file_crawler_test;
-            
-            import java.util.Map;
-            import java.util.regex.Pattern;
-            
-            import com.cw.file_crawler_test.utils.AnotherClass;
-            import com.cw.file_crawler_test.service.controllers.MyController;
-            
-            public class Main {
-            };
-            """.trimIndent()
-        )
-
-        val controllerClass = fixture.addFileToProject(
-            "service/controllers/MyController.java",
-            """
-                package com.cw.file_crawler_test.service.controllers;
-                
-                public class MyController {}
-            """.trimIndent()
-        )
-
-        val anotherClass = fixture.addFileToProject(
-            "/utils/AnotherClass.java",
-            """
-                package com.cw.file_crawler_test.utils;
-                
-                public class AnotherClass {}
-            """.trimIndent()
-        )
-
-        fun assertCrawlerFindCorrectFiles(sut: CodeWhispererFileCrawler) {
-            runReadAction {
-                val expected = setOf<VirtualFile>(controllerClass.virtualFile, anotherClass.virtualFile)
-                val actualFiles = runBlocking { sut.listFilesImported(mainClass) }
-
-                assertThat(actualFiles).hasSize(2)
-                actualFiles.forEach {
-                    assertThat(expected).contains(it)
-                }
-            }
-        }
-
-        assertCrawlerFindCorrectFiles(JavaCodeWhispererFileCrawler)
-        // can't make it work right since the temp file created is not in the real file system
-        // Naive crawler will actually read the file system thun unable to find files
-        //        assertCrawlerFindCorrectFiles(NaiveJavaCodeWhispererFileCrawler(project))
     }
 
     @Test
