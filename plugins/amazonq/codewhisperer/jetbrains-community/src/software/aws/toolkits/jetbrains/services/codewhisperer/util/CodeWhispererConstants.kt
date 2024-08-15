@@ -10,6 +10,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat
@@ -132,10 +133,14 @@ object CodeWhispererConstants {
             }
         }
     }
+
     object CrossFile {
-        const val CHUNK_SIZE = 60
-        const val NUMBER_OF_LINE_IN_CHUNK = 10
-        const val NUMBER_OF_CHUNK_TO_FETCH = 3
+        val CHUNK_SIZE
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 200 else 60
+        val NUMBER_OF_LINE_IN_CHUNK
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 50 else 10
+        val NUMBER_OF_CHUNK_TO_FETCH
+            get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 10 else 3
         const val NEIGHBOR_FILES_DISTANCE = 1
     }
 
@@ -147,7 +152,7 @@ object CodeWhispererConstants {
     object TryExampleFileContent {
 
         private const val AUTO_TRIGGER_CONTENT_JAVA =
-"""import java.util.ArrayList;
+            """import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +174,7 @@ public class Main {
 }"""
 
         private const val MANUAL_TRIGGER_CONTENT_JAVA =
-"""// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
+            """// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
 
 public class S3Uploader {
     
@@ -180,7 +185,7 @@ public class S3Uploader {
 }"""
 
         private const val UNIT_TEST_CONTENT_JAVA =
-"""// TODO: Ask Amazon Q to write unit tests.
+            """// TODO: Ask Amazon Q to write unit tests.
 
 // Write a test case for the sum function.
 
