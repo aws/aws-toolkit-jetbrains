@@ -121,6 +121,13 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                 val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
                 val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
 
+                if (newFileInfo.isNotEmpty() || deletedFileInfo.isNotEmpty()) {
+                    messenger.sendAnswerPart(
+                        tabId = tabID,
+                        message =  message("amazonqFeatureDev.code_generation.generated_code")
+                    )
+                }
+
                 return CodeGenerationResult(
                     newFiles = newFileInfo,
                     deletedFiles = deletedFileInfo,
