@@ -1,3 +1,61 @@
+# _3.22_ (2024-08-08)
+- **(Feature)** feat(Amazon Q Code Transformation): warn user if absolute path found in pom.xml
+- **(Feature)** feat(Amazon Q Code Transformation): show pro tier users estimated cost of /transform on projects over 100K lines
+- **(Bug Fix)** fix(Amazon Q Code Transformation): prevent empty chat bubble from appearing when starting or cancelling a transformation
+- **(Bug Fix)** Amazon Q /dev: include a retry option for the same prompt after folder reselection
+- **(Bug Fix)** Fix inability to open files on double click and open context menu on right click in the S3 bucket viewer
+- **(Bug Fix)** fix(amazonq): Amazon Q chat `@workspace` uses more than 20% cpu
+- **(Bug Fix)** Fix 'Cannot create extension' in AWS Toolkit
+
+# _3.21_ (2024-08-01)
+- **(Bug Fix)** Fix NullPointerException that may happen when re-authenticating to Amazon Q
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with the max tabs notification not being dismissible
+- **(Bug Fix)** Fix Amazon Q chat context menu actions show up in all chat windows
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with an incorrect input cursor position in the prompt text box
+- **(Bug Fix)** Amazon Q Chat: Showing/hiding the scrollbars is now controlled by the OS settings
+
+# _3.20_ (2024-07-26)
+- **(Bug Fix)** Fix Q chat not responding in 2023.2 and 2023.3
+
+# _3.19_ (2024-07-25)
+- **(Feature)** Q feature dev: Use common code extensions to filter relevant files
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug where multiline user input appears like a code block instead of a paragraph
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug when the prompt input exceeds the width of the chat box it's not always wrapped correctly.
+- **(Bug Fix)** Fix 'ContainerDisposedException' when attempting to sign-in to Amazon Q
+- **(Bug Fix)** Fix Q window reauthenticate button not functioning due to illegal function call outisde of EDT
+
+# _3.18_ (2024-07-19)
+- **(Feature)** Add support for 2024.2
+- **(Bug Fix)** Fix bug when workspace index cache is not loaded
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.1 and for IDEs based on the 2023.2 platform
+
+# _3.17_ (2024-07-15)
+- **(Feature)** Amazon Q/dev: proactively show code generation iterations
+- **(Bug Fix)** Don't allow Q/Core to be installed in the unsupported thin client context ([#4658](https://github.com/aws/aws-toolkit-jetbrains/issues/4658))
+- **(Bug Fix)** AmazonQ chat `@workspace` file indexing respects user's git-ignore
+- **(Bug Fix)** Amazon Q /dev command: improve user error messages
+
+# _3.16_ (2024-07-10)
+- **(Feature)** Add support for [Amazon Q Chat Workspace Context](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/workspace-context.html). Customers can use `@workspace` to ask questions regarding local workspace.
+
+# _3.15_ (2024-07-08)
+- **(Bug Fix)** Amazon Q Chat: Fixed button texts are cropped too short
+- **(Bug Fix)** Amazon Q Chat: Fixed button font sizes are too big
+- **(Bug Fix)** Expose Amazon Q backend validation error message
+- **(Bug Fix)** Amazon Q Security Scans: Fixed unnecessary yellow lines appearing in both auto scans and project scans.
+- **(Bug Fix)** Amazon Q: Fix an issue where inline suggestion will not properly show in JetBrains remote env 2024.1+
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible when multine text inserted with paste
+- **(Bug Fix)** Fix Q Chat not respecting system trust store unless a proxy is configured
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input and selected command horizontal alignment
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible if an html special character is inserted
+- **(Bug Fix)** Amazon Q Chat: Fixed buttons don't show borders inside a message
+
+# _3.14_ (2024-06-27)
+- **(Bug Fix)** Q Code Transform - Add troubleshooting document links to UI messages
+- **(Bug Fix)** Security Scan: Improved telemetry error messages
+- **(Bug Fix)** Feature Development: fix in progress UX during backend calls
+- **(Bug Fix)** Rewrite integration with the New Solution dialog in Rider to use the new API.
+
 # _3.13_ (2024-06-24)
 - **(Bug Fix)** Fix refresh token failure due to null aws error details
 

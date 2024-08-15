@@ -16,13 +16,17 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
+import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.resources.message
 import java.lang.Thread.sleep
 import java.time.Duration
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
@@ -53,6 +57,9 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     var didSleepOnce = false
     val maxRefreshes = 10
     var numRefreshes = 0
+
+    // We refresh token at the start of polling, but for some long jobs that runs for 30 minutes plus, tokens may need to be
+    // refreshed again when AccessDeniedException or InvalidGrantException are caught.
     refreshToken(project)
 
     try {
@@ -99,6 +106,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 if (numRefreshes++ > maxRefreshes) throw e
                 refreshToken(project)
                 return@waitUntil state
+            } catch (e: InvalidGrantException) {
+                if (numRefreshes++ > maxRefreshes) throw e
+                refreshToken(project)
+                return@waitUntil state
             } finally {
                 sleep(sleepDurationMillis)
             }
@@ -107,7 +118,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
         when (e) {
-            is WaiterUnrecoverableException, is AccessDeniedException -> {
+            is WaiterUnrecoverableException, is AccessDeniedException, is InvalidGrantException -> {
                 return PollingResult(false, transformationResponse?.transformationJob(), state, transformationPlan)
             }
             else -> throw e
@@ -119,4 +130,9 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
 fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>) = stepZeroProgressUpdates.associate {
     it.name() to it.description()
+}
+
+fun getBillingText(linesOfCode: Int): String {
+    val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))
+    return message("codemodernizer.migration_plan.header.billing_text", linesOfCode, BILLING_RATE, estimatedCost)
 }

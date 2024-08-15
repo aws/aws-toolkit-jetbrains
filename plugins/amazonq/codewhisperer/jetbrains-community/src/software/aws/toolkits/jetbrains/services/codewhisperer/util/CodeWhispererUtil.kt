@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -32,6 +34,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -121,13 +125,13 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
 fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
     var prevChunk: String? = null
     inputStream.bufferedReader(Charsets.UTF_8).useLines {
-        val iter = it.chunked(10).iterator()
+        val iter = it.chunked(NUMBER_OF_LINE_IN_CHUNK).iterator()
         while (iter.hasNext()) {
             val currentChunk = iter.next().joinToString("\n").trimEnd()
 
             // chunk[0]
             if (prevChunk == null) {
-                val first3Lines = currentChunk.split("\n").take(3).joinToString("\n").trimEnd()
+                val first3Lines = currentChunk.split("\n").take(NUMBER_OF_CHUNK_TO_FETCH).joinToString("\n").trimEnd()
                 yield(Chunk(content = first3Lines, path = path, nextChunk = currentChunk))
             } else {
                 // chunk[1]...chunk[n-1]
@@ -181,15 +185,20 @@ object CodeWhispererUtil {
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
         if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
-        return maybeReauthProviderIfNeeded(project, tokenProvider) {
-            runInEdt {
-                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
-                    notifyConnectionExpiredRequestReauth(project)
-                }
-                if (!isPluginStarting) {
-                    CodeWhispererService.markReAuthPromptShown()
+        return try {
+            maybeReauthProviderIfNeeded(project, tokenProvider) {
+                runInEdt {
+                    if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                        notifyConnectionExpiredRequestReauth(project)
+                    }
+                    if (!isPluginStarting) {
+                        CodeWhispererService.markReAuthPromptShown()
+                    }
                 }
             }
+        } catch (e: Exception) {
+            getLogger<CodeWhispererService>().warn(e) { "prompt reauth failed with unexpected error" }
+            true
         }
     }
 

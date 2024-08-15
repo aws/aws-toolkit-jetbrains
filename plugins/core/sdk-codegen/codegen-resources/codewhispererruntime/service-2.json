@@ -384,6 +384,7 @@
             "members": {
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
                 "userIntent": { "shape": "UserIntent" },
                 "hasCodeSnippet": { "shape": "Boolean" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
@@ -393,7 +394,8 @@
                 "fullResponselatency": { "shape": "Double" },
                 "requestLength": { "shape": "Integer" },
                 "responseLength": { "shape": "Integer" },
-                "numberOfCodeBlocks": { "shape": "Integer" }
+                "numberOfCodeBlocks": { "shape": "Integer" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatHistory":{
@@ -408,11 +410,13 @@
             "members": {
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
                 "interactionType": { "shape": "ChatMessageInteractionType" },
                 "interactionTarget": { "shape": "String" },
                 "acceptedCharacterCount": { "shape": "Integer" },
                 "acceptedLineCount": { "shape": "Integer" },
-                "acceptedSnippetHasReference": { "shape": "Boolean" }
+                "acceptedSnippetHasReference": { "shape": "Boolean" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "CreateTaskAssistConversationRequest": {
@@ -468,9 +472,11 @@
             "required": ["conversationId", "messageId", "modificationPercentage"],
             "members": {
                 "conversationId": { "shape": "ConversationId" },
+                "customizationArn":{"shape":"CustomizationArn"},
                 "messageId": { "shape": "MessageId" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
-                "modificationPercentage": { "shape": "Double" }
+                "modificationPercentage": { "shape": "Double" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatTriggerType":{
@@ -538,6 +544,11 @@
                 "status":{"shape":"CodeGenerationWorkflowStatus"},
                 "currentStage":{"shape":"CodeGenerationWorkflowStage"}
             }
+        },
+        "CodeGenerationStatusDetail":{
+            "type":"string",
+            "documentation":"<p>Detailed message about the code generation status</p>",
+            "sensitive":true
         },
         "CodeGenerationWorkflowStage":{
             "type":"string",
@@ -1016,6 +1027,15 @@
                 },
                 "codeGenerationStatus": {
                     "shape": "CodeGenerationStatus"
+                },
+                "codeGenerationStatusDetail": {
+                    "shape": "CodeGenerationStatusDetail"
+                },
+                "codeGenerationRemainingIterationCount": {
+                    "shape": "Integer"
+                },
+                "codeGenerationTotalIterationCount": {
+                    "shape": "Integer"
                 }
             }
         },

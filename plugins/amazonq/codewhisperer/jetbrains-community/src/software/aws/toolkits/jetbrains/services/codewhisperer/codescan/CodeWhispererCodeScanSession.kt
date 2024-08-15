@@ -69,8 +69,6 @@ import java.time.Instant
 import java.util.Base64
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
-import kotlin.math.max
-import kotlin.math.min
 
 class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     private val clientToken: UUID = UUID.randomUUID()
@@ -154,7 +152,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     }
                 }
                 val errorMessage = createCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-                codeScanFailed(errorMessage, "CreateCodeScanFailedError")
+                codeScanFailed(errorMessage)
             }
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
@@ -191,7 +189,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                         }
                     }
                     val errorMessage = getCodeScanResponse.errorMessage()?.let { it } ?: message("codewhisperer.codescan.run_scan_error_telemetry")
-                    codeScanFailed(errorMessage, "DefaultError")
+                    codeScanFailed(errorMessage)
                 }
             }
 
@@ -287,7 +285,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Create Upload URL failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException(errorMessage, "CreateUploadUrlError")
+        throw codeScanServerException("CreateUploadUrlException: $errorMessage")
     }
 
     private fun getUploadIntent(scope: CodeWhispererConstants.CodeAnalysisScope): UploadIntent = when (scope) {
@@ -321,7 +319,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: Exception) {
             LOG.debug { "Artifact failed to upload in the S3 bucket: ${e.message}" }
             val errorMessage = getTelemetryErrorMessage(e)
-            throw codeScanServerException(errorMessage, "UploadArtifactToS3Error")
+            throw codeScanServerException("UploadArtifactToS3Exception: $errorMessage")
         }
     }
 
@@ -344,7 +342,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         } catch (e: Exception) {
             LOG.debug { "Creating security scan failed: ${e.message}" }
             val errorMessage = getTelemetryErrorMessage(e)
-            throw codeScanServerException(errorMessage, "CreateCodeScanError")
+            throw codeScanServerException("CreateCodeScanException: $errorMessage")
         }
     }
 
@@ -357,7 +355,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Getting security scan failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException(errorMessage, "GetCodeScanError")
+        throw codeScanServerException("GetCodeScanException: $errorMessage")
     }
 
     fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeScanFindingsResponse = try {
@@ -371,54 +369,73 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     } catch (e: Exception) {
         LOG.debug { "Listing security scan failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e)
-        throw codeScanServerException(errorMessage, "ListCodeScanFindingsError")
+        throw codeScanServerException("ListCodeScanFindingsException: $errorMessage")
     }
 
     fun mapToCodeScanIssues(recommendations: List<String>): List<CodeWhispererCodeScanIssue> {
-        val scanRecommendations: List<CodeScanRecommendation> = recommendations.map {
-            val value: List<CodeScanRecommendation> = MAPPER.readValue(it)
-            value
-        }.flatten()
+        val scanRecommendations = recommendations.flatMap { MAPPER.readValue<List<CodeScanRecommendation>>(it) }
         if (isProjectScope()) {
             LOG.debug { "Total code scan issues returned from service: ${scanRecommendations.size}" }
         }
-        return scanRecommendations.mapNotNull {
+        return scanRecommendations.mapNotNull { recommendation ->
             val file = try {
                 LocalFileSystem.getInstance().findFileByIoFile(
-                    Path.of(sessionContext.sessionConfig.projectRoot.path, it.filePath).toFile()
+                    Path.of(sessionContext.sessionConfig.projectRoot.path, recommendation.filePath).toFile()
                 )
             } catch (e: Exception) {
-                LOG.debug { "Cannot find file at location ${it.filePath}" }
+                LOG.debug { "Cannot find file at location ${recommendation.filePath}" }
                 null
             }
-            when (file?.isDirectory) {
-                false -> {
-                    runReadAction {
-                        FileDocumentManager.getInstance().getDocument(file)
-                    }?.let { document ->
-                        val endLineInDocument = min(max(0, it.endLine - 1), document.lineCount - 1)
+
+            if (file?.isDirectory == false) {
+                runReadAction {
+                    FileDocumentManager.getInstance().getDocument(file)
+                }?.let { document ->
+
+                    val documentLines = document.getText().split("\n")
+                    val (startLine, endLine) = recommendation.run { startLine to endLine }
+                    var shouldDisplayIssue = true
+
+                    for (codeBlock in recommendation.codeSnippet) {
+                        val lineNumber = codeBlock.number - 1
+                        if (codeBlock.number in startLine..endLine) {
+                            val documentLine = documentLines.getOrNull(lineNumber)
+                            if (documentLine != codeBlock.content) {
+                                shouldDisplayIssue = false
+                                break
+                            }
+                        }
+                    }
+
+                    if (shouldDisplayIssue) {
+                        val endLineInDocument = minOf(maxOf(0, recommendation.endLine - 1), document.lineCount - 1)
                         val endCol = document.getLineEndOffset(endLineInDocument) - document.getLineStartOffset(endLineInDocument) + 1
+
                         CodeWhispererCodeScanIssue(
-                            startLine = it.startLine,
+                            startLine = recommendation.startLine,
                             startCol = 1,
-                            endLine = it.endLine,
+                            endLine = recommendation.endLine,
                             endCol = endCol,
                             file = file,
                             project = sessionContext.project,
-                            title = it.title,
-                            description = it.description,
-                            detectorId = it.detectorId,
-                            detectorName = it.detectorName,
-                            findingId = it.findingId,
-                            ruleId = it.ruleId,
-                            relatedVulnerabilities = it.relatedVulnerabilities,
-                            severity = it.severity,
-                            recommendation = it.remediation.recommendation,
-                            suggestedFixes = it.remediation.suggestedFixes
+                            title = recommendation.title,
+                            description = recommendation.description,
+                            detectorId = recommendation.detectorId,
+                            detectorName = recommendation.detectorName,
+                            findingId = recommendation.findingId,
+                            ruleId = recommendation.ruleId,
+                            relatedVulnerabilities = recommendation.relatedVulnerabilities,
+                            severity = recommendation.severity,
+                            recommendation = recommendation.remediation.recommendation,
+                            suggestedFixes = recommendation.remediation.suggestedFixes,
+                            codeSnippet = recommendation.codeSnippet
                         )
+                    } else {
+                        null
                     }
                 }
-                else -> null
+            } else {
+                null
             }
         }.onEach { issue ->
             // Add range highlighters for all the issues found.
@@ -435,6 +452,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     fun getTelemetryErrorMessage(e: Exception): String = when {
         e.message?.contains("Resource not found.") == true -> "Resource not found."
         e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
+        e.message?.contains("Improperly formed request") == true -> "Improperly formed request"
         e.message?.contains("Service returned HTTP status code 403") == true -> "Service returned HTTP status code 403"
         e.message?.contains("invalid_grant: Invalid token provided") == true -> "invalid_grant: Invalid token provided"
         e.message?.contains("Connect timed out") == true -> "Unable to execute HTTP request: Connect timed out" // Error: Connect to host failed
@@ -487,7 +505,8 @@ internal data class CodeScanRecommendation(
     val ruleId: String?,
     val relatedVulnerabilities: List<String>,
     val severity: String,
-    val remediation: Remediation
+    val remediation: Remediation,
+    val codeSnippet: List<CodeLine>
 )
 
 data class Description(val text: String, val markdown: String)
@@ -497,6 +516,8 @@ data class Remediation(val recommendation: Recommendation, val suggestedFixes: L
 data class Recommendation(val text: String, val url: String)
 
 data class SuggestedFix(val description: String, val code: String)
+
+data class CodeLine(val number: Int, val content: String)
 
 data class CodeScanSessionContext(
     val project: Project,

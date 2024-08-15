@@ -59,7 +59,7 @@ object CodeWhispererConstants {
     const val CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
     const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
     const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
-    const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 15
+    const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 30
     const val TOTAL_BYTES_IN_KB = 1024
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
     const val TOTAL_MILLIS_IN_SECOND = 1000
@@ -134,6 +134,8 @@ object CodeWhispererConstants {
     }
     object CrossFile {
         const val CHUNK_SIZE = 60
+        const val NUMBER_OF_LINE_IN_CHUNK = 10
+        const val NUMBER_OF_CHUNK_TO_FETCH = 3
     }
 
     object Utg {
