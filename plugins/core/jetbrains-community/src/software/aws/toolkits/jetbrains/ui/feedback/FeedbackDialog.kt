@@ -39,7 +39,12 @@ import java.net.URLEncoder
 const val FEEDBACK_SOURCE = "source"
 const val ENABLED_EXPERIMENTS = "experimentsEnabled"
 const val FEEDBACK_ENTRYPOINT = "feedbackEntrypoint"
-
+enum class ProductEntryPoint {
+    AWSTOOLKIT,
+    AMAZONQ,
+    CODEWHISPERER,
+    FEAUTUREDEV
+}
 abstract class FeedbackDialog(
     protected val project: Project,
     initialSentiment: Sentiment = Sentiment.POSITIVE,
