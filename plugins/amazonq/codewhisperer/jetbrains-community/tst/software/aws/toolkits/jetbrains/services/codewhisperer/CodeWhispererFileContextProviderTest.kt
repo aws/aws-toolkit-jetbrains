@@ -218,7 +218,7 @@ class CodeWhispererFileContextProviderTest {
         runTest {
             sut.extractSupplementalFileContext(testPsiFile, aFileContextInfo(CodeWhispererTypeScript.INSTANCE))
             verify(sut).extractSupplementalFileContextForSrc(any(), any())
-            verify(sut,times(0)).extractSupplementalFileContextForTst(any(), any())
+            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
         }
     }
 
