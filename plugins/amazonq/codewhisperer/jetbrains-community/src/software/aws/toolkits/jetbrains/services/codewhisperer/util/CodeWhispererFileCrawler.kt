@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.isDeveloperMode
@@ -87,18 +88,35 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         }
     }.orEmpty()
 
-    override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = if (isDeveloperMode()) {
-        val previousSelected = listPreviousSelectedFile(target)
-        val neighbors = neighborFiles(target, 1).mapNotNull { it.virtualFile }
-        val result = previousSelected + neighbors
-        println("MRU list: ${previousSelected.map { it.name }}")
-        println("neighbors: ${neighbors.map { it.name }}")
-        result.distinctBy { it.name }
-    } else {
-        listAllOpenedFilesSortedByDist(target)
-    }.also {
-        val logStr = it.map { file -> file.name }
-        println("crossfile candidates: $logStr")
+    override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
+        val candidates = if (isDeveloperMode()) {
+            val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
+            val neighbors: List<VirtualFile> =
+                neighborFiles(target, 0).toList() +
+                    neighborFiles(target, 1).toList() +
+                    neighborFiles(target, 2).toList()
+            val openedFiles = listAllOpenedFilesSortedByDist(target)
+
+            val result = previousSelected.take(3) + neighborFiles(target, 0) + openedFiles
+
+            LOG.debug {
+                buildString {
+                    append("MRU: ${previousSelected.map { it.name }}\n")
+                    append("neighbors: ${neighbors.map { it.name }}")
+                    append("opened files: ${openedFiles.map { it.name }}")
+                }
+            }
+
+            result.distinctBy { it.name }
+        } else {
+            listAllOpenedFilesSortedByDist(target)
+        }.filter {
+            it.name != target.virtualFile.name &&
+                isSameDialect(it.extension) &&
+                !isTestFile(it, target.project)
+        }
+
+        return candidates
     }
 
     /**
@@ -108,11 +126,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         val targetFile = target.virtualFile
 
         val openedFiles = runReadAction {
-            FileEditorManager.getInstance(target.project).openFiles.toList().filter {
-                it.name != target.virtualFile.name &&
-                    isSameDialect(it.extension) &&
-                    !isTestFile(it, target.project)
-            }
+            FileEditorManager.getInstance(target.project).openFiles.toList()
         }
 
         val fileToFileDistanceList = runReadAction {
@@ -198,7 +212,10 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psiFile: PsiFile, distance: Int): Set<PsiFile> = search(psiFile, distance).filterNot { it == psiFile }.toSet()
+    fun neighborFiles(psiFile: PsiFile, distance: Int): Set<VirtualFile> = search(psiFile, distance)
+        .filterNot { it == psiFile }
+        .mapNotNull { it.virtualFile }
+        .toSet()
 
     private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
         search(psiFile.containingDirectory, distance, true) +
