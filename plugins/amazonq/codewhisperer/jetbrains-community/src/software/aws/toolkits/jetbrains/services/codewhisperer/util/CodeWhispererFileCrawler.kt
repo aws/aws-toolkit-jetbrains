@@ -14,10 +14,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -89,7 +89,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> = if (isDeveloperMode()) {
         val previousSelected = listPreviousSelectedFile(target)
-        val neighbors = neighborFiles(target).mapNotNull { it.virtualFile }
+        val neighbors = neighborFiles(target, 1).mapNotNull { it.virtualFile }
         val result = previousSelected + neighbors
         println("MRU list: ${previousSelected.map { it.name }}")
         println("neighbors: ${neighbors.map { it.name }}")
@@ -198,7 +198,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
+    fun neighborFiles(psiFile: PsiFile, distance: Int): Set<PsiFile> = search(psiFile, distance).filterNot { it == psiFile }.toSet()
 
     private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
         search(psiFile.containingDirectory, distance, true) +
@@ -235,6 +235,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }
 
     companion object {
+        private val LOG = getLogger<FileCrawler>()
         // TODO: move to CodeWhispererUtils.kt
         /**
          * @param target will be the source of keywords

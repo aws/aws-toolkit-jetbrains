@@ -152,24 +152,24 @@ class CodeWhispererFileCrawlerTest {
         val e = fixture.addFileToProject("root/util/context/e.java", aString())
         val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
 
-        assertThat(sut.neighborFiles(a)).isEqualTo(setOf(b, e)).also {
+        assertThat(sut.neighborFiles(a, 1)).isEqualTo(setOf(b, e)).also {
             assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
             assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
         }
 
-        assertThat(sut.neighborFiles(b)).isEqualTo(setOf(a, c, d, e)).also {
+        assertThat(sut.neighborFiles(b, 1)).isEqualTo(setOf(a, c, d, e)).also {
             assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
             assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
             assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
         }
 
-        assertThat(sut.neighborFiles(c)).isEqualTo(setOf(b))
+        assertThat(sut.neighborFiles(c, 1)).isEqualTo(setOf(b))
 
-        assertThat(sut.neighborFiles(d)).isEqualTo(setOf(b))
+        assertThat(sut.neighborFiles(d, 1)).isEqualTo(setOf(b))
 
-        assertThat(sut.neighborFiles(e)).isEqualTo(setOf(a, b))
+        assertThat(sut.neighborFiles(e, 1)).isEqualTo(setOf(a, b))
 
-        assertThat(sut.neighborFiles(f)).isEmpty().also {
+        assertThat(sut.neighborFiles(f, 1)).isEmpty().also {
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, a.virtualFile)).isGreaterThan(1).isEqualTo(4)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, b.virtualFile)).isGreaterThan(1).isEqualTo(3)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, c.virtualFile)).isGreaterThan(1).isEqualTo(4)
