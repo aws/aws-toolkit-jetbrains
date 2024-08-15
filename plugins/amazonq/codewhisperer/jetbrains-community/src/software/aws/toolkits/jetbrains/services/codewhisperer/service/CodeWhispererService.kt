@@ -41,6 +41,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFou
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -62,7 +63,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -76,9 +77,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
@@ -628,22 +627,12 @@ class CodeWhispererService : Disposable {
                 withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
                     FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
                 }
+            } catch (e: TimeoutCancellationException) {
+                LOG.debug { "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms" }
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             } catch (e: Exception) {
-                if (e is TimeoutCancellationException) {
-                    LOG.debug {
-                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                    }
-                    SupplementalContextInfo(
-                        isUtg = isTstFile,
-                        contents = emptyList(),
-                        latency = System.currentTimeMillis() - startFetchingTimestamp,
-                        targetFileName = fileContext.filename,
-                        strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
-                    )
-                } else {
-                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                    null
-                }
+                LOG.error { "Run into unexpected error while fetching supplemental context, error: ${e.message}" }
+                SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
             }
         }
 
@@ -784,7 +773,7 @@ class CodeWhispererService : Disposable {
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextInfo?,
+            supplementalContext: SupplementalContextResult,
             customizationArn: String?
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
@@ -796,12 +785,16 @@ class CodeWhispererService : Disposable {
                 .filename(fileContextInfo.filename)
                 .programmingLanguage(programmingLanguage)
                 .build()
-            val supplementalContexts = supplementalContext?.contents?.map {
-                SupplementalContext.builder()
-                    .content(it.content)
-                    .filePath(it.path)
-                    .build()
-            }.orEmpty()
+            val cwsprSupplementalContext = if (supplementalContext is SupplementalContextResult.Success) {
+                supplementalContext.contents.map {
+                    SupplementalContext.builder()
+                        .content(it.content)
+                        .filePath(it.path)
+                        .build()
+                }
+            } else {
+                emptyList()
+            }
             val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
                 RecommendationsWithReferencesPreference.ALLOW
             } else {
@@ -810,7 +803,7 @@ class CodeWhispererService : Disposable {
 
             return GenerateCompletionsRequest.builder()
                 .fileContext(fileContext)
-                .supplementalContexts(supplementalContexts)
+                .supplementalContexts(cwsprSupplementalContext)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
@@ -825,7 +818,7 @@ data class RequestContext(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    val supplementalContext: SupplementalContextInfo?,
+    val supplementalContext: SupplementalContextResult,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?
