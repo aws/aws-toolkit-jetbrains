@@ -45,7 +45,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
@@ -211,7 +211,7 @@ object CodeWhispererTestUtil {
 fun aRequestContext(
     project: Project,
     myFileContextInfo: FileContextInfo? = null,
-    mySupplementalContextInfo: SupplementalContextResult? = null
+    mySupplementalContextInfo: SupplementalContextInfo? = null
 ): RequestContext {
     val triggerType = aTriggerType()
     val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {
@@ -251,7 +251,7 @@ fun aRequestContext(
     )
 }
 
-fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? = null, myLatency: Long? = null): SupplementalContextResult.Success {
+fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? = null, myLatency: Long? = null): SupplementalContextInfo {
     val contents = mutableListOf<Chunk>()
     val numberOfContent = Random.nextInt(1, 4)
     repeat(numberOfContent) {
@@ -266,7 +266,7 @@ fun aSupplementalContextInfo(myContents: List<Chunk>? = null, myIsUtg: Boolean? 
     val isUtg = Random.nextBoolean()
     val latency = Random.nextLong(from = 0L, until = 100L)
 
-    return SupplementalContextResult.Success(
+    return SupplementalContextInfo(
         isUtg = myIsUtg ?: isUtg,
         latency = myLatency ?: latency,
         contents = myContents ?: contents,

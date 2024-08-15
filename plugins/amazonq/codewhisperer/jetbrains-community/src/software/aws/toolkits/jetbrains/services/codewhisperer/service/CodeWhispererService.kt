@@ -21,10 +21,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -43,9 +40,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFou
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -57,7 +54,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -65,7 +61,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -79,7 +75,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
@@ -92,7 +90,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposable {
+class CodeWhispererService : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
@@ -147,14 +145,6 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         val isInjectedFile = runReadAction { psiFile.isInjectedText() }
         if (isInjectedFile) return
 
-        val requestContext = try {
-            getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
-        } catch (e: Exception) {
-            LOG.error { "Unable to retrieve users' file context for inline suggestion request ${e.message}" }
-            CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
-            return
-        }
-
         LOG.debug {
             "Calling CodeWhisperer service, trigger type: ${triggerTypeInfo.triggerType}" +
                 if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger) {
@@ -169,10 +159,16 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
             return
         }
 
-        invokeCodeWhispererInBackground(psiFile, requestContext)
+        invokeCodeWhispererInBackground(project, editor, psiFile, triggerTypeInfo, latencyContext)
     }
 
-    private fun invokeCodeWhispererInBackground(psiFile: PsiFile, requestContextDeferred: Deferred<RequestContext>) {
+    private fun invokeCodeWhispererInBackground(
+        project: Project,
+        editor: Editor,
+        psiFile: PsiFile,
+        triggerTypeInfo: TriggerTypeInfo,
+        latencyContext: LatencyContext
+    ) {
         val popup = CodeWhispererPopupManager.getInstance().initPopup()
         Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
 
@@ -181,26 +177,17 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
         // It's possible and ok that coroutine will keep running until the next time we check it's state.
         // As long as we don't show to the user extra info we are good.
+        val coroutineScope = disposableCoroutineScope(popup)
 
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
         coroutineScope.launch {
-            val requestContext = requestContextDeferred.await()
-
-            val language = requestContext.fileContextInfo.programmingLanguage
-            val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-            if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
-                LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
-
-                if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
-                    runInEdt {
-                        showCodeWhispererInfoHint(
-                            requestContext.editor,
-                            message("codewhisperer.language.error", psiFile.fileType.name)
-                        )
-                    }
-                }
+            val requestContext = try {
+                getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
+            } catch (e: Exception) {
+                LOG.debug { e.message.toString() }
+                CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
                 return@launch
             }
 
@@ -211,6 +198,19 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
                     requestContext.customizationArn
                 )
             )
+
+            val language = requestContext.fileContextInfo.programmingLanguage
+            val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
+            if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
+                LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
+                if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+                    showCodeWhispererInfoHint(
+                        requestContext.editor,
+                        message("codewhisperer.language.error", psiFile.fileType.name)
+                    )
+                }
+                return@launch
+            }
 
             try {
                 var startTime = System.nanoTime()
@@ -615,32 +615,42 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         )
     }
 
-    fun getRequestContext(
+    suspend fun getRequestContext(
         triggerTypeInfo: TriggerTypeInfo,
         editor: Editor,
         project: Project,
         psiFile: PsiFile,
         latencyContext: LatencyContext
-    ): Deferred<RequestContext> = coroutineScope.async {
+    ): RequestContext {
         // 1. file context
         val fileContext: FileContextInfo = runReadAction { FileContextProvider.getInstance(project).extractFileContext(editor, psiFile) }
 
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
-
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
         val supplementalContext = try {
             withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
                 FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
             }
-        } catch (e: TimeoutCancellationException) {
-            LOG.debug { "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms" }
-            SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
         } catch (e: Exception) {
-            LOG.error { "Run into unexpected error while fetching supplemental context, error: ${e.message}" }
-            SupplementalContextResult.Failure(isUtg = isTstFile, e, fileContext.filename, System.currentTimeMillis() - startFetchingTimestamp)
+            if (e is TimeoutCancellationException) {
+                LOG.debug {
+                    "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
+                }
+                SupplementalContextInfo(
+                    isUtg = isTstFile,
+                    contents = emptyList(),
+                    latency = System.currentTimeMillis() - startFetchingTimestamp,
+                    targetFileName = fileContext.filename,
+                    strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
+                )
+            } else {
+                LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                null
+            }
         }
+
 
         // 3. caret position
         val caretPosition = runReadAction { getCaretPosition(editor) }
@@ -651,17 +661,7 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        return@async RequestContext(
-            project,
-            editor,
-            triggerTypeInfo,
-            caretPosition,
-            fileContext,
-            supplementalContext,
-            connection,
-            latencyContext,
-            customizationArn
-        )
+        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, latencyContext, customizationArn)
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
@@ -789,7 +789,7 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
 
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextResult,
+            supplementalContext: SupplementalContextInfo?,
             customizationArn: String?
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
@@ -801,18 +801,12 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
                 .filename(fileContextInfo.filename)
                 .programmingLanguage(programmingLanguage)
                 .build()
-
-            val cwsprSupplementalContext = if (supplementalContext is SupplementalContextResult.Success) {
-                supplementalContext.contents.map {
-                    SupplementalContext.builder()
-                        .content(it.content)
-                        .filePath(it.path)
-                        .build()
-                }
-            } else {
-                emptyList()
-            }
-
+            val supplementalContexts = supplementalContext?.contents?.map {
+                SupplementalContext.builder()
+                    .content(it.content)
+                    .filePath(it.path)
+                    .build()
+            }.orEmpty()
             val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
                 RecommendationsWithReferencesPreference.ALLOW
             } else {
@@ -821,7 +815,7 @@ class CodeWhispererService(private val coroutineScope: CoroutineScope) : Disposa
 
             return GenerateCompletionsRequest.builder()
                 .fileContext(fileContext)
-                .supplementalContexts(cwsprSupplementalContext)
+                .supplementalContexts(supplementalContexts)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
@@ -836,10 +830,10 @@ data class RequestContext(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    val supplementalContext: SupplementalContextResult,
+    val supplementalContext: SupplementalContextInfo?,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
-    val customizationArn: String?,
+    val customizationArn: String?
 )
 
 data class ResponseContext(
