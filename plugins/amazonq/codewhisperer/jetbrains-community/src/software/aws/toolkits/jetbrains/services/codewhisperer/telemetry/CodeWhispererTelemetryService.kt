@@ -104,7 +104,7 @@ class CodeWhispererTelemetryService {
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
 
-        val supContext = requestContext.supplementalContext()
+        val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
         val supIsUtg = supContext.isUtg
         val supLatency = when (supContext) {
@@ -155,7 +155,7 @@ class CodeWhispererTelemetryService {
         val (project, _, triggerTypeInfo) = requestContext
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
 
-        val supContext = requestContext.supplementalContext()
+        val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
         val supIsUtg = supContext.isUtg
         val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
@@ -219,7 +219,7 @@ class CodeWhispererTelemetryService {
 
         val classifierThreshold = CodeWhispererAutoTriggerService.getThreshold()
 
-        val supContext = requestContext.supplementalContext()
+        val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
         val supIsUtg = supContext.isUtg
         val supStrategy = if (supContext is SupplementalContextResult.Success) supContext.strategy.toString() else null

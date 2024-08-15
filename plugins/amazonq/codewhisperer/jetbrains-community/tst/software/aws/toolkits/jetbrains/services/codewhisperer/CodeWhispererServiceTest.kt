@@ -9,6 +9,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -81,7 +82,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun `getRequestContext should collect file context, supplemental context and customization`() = runInEdtAndWait {
+    fun `getRequestContext should collect file context, supplemental context and customization`() = runTest {
         val crossfileCandidate = projectRule.fixture.addFileToProject("Util.java", "public class Util {}")
 
         runInEdtAndWait {
@@ -99,7 +100,7 @@ class CodeWhispererServiceTest {
             project = projectRule.project,
             psiFile = file,
             latencyContext = LatencyContext()
-        )
+        ).await()
 
         assertThat(actual.customizationArn).isEqualTo("fake-arn")
         assertThat(actual.fileContextInfo.filename).isEqualTo("Main.java")
@@ -115,7 +116,7 @@ class CodeWhispererServiceTest {
             )
         )
 
-        val supplementalContext = actual.supplementalContext()
+        val supplementalContext = actual.supplementalContext
         assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
         supplementalContext as SupplementalContextResult.Success
         assertThat(supplementalContext.contents).isNotEmpty
@@ -125,7 +126,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun `getRequestContext should still collect file context and customizatioArn even if supplemental context fetching fails`() {
+    fun `getRequestContext should still collect file context and customizatioArn even if supplemental context fetching fails`() = runTest {
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
             onBlocking { this.extractSupplementalFileContext(any(), any()) } doThrow TimeoutCancellationException::class
@@ -140,10 +141,10 @@ class CodeWhispererServiceTest {
             projectRule.project,
             file,
             LatencyContext()
-        )
+        ).await()
 
         assertThat(actual.customizationArn).isEqualTo("fake-arn")
-        actual.supplementalContext().let {
+        actual.supplementalContext.let {
             it as SupplementalContextResult.Failure
             assertThat(it.error).isInstanceOf(TimeoutCancellationException::class.java)
             assertThat(it.isTimeoutFailure()).isTrue
@@ -227,7 +228,7 @@ class CodeWhispererServiceTest {
 
     @Ignore("need update language type since Java is fully supported")
     @Test
-    fun `getRequestContext - cross file context should be empty for non-cross-file user group`() {
+    fun `getRequestContext - cross file context should be empty for non-cross-file user group`() = runTest {
         val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
 
         runInEdtAndWait {
@@ -240,9 +241,9 @@ class CodeWhispererServiceTest {
             projectRule.project,
             file,
             LatencyContext()
-        )
+        ).await()
 
-        actual.supplementalContext().let {
+        actual.supplementalContext.let {
             it as SupplementalContextResult.Success
             assertThat(it.contents).isEmpty()
             assertThat(it.contentLength).isEqualTo(0)

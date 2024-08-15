@@ -10,6 +10,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -237,7 +238,7 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun sendUserTriggerDecisionTelemetry() {
+    fun sendUserTriggerDecisionTelemetry() = runTest {
         val mockModelConfiguraotr = mock<CodeWhispererModelConfigurator> {
             on { activeCustomization(any()) } doReturn CodeWhispererCustomization("fake-arn", "fake-name")
         }
@@ -253,7 +254,7 @@ class CodeWhispererClientAdaptorTest {
             projectRule.project,
             file,
             LatencyContext(codewhispererEndToEndStart = 0, codewhispererEndToEndEnd = 20000000)
-        )
+        ).await()
 
         sut.sendUserTriggerDecisionTelemetry(
             requestContext,
