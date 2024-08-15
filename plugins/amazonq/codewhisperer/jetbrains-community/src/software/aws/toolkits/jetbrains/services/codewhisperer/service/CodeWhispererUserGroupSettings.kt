@@ -19,6 +19,7 @@ import kotlin.reflect.KClass
 /**
  * Component controlling codewhisperer user group settings
  */
+@Deprecated("use CodeWhispererFeatureConfigService instead")
 @Service
 @State(name = "codewhispererUserGroupSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUserGroupStates> {

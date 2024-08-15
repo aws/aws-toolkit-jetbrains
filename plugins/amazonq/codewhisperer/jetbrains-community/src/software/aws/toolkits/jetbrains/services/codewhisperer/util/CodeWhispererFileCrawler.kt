@@ -198,7 +198,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psiFile: PsiFile) = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
+    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
 
     private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
         search(psiFile.containingDirectory, distance, true) +
@@ -208,16 +208,11 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
         var d = distance
         val res = mutableListOf<PsiFile>()
-        val pendingVisit = mutableListOf(psiDir)
-        val visisted = mutableMapOf(psiDir to false)
+        var pendingVisit = listOf(psiDir)
 
         while (d >= 0 && pendingVisit.isNotEmpty()) {
-            var toVisit = emptyList<PsiDirectory>()
+            val toVisit = mutableListOf<PsiDirectory>()
             for (dir in pendingVisit) {
-                if (visisted[dir] == true) {
-                    continue
-                }
-
                 val fs = dir.files
                 res.addAll(fs)
 
@@ -226,14 +221,13 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                 } else {
                     dir.parentDirectory?.let {
                         listOf(it)
-                    } ?: emptyList()
+                    }.orEmpty()
                 }
 
-                toVisit = dirs
-                visisted[dir] = true
+                toVisit.addAll(dirs)
             }
 
-            pendingVisit.addAll(toVisit)
+            pendingVisit = toVisit
             d--
         }
 
