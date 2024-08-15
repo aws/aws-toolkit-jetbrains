@@ -190,7 +190,6 @@ class CodeWhispererFileContextProviderTest {
         }
     }
 
-    @Ignore
     @Test
     fun `use crossfile if UTG is not supported`() {
         sut = spy(sut)
@@ -214,7 +213,6 @@ class CodeWhispererFileContextProviderTest {
             fixture.openFileInEditor(psiFile2.virtualFile)
             fixture.openFileInEditor(psiFile3.virtualFile)
             fixture.openFileInEditor(testPsiFile.virtualFile)
-//            fixture.editor.caretModel.moveToOffset(fixture.editor.document.textLength)
         }
 
         runTest {
