@@ -13,6 +13,8 @@ class CodeWhispererShell private constructor() : CodeWhispererProgrammingLanguag
 
     override fun isCodeCompletionSupported(): Boolean = true
 
+    override fun isSupplementalContextSupported() = true
+
     companion object {
         const val ID = "shell"
 

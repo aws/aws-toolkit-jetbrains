@@ -14,6 +14,7 @@ import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -31,12 +32,17 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererKotlin
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTf
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -122,72 +128,62 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `shouldFetchCrossfileContext - fully support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-
-        assertThat(
-            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
-                CodeWhispererJavaScript.INSTANCE,
-                CodeWhispererUserGroup.CrossFile
-            )
-        ).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-
-        assertThat(
-            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
-                CodeWhispererTypeScript.INSTANCE,
-                CodeWhispererUserGroup.CrossFile
-            )
-        ).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, mock())).isTrue
     }
 
-    @Ignore("Reenable this once we have any partial support language")
     @Test
-    fun `shouldFetchCrossfileContext - partially support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
+    fun `shouldFetchCrossfileContext - partially support should return true if feature flag is enabled`() {
+        val mockFeatureConfigService = mock<CodeWhispererFeatureConfigService> {
+            on { getCrossfileConfig() } doReturn true
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfigService, disposableRule.disposable)
+
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, mock())).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, mock())).isTrue
+    }
+
+    @Test
+    fun `shouldFetchCrossfileContext - partially support should return false if feature flag is disabled`() {
+        val mockFeatureConfigService = mock<CodeWhispererFeatureConfigService> {
+            on { getCrossfileConfig() } doReturn false
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfigService, disposableRule.disposable)
+
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, mock())).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, mock())).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, mock())).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, mock())).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, mock())).isFalse
     }
 
     @Test
     fun `shouldFetchCrossfileContext - no support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererYaml.INSTANCE, mock())).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJson.INSTANCE, mock())).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPlainText.INSTANCE, mock())).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTf.INSTANCE, mock())).isNull()
     }
 
     @Test
-    fun `languages not supporting supplemental context will return empty`() {
+    fun `languages not supported will return empty directly`() {
         val psiFiles = setupFixture(fixture)
         val psi = psiFiles[0]
 
-        runBlocking {
-            var context = aFileContextInfo(CodeWhispererCsharp.INSTANCE)
-
+        runTest {
+            var context = aFileContextInfo(CodeWhispererYaml.INSTANCE)
             assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
             assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
 
-            context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
+            context = aFileContextInfo(CodeWhispererTf.INSTANCE)
             assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
             assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
         }

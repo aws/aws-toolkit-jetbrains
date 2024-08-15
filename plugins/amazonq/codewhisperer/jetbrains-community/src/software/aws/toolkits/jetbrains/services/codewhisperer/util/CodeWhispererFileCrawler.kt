@@ -10,10 +10,12 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -137,6 +139,65 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     private fun isSameDialect(fileExt: String?): Boolean = fileExt?.let {
         dialects.contains(fileExt)
     } ?: false
+
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
+
+    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
+        search(psiFile.containingDirectory, distance, true) +
+            search(psiFile.containingDirectory, distance, false)
+    }
+
+    private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
+        var d = distance
+        val res = mutableListOf<PsiFile>()
+        var pendingVisit = listOf(psiDir)
+
+        while (d >= 0 && pendingVisit.isNotEmpty()) {
+            val toVisit = mutableListOf<PsiDirectory>()
+            for (dir in pendingVisit) {
+                val fs = dir.files
+                res.addAll(fs)
+
+                val dirs = if (goDown) {
+                    dir.subdirectories.toList()
+                } else {
+                    dir.parentDirectory?.let {
+                        listOf(it)
+                    }.orEmpty()
+                }
+
+                toVisit.addAll(dirs)
+            }
+
+            pendingVisit = toVisit
+            d--
+        }
+
+        return res.toSet()
+    }
 
     companion object {
         // TODO: move to CodeWhispererUtils.kt
