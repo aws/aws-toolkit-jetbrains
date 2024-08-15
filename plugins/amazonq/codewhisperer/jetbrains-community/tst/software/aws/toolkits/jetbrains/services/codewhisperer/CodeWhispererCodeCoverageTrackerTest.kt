@@ -159,7 +159,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             mock(),
             mock(),
             FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE),
-            mock(),
+            aSupplementalContextInfo(),
             null,
             mock(),
             aString()
