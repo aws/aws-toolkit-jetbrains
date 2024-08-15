@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
@@ -62,6 +63,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCove
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -159,7 +161,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             mock(),
             mock(),
             FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE),
-            aSupplementalContextInfo(),
+            SupplementalContextInfo(isUtg = false, contents = emptyList(), targetFileName = "", strategy = CrossFileStrategy.Empty, latency = 0L),
             null,
             mock(),
             aString()

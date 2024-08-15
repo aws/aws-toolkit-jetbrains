@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContex
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
@@ -104,15 +103,18 @@ class CodeWhispererTelemetryService {
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
 
-        val supContext = requestContext.supplementalContext
-        val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
-        val supLatency = when (supContext) {
-            is SupplementalContextResult.Success -> supContext.latency
-            is SupplementalContextResult.Failure -> supContext.latency
-            else -> null
+        // since python now only supports UTG but not cross file context
+        val supContext = if (requestContext.fileContextInfo.programmingLanguage.isUTGSupported() &&
+            requestContext.supplementalContext?.isUtg == true
+        ) {
+            requestContext.supplementalContext
+        } else if (requestContext.fileContextInfo.programmingLanguage.isSupplementalContextSupported() &&
+            requestContext.supplementalContext?.isUtg == false
+        ) {
+            requestContext.supplementalContext
+        } else {
+            null
         }
-        val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
 
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         val startUrl = getConnectionStartUrl(requestContext.connection)
@@ -133,10 +135,10 @@ class CodeWhispererTelemetryService {
             success = invocationSuccess,
             credentialStartUrl = startUrl,
             codewhispererImportRecommendationEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled(),
-            codewhispererSupplementalContextTimeout = supIsTimeout,
-            codewhispererSupplementalContextIsUtg = supIsUtg,
-            codewhispererSupplementalContextLatency = supLatency?.toDouble(),
-            codewhispererSupplementalContextLength = supContentLength,
+            codewhispererSupplementalContextTimeout = supContext?.isProcessTimeout,
+            codewhispererSupplementalContextIsUtg = supContext?.isUtg,
+            codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
+            codewhispererSupplementalContextLength = supContext?.contentLength,
             codewhispererCustomizationArn = requestContext.customizationArn,
             codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name
         )
@@ -154,11 +156,7 @@ class CodeWhispererTelemetryService {
         val recommendation = detailContext.recommendation
         val (project, _, triggerTypeInfo) = requestContext
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-
-        val supContext = requestContext.supplementalContext
-        val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
-        val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
+        val supplementalContext = requestContext.supplementalContext
 
         LOG.debug {
             "Recording user decisions of recommendation. " +
@@ -184,9 +182,9 @@ class CodeWhispererTelemetryService {
             codewhispererSuggestionState = suggestionState,
             codewhispererTriggerType = triggerTypeInfo.triggerType,
             credentialStartUrl = startUrl,
-            codewhispererSupplementalContextIsUtg = supIsUtg,
-            codewhispererSupplementalContextLength = supContentLength,
-            codewhispererSupplementalContextTimeout = supIsTimeout,
+            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
+            codewhispererSupplementalContextLength = supplementalContext?.contentLength,
+            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
             codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name
         )
     }
@@ -219,11 +217,7 @@ class CodeWhispererTelemetryService {
 
         val classifierThreshold = CodeWhispererAutoTriggerService.getThreshold()
 
-        val supContext = requestContext.supplementalContext
-        val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
-        val supStrategy = if (supContext is SupplementalContextResult.Success) supContext.strategy.toString() else null
-        val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
+        val supplementalContext = requestContext.supplementalContext
         val completionType = if (recommendationContext.details.isEmpty()) CodewhispererCompletionType.Line else recommendationContext.details[0].completionType
 
         // only send if it's a pro tier user
@@ -280,10 +274,10 @@ class CodeWhispererTelemetryService {
             codewhispererClassifierResult = classifierResult,
             codewhispererClassifierThreshold = classifierThreshold,
             codewhispererCustomizationArn = requestContext.customizationArn,
-            codewhispererSupplementalContextIsUtg = supIsUtg,
-            codewhispererSupplementalContextLength = supContentLength,
-            codewhispererSupplementalContextTimeout = supIsTimeout,
-            codewhispererSupplementalContextStrategyId = supStrategy,
+            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
+            codewhispererSupplementalContextLength = supplementalContext?.contentLength,
+            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
+            codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
             codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
             codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
             codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()

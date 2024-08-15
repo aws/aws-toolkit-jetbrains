@@ -284,6 +284,7 @@ class CodeWhispererTelemetryServiceTest {
                 "codewhispererTypeaheadLength" to recommendationContext.userInputSinceInvocation.length,
                 "codewhispererTimeSinceLastDocumentChange" to timeSinceDocumentChanged,
                 "codewhispererUserGroup" to "Control",
+                "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                 "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                 "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
                 "codewhispererCharactersAccepted" to charCount
@@ -380,6 +381,7 @@ class CodeWhispererTelemetryServiceTest {
                     count = 1,
                     "codewhispererSuggestionState" to expectedState,
                     "codewhispererUserGroup" to "Control",
+                    "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                     "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                     "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
                     atLeast = true
@@ -390,6 +392,7 @@ class CodeWhispererTelemetryServiceTest {
                     "codewhisperer_userTriggerDecision",
                     count = 1,
                     "codewhispererPreviousSuggestionState" to expectedPreviousSuggestionState,
+                    "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                     "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                     "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
                     "codewhispererUserGroup" to "Control",
