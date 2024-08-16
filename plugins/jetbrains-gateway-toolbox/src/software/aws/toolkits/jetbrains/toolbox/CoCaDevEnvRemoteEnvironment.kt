@@ -8,14 +8,16 @@ import com.jetbrains.toolbox.gateway.EnvironmentVisibilityState
 import com.jetbrains.toolbox.gateway.RemoteProviderEnvironment
 import com.jetbrains.toolbox.gateway.environments.EnvironmentContentsView
 import com.jetbrains.toolbox.gateway.states.EnvironmentStateConsumer
+import com.jetbrains.toolbox.gateway.ui.ObservablePropertiesFactory
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.jetbrains.services.caws.CawsProject
 import java.util.concurrent.CompletableFuture
 
 class CoCaDevEnvRemoteEnvironment(
     private val coroutineScope: CoroutineScope,
-    private val project: CawsProject
-): AbstractRemoteProviderEnvironment() {
+    private val project: CawsProject,
+    factory: ObservablePropertiesFactory
+): AbstractRemoteProviderEnvironment(factory) {
     override fun getId(): String {
         return project.toString()
     }

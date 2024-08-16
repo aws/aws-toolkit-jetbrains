@@ -44,17 +44,15 @@ import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerS
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
-import software.aws.toolkits.jetbrains.core.explorer.cwqTab.nodes.CodeWhispererExplorerRootNode
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -65,8 +63,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsFor
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForExplorer
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
-import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
-import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
+import software.aws.toolkits.jetbrains.ui.feedback.ToolkitFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
@@ -94,7 +91,7 @@ class GettingStartedPanel(
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
-                override fun onChange(providerId: String) {
+                override fun onChange(providerId: String, newScopes: List<String>?) {
                     connectionUpdated()
                 }
             }
@@ -537,7 +534,7 @@ class GettingStartedPanel(
                         message("gettingstarted.auth.idc.sign.out.confirmation")
                     ).yesText(message("general.confirm")).ask(project)
                     if (confirmDeletion) {
-                        deleteSsoConnectionCW(connection)
+                        deleteSsoConnection(connection)
                     }
                 }
             }
@@ -548,9 +545,11 @@ class GettingStartedPanel(
             }
         }
 
-        private fun handleCodeCatalystLogin(authResult: Boolean, revertToPanel: Panel) {
-            handleLogin(authResult)
-            if (authResult) {
+        private fun handleCodeCatalystLogin(authResult: Boolean?, revertToPanel: Panel) {
+            val r = authResult ?: return
+
+            handleLogin(r)
+            if (r) {
                 controlPanelVisibility(panelConnectionInProgress, panelConnected)
 
                 val tooltip = GotItTooltip(
@@ -614,7 +613,7 @@ class GettingStartedPanel(
                                     )
                                     handleLogin(loginSuccess)
 
-                                    if (loginSuccess) {
+                                    if (loginSuccess == true) {
                                         val tooltip = GotItTooltip(
                                             "$GOT_IT_ID_PREFIX.explorer",
                                             message("gettingstarted.explorer.gotit.explorer.body"),
@@ -678,7 +677,7 @@ class GettingStartedPanel(
                                             message("gettingstarted.auth.idc.sign.out.confirmation")
                                         ).yesText(message("general.confirm")).ask(project)
                                         if (confirmDeletion) {
-                                            deleteSsoConnectionExplorer(connection)
+                                            deleteSsoConnection(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
@@ -709,7 +708,7 @@ class GettingStartedPanel(
                                     )
                                     handleLogin(loginSuccess)
 
-                                    if (loginSuccess) {
+                                    if (loginSuccess == true) {
                                         controlPanelVisibility(panelConnectionInProgress, panelConnected)
                                         val tooltip = GotItTooltip(
                                             "$GOT_IT_ID_PREFIX.explorer",
@@ -746,7 +745,7 @@ class GettingStartedPanel(
                                             message("gettingstarted.auth.idc.sign.out.confirmation")
                                         ).yesText(message("general.confirm")).ask(project)
                                         if (confirmDeletion) {
-                                            deleteSsoConnectionExplorer(connection)
+                                            deleteSsoConnection(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
@@ -874,7 +873,7 @@ class GettingStartedPanel(
                         panelConnected = panel {
                             row {
                                 button(message("codewhisperer.explorer.learn")) {
-                                    LearnCodeWhispererEditorProvider.openEditor(project)
+//                                    LearnCodeWhispererEditorProvider.openEditor(project)
                                 }
                             }
                             row {
@@ -899,7 +898,7 @@ class GettingStartedPanel(
                                                 message("gettingstarted.auth.idc.sign.out.confirmation")
                                             ).yesText(message("general.confirm")).ask(project)
                                             if (confirmDeletion) {
-                                                deleteSsoConnectionCW(connection)
+                                                deleteSsoConnection(connection)
                                             }
                                         }
                                     }
@@ -989,7 +988,7 @@ class GettingStartedPanel(
                                                 message("gettingstarted.auth.idc.sign.out.confirmation")
                                             ).yesText(message("general.confirm")).ask(project)
                                             if (confirmDeletion) {
-                                                deleteSsoConnectionCW(connection)
+                                                deleteSsoConnection(connection)
                                             }
                                         }
                                         logoutFromSsoConnection(project, connection) {
@@ -1045,7 +1044,7 @@ class GettingStartedPanel(
                     .withHeader(message("codewhisperer.explorer.tooltip.title"))
                     .withPosition(Balloon.Position.above)
 
-                showGotIt(AwsToolkitExplorerToolWindow.CODEWHISPERER_Q_TAB_ID, CodeWhispererExplorerRootNode.NODE_NAME, tooltip)
+                showGotIt(AwsToolkitExplorerToolWindow.Q_TAB_ID, message("action.q.openchat.text"), tooltip)
             } else {
                 controlPanelVisibility(panelConnectionInProgress, revertToPanel)
             }
@@ -1119,8 +1118,9 @@ class GettingStartedPanel(
         abstract val loginSuccessTitle: String
         abstract val loginSuccessBody: String
 
-        protected fun handleLogin(authResult: Boolean) {
-            if (authResult) {
+        protected fun handleLogin(authResult: Boolean?) {
+            val r = authResult ?: return
+            if (r) {
                 infoBanner.setSuccessMessage(loginSuccessTitle, loginSuccessBody)
             }
         }
@@ -1227,15 +1227,17 @@ class GettingStartedPanel(
     }
 
     companion object {
-        fun openPanel(project: Project, firstInstance: Boolean = false, connectionInitiatedFromExplorer: Boolean = false) = FileEditorManager.getInstance(
-            project
-        ).openTextEditor(
-            OpenFileDescriptor(
-                project,
-                GettingStartedVirtualFile(firstInstance, connectionInitiatedFromExplorer)
-            ),
-            true
-        )
+        fun openPanel(project: Project, firstInstance: Boolean = false, connectionInitiatedFromExplorer: Boolean = false) = runInEdt {
+            FileEditorManager.getInstance(
+                project
+            ).openTextEditor(
+                OpenFileDescriptor(
+                    project,
+                    GettingStartedVirtualFile(firstInstance, connectionInitiatedFromExplorer)
+                ),
+                true
+            )
+        }
     }
 
     override fun dispose() {
@@ -1245,7 +1247,7 @@ class GettingStartedPanel(
 class ShareFeedbackInGetStarted : DumbAwareAction() {
     override fun actionPerformed(e: AnActionEvent) {
         runInEdt {
-            FeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
+            ToolkitFeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
         }
     }
 }

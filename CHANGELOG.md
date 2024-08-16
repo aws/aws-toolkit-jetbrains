@@ -1,3 +1,218 @@
+# _3.23_ (2024-08-15)
+- **(Bug Fix)** Fix NPE in Rider AWS SAM project wizard ([#4768](https://github.com/aws/aws-toolkit-jetbrains/issues/4768))
+- **(Bug Fix)** Amazon Q Chat: Fix Tab selection scrollbar visibility which causes tabs half visible if there are several tabs open
+- **(Bug Fix)** Amazon Q `/dev`: update supported file extensions
+- **(Bug Fix)** Amazon Q: Optimized the workspace file collection logic which makes the collection time now only 5-10% of what it was before.
+- **(Bug Fix)** Amazon Q Chat: / command selector doesn't work if user pastes the command to prompt and submits
+- **(Bug Fix)** Amazon Q Chat: Related link previews sometimes remain on screen and block the whole Chat UI
+- **(Bug Fix)** Amazon Q Chat: @ context selector conflicts with some use cases where the user wants use @ character for a word in the prompt itself
+- **(Bug Fix)** Amazon Q Chat: Fix Header items in card bodies don't wrap if they don't contain spaces
+- **(Removal)** Removed support for 2023.2.x IDEs
+- **(Removal)** Removed support for Gateway 2024.1
+
+# _3.22_ (2024-08-08)
+- **(Feature)** feat(Amazon Q Code Transformation): warn user if absolute path found in pom.xml
+- **(Feature)** feat(Amazon Q Code Transformation): show pro tier users estimated cost of /transform on projects over 100K lines
+- **(Bug Fix)** fix(Amazon Q Code Transformation): prevent empty chat bubble from appearing when starting or cancelling a transformation
+- **(Bug Fix)** Amazon Q /dev: include a retry option for the same prompt after folder reselection
+- **(Bug Fix)** Fix inability to open files on double click and open context menu on right click in the S3 bucket viewer
+- **(Bug Fix)** fix(amazonq): Amazon Q chat `@workspace` uses more than 20% cpu
+- **(Bug Fix)** Fix 'Cannot create extension' in AWS Toolkit
+
+# _3.21_ (2024-08-01)
+- **(Bug Fix)** Fix NullPointerException that may happen when re-authenticating to Amazon Q
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with the max tabs notification not being dismissible
+- **(Bug Fix)** Fix Amazon Q chat context menu actions show up in all chat windows
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with an incorrect input cursor position in the prompt text box
+- **(Bug Fix)** Amazon Q Chat: Showing/hiding the scrollbars is now controlled by the OS settings
+
+# _3.20_ (2024-07-26)
+- **(Bug Fix)** Fix Q chat not responding in 2023.2 and 2023.3
+
+# _3.19_ (2024-07-25)
+- **(Feature)** Q feature dev: Use common code extensions to filter relevant files
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug where multiline user input appears like a code block instead of a paragraph
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug when the prompt input exceeds the width of the chat box it's not always wrapped correctly.
+- **(Bug Fix)** Fix 'ContainerDisposedException' when attempting to sign-in to Amazon Q
+- **(Bug Fix)** Fix Q window reauthenticate button not functioning due to illegal function call outisde of EDT
+
+# _3.18_ (2024-07-19)
+- **(Feature)** Add support for 2024.2
+- **(Bug Fix)** Fix bug when workspace index cache is not loaded
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.1 and for IDEs based on the 2023.2 platform
+
+# _3.17_ (2024-07-15)
+- **(Feature)** Amazon Q/dev: proactively show code generation iterations
+- **(Bug Fix)** Don't allow Q/Core to be installed in the unsupported thin client context ([#4658](https://github.com/aws/aws-toolkit-jetbrains/issues/4658))
+- **(Bug Fix)** AmazonQ chat `@workspace` file indexing respects user's git-ignore
+- **(Bug Fix)** Amazon Q /dev command: improve user error messages
+
+# _3.16_ (2024-07-10)
+- **(Feature)** Add support for [Amazon Q Chat Workspace Context](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/workspace-context.html). Customers can use `@workspace` to ask questions regarding local workspace.
+
+# _3.15_ (2024-07-08)
+- **(Bug Fix)** Amazon Q Chat: Fixed button texts are cropped too short
+- **(Bug Fix)** Amazon Q Chat: Fixed button font sizes are too big
+- **(Bug Fix)** Expose Amazon Q backend validation error message
+- **(Bug Fix)** Amazon Q Security Scans: Fixed unnecessary yellow lines appearing in both auto scans and project scans.
+- **(Bug Fix)** Amazon Q: Fix an issue where inline suggestion will not properly show in JetBrains remote env 2024.1+
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible when multine text inserted with paste
+- **(Bug Fix)** Fix Q Chat not respecting system trust store unless a proxy is configured
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input and selected command horizontal alignment
+- **(Bug Fix)** Amazon Q Chat: Fixed prompt input becomes invisible if an html special character is inserted
+- **(Bug Fix)** Amazon Q Chat: Fixed buttons don't show borders inside a message
+
+# _3.14_ (2024-06-27)
+- **(Bug Fix)** Q Code Transform - Add troubleshooting document links to UI messages
+- **(Bug Fix)** Security Scan: Improved telemetry error messages
+- **(Bug Fix)** Feature Development: fix in progress UX during backend calls
+- **(Bug Fix)** Rewrite integration with the New Solution dialog in Rider to use the new API.
+
+# _3.13_ (2024-06-24)
+- **(Bug Fix)** Fix refresh token failure due to null aws error details
+
+# _3.12_ (2024-06-21)
+- **(Bug Fix)** Fix an issue where worker threads are unable to properly resolve the calling plugin, resulting in invalid telemetry data
+- **(Bug Fix)** Amazon Q Chat: Fixed broken code blocks with typewriter text in list items.
+- **(Bug Fix)** Feature Development: update /dev welcome message
+- **(Bug Fix)** Fix IDE auto completion settings potentially overwritten by Q inline suggestion
+- **(Bug Fix)** Fix infinite restart loop on <=241 when an incompatible version of AWS Toolkit is installed alongside Amazon Q ([#4519](https://github.com/aws/aws-toolkit-jetbrains/issues/4519))
+
+# _3.11_ (2024-06-13)
+- **(Feature)** Amazon Q Code Transform: Allow user to view transformation build log
+- **(Bug Fix)** Fix intermittent validation exception from CodeWhisperer service for improperly formed request
+- **(Bug Fix)** fix(Amazon Q Code Transformation): allow module to be zipped successfully even if it contains broken symlinks
+
+# _3.10_ (2024-06-07)
+- **(Bug Fix)** Resolve a NullPointerException that could occur while handling editor creation event. ([#4554](https://github.com/aws/aws-toolkit-jetbrains/issues/4554))
+
+# _3.9_ (2024-06-06)
+- **(Feature)** feat(featureDev): generated plan being shown from top
+- **(Feature)** Amazon Q Code Transform: Communicate download failure in transform chat, and improve download failure notification
+- **(Feature)** CodeTransformation: increase project upload limit to 2GB
+- **(Bug Fix)** Security Scan: Improved method of applying security fixes
+- **(Bug Fix)** Security Scan: Improved accuracy when applying security fixes
+- **(Bug Fix)** Security Scan: Fixes inconsistent behavior with how security issues are underlined in the editor.
+
+# _3.8_ (2024-05-30)
+- **(Bug Fix)** fix(featureDev): File Rejection stopped working
+- **(Bug Fix)** Amazon Q Feature Development: Update error message when repo size larger than 200 megabytes
+- **(Bug Fix)** Always show device code prompt when performing device code grant through a legacy SSO configuration
+
+# _3.7_ (2024-05-29)
+- **(Bug Fix)** (featureDev): Revert fix for file rejection. Reason: The plan disappears after clicking generate Code
+- **(Bug Fix)** Amazon Q Code Transformation: show more specific error messages on failure cases
+
+# _3.6_ (2024-05-28)
+- **(Bug Fix)** Fix recurring popup "refreshing token" whne users're typing in the IDE and Q connection expires
+
+# _3.5_ (2024-05-23)
+- **(Bug Fix)** Amazon Q Code Transformation: show exact error messages in chat when job fails
+
+# _3.4_ (2024-05-16)
+- **(Bug Fix)** Amazon Q Chat: Prompt input field in Q Chat tabs doesn't stop after it reaches to the given maxLength
+- **(Bug Fix)** Amazon Q Chat: When window gets focus, even though the autoFocus property is set to true, input field doesn't get focus
+- **(Bug Fix)** Amazon Q Chat: Inside chat body, if there is a code block inside a list item it shows <br/> tags
+- **(Bug Fix)** Security Scan: Improved error notifications
+
+# _3.3_ (2024-05-14)
+- **(Bug Fix)** Don't use `authorization_grant` when performing SSO login with legacy SSO or non-commercial AWS regions
+
+# _3.2_ (2024-05-13)
+- **(Feature)** Amazon Q: Updated status bar icons including an explicit icon for an unconnected state
+- **(Feature)** Human in the loop - Adding human intervention to help update dependencies during the Amazon Q Transformation process
+- **(Feature)** Improve the SSO login experience by switching to the Authorization Code with PKCE flow
+- **(Bug Fix)** Fix AWS SSO connection when authenticating with RDS using an IAM Identity Center profile ([#4145](https://github.com/aws/aws-toolkit-jetbrains/issues/4145))
+- **(Bug Fix)** Amazon Q: Reduce frequency of automated code scans and terminate superseded file scans.
+- **(Bug Fix)** Amazon Q Code Transformation: ensure chat does not freeze with /transform on an invalid project
+- **(Bug Fix)** Amazon Q: Fix issue where items listed by Amazon Q Code Scan were duplicated or missing
+- **(Bug Fix)** Amazon Q Chat: Typewriter animator parts showing up in code fields inside listitems
+- **(Bug Fix)** Removed install Q notification if Q is already installed
+- **(Bug Fix)** Amazon Q: Avoid duplicate credential expired notifications during startup
+- **(Bug Fix)** Amazon Q: Support disabling auto-scan for unsupported languages.
+
+# _3.1_ (2024-04-30)
+- **(Bug Fix)** Amazon Q Feature Development: Handle generated code parsing for rendering references correctly
+- **(Bug Fix)** Amazon Q Chat: Copy to clipboard on code blocks doesn't work
+- **(Bug Fix)** Amazon Q Chat: Fixed markdown is not getting parsed inside list items.
+- **(Bug Fix)** Fix help icon in the AWS Explorer pointing to the wrong auth instructions page
+- **(Bug Fix)** Amazon Q: Fix an issue where /dev usage would cause the UI to freeze and take an unusually long time to complete. ([#4269](https://github.com/aws/aws-toolkit-jetbrains/issues/4269))
+- **(Bug Fix)** Fix for Code Scan Issue editor popup for Builder Id users.
+
+# _3.0_ (2024-04-29)
+- **(Feature)** Amazon Q: Security scans can now run automatically when file changes are made
+- **(Feature)** Amazon Q: Send security issue to chat for explanation and fix
+- **(Feature)** Amazon Q: Security scans can now run on all files in the project
+- **(Feature)** Amazon Q Chat: Added additional parameters to onCopyCodeToClipboard and onCodeInsertToCursorPosition events
+- **(Feature)** Amazon Q Code Transformation: include details about expected changes in transformation plan
+- **(Feature)** Connection id is now shown beside CodeCatalyst dropdown
+- **(Feature)** Amazon Q Chat: Updates quick action commands style and groupings
+- **(Bug Fix)** Amazon Q Chat: Q panel doesn't fit to its parent
+- **(Bug Fix)** Amazon Q Code Feature Development: Update welcome message and menu item description for /dev command
+- **(Bug Fix)** Amazon Q Feature Development: Update error message for monthly conversation limit reach
+
+# _2.19_ (2024-04-19)
+- **(Feature)** Enable Amazon Q feature development and Amazon Q transform capabilities (/dev and /transform) for AWS Builder ID users.
+- **(Bug Fix)** Amazon Q Code Transformation: ensure full error message shown in notifications
+- **(Bug Fix)** Fix issue with competing SDK proxy configuration ([#4279](https://github.com/aws/aws-toolkit-jetbrains/issues/4279))
+
+# _2.18_ (2024-04-12)
+- **(Feature)** Add support for Lambda runtime Java 21
+- **(Feature)** Add support for Lambda runtime Node.js 20
+- **(Feature)** Add support for Lambda runtime Python 3.12
+- **(Bug Fix)** CodeWhisperer: handle exception when code scan service returns out of bounds line numbers
+- **(Bug Fix)** Amazon Q Code Feature Development: fix the welcome message for /dev command
+- **(Removal)** Drop support for the Python 3.7 Lambda runtime
+- **(Removal)** Drop support for the Node.js14 Lambda runtime
+- **(Removal)** Drop support for the .NET 5.0 Lambda runtime
+- **(Removal)** Removed support for Gateway 2023.3
+- **(Removal)** Removed support for 2023.1.x IDEs
+- **(Removal)** Drop support for the Java 8 (AL2012) Lambda runtime
+
+# _2.17_ (2024-04-04)
+- **(Bug Fix)** Fix "null" appearing in feedback dialog prompts
+- **(Bug Fix)** Amazon Q Code Transformation - Omit Maven metadata files when uploading dependencies to fix certain build failures in backend.
+- **(Bug Fix)** Amazon Q Code Transformation: use actual project JDK when transforming project
+
+# _2.16_ (2024-03-29)
+- **(Bug Fix)** Fix issue where Amazon Q Chat does not appear in IDEs other than IntelliJ IDEA ([#4218](https://github.com/aws/aws-toolkit-jetbrains/issues/4218))
+
+# _2.15_ (2024-03-28)
+- **(Feature)** CodeTransform: new experience with Amazon Q chat integration
+- **(Bug Fix)** Move 'Send to Amazon Q' action group to the bottom of right click menu
+- **(Bug Fix)** Fix scripts missing when connecting through JetBrains Gateway ([#4188](https://github.com/aws/aws-toolkit-jetbrains/issues/4188))
+
+# _2.14_ (2024-03-21)
+- **(Feature)** Amazon Q + CodeWhisperer: Most Amazon Q + CodeWhisperer actions are now migrated from the AWS Toolkit panel to the Amazon Q status bar menu.
+- **(Bug Fix)** CodeCatalyst: Update status of connection in developer tools if the user connection is expired.
+- **(Bug Fix)** Respect IDE HTTP proxy server settings when using Amazon Q
+- **(Removal)** CodeTransformation: remove play button from Transformation Hub, instead use /transform in chat
+
+# _2.13_ (2024-03-13)
+- **(Feature)** CodeTransform: add button to submit feedback when job fails
+
+# _2.12_ (2024-03-12)
+- **(Feature)** Add configurable auto plugin update feature
+- **(Feature)** Amazon Q: Support feature development (/dev)
+- **(Bug Fix)** Show better error message on upload zip errors for Q Code Transform.
+- **(Bug Fix)** CodeWhisperer: Include copied code in percentage code written metrics
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2023.3 and for for IDEs based on the 2023.1 platform
+
+# _2.11_ (2024-03-07)
+- **(Bug Fix)** Move 'Send to Amazon Q' action group after the 'Show Context Actions' action
+- **(Bug Fix)** fix(CodeTransform): Updating commands for copying dependencies
+- **(Bug Fix)** Fix 'ActionUpdateThread.OLD_EDT' deprecation errors in 2024.1
+
+# _2.10_ (2024-02-29)
+- **(Feature)** Amazon Q CodeTransform: show link to docs in error notifications
+- **(Feature)** Security issue hover telemetry includes additional metadata
+- **(Feature)** CodeWhisperer: Add startUrl to security scan telemetry
+
+# _2.9_ (2024-02-22)
+- **(Feature)** Add startUrl in Amazon Q telemetry events
+- **(Feature)** CodeTransformation: block upload if project > 1GB
+- **(Bug Fix)** Amazon Q: Service exceptions are not suppressed and displayed to the user.
+
 # _2.8_ (2024-02-15)
 - **(Feature)** CodeTransform: smart select Java version of project
 - **(Bug Fix)** Fix for AmazonQ on Linux input focus problem ([#4100](https://github.com/aws/aws-toolkit-jetbrains/issues/4100))

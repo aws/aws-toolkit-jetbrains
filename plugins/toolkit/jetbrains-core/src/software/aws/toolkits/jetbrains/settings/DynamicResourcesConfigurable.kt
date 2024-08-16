@@ -12,8 +12,8 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.FilterComponent
 import com.intellij.ui.ListSpeedSearch
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
@@ -22,9 +22,9 @@ import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.explorer.ExplorerToolWindow
+import software.aws.toolkits.jetbrains.feedback.sendFeedbackWithExperimentsMetadata
 import software.aws.toolkits.jetbrains.services.dynamic.DynamicResourceSupportedTypes
 import software.aws.toolkits.jetbrains.services.dynamic.explorer.OtherResourcesNode
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.FEEDBACK_SOURCE
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -94,14 +94,14 @@ class DynamicResourcesConfigurable : BoundConfigurable(message("aws.settings.dyn
                         checklist.toggleAll(false)
                     }.widthGroup(sizeGroup)
                 }
-            }.verticalAlign(VerticalAlign.TOP)
+            }.align(AlignY.TOP)
         }.resizableRow()
     }
 
     private fun submitSuggestion(suggestion: String) {
         coroutineScope.launch(getCoroutineBgContext()) {
             try {
-                TelemetryService.getInstance().sendFeedback(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions")).also {
+                sendFeedbackWithExperimentsMetadata(Sentiment.NEGATIVE, suggestion, mapOf(FEEDBACK_SOURCE to "Resource Type Suggestions")).also {
                     FeedbackTelemetry.result(project = null, success = true)
                 }
             } catch (e: Exception) {

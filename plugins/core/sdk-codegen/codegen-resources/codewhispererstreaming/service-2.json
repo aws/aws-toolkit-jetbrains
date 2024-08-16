@@ -55,6 +55,7 @@
             "output":{"shape":"GenerateTaskAssistPlanResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -71,6 +72,12 @@
                 "message":{"shape":"String"}
             },
             "exception":true
+        },
+        "ArtifactId":{
+            "type":"string",
+            "max":126,
+            "min":1,
+            "pattern":"[a-zA-Z0-9-_]+"
         },
         "AssistantResponseEvent":{
             "type":"structure",
@@ -127,6 +134,10 @@
             "event":true,
             "sensitive":true
         },
+        "Boolean":{
+            "type":"boolean",
+            "box":true
+        },
         "ChatHistory":{
             "type":"list",
             "member":{"shape":"ChatMessage"},
@@ -149,6 +160,7 @@
                 "codeReferenceEvent":{"shape":"CodeReferenceEvent"},
                 "supplementaryWebLinksEvent":{"shape":"SupplementaryWebLinksEvent"},
                 "followupPromptEvent":{"shape":"FollowupPromptEvent"},
+                "invalidStateEvent": {"shape":  "InvalidStateEvent"},
                 "error":{"shape":"InternalServerException"}
             },
             "eventstream":true
@@ -206,7 +218,8 @@
                 "conversationId":{"shape":"ConversationId"},
                 "history":{"shape":"ChatHistory"},
                 "currentMessage":{"shape":"ChatMessage"},
-                "chatTriggerType":{"shape":"ChatTriggerType"}
+                "chatTriggerType":{"shape":"ChatTriggerType"},
+                "customizationArn":{"shape": "ResourceArn"}
             }
         },
         "CursorState":{
@@ -266,13 +279,23 @@
             "type":"structure",
             "members":{
                 "document":{"shape":"TextDocument"},
-                "cursorState":{"shape":"CursorState"}
+                "cursorState":{"shape":"CursorState"},
+                "relevantDocuments": {"shape": "RelevantDocumentList"},
+                "useRelevantDocuments": {"shape": "Boolean"}
             }
+        },
+        "ExportContext":{
+            "type":"structure",
+            "members":{
+                "transformationExportContext":{"shape":"TransformationExportContext"}
+            },
+            "union":true
         },
         "ExportIntent":{
             "type":"string",
             "enum":[
-                "TRANSFORMATION"
+                "TRANSFORMATION",
+                "TASK_ASSIST"
             ]
         },
         "ExportResultArchiveRequest":{
@@ -283,7 +306,8 @@
             ],
             "members":{
                 "exportId":{"shape":"String"},
-                "exportIntent":{"shape":"ExportIntent"}
+                "exportIntent":{"shape":"ExportIntent"},
+                "exportContext":{"shape":"ExportContext"}
             }
         },
         "ExportResultArchiveResponse":{
@@ -362,6 +386,18 @@
             "exception":true,
             "fault":true,
             "retryable":{"throttling":false}
+        },
+        "InvalidStateEvent":{
+            "type":"structure",
+            "members":{
+                "reason":{"shape":"InvalidStateReason"},
+                "message":{"shape": "String"}
+            },
+            "event":true
+        },
+        "InvalidStateReason":{
+            "type":"string",
+            "enum":["INVALID_TASK_ASSIST_PLAN"]
         },
         "Long":{
             "type":"long",
@@ -449,6 +485,30 @@
             "member":{"shape":"Reference"},
             "max":10,
             "min":0
+        },
+        "RelevantTextDocument": {
+            "type": "structure",
+            "required": [
+                "relativeFilePath"
+            ],
+            "members": {
+                "relativeFilePath": {"shape": "SensitiveString"},
+                "programmingLanguage": {"shape": "ProgrammingLanguage"},
+                "text": {"shape": "SensitiveString"},
+                "documentSymbols": {"shape": "DocumentSymbols"}
+            }
+        },
+        "RelevantDocumentList": {
+            "type": "list",
+            "member": {"shape": "RelevantTextDocument"},
+            "max": 5,
+            "min": 0
+        },
+        "ResourceArn":{
+            "type":"string",
+            "max":1224,
+            "min":0,
+            "pattern":"arn:([-.a-z0-9]{1,63}:){2}([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
         },
         "ResourceNotFoundException":{
             "type":"structure",
@@ -617,6 +677,33 @@
             },
             "exception":true,
             "retryable":{"throttling":true}
+        },
+        "ServiceQuotaExceededException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true,
+            "retryable":{"throttling":true}
+        },
+        "TransformationDownloadArtifactType":{
+            "type":"string",
+            "enum":[
+                "ClientInstructions",
+                "Logs"
+            ]
+        },
+        "TransformationExportContext":{
+            "type":"structure",
+            "required":[
+                "downloadArtifactId",
+                "downloadArtifactType"
+            ],
+            "members":{
+                "downloadArtifactId":{"shape":"ArtifactId"},
+                "downloadArtifactType":{"shape":"TransformationDownloadArtifactType"}
+            }
         },
         "UploadId":{
             "type":"string",

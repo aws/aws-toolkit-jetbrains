@@ -15,3 +15,7 @@ dependencies {
     implementation(libs.aws.jsonProtocol)
     implementation(libs.aws.queryProtocol)
 }
+
+java {
+    targetCompatibility = JavaVersion.VERSION_17
+}

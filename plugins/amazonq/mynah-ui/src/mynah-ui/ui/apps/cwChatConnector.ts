@@ -21,6 +21,7 @@ export interface ConnectorProps {
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
     onError: (tabID: string, message: string, title: string) => void
     onWarning: (tabID: string, message: string, title: string) => void
+    onOpenSettingsMessage: (tabID: string) => void
     tabsStorage: TabsStorage
 }
 
@@ -30,6 +31,7 @@ export class Connector {
     private readonly onWarning
     private readonly onChatAnswerReceived
     private readonly onCWCContextCommandMessage
+    private readonly onOpenSettingsMessage
     private readonly followUpGenerator: FollowUpGenerator
 
     constructor(props: ConnectorProps) {
@@ -38,6 +40,7 @@ export class Connector {
         this.onWarning = props.onWarning
         this.onError = props.onError
         this.onCWCContextCommandMessage = props.onCWCContextCommandMessage
+        this.onOpenSettingsMessage = props.onOpenSettingsMessage
         this.followUpGenerator = new FollowUpGenerator()
     }
 
@@ -92,7 +95,10 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         this.sendMessageToExtension({
             tabID: tabID,
@@ -102,6 +108,9 @@ export class Connector {
             tabType: 'cwc',
             insertionTargetType: type,
             codeReference,
+            eventId,
+            codeBlockIndex,
+            totalCodeBlocks,
         })
     }
 
@@ -110,7 +119,10 @@ export class Connector {
         messageId: string,
         code?: string,
         type?: 'selection' | 'block',
-        codeReference?: CodeReference[]
+        codeReference?: CodeReference[],
+        eventId?: string,
+        codeBlockIndex?: number,
+        totalCodeBlocks?: number
     ): void => {
         this.sendMessageToExtension({
             tabID: tabID,
@@ -120,6 +132,9 @@ export class Connector {
             tabType: 'cwc',
             insertionTargetType: type,
             codeReference,
+            eventId,
+            codeBlockIndex,
+            totalCodeBlocks,
         })
     }
 
@@ -296,15 +311,6 @@ export class Connector {
         }
     }
 
-    transform = (tabID: string): void => {
-        this.sendMessageToExtension({
-            tabID: tabID,
-            command: 'transform',
-            chatMessage: 'transform',
-            tabType: 'cwc',
-        })
-    }
-
     private processAuthNeededException = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived === undefined) {
             return
@@ -319,6 +325,10 @@ export class Connector {
         })
 
         return
+    }
+
+    private processOpenSettingsMessage = async (messageData: any): Promise<void> => {
+        this.onOpenSettingsMessage(messageData.tabID)
     }
 
     handleMessageReceive = async (messageData: any): Promise<void> => {
@@ -343,6 +353,11 @@ export class Connector {
 
         if (messageData.type === 'authNeededException') {
             await this.processAuthNeededException(messageData)
+            return
+        }
+
+        if (messageData.type === 'openSettingsMessage') {
+            await this.processOpenSettingsMessage(messageData)
             return
         }
     }

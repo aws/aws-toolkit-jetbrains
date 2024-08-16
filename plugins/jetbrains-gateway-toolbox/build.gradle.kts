@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.kotlin.com.intellij.openapi.util.SystemInfoRt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Path
 import kotlin.io.path.div
 
@@ -10,18 +13,20 @@ plugins {
     id("toolkit-detekt")
 }
 
-repositories {
-    maven("https://packages.jetbrains.team/maven/p/tbx/gateway")
-}
-
 dependencies {
-    api(project(":plugin-toolkit:core"))
+    api(project(":plugin-core:core"))
     api(project(":plugin-toolkit:jetbrains-core"))
     api(project(":plugin-toolkit:jetbrains-gateway"))
     compileOnly(libs.sshd.core)
-    implementation("com.jetbrains.toolbox.gateway:gateway-api:2.1.0.17705")
+    implementation("com.jetbrains.toolbox.gateway:gateway-api:2.5.0.32871")
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
+}
+java {
+    targetCompatibility = JavaVersion.VERSION_17
+}
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
 }
 
 val pluginId = "sample"

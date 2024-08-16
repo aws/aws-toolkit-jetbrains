@@ -1,0 +1,102 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+
+    "definitions": {
+        "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Version name in SemVer notation.",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*))+$"
+        },
+        "color": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 7,
+            "description": "Color in HTML hex format.",
+            "pattern": "^#?[0-9a-fA-F]{6}$"
+        }
+    },
+
+    "type": "object",
+    "description": "Toolbox Gateway extension description.",
+    "properties": {
+        "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique plugin id, must match JetBrains Marketplace plugin id."
+        },
+        "version": {
+            "$ref": "#/definitions/version",
+            "description": "Version number in SemVer notation."
+        },
+        "meta": {
+            "type": "object",
+            "properties": {
+                "readableName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Plugin name as displayed in the UI"
+                },
+                "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "One line description as displayed in the UI"
+                },
+                "vendor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Vendor name as displayed in the UI"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Plguin homepage URL."
+                },
+                "backgroundColors": {
+                    "type": "object",
+                    "properties": {
+                        "start": {
+                            "$ref": "#/definitions/color",
+                            "description": "Color of the start spot (left in LTR locales, right in RTL locales)"
+                        },
+                        "top": {
+                            "$ref": "#/definitions/color",
+                            "description": "Color of the topmost spot"
+                        },
+                        "end": {
+                            "$ref": "#/definitions/color",
+                            "description": "Color of the end spot (right in LTR locales, left in RTL locales)"
+                        }
+                    },
+                    "description": "Colors for background spots on provider pages.",
+                    "required": ["start", "top", "end"],
+                    "additionalProperties": false
+                }
+            },
+            "required": ["readableName", "description", "vendor", "url"],
+            "additionalProperties": false
+        },
+        "apiVersion": {
+            "$ref": "#/definitions/version",
+            "description": "Target plugin API version. Follows SemVer."
+        },
+        "compatibleVersionRange": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "$ref": "#/definitions/version",
+                    "description": "Minimal compatible version of the Toolbox App"
+                },
+                "to": {
+                    "$ref": "#/definitions/version",
+                    "description": "Maximum compatible version of the Toolbox App (can be omitted)"
+                }
+            },
+            "required": ["from"],
+            "additionalProperties": false
+        }
+    },
+
+    "required": ["id", "version", "meta", "apiVersion"],
+    "additionalProperties": false
+}

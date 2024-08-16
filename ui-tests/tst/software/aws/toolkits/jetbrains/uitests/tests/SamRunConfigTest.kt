@@ -14,9 +14,9 @@ import com.intellij.remoterobot.utils.waitFor
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.uitests.CoreTest
 import software.aws.toolkits.jetbrains.uitests.extensions.uiTest
@@ -32,8 +32,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 
+@Disabled("Needs to be moved to accomodate plugin split")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2023.1", disabledReason = "Flakes on 231")
 class SamRunConfigTest {
     private val dataPath = Paths.get(System.getProperty("testDataPath")).resolve("samProjects/zip/java11")
     private val input = "{}"

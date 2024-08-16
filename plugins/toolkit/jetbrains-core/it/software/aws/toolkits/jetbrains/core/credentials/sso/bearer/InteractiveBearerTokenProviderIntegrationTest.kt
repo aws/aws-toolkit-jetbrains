@@ -16,10 +16,12 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sso.AccessTokenCacheKey
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceGrantAccessTokenCacheKey
 import software.aws.toolkits.jetbrains.core.credentials.sso.DiskCache
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Path
 import java.time.Instant
 
@@ -35,7 +37,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
 
         private val testScopes = listOf("sso:account:access")
         private val diskCache by lazy { DiskCache(cacheDir = diskCachePath) }
-        private val cacheKey = AccessTokenCacheKey(SONO_REGION, SONO_URL, testScopes)
+        private val cacheKey = DeviceGrantAccessTokenCacheKey(SONO_REGION, SONO_URL, testScopes)
     }
 
     @Test
@@ -64,7 +66,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
         val initialToken = diskCache.loadAccessToken(cacheKey)
         assumeThat(initialToken).isNotNull
 
-        diskCache.saveAccessToken(cacheKey, initialToken!!.copy(accessToken = "invalid", expiresAt = Instant.EPOCH))
+        diskCache.saveAccessToken(cacheKey, (initialToken!! as DeviceAuthorizationGrantToken).copy(accessToken = "invalid", expiresAt = Instant.EPOCH))
         val sut = InteractiveBearerTokenProvider(
             startUrl = SONO_URL,
             region = SONO_REGION,
@@ -73,7 +75,7 @@ class InteractiveBearerTokenProviderIntegrationTest {
             id = "test"
         )
 
-        assertThat(sut.resolveToken()).satisfies {
+        assertThat(sut.resolveToken()).satisfiesKt {
             assertThat(it).isNotNull()
             assertThat(it).isNotEqualTo(initialToken)
         }

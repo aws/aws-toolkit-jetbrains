@@ -1,31 +1,56 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import kotlin.collections.ArrayDeque
+import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
-pluginManagement {
-    repositories {
-        val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
-        val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
-        if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
-            println("Using CodeArtifact proxy: ${codeArtifactUrl.get()}")
-            maven {
-                url = uri(codeArtifactUrl.get())
-                credentials {
-                    username = "aws"
-                    password = codeArtifactToken.get()
-                }
+val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
+    val codeArtifactUrl: Provider<String> = providers.environmentVariable("CODEARTIFACT_URL")
+    val codeArtifactToken: Provider<String> = providers.environmentVariable("CODEARTIFACT_AUTH_TOKEN")
+    return if (codeArtifactUrl.isPresent && codeArtifactToken.isPresent) {
+        maven {
+            url = uri(codeArtifactUrl.get())
+            credentials {
+                username = "aws"
+                password = codeArtifactToken.get()
             }
         }
-        gradlePluginPortal()
+    } else {
+        null
+    }
+}.also {
+    pluginManagement {
+        repositories {
+            it()
+            gradlePluginPortal()
+        }
+    }
+}
+
+plugins {
+    id("com.github.burrunan.s3-build-cache") version "1.5"
+    id("com.gradle.develocity") version "3.17.5"
+    id("org.jetbrains.intellij.platform.settings") version "2.0.0"
+}
+
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        codeArtifactMavenRepo()
+        mavenCentral()
+        maven("https://packages.jetbrains.team/maven/p/tbx/gateway")
+
+        intellijPlatform {
+            defaultRepositories()
+            jetbrainsRuntime()
+        }
     }
 }
 
 buildscript {
     // match with version catalog, s3-build-cache has silent classpath conflict with codegen task
     // also since this is a settings plugin, we can't use a version catalog
-    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
     dependencies {
-        classpath(platform("software.amazon.awssdk:bom:2.20.111"))
+        classpath(platform("software.amazon.awssdk:bom:2.26.25"))
     }
 }
 
@@ -33,6 +58,7 @@ val regionEnv: Provider<String> = providers.environmentVariable("AWS_REGION")
 val bucketEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_BUCKET")
 val prefixEnv: Provider<String> = providers.environmentVariable("S3_BUILD_CACHE_PREFIX")
 if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
+    // TODO: can we serve a remote cache out of CloudFront instead? https://docs.gradle.org/8.1/userguide/build_cache.html#sec:build_cache_configure_remote
     buildCache {
         local {
             isEnabled = false
@@ -48,13 +74,16 @@ if (regionEnv.isPresent && bucketEnv.isPresent && prefixEnv.isPresent) {
     }
 }
 
-plugins {
-    id("com.gradle.enterprise").version("3.15.1")
-    id("com.github.burrunan.s3-build-cache").version("1.5")
-}
-
-gradleEnterprise {
+develocity {
     buildScan {
+        // only publish with `--scan` argument
+        publishing.onlyIf { false }
+
+        if (System.getenv("CI") == "true") {
+            termsOfUseUrl = "https://gradle.com/help/legal-terms-of-use"
+            termsOfUseAgree = "yes"
+        }
+
         obfuscation {
             username { "<username>" }
             hostname { "<hostname>" }
@@ -68,6 +97,10 @@ rootProject.name = "aws-toolkit-jetbrains"
 
 include("detekt-rules")
 include("ui-tests")
+include("sandbox-all")
+when (providers.gradleProperty("ideProfileName").get()) {
+    "2023.3", "2024.1" -> include("tmp-all")
+}
 
 /*
 plugins/
@@ -98,7 +131,7 @@ file("plugins").listFiles()?.forEach root@ {
     project(":$pluginRoot").projectDir = it
 
     val path = ArrayDeque<String>()
-    it.walk().maxDepth(2)
+    it.walk().maxDepth(3)
         .onEnter {
             // dont bother traversing a directory if it does not declare a subproject
             if (!it.resolve("build.gradle.kts").isFile) {
@@ -121,7 +154,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name.startsWith("jetbrains-gateway")) {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.1", "2023.2" -> {
+                    "2023.3", "2024.1" -> {
                         return@forEach
                     }
                 }

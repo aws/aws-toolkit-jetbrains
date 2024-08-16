@@ -10,6 +10,7 @@ import com.jetbrains.toolbox.gateway.ui.CheckboxField
 import com.jetbrains.toolbox.gateway.ui.ComboBoxField
 import com.jetbrains.toolbox.gateway.ui.LabelField
 import com.jetbrains.toolbox.gateway.ui.LinkField
+import com.jetbrains.toolbox.gateway.ui.ObservablePropertiesFactory
 import com.jetbrains.toolbox.gateway.ui.RadioButtonField
 import com.jetbrains.toolbox.gateway.ui.TextField
 import com.jetbrains.toolbox.gateway.ui.UiField
@@ -27,11 +28,9 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
-import software.aws.toolkits.jetbrains.core.credentials.reauthProviderIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.core.credentials.sono.SonoCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.tokenConnection
@@ -46,7 +45,8 @@ import kotlin.streams.asSequence
 
 class CoCaDevEnvRemoteProvider(
     private val consumer: RemoteEnvironmentConsumer,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    private val factory: ObservablePropertiesFactory,
 ) : RemoteProvider {
 
     init {
@@ -100,7 +100,7 @@ class CoCaDevEnvRemoteProvider(
 //                consumer.consumeEnvironments(listOf(it.first()))
 //            }
 //        }
-        consumer.consumeEnvironments(listOf(CoCaDevEnvRemoteEnvironment(coroutineScope, CawsProject("aaaaa", "bbbbb"))))
+        consumer.consumeEnvironments(listOf(CoCaDevEnvRemoteEnvironment(coroutineScope, CawsProject("aaaaa", "bbbbb"), factory)))
     }
 
     override fun getNewEnvironmentUiPage(): UiPage {
@@ -116,7 +116,7 @@ class CoCaDevEnvRemoteProvider(
                     LabelField("LabelField"),
                     LinkField("LinkField", "https://example.com"),
                     RadioButtonField(true, "RadioButtonField", "RadioButtonField"),
-                    TextField("TextField")
+                    TextField("TextField", "placeholder")
                 )
         }
     }

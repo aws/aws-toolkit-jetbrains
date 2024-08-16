@@ -46,6 +46,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -58,7 +59,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredent
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.lazilyGetUserId
-import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.gateway.connection.GET_IDE_BACKEND_VERSION_COMMAND
 import software.aws.toolkits.jetbrains.gateway.connection.GitSettings
 import software.aws.toolkits.jetbrains.gateway.connection.IDE_BACKEND_DIR
@@ -207,7 +207,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                     )
                             }
 
-                            val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.pluginPath().fileName}"
+                            val pluginPath = "$IDE_BACKEND_DIR/plugins/${AwsToolkit.PLUGINS_INFO.getValue(AwsPlugin.TOOLKIT).path?.fileName}"
                             var retries = 3
                             val startTimeToCheckInstallation = System.currentTimeMillis()
 

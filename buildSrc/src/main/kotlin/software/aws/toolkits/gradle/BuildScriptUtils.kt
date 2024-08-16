@@ -8,7 +8,6 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import software.aws.toolkits.gradle.intellij.IdeVersions
-import java.io.IOException
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion as KotlinVersionEnum
 
 /**
@@ -23,15 +22,16 @@ fun Project.ciOnly(block: () -> Unit) {
 fun Project.isCi() : Boolean = providers.environmentVariable("CI").isPresent
 
 fun Project.jvmTarget(): Provider<JavaVersion> = withCurrentProfileName {
-    JavaVersion.VERSION_17
+    when (it) {
+//        "2023.3", "2024.1" -> JavaVersion.VERSION_17
+        else -> JavaVersion.VERSION_17
+    }
 }
 
 // https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#other-bundled-kotlin-libraries
 fun Project.kotlinTarget(): Provider<String> = withCurrentProfileName {
     when (it) {
-        "2022.3" -> KotlinVersionEnum.KOTLIN_1_7
-        "2023.1", "2023.2" -> KotlinVersionEnum.KOTLIN_1_8
-        "2023.3", "2024.1" -> KotlinVersionEnum.KOTLIN_1_9
+        "2023.3", "2024.1", "2024.2" -> KotlinVersionEnum.KOTLIN_1_9
         else -> error("not set")
     }.version
 }
@@ -56,7 +56,7 @@ fun Project.buildMetadata() =
                 append(".modified")
             }
         }
-    } catch(e: IOException) {
+    } catch(e: Exception) {
         logger.warn("Could not determine current commit", e)
 
         "unknownCommit"

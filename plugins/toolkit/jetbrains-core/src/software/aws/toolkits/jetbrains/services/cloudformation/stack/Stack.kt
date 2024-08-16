@@ -7,11 +7,11 @@ import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.ToggleAction
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.DumbAwareAction
@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.core.explorer.actions.SingleResourceNodeA
 import software.aws.toolkits.jetbrains.core.toolwindow.ToolkitToolWindow
 import software.aws.toolkits.jetbrains.services.cloudformation.CloudFormationStackNode
 import software.aws.toolkits.jetbrains.services.cloudformation.toolwindow.CloudFormationToolWindow
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CloudformationTelemetry
 import java.time.Duration
@@ -203,6 +204,8 @@ private class StackUI(
     private fun createToolbar(): JComponent {
         val actionGroup = DefaultActionGroup()
         actionGroup.addAction(object : DumbAwareAction(message("general.refresh"), null, AllIcons.Actions.Refresh) {
+            override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
             override fun actionPerformed(e: AnActionEvent) {
                 updater.start()
             }
@@ -219,12 +222,14 @@ private class StackUI(
 
     private fun createFilterAction() =
         object : ToggleAction(message("cloudformation.stack.filter.show_completed"), null, AllIcons.RunConfigurations.ShowPassed), DumbAware {
+            override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
             private val state = AtomicBoolean(true)
             override fun isSelected(e: AnActionEvent): Boolean = state.get()
 
             override fun setSelected(e: AnActionEvent, newState: Boolean) {
                 if (state.getAndSet(newState) != newState) {
-                    ApplicationManager.getApplication().executeOnPooledThread {
+                    pluginAwareExecuteOnPooledThread {
                         updater.applyFilter {
                             newState || it.resourceStatus().type != StatusType.COMPLETED
                         }

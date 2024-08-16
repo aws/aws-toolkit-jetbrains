@@ -39,6 +39,7 @@
             "output":{"shape":"CreateUploadUrlResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
@@ -46,6 +47,36 @@
                 {"shape":"AccessDeniedException"}
             ],
             "idempotent":true
+        },
+        "CreateTaskAssistConversation": {
+            "name": "CreateTaskAssistConversation",
+            "http": {
+                "method": "POST",
+                "requestUri": "/"
+            },
+            "input": {
+                "shape": "CreateTaskAssistConversationRequest"
+            },
+            "output": {
+                "shape": "CreateTaskAssistConversationResponse"
+            },
+            "errors": [
+                {
+                    "shape": "ThrottlingException"
+                },
+                {
+                    "shape": "ServiceQuotaExceededException"
+                },
+                {
+                    "shape": "InternalServerException"
+                },
+                {
+                    "shape": "ValidationException"
+                },
+                {
+                    "shape": "AccessDeniedException"
+                }
+            ]
         },
         "GenerateCompletions":{
             "name":"GenerateCompletions",
@@ -76,6 +107,39 @@
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
+            ]
+        },
+        "GetTaskAssistCodeGeneration": {
+            "name": "GetTaskAssistCodeGeneration",
+            "http": {
+                "method": "POST",
+                "requestUri": "/"
+            },
+            "input": {
+                "shape": "GetTaskAssistCodeGenerationRequest"
+            },
+            "output": {
+                "shape": "GetTaskAssistCodeGenerationResponse"
+            },
+            "errors": [
+                {
+                    "shape": "ThrottlingException"
+                },
+                {
+                    "shape": "ConflictException"
+                },
+                {
+                    "shape": "ResourceNotFoundException"
+                },
+                {
+                    "shape": "InternalServerException"
+                },
+                {
+                    "shape": "ValidationException"
+                },
+                {
+                    "shape": "AccessDeniedException"
+                }
             ]
         },
         "GetTransformation":{
@@ -154,6 +218,22 @@
                 {"shape":"AccessDeniedException"}
             ]
         },
+        "ResumeTransformation":{
+            "name":"ResumeTransformation",
+            "http":{
+                "method":"POST",
+                "requestUri":"/"
+            },
+            "input":{"shape":"ResumeTransformationRequest"},
+            "output":{"shape":"ResumeTransformationResponse"},
+            "errors":[
+                {"shape":"ThrottlingException"},
+                {"shape":"ResourceNotFoundException"},
+                {"shape":"InternalServerException"},
+                {"shape":"ValidationException"},
+                {"shape":"AccessDeniedException"}
+            ]
+        },
         "SendTelemetryEvent":{
             "name":"SendTelemetryEvent",
             "http":{
@@ -187,6 +267,24 @@
                 {"shape":"AccessDeniedException"}
             ],
             "idempotent":true
+        },
+        "StartTaskAssistCodeGeneration": {
+            "name":"StartTaskAssistCodeGeneration",
+            "http":{
+                "method":"POST",
+                "requestUri":"/"
+            },
+            "input":{"shape":"StartTaskAssistCodeGenerationRequest"},
+            "output":{"shape":"StartTaskAssistCodeGenerationResponse"},
+            "errors":[
+                {"shape":"ThrottlingException"},
+                {"shape":"ServiceQuotaExceededException"},
+                {"shape":"ConflictException"},
+                {"shape":"ResourceNotFoundException"},
+                {"shape":"InternalServerException"},
+                {"shape":"ValidationException"},
+                {"shape":"AccessDeniedException"}
+            ]
         },
         "StartTransformation":{
             "name":"StartTransformation",
@@ -227,6 +325,12 @@
                 "message":{"shape":"String"}
             },
             "exception":true
+        },
+        "ArtifactId":{
+            "type":"string",
+            "max":126,
+            "min":1,
+            "pattern":"[a-zA-Z0-9-_]+"
         },
         "ArtifactMap":{
             "type":"map",
@@ -280,6 +384,7 @@
             "members": {
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
                 "userIntent": { "shape": "UserIntent" },
                 "hasCodeSnippet": { "shape": "Boolean" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
@@ -288,7 +393,9 @@
                 "timeBetweenChunks": { "shape": "TimeBetweenChunks" },
                 "fullResponselatency": { "shape": "Double" },
                 "requestLength": { "shape": "Integer" },
-                "responseLength": { "shape": "Integer" }
+                "responseLength": { "shape": "Integer" },
+                "numberOfCodeBlocks": { "shape": "Integer" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatHistory":{
@@ -303,11 +410,33 @@
             "members": {
                 "conversationId": { "shape": "ConversationId" },
                 "messageId": { "shape": "MessageId" },
+                "customizationArn":{ "shape":"CustomizationArn" },
                 "interactionType": { "shape": "ChatMessageInteractionType" },
                 "interactionTarget": { "shape": "String" },
                 "acceptedCharacterCount": { "shape": "Integer" },
-                "acceptedSnippetHasReference": { "shape": "Boolean" }
+                "acceptedLineCount": { "shape": "Integer" },
+                "acceptedSnippetHasReference": { "shape": "Boolean" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
+        },
+        "CreateTaskAssistConversationRequest": {
+            "type": "structure",
+            "members": {}
+        },
+        "CreateTaskAssistConversationResponse": {
+            "type": "structure",
+            "required": ["conversationId"],
+            "members": {
+                "conversationId": {
+                    "shape": "TaskAssistConversationId"
+                }
+            }
+        },
+        "TaskAssistConversationId": {
+            "type": "string",
+            "documentation": "<p>ID which represents a multi-turn conversation</p>",
+            "max": 128,
+            "min": 1
         },
         "ChatMessage":{
             "type":"structure",
@@ -331,14 +460,23 @@
                 "DOWNVOTE"
             ]
         },
+        "FeatureDevEvent": {
+            "type": "structure",
+            "required": ["conversationId"],
+            "members": {
+                "conversationId": { "shape":  "ConversationId" }
+            }
+        },
         "ChatUserModificationEvent": {
             "type": "structure",
             "required": ["conversationId", "messageId", "modificationPercentage"],
             "members": {
                 "conversationId": { "shape": "ConversationId" },
+                "customizationArn":{"shape":"CustomizationArn"},
                 "messageId": { "shape": "MessageId" },
                 "programmingLanguage": { "shape": "ProgrammingLanguage" },
-                "modificationPercentage": { "shape": "Double" }
+                "modificationPercentage": { "shape": "Double" },
+                "hasProjectLevelContext": { "shape": "Boolean" }
             }
         },
         "ChatTriggerType":{
@@ -352,6 +490,13 @@
             "type":"string",
             "enum":["codeanalysis/findings/1.0"]
         },
+        "CodeAnalysisScope": {
+            "type": "string",
+            "enum": [
+                "FILE",
+                "PROJECT"
+            ]
+        },
         "CodeAnalysisStatus":{
             "type":"string",
             "enum":[
@@ -359,6 +504,13 @@
                 "Pending",
                 "Failed"
             ]
+        },
+        "CodeAnalysisUploadContext": {
+            "type": "structure",
+            "required": ["codeScanName"],
+            "members": {
+                "codeScanName": { "shape": "CodeScanName" }
+            }
         },
         "CodeCoverageEvent":{
             "type":"structure",
@@ -393,6 +545,11 @@
                 "currentStage":{"shape":"CodeGenerationWorkflowStage"}
             }
         },
+        "CodeGenerationStatusDetail":{
+            "type":"string",
+            "documentation":"<p>Detailed message about the code generation status</p>",
+            "sensitive":true
+        },
         "CodeGenerationWorkflowStage":{
             "type":"string",
             "enum":[
@@ -418,13 +575,60 @@
             "members":{
                 "programmingLanguage":{"shape":"ProgrammingLanguage"},
                 "codeScanJobId":{"shape":"CodeScanJobId"},
-                "timestamp":{"shape":"Timestamp"}
+                "timestamp":{"shape":"Timestamp"},
+                "codeAnalysisScope": {"shape": "CodeAnalysisScope"}
             }
         },
         "CodeScanJobId":{
             "type":"string",
             "max":128,
             "min":1
+        },
+        "CodeScanName": {
+            "type": "string",
+            "documentation": "<p>Code analysis scan name</p>",
+            "max": 128,
+            "min": 1
+        },
+        "CodeScanRemediationsEvent": {
+            "type": "structure",
+            "members": {
+                "programmingLanguage": {
+                    "shape": "ProgrammingLanguage"
+                },
+                "CodeScanRemediationsEventType": {
+                    "shape": "CodeScanRemediationsEventType"
+                },
+                "timestamp": {
+                    "shape": "Timestamp"
+                },
+                "detectorId": {
+                    "shape": "String"
+                },
+                "findingId": {
+                    "shape": "String"
+                },
+                "ruleId": {
+                    "shape": "String"
+                },
+                "component": {
+                    "shape": "String"
+                },
+                "reason": {
+                    "shape": "String"
+                },
+                "result": {
+                    "shape": "String"
+                },
+                "includesFix": {
+                    "shape": "Boolean"
+                }
+            }
+        },
+        "CodeScanRemediationsEventType": {
+            "type": "string",
+            "documentation": "<p>Code Scan Remediations Interaction Type</p>",
+            "enum": ["CODESCAN_ISSUE_HOVER", "CODESCAN_ISSUE_APPLY_FIX", "CODESCAN_ISSUE_VIEW_DETAILS"]
         },
         "Completion":{
             "type":"structure",
@@ -529,7 +733,10 @@
             "members":{
                 "uploadId":{"shape":"UploadId"},
                 "uploadUrl":{"shape":"PreSignedUrl"},
-                "kmsKeyArn":{"shape":"ResourceArn"}
+                "kmsKeyArn":{"shape":"ResourceArn"},
+                "requestHeaders": {
+                    "shape": "RequestHeaders"
+                }
             }
         },
         "CursorState":{
@@ -797,6 +1004,39 @@
             "members":{
                 "status":{"shape":"CodeAnalysisStatus"},
                 "errorMessage":{"shape":"SensitiveString"}
+            }
+        },
+        "GetTaskAssistCodeGenerationRequest": {
+            "type": "structure",
+            "required": ["conversationId", "codeGenerationId"],
+            "members": {
+                "conversationId": {
+                    "shape": "ConversationId"
+                },
+                "codeGenerationId": {
+                    "shape": "CodeGenerationId"
+                }
+            }
+        },
+        "GetTaskAssistCodeGenerationResponse": {
+            "type": "structure",
+            "required": ["conversationId", "codeGenerationStatus"],
+            "members": {
+                "conversationId": {
+                    "shape": "ConversationId"
+                },
+                "codeGenerationStatus": {
+                    "shape": "CodeGenerationStatus"
+                },
+                "codeGenerationStatusDetail": {
+                    "shape": "CodeGenerationStatusDetail"
+                },
+                "codeGenerationRemainingIterationCount": {
+                    "shape": "Integer"
+                },
+                "codeGenerationTotalIterationCount": {
+                    "shape": "Integer"
+                }
             }
         },
         "GetTransformationPlanRequest":{
@@ -1081,6 +1321,27 @@
             "min":0,
             "pattern":"arn:([-.a-z0-9]{1,63}:){2}([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
         },
+        "RequestHeaderKey": {
+            "type": "string",
+            "max": 64,
+            "min": 1
+        },
+        "RequestHeaderValue": {
+            "type": "string",
+            "max": 256,
+            "min": 1
+        },
+        "RequestHeaders": {
+            "type": "map",
+            "key": {
+                "shape": "RequestHeaderKey"
+            },
+            "value": {
+                "shape": "RequestHeaderValue"
+            },
+            "max": 16,
+            "min": 1
+        },
         "ResourceNotFoundException":{
             "type":"structure",
             "required":["message"],
@@ -1088,6 +1349,21 @@
                 "message":{"shape":"String"}
             },
             "exception":true
+        },
+        "ResumeTransformationRequest":{
+            "type":"structure",
+            "required":["transformationJobId"],
+            "members":{
+                "transformationJobId":{"shape":"TransformationJobId"},
+                "userActionStatus":{"shape":"TransformationUserActionStatus"}
+            }
+        },
+        "ResumeTransformationResponse":{
+            "type":"structure",
+            "required":["transformationStatus"],
+            "members":{
+                "transformationStatus":{"shape":"TransformationStatus"}
+            }
         },
         "RuntimeDiagnostic":{
             "type":"structure",
@@ -1165,7 +1441,9 @@
                 "clientToken":{
                     "shape":"StartCodeAnalysisRequestClientTokenString",
                     "idempotencyToken":true
-                }
+                },
+                "scope": {"shape": "CodeAnalysisScope"},
+                "codeScanName":{"shape":"CodeScanName"}
             }
         },
         "StartCodeAnalysisRequestClientTokenString":{
@@ -1189,6 +1467,28 @@
             "type":"string",
             "max":256,
             "min":1
+        },
+        "StartTaskAssistCodeGenerationRequest": {
+            "type":"structure",
+            "required":[
+                "conversationState",
+                "workspaceState"
+            ],
+            "members":{
+                "conversationState":{"shape":"ConversationState"},
+                "workspaceState":{"shape":"WorkspaceState"}
+            }
+        },
+        "StartTaskAssistCodeGenerationResponse": {
+            "type":"structure",
+            "required":[
+                "conversationId",
+                "codeGenerationId"
+            ],
+            "members":{
+                "conversationId":{"shape":"ConversationId"},
+                "codeGenerationId":{"shape": "CodeGenerationId"}
+            }
         },
         "StartTransformationRequest":{
             "type":"structure",
@@ -1316,10 +1616,12 @@
                 "codeCoverageEvent":{"shape":"CodeCoverageEvent"},
                 "userModificationEvent":{"shape":"UserModificationEvent"},
                 "codeScanEvent":{"shape":"CodeScanEvent"},
+                "codeScanRemediationsEvent": { "shape": "CodeScanRemediationsEvent" },
                 "metricData":{"shape":"MetricData"},
                 "chatAddMessageEvent": { "shape": "ChatAddMessageEvent" },
                 "chatInteractWithMessageEvent": { "shape": "ChatInteractWithMessageEvent" },
-                "chatUserModificationEvent": { "shape": "ChatUserModificationEvent" }
+                "chatUserModificationEvent": { "shape": "ChatUserModificationEvent" },
+                "featureDevEvent":  { "shape":  "FeatureDevEvent" }
             },
             "union":true
         },
@@ -1377,6 +1679,15 @@
             "exception":true,
             "retryable":{"throttling":true}
         },
+        "ServiceQuotaExceededException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true,
+            "retryable":{"throttling":true}
+        },
         "TimeBetweenChunks": {
             "type": "list",
             "member": { "shape": "Double" },
@@ -1384,6 +1695,26 @@
             "min": 0
         },
         "Timestamp":{"type":"timestamp"},
+        "TransformationDownloadArtifact":{
+            "type":"structure",
+            "members":{
+                "downloadArtifactType":{"shape":"TransformationDownloadArtifactType"},
+                "downloadArtifactId":{"shape":"ArtifactId"}
+            }
+        },
+        "TransformationDownloadArtifactType":{
+            "type":"string",
+            "enum":[
+                "ClientInstructions",
+                "Logs"
+            ]
+        },
+        "TransformationDownloadArtifacts":{
+            "type":"list",
+            "member":{"shape":"TransformationDownloadArtifact"},
+            "max":10,
+            "min":0
+        },
         "TransformationJob":{
             "type":"structure",
             "members":{
@@ -1427,7 +1758,8 @@
                 "status":{"shape":"TransformationProgressUpdateStatus"},
                 "description":{"shape":"String"},
                 "startTime":{"shape":"Timestamp"},
-                "endTime":{"shape":"Timestamp"}
+                "endTime":{"shape":"Timestamp"},
+                "downloadArtifacts":{"shape":"TransformationDownloadArtifacts"}
             }
         },
         "TransformationProgressUpdateStatus":{
@@ -1435,7 +1767,8 @@
             "enum":[
                 "IN_PROGRESS",
                 "COMPLETED",
-                "FAILED"
+                "FAILED",
+                "PAUSED"
             ]
         },
         "TransformationProjectState":{
@@ -1469,7 +1802,9 @@
                 "COMPLETED",
                 "PARTIALLY_COMPLETED",
                 "STOPPING",
-                "STOPPED"
+                "STOPPED",
+                "PAUSED",
+                "RESUMED"
             ]
         },
         "TransformationStep":{
@@ -1508,6 +1843,35 @@
             "type":"string",
             "enum":["LANGUAGE_UPGRADE"]
         },
+        "TransformationUploadArtifactType":{
+            "type":"string",
+            "enum":["Dependencies"]
+        },
+        "TransformationUploadContext":{
+            "type":"structure",
+            "required":[
+                "jobId",
+                "uploadArtifactType"
+            ],
+            "members":{
+                "jobId":{"shape":"TransformationJobId"},
+                "uploadArtifactType":{"shape":"TransformationUploadArtifactType"}
+            }
+        },
+        "TaskAssistPlanningUploadContext": {
+            "type": "structure",
+            "required": ["conversationId"],
+            "members": {
+                "conversationId": { "shape": "ConversationId" }
+            }
+        },
+        "TransformationUserActionStatus":{
+            "type":"string",
+            "enum":[
+                "COMPLETED",
+                "REJECTED"
+            ]
+        },
         "UUID":{
             "type":"string",
             "max":36,
@@ -1515,7 +1879,11 @@
         },
         "UploadContext":{
             "type":"structure",
-            "members":{},
+            "members":{
+                "taskAssistPlanningUploadContext":{"shape":"TaskAssistPlanningUploadContext"},
+                "transformationUploadContext":{"shape":"TransformationUploadContext"},
+                "codeAnalysisUploadContext":{"shape":"CodeAnalysisUploadContext"}
+            },
             "union":true
         },
         "UploadId":{
@@ -1526,7 +1894,10 @@
         "UploadIntent":{
             "type":"string",
             "enum":[
-                "TRANSFORMATION"
+                "TRANSFORMATION",
+                "TASK_ASSIST_PLANNING",
+                "AUTOMATIC_FILE_SECURITY_SCAN",
+                "FULL_PROJECT_SECURITY_SCAN"
             ]
         },
         "UserContext":{

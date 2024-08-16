@@ -11,7 +11,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.IdeaActionButtonLook
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DefaultProjectFactory
 import com.intellij.openapi.project.DumbAwareAction
@@ -38,16 +37,16 @@ import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.amazon.awssdk.services.codecatalyst.model.DevEnvironmentStatus
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
-import software.aws.toolkits.jetbrains.core.utils.buildMap
 import software.aws.toolkits.jetbrains.gateway.CawsConnectionParameters
 import software.aws.toolkits.jetbrains.gateway.SsoSettings
 import software.aws.toolkits.jetbrains.gateway.Workspace
 import software.aws.toolkits.jetbrains.gateway.connection.ThinClientTrackerService
 import software.aws.toolkits.jetbrains.gateway.connection.caws.CawsCommandExecutor
 import software.aws.toolkits.jetbrains.gateway.inProgress
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.caws.isSubscriptionFreeTier
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.awt.Color
 import java.awt.FlowLayout
@@ -124,7 +123,7 @@ class WorkspaceDetails(
         if (ws.status == DevEnvironmentStatus.RUNNING) {
             buttonPanel.add(createActionButton(ConfigureAction(ws, workspaces, cawsClient)))
 
-            if (AwsToolkit.isDeveloperMode()) {
+            if (isDeveloperMode()) {
                 buttonPanel.add(createActionButton(ShellAction(ws, workspaces, cawsClient)))
             }
         }
@@ -171,7 +170,7 @@ class PauseAction(private val ws: Workspace, private val workspaceList: Workspac
     override fun actionPerformed(e: AnActionEvent) {
         val result = Messages.showYesNoCancelDialog(message("caws.pause_warning"), message("caws.pause_warning_title"), null)
         if (result != Messages.YES) return
-        ApplicationManager.getApplication().executeOnPooledThread {
+        pluginAwareExecuteOnPooledThread {
             try {
                 ThinClientTrackerService.getInstance().terminateIfRunning(ws.identifier.id)
                 cawsClient.stopDevEnvironment {
@@ -200,7 +199,7 @@ class TerminateAction(private val ws: Workspace, private val workspaceList: Work
     override fun actionPerformed(e: AnActionEvent) {
         val result = Messages.showYesNoDialog(message("caws.delete_workspace_warning"), message("caws.delete_workspace_warning_title"), null)
         if (result != Messages.YES) return
-        ApplicationManager.getApplication().executeOnPooledThread {
+        pluginAwareExecuteOnPooledThread {
             try {
                 cawsClient.deleteDevEnvironment {
                     it.spaceName(ws.identifier.project.space)
