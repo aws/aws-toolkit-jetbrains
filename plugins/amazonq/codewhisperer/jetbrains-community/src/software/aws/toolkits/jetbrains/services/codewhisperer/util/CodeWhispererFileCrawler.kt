@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -89,7 +90,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }.orEmpty()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
-        val candidates = if (isDeveloperMode()) {
+        val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
             val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
             val neighbors: List<VirtualFile> =
                 neighborFiles(target, 0).toList() +
