@@ -91,8 +91,11 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
         val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
             val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
-            val neighbors: List<VirtualFile> = neighborFiles(target, 2).toList()
+                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
+            val neighbors: List<VirtualFile> = neighborFiles(target, 2)
+                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
             val openedFiles = listAllOpenedFilesSortedByDist(target)
+                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
 
             val result = previousSelected.take(3) + neighborFiles(target, 0) + openedFiles
 
@@ -107,10 +110,6 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             result.distinctBy { it.name }
         } else {
             listAllOpenedFilesSortedByDist(target)
-        }.filter {
-            it.name != target.virtualFile.name &&
-                isSameDialect(it.extension) &&
-                !isTestFile(it, target.project)
         }
 
         return candidates
@@ -119,7 +118,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     /**
      * Default strategy will return all opened files sorted with file distance against the target
      */
-    private fun listAllOpenedFilesSortedByDist(target: PsiFile): List<VirtualFile> {
+    fun listAllOpenedFilesSortedByDist(target: PsiFile): List<VirtualFile> {
         val targetFile = target.virtualFile
 
         val openedFiles = runReadAction {
@@ -139,7 +138,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      * New strategy will return opened files sorted by timeline the file is used (Most Recently Used), which should be as same as JB's file switcher (ctrl + tab)
      * Note: test file is included here unlike the default strategy (thus different predicate inside filter)
      */
-    private fun listPreviousSelectedFile(target: PsiFile): List<VirtualFile> {
+    fun listPreviousSelectedFile(target: PsiFile): List<VirtualFile> {
         val targetVFile = target.virtualFile
         return runReadAction {
             (FileEditorManager.getInstance(target.project) as FileEditorManagerImpl).getSelectionHistory()
@@ -194,12 +193,12 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *     5. E: root/util/context/e.ts
      *     6. F: root/util/foo/bar/baz/f.ts
      *
-     *   neighborfiles(A) = [B, E]
-     *   neighborfiles(B) = [A, C, D, E]
-     *   neighborfiles(C) = [B,]
-     *   neighborfiles(D) = [B,]
-     *   neighborfiles(E) = [A, B]
-     *   neighborfiles(F) = []
+     *   neighborfiles(A, 1) = [B, E]
+     *   neighborfiles(B, 1) = [A, C, D, E]
+     *   neighborfiles(C, 1) = [B,]
+     *   neighborfiles(D, 1) = [B,]
+     *   neighborfiles(E, 1) = [A, B]
+     *   neighborfiles(F, 1) = []
      *
      *      A B C D E F
      *   A  x 1 2 2 0 4
