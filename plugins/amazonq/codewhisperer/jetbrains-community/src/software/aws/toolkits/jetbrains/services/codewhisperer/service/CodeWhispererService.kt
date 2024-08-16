@@ -651,7 +651,6 @@ class CodeWhispererService : Disposable {
             }
         }
 
-
         // 3. caret position
         val caretPosition = runReadAction { getCaretPosition(editor) }
 

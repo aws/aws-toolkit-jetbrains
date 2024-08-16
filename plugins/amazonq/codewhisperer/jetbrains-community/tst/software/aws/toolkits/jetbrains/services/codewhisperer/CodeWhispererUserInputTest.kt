@@ -8,6 +8,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.replaceService
+import io.kinference.utils.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.mockito.kotlin.argumentCaptor
@@ -107,7 +109,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
         codewhispererServiceSpy.stub {
-            onGeneric {
+            onBlocking {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
@@ -116,13 +118,15 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
                     latencyContextCaptor.capture()
                 )
             }.doAnswer {
-                val requestContext = codewhispererServiceSpy.getRequestContext(
-                    triggerTypeCaptor.firstValue,
-                    editorCaptor.firstValue,
-                    projectCaptor.firstValue,
-                    psiFileCaptor.firstValue,
-                    latencyContextCaptor.firstValue
-                )
+                val requestContext = runBlocking {
+                    codewhispererServiceSpy.getRequestContext(
+                        triggerTypeCaptor.firstValue,
+                        editorCaptor.firstValue,
+                        projectCaptor.firstValue,
+                        psiFileCaptor.firstValue,
+                        latencyContextCaptor.firstValue
+                    )
+                }
                 projectRule.fixture.type(userInput)
                 requestContext
             }.thenCallRealMethod()

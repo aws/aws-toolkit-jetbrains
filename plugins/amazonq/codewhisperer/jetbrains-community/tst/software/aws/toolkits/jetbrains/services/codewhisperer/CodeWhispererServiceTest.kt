@@ -8,6 +8,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -54,7 +55,7 @@ class CodeWhispererServiceTest {
     }
 
     @Test
-    fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() {
+    fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() = runTest {
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
         whenever(customizationConfig.activeCustomization(projectRule.project)).thenReturn(
             CodeWhispererCustomization(
@@ -104,7 +105,7 @@ class CodeWhispererServiceTest {
 
     @Ignore("need update language type since Java is fully supported")
     @Test
-    fun `getRequestContext - cross file context should be empty for non-cross-file user group`() {
+    fun `getRequestContext - cross file context should be empty for non-cross-file user group`() = runTest {
         whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.Control)
         val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
 
