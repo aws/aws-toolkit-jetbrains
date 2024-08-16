@@ -38,7 +38,13 @@ import java.net.URLEncoder
 
 const val FEEDBACK_SOURCE = "source"
 const val ENABLED_EXPERIMENTS = "experimentsEnabled"
-
+const val FEEDBACK_ENTRYPOINT = "feedbackEntrypoint"
+enum class ProductEntryPoint {
+    AWSTOOLKIT,
+    AMAZONQ,
+    CODEWHISPERER,
+    FEAUTUREDEV
+}
 abstract class FeedbackDialog(
     protected val project: Project,
     initialSentiment: Sentiment = Sentiment.POSITIVE,
@@ -49,7 +55,6 @@ abstract class FeedbackDialog(
     protected abstract fun notificationTitle(): String
     protected abstract fun productName(): String
     protected open fun feedbackPrompt(): String = message("feedback.comment.textbox.title", productName())
-
     private val coroutineScope = projectCoroutineScope(project)
     protected var sentiment = initialSentiment
     private val smileIcon = IconUtil.scale(AwsIcons.Misc.SMILE, null, 3f)
@@ -57,7 +62,6 @@ abstract class FeedbackDialog(
     protected var commentText: String = initialComment
     private lateinit var comment: Cell<JBTextArea>
     private var lengthLimitLabel = JBLabel(message("feedback.comment.textbox.initial.length")).also { it.foreground = UIUtil.getLabelInfoForeground() }
-
     private val dialogPanel by lazy {
         panel {
             if (isToolkit()) {

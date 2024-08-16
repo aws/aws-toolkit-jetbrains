@@ -12,7 +12,7 @@ class FeatureDevFeedbackDialog(project: Project) : FeedbackDialog(project) {
     override fun feedbackPrompt() = message("feedback.comment.textbox.title.amazonq.feature_dev")
     override fun productName() = "Amazon Q FeatureDev"
     override suspend fun sendFeedback() {
-        TelemetryService.getInstance().sendFeedback(sentiment, commentText)
+        TelemetryService.getInstance().sendFeedback(sentiment, commentText, mapOf(FEEDBACK_ENTRYPOINT to ProductEntryPoint.FEAUTUREDEV.toString()))
     }
 
     init {
