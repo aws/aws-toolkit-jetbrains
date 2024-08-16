@@ -141,7 +141,7 @@ object CodeWhispererConstants {
             get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 50 else 10
         val NUMBER_OF_CHUNK_TO_FETCH
             get() = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) 10 else 3
-        const val NEIGHBOR_FILES_DISTANCE = 1
+        const val NEIGHBOR_FILES_DISTANCE = 2
     }
 
     object Utg {

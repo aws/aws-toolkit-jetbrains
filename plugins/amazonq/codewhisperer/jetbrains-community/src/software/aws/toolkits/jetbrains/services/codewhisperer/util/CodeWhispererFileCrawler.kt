@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.TestSourcesFilter
@@ -13,8 +14,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 
 /**
@@ -86,14 +90,44 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }.orEmpty()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
+        val srcFileWithSameExtPredicate = { file: VirtualFile ->
+            !isTestFile(file, target.project) && isSameDialect(file.extension)
+        }
+        val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
+            val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
+                .filter { srcFileWithSameExtPredicate(it) }
+            val neighbors: List<VirtualFile> = neighborFiles(target, NEIGHBOR_FILES_DISTANCE)
+                .filter { srcFileWithSameExtPredicate(it) }
+            val openedFiles = listAllOpenedFilesSortedByDist(target)
+                .filter { srcFileWithSameExtPredicate(it) }
+
+            val result = previousSelected.take(3) + neighbors + openedFiles
+
+            LOG.debug {
+                buildString {
+                    append("MRU: ${previousSelected.map { it.name }}\n")
+                    append("neighbors: ${neighbors.map { it.name }}")
+                    append("opened files: ${openedFiles.map { it.name }}")
+                }
+            }
+
+            result.distinctBy { it.name }
+        } else {
+            listAllOpenedFilesSortedByDist(target)
+                .filter { srcFileWithSameExtPredicate(it) }
+        }
+
+        return candidates
+    }
+
+    /**
+     * Default strategy will return all opened files sorted with file distance against the target
+     */
+    fun listAllOpenedFilesSortedByDist(target: PsiFile): List<VirtualFile> {
         val targetFile = target.virtualFile
 
         val openedFiles = runReadAction {
-            FileEditorManager.getInstance(target.project).openFiles.toList().filter {
-                it.name != target.virtualFile.name &&
-                    isSameDialect(it.extension) &&
-                    !isTestFile(it, target.project)
-            }
+            FileEditorManager.getInstance(target.project).openFiles.toList()
         }
 
         val fileToFileDistanceList = runReadAction {
@@ -102,7 +136,26 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             }
         }
 
-        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+        return fileToFileDistanceList
+            .sortedBy { it.second }
+            .map { it.first }
+            .filter { it.name != target.virtualFile.name }
+    }
+
+    /**
+     * New strategy will return opened files sorted by timeline the file is used (Most Recently Used), which should be as same as JB's file switcher (ctrl + tab)
+     * Note: test file is included here unlike the default strategy (thus different predicate inside filter)
+     */
+    fun listPreviousSelectedFile(target: PsiFile): List<VirtualFile> {
+        val targetVFile = target.virtualFile
+        return runReadAction {
+            (FileEditorManager.getInstance(target.project) as FileEditorManagerImpl).getSelectionHistory()
+                .map { it.first }
+                .filter {
+                    it.name != targetVFile.name &&
+                        isSameDialect(it.extension)
+                }
+        }
     }
 
     override fun listUtgCandidate(target: PsiFile): ListUtgCandidateResult {
@@ -148,12 +201,12 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *     5. E: root/util/context/e.ts
      *     6. F: root/util/foo/bar/baz/f.ts
      *
-     *   neighborfiles(A) = [B, E]
-     *   neighborfiles(B) = [A, C, D, E]
-     *   neighborfiles(C) = [B,]
-     *   neighborfiles(D) = [B,]
-     *   neighborfiles(E) = [A, B]
-     *   neighborfiles(F) = []
+     *   neighborfiles(A, 1) = [B, E]
+     *   neighborfiles(B, 1) = [A, C, D, E]
+     *   neighborfiles(C, 1) = [B,]
+     *   neighborfiles(D, 1) = [B,]
+     *   neighborfiles(E, 1) = [A, B]
+     *   neighborfiles(F, 1) = []
      *
      *      A B C D E F
      *   A  x 1 2 2 0 4
@@ -163,14 +216,8 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psiFile: PsiFile): Set<PsiFile> = search(psiFile, NEIGHBOR_FILES_DISTANCE).filterNot { it == psiFile }.toSet()
-
-    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
-        search(psiFile.containingDirectory, distance, true) +
-            search(psiFile.containingDirectory, distance, false)
-    }
-
-    private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
+    fun neighborFiles(psi: PsiFile, distance: Int): List<VirtualFile> = runReadAction {
+        val psiDir = psi.containingDirectory
         var d = distance
         val res = mutableListOf<PsiFile>()
         var pendingVisit = listOf(psiDir)
@@ -181,25 +228,23 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                 val fs = dir.files
                 res.addAll(fs)
 
-                val dirs = if (goDown) {
-                    dir.subdirectories.toList()
-                } else {
-                    dir.parentDirectory?.let {
-                        listOf(it)
-                    }.orEmpty()
+                dir.parentDirectory?.let {
+                    toVisit.addAll(listOf(it))
                 }
-
-                toVisit.addAll(dirs)
+                toVisit.addAll(dir.subdirectories)
             }
 
             pendingVisit = toVisit
             d--
         }
 
-        return res.toSet()
+        res.filterNot { it == psi }
+            .mapNotNull { it.virtualFile }
+            .distinctBy { it.name }
     }
 
     companion object {
+        private val LOG = getLogger<FileCrawler>()
         // TODO: move to CodeWhispererUtils.kt
         /**
          * @param target will be the source of keywords

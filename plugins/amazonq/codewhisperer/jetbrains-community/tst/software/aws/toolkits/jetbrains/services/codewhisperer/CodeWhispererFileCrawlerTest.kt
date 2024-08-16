@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
@@ -10,15 +11,24 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito.spy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispereJavaClassResolver
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererPythonClassResolver
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererFileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.JavaCodeWhispererFileCrawler
@@ -36,6 +46,10 @@ class CodeWhispererFileCrawlerTest {
     @JvmField
     @Rule
     val projectRule: CodeInsightTestFixtureRule = CodeInsightTestFixtureRule()
+
+    @JvmField
+    @Rule
+    val disposableRule = DisposableRule()
 
     lateinit var sut: CodeWhispererFileCrawler
 
@@ -152,30 +166,257 @@ class CodeWhispererFileCrawlerTest {
         val e = fixture.addFileToProject("root/util/context/e.java", aString())
         val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
 
-        assertThat(sut.neighborFiles(a)).isEqualTo(setOf(b, e)).also {
-            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-        }
+        assertThat(sut.neighborFiles(a, 1))
+            .contains(b.virtualFile, e.virtualFile).hasSize(2).also {
+                assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            }
 
-        assertThat(sut.neighborFiles(b)).isEqualTo(setOf(a, c, d, e)).also {
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-        }
+        assertThat(sut.neighborFiles(b, 1))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile).hasSize(4).also {
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            }
 
-        assertThat(sut.neighborFiles(c)).isEqualTo(setOf(b))
+        assertThat(sut.neighborFiles(c, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
 
-        assertThat(sut.neighborFiles(d)).isEqualTo(setOf(b))
+        assertThat(sut.neighborFiles(d, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
 
-        assertThat(sut.neighborFiles(e)).isEqualTo(setOf(a, b))
+        assertThat(sut.neighborFiles(e, 1))
+            .contains(a.virtualFile, b.virtualFile)
+            .hasSize(2)
 
-        assertThat(sut.neighborFiles(f)).isEmpty().also {
+        assertThat(sut.neighborFiles(f, 1)).isEmpty().also {
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, a.virtualFile)).isGreaterThan(1).isEqualTo(4)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, b.virtualFile)).isGreaterThan(1).isEqualTo(3)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, c.virtualFile)).isGreaterThan(1).isEqualTo(4)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, d.virtualFile)).isGreaterThan(1).isEqualTo(4)
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, e.virtualFile)).isGreaterThan(1).isEqualTo(4)
         }
+    }
+
+    /**
+     *     1. A: root/util/context/a.ts
+     *     2. B: root/util/b.ts
+     *     3. C: root/util/service/c.ts
+     *     4. D: root/d.ts
+     *     5. E: root/util/context/e.ts
+     *     6. F: root/util/foo/bar/baz/f.ts
+     *
+     *   neighborfiles(A) = [B, E]
+     *   neighborfiles(B) = [A, C, D, E]
+     *   neighborfiles(C) = [B,]
+     *   neighborfiles(D) = [B,]
+     *   neighborfiles(E) = [A, B]
+     *   neighborfiles(F) = []
+     *
+     *      A B C D E F
+     *   A  x 1 2 2 0 4
+     *   B  1 x 1 1 1 3
+     *   C  2 1 x 2 2 4
+     *   D  2 1 2 x 2 4
+     *   E  0 1 2 2 x 4
+     *   F  4 3 4 4 4 x
+     */
+    @Test
+    fun `neighborFile should return all files except itself with distance less than or equal to specified distance`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+
+        assertThat(sut.neighborFiles(a, 2))
+            .contains(b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(a, 1))
+            .contains(b.virtualFile, e.virtualFile)
+            .hasSize(2)
+
+        assertThat(sut.neighborFiles(a, 0))
+            .contains(e.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(b, 3))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(b, 2))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(b, 1))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(b, 0)).isEmpty()
+
+        assertThat(sut.neighborFiles(c, 4))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(c, 3))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(c, 2))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(c, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(d, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(d, 3))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(d, 2))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(d, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(d, 0)).isEmpty()
+
+        assertThat(sut.neighborFiles(e, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(e, 3))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(e, 2))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(e, 1))
+            .contains(a.virtualFile, b.virtualFile)
+            .hasSize(2)
+
+        assertThat(sut.neighborFiles(f, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(f, 3))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(f, 2)).isEmpty()
+
+        assertThat(sut.neighborFiles(f, 1)).isEmpty()
+
+        assertThat(sut.neighborFiles(f, 0)).isEmpty()
+    }
+
+    @Test
+    fun `crossfile candidate should have correct order`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val mockConfig = mock<CodeWhispererFeatureConfigService> {
+            on { getCrossfileConfig() } doReturn true
+        }
+
+        ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockConfig, disposableRule.disposable)
+
+        val main = fixture.addFileToProject("root/main.java", aString())
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+        val testA = fixture.addFileToProject("root/test/aTest.java", aString())
+        val testB = fixture.addFileToProject("root/test/bTest.java", aString())
+
+        sut = spy(sut)
+        sut.stub {
+            onGeneric { listPreviousSelectedFile(any()) } doReturn listOf(a.virtualFile, b.virtualFile, main.virtualFile, c.virtualFile, d.virtualFile)
+            onGeneric { neighborFiles(any(), any()) } doReturn listOf(e.virtualFile, f.virtualFile)
+            onGeneric { listAllOpenedFilesSortedByDist(any()) } doReturn listOf(
+                a.virtualFile,
+                b.virtualFile,
+                c.virtualFile,
+                d.virtualFile,
+                e.virtualFile,
+                f.virtualFile,
+                testB.virtualFile,
+                testA.virtualFile
+            )
+        }
+
+        val actual = sut.listCrossFileCandidate(a)
+
+        // take 3 files from "previous selected" => [a, b, main]
+        // neighbors within distnace 2 => [e, f]
+        // opened files => [a, b, c, d, e, f]
+        // exclude test files
+        assertThat(actual).isEqualTo(
+            listOf(a.virtualFile, b.virtualFile, main.virtualFile, e.virtualFile, f.virtualFile, c.virtualFile, d.virtualFile)
+        )
+        verify(sut, times(1)).neighborFiles(any(), any())
+        verify(sut, times(1)).listPreviousSelectedFile(any())
+    }
+
+    @Test
+    fun `crossfile candidate should use opened files only if feature flag is disabled`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val mockConfig = mock<CodeWhispererFeatureConfigService> {
+            on { getCrossfileConfig() } doReturn false
+        }
+
+        ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockConfig, disposableRule.disposable)
+
+        val main = fixture.addFileToProject("root/main.java", aString())
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+        val testA = fixture.addFileToProject("root/test/aTest.java", aString())
+        val testB = fixture.addFileToProject("root/test/bTest.java", aString())
+
+        sut = spy(sut)
+        sut.stub {
+            onGeneric { listPreviousSelectedFile(any()) } doReturn listOf(a.virtualFile, b.virtualFile, main.virtualFile, c.virtualFile, d.virtualFile)
+            onGeneric { neighborFiles(any(), any()) } doReturn listOf(e.virtualFile, f.virtualFile)
+            onGeneric { listAllOpenedFilesSortedByDist(any()) } doReturn listOf(
+                a.virtualFile,
+                b.virtualFile,
+                c.virtualFile,
+                d.virtualFile,
+                e.virtualFile,
+                f.virtualFile,
+                testB.virtualFile,
+                testA.virtualFile
+            )
+        }
+
+        val actual = sut.listCrossFileCandidate(a)
+
+        assertThat(actual).isEqualTo(
+            listOf(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+        )
+        verify(sut, times(0)).neighborFiles(any(), any())
+        verify(sut, times(0)).listPreviousSelectedFile(any())
     }
 }
 
