@@ -185,6 +185,108 @@ class CodeWhispererFileCrawlerTest {
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, e.virtualFile)).isGreaterThan(1).isEqualTo(4)
         }
     }
+
+    @Test
+    fun `neighborFile should return all files except itself with distance less than or equal to specified distance`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+
+        assertThat(sut.neighborFiles(a, 2))
+            .contains(b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(a, 1))
+            .contains(b.virtualFile, e.virtualFile)
+            .hasSize(2)
+
+        assertThat(sut.neighborFiles(a, 0))
+            .contains(e.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(b, 3))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(b, 2))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(b, 1))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(b, 0)).isEmpty()
+
+        assertThat(sut.neighborFiles(c, 4))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(c, 3))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(c, 2))
+            .contains(a.virtualFile, b.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(c, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(d, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(d, 3))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(d, 2))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, e.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(d, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(d, 0)).isEmpty()
+
+        assertThat(sut.neighborFiles(e, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, f.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(e, 3))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(e, 2))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile)
+            .hasSize(4)
+
+        assertThat(sut.neighborFiles(e, 1))
+            .contains(a.virtualFile, b.virtualFile)
+            .hasSize(2)
+
+        assertThat(sut.neighborFiles(f, 4))
+            .contains(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile)
+            .hasSize(5)
+
+        assertThat(sut.neighborFiles(f, 3))
+            .contains(b.virtualFile)
+            .hasSize(1)
+
+        assertThat(sut.neighborFiles(f, 2)).isEmpty()
+
+        assertThat(sut.neighborFiles(f, 1)).isEmpty()
+
+        assertThat(sut.neighborFiles(f, 0)).isEmpty()
+    }
 }
 
 class JavaCodeWhispererFileCrawlerTest {

@@ -17,7 +17,6 @@ import com.intellij.psi.PsiManager
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 
@@ -213,17 +212,8 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psiFile: PsiFile, distance: Int): Set<VirtualFile> = search(psiFile, distance)
-        .filterNot { it == psiFile }
-        .mapNotNull { it.virtualFile }
-        .toSet()
-
-    private fun search(psiFile: PsiFile, distance: Int): Set<PsiFile> = runReadAction {
-        search(psiFile.containingDirectory, distance, true) +
-            search(psiFile.containingDirectory, distance, false)
-    }
-
-    private fun search(psiDir: PsiDirectory, distance: Int, goDown: Boolean): Set<PsiFile> {
+    fun neighborFiles(psi: PsiFile, distance: Int): Set<VirtualFile> = runReadAction {
+        val psiDir = psi.containingDirectory
         var d = distance
         val res = mutableListOf<PsiFile>()
         var pendingVisit = listOf(psiDir)
@@ -234,22 +224,19 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
                 val fs = dir.files
                 res.addAll(fs)
 
-                val dirs = if (goDown) {
-                    dir.subdirectories.toList()
-                } else {
-                    dir.parentDirectory?.let {
-                        listOf(it)
-                    }.orEmpty()
+                dir.parentDirectory?.let {
+                    toVisit.addAll(listOf(it))
                 }
-
-                toVisit.addAll(dirs)
+                toVisit.addAll(dir.subdirectories)
             }
 
             pendingVisit = toVisit
             d--
         }
 
-        return res.toSet()
+        res.filterNot { it == psi }
+            .mapNotNull { it.virtualFile }
+            .toSet()
     }
 
     companion object {
