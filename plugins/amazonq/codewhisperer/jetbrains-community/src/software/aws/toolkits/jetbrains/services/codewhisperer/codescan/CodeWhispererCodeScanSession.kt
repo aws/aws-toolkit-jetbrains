@@ -12,8 +12,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.util.TimeoutUtil.sleep
 import com.intellij.util.io.HttpRequests
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.time.withTimeout
@@ -157,9 +157,9 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             val jobId = createCodeScanResponse.jobId()
             codeScanResponseContext = codeScanResponseContext.copy(codeScanJobId = jobId)
             if (isProjectScope()) {
-                sleep(PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
+                delay(PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
             } else {
-                sleep(FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
+                delay(FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
             }
 
             // 5. Keep polling the API GetCodeScan to wait for results for a given timeout period.
@@ -180,7 +180,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                             "request id: ${getCodeScanResponse.responseMetadata().requestId()}"
                     }
                 }
-                sleepThread()
+                delay(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
                 if (codeScanStatus == CodeScanStatus.FAILED) {
                     if (isProjectScope()) {
                         LOG.debug {
@@ -443,10 +443,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 issue.rangeHighlighter = issue.addRangeHighlighter()
             }
         }
-    }
-
-    fun sleepThread() {
-        sleep(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
     }
 
     fun getTelemetryErrorMessage(e: Exception): String = when {

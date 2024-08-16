@@ -50,6 +50,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -84,6 +85,8 @@ import javax.swing.Icon
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 import kotlin.coroutines.CoroutineContext
+
+private val LOG = getLogger<CodeWhispererCodeScanManager>()
 
 class CodeWhispererCodeScanManager(val project: Project) {
     private val codeScanResultsPanel by lazy {
@@ -704,7 +707,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
     }
 
     companion object {
-        private val LOG = getLogger<CodeWhispererCodeScanManager>()
         fun getInstance(project: Project): CodeWhispererCodeScanManager = project.service()
     }
 }
@@ -765,7 +767,11 @@ data class CodeWhispererCodeScanIssue(
         markupModel: MarkupModel? =
             DocumentMarkupModel.forDocument(document, project, false)
     ): RangeHighlighterEx? {
-        if (!ApplicationManager.getApplication().isDispatchThread) return null
+        if (!ApplicationManager.getApplication().isDispatchThread) {
+            LOG.warn(RuntimeException()) { "Attempted to call addRangeHighlighter on EDT" }
+            return null
+        }
+
         return markupModel?.let {
             textRange ?: return null
             it.addRangeHighlighter(

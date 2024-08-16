@@ -338,7 +338,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
         doNothing().`when`(sessionMock).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
-        doNothing().`when`(sessionMock).sleepThread()
 
         ToolWindowManager.getInstance(project).registerToolWindow(
             RegisterToolWindowTask(

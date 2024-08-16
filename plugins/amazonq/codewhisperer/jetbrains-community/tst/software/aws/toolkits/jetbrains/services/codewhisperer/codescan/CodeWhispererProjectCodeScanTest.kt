@@ -4,6 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.openapi.vfs.VirtualFile
+import java.io.BufferedInputStream
+import java.util.zip.ZipInputStream
+import kotlin.io.path.relativeTo
+import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -17,10 +22,6 @@ import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureR
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
-import java.io.BufferedInputStream
-import java.util.zip.ZipInputStream
-import kotlin.io.path.relativeTo
-import kotlin.test.assertNotNull
 
 class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsightTestFixtureRule()) {
     private lateinit var testCs: VirtualFile
@@ -103,7 +104,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     }
 
     @Test
-    fun `e2e happy path integration test`() {
+    fun `e2e happy path integration test`() = runTest {
         assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 10, totalSize, 1)
     }
 
