@@ -191,6 +191,38 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
+    fun `use crossfile if UTG is not supported`() {
+        sut = spy(sut)
+        val psiFile1 = fixture.addFileToProject("main.ts", "class Main {}")
+        val psiFile2 = fixture.addFileToProject("/foo/fooClass.ts", "export class Foo {}")
+        val psiFile3 = fixture.addFileToProject("/bar/barClass.ts", "export class Bar {}")
+        val testPsiFile = fixture.addFileToProject(
+            "test/main.test.ts",
+            """
+            describe('test main', function () {
+                it('should work', function () {
+                    const foo = new Foo();
+                    const bar = new Bar();
+                });
+            });
+            """.trimIndent()
+        )
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(psiFile1.virtualFile)
+            fixture.openFileInEditor(psiFile2.virtualFile)
+            fixture.openFileInEditor(psiFile3.virtualFile)
+            fixture.openFileInEditor(testPsiFile.virtualFile)
+        }
+
+        runTest {
+            sut.extractSupplementalFileContext(testPsiFile, aFileContextInfo(CodeWhispererTypeScript.INSTANCE))
+            verify(sut).extractSupplementalFileContextForSrc(any(), any())
+            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
+        }
+    }
+
+    @Test
     fun `extractFileContext should return correct strings`() {
         val src = """
             public class Main {
