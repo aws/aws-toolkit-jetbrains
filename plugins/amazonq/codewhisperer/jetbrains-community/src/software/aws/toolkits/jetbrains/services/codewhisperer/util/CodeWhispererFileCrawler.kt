@@ -132,7 +132,10 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             }
         }
 
-        return fileToFileDistanceList.sortedBy { it.second }.map { it.first }
+        return fileToFileDistanceList
+            .sortedBy { it.second }
+            .map { it.first }
+            .filter { it.name != target.virtualFile.name }
     }
 
     /**
