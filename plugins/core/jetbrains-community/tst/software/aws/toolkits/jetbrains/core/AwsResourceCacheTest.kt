@@ -121,7 +121,7 @@ class AwsResourceCacheTest {
     @Test
     fun exceptionsAreBubbledWhenNoEntry() {
         doAnswer { throw Throwable("Bang!") }.whenever(mockResource).fetch(any())
-        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Bang!")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithAwsCoreBundle.message("Bang!")
     }
 
     @Test
@@ -427,7 +427,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).thenThrow(RuntimeException("boom"))
         assertThatThrownBy { sut.getResourceNow(mockResource, connectionSettings, timeout = Duration.ofSeconds(1)) }
             .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("boom")
+            .hasAwsCoreBundle.message("boom")
     }
 
     @Test
@@ -493,8 +493,8 @@ class AwsResourceCacheTest {
         val first = sut.getResource(mockResource, connectionSettings)
         val second = sut.getResource(mockResource, connectionSettings)
         latch.countDown()
-        assertThatThrownBy { first.value }.hasCauseWithMessage("Boom")
-        assertThatThrownBy { second.value }.hasCauseWithMessage("Boom")
+        assertThatThrownBy { first.value }.hasCauseWithAwsCoreBundle.message("Boom")
+        assertThatThrownBy { second.value }.hasCauseWithAwsCoreBundle.message("Boom")
         verifyResourceCalled(1, mockResource)
     }
 
@@ -508,8 +508,8 @@ class AwsResourceCacheTest {
     @Test
     fun retriesReturnTheMostRecentException() {
         whenever(mockResource.fetch(any())).thenThrow(RuntimeException("Boom"), RuntimeException("Ouch"))
-        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Boom")
-        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithMessage("Ouch")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithAwsCoreBundle.message("Boom")
+        assertThatThrownBy { sut.getResource(mockResource, connectionSettings).value }.hasCauseWithAwsCoreBundle.message("Ouch")
     }
 
     @Test

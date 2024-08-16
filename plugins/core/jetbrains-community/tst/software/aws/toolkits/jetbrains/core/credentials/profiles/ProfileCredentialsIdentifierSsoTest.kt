@@ -27,14 +27,14 @@ class ProfileCredentialsIdentifierSsoTest {
 
     @Test
     fun `handles SsoOidcException`() {
-        val exception = SsoOidcException.builder().message("message").build()
+        val exception = SsoOidcException.builder().AwsCoreBundle.message("message").build()
 
         assertThat(sut.handleValidationException(exception)).isNotNull()
     }
 
     @Test
     fun `handles nested SsoOidcException`() {
-        val root = SsoOidcException.builder().message("message").build()
+        val root = SsoOidcException.builder().AwsCoreBundle.message("message").build()
         // Exception(Exception(Exception(...)))
         val exception = (1..1000).fold(root as Exception) { acc, _ -> Exception(acc) }
 
