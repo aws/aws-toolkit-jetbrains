@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.ListUtgCandidateResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NEIGHBOR_FILES_DISTANCE
 
 /**
  * An interface define how do we parse and fetch files provided a psi file or project
@@ -92,12 +93,12 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
         val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
             val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
                 .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
-            val neighbors: List<VirtualFile> = neighborFiles(target, 2)
+            val neighbors: List<VirtualFile> = neighborFiles(target, NEIGHBOR_FILES_DISTANCE)
                 .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
             val openedFiles = listAllOpenedFilesSortedByDist(target)
                 .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
 
-            val result = previousSelected.take(3) + neighborFiles(target, 0) + openedFiles
+            val result = previousSelected.take(3) + neighbors + openedFiles
 
             LOG.debug {
                 buildString {
