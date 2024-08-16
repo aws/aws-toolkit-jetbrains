@@ -81,7 +81,6 @@
         See PluginManagerCore#mergeOptionalConfigs -->
     <!-- However, required deps declared though XIncludes are acceptable as long as they can be resolved in the same JAR -->
     <depends>com.intellij.modules.platform</depends>
-    <depends config-file="ext-json.xml">com.intellij.modules.json</depends>
 
     <!-- platform-specific required dependencies go in their respective includes -->
     <!-- Gateway build will drop plugin-intellij and insert its own patched XML -->
