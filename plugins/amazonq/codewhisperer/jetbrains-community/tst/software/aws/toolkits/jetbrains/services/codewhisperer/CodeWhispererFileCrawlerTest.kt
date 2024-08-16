@@ -152,22 +152,30 @@ class CodeWhispererFileCrawlerTest {
         val e = fixture.addFileToProject("root/util/context/e.java", aString())
         val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
 
-        assertThat(sut.neighborFiles(a, 1)).isEqualTo(setOf(b, e).mapNotNull { it.virtualFile }).also {
-            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-        }
+        assertThat(sut.neighborFiles(a, 1))
+            .contains(b.virtualFile, e.virtualFile).hasSize(2).also {
+                assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(0)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(a.virtualFile, b.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            }
 
-        assertThat(sut.neighborFiles(b, 1)).isEqualTo(setOf(a, c, d, e).mapNotNull { it.virtualFile }).also {
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-            assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
-        }
+        assertThat(sut.neighborFiles(b, 1))
+            .contains(a.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile).hasSize(4).also {
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, c.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, d.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+                assertThat(CodeWhispererFileCrawler.getFileDistance(b.virtualFile, e.virtualFile)).isLessThanOrEqualTo(1).isEqualTo(1)
+            }
 
-        assertThat(sut.neighborFiles(c, 1)).isEqualTo(setOf(b).mapNotNull { it.virtualFile })
+        assertThat(sut.neighborFiles(c, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
 
-        assertThat(sut.neighborFiles(d, 1)).isEqualTo(setOf(b).mapNotNull { it.virtualFile })
+        assertThat(sut.neighborFiles(d, 1))
+            .contains(b.virtualFile)
+            .hasSize(1)
 
-        assertThat(sut.neighborFiles(e, 1)).isEqualTo(setOf(a, b).mapNotNull { it.virtualFile })
+        assertThat(sut.neighborFiles(e, 1))
+            .contains(a.virtualFile, b.virtualFile)
+            .hasSize(2)
 
         assertThat(sut.neighborFiles(f, 1)).isEmpty().also {
             assertThat(CodeWhispererFileCrawler.getFileDistance(f.virtualFile, a.virtualFile)).isGreaterThan(1).isEqualTo(4)
