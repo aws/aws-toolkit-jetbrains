@@ -151,7 +151,7 @@ object CodeWhispererConstants {
     object TryExampleFileContent {
 
         private const val AUTO_TRIGGER_CONTENT_JAVA =
-"""import java.util.ArrayList;
+            """import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
