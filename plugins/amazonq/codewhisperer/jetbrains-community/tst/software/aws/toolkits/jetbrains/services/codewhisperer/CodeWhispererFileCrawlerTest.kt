@@ -22,6 +22,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispereJavaClassResolver
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.classresolver.CodeWhispererClassResolver
@@ -343,12 +345,6 @@ class CodeWhispererFileCrawlerTest {
         val testA = fixture.addFileToProject("root/test/aTest.java", aString())
         val testB = fixture.addFileToProject("root/test/bTest.java", aString())
 
-        /**
-         * previous selected 3 src files: [a, f, e]
-         * neighbors: [b, c, d, e]
-         * opened: all files except testA, testB
-         */
-
         sut = spy(sut)
         sut.stub {
             onGeneric { listPreviousSelectedFile(any()) } doReturn listOf(a.virtualFile, b.virtualFile, main.virtualFile, c.virtualFile, d.virtualFile)
@@ -374,6 +370,53 @@ class CodeWhispererFileCrawlerTest {
         assertThat(actual).isEqualTo(
             listOf(a.virtualFile, b.virtualFile, main.virtualFile, e.virtualFile, f.virtualFile, c.virtualFile, d.virtualFile)
         )
+        verify(sut, times(1)).neighborFiles(any(), any())
+        verify(sut, times(1)).listPreviousSelectedFile(any())
+    }
+
+    @Test
+    fun `crossfile candidate should use opened files only if feature flag is disabled`() {
+        sut = JavaCodeWhispererFileCrawler
+
+        val mockConfig = mock<CodeWhispererFeatureConfigService> {
+            on { getCrossfileConfig() } doReturn false
+        }
+
+        ApplicationManager.getApplication().replaceService(CodeWhispererFeatureConfigService::class.java, mockConfig, disposableRule.disposable)
+
+        val main = fixture.addFileToProject("root/main.java", aString())
+        val a = fixture.addFileToProject("root/util/context/a.java", aString())
+        val b = fixture.addFileToProject("root/util/b.java", aString())
+        val c = fixture.addFileToProject("root/util/service/c.java", aString())
+        val d = fixture.addFileToProject("root/d.java", aString())
+        val e = fixture.addFileToProject("root/util/context/e.java", aString())
+        val f = fixture.addFileToProject("root/util/foo/bar/baz/f.java", aString())
+        val testA = fixture.addFileToProject("root/test/aTest.java", aString())
+        val testB = fixture.addFileToProject("root/test/bTest.java", aString())
+
+        sut = spy(sut)
+        sut.stub {
+            onGeneric { listPreviousSelectedFile(any()) } doReturn listOf(a.virtualFile, b.virtualFile, main.virtualFile, c.virtualFile, d.virtualFile)
+            onGeneric { neighborFiles(any(), any()) } doReturn listOf(e.virtualFile, f.virtualFile)
+            onGeneric { listAllOpenedFilesSortedByDist(any()) } doReturn listOf(
+                a.virtualFile,
+                b.virtualFile,
+                c.virtualFile,
+                d.virtualFile,
+                e.virtualFile,
+                f.virtualFile,
+                testB.virtualFile,
+                testA.virtualFile
+            )
+        }
+
+        val actual = sut.listCrossFileCandidate(a)
+
+        assertThat(actual).isEqualTo(
+            listOf(a.virtualFile, b.virtualFile, c.virtualFile, d.virtualFile, e.virtualFile, f.virtualFile)
+        )
+        verify(sut, times(0)).neighborFiles(any(), any())
+        verify(sut, times(0)).listPreviousSelectedFile(any())
     }
 }
 

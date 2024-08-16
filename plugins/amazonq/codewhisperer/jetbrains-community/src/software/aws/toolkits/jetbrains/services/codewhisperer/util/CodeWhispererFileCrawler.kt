@@ -90,13 +90,16 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }.orEmpty()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
+        val srcFileWithSameExtPredicate = { file: VirtualFile ->
+            !isTestFile(file, target.project) && isSameDialect(file.extension)
+        }
         val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
             val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
-                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
+                .filter { srcFileWithSameExtPredicate(it) }
             val neighbors: List<VirtualFile> = neighborFiles(target, NEIGHBOR_FILES_DISTANCE)
-                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
+                .filter { srcFileWithSameExtPredicate(it) }
             val openedFiles = listAllOpenedFilesSortedByDist(target)
-                .filter { !isTestFile(it, target.project) && isSameDialect(it.extension) }
+                .filter { srcFileWithSameExtPredicate(it) }
 
             val result = previousSelected.take(3) + neighbors + openedFiles
 
@@ -111,6 +114,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
             result.distinctBy { it.name }
         } else {
             listAllOpenedFilesSortedByDist(target)
+                .filter { srcFileWithSameExtPredicate(it) }
         }
 
         return candidates
