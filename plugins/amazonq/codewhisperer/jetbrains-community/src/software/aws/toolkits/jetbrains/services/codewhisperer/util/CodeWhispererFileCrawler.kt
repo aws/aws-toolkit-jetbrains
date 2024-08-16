@@ -91,10 +91,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
         val candidates = if (CodeWhispererFeatureConfigService.getInstance().getCrossfileConfig()) {
             val previousSelected: List<VirtualFile> = listPreviousSelectedFile(target)
-            val neighbors: List<VirtualFile> =
-                neighborFiles(target, 0).toList() +
-                    neighborFiles(target, 1).toList() +
-                    neighborFiles(target, 2).toList()
+            val neighbors: List<VirtualFile> = neighborFiles(target, 2).toList()
             val openedFiles = listAllOpenedFilesSortedByDist(target)
 
             val result = previousSelected.take(3) + neighborFiles(target, 0) + openedFiles
@@ -212,7 +209,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
      *   E  0 1 2 2 x 4
      *   F  4 3 4 4 4 x
      */
-    fun neighborFiles(psi: PsiFile, distance: Int): Set<VirtualFile> = runReadAction {
+    fun neighborFiles(psi: PsiFile, distance: Int): List<VirtualFile> = runReadAction {
         val psiDir = psi.containingDirectory
         var d = distance
         val res = mutableListOf<PsiFile>()
@@ -236,7 +233,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         res.filterNot { it == psi }
             .mapNotNull { it.virtualFile }
-            .toSet()
+            .distinctBy { it.name }
     }
 
     companion object {
