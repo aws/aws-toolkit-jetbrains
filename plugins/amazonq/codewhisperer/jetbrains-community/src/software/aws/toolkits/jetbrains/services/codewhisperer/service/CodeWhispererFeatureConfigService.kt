@@ -90,7 +90,6 @@ class CodeWhispererFeatureConfigService {
         featureConfigs[name]?.value ?: FEATURE_DEFINITIONS[name]?.value
             ?: FeatureValue.builder().boolValue(true).build()
 
-    // TODO: call real service
     fun getCrossfileConfig() = getFeatureValueForKey(CROSSFILE_NAME).stringValue() == "new-crossfile-strategy"
 
     companion object {
