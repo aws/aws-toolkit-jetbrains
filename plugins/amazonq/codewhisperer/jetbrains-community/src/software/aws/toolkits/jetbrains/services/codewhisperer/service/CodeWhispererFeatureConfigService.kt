@@ -10,7 +10,6 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfBIDConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
@@ -85,20 +84,21 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
-    // TODO: call real service
-    fun getCrossfileConfig() = isDeveloperMode()
-
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean true.
     private fun getFeatureValueForKey(name: String): FeatureValue =
         featureConfigs[name]?.value ?: FEATURE_DEFINITIONS[name]?.value
             ?: FeatureValue.builder().boolValue(true).build()
 
+    // TODO: call real service
+    fun getCrossfileConfig() = getFeatureValueForKey(CROSSFILE_NAME).stringValue() == "new-crossfile-strategy"
+
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
         private const val DATA_COLLECTION_FEATURE = "IDEProjectContextDataCollection"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        private const val CROSSFILE_NAME = "IDEInlineSuggestionCrossfileContext"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
