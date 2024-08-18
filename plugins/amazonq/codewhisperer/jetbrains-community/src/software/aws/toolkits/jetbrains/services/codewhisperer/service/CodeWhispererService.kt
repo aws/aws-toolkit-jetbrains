@@ -21,11 +21,13 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
@@ -91,7 +93,7 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererService : Disposable {
+class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
 
@@ -198,15 +200,16 @@ class CodeWhispererService : Disposable {
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
-        val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-            buildCodeWhispererRequest(
-                requestContext.fileContextInfo,
-                requestContext.supplementalContext,
-                requestContext.customizationArn
-            )
-        )
         coroutineScope.launch {
             try {
+                val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
+                    buildCodeWhispererRequest(
+                        requestContext.fileContextInfo,
+                        requestContext.awaitSupplementalContext(),
+                        requestContext.customizationArn
+                    )
+                )
+
                 var startTime = System.nanoTime()
                 requestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
                 requestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
@@ -623,7 +626,7 @@ class CodeWhispererService : Disposable {
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = runBlocking {
+        val supplementalContext = cs.async {
             try {
                 withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
                     FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
@@ -825,11 +828,19 @@ data class RequestContext(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    val supplementalContext: SupplementalContextInfo?,
+    private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?
-)
+) {
+    var supplementalContext: SupplementalContextInfo? = null
+        private set
+
+    suspend fun awaitSupplementalContext(): SupplementalContextInfo? {
+        supplementalContext = supplementalContextDeferred.await()
+        return supplementalContext
+    }
+}
 
 data class ResponseContext(
     val sessionId: String,
