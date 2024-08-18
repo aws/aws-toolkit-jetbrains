@@ -25,6 +25,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
@@ -145,6 +146,27 @@ class CodeWhispererService : Disposable {
         val isInjectedFile = runReadAction { psiFile.isInjectedText() }
         if (isInjectedFile) return
 
+        val requestContext = try {
+            getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
+        } catch (e: Exception) {
+            LOG.debug { e.message.toString() }
+            CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
+            return
+        }
+
+        val language = requestContext.fileContextInfo.programmingLanguage
+        val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
+        if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
+            LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
+            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+                showCodeWhispererInfoHint(
+                    requestContext.editor,
+                    message("codewhisperer.language.error", psiFile.fileType.name)
+                )
+            }
+            return
+        }
+
         LOG.debug {
             "Calling CodeWhisperer service, trigger type: ${triggerTypeInfo.triggerType}" +
                 if (triggerTypeInfo.triggerType == CodewhispererTriggerType.AutoTrigger) {
@@ -159,16 +181,10 @@ class CodeWhispererService : Disposable {
             return
         }
 
-        invokeCodeWhispererInBackground(project, editor, psiFile, triggerTypeInfo, latencyContext)
+        invokeCodeWhispererInBackground(requestContext)
     }
 
-    private fun invokeCodeWhispererInBackground(
-        project: Project,
-        editor: Editor,
-        psiFile: PsiFile,
-        triggerTypeInfo: TriggerTypeInfo,
-        latencyContext: LatencyContext
-    ) {
+    private fun invokeCodeWhispererInBackground(requestContext: RequestContext) {
         val popup = CodeWhispererPopupManager.getInstance().initPopup()
         Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
 
@@ -182,36 +198,14 @@ class CodeWhispererService : Disposable {
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
-        coroutineScope.launch {
-            val requestContext = try {
-                getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
-            } catch (e: Exception) {
-                LOG.debug { e.message.toString() }
-                CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
-                return@launch
-            }
-
-            val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-                buildCodeWhispererRequest(
-                    requestContext.fileContextInfo,
-                    requestContext.supplementalContext,
-                    requestContext.customizationArn
-                )
+        val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
+            buildCodeWhispererRequest(
+                requestContext.fileContextInfo,
+                requestContext.supplementalContext,
+                requestContext.customizationArn
             )
-
-            val language = requestContext.fileContextInfo.programmingLanguage
-            val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-            if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
-                LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
-                if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
-                    showCodeWhispererInfoHint(
-                        requestContext.editor,
-                        message("codewhisperer.language.error", psiFile.fileType.name)
-                    )
-                }
-                return@launch
-            }
-
+        )
+        coroutineScope.launch {
             try {
                 var startTime = System.nanoTime()
                 requestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
@@ -615,7 +609,7 @@ class CodeWhispererService : Disposable {
         )
     }
 
-    suspend fun getRequestContext(
+    fun getRequestContext(
         triggerTypeInfo: TriggerTypeInfo,
         editor: Editor,
         project: Project,
@@ -629,25 +623,27 @@ class CodeWhispererService : Disposable {
         // 2. supplemental context
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
-        val supplementalContext = try {
-            withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-                FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
-            }
-        } catch (e: Exception) {
-            if (e is TimeoutCancellationException) {
-                LOG.debug {
-                    "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
+        val supplementalContext = runBlocking {
+            try {
+                withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
+                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
                 }
-                SupplementalContextInfo(
-                    isUtg = isTstFile,
-                    contents = emptyList(),
-                    latency = System.currentTimeMillis() - startFetchingTimestamp,
-                    targetFileName = fileContext.filename,
-                    strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
-                )
-            } else {
-                LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                null
+            } catch (e: Exception) {
+                if (e is TimeoutCancellationException) {
+                    LOG.debug {
+                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
+                    }
+                    SupplementalContextInfo(
+                        isUtg = isTstFile,
+                        contents = emptyList(),
+                        latency = System.currentTimeMillis() - startFetchingTimestamp,
+                        targetFileName = fileContext.filename,
+                        strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
+                    )
+                } else {
+                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                    null
+                }
             }
         }
 
