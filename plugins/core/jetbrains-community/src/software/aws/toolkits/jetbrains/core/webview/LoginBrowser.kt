@@ -14,7 +14,6 @@ import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
-import io.ktor.util.logging.error
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
@@ -279,7 +278,7 @@ abstract class LoginBrowser(
                         credentialType = CredentialType.StaticProfile
                     )
                     LOG.error(error) { "Profile file error" }
-                    Messages.showErrorDialog(jcefBrowser.component, error.message, message("gettingstarted.auth.failed"))
+                    Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
                 },
                 {
                     AwsTelemetry.loginWithBrowser(
@@ -296,7 +295,7 @@ abstract class LoginBrowser(
                         reason = reason,
                     )
                     LOG.error(error) { reason }
-                    Messages.showErrorDialog(jcefBrowser.component, error.message, message("gettingstarted.auth.failed"))
+                    Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
                 }
             ).login(project)
 
