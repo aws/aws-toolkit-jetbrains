@@ -23,6 +23,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -183,7 +184,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         invokeCodeWhispererInBackground(requestContext)
     }
 
-    private fun invokeCodeWhispererInBackground(requestContext: RequestContext) {
+    internal fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
         val popup = CodeWhispererPopupManager.getInstance().initPopup()
         Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
 
@@ -197,7 +198,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
-        coroutineScope.launch {
+        val job = coroutineScope.launch {
             try {
                 val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
                     buildCodeWhispererRequest(
@@ -413,6 +414,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 CodeWhispererInvocationStatus.getInstance().setInvocationComplete()
             }
         }
+
+        return job
     }
 
     @RequiresEdt
