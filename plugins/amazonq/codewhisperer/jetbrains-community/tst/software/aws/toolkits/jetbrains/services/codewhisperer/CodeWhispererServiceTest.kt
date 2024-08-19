@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.popup.JBPopup
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
@@ -67,6 +68,7 @@ class CodeWhispererServiceTest {
     private lateinit var popupManager: CodeWhispererPopupManager
     private lateinit var telemetryService: CodeWhispererTelemetryService
     private lateinit var mockPopup: JBPopup
+    private lateinit var file: PsiFile
 
     @Before
     fun setUp() {
@@ -83,9 +85,9 @@ class CodeWhispererServiceTest {
 
         telemetryService = mock()
 
-        val f = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
+        file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
         runInEdtAndWait {
-            projectRule.fixture.openFileInEditor(f.virtualFile)
+            projectRule.fixture.openFileInEditor(file.virtualFile)
         }
 
         ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, userGroupSetting, disposableRule.disposable)
@@ -124,11 +126,6 @@ class CodeWhispererServiceTest {
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
-
-        val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
-        runInEdtAndWait {
-            projectRule.fixture.openFileInEditor(file.virtualFile)
-        }
 
         val actual = sut.getRequestContext(
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
