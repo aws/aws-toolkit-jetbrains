@@ -223,7 +223,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        var codeScanJobId: String? = null
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
         var skipTelemetry = false
         try {
@@ -256,7 +255,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     language = codeScanSessionConfig.getProgrammingLanguage()
                     if (language == CodeWhispererPlainText.INSTANCE) { skipTelemetry = true }
                     codeScanResponseContext = codeScanResponse.responseContext
-                    codeScanJobId = codeScanResponseContext.codeScanJobId
                     when (codeScanResponse) {
                         is CodeScanResponse.Success -> {
                             val issues = codeScanResponse.issues
@@ -276,7 +274,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             throw codeScanResponse.failureReason
                         }
                     }
-                    LOG.info { "Security scan completed for jobID: $codeScanJobId." }
+                    LOG.info { "Security scan completed for jobID: ${codeScanResponseContext.codeScanJobId}." }
                 }
             }
         } catch (e: Error) {
@@ -307,7 +305,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             scope
                         )
                     )
-                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanJobId, scope)
+                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanResponseContext.codeScanJobId, scope)
                 }
             }
         }
@@ -380,12 +378,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
 
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            LOG.error {
+            LOG.error(e) {
                 "Failed to run security scan and display results. Caused by: $errorMessage, status code: $errorCode, " +
                     "exception: ${e::class.simpleName}, request ID: $requestId " +
                     "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
-                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
-                    "stacktrace: ${e.stackTrace.contentDeepToString()}"
+                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, "
             }
         }
 

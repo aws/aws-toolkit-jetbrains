@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.replaceService
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
@@ -40,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
+import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
@@ -329,10 +329,11 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     fun `test run() - happypath`() = runTest {
         assertNotNull(sessionConfigSpy)
         val codeScanResponse = codeScanSessionSpy.run()
-        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Success>()
-        assertThat(codeScanResponse.issues).hasSize(2)
-        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-        assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
+        assertThat(codeScanResponse).isInstanceOfSatisfying<CodeScanResponse.Success> {
+            assertThat(it.issues).hasSize(2)
+            assertThat(it.responseContext.payloadContext).isEqualTo(payloadContext)
+            assertThat(it.responseContext.codeScanJobId).isEqualTo("jobId")
+        }
 
         val inOrder = inOrder(codeScanSessionSpy)
         inOrder.verify(codeScanSessionSpy, Times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), anyString())
@@ -445,10 +446,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         }
         mockClient.stub {
             onGeneric { getCodeScan(any(), any()) }.thenAnswer {
-                // classpath issue needs to be resolved before we can use `doSuspendableAnswer`
-                runBlocking {
-                    delay(TIMEOUT)
-                }
+                Thread.sleep(TIMEOUT)
                 fakeGetCodeScanResponsePending
             }
         }

@@ -89,7 +89,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
      *  6. Return the results from the ListCodeScan API.
      */
     suspend fun run(): CodeScanResponse {
-        var issues: List<CodeWhispererCodeScanIssue> = listOf()
         var codeScanResponseContext = defaultCodeScanResponseContext()
         val currentCoroutineContext = coroutineContext
         try {
@@ -217,7 +216,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 LOG.debug { "Rendering response to display security scan results." }
             }
             currentCoroutineContext.ensureActive()
-            issues = mapToCodeScanIssues(documents)
+            val issues = mapToCodeScanIssues(documents)
             codeScanResponseContext = codeScanResponseContext.copy(codeScanTotalIssues = issues.count())
             codeScanResponseContext = codeScanResponseContext.copy(codeScanIssuesWithFixes = issues.count { it.suggestedFixes.isNotEmpty() })
             codeScanResponseContext = codeScanResponseContext.copy(reason = "Succeeded")
@@ -237,14 +236,13 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     }
                 }
             }
-            LOG.error {
+            LOG.error(e) {
                 "Failed to run security scan and display results. Caused by: ${e.message}, status code: ${awsError?.errorCode()}, " +
                     "exception: ${e::class.simpleName}, request ID: ${exception?.requestId()}" +
                     "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
-                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
-                    "stacktrace: ${e.stackTrace.contentDeepToString()}"
+                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, "
             }
-            return CodeScanResponse.Failure(issues, codeScanResponseContext, e)
+            return CodeScanResponse.Failure(codeScanResponseContext, e)
         }
     }
 
@@ -474,16 +472,15 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 }
 
 sealed class CodeScanResponse {
-    abstract val issues: List<CodeWhispererCodeScanIssue>
     abstract val responseContext: CodeScanResponseContext
 
     data class Success(
-        override val issues: List<CodeWhispererCodeScanIssue>,
+        val issues: List<CodeWhispererCodeScanIssue>,
         override val responseContext: CodeScanResponseContext
     ) : CodeScanResponse()
 
     data class Failure(
-        override val issues: List<CodeWhispererCodeScanIssue>,
+        // this needs some cleanup as it solely exists for tracking the job ID
         override val responseContext: CodeScanResponseContext,
         val failureReason: Throwable
     ) : CodeScanResponse()
