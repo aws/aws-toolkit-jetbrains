@@ -150,7 +150,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
                             |
-                            """.trimMargin()
+                                    """.trimMargin()
                                 )
                             }
                         }
