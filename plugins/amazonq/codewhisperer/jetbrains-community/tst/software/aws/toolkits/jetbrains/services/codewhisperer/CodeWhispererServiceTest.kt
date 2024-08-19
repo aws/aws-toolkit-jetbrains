@@ -205,7 +205,6 @@ class CodeWhispererServiceTest {
 
         argumentCaptor<GenerateCompletionsRequest> {
             verify(clientFacade).generateCompletionsPaginator(capture())
-            println(firstValue)
             assertThat(firstValue.customizationArn()).isEqualTo("fake-arn")
             assertThat(firstValue.fileContext()).isEqualTo(mockFileContext.toSdkModel())
             assertThat(firstValue.supplementalContexts()).hasSameSizeAs(mockSupContext.contents)
