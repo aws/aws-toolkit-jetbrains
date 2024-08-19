@@ -77,7 +77,7 @@ class ProfileReaderTest {
         assertThat(validProfiles).isEmpty()
         assertThat(invalidProfiles.map { it.key to it.value.message })
             .contains(
-                "role" to message(
+                "role" to AwsCoreBundle.message(
                     "credentials.profile.circular_profiles",
                     "role",
                     "role->source_profile->source_profile2->source_profile3->source_profile"

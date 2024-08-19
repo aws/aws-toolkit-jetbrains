@@ -290,7 +290,7 @@ class SetupAuthenticationDialogTest {
         }
 
         mockClientManager.create<StsClient>().stub {
-            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().AwsCoreBundle.message("Some service exception message").build())
+            whenever(it.getCallerIdentity(any<GetCallerIdentityRequest>())).thenThrow(StsException.builder().message("Some service exception message").build())
         }
 
         runInEdtAndWait {

@@ -343,7 +343,10 @@ sealed class ConnectionState(val displayMessage: String, val isTerminal: Boolean
     }
 
     class InvalidConnection(private val cause: Exception) :
-        ConnectionState(AwsCoreBundle.message("settings.states.invalid", ExceptionUtil.getMessage(cause) ?: ExceptionUtil.getThrowableText(cause)), isTerminal = true) {
+        ConnectionState(
+            AwsCoreBundle.message("settings.states.invalid", ExceptionUtil.getMessage(cause) ?: ExceptionUtil.getThrowableText(cause)),
+            isTerminal = true
+        ) {
         override val shortMessage = AwsCoreBundle.message("settings.states.invalid.short")
 
         override val actions: List<AnAction> = listOf(RefreshConnectionAction(AwsCoreBundle.message("settings.retry")), gettingStartedAction, editCredsAction)

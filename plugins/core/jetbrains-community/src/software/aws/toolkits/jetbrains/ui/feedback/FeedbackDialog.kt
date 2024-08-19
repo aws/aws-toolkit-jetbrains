@@ -56,7 +56,9 @@ abstract class FeedbackDialog(
     private val sadIcon = IconUtil.scale(AwsIcons.Misc.FROWN, null, 3f)
     protected var commentText: String = initialComment
     private lateinit var comment: Cell<JBTextArea>
-    private var lengthLimitLabel = JBLabel(AwsCoreBundle.message("feedback.comment.textbox.initial.length")).also { it.foreground = UIUtil.getLabelInfoForeground() }
+    private var lengthLimitLabel = JBLabel(AwsCoreBundle.message("feedback.comment.textbox.initial.length")).also {
+        it.foreground = UIUtil.getLabelInfoForeground()
+    }
 
     private val dialogPanel by lazy {
         panel {
@@ -157,7 +159,11 @@ abstract class FeedbackDialog(
                     notifyInfo(notificationTitle(), AwsCoreBundle.message("feedback.submit_success"), project)
                 } catch (e: Exception) {
                     withContext(edtContext) {
-                        Messages.showMessageDialog(AwsCoreBundle.message("feedback.submit_failed", e), AwsCoreBundle.message("feedback.submit_failed_title"), null)
+                        Messages.showMessageDialog(
+                            AwsCoreBundle.message("feedback.submit_failed", e),
+                            AwsCoreBundle.message("feedback.submit_failed_title"),
+                            null
+                        )
                         setOKButtonText(AwsCoreBundle.message("feedback.submit_button"))
                         isOKActionEnabled = true
                     }
