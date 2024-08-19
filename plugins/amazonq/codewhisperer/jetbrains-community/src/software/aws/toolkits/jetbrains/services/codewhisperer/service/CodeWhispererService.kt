@@ -23,12 +23,10 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
@@ -45,6 +43,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingExce
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -78,9 +77,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
@@ -624,29 +621,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
-        val startFetchingTimestamp = System.currentTimeMillis()
         val supplementalContext = cs.async {
-            val isTstFile = FileContextProvider.getInstance(project).isTestFile(psiFile)
             try {
-                withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext)
-                }
+                FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext, timeout = SUPPLEMENTAL_CONTEXT_TIMEOUT)
             } catch (e: Exception) {
-                if (e is TimeoutCancellationException) {
-                    LOG.debug {
-                        "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
-                    }
-                    SupplementalContextInfo(
-                        isUtg = isTstFile,
-                        contents = emptyList(),
-                        latency = System.currentTimeMillis() - startFetchingTimestamp,
-                        targetFileName = fileContext.filename,
-                        strategy = if (isTstFile) UtgStrategy.Empty else CrossFileStrategy.Empty
-                    )
-                } else {
-                    LOG.debug { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                    null
-                }
+                LOG.warn { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                null
             }
         }
 

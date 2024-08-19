@@ -66,7 +66,7 @@ class CodeWhispererServiceTest {
 
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
-            onBlocking { this.extractSupplementalFileContext(any(), any()) } doThrow TimeoutCancellationException::class
+            onBlocking { this.extractSupplementalFileContext(any(), any(), any()) } doThrow TimeoutCancellationException::class
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
