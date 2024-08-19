@@ -7,7 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -15,18 +15,17 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -64,9 +63,19 @@ class CodeWhispererServiceTest {
             )
         )
 
+        val mockSupplementalContext = aSupplementalContextInfo(
+            myContents = listOf(
+                Chunk(content = "foo", path = "/foo.java"),
+                Chunk(content = "bar", path = "/bar.java"),
+                Chunk(content = "baz", path = "/baz.java")
+            ),
+            myIsUtg = false,
+            myLatency = 50L
+        )
+
         val mockFileContextProvider = mock<FileContextProvider> {
             on { this.extractFileContext(any(), any()) } doReturn aFileContextInfo()
-            onBlocking { this.extractSupplementalFileContext(any(), any(), any()) } doThrow TimeoutCancellationException::class
+            onBlocking { this.extractSupplementalFileContext(any(), any(), any()) } doReturn mockSupplementalContext
         }
 
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
@@ -85,21 +94,12 @@ class CodeWhispererServiceTest {
             LatencyContext()
         )
 
-        assertThat(actual.customizationArn).isEqualTo("fake-arn")
-        actual.supplementalContext.let {
-            assertThat(it).isNotNull
-            assertThat(it?.isProcessTimeout)
-                .isNotNull
-                .isEqualTo(
-                    it?.latency?.let { latency ->
-                        latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
-                    }
-                )
-
-            assertThat(it?.contents).isNotNull.isEmpty()
+        runTest {
+            actual.awaitSupplementalContext()
         }
 
-        assertThat(actual.supplementalContext).isNotNull
+        assertThat(actual.customizationArn).isEqualTo("fake-arn")
+        assertThat(actual.supplementalContext).isEqualTo(mockSupplementalContext)
     }
 
     @Ignore("need update language type since Java is fully supported")

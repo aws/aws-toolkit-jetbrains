@@ -813,8 +813,20 @@ data class RequestContext(
     val latencyContext: LatencyContext,
     val customizationArn: String?
 ) {
+    // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null
         private set
+        get() = when (field) {
+            null -> {
+                if (!supplementalContextDeferred.isCompleted) {
+                    error("attempt to access supplemental context before awaiting the deferred")
+                } else {
+                    null
+                }
+            }
+
+            else -> field
+        }
 
     suspend fun awaitSupplementalContext(): SupplementalContextInfo? {
         supplementalContext = supplementalContextDeferred.await()
