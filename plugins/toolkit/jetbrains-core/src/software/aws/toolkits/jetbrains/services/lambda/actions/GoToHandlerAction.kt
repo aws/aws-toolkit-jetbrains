@@ -30,9 +30,9 @@ class GoToHandlerAction : ExplorerNodeAction<LambdaFunctionNode>(ActionsBundle.a
         val handlers = getHandler(selected.first())
         if (handlers != null) {
             OpenSourceUtil.navigate(true, *handlers)
-            LambdaTelemetry.goToHandler(project = e.project, passive = true)
+            LambdaTelemetry.goToHandler(project = e.project, success = true)
         } else {
-            LambdaTelemetry.goToHandler(project = e.project, passive = false)
+            LambdaTelemetry.goToHandler(project = e.project, success = false)
         }
     }
 
