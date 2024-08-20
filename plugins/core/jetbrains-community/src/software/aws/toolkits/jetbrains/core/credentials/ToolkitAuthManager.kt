@@ -25,7 +25,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -270,6 +271,7 @@ fun reauthConnectionIfNeeded(
                     )
                 }
             }
+
         }
     }
     return tokenProvider
@@ -291,7 +293,7 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
-                return runUnderProgressIfNeeded(project, message("credentials.refreshing"), true) {
+                return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
                     return@runUnderProgressIfNeeded false
