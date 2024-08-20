@@ -129,19 +129,6 @@ fun loginSso(
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
                 )
-                recordLoginWithBrowser(
-                    credentialStartUrl = transientConnection.startUrl,
-                    credentialSourceId = CredentialSourceId.AwsId,
-                    isReAuth = true,
-                    result = Result.Succeeded,
-                    source = metadata?.sourceId
-                )
-                recordAddConnection(
-                    credentialSourceId = CredentialSourceId.AwsId,
-                    isReAuth = true,
-                    result = Result.Failed,
-                    source = metadata?.sourceId
-                )
             }
         } catch (e: Exception) {
             onError(e)
@@ -191,6 +178,7 @@ fun loginSso(
         reauthConnectionIfNeeded(
             project = project,
             connection = connection,
+            isReAuth = true
         )
         return connection
     } ?: run {
@@ -243,6 +231,7 @@ fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
+    isReAuth: Boolean = false
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
@@ -251,7 +240,36 @@ fun reauthConnectionIfNeeded(
 
     maybeReauthProviderIfNeeded(project, tokenProvider) {
         runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            tokenProvider.reauthenticate()
+            try {
+                tokenProvider.reauthenticate()
+                if (isReAuth) {
+                    recordLoginWithBrowser(
+                        credentialStartUrl = tokenProvider.currentToken()?.ssoUrl,
+                        credentialSourceId = CredentialSourceId.AwsId,
+                        isReAuth = true,
+                        result = Result.Succeeded
+                    )
+                    recordAddConnection(
+                        credentialSourceId = CredentialSourceId.AwsId,
+                        isReAuth = true,
+                        result = Result.Succeeded
+                    )
+                }
+            } catch (e: Exception) {
+                if (isReAuth) {
+                    recordLoginWithBrowser(
+                        credentialStartUrl = tokenProvider.currentToken()?.ssoUrl,
+                        credentialSourceId = CredentialSourceId.AwsId,
+                        isReAuth = true,
+                        result = Result.Failed
+                    )
+                    recordAddConnection(
+                        credentialSourceId = CredentialSourceId.AwsId,
+                        isReAuth = true,
+                        result = Result.Failed
+                    )
+                }
+            }
         }
     }
     return tokenProvider

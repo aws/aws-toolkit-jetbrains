@@ -315,7 +315,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken)
+                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true)
             }
             stopAndClearBrowserOpenTimer()
         }
