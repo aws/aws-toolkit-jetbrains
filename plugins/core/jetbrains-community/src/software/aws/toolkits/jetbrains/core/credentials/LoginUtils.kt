@@ -241,7 +241,7 @@ fun messageFromConfigFacadeError(e: Exception): Pair<String, String> {
         "codewhisperer.credential.login.exception.general" to e::class.java.name
     }
 
-    val errorMessage = message(errorTemplate, e.localizedMessage ?: e::class.java.name)
+    val errorMessage = AwsCoreBundle.message(errorTemplate, e.localizedMessage ?: e::class.java.name)
 
     return errorMessage to errorType
 }
