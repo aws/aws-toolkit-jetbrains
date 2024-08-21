@@ -312,7 +312,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             is DownloadFailureReason.OTHER, is DownloadFailureReason.INVALID_ARTIFACT -> notifyStickyWarn(
                 message("codemodernizer.notification.warn.view_diff_failed.title"),
-                message("codemodernizer.notification.warn.download_failed_generic.content", error),
+                message("codemodernizer.notification.warn.download_failed_other.content", error),
                 project,
             )
         }
