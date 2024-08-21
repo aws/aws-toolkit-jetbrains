@@ -11,7 +11,7 @@ import com.intellij.openapi.util.BuildNumber
 /**
  * @return true if running in any type of remote environment
  */
-fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
+fun isRunningOnRemoteBackend() = false
 
 /**
  * @return true if running in a codecatalyst remote environment

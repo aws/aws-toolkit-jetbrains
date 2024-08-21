@@ -124,7 +124,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         )
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = !isRunningOnRemoteBackend() && isQSupportedInThisVersion()
+    override fun shouldBeAvailable(project: Project): Boolean = true
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager

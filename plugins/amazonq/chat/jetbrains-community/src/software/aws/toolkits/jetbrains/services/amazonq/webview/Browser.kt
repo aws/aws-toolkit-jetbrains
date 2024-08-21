@@ -6,7 +6,10 @@ package software.aws.toolkits.jetbrains.services.amazonq.webview
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import org.cef.CefApp
+import com.intellij.ui.jcef.executeJavaScript
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import java.util.function.Function
 
@@ -23,13 +26,13 @@ class Browser(parent: Disposable) : Disposable {
 
     fun init(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                "mynah",
-                AssetResourceHandler.AssetResourceHandlerFactory(),
-            )
-
+//        CefApp.getInstance()
+//            .registerSchemeHandlerFactory(
+//                "http",
+//                "mynah",
+//                AssetResourceHandler.AssetResourceHandlerFactory(),
+//            )
+        println("aaaaaaaaa did a load")
         loadWebView(isCodeTransformAvailable, isFeatureDevAvailable)
     }
 
@@ -51,6 +54,21 @@ class Browser(parent: Disposable) : Disposable {
         jcefBrowser.setProperty("state", "")
         // load the web app
         jcefBrowser.loadHTML(getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable))
+        disposableCoroutineScope(this).launch {
+            while (true) {
+                delay(5000)
+                try {
+                    println("yy" + jcefBrowser.executeJavaScript("ideApi.postMessage('aaaaaaaaaaaaaaaaaaa')", 0))
+                    println(
+                        "yy" + jcefBrowser.executeJavaScript(
+                            "var state = false; setInterval(function() {document.body.innerHTML = !!state; state = !state;}, 1000)",
+                            0
+                        )
+                    )
+                    break
+                } catch (_: Exception) {}
+            }
+        }
     }
 
     /**
@@ -85,12 +103,13 @@ class Browser(parent: Disposable) : Disposable {
                     $jsScripts
                 </head>
                 <body>
+                loading
                 </body>
             </html>
         """.trimIndent()
     }
 
     companion object {
-        private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
+        private const val WEB_SCRIPT_URI = "http://127.0.0.1:8000/js/mynah-ui.js"
     }
 }

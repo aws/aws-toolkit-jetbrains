@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -36,16 +38,20 @@ class BrowserConnector(
         // Send browser messages to the outbound publisher
         addMessageHook(browser)
             .onEach { json ->
-                val node = serializer.toNode(json)
-                if (node.command == "ui-is-ready") {
-                    uiReady.complete(true)
-                }
-                val tabType = node.tabType ?: return@onEach
-                connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
-                    launch {
-                        val message = serializer.deserialize(node, connection.messageTypeRegistry)
-                        connection.messagesFromUiToApp.publish(message)
+                try {
+                    val node = serializer.toNode(json)
+                    if (node.command == "ui-is-ready") {
+                        uiReady.complete(true)
                     }
+                    val tabType = node.tabType ?: return@onEach
+                    connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
+                        launch {
+                            val message = serializer.deserialize(node, connection.messageTypeRegistry)
+                            connection.messagesFromUiToApp.publish(message)
+                        }
+                    }
+                } catch (e: Exception) {
+                    getLogger<BrowserConnector>().error(e) { "message hook err" }
                 }
             }
             .launchIn(this)
@@ -76,6 +82,7 @@ class BrowserConnector(
 
     private fun addMessageHook(browser: Browser) = callbackFlow {
         val handler = Function<String, Response> {
+            println(it)
             trySend(it)
             null
         }

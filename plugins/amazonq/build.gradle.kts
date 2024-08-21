@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware
 import software.aws.toolkits.gradle.changelog.tasks.GeneratePluginChangeLog
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.IdeVersions
@@ -47,5 +48,18 @@ tasks.check {
         subDirs.forEach { insideService->
             dependsOn(":plugin-amazonq:${serviceSubDir.name}:${insideService.name}:check")
         }
+    }
+}
+
+val runSplitIde by intellijPlatformTesting.runIde.registering {
+    splitMode = true
+    splitModeTarget = SplitModeAware.SplitModeTarget.BACKEND
+
+    plugins {
+        localPlugin(provider { project(":plugin-core").tasks.buildPlugin.get().outputs.files.singleFile })
+    }
+
+    prepareSandboxTask {
+        dependsOn(provider { project(":plugin-core").tasks.buildPlugin })
     }
 }

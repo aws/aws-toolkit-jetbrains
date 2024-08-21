@@ -3,9 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.focusArea
 
+import com.intellij.idea.AppMode
+import com.intellij.openapi.client.ClientKind
+import com.intellij.openapi.client.sessions
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.SelectionModel
+import com.intellij.openapi.fileEditor.ClientFileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
@@ -24,10 +29,13 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
 
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FocusAreaContext? {
-        val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditor
-        } ?: return null
-
+        val editor = if (AppMode.isRemoteDevHost()) {
+            project.sessions(ClientKind.REMOTE).firstOrNull()?.service<ClientFileEditorManager>()?.getSelectedTextEditor() ?: return null
+        } else {
+            computeOnEdt {
+                FileEditorManager.getInstance(project).selectedTextEditor
+            } ?: return null
+        }
         if (editor.document.text.isBlank()) return null
 
         // Get 10k characters around the cursor
@@ -108,7 +116,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
         }
         val fileText = editor.document.text
-        val fileName = FileEditorManager.getInstance(project).selectedFiles.first().name
+        val fileName = editor.virtualFile.name
 
         // Offset the selection range to the start of the trimmedFileText
         val selectionInsideTrimmedFileTextRange = codeSelectionRange.let {
