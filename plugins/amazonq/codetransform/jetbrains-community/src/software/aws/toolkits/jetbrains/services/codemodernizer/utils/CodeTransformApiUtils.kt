@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.AlreadyDisposedException
+import kotlinx.coroutines.delay
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -21,9 +22,11 @@ import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
-import java.lang.Thread.sleep
+import software.aws.toolkits.resources.message
 import java.time.Duration
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class PollingResult(
@@ -75,7 +78,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
         ) {
             try {
                 if (!didSleepOnce) {
-                    sleep(initialSleepDurationMillis)
+                    delay(initialSleepDurationMillis)
                     didSleepOnce = true
                 }
                 if (isDisposed.get()) throw AlreadyDisposedException("The invoker is disposed.")
@@ -83,7 +86,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 val newStatus = transformationResponse?.transformationJob()?.status() ?: throw RuntimeException("Unable to get job status")
                 var newPlan: TransformationPlan? = null
                 if (newStatus in STATES_WHERE_PLAN_EXIST) {
-                    sleep(sleepDurationMillis)
+                    delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
                 if (newStatus != state) {
@@ -108,7 +111,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 refreshToken(project)
                 return@waitUntil state
             } finally {
-                sleep(sleepDurationMillis)
+                delay(sleepDurationMillis)
             }
         }
     } catch (e: Exception) {
@@ -127,4 +130,9 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
 fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>) = stepZeroProgressUpdates.associate {
     it.name() to it.description()
+}
+
+fun getBillingText(linesOfCode: Int): String {
+    val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))
+    return message("codemodernizer.migration_plan.header.billing_text", linesOfCode, BILLING_RATE, estimatedCost)
 }

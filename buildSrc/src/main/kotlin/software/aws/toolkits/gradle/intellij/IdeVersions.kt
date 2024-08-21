@@ -19,43 +19,6 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2023.2",
-            community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "2023.2.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                ),
-                marketplacePlugins = listOf(
-                    "PythonCore:232.8660.185",
-                    "Docker:232.8660.185"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "2023.2.2",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "Pythonid:232.8660.185",
-                    "org.jetbrains.plugins.go:232.8660.142",
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2023.2.5",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2023.2.3",
-                nugetVersion = "2023.2.5"
-            )
-        ),
-        Profile(
             name = "2023.3",
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
@@ -94,11 +57,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2024.1",
-            gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "241.14494-EAP-CANDIDATE-SNAPSHOT",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2024.1",
@@ -145,21 +103,21 @@ object IdeVersions {
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "242.20224.38-EAP-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.33",
-                    "PythonCore:242.20224.38",
-                    "Docker:242.20224.44"
+                    "org.toml.lang:242.20224.155",
+                    "PythonCore:242.20224.300",
+                    "Docker:242.20224.237"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "242.20224.38-EAP-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -167,9 +125,9 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:242.20224.33",
-                    "Pythonid:242.20224.38",
-                    "org.jetbrains.plugins.go:242.20224.38",
+                    "org.toml.lang:242.20224.155",
+                    "Pythonid:242.20224.300",
+                    "org.jetbrains.plugins.go:242.20224.300",
                 )
             ),
             rider = RiderProfile(

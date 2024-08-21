@@ -28,7 +28,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
 
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
-    id("com.gradle.develocity") version "3.17.5"
+    id("com.gradle.develocity") version "3.17.6"
     id("org.jetbrains.intellij.platform.settings") version "2.0.0"
 }
 
@@ -98,7 +98,7 @@ include("detekt-rules")
 include("ui-tests")
 include("sandbox-all")
 when (providers.gradleProperty("ideProfileName").get()) {
-    "2023.2", "2023.3", "2024.1" -> include("tmp-all")
+    "2023.3", "2024.1" -> include("tmp-all")
 }
 
 /*
@@ -153,7 +153,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.2", "2023.3" -> {
+                    "2023.3", "2024.1" -> {
                         return@forEach
                     }
                 }
