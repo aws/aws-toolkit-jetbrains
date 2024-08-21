@@ -531,9 +531,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
-        val rawAcceptedTokenSize = pythonResponse.completions()[0].content().length
+        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length
         val acceptedTokensSize = rawAcceptedTokenSize - deletedTokenByUser
-        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length
+        val totalTokensSize = keystrokeInput.length + rawAcceptedTokenSize
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -580,9 +580,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
         }
 
-        val rawAcceptedTokenSize = pythonResponse.completions()[0].content().length
-        val acceptedTokensSize = rawAcceptedTokenSize
-        val totalTokensSize = keystrokeInput.length + pythonResponse.completions()[0].content().length + 1
+        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length
+        val totalTokensSize = keystrokeInput.length + rawAcceptedTokenSize + 1
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -590,10 +589,10 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             metricCaptor.allValues,
             codePercentage,
             1,
-            "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
+            "codewhispererAcceptedTokens" to rawAcceptedTokenSize.toString(),
             "codewhispererSuggestedTokens" to rawAcceptedTokenSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
-            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString(),
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(rawAcceptedTokenSize, totalTokensSize).toString(),
             "codewhispererUserGroup" to userGroup.name,
         )
     }
@@ -635,13 +634,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
+        val rawAcceptedTokenCount = pythonResponse.completions().first().content().length
         assertEventsContainsFieldsAndCount(
             metricCaptor.allValues,
             codePercentage,
             1,
-            "codewhispererAcceptedTokens" to pythonResponse.completions()[0].content().length.toString(),
-            "codewhispererSuggestedTokens" to pythonResponse.completions()[0].content().length.toString(),
-            "codewhispererTotalTokens" to (1 + pythonResponse.completions()[0].content().length).toString(),
+            "codewhispererAcceptedTokens" to rawAcceptedTokenCount.toString(),
+            "codewhispererSuggestedTokens" to rawAcceptedTokenCount.toString(),
+            "codewhispererTotalTokens" to (1 + rawAcceptedTokenCount).toString(),
             "codewhispererPercentage" to "96",
             "codewhispererUserGroup" to userGroup.name,
         )
