@@ -305,48 +305,6 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     }
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-//        val onIdCError: (Exception) -> Unit = { e ->
-//            stopAndClearBrowserOpenTimer()
-//            val result = if (!isUserCancellation(e)) {
-//                runInEdt {
-//                    Messages.showErrorDialog(jcefBrowser.component, ssoErrorMessageFromException(e), "Failed to Authenticate")
-//                }
-//                Result.Failed
-//            } else {
-//                Result.Cancelled
-//            }
-//            AwsTelemetry.loginWithBrowser(
-//            project = null,
-//            credentialStartUrl = url,
-//            isReAuth = isReAuth,
-//            result = result,
-//            reason = message,
-//            credentialSourceId = CredentialSourceId.IamIdentityCenter
-//            )
-//            AuthTelemetry.addConnection(
-//                result = result,
-//                credentialSourceId = CredentialSourceId.IamIdentityCenter,
-//                reason = message,
-//                isReAuth = isReAuth,
-//            )
-//        }
-//        val onIdCSuccess: () -> Unit = {
-//            stopAndClearBrowserOpenTimer()
-//            AwsTelemetry.loginWithBrowser(
-//                project = null,
-//                result = Result.Succeeded,
-//                isReAuth = isReAuth,
-//                credentialType = CredentialType.BearerToken,
-//                credentialStartUrl = url,
-//                credentialSourceId = CredentialSourceId.IamIdentityCenter
-//            )
-//            AuthTelemetry.addConnection(
-//                project = null,
-//                result = Result.Succeeded,
-//                isReAuth = isReAuth,
-//                credentialSourceId = CredentialSourceId.IamIdentityCenter
-//            )
-//        }
         val (onIdCError: (Exception) -> Unit, onIdCSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
 
         val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
