@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc.inline
 
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -11,7 +12,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
 
 class InlineChatFileListener(private val context: AmazonQAppInitContext) : FileEditorManagerListener {
-    override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-        ChatCaretListener(source.project, context)
+//    override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
+//        ChatCaretListener(source.project, context)
+//    }
+
+    override fun selectionChanged(event: FileEditorManagerEvent) {
+        ChatCaretListener(context.project, context)
     }
 }

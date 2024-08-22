@@ -25,4 +25,3 @@ class QOpenPanelAction : AnAction(message("action.q.openchat.text"), null, AwsIc
 private fun isQSupportedInThisVersion(): Boolean {
     return true
 }
-p
