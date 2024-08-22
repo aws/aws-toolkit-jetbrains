@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -121,6 +120,7 @@ fun loginSso(
     onSuccess: () -> Unit = {},
     metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
+    val source = metadata
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
@@ -239,19 +239,20 @@ fun reauthConnectionIfNeeded(
         onPendingToken(tokenProvider)
     }
 
+    val startUrl = (connection as AwsBearerTokenConnection).startUrl
     maybeReauthProviderIfNeeded(project, tokenProvider) {
-        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+        runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
             try {
                 tokenProvider.reauthenticate()
                 if (isReAuth) {
                     recordLoginWithBrowser(
-                        credentialStartUrl = tokenProvider.currentToken()?.ssoUrl,
-                        credentialSourceId = CredentialSourceId.AwsId,
+                        credentialStartUrl = startUrl,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
                         result = Result.Succeeded
                     )
                     recordAddConnection(
-                        credentialSourceId = CredentialSourceId.AwsId,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
                         result = Result.Succeeded
                     )
@@ -259,19 +260,18 @@ fun reauthConnectionIfNeeded(
             } catch (e: Exception) {
                 if (isReAuth) {
                     recordLoginWithBrowser(
-                        credentialStartUrl = tokenProvider.currentToken()?.ssoUrl,
-                        credentialSourceId = CredentialSourceId.AwsId,
+                        credentialStartUrl = startUrl,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
                         result = Result.Failed
                     )
                     recordAddConnection(
-                        credentialSourceId = CredentialSourceId.AwsId,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
                         result = Result.Failed
                     )
                 }
             }
-
         }
     }
     return tokenProvider
