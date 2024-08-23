@@ -508,7 +508,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizer detects partially migrated code`() = runTest{
+    fun `CodeModernizer detects partially migrated code`() = runTest {
         doReturn(
             exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
             exampleGetCodeMigrationResponse.replace(TransformationStatus.PLANNED),
