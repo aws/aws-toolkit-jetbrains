@@ -13,18 +13,15 @@ env:
 phases:
   install:
     commands:
-      - cat /etc/passwd
-      - getent group
-      - id codebuild-user
       - useradd codebuild-user
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output
       - chown -R codebuild-user:codebuild-user /codebuild/local-cache
+      - chown -R codebuild-user:codebuild-user /home/codebuild-user
       - setfacl -m d:o::rwx,o::rwx /root
       - mkdir /tmp/testArtifacts; chmod 777 /tmp/testArtifacts
       - export AWS_CODEARTIFACT_NUGET_LOGFILE=/tmp/testArtifacts/codeArtifactNuGet.log
       # (CVE-2022-24765) fatal: detected dubious ownership in repository
-      - ls -alh /home/codebuild-user/
       - su codebuild-user -c "git config --global --add safe.directory \"$CODEBUILD_SRC_DIR\""
 
   build:
