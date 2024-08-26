@@ -239,6 +239,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             is BrowserMessage.SendTelemetry -> {
                 UiTelemetry.click(project, "auth_continueButton")
             }
+
+            is BrowserMessage.SendUiClickTelemetry -> {
+                UiTelemetry.click(project, message.signInOptionClicked)
+            }
         }
     }
 

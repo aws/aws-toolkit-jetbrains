@@ -198,6 +198,10 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             is BrowserMessage.SendTelemetry -> {
                 UiTelemetry.click(project, "auth_continueButton")
             }
+
+            is BrowserMessage.SendUiClickTelemetry -> {
+                UiTelemetry.click(project, message.signInOptionClicked)
+            }
         }
     }
 
