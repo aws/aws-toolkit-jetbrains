@@ -7,7 +7,7 @@
 
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowListener"
-                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>   
+                  topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextEditorListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
@@ -68,6 +68,11 @@
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.OptimizeCodeAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.OptimizeCodeAction">
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt A" />
+            </action>
+
+            <action id="aws.toolkit.jetbrains.core.services.cwc.commands.TestCodeAction"
+                    class="software.aws.toolkits.jetbrains.services.cwc.commands.TestCodeAction">
+                <keyboard-shortcut keymap="$default" first-keystroke="meta alt T" />
             </action>
 
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.SendToPromptAction"
