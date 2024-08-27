@@ -336,11 +336,12 @@ class SsoAccessTokenProvider(
         }
     }
 
-    private fun sendFailedRefreshCredentialsMetricIfNeeded(
+    private fun sendRefreshCredentialsMetric(
         currentToken: AccessToken,
         reason: String,
         reasonDesc: String,
-        requestId: String? = null
+        requestId: String? = null,
+        result: Result
     ) {
         val tokenCreationTime = currentToken.createdAt
         val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
@@ -349,7 +350,7 @@ class SsoAccessTokenProvider(
         if (tokenCreationTime != Instant.EPOCH) {
             AwsTelemetry.refreshCredentials(
                 project = null,
-                result = Result.Failed,
+                result = result,
                 sessionDuration = sessionDuration.toHours().toInt(),
                 credentialSourceId = credentialSourceId,
                 reason = reason,
@@ -362,10 +363,11 @@ class SsoAccessTokenProvider(
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"
-            sendFailedRefreshCredentialsMetricIfNeeded(
+            sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null refresh token",
-                reasonDesc = message
+                reasonDesc = message,
+                result = Result.Failed
             )
             throw InvalidRequestException.builder().message(message).build()
         }
@@ -376,10 +378,11 @@ class SsoAccessTokenProvider(
         }
         if (registration == null) {
             val message = "Unable to load client registration"
-            sendFailedRefreshCredentialsMetricIfNeeded(
+            sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null client registration",
-                reasonDesc = message
+                reasonDesc = message,
+                result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
         }
@@ -399,6 +402,13 @@ class SsoAccessTokenProvider(
 
             saveAccessToken(token)
 
+            sendRefreshCredentialsMetric(
+                currentToken,
+                result = Result.Succeeded,
+                reason = "",
+                reasonDesc = ""
+            )
+
             return token
         } catch (e: Exception) {
             val requestId = when (e) {
@@ -409,11 +419,12 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
                 else -> e.message ?: "Unknown error"
             }
-            sendFailedRefreshCredentialsMetricIfNeeded(
+            sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Refresh access token request failed",
                 reasonDesc = message,
-                requestId = requestId
+                requestId = requestId,
+                result = Result.Failed
             )
             throw e
         }
