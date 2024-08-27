@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix to pass context specific user intent and trigger type to Amazon Q chat"
-}
