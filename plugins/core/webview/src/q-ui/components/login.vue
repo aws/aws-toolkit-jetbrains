@@ -82,6 +82,7 @@ export default defineComponent({
             this.$store.commit('setStage', stage)
         },
         handleBackButtonClick() {
+            window.ideApi.postMessage({command: 'sendUiClickTelemetry', signInOptionClicked: "auth_backButton"})
             if (this.cancellable) {
                 window.ideApi.postMessage({command: 'toggleBrowser'})
             }
@@ -92,7 +93,7 @@ export default defineComponent({
             this.mutateStage('START')
         },
         login(type: LoginOption) {
-            window.ideApi.postMessage({command: 'sendTelemetry'})
+            window.ideApi.postMessage({command: 'sendUiClickTelemetry', signInOptionClicked: "auth_continueButton"})
             this.selectedLoginOption = type
             this.mutateStage('AUTHENTICATING')
             if (type instanceof IdC) {
