@@ -390,18 +390,18 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     companion object {
         private val logger = getLogger<TelemetryHelper>()
 
-        fun getQConnection() : ToolkitConnection? = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(QConnection.getInstance())
+        fun getQConnection(): ToolkitConnection? = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(QConnection.getInstance())
 
         fun recordOpenChat() {
             AmazonqTelemetry.openChat(passive = true)
-            if(getQConnection() == null) {
+            if (getQConnection() == null) {
                 AuthTelemetry.signInPageOpened()
             }
         }
 
         fun recordCloseChat() {
             AmazonqTelemetry.closeChat(passive = true)
-            if(getQConnection() == null) {
+            if (getQConnection() == null) {
                 AuthTelemetry.signInPageClosed()
             }
         }
