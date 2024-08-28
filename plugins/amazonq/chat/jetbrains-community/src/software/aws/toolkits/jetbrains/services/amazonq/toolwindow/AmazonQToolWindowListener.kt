@@ -6,7 +6,11 @@ package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
+import migration.software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
+import software.aws.toolkits.telemetry.AuthTelemetry
 
 class AmazonQToolWindowListener : ToolWindowManagerListener {
 
