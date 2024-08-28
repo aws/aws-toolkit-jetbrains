@@ -98,7 +98,7 @@ abstract class LoginBrowser(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
                         credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
-                        authType = isPKCEorDAG(ssoRegion)
+                        authType = getAuthType(ssoRegion)
                     )
                     AuthTelemetry.addConnection(
                         result = Result.Failed,
@@ -190,7 +190,7 @@ abstract class LoginBrowser(
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = isPKCEorDAG()
+                authType = getAuthType()
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
@@ -207,7 +207,7 @@ abstract class LoginBrowser(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = isPKCEorDAG()
+                authType = getAuthType()
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
@@ -262,7 +262,7 @@ abstract class LoginBrowser(
                 result = result,
                 reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                authType = isPKCEorDAG(region.name)
+                authType = getAuthType(region.name)
             )
             AuthTelemetry.addConnection(
                 result = result,
@@ -280,7 +280,7 @@ abstract class LoginBrowser(
                 credentialType = CredentialType.BearerToken,
                 credentialStartUrl = url,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                authType = isPKCEorDAG(region.name)
+                authType = getAuthType(region.name)
             )
             AuthTelemetry.addConnection(
                 project = null,
@@ -413,7 +413,7 @@ abstract class LoginBrowser(
         }
     }
 
-    fun isPKCEorDAG(region: String = "us-east-1"): AuthType {
+    fun getAuthType(region: String = "us-east-1"): AuthType {
         val isCommercialRegion = !region.startsWith("us-gov") && !region.startsWith("us-iso") && !region.startsWith("cn")
         if (!Registry.`is`("aws.dev.useDAG") && isCommercialRegion) {
             return AuthType.PKCE
