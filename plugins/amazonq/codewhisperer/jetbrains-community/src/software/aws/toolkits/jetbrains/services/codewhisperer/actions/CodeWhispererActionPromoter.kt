@@ -14,15 +14,15 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.Cod
 class CodeWhispererActionPromoter : ActionPromoter {
     override fun promote(actions: MutableList<out AnAction>, context: DataContext): MutableList<AnAction> {
         val results = actions.toMutableList()
-        results.sortWith { a, b ->
-            if (isCodeWhispererPopupAction(a)) {
-                return@sortWith -1
-            } else if (isCodeWhispererPopupAction(b)) {
-                return@sortWith 1
-            } else {
-                0
-            }
-        }
+//        results.sortWith { a, b ->
+//            if (isCodeWhispererPopupAction(a)) {
+//                return@sortWith -1
+//            } else if (isCodeWhispererPopupAction(b)) {
+//                return@sortWith 1
+//            } else {
+//                0
+//            }
+//        }
         return results
     }
 

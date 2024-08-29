@@ -10,6 +10,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import groovy.lang.Tuple3
+import groovy.lang.Tuple4
 import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.jetbrains.annotations.TestOnly
@@ -29,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
@@ -397,53 +400,64 @@ class CodeWhispererTelemetryService {
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null
     ) {
-        val detailContexts = recommendationContext.details
         val decisions = mutableListOf<CodewhispererSuggestionState>()
 
-        detailContexts.forEachIndexed { index, detailContext ->
-            val suggestionState = recordSuggestionState(
-                index,
-                sessionContext.selectedIndex,
-                sessionContext.seen.contains(index),
-                hasUserAccepted,
-                detailContext.isDiscarded,
-                detailContext.recommendation.content().isEmpty()
-            )
-            sendUserDecisionEvent(requestContext, responseContext, detailContext, index, suggestionState, detailContexts.size)
+        CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().forEach {
+            val detailContexts = it.recommendationContext.details
 
-            decisions.add(suggestionState)
-        }
+            detailContexts.forEachIndexed { index, detailContext ->
+                val suggestionState = recordSuggestionState(
+                    index,
+                    sessionContext.selectedIndex,
+                    sessionContext.seen.contains(index),
+                    hasUserAccepted,
+                    detailContext.isDiscarded,
+                    detailContext.recommendation.content().isEmpty()
+                )
+                sendUserDecisionEvent(it.requestContext, it.responseContext, detailContext, index, suggestionState, detailContexts.size)
 
-        with(aggregateUserDecision(decisions)) {
-            // the order of the following matters
-            // step 1, send out current decision
-            previousUserTriggerDecisionTimestamp = Instant.now()
+                decisions.add(suggestionState)
+            }
 
-            val referenceCount = if (hasUserAccepted && detailContexts[sessionContext.selectedIndex].recommendation.hasReferences()) 1 else 0
-            val acceptedContent =
-                if (hasUserAccepted) {
-                    detailContexts[sessionContext.selectedIndex].recommendation.content()
-                } else {
-                    ""
+            with(aggregateUserDecision(decisions)) {
+                // the order of the following matters
+                // step 1, send out current decision
+                previousUserTriggerDecisionTimestamp = Instant.now()
+
+                val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
+                    val context = element.recommendationContext
+                    context.details.map { detail ->
+                        Tuple3(detail, context.userInputSinceInvocation, context.typeaheadOriginal)
+                    }
                 }
-            val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
-            val acceptedCharCount = acceptedContent.length
-            sendUserTriggerDecisionEvent(
-                requestContext,
-                responseContext,
-                recommendationContext,
-                CodewhispererSuggestionState.from(this.toString()),
-                popupShownTime,
-                referenceCount,
-                generatedLineCount,
-                acceptedCharCount
-            )
+                val referenceCount = if (hasUserAccepted && details[sessionContext.selectedIndex].v1.recommendation.hasReferences()) 1 else 0
+                val acceptedContent =
+                    if (hasUserAccepted) {
+                        details[sessionContext.selectedIndex].v1.recommendation.content()
+                    } else {
+                        ""
+                    }
+                val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
+                val acceptedCharCount = acceptedContent.length
+                sendUserTriggerDecisionEvent(
+                    requestContext,
+                    responseContext,
+                    recommendationContext,
+                    CodewhispererSuggestionState.from(this.toString()),
+                    popupShownTime,
+                    referenceCount,
+                    generatedLineCount,
+                    acceptedCharCount
+                )
 
-            // step 2, put current decision into queue for later reference
-            previousUserTriggerDecisions.add(this)
-            // we need this as well because AutotriggerService will reset the queue periodically
-            CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
+                // step 2, put current decision into queue for later reference
+                previousUserTriggerDecisions.add(this)
+                // we need this as well because AutoTriggerService will reset the queue periodically
+                CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
+            }
         }
+
+
     }
 
     /**

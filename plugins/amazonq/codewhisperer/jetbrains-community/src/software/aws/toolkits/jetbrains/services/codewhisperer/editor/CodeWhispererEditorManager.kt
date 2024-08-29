@@ -10,10 +10,13 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
+import groovy.lang.Tuple3
+import groovy.lang.Tuple4
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
@@ -24,16 +27,23 @@ import java.util.Stack
 @Service
 class CodeWhispererEditorManager {
     fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
-        val (requestContext, responseContext, recommendationContext) = states
+        val (requestContext, responseContext) = states
         val (project, editor) = requestContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
         val selectedIndex = sessionContext.selectedIndex
-        val typeahead = sessionContext.typeahead
-        val detail = recommendationContext.details[selectedIndex]
+        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
+            val context = element.recommendationContext
+            context.details.map {
+                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
+            }
+        }
+        val typeahead = details[selectedIndex].v3
+        val detail = details[selectedIndex].v1
+        val userInput = details[selectedIndex].v2
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            recommendationContext.userInputSinceInvocation
+            userInput
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -67,7 +77,7 @@ class CodeWhispererEditorManager {
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-                ).afterAccept(states, sessionContext, rangeMarker)
+                ).afterAccept(states, details, sessionContext, rangeMarker)
             }
         }
     }

@@ -195,7 +195,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     fun `test cancelling popup will send user decision event for all unseen but one rejected`() {
         val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         withCodeWhispererServiceInvokedAndWait { states ->
-            popupManagerSpy.cancelPopup(states.popup)
+            popupManagerSpy.cancelPopup()
 
             val count = pythonResponse.completions().size
             argumentCaptor<MetricEvent>().apply {

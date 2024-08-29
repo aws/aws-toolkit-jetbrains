@@ -4,8 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.importadder
 
 import com.intellij.openapi.editor.RangeMarker
+import groovy.lang.Tuple3
+import groovy.lang.Tuple4
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
@@ -13,7 +16,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 
 object CodeWhispererImportAdderListener : CodeWhispererUserActionListener {
     internal val LOG = getLogger<CodeWhispererImportAdderListener>()
-    override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
+    override fun afterAccept(states: InvocationContext, details: List<Tuple3<DetailContext, String, String>>, sessionContext: SessionContext, rangeMarker: RangeMarker) {
         if (!CodeWhispererSettings.getInstance().isImportAdderEnabled()) {
             LOG.debug { "Import adder not enabled in user settings" }
             return
@@ -28,6 +31,6 @@ object CodeWhispererImportAdderListener : CodeWhispererUserActionListener {
             LOG.debug { "No import adder found for $language" }
             return
         }
-        importAdder.insertImportStatements(states, sessionContext)
+        importAdder.insertImportStatements(states, details, sessionContext)
     }
 }

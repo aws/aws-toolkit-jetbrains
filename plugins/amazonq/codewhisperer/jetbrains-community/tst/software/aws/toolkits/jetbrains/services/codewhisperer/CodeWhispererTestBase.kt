@@ -97,7 +97,7 @@ open class CodeWhispererTestBase {
         }
 
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
-        popupManagerSpy.reset()
+        popupManagerSpy.resetSession()
         doNothing().`when`(popupManagerSpy).showPopup(any(), any(), any(), any(), any())
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManagerSpy, disposableRule.disposable)
 
@@ -155,7 +155,7 @@ open class CodeWhispererTestBase {
     open fun tearDown() {
         stateManager.loadState(originalExplorerActionState)
         settingsManager.loadState(originalSettings)
-        popupManagerSpy.reset()
+        popupManagerSpy.resetSession()
         runInEdtAndWait {
             popupManagerSpy.closePopup()
         }

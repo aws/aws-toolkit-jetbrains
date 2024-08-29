@@ -15,16 +15,18 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import io.ktor.utils.io.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -57,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -93,6 +96,9 @@ import java.util.concurrent.TimeUnit
 class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
+    val ongoingRequests = mutableMapOf<Int, InvocationContext?>()
+    val ongoingRequestsContext = mutableMapOf<Int, RequestContext>()
+    private var jobId = 0
 
     init {
         Disposer.register(this, codeInsightSettingsFacade)
@@ -147,6 +153,14 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
+        val caretContext = requestContext.fileContextInfo.caretContext
+        ongoingRequestsContext.forEach { (k, v) ->
+            val vCaretContext = v.fileContextInfo.caretContext
+            if (vCaretContext == caretContext) {
+                println("same caretContext found from job: $k, left context ${vCaretContext.leftContextOnCurrentLine}")
+                return
+            }
+        }
 
         val language = requestContext.fileContextInfo.programmingLanguage
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
@@ -171,7 +185,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         val invocationStatus = CodeWhispererInvocationStatus.getInstance()
-        if (invocationStatus.checkExistingInvocationAndSet()) {
+        if (invocationStatus.checkExistingInvocationAndSet() && false) {
             return
         }
 
@@ -179,19 +193,23 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     internal fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
-        val popup = CodeWhispererPopupManager.getInstance().initPopup()
-        Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+//        val popup = CodeWhispererPopupManager.getInstance().initPopup()
+        val currentJobId = jobId++
+        // a placeholder to indicate a session has started
+        ongoingRequests[currentJobId] = null
+        ongoingRequestsContext[currentJobId] = requestContext
 
         val workerContexts = mutableListOf<WorkerContext>()
         // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
         // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
         // It's possible and ok that coroutine will keep running until the next time we check it's state.
         // As long as we don't show to the user extra info we are good.
-        val coroutineScope = disposableCoroutineScope(popup)
+        val coroutineScope = projectCoroutineScope(requestContext.project)
 
-        var states: InvocationContext? = null
         var lastRecommendationIndex = -1
 
+        val line = requestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
+        println("triggering, last char ${line}, jobId: $currentJobId")
         val job = coroutineScope.launch {
             try {
                 val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
@@ -250,21 +268,29 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         // task hasn't been finished yet, in this case simply add another task to the queue. If they
                         // see worker queue is empty, the previous tasks must have been finished before this. In this
                         // case render CodeWhisperer UI directly.
-                        val workerContext = WorkerContext(requestContext, responseContext, validatedResponse, popup)
+                        val workerContext = WorkerContext(requestContext, responseContext, validatedResponse)
                         if (workerContexts.isNotEmpty()) {
                             workerContexts.add(workerContext)
                         } else {
-                            if (states == null && !popup.isDisposed &&
+                            if (ongoingRequests.isEmpty() &&
                                 !CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToShowCodeWhisperer()
                             ) {
                                 // It's the first response, and no enough delay before showing
                                 projectCoroutineScope(requestContext.project).launch {
-                                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToShowCodeWhisperer()) {
+                                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToShowCodeWhisperer() && false) {
                                         delay(CodeWhispererConstants.POPUP_DELAY_CHECK_INTERVAL)
                                     }
                                     runInEdt {
                                         workerContexts.forEach {
-                                            states = processCodeWhispererUI(it, states)
+                                            ongoingRequests[currentJobId] = processCodeWhispererUI(
+                                                it,
+                                                ongoingRequests[currentJobId],
+                                                coroutineScope,
+                                                currentJobId
+                                            )
+                                            if (ongoingRequests[currentJobId] == null) {
+                                                coroutineScope.coroutineContext.cancel()
+                                            }
                                         }
                                         workerContexts.clear()
                                     }
@@ -272,14 +298,25 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                 workerContexts.add(workerContext)
                             } else {
                                 // Have enough delay before showing for the first response, or it's subsequent responses
-                                states = processCodeWhispererUI(workerContext, states)
+                                ongoingRequests[currentJobId] = processCodeWhispererUI(
+                                    workerContext,
+                                    ongoingRequests[currentJobId],
+                                    coroutineScope,
+                                    currentJobId
+                                )
                             }
                         }
+                    }
+                    if (!ongoingRequests.contains(currentJobId)) {
+                        LOG.debug { "Skipping sending remaining requests on jobId removed" }
+                        println("exit 1 , jobId: $currentJobId")
+                        break
                     }
                     if (!isActive) {
                         // If job is cancelled before we do another request, don't bother making
                         // another API call to save resources
                         LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
+                        println("exit 2 , jobId: $currentJobId")
                         break
                     }
                 }
@@ -397,12 +434,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 }
                 CodeWhispererInvocationStatus.getInstance().finishInvocation()
                 runInEdt {
-                    states?.let {
-                        CodeWhispererPopupManager.getInstance().updatePopupPanel(
-                            it,
-                            CodeWhispererPopupManager.getInstance().sessionContext
-                        )
-                    }
+                    CodeWhispererPopupManager.getInstance().updatePopupPanel(
+                        ongoingRequests[currentJobId],
+                        CodeWhispererPopupManager.getInstance().sessionContext
+                    )
                 }
             } finally {
                 CodeWhispererInvocationStatus.getInstance().setInvocationComplete()
@@ -413,25 +448,33 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     @RequiresEdt
-    private fun processCodeWhispererUI(workerContext: WorkerContext, currStates: InvocationContext?): InvocationContext? {
+    private fun processCodeWhispererUI(
+        workerContext: WorkerContext,
+        currStates: InvocationContext?,
+        coroutine: CoroutineScope,
+        jobId: Int
+    ): InvocationContext? {
         val requestContext = workerContext.requestContext
         val responseContext = workerContext.responseContext
         val response = workerContext.response
-        val popup = workerContext.popup
+//        val popup = workerContext.popup
         val requestId = response.responseMetadata().requestId()
 
         // At this point when we are in EDT, the state of the popup will be thread-safe
         // across this thread execution, so if popup is disposed, we will stop here.
         // This extra check is needed because there's a time between when we get the response and
         // when we enter the EDT.
-        if (popup.isDisposed) {
+        if (!ongoingRequests.contains(jobId)) {
             LOG.debug { "Stop showing CodeWhisperer recommendations on CodeWhisperer session exit. RequestId: $requestId" }
+            println("exit 3 , jobId: $jobId")
             return null
         }
 
         if (requestContext.editor.isDisposed) {
-            LOG.debug { "Stop showing CodeWhisperer recommendations since editor is disposed. RequestId: $requestId" }
-            CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+            LOG.debug { "Stop showing all CodeWhisperer recommendations since editor is disposed. RequestId: $requestId" }
+            CodeWhispererPopupManager.getInstance().sessionContext?.let { Disposer.dispose(it) }
+//            CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+            println("exit 4  , jobId: $jobId")
             return null
         }
 
@@ -443,27 +486,40 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             requestContext.editor,
             requestContext.caretPosition
         )
-        val isPopupShowing: Boolean
+        val isPopupShowing = checkRecommendationsValidity(currStates, false, jobId)
         val nextStates: InvocationContext?
         if (currStates == null) {
-            // first response
-            nextStates = initStates(requestContext, responseContext, response, caretMovement, popup)
-            isPopupShowing = false
+            // first response for the jobId
+            nextStates = initStates(requestContext, responseContext, response, caretMovement, coroutine, jobId)
 
             // receiving a null state means caret has moved backward or there's a conflict with
-            // Intellisense popup, so we are going to cancel the job
+            // Intellisense popup, so we are going to cancel the current job
             if (nextStates == null) {
-                LOG.debug { "Cancelling popup and exiting CodeWhisperer session. RequestId: $requestId" }
-                CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+                LOG.debug { "Exiting CodeWhisperer session. RequestId: $requestId" }
+                ongoingRequests[jobId]?.let { Disposer.dispose(it) }
+//                CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+                println("exit 5 , jobId: $jobId")
                 return null
             }
         } else {
-            // subsequent responses
+            // subsequent responses for the jobId
             nextStates = updateStates(currStates, response)
-            isPopupShowing = checkRecommendationsValidity(currStates, false)
         }
+        println("adding ${response.completions().size} completions from job ${jobId}")
+        ongoingRequests[jobId] = nextStates
 
-        val hasAtLeastOneValid = checkRecommendationsValidity(nextStates, response.nextToken().isEmpty())
+        val hasAtLeastOneValid = checkRecommendationsValidity(nextStates, response.nextToken().isEmpty(), jobId)
+//        println("details for $jobId:")
+//        println("current states have ${nextStates.recommendationContext.details.size} total suggestions, recently added by ${jobId}")
+        val allSuggestions = ongoingRequests.values.filterNotNull().flatMap { it.recommendationContext.details }
+        val valid = allSuggestions.filter { !it.isDiscarded }.size
+        println("total: $valid valid, ${allSuggestions.size - valid} discarded")
+//        nextStates.recommendationContext.details.forEach {
+//            println(it.recommendation.content())
+//        }
+
+
+
 
         // If there are no recommendations at all in this session, we need to manually send the user decision event here
         // since it won't be sent automatically later
@@ -489,7 +545,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         if (!hasAtLeastOneValid) {
             if (response.nextToken().isEmpty()) {
                 LOG.debug { "None of the recommendations are valid, exiting CodeWhisperer session" }
-                CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+                // TODO: decide whether or not to dispose what here
+//                CodeWhispererPopupManager.getInstance().cancelPopup(popup)
+                ongoingRequests[jobId]?.let { Disposer.dispose(it) }
+                CodeWhispererPopupManager.getInstance().sessionContext?.let {
+                    it.selectedIndex = CodeWhispererPopupManager.getInstance().findNewSelectedIndex(true, it.selectedIndex)
+                }
+                println("exit 6 , jobId: $jobId")
                 return null
             }
         } else {
@@ -503,7 +565,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         responseContext: ResponseContext,
         response: GenerateCompletionsResponse,
         caretMovement: CaretMovement,
-        popup: JBPopup
+//        popup: JBPopup,
+        coroutine: CoroutineScope,
+        jobId: Int
     ): InvocationContext? {
         val requestId = response.responseMetadata().requestId()
         val recommendations = response.completions()
@@ -542,8 +606,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             recommendations,
             requestId
         )
-        val recommendationContext = RecommendationContext(detailContexts, userInputOriginal, userInput, visualPosition)
-        return buildInvocationContext(requestContext, responseContext, recommendationContext, popup)
+        val recommendationContext = RecommendationContext(detailContexts, userInputOriginal, userInput, visualPosition, jobId)
+        return buildInvocationContext(requestContext, responseContext, recommendationContext, coroutine)
     }
 
     private fun updateStates(
@@ -551,24 +615,28 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         response: GenerateCompletionsResponse
     ): InvocationContext {
         val recommendationContext = states.recommendationContext
-        val details = recommendationContext.details
+//        val details = recommendationContext.details
         val newDetailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
             states.requestContext,
             recommendationContext.userInputSinceInvocation,
             response.completions(),
             response.responseMetadata().requestId()
         )
-        Disposer.dispose(states)
+//        Disposer.dispose(states)
 
-        val updatedStates = states.copy(
-            recommendationContext = recommendationContext.copy(details = details + newDetailContexts)
-        )
-        Disposer.register(states.popup, updatedStates)
-        CodeWhispererPopupManager.getInstance().initPopupListener(updatedStates)
-        return updatedStates
+        recommendationContext.details.addAll(newDetailContexts)
+
+//        Disposer.dispose(states)
+//        val updatedStates = states.copy(
+//            recommendationContext = recommendationContext.copy(details = details + newDetailContexts)
+//        )
+//        Disposer.register(states.popup, updatedStates)
+//        CodeWhispererPopupManager.getInstance().initPopupListener(updatedStates)
+        return states
     }
 
-    private fun checkRecommendationsValidity(states: InvocationContext, showHint: Boolean): Boolean {
+    private fun checkRecommendationsValidity(states: InvocationContext?, showHint: Boolean, jobId: Int): Boolean {
+        if (states == null) return false
         val details = states.recommendationContext.details
 
         // set to true when at least one is not discarded or empty
@@ -584,7 +652,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     private fun updateCodeWhisperer(states: InvocationContext, recommendationAdded: Boolean) {
-        CodeWhispererPopupManager.getInstance().changeStates(states, 0, "", true, recommendationAdded)
+        CodeWhispererPopupManager.getInstance().changeStatesForShowing(states, recommendationAdded)
     }
 
     private fun sendDiscardedUserDecisionEventForAll(
@@ -594,8 +662,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     ) {
         val detailContexts = recommendations.map {
             DetailContext("", it, it, true, false, "", getCompletionType(it))
-        }
-        val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0))
+        }.toMutableList()
+        val recommendationContext = RecommendationContext(detailContexts, "", "", VisualPosition(0, 0), -1)
 
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
             requestContext,
@@ -662,25 +730,38 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         requestContext: RequestContext,
         responseContext: ResponseContext,
         recommendationContext: RecommendationContext,
-        popup: JBPopup
+        coroutine: CoroutineScope
+//        popup: JBPopup
     ): InvocationContext {
-        addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
         // previously(before pagination) we use popup as the parent disposable.
         // After pagination, listeners need to be updated as states are updated, for the same popup,
         // so disposable chain becomes popup -> disposable -> listeners updates, and disposable gets replaced on every
         // state update.
-        val states = InvocationContext(requestContext, responseContext, recommendationContext, popup)
-        Disposer.register(popup, states)
-        CodeWhispererPopupManager.getInstance().initPopupListener(states)
+        val states = InvocationContext(requestContext, responseContext, recommendationContext)
+//        addSessionDisposables(states)
+//        if (CodeWhispererPopupManager.getInstance().sessionContext == null) {
+//            CodeWhispererPopupManager.getInstance().sessionContext = SessionContext()
+//        }
+//        val sessionContext = CodeWhispererPopupManager.getInstance().sessionContext ?: SessionContext()
+//        CodeWhispererPopupManager.getInstance().sessionContext = sessionContext
+//        Disposer.register(sessionContext) {
+//            CodeWhispererInvocationStatus.getInstance().finishInvocation()
+//        }
+        Disposer.register(states) {
+            coroutine.cancel(CancellationException("hahahah"))
+        }
+//        Disposer.register(states, popup)
+//        Disposer.register(popup, states)
+//        CodeWhispererRecommendationManager.getInstance().states = states
         return states
     }
 
-    private fun addPopupChildDisposables(popup: JBPopup) {
-        codeInsightSettingsFacade.disableCodeInsightUntil(popup)
+    private fun addSessionDisposables(disposable: Disposable) {
+//        codeInsightSettingsFacade.disableCodeInsightUntil(disposable)
 
-        Disposer.register(popup) {
-            CodeWhispererPopupManager.getInstance().reset()
+        Disposer.register(disposable) {
+            CodeWhispererPopupManager.getInstance().resetSession()
         }
     }
 

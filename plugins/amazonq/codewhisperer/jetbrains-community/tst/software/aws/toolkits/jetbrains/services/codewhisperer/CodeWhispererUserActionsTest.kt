@@ -95,7 +95,7 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         }
         withCodeWhispererServiceInvokedAndWait {
             projectRule.fixture.performEditorAction(actionId)
-            verify(popupManagerSpy, timeout(5000)).cancelPopup(any())
+            verify(popupManagerSpy, timeout(5000)).cancelPopup()
         }
     }
 

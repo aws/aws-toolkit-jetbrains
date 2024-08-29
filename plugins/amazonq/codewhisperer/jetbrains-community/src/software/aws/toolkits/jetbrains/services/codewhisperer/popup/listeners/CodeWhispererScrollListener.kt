@@ -7,10 +7,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.event.VisibleAreaEvent
 import com.intellij.openapi.editor.event.VisibleAreaListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 
-class CodeWhispererScrollListener(private val states: InvocationContext) : VisibleAreaListener {
+class CodeWhispererScrollListener(private val states: InvocationContext, private val sessionContext: SessionContext) : VisibleAreaListener {
     override fun visibleAreaChanged(e: VisibleAreaEvent) {
         val oldRect = e.oldRectangle
         val newRect = e.newRectangle
@@ -19,7 +20,7 @@ class CodeWhispererScrollListener(private val states: InvocationContext) : Visib
         ) {
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_POPUP_STATE_CHANGED
-            ).scrolled(states, CodeWhispererPopupManager.getInstance().sessionContext)
+            ).scrolled(states, sessionContext)
         }
     }
 }

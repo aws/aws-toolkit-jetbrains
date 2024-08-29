@@ -23,6 +23,8 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
+import groovy.lang.Tuple3
+import groovy.lang.Tuple4
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
@@ -30,7 +32,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.EDITOR_CODE_REFERENCE_HOVER
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
@@ -109,11 +113,18 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         }
     }
 
-    fun insertCodeReference(states: InvocationContext, selectedIndex: Int) {
+    fun insertCodeReference(states: InvocationContext, details: List<Tuple3<DetailContext, String, String>>, selectedIndex: Int) {
         val (requestContext, _, recommendationContext) = states
         val (_, editor, _, caretPosition) = requestContext
-        val (_, detail, reformattedDetail) = recommendationContext.details[selectedIndex]
-        insertCodeReference(detail.content(), reformattedDetail.references(), editor, caretPosition, detail)
+//        val (_, detail, reformattedDetail) = recommendationContext.details[selectedIndex]
+//        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
+//            val context = element.recommendationContext
+//            context.details.map {
+//                Tuple4(it, context.userInputSinceInvocation, context.typeaheadOriginal, context.typeahead)
+//            }
+//        }
+        val detail = details[selectedIndex].v1
+        insertCodeReference(details[selectedIndex].v1.recommendation.content(), detail.reformatted.references(), editor, caretPosition, detail.recommendation)
     }
 
     fun getReferenceLineNums(editor: Editor, start: Int, end: Int): String {

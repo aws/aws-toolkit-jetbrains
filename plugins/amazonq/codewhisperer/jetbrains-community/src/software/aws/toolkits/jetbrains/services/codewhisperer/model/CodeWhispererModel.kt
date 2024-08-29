@@ -6,14 +6,18 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.model
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.ui.popup.JBPopup
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -81,10 +85,13 @@ data class SupplementalContextInfo(
 }
 
 data class RecommendationContext(
-    val details: List<DetailContext>,
+    val details: MutableList<DetailContext>,
     val userInputOriginal: String,
     val userInputSinceInvocation: String,
-    val position: VisualPosition
+    val position: VisualPosition,
+    val jobId: Int,
+//    var typeahead: String = "",
+    var typeaheadOriginal: String = "",
 )
 
 data class DetailContext(
@@ -98,14 +105,35 @@ data class DetailContext(
 )
 
 data class SessionContext(
-    val typeahead: String = "",
-    val typeaheadOriginal: String = "",
-    val selectedIndex: Int = 0,
+    var selectedIndex: Int = 0,
     val seen: MutableSet<Int> = mutableSetOf(),
-    val isFirstTimeShowingPopup: Boolean = true,
+    var isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
-    var insertEndOffset: Int = -1
-)
+    var insertEndOffset: Int = -1,
+    var popupDisplayOffset: Int = -1
+) : Disposable {
+    private var isDisposed = false
+
+    @RequiresEdt
+    override fun dispose() {
+        println("disposing the session")
+        val jobIds = CodeWhispererService.getInstance().ongoingRequests.keys.toList()
+        jobIds.forEach { jobId ->
+            val job = CodeWhispererService.getInstance().ongoingRequests[jobId] ?: return@forEach
+            Disposer.dispose(job)
+        }
+        CodeWhispererService.getInstance().ongoingRequests.clear()
+        CodeWhispererService.getInstance().ongoingRequestsContext.clear()
+        CodeWhispererPopupManager.getInstance().cancelPopup()
+        CodeWhispererPopupManager.getInstance().sessionContext = null
+        CodeWhispererInvocationStatus.getInstance().finishInvocation()
+        println("current ongoingRequestContext:")
+        CodeWhispererService.getInstance().ongoingRequestsContext.keys.forEach { print("$it  ") }
+        isDisposed = true
+    }
+
+    fun isDisposed() = isDisposed
+}
 
 data class RecommendationChunk(
     val text: String,
@@ -124,16 +152,30 @@ data class InvocationContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
-    val popup: JBPopup
 ) : Disposable {
-    override fun dispose() {}
+    private var isDisposed = false
+
+    @RequiresEdt
+    override fun dispose() {
+
+//        CodeWhispererPopupManager.getInstance().cancelPopup()
+        CodeWhispererService.getInstance().ongoingRequests.remove(recommendationContext.jobId)
+        CodeWhispererService.getInstance().ongoingRequestsContext.remove(recommendationContext.jobId)
+
+        // TODO: send userTriggerDecision telemetry
+
+        println("state for jobId ${recommendationContext.jobId} is disposed")
+        isDisposed = true
+    }
+
+    fun isDisposed() = isDisposed
 }
 
 data class WorkerContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val response: GenerateCompletionsResponse,
-    val popup: JBPopup
+//    val popup: JBPopup
 )
 
 data class CodeScanTelemetryEvent(

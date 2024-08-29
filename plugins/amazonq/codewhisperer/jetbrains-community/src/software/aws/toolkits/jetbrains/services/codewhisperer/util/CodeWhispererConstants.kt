@@ -38,7 +38,7 @@ object CodeWhispererConstants {
 
     // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
     // avoid ThrottlingException as much as possible.
-    const val INVOCATION_INTERVAL: Long = 2050
+    const val INVOCATION_INTERVAL: Long = 100
 
     const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
@@ -105,7 +105,7 @@ object CodeWhispererConstants {
     }
 
     object Config {
-        const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
+        const val CODEWHISPERER_ENDPOINT = "https://rts.gamma-us-east-1.codewhisperer.ai.aws.dev/" // PROD
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
         val Sigv4ClientRegion = Region.US_EAST_1
         val BearerClientRegion = Region.US_EAST_1

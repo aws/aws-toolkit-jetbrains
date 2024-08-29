@@ -73,6 +73,7 @@ class CodeWhispererInvocationStatus {
 
     fun setPopupActive(value: Boolean) {
         isPopupActive = value
+        println("set popup active to $value")
     }
 
     fun setInvocationStart() {
