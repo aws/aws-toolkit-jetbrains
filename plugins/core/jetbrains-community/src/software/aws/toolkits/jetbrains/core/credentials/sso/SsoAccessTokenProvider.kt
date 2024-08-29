@@ -338,8 +338,8 @@ class SsoAccessTokenProvider(
 
     private fun sendRefreshCredentialsMetric(
         currentToken: AccessToken,
-        reason: String,
-        reasonDesc: String,
+        reason: String?,
+        reasonDesc: String?,
         requestId: String? = null,
         result: Result
     ) {
@@ -405,8 +405,8 @@ class SsoAccessTokenProvider(
             sendRefreshCredentialsMetric(
                 currentToken,
                 result = Result.Succeeded,
-                reason = "",
-                reasonDesc = ""
+                reason = null,
+                reasonDesc = null
             )
 
             return token
