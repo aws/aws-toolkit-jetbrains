@@ -8,8 +8,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.replaceService
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -39,10 +39,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
+import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.io.FileInputStream
+import java.lang.management.ManagementFactory
 import java.util.Base64
 import java.util.UUID
 import java.util.zip.ZipFile
@@ -54,17 +56,27 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     private lateinit var psifile2: PsiFile
     private lateinit var psifile3: PsiFile
     private lateinit var psifile4: PsiFile
+    private lateinit var psifilePerformanceTest: PsiFile
+    private lateinit var psifilePerformanceTest2: PsiFile
     private lateinit var file: File
     private lateinit var file2: File
     private lateinit var file3: File
     private lateinit var file4: File
+    private lateinit var performanceTestfileWithPayload200KB: File
+    private lateinit var performanceTestfileWithPayload150KB: File
     private lateinit var virtualFile3: VirtualFile
     private lateinit var virtualFile4: VirtualFile
     private lateinit var sessionConfigSpy: CodeScanSessionConfig
     private lateinit var sessionConfigSpy2: CodeScanSessionConfig
+    private lateinit var sessionConfigSpy3: CodeScanSessionConfig
+    private lateinit var sessionConfigSpy4: CodeScanSessionConfig
     private val payloadContext = PayloadContext(CodewhispererLanguage.Python, 1, 1, 10, listOf(), 600, 200)
     private lateinit var codeScanSessionContext: CodeScanSessionContext
+    private lateinit var codeScanSessionContext2: CodeScanSessionContext
+    private lateinit var codeScanSessionContext3: CodeScanSessionContext
     private lateinit var codeScanSessionSpy: CodeWhispererCodeScanSession
+    private lateinit var codeScanSessionSpy2: CodeWhispererCodeScanSession
+    private lateinit var codeScanSessionSpy3: CodeWhispererCodeScanSession
     private val codeScanName = UUID.randomUUID().toString()
 
     @Before
@@ -131,6 +143,33 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         virtualFile4 = psifile4.virtualFile
         file4 = virtualFile4.toNioPath().toFile()
 
+        // Create a 200KB file
+        val content = "a".repeat(200 * 1024)
+        psifilePerformanceTest = projectRule.fixture.addFileToProject("test.txt", content)
+        performanceTestfileWithPayload200KB = psifilePerformanceTest.virtualFile.toNioPath().toFile()
+
+        sessionConfigSpy3 = spy(
+            CodeScanSessionConfig.create(
+                psifilePerformanceTest.virtualFile,
+                project,
+                CodeWhispererConstants.CodeAnalysisScope.FILE
+            )
+        )
+        setupResponse(psifilePerformanceTest.virtualFile.toNioPath().relativeTo(sessionConfigSpy3.projectRoot.toNioPath()))
+
+        // Create a 150KB file
+        val codeContentForPayload = "a".repeat(150 * 1024)
+        psifilePerformanceTest2 = projectRule.fixture.addFileToProject("test.txt", codeContentForPayload)
+        performanceTestfileWithPayload150KB = psifilePerformanceTest2.virtualFile.toNioPath().toFile()
+
+        sessionConfigSpy4 = spy(
+            CodeScanSessionConfig.create(
+                psifilePerformanceTest2.virtualFile,
+                project,
+                CodeWhispererConstants.CodeAnalysisScope.FILE
+            )
+        )
+        setupResponse(psifilePerformanceTest2.virtualFile.toNioPath().relativeTo(sessionConfigSpy4.projectRoot.toNioPath()))
         sessionConfigSpy = spy(
             CodeScanSessionConfig.create(
                 psifile.virtualFile,
@@ -158,12 +197,87 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         codeScanSessionSpy = spy(CodeWhispererCodeScanSession(codeScanSessionContext))
         doNothing().`when`(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
+        codeScanSessionContext2 = CodeScanSessionContext(project, sessionConfigSpy3, CodeWhispererConstants.CodeAnalysisScope.FILE)
+        codeScanSessionSpy2 = spy(CodeWhispererCodeScanSession(codeScanSessionContext2))
+        doNothing().`when`(codeScanSessionSpy2).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
+
+        codeScanSessionContext3 = CodeScanSessionContext(project, sessionConfigSpy4, CodeWhispererConstants.CodeAnalysisScope.FILE)
+        codeScanSessionSpy3 = spy(CodeWhispererCodeScanSession(codeScanSessionContext3))
+        doNothing().`when`(codeScanSessionSpy3).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
             onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
             onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
             onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
         }
+    }
+
+    @Test
+    fun `test run() - measure CPU and memory usage`() {
+        // Set up CPU and Memory monitoring
+        val runtime = Runtime.getRuntime()
+        val bean = ManagementFactory.getThreadMXBean()
+        val startCpuTime = bean.getCurrentThreadCpuTime()
+        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val startSystemTime = System.nanoTime()
+
+        // Run the code scan
+        runBlocking {
+            codeScanSessionSpy2.run()
+        }
+
+        // Calculate CPU and memory usage
+        val endCpuTime = bean.getCurrentThreadCpuTime()
+        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val endSystemTime = System.nanoTime()
+
+        val cpuTimeUsedNanos = endCpuTime - startCpuTime
+        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
+        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
+
+        val memoryUsed = endMemoryUsage - startMemoryUsage
+        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
+
+        // Calculate CPU usage in percentage
+        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
+
+        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
+        assertThat(cpuUsagePercentage).isLessThan(30.0)
+        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
+    }
+
+    @Test
+    fun `test run() - measure CPU and memory usage with payload of 150KB`() {
+        // Set up CPU and Memory monitoring
+        val runtime = Runtime.getRuntime()
+        val bean = ManagementFactory.getThreadMXBean()
+        val startCpuTime = bean.getCurrentThreadCpuTime()
+        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val startSystemTime = System.nanoTime()
+
+        // Run the code scan
+        runBlocking {
+            codeScanSessionSpy3.run()
+        }
+
+        // Calculate CPU and memory usage
+        val endCpuTime = bean.getCurrentThreadCpuTime()
+        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
+        val endSystemTime = System.nanoTime()
+
+        val cpuTimeUsedNanos = endCpuTime - startCpuTime
+        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
+        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
+
+        val memoryUsed = endMemoryUsage - startMemoryUsage
+        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
+
+        // Calculate CPU usage in percentage
+        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
+
+        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
+        assertThat(cpuUsagePercentage).isLessThan(30.0)
+        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
     }
 
     @Test
@@ -212,14 +326,13 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     }
 
     @Test
-    fun `test run() - happypath`() {
+    fun `test run() - happypath`() = runTest {
         assertNotNull(sessionConfigSpy)
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Success>()
-            assertThat(codeScanResponse.issues).hasSize(2)
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOfSatisfying<CodeScanResponse.Success> {
+            assertThat(it.issues).hasSize(2)
+            assertThat(it.responseContext.payloadContext).isEqualTo(payloadContext)
+            assertThat(it.responseContext.codeScanJobId).isEqualTo("jobId")
         }
 
         val inOrder = inOrder(codeScanSessionSpy)
@@ -240,7 +353,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     }
 
     @Test
-    fun `unsupported languages file scan fail`() {
+    fun `unsupported languages file scan fail`() = runTest {
         scanManagerSpy = Mockito.spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
         projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, scanManagerSpy, disposableRule.disposable)
 
@@ -252,9 +365,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         `when`(fileEditorManager.selectedEditor).thenReturn(selectedEditor)
         `when`(selectedEditor.file).thenReturn(virtualFile3)
 
-        runBlocking {
-            scanManagerSpy.runCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
-        }
+        scanManagerSpy.runCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         // verify that function was run but none of the results/error handling methods were called.
         verify(scanManagerSpy, times(0)).updateFileIssues(any(), any())
         verify(scanManagerSpy, times(0)).handleError(any(), any(), any())
@@ -262,7 +373,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     }
 
     @Test
-    fun `test run() - file scans limit reached`() {
+    fun `test run() - file scans limit reached`() = runTest {
         assertNotNull(sessionConfigSpy)
 
         mockClient.stub {
@@ -283,107 +394,91 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
                     .build()
             )
         }
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            if (codeScanResponse is CodeScanResponse.Failure) {
-                assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
-                assertThat(codeScanResponse.failureReason.toString()).contains("File Scan Monthly Exceeded")
-                assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
-            }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        if (codeScanResponse is CodeScanResponse.Failure) {
+            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
+            assertThat(codeScanResponse.failureReason.toString()).contains("File Scan Monthly Exceeded")
+            assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
         }
     }
 
     @Test
-    fun `test run() - createCodeScan failed`() {
+    fun `test run() - createCodeScan failed`() = runTest {
         mockClient.stub {
             onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponseFailed)
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
     }
 
     @Test
-    fun `test run() - createCodeScan error`() {
+    fun `test run() - createCodeScan error`() = runTest {
         mockClient.stub {
             onGeneric { createCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
     }
 
     @Test
-    fun `test run() - getCodeScan failed`() {
+    fun `test run() - getCodeScan failed`() = runTest {
         mockClient.stub {
             onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponseFailed)
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<Exception>()
     }
 
     @Test
-    fun `test run() - getCodeScan pending timeout`() {
+    fun `test run() - getCodeScan pending timeout`() = runTest {
         sessionConfigSpy.stub {
             onGeneric { overallJobTimeoutInSeconds() }.thenReturn(5)
         }
         mockClient.stub {
             onGeneric { getCodeScan(any(), any()) }.thenAnswer {
-                runBlocking {
-                    delay(TIMEOUT)
-                }
+                Thread.sleep(TIMEOUT)
                 fakeGetCodeScanResponsePending
             }
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<WaiterTimeoutException>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<WaiterTimeoutException>()
     }
 
     @Test
-    fun `test run() - getCodeScan error`() {
+    fun `test run() - getCodeScan error`() = runTest {
         mockClient.stub {
             onGeneric { getCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
     }
 
     @Test
-    fun `test run() - listCodeScanFindings error`() {
+    fun `test run() - listCodeScanFindings error`() = runTest {
         mockClient.stub {
             onGeneric { listCodeScanFindings(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
-        runBlocking {
-            val codeScanResponse = codeScanSessionSpy.run()
-            assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
-            assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
-            assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
-        }
+        val codeScanResponse = codeScanSessionSpy.run()
+        assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
+        assertThat(codeScanResponse.responseContext.payloadContext).isEqualTo(payloadContext)
+        assertThat((codeScanResponse as CodeScanResponse.Failure).failureReason).isInstanceOf<CodeWhispererCodeScanServerException>()
     }
 
     companion object {

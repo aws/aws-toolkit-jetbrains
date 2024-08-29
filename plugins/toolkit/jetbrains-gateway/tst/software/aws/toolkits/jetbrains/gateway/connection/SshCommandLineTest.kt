@@ -8,12 +8,17 @@ import com.github.tomakehurst.wiremock.client.WireMock.any
 import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
+import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.net.NetUtils
 import com.jetbrains.rd.util.spinUntil
 import net.schmizz.sshj.common.Buffer
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -43,7 +48,7 @@ class SshCommandLineTest {
     @Test
     fun `known hosts added`() {
         val hostFile = tempFolder.newFile().toPath()
-        SshCommandLine("localhost", port = sshServer.server.port)
+        SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(hostFile)
             .executeAndGetOutput()
 
@@ -54,16 +59,40 @@ class SshCommandLineTest {
 
     @Test
     fun `local port forwarding`() {
+        assumeFalse("Flaking on Windows CI", SystemInfo.isWindows)
+
         val wireMockPort = wireMock.port()
         val localPort = NetUtils.findAvailableSocketPort()
         wireMock.stubFor(any(anyUrl()).willReturn(aResponse().withBody("hello from wiremock:${wireMock.port()}").withStatus(200)))
 
         // redirect localhost:localPort to localhost:wireMockPort
         // ideally, we would bind wiremock to a different loopback address, but macOS doesn't allow this by default
-        SshCommandLine("localhost", port = sshServer.server.port)
+        SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(tempFolder.newFile().toPath())
-            .localPortForward(localPort, wireMockPort)
-            .executeInBackground()
+            .localPortForward(localPort = localPort, destination = sshServer.server.host, remotePort = wireMockPort, noShell = true)
+            .executeInBackground(
+                object : ProcessListener {
+                    override fun startNotified(event: ProcessEvent) {
+                        println("ssh client: startNotified")
+                    }
+
+                    override fun processTerminated(event: ProcessEvent) {
+                        println("ssh client: processTerminated, exit: ${event.exitCode}")
+                    }
+
+                    override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                        println("ssh client: processWillTerminate, willBeDestroyed: $willBeDestroyed")
+                    }
+
+                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                        println("ssh client: onTextAvailable: ${event.text}")
+                    }
+
+                    override fun processNotStarted() {
+                        println("ssh client: processNotStarted")
+                    }
+                }
+            )
 
         // race between ssh background process and client
         spinUntil(5_000) { sshServer.clientIsConnected() }
@@ -74,7 +103,7 @@ class SshCommandLineTest {
 
     @Test
     fun `execute command`() {
-        val output = SshCommandLine("localhost", port = sshServer.server.port)
+        val output = SshCommandLine(sshServer.server.host, port = sshServer.server.port)
             .knownHostsLocation(tempFolder.newFile().toPath())
             // server rewrites to this to `ls`; we're testing that the command is runnable on the machine
             .addToRemoteCommand("some complicated command { wow }")

@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.gradle.intellij
 
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -15,12 +14,8 @@ abstract class ToolkitIntelliJExtension(private val providers: ProviderFactory) 
 
     fun ideProfile() = IdeVersions.ideProfile(providers)
 
-    fun version(): Provider<String?> = productProfile().flatMap { profile ->
-        providers.provider { profile.version() }
-    }
-
-    fun localPath(): Provider<String?> = productProfile().flatMap { profile ->
-        providers.provider { profile.localPath() }
+    fun version(): Provider<String> = productProfile().flatMap { profile ->
+        providers.provider { profile.sdkVersion }
     }
 
     fun productProfile(): Provider<out ProductProfile> = ideFlavor.flatMap { flavor ->

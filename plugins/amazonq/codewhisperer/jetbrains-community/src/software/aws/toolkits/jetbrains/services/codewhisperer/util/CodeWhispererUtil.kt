@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -18,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -37,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -183,15 +187,23 @@ object CodeWhispererUtil {
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
         if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
-        return maybeReauthProviderIfNeeded(project, tokenProvider) {
-            runInEdt {
-                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
-                    notifyConnectionExpiredRequestReauth(project)
-                }
-                if (!isPluginStarting) {
-                    CodeWhispererService.markReAuthPromptShown()
+        return try {
+            maybeReauthProviderIfNeeded(project, tokenProvider) {
+                runInEdt {
+                    if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                        notifyConnectionExpiredRequestReauth(project)
+                    }
+                    if (!isPluginStarting) {
+                        CodeWhispererService.markReAuthPromptShown()
+                    }
+                    if (!tokenConnection(project).isSono()) {
+                        notifySessionConfiguration(project)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            getLogger<CodeWhispererService>().warn(e) { "prompt reauth failed with unexpected error" }
+            true
         }
     }
 
@@ -212,6 +224,24 @@ object CodeWhispererUtil {
                 }
             )
         )
+    }
+
+    private fun notifySessionConfiguration(project: Project) {
+        if (CodeWhispererExplorerActionManager.getInstance().getSessionConfigurationMessageShown()) {
+            return
+        }
+        val learnMoreLink = "https://docs.aws.amazon.com/singlesignon/latest/userguide/configure-user-session.html#90-day-extended-session-duration"
+        notifyInfo(
+            message("q.session_configuration"),
+            message("q.session_configuration.description"),
+            project,
+            listOf(
+                NotificationAction.createSimple(message("q.learn.more")) {
+                    BrowserUtil.browse(learnMoreLink)
+                }
+            )
+        )
+        CodeWhispererExplorerActionManager.getInstance().setSessionConfigurationMessageShown(true)
     }
 
     fun getConnectionStartUrl(connection: ToolkitConnection?): String? {
@@ -243,7 +273,7 @@ object CodeWhispererUtil {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
-            reauthConnectionIfNeeded(project, connection)
+            reauthConnectionIfNeeded(project, connection, isReAuth = true)
         }
     }
 
