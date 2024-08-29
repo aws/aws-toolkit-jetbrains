@@ -10,7 +10,6 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowserBase
@@ -410,15 +409,6 @@ abstract class LoginBrowser(
                 </body>
             </html>
             """.trimIndent()
-        }
-    }
-
-    fun getAuthType(region: String = "us-east-1"): AuthType {
-        val isCommercialRegion = !region.startsWith("us-gov") && !region.startsWith("us-iso") && !region.startsWith("cn")
-        if (!Registry.`is`("aws.dev.useDAG") && isCommercialRegion) {
-            return AuthType.PKCE
-        } else {
-            return AuthType.DeviceCode
         }
     }
 }

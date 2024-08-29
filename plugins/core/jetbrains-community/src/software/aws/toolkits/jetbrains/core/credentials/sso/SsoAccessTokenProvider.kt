@@ -22,9 +22,11 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
+import software.aws.toolkits.jetbrains.core.webview.getAuthType
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
@@ -159,8 +161,7 @@ class SsoAccessTokenProvider(
             return it
         }
 
-        val isCommercialRegion = !ssoRegion.startsWith("us-gov") && !ssoRegion.startsWith("us-iso") && !ssoRegion.startsWith("cn")
-        val token = if (isCommercialRegion && isNewAuthPkce) {
+        val token = if (getAuthType(ssoRegion) == AuthType.PKCE) {
             pollForPkceToken()
         } else {
             pollForDAGToken()
