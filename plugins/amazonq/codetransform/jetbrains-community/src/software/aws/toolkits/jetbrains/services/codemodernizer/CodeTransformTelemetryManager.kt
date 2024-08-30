@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaVersionFromProjectSetting
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
-import software.aws.toolkits.telemetry.CodeTransformApiNames
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
