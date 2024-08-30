@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Fix Runtime Exception:Cannot invoke (class=AmazonQToolWindowListener, method=toolWindowShown, topic=ToolWindowManagerListener) [#4849](https://github.com/aws/aws-toolkit-jetbrains/issues/4849)"
+  "description" : "Fix Runtime Exception when opening a tool window (#4849)"
 }
