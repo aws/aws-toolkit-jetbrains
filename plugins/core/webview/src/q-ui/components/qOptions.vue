@@ -56,6 +56,7 @@ import {defineComponent} from 'vue'
 import SelectableItem from "./selectableItem.vue";
 import {AwsBearerTokenConnection, BuilderId, ExistConnection, Feature, LoginIdentifier, SONO_URL, Stage} from "../../model";
 import {AWS_BUILDER_ID_NAME, IDENTITY_CENTER_NAME} from "../../constants"
+import LoginOptions from "@/q-ui/components/loginOptions.vue";
 
 export default defineComponent({
     name: "loginOptions",
@@ -90,8 +91,15 @@ export default defineComponent({
             this.selectedLoginOption = itemId
         },
         emitUiClickMetric(itemId: string) {
-            this.$emit('emitUiClickTelemetry', itemId)
+            const loginIdentifiers = Object.values(LoginIdentifier).map(value => value.toString());
+            if(loginIdentifiers.includes(itemId) ) {
+                 this.$emit('emitUiClickTelemetry', itemId)
+             } else {
+                this.$emit('emitUiClickTelemetry', LoginIdentifier.EXISTING_LOGINS)
+             }
+
         },
+
         handleBackButtonClick() {
             this.$emit('backToMenu')
         },
