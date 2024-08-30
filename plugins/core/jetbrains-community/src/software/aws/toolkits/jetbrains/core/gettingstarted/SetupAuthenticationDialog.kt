@@ -292,7 +292,7 @@ class SetupAuthenticationDialog(
                 } ?: return
 
                 if (!promptForIdcPermissionSet) {
-                    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+                    project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
                     close(OK_EXIT_CODE)
                     return
                 }
