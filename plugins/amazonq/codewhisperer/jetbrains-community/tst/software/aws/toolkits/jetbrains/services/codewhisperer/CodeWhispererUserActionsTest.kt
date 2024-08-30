@@ -138,7 +138,7 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
             on { this.newRectangle } doReturn newRect
         }
         withCodeWhispererServiceInvokedAndWait { states ->
-            CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
+            CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
             val listener = CodeWhispererScrollListener(states)
             listener.visibleAreaChanged(event)
             verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any(), any())

@@ -9,10 +9,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import java.awt.event.ActionEvent
 
-class CodeWhispererAcceptButtonActionListener(states: InvocationContext, private val sessionContext: SessionContext) : CodeWhispererActionListener(states) {
+class CodeWhispererAcceptButtonActionListener(sessionContext: SessionContext) : CodeWhispererActionListener(sessionContext) {
     override fun actionPerformed(e: ActionEvent?) {
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-        ).beforeAccept(states, sessionContext)
+        ).beforeAccept(sessionContext)
     }
 }

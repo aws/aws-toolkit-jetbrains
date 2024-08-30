@@ -9,7 +9,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import groovy.lang.Tuple3
-import groovy.lang.Tuple4
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -17,21 +16,15 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
 abstract class CodeWhispererImportAdder {
     abstract val supportedLanguages: List<CodeWhispererProgrammingLanguage>
     abstract val dummyFileName: String
 
-    fun insertImportStatements(states: InvocationContext, details: List<Tuple3<DetailContext, String, String>>, sessionContext: SessionContext) {
-//        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-//            val context = element.recommendationContext
-//            context.details.map {
-//                Tuple4(it, context.userInputSinceInvocation, context.typeaheadOriginal, context.typeahead)
-//            }
-//        }
-        val imports = details[sessionContext.selectedIndex].v1.recommendation.mostRelevantMissingImports()
+    fun insertImportStatements(states: InvocationContext, previews: List<PreviewContext>, sessionContext: SessionContext) {
+        val imports = previews[sessionContext.selectedIndex].detail.recommendation.mostRelevantMissingImports()
         LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
         imports.forEach {
             insertImportStatement(states, it)

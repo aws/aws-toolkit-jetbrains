@@ -9,8 +9,6 @@ import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.ui.DebuggerColors
-import groovy.lang.Tuple3
-import groovy.lang.Tuple4
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.inlay.CodeWhispererInlayManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -20,27 +18,22 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
 class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
-    override fun stateChanged(states: InvocationContext, sessionContext: SessionContext) {
-        val editor = states.requestContext.editor
+    override fun stateChanged(sessionContext: SessionContext) {
+        val editor = sessionContext.editor
         val editorManager = CodeWhispererEditorManager.getInstance()
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
         val selectedIndex = sessionContext.selectedIndex
-        val typeaheadOriginal = details[selectedIndex].v3
-        val detail = details[selectedIndex].v1
+        val typeahead = previews[selectedIndex].typeahead
+        val detail = previews[selectedIndex].detail
         val caretOffset = editor.caretModel.primaryCaret.offset
         val document = editor.document
         val lineEndOffset = document.getLineEndOffset(document.getLineNumber(caretOffset))
 
         // get matching brackets from recommendations to the brackets after caret position
         val remaining = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
-            details[selectedIndex].v1,
-            details[selectedIndex].v2,
-        ).substring(typeaheadOriginal.length)
+            detail,
+            previews[selectedIndex].userInput,
+        ).substring(typeahead.length)
 
         val remainingLines = remaining.split("\n")
         val firstLineOfRemaining = remainingLines.first()
@@ -70,7 +63,7 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
                 },
                 HighlighterTargetArea.EXACT_RANGE
             )
-            Disposer.register(states) {
+            Disposer.register(sessionContext) {
                 editor.markupModel.removeHighlighter(rangeHighlighter)
             }
             sessionContext.toBeRemovedHighlighter = rangeHighlighter
@@ -96,63 +89,19 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
 
         // inlay chunks are chunks from first line(chunks) and an additional chunk from other lines
         val inlayChunks = chunks + listOf(RecommendationChunk(otherLinesInlayText, 0, chunks.last().inlayOffset))
-        CodeWhispererInlayManager.getInstance().updateInlays(states, sessionContext, inlayChunks)
+        CodeWhispererInlayManager.getInstance().updateInlays(sessionContext, inlayChunks)
         CodeWhispererPopupManager.getInstance().render(
-            states,
             sessionContext,
-            overlappingLinesCount,
             isRecommendationAdded = false,
             isScrolling = false
         )
     }
 
-    override fun scrolled(states: InvocationContext, sessionContext: SessionContext) {
-        if (states.isDisposed()) return
-        val editor = states.requestContext.editor
-        val editorManager = CodeWhispererEditorManager.getInstance()
-        val selectedIndex = sessionContext.selectedIndex
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        val typeaheadOriginal = details[selectedIndex].v3
-        val detail = details[selectedIndex].v1
-
-        // get matching brackets from recommendations to the brackets after caret position
-        val remaining = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
-            detail,
-            states.recommendationContext.userInputSinceInvocation
-        ).substring(typeaheadOriginal.length)
-
-        val remainingLines = remaining.split("\n")
-        val otherLinesOfRemaining = remainingLines.drop(1)
-
-        // process other lines inlays, where we do tail-head matching as much as possible
-        val overlappingLinesCount = editorManager.findOverLappingLines(
-            editor,
-            otherLinesOfRemaining,
-            detail.isTruncatedOnRight,
-            sessionContext
-        )
-
-        CodeWhispererPopupManager.getInstance().render(
-            states,
-            sessionContext,
-            overlappingLinesCount,
-            isRecommendationAdded = false,
-            isScrolling = true
-        )
+    override fun scrolled(sessionContext: SessionContext) {
+        CodeWhispererPopupManager.getInstance().render(sessionContext, isRecommendationAdded = false, isScrolling = true)
     }
 
     override fun recommendationAdded(states: InvocationContext, sessionContext: SessionContext) {
-        CodeWhispererPopupManager.getInstance().render(
-            states,
-            sessionContext,
-            0,
-            isRecommendationAdded = true,
-            isScrolling = false
-        )
+        CodeWhispererPopupManager.getInstance().render(sessionContext, isRecommendationAdded = true, isScrolling = false)
     }
 }

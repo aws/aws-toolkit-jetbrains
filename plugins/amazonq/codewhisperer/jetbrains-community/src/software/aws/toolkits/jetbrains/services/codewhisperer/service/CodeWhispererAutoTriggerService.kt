@@ -3,9 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
-import com.intellij.codeWithMe.clientId
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -22,16 +20,15 @@ import org.apache.commons.collections4.queue.CircularFifoQueue
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.extractCaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.INVOCATION_DELAY
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
-import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.exp
@@ -86,8 +83,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
             return null
         }
-        if (lastCharTypedTime != null && lastCharTypedTime?.plusMillis(0)?.isAfter(Instant.now()) == true) {
-//            println("cancelling last trigger job ${lastTrigger.hashCode()} since user has immediately typed since then")
+        if (hasEnoughDelaySinceLastTrigger()) {
             lastTrigger?.cancel()
         }
 
@@ -102,43 +98,21 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
         val coroutineScope = applicationCoroutineScope()
 
-        return when (triggerType) {
-            is CodeWhispererAutomatedTriggerType.IdleTime -> run {
-                coroutineScope.launch {
-                    // TODO: potential race condition between hasExistingInvocation and entering edt
-                    // but in that case we will just return in performAutomatedTriggerAction
-                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
-                        CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
-                    ) {
-                        if (!isActive) return@launch
-                        delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
-                    }
-                    runInEdt {
-                        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime(), latencyContext)
-                    }
-                }.also {
-                    lastTrigger = it
-                }
-            }
-
-            else -> run {
-//                if (lastCharTypedTime != null && lastCharTypedTime?.plusMillis(100)?.isAfter(Instant.now()) != false) return null
+        return run {
                 coroutineScope.launch(EDT) {
-                    while (lastCharTypedTime != null && lastCharTypedTime?.plusMillis(0)?.isAfter(Instant.now()) == true) {
+                    while (!hasEnoughDelaySinceLastTrigger()) {
                         if (!isActive) return@launch
                         delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
                     }
 
-//                    println("time now: ${System.currentTimeMillis()}")
                     performAutomatedTriggerAction(editor, triggerType, latencyContext)
                 }.also {
                     lastTrigger = it
-//                    println("create trigger job ${lastTrigger.hashCode()}, time: ${System.currentTimeMillis()}")
                 }
             }
-        }
     }
+
+    private fun hasEnoughDelaySinceLastTrigger(): Boolean = lastCharTypedTime == null || lastCharTypedTime?.plusMillis(INVOCATION_DELAY)?.isBefore(Instant.now()) == true
 
     private fun scheduleReset() {
         if (!alarm.isDisposed) {

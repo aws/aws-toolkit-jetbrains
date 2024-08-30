@@ -311,7 +311,11 @@ class CodeWhispererTelemetryServiceTest {
             val hasUserAccept = decisions.any { it == CodewhispererSuggestionState.Accept }
             val popupShownDuration = Duration.ofSeconds(Random.nextLong(0, 30))
 
-            sut.sendUserDecisionEventForAll(requestContext, responseContext, recommendationContext, sessionContext, hasUserAccept, popupShownDuration)
+            sut.sendUserDecisionEventForAll(
+                sessionContext,
+                hasUserAccept,
+                popupShownDuration
+            )
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
 
@@ -376,7 +380,11 @@ class CodeWhispererTelemetryServiceTest {
             val hasUserAccept = decisions.any { it == CodewhispererSuggestionState.Accept }
             val popupShownDuration = Duration.ofSeconds(Random.nextLong(0, 30))
 
-            sut.sendUserDecisionEventForAll(requestContext, responseContext, recommendationContext, sessionContext, hasUserAccept, popupShownDuration)
+            sut.sendUserDecisionEventForAll(
+                sessionContext,
+                hasUserAccept,
+                popupShownDuration
+            )
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
 

@@ -3,11 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.model
 
+import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
+import com.intellij.ui.ComponentUtil
+import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
@@ -16,10 +23,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.AcceptedSuggestionEntry
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
@@ -27,6 +37,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 data class Chunk(
@@ -90,8 +102,14 @@ data class RecommendationContext(
     val userInputSinceInvocation: String,
     val position: VisualPosition,
     val jobId: Int,
-//    var typeahead: String = "",
-    var typeaheadOriginal: String = "",
+    var typeahead: String = "",
+)
+
+data class PreviewContext(
+    val jobId: Int,
+    val detail: DetailContext,
+    val userInput: String,
+    val typeahead: String,
 )
 
 data class DetailContext(
@@ -105,30 +123,61 @@ data class DetailContext(
 )
 
 data class SessionContext(
-    var selectedIndex: Int = 0,
+    val project: Project,
+    val editor: Editor,
+    var popup: JBPopup? = null,
+    var selectedIndex: Int = -1,
     val seen: MutableSet<Int> = mutableSetOf(),
     var isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
-    var popupDisplayOffset: Int = -1
+    var popupDisplayOffset: Int = -1,
+    val latencyContext: LatencyContext,
+    var hasAccepted: Boolean = false
 ) : Disposable {
     private var isDisposed = false
+    init {
+        project.messageBus.connect().subscribe(
+            CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+            object : CodeWhispererIntelliSenseOnHoverListener {
+                override fun onEnter() {
+                    val popupWindow = (popup as AbstractPopup?)?.popupWindow ?: return
+                    WindowManager.getInstance().setAlphaModeRatio(popupWindow, 1f)
+
+                    val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
+                    if (a != null) {
+                        WindowManager.getInstance().setAlphaModeRatio(a, 0f)
+                    }
+                }
+            }
+        )
+    }
 
     @RequiresEdt
     override fun dispose() {
         println("disposing the session")
-        val jobIds = CodeWhispererService.getInstance().ongoingRequests.keys.toList()
-        jobIds.forEach { jobId ->
-            val job = CodeWhispererService.getInstance().ongoingRequests[jobId] ?: return@forEach
-            Disposer.dispose(job)
+
+        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+            this,
+            hasAccepted,
+            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+        )
+
+        val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
+        if (a != null) {
+            WindowManager.getInstance().setAlphaModeRatio(a, 0f)
         }
-        CodeWhispererService.getInstance().ongoingRequests.clear()
-        CodeWhispererService.getInstance().ongoingRequestsContext.clear()
-        CodeWhispererPopupManager.getInstance().cancelPopup()
-        CodeWhispererPopupManager.getInstance().sessionContext = null
+
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
+
+        if (hasAccepted) {
+            popup?.closeOk(null)
+        } else {
+            popup?.cancel()
+        }
+        popup?.let { Disposer.dispose(it) }
+        popup = null
         CodeWhispererInvocationStatus.getInstance().finishInvocation()
-        println("current ongoingRequestContext:")
-        CodeWhispererService.getInstance().ongoingRequestsContext.keys.forEach { print("$it  ") }
         isDisposed = true
     }
 
@@ -157,11 +206,6 @@ data class InvocationContext(
 
     @RequiresEdt
     override fun dispose() {
-
-//        CodeWhispererPopupManager.getInstance().cancelPopup()
-        CodeWhispererService.getInstance().ongoingRequests.remove(recommendationContext.jobId)
-        CodeWhispererService.getInstance().ongoingRequestsContext.remove(recommendationContext.jobId)
-
         // TODO: send userTriggerDecision telemetry
 
         println("state for jobId ${recommendationContext.jobId} is disposed")
@@ -175,7 +219,6 @@ data class WorkerContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val response: GenerateCompletionsResponse,
-//    val popup: JBPopup
 )
 
 data class CodeScanTelemetryEvent(

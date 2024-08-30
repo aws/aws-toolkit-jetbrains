@@ -10,8 +10,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
-import groovy.lang.Tuple3
-import groovy.lang.Tuple4
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
@@ -26,21 +24,18 @@ import java.util.Stack
 
 @Service
 class CodeWhispererEditorManager {
-    fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
+    fun updateEditorWithRecommendation(sessionContext: SessionContext) {
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        val selectedIndex = sessionContext.selectedIndex
+        val preview = previews[selectedIndex]
+        val states = CodeWhispererService.getInstance().getAllPaginationSessions()[preview.jobId] ?: return
         val (requestContext, responseContext) = states
-        val (project, editor) = requestContext
+        val (project, editor) = sessionContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
-        val selectedIndex = sessionContext.selectedIndex
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        val typeahead = details[selectedIndex].v3
-        val detail = details[selectedIndex].v1
-        val userInput = details[selectedIndex].v2
+        val typeahead = preview.typeahead
+        val detail = preview.detail
+        val userInput = preview.userInput
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
             userInput
@@ -77,7 +72,7 @@ class CodeWhispererEditorManager {
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-                ).afterAccept(states, details, sessionContext, rangeMarker)
+                ).afterAccept(states, previews, sessionContext, rangeMarker)
             }
         }
     }

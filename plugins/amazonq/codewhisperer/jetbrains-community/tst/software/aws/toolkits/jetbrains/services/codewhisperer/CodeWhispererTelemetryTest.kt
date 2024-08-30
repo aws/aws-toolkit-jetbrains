@@ -416,7 +416,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         val statesCaptor = argumentCaptor<InvocationContext>()
         withCodeWhispererServiceInvokedAndWait {}
-        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any(), any(), any())
+        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any(), any())
         val states = statesCaptor.lastValue
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -428,40 +428,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
             "codewhispererUserGroup" to userGroup.name,
         )
-    }
-
-    @Test
-    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
-        val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
-        val codewhispererServiceSpy = spy(codewhispererService)
-        codewhispererServiceSpy.stub {
-            onGeneric {
-                canDoInvocation(any(), any())
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-        popupManagerSpy.stub {
-            onGeneric {
-                hasConflictingPopups(any())
-            } doAnswer {
-                true
-            }
-        }
-        invokeCodeWhispererService()
-
-        runInEdtAndWait {
-            val metricCaptor = argumentCaptor<MetricEvent>()
-            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
-            assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues,
-                userDecision,
-                pythonResponse.completions().size,
-                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
-                "codewhispererUserGroup" to userGroup.name,
-            )
-        }
     }
 
     @Test

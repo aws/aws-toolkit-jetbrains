@@ -14,6 +14,7 @@ import com.intellij.ui.hover.HoverListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import java.awt.Component
 
 object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
@@ -45,7 +46,9 @@ object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
             newLookup,
             object : HoverListener() {
                 override fun mouseEntered(component: Component, x: Int, y: Int) {
-                    runReadAction { CodeWhispererPopupManager.getInstance().hidePopup(newLookup.editor) }
+                    runReadAction { newLookup.project.messageBus.syncPublisher(
+                        CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+                    ).onEnter() }
                 }
                 override fun mouseMoved(component: Component, x: Int, y: Int) {}
                 override fun mouseExited(component: Component) {}

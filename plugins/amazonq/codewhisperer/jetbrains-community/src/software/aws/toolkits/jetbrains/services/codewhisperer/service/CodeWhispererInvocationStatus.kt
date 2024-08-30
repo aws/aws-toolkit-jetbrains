@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 class CodeWhispererInvocationStatus {
     private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
     private var invokingSessionId: String? = null
-    private var timeAtLastInvocationComplete: Instant? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
         private set
     private var isPopupActive: Boolean = false
@@ -46,10 +45,6 @@ class CodeWhispererInvocationStatus {
         }
     }
 
-    fun setInvocationComplete() {
-        timeAtLastInvocationComplete = Instant.now()
-    }
-
     fun documentChanged() {
         timeAtLastDocumentChanged = Instant.now()
     }
@@ -69,11 +64,11 @@ class CodeWhispererInvocationStatus {
         return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
-    fun isPopupActive(): Boolean = isPopupActive
+    fun isDisplaySessionActive(): Boolean = isPopupActive
 
-    fun setPopupActive(value: Boolean) {
+    fun setDisplaySessionActive(value: Boolean) {
         isPopupActive = value
-        println("set popup active to $value")
+//        println("set popup active to $value")
     }
 
     fun setInvocationStart() {
@@ -83,11 +78,6 @@ class CodeWhispererInvocationStatus {
     fun setInvocationSessionId(sessionId: String?) {
         LOG.debug { "Set current CodeWhisperer invocation sessionId: $sessionId" }
         invokingSessionId = sessionId
-    }
-
-    fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
-        val timeCanShowCodeWhisperer = timeAtLastInvocationStart?.plusMillis(CodeWhispererConstants.INVOCATION_INTERVAL) ?: return true
-        return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
     companion object {

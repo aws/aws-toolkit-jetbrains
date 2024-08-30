@@ -8,12 +8,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 
-class CodeWhispererPopupLeftArrowHandler(states: InvocationContext) : CodeWhispererEditorActionHandler(states) {
+class CodeWhispererPopupLeftArrowHandler(sessionContext: SessionContext) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-        ).navigatePrevious(states)
+        ).navigatePrevious(sessionContext)
     }
 }

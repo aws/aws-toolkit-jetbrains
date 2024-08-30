@@ -11,16 +11,16 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 
-class CodeWhispererScrollListener(private val states: InvocationContext, private val sessionContext: SessionContext) : VisibleAreaListener {
+class CodeWhispererScrollListener(private val sessionContext: SessionContext) : VisibleAreaListener {
     override fun visibleAreaChanged(e: VisibleAreaEvent) {
         val oldRect = e.oldRectangle
         val newRect = e.newRectangle
-        if (CodeWhispererInvocationStatus.getInstance().isPopupActive() &&
+        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() &&
             (oldRect.x != newRect.x || oldRect.y != newRect.y)
         ) {
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_POPUP_STATE_CHANGED
-            ).scrolled(states, sessionContext)
+            ).scrolled(sessionContext)
         }
     }
 }

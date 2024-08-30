@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
-import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
@@ -15,7 +15,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
@@ -44,8 +43,6 @@ import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
-import com.jetbrains.rd.swing.awtMousePoint
-import groovy.lang.Tuple3
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
@@ -56,10 +53,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.inlineLabelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupLeftArrowHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
@@ -71,7 +70,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
@@ -91,9 +89,8 @@ class CodeWhispererPopupManager {
 
     var shouldListenerCancelPopup: Boolean = true
         private set
-    var sessionContext: SessionContext? = null
 
-    private var myPopup: JBPopup? = null
+//    private var myPopup: JBPopup? = null
 
     init {
         // Listen for global scheme changes
@@ -121,255 +118,87 @@ class CodeWhispererPopupManager {
     }
 
     @RequiresEdt
-    fun changeStatesForNavigation(states: InvocationContext, indexChange: Int) {
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Triple(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        var sessionContext = sessionContext ?: SessionContext()
-        this.sessionContext = sessionContext
-
-        val isReverse = indexChange < 0
-        val userInput = states.recommendationContext.userInputSinceInvocation
-        val validCount = getValidCount(emptyList(), userInput, "")
-        val validSelectedIndex = getValidSelectedIndex(emptyList(), userInput, sessionContext.selectedIndex, "")
+    fun changeStatesForNavigation(sessionContext: SessionContext, indexChange: Int) {
+        val validCount = getValidCount()
+        val validSelectedIndex = getValidSelectedIndex(sessionContext.selectedIndex)
         if ((validSelectedIndex == validCount - 1 && indexChange == 1) ||
             (validSelectedIndex == 0 && indexChange == -1)
         ) {
             return
         }
-        val selectedIndex = findNewSelectedIndex(
-            isReverse,
-            sessionContext.selectedIndex + indexChange
-        )
-        if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex].first, details[selectedIndex].second, details[selectedIndex].third)) {
-            LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
-            Disposer.dispose(sessionContext)
-            return
-        }
+        val isReverse = indexChange < 0
+        val selectedIndex = findNewSelectedIndex(isReverse, sessionContext.selectedIndex + indexChange)
 
         sessionContext.selectedIndex = selectedIndex
         sessionContext.isFirstTimeShowingPopup = false
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-            states,
             sessionContext
         )
     }
 
     @RequiresEdt
     fun changeStatesForTypeahead(
-        states: InvocationContext,
+        sessionContext: SessionContext,
         typeaheadChange: String,
         typeaheadAdded: Boolean
     ) {
-        var sessionContext = sessionContext ?: SessionContext()
-        this.sessionContext = sessionContext
-        val recos = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull()
-        val userInput = states.recommendationContext.userInputSinceInvocation
-
-        sessionContext.selectedIndex
-        recos.forEach {
-            val typeaheadOriginal =
-                if (typeaheadAdded) {
-                    it.recommendationContext.typeaheadOriginal + typeaheadChange
-                } else {
-                    if (typeaheadChange.length > it.recommendationContext.typeaheadOriginal.length) {
-                        Disposer.dispose(sessionContext)
-                        println("exit 7, ")
-                        return
-                    }
-                    it.recommendationContext.typeaheadOriginal.substring(
-                        0,
-                        it.recommendationContext.typeaheadOriginal.length - typeaheadChange.length
-                    )
-                }
-            it.recommendationContext.typeaheadOriginal = typeaheadOriginal
-        }
-        val isReverse = false
-        val selectedIndex = findNewSelectedIndex(
-            isReverse,
-            sessionContext.selectedIndex
-        )
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            element.recommendationContext.details.map {
-                Triple(it, element.recommendationContext.userInputSinceInvocation, element.recommendationContext.typeaheadOriginal)
-            }
-        }
-        if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex].first, details[selectedIndex].second, details[selectedIndex].third)) {
+        CodeWhispererService.getInstance().updateTypeahead(typeaheadChange, typeaheadAdded, sessionContext)
+        val selectedIndex = findNewSelectedIndex(false, sessionContext.selectedIndex)
+        if (selectedIndex == -1) {
             LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
-            Disposer.dispose(sessionContext)
-//            cancelPopup()
+            CodeWhispererService.getInstance().disposeDisplaySession(false)
             return
         }
 
-//        recos.forEach {
-//            it.recommendationContext.typeahead = resolveTypeahead(it, details, selectedIndex, it.recommendationContext.typeaheadOriginal)
-//        }
-//        sessionContext.typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
-//        sessionContext.typeaheadOriginal = typeaheadOriginal
         sessionContext.selectedIndex = selectedIndex
         sessionContext.isFirstTimeShowingPopup = false
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-            states,
             sessionContext
         )
     }
 
     @RequiresEdt
-    fun changeStatesForShowing(
-        states: InvocationContext,
-        recommendationAdded: Boolean = false
-    ) {
-        var sessionContext = sessionContext ?: SessionContext()
-        this.sessionContext = sessionContext
+    fun changeStatesForShowing(sessionContext: SessionContext, states: InvocationContext, recommendationAdded: Boolean = false) {
         if (recommendationAdded) {
-//            LOG.debug {
-//                "Add recommendations to the existing CodeWhisperer session, current number of recommendations: ${details.size}"
-//            }
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED)
                 .recommendationAdded(states, sessionContext)
             return
         }
-        val isReverse = false
 
-        val selectedIndex = findNewSelectedIndex(
-            isReverse,
-            sessionContext.selectedIndex,
-        )
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            element.recommendationContext.details.map {
-                Triple(it, element.recommendationContext.userInputSinceInvocation, element.recommendationContext.typeaheadOriginal)
-            }
-        }
-        if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex].first, details[selectedIndex].second, details[selectedIndex].third)) {
+        val selectedIndex = findNewSelectedIndex(false, sessionContext.selectedIndex)
+        if (selectedIndex == -1) {
             LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
-            Disposer.dispose(sessionContext)
-//            cancelPopup()
+            CodeWhispererService.getInstance().disposeDisplaySession(false)
             return
         }
 
         sessionContext.selectedIndex = selectedIndex
         sessionContext.isFirstTimeShowingPopup = true
         if (sessionContext.popupDisplayOffset == -1) {
-            sessionContext.popupDisplayOffset = states.requestContext.editor.caretModel.offset
+            sessionContext.popupDisplayOffset = sessionContext.editor.caretModel.offset
         }
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-            states,
             sessionContext
         )
     }
 
-//    fun changeStates(
-//        states: InvocationContext,
-//        indexChange: Int,
-//        typeaheadChange: String,
-//        typeaheadAdded: Boolean,
-//        recommendationAdded: Boolean = false
-//    ) {
-//        val (_, _, recommendationContext) = states
-//        val (details) = recommendationContext
-//        var sessionContext = sessionContext ?: SessionContext()
-//        if (recommendationAdded) {
-//            LOG.debug {
-//                "Add recommendations to the existing CodeWhisperer session, current number of recommendations: ${details.size}"
-//            }
-//            ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED)
-//                .recommendationAdded(states, sessionContext)
-//            return
-//        }
-//        val typeaheadOriginal =
-//            if (typeaheadAdded) {
-//                recommendationContext.typeaheadOriginal + typeaheadChange
-//            } else {
-//                if (typeaheadChange.length > recommendationContext.typeaheadOriginal.length) {
-//                    Disposer.dispose(sessionContext)
-//                    println("exit 7, ")
-//                    return
-//                }
-//                sessionContext.typeaheadOriginal.substring(
-//                    0,
-//                    sessionContext.typeaheadOriginal.length - typeaheadChange.length
-//                )
-//            }
-//        val isReverse = indexChange < 0
-//        val userInput = states.recommendationContext.userInputSinceInvocation
-//        val validCount = getValidCount(details, userInput, typeaheadOriginal)
-//        val validSelectedIndex = getValidSelectedIndex(details, userInput, sessionContext.selectedIndex, typeaheadOriginal)
-//        if ((validSelectedIndex == validCount - 1 && indexChange == 1) ||
-//            (validSelectedIndex == 0 && indexChange == -1)
-//        ) {
-//            return
-//        }
-//        val selectedIndex = findNewSelectedIndex(
-//            isReverse,
-//            sessionContext.selectedIndex + indexChange
-//        )
-//        if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex], userInput, typeaheadOriginal)) {
-//            LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
-//            Disposer.dispose(sessionContext)
-//            return
-//        }
-//
-//        sessionContext.typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
-//        sessionContext.typeaheadOriginal = typeaheadOriginal
-//        sessionContext.selectedIndex = selectedIndex
-//        sessionContext.isFirstTimeShowingPopup = indexChange == 0 && typeaheadChange.isEmpty()
-//
-//        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
-//            states,
-//            sessionContext
-//        )
-//        this.sessionContext = sessionContext
-//    }
-
-    private fun resolveTypeahead(states: InvocationContext, details: List<Triple<DetailContext, String, String>>, selectedIndex: Int, typeahead: String): String {
-        val recommendation = details[selectedIndex].first.reformatted.content()
-        val userInput = states.recommendationContext.userInputSinceInvocation
-        var indexOfFirstNonWhiteSpace = typeahead.indexOfFirst { !it.isWhitespace() }
-        if (indexOfFirstNonWhiteSpace == -1) {
-            indexOfFirstNonWhiteSpace = typeahead.length
-        }
-
-        for (i in 0..indexOfFirstNonWhiteSpace) {
-            val subTypeahead = typeahead.substring(i)
-            if (recommendation.startsWith(userInput + subTypeahead)) return subTypeahead
-        }
-        return typeahead
-    }
-
-    fun updatePopupPanel(states: InvocationContext?, sessionContext: SessionContext?) {
-        if (states == null || sessionContext == null) return
-        val userInput = states.recommendationContext.userInputSinceInvocation
-//        val details = states.recommendationContext.details
+    fun updatePopupPanel(sessionContext: SessionContext?) {
+        if (sessionContext == null || sessionContext.selectedIndex == -1 || sessionContext.isDisposed()) return
         val selectedIndex = sessionContext.selectedIndex
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        val typeaheadOriginal = details[selectedIndex].v3
-        val validCount = getValidCount(emptyList(), userInput, typeaheadOriginal)
-        val validSelectedIndex = getValidSelectedIndex(emptyList(), userInput, selectedIndex, typeaheadOriginal)
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        val validCount = getValidCount()
+        val validSelectedIndex = getValidSelectedIndex(selectedIndex)
         updateSelectedRecommendationLabelText(validSelectedIndex, validCount)
         updateNavigationPanel(validSelectedIndex, validCount)
-        updateImportPanel(details[selectedIndex].v1.recommendation.mostRelevantMissingImports())
-        updateCodeReferencePanel(states.requestContext.project, details[selectedIndex].v1.recommendation.references())
+        updateImportPanel(previews[selectedIndex].detail.recommendation.mostRelevantMissingImports())
+        updateCodeReferencePanel(sessionContext.project, previews[selectedIndex].detail.recommendation.references())
     }
 
-    fun render(
-        states: InvocationContext,
-        sessionContext: SessionContext,
-        overlappingLinesCount: Int,
-        isRecommendationAdded: Boolean,
-        isScrolling: Boolean
-    ) {
-        updatePopupPanel(states, sessionContext)
+    fun render(sessionContext: SessionContext, isRecommendationAdded: Boolean, isScrolling: Boolean) {
+        updatePopupPanel(sessionContext)
 
         sessionContext.seen.add(sessionContext.selectedIndex)
 
@@ -383,10 +212,10 @@ class CodeWhispererPopupManager {
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
         if (!isRecommendationAdded) {
-            showPopup(states, sessionContext)
+            showPopup(sessionContext)
             if (!isScrolling) {
-                states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
-                states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+                sessionContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+                sessionContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
             }
         }
         if (isScrolling ||
@@ -395,7 +224,7 @@ class CodeWhispererPopupManager {
         ) {
             return
         }
-        CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+//        CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(sessionContext)
     }
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
@@ -407,81 +236,47 @@ class CodeWhispererPopupManager {
         }
     }
 
-    fun resetSession() {
-        sessionContext?.let {
-            Disposer.dispose(it)
-        }
-        sessionContext = null
-    }
-
-    fun cancelPopup() {
-        myPopup?.let {
-            it.cancel()
-            Disposer.dispose(it)
-        }
-        myPopup = null
-    }
-
-    fun closePopup() {
-       myPopup?.let {
-            it.closeOk(null)
-            Disposer.dispose(it)
-        }
-        myPopup = null
-    }
+//    fun resetSession() {
+//        sessionContext?.let {
+//            Disposer.dispose(it)
+//        }
+//        sessionContext = null
+//    }
 
     fun showPopup(
-        states: InvocationContext,
         sessionContext: SessionContext,
         force: Boolean = false,
     ) {
-//        popup = initPopup()
-        val p = states.requestContext.editor.offsetToXY(sessionContext.popupDisplayOffset)
-        var popup: JBPopup? = null
-        if (myPopup == null) {
+        val p = sessionContext.editor.offsetToXY(sessionContext.popupDisplayOffset)
+        val popup: JBPopup?
+        if (sessionContext.popup == null) {
             popup = initPopup()
-            initPopupListener(states, sessionContext, popup)
+            sessionContext.popup = popup
+            initPopupListener(sessionContext, popup)
         } else {
-            popup = myPopup
+            popup = sessionContext.popup
         }
-//        val popup = myPopup
-        if (popup == null) {
-            val a = 1
-        }
-        val editor = states.requestContext.editor
-//        val detailContexts = states.recommendationContext.details
-        val userInputOriginal = states.recommendationContext.userInputOriginal
-//        val userInput = states.recommendationContext.userInputSinceInvocation
-        val selectedIndex = sessionContext.selectedIndex
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Tuple3(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        val detail = details[selectedIndex].v1
-//        val typeahead = details[selectedIndex].v4
+        val editor = sessionContext.editor
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        val userInputOriginal = previews[sessionContext.selectedIndex].userInput
         val userInputLines = userInputOriginal.split("\n").size - 1
-//        val lineCount = getReformattedRecommendation(detail, userInput).split("\n").size
         val popupSize = (popup as AbstractPopup).preferredContentSize
-//        val yBelowLastLine = p.y + (lineCount + additionalLines + userInputLines - overlappingLinesCount) * editor.lineHeight
         val yAboveFirstLine = p.y - popupSize.height + userInputLines * editor.lineHeight
         val popupRect = Rectangle(p.x, yAboveFirstLine, popupSize.width, popupSize.height)
         val editorRect = editor.scrollingModel.visibleArea
         var shouldHidePopup = false
 
-        CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
 
         // Check if the current editor still has focus. If not, don't show the popup.
         val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {
             editor.contentComponent.isFocusOwner
         } else {
-            FileEditorManager.getInstance(states.requestContext.project).selectedTextEditorWithRemotes.firstOrNull() == editor
+            FileEditorManager.getInstance(sessionContext.project).selectedTextEditorWithRemotes.firstOrNull() == editor
         }
-        if (!isSameEditorAsTrigger && false) {
+        if (!isSameEditorAsTrigger) {
             LOG.debug { "Current editor no longer has focus, not showing the popup" }
-            Disposer.dispose(sessionContext)
-//            cancelPopup()
+            CodeWhispererService.getInstance().disposeDisplaySession(false)
             return
         }
 
@@ -526,13 +321,13 @@ class CodeWhispererPopupManager {
                 editor.putUserData(PopupFactoryImpl.ANCHOR_POPUP_POSITION, popupPositionForRemote)
                 popup.showInBestPositionFor(editor)
             }
-            val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
-            CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
-                detail.requestId,
-                states.requestContext,
-                states.responseContext,
-                perceivedLatency
-            )
+//            val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
+//            CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
+//                detail.requestId,
+//                states.requestContext,
+//                states.responseContext,
+//                perceivedLatency
+//            )
         }
 
         val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
@@ -551,20 +346,8 @@ class CodeWhispererPopupManager {
                     popup.popupWindow?.let {
                         WindowManager.getInstance().setAlphaModeRatio(it, 1f)
                     }
-                } else {
-//                WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
                 }
             }
-        }
-    }
-
-    fun hidePopup(editor: Editor) {
-        val popupWindow = (myPopup as AbstractPopup?)?.popupWindow ?: return
-        WindowManager.getInstance().setAlphaModeRatio(popupWindow, 1f)
-
-        val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
-        if (a != null) {
-            WindowManager.getInstance().setAlphaModeRatio(a, 0f)
         }
     }
 
@@ -572,27 +355,25 @@ class CodeWhispererPopupManager {
         .createComponentPopupBuilder(popupComponents.panel, null)
         .setAlpha(0.1F)
         .setCancelOnClickOutside(true)
-//        .setCancelOnOtherWindowOpen(true)
-        .setCancelKeyEnabled(true)
+        .setCancelOnOtherWindowOpen(true)
+//        .setCancelKeyEnabled(true)
         .setCancelOnWindowDeactivation(true)
-        .createPopup().also {
-            myPopup = it
-        }
+        .createPopup()
 
     fun getReformattedRecommendation(detailContext: DetailContext, userInput: String) =
         detailContext.reformatted.content().substring(userInput.length)
 
-    fun initPopupListener(states: InvocationContext, sessionContext: SessionContext, popup: JBPopup) {
-        addPopupListener(states, sessionContext, popup)
-        states.requestContext.editor.scrollingModel.addVisibleAreaListener(CodeWhispererScrollListener(states, sessionContext), sessionContext)
-        addButtonActionListeners(states, sessionContext)
-        addMessageSubscribers(states, sessionContext)
-        setPopupActionHandlers(states, sessionContext)
-        addComponentListeners(states, sessionContext)
+    private fun initPopupListener(sessionContext: SessionContext, popup: JBPopup) {
+        addPopupListener(popup)
+        sessionContext.editor.scrollingModel.addVisibleAreaListener(CodeWhispererScrollListener(sessionContext), sessionContext)
+        addButtonActionListeners(sessionContext)
+        addMessageSubscribers(sessionContext)
+        setPopupActionHandlers(sessionContext)
+        addComponentListeners(sessionContext)
     }
 
-    private fun addPopupListener(states: InvocationContext, sessionContext: SessionContext, popup: JBPopup) {
-        val listener = CodeWhispererPopupListener(states, sessionContext)
+    private fun addPopupListener(popup: JBPopup) {
+        val listener = CodeWhispererPopupListener()
         popup.addListener(listener)
         Disposer.register(popup) {
             println("listener is removed")
@@ -600,54 +381,54 @@ class CodeWhispererPopupManager {
         }
     }
 
-    private fun addMessageSubscribers(states: InvocationContext, sessionContext: SessionContext) {
+    private fun addMessageSubscribers(sessionContext: SessionContext) {
         val connect = ApplicationManager.getApplication().messageBus.connect(sessionContext)
         connect.subscribe(
             CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
-                override fun navigateNext(states: InvocationContext) {
-                    changeStatesForNavigation(states, 1)
+                override fun navigateNext(sessionContext: SessionContext) {
+                    changeStatesForNavigation(sessionContext, 1)
                 }
 
-                override fun navigatePrevious(states: InvocationContext) {
-                    changeStatesForNavigation(states, -1)
+                override fun navigatePrevious(sessionContext: SessionContext) {
+                    changeStatesForNavigation(sessionContext, -1)
                 }
 
-                override fun backspace(states: InvocationContext, diff: String) {
-                    changeStatesForTypeahead(states, diff, false)
+                override fun backspace(sessionContext: SessionContext, diff: String) {
+                    changeStatesForTypeahead(sessionContext, diff, false)
                 }
 
-                override fun enter(states: InvocationContext, diff: String) {
-                    changeStatesForTypeahead(states, diff, true)
+                override fun enter(sessionContext: SessionContext, diff: String) {
+                    changeStatesForTypeahead(sessionContext, diff, true)
                 }
 
-                override fun type(states: InvocationContext, diff: String) {
+                override fun type(sessionContext: SessionContext, diff: String) {
                     // remove the character at primaryCaret if it's the same as the typed character
-                    val caretOffset = states.requestContext.editor.caretModel.primaryCaret.offset
-                    val document = states.requestContext.editor.document
+                    val caretOffset = sessionContext.editor.caretModel.primaryCaret.offset
+                    val document = sessionContext.editor.document
                     val text = document.charsSequence
                     if (caretOffset < text.length && diff == text[caretOffset].toString()) {
-                        WriteCommandAction.runWriteCommandAction(states.requestContext.project) {
+                        WriteCommandAction.runWriteCommandAction(sessionContext.project) {
                             document.deleteString(caretOffset, caretOffset + 1)
                         }
                     }
-                    changeStatesForTypeahead(states, diff, true)
+                    changeStatesForTypeahead(sessionContext, diff, true)
                 }
 
-                override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
+                override fun beforeAccept(sessionContext: SessionContext) {
                     dontClosePopupAndRun {
-                        CodeWhispererEditorManager.getInstance().updateEditorWithRecommendation(states, sessionContext)
+                        CodeWhispererEditorManager.getInstance().updateEditorWithRecommendation(sessionContext)
                     }
-                    closePopup()
+                    CodeWhispererService.getInstance().disposeDisplaySession(true)
                 }
             }
         )
     }
 
-    private fun addButtonActionListeners(states: InvocationContext, sessionContext: SessionContext) {
-        popupComponents.prevButton.addButtonActionListener(CodeWhispererPrevButtonActionListener(states), sessionContext)
-        popupComponents.nextButton.addButtonActionListener(CodeWhispererNextButtonActionListener(states), sessionContext)
-        popupComponents.acceptButton.addButtonActionListener(CodeWhispererAcceptButtonActionListener(states, sessionContext), sessionContext)
+    private fun addButtonActionListeners(sessionContext: SessionContext) {
+        popupComponents.prevButton.addButtonActionListener(CodeWhispererPrevButtonActionListener(sessionContext), sessionContext)
+        popupComponents.nextButton.addButtonActionListener(CodeWhispererNextButtonActionListener(sessionContext), sessionContext)
+        popupComponents.acceptButton.addButtonActionListener(CodeWhispererAcceptButtonActionListener(sessionContext), sessionContext)
     }
 
     private fun JButton.addButtonActionListener(listener: CodeWhispererActionListener, sessionContext: SessionContext) {
@@ -655,20 +436,21 @@ class CodeWhispererPopupManager {
         Disposer.register(sessionContext) { this.removeActionListener(listener) }
     }
 
-    private fun setPopupActionHandlers(states: InvocationContext, sessionContext: SessionContext) {
+    private fun setPopupActionHandlers(sessionContext: SessionContext) {
         val actionManager = EditorActionManager.getInstance()
-        setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, states), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states, sessionContext), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_LEFT, CodeWhispererPopupLeftArrowHandler(states), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_RIGHT, CodeWhispererPopupRightArrowHandler(states), sessionContext)
+        setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_LEFT, CodeWhispererPopupLeftArrowHandler(sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_RIGHT, CodeWhispererPopupRightArrowHandler(sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)
         setPopupActionHandler(
             ACTION_EDITOR_ENTER,
-            CodeWhispererPopupEnterHandler(actionManager.getActionHandler(ACTION_EDITOR_ENTER), states),
+            CodeWhispererPopupEnterHandler(actionManager.getActionHandler(ACTION_EDITOR_ENTER), sessionContext),
             sessionContext
         )
         setPopupActionHandler(
             ACTION_EDITOR_BACKSPACE,
-            CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), states),
+            CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), sessionContext),
             sessionContext
         )
     }
@@ -683,77 +465,77 @@ class CodeWhispererPopupManager {
         Disposer.register(sessionContext) { EditorActionManager.getInstance().setActionHandler(id, oldHandler) }
     }
 
-    private fun addComponentListeners(states: InvocationContext, sessionContext: SessionContext) {
-        val editor = states.requestContext.editor
-        val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
+    private fun addComponentListeners(sessionContext: SessionContext) {
+        val editor = sessionContext.editor
+        val codeWhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
                 if (shouldListenerCancelPopup) {
-                    cancelPopup()
+                    CodeWhispererService.getInstance().disposeDisplaySession(false)
                 }
                 super.selectionChanged(event)
             }
         }
-        editor.selectionModel.addSelectionListener(codewhispererSelectionListener)
-        Disposer.register(sessionContext) { editor.selectionModel.removeSelectionListener(codewhispererSelectionListener) }
+        editor.selectionModel.addSelectionListener(codeWhispererSelectionListener)
+        Disposer.register(sessionContext) { editor.selectionModel.removeSelectionListener(codeWhispererSelectionListener) }
 
-        val codewhispererDocumentListener: DocumentListener = object : DocumentListener {
+        val codeWhispererDocumentListener: DocumentListener = object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                val statesWithin = states
                 if (shouldListenerCancelPopup) {
                     // handle IntelliSense accept case
+                    // TODO: handle bulk delete (delete word) case
                     if (editor.document == event.document &&
                         editor.caretModel.offset == event.offset &&
                         event.newLength > event.oldLength) {
                         dontClosePopupAndRun {
                             super.documentChanged(event)
                             editor.caretModel.moveCaretRelatively(event.newLength, 0, false, false, true)
-                            changeStatesForTypeahead(states, event.newFragment.toString(), true)
+                            changeStatesForTypeahead(sessionContext, event.newFragment.toString(), true)
                         }
                         return
                     } else {
-                        cancelPopup()
+                        CodeWhispererService.getInstance().disposeDisplaySession(false)
                     }
                 }
                 super.documentChanged(event)
             }
         }
-        editor.document.addDocumentListener(codewhispererDocumentListener, states)
+        editor.document.addDocumentListener(codeWhispererDocumentListener, sessionContext)
 
-        val codewhispererCaretListener: CaretListener = object : CaretListener {
+        val codeWhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-//                if (shouldListenerCancelPopup) {
-//                    cancelPopup()
-//                }
+                if (shouldListenerCancelPopup) {
+                    CodeWhispererService.getInstance().disposeDisplaySession(false)
+                }
                 super.caretPositionChanged(event)
             }
         }
-        editor.caretModel.addCaretListener(codewhispererCaretListener)
-        Disposer.register(sessionContext) { editor.caretModel.removeCaretListener(codewhispererCaretListener) }
+        editor.caretModel.addCaretListener(codeWhispererCaretListener)
+        Disposer.register(sessionContext) { editor.caretModel.removeCaretListener(codeWhispererCaretListener) }
 
         val editorComponent = editor.contentComponent
         if (editorComponent.isShowing) {
             val window = ComponentUtil.getWindow(editorComponent)
             val windowListener: ComponentListener = object : ComponentAdapter() {
                 override fun componentMoved(event: ComponentEvent) {
-                    cancelPopup()
+                    CodeWhispererService.getInstance().disposeDisplaySession(false)
                 }
 
                 override fun componentShown(e: ComponentEvent?) {
-                    cancelPopup()
+                    CodeWhispererService.getInstance().disposeDisplaySession(false)
                     super.componentShown(e)
                 }
             }
             window?.addComponentListener(windowListener)
-            Disposer.register(states) { window?.removeComponentListener(windowListener) }
+            Disposer.register(sessionContext) { window?.removeComponentListener(windowListener) }
         }
 
 
         val suggestionHoverEnterListener: EditorMouseMotionListener = object : EditorMouseMotionListener {
             override fun mouseMoved(e: EditorMouseEvent) {
                 e.mouseEvent.component
-                println("current mouse offset : ${e.offset}, point: ${e.mouseEvent.point}")
+//                println("current mouse offset : ${e.offset}, point: ${e.mouseEvent.point}")
                 val startOffset = editor.offsetToXY(editor.caretModel.offset)
-                println("caret x y: ${startOffset}")
+//                println("caret x y: ${startOffset}")
                 val point = e.mouseEvent.point
                 val right = startOffset.x + (e.inlay?.widthInPixels ?: 0)
                 val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
@@ -765,14 +547,16 @@ class CodeWhispererPopupManager {
                 }
 
                 if (e.inlay != null) {
-                    showPopup(states, sessionContext, force = true)
+                    showPopup(sessionContext, force = true)
                 } else {
-                    hidePopup(editor)
+                    sessionContext.project.messageBus.syncPublisher(
+                        CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+                    ).onEnter()
                 }
                 super.mouseMoved(e)
             }
         }
-        editor.addEditorMouseMotionListener(suggestionHoverEnterListener, states)
+        editor.addEditorMouseMotionListener(suggestionHoverEnterListener, sessionContext)
     }
 
     private fun updateSelectedRecommendationLabelText(validSelectedIndex: Int, validCount: Int) {
@@ -849,24 +633,10 @@ class CodeWhispererPopupManager {
         }
     }
 
-    fun hasConflictingPopups(editor: Editor): Boolean =
-        (ParameterInfoController.existsWithVisibleHintForEditor(editor, true) ||
-            LookupManager.getActiveLookup(editor) != null) && false
-
-    fun findNewSelectedIndex(
-        isReverse: Boolean,
-        start: Int
-    ): Int {
-        val recos = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            element.recommendationContext.details.map {
-                Triple(it, element.recommendationContext.userInputSinceInvocation, element.recommendationContext.typeaheadOriginal)
-            }
-        }
-
-
-
-//            .flatMap { Triple(it.recommendationContext.details, it.recommendationContext. }
-        val count = recos.size
+    fun findNewSelectedIndex(isReverse: Boolean, selectedIndex: Int): Int {
+        val start = if (selectedIndex == -1) 0 else selectedIndex
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        val count = previews.size
         val unit = if (isReverse) -1 else 1
         var currIndex: Int
         for (i in 0 until count) {
@@ -874,58 +644,25 @@ class CodeWhispererPopupManager {
             if (currIndex < 0) {
                 currIndex += count
             }
-            val triple = recos[currIndex]
-            if (isValidRecommendation(triple.first, triple.second, triple.third)) {
+            if (isValidRecommendation(previews[currIndex])) {
                 return currIndex
             }
         }
-
-//        val count = detailContexts.size
-//        val unit = if (isReverse) -1 else 1
-//        var currIndex: Int
-//        for (i in 0 until count) {
-//            currIndex = (start + i * unit) % count
-//            if (currIndex < 0) {
-//                currIndex += count
-//            }
-//            if (isValidRecommendation(detailContexts[currIndex], userInput, typeahead)) {
-//                return currIndex
-//            }
-//        }
         return -1
     }
 
-    private fun getValidCount(detailContexts: List<DetailContext>, userInput: String, typeahead: String): Int {
-        var count = 0
-        CodeWhispererService.getInstance().ongoingRequests.forEach { t, u ->
-            if (u == null) return@forEach
-            count += u.recommendationContext.details.filter {
-                isValidRecommendation(it, u.recommendationContext.userInputSinceInvocation, u.recommendationContext.typeaheadOriginal)
-            }.size
-        }
-        return count
-//        detailContexts.filter { isValidRecommendation(it, userInput, typeahead) }.size
-    }
+    private fun getValidCount(): Int =
+        CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo().filter { isValidRecommendation(it) }.size
 
-    private fun getValidSelectedIndex(
-        detailContexts: List<DetailContext>,
-        userInput: String,
-        selectedIndex: Int,
-        typeahead: String
-    ): Int {
+    private fun getValidSelectedIndex(selectedIndex: Int): Int {
         var curr = 0
 
-        val details = CodeWhispererService.getInstance().ongoingRequests.values.filterNotNull().flatMap { element ->
-            val context = element.recommendationContext
-            context.details.map {
-                Triple(it, context.userInputSinceInvocation, context.typeaheadOriginal)
-            }
-        }
-        details.forEachIndexed { index, triple ->
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        previews.forEachIndexed { index, triple ->
             if (index == selectedIndex) {
                 return curr
             }
-            if (isValidRecommendation(triple.first, triple.second, triple.third)) {
+            if (isValidRecommendation(triple)) {
                 curr++
             }
 
@@ -933,10 +670,9 @@ class CodeWhispererPopupManager {
         return -1
     }
 
-    private fun isValidRecommendation(detailContext: DetailContext, userInput: String, typeahead: String): Boolean {
-        if (detailContext.isDiscarded) return false
-        if (detailContext.recommendation.content().isEmpty()) return false
-        return detailContext.recommendation.content().startsWith(userInput + typeahead)
+    private fun isValidRecommendation(preview: PreviewContext): Boolean {
+        if (preview.detail.isDiscarded) return false
+        return preview.detail.recommendation.content().startsWith(preview.userInput + preview.typeahead)
     }
 
     companion object {
@@ -954,17 +690,17 @@ class CodeWhispererPopupManager {
 }
 
 interface CodeWhispererPopupStateChangeListener {
-    fun stateChanged(states: InvocationContext, sessionContext: SessionContext) {}
-    fun scrolled(states: InvocationContext, sessionContext: SessionContext) {}
+    fun stateChanged(sessionContext: SessionContext) {}
+    fun scrolled(sessionContext: SessionContext) {}
     fun recommendationAdded(states: InvocationContext, sessionContext: SessionContext) {}
 }
 
 interface CodeWhispererUserActionListener {
-    fun backspace(states: InvocationContext, diff: String) {}
-    fun enter(states: InvocationContext, diff: String) {}
-    fun type(states: InvocationContext, diff: String) {}
-    fun navigatePrevious(states: InvocationContext) {}
-    fun navigateNext(states: InvocationContext) {}
-    fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {}
-    fun afterAccept(states: InvocationContext, details: List<Tuple3<DetailContext, String, String>>, sessionContext: SessionContext, rangeMarker: RangeMarker) {}
+    fun backspace(sessionContext: SessionContext, diff: String) {}
+    fun enter(sessionContext: SessionContext, diff: String) {}
+    fun type(sessionContext: SessionContext, diff: String) {}
+    fun navigatePrevious(sessionContext: SessionContext) {}
+    fun navigateNext(sessionContext: SessionContext) {}
+    fun beforeAccept(sessionContext: SessionContext) {}
+    fun afterAccept(states: InvocationContext, previews: List<PreviewContext>, sessionContext: SessionContext, rangeMarker: RangeMarker) {}
 }

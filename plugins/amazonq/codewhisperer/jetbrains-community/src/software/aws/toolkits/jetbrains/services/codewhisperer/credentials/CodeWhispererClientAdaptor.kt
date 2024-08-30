@@ -46,6 +46,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -92,6 +93,7 @@ interface CodeWhispererClientAdaptor : Disposable {
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
 
     fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContext,
         requestContext: RequestContext,
         responseContext: ResponseContext,
         completionType: CodewhispererCompletionType,
@@ -293,6 +295,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
 
     override fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContext,
         requestContext: RequestContext,
         responseContext: ResponseContext,
         completionType: CodewhispererCompletionType,
@@ -303,24 +306,24 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
-        var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
+        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
 
         // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
         // suggestion to be now.
         if (e2eLatency < 0) {
             e2eLatency = TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - requestContext.latencyContext.codewhispererEndToEndStart
+                System.nanoTime() - sessionContext.latencyContext.codewhispererEndToEndStart
             ).toDouble()
         }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
-                    it.requestId(requestContext.latencyContext.firstRequestId)
+                    it.requestId(sessionContext.latencyContext.firstRequestId)
                     it.completionType(completionType.toCodeWhispererSdkType())
                     it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
-                    it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
+                    it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)

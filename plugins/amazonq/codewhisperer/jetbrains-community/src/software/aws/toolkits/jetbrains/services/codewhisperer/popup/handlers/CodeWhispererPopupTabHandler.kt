@@ -20,10 +20,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 
-class CodeWhispererPopupTabHandler(states: InvocationContext, private val sessionContext: SessionContext) : CodeWhispererEditorActionHandler(states) {
+class CodeWhispererPopupTabHandler(sessionContext: SessionContext) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-        ).beforeAccept(states, sessionContext)
+        ).beforeAccept(sessionContext)
     }
 }
