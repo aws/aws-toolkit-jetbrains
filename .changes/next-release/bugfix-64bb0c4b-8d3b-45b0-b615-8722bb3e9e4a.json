@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix Runtime Exception:Cannot invoke (class=AmazonQToolWindowListener, method=toolWindowShown, topic=ToolWindowManagerListener) (#4849)"
+}
