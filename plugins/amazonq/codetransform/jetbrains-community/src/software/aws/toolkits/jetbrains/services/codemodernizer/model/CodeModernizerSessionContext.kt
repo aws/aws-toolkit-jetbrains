@@ -179,8 +179,6 @@ data class CodeModernizerSessionContext(
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.dependenciesCopied()
             copyResult.dependencyDirectory
         } else {
             null
