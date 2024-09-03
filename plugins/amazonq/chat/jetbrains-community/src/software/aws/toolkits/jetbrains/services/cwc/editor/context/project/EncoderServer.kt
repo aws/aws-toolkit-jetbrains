@@ -129,8 +129,7 @@ class EncoderServer(val project: Project) : Disposable {
         }
         val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
         val nodePath = cachePath.resolve(nodeRunnableName).toString()
-        val redirectOutput = " > ${cachePath.resolve("lsp.log")}"
-        val command = GeneralCommandLine(nodePath, jsPath, redirectOutput)
+        val command = GeneralCommandLine(nodePath, jsPath)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withEnvironment(map)
         return command

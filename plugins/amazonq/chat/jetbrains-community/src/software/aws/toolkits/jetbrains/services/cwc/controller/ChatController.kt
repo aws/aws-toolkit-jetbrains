@@ -115,7 +115,7 @@ class ChatController private constructor(
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
             val scope = projectCoroutineScope(context.project)
             scope.launch {
-                delay(60_000)
+                delay(60_000) // Wait for 60 seconds to get accurate CPU load for 1 min
                 val startTime = Instant.now()
                 val maxDuration = Duration.ofMinutes(30)
                 while (Duration.between(startTime, Instant.now()).minus(maxDuration).isNegative) {
@@ -554,6 +554,7 @@ class ChatController private constructor(
 
     companion object {
         private val logger = getLogger<ChatController>()
+
         // This is a special tabID we can receive to indicate that there is no tab available for handling the context menu action
         private const val NO_TAB_AVAILABLE = "no-available-tabs"
 
