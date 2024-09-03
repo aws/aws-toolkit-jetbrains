@@ -7,10 +7,14 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
-import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.openapi.ui.popup.ListSeparator
+import com.intellij.ui.GroupedComboBoxRenderer
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindIntText
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
+import org.jetbrains.annotations.Nls
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
@@ -18,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.resources.message
 import java.awt.Font
+import javax.swing.ListCellRenderer
 
 //  As the connection is project-level, we need to make this project-level too (we have different config for Sono vs SSO users)
 class CodeWhispererConfigurable(private val project: Project) :
@@ -87,6 +92,27 @@ class CodeWhispererConfigurable(private val project: Project) :
                     bindSelected(codeWhispererSettings::isImportAdderEnabled, codeWhispererSettings::toggleImportAdder)
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
+
+            row(message("aws.settings.codewhisperer.inline.suggestion_priority.text")) {
+                comboBox(
+                    listOf(
+                        message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text"),
+                        message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
+                    ),
+                    object : GroupedComboBoxRenderer<String?>() {
+                        override fun getText(item: String?): String = item ?: ""
+                        override fun getSecondaryText(item: String?): String =
+                            if (item == message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text"))  {
+                                " default"
+                            } else {
+                                ""
+                            }
+                        override fun separatorFor(value: String?): ListSeparator? = null
+                    }
+                ).apply {
+                    bindItem(codeWhispererSettings::getPrioritizedSuggestionString, codeWhispererSettings::setIsQSuggestionPrioritized)
+                }.comment(message("aws.settings.codewhisperer.inline.suggestion_priority.tooltip"), maxLineLength = 38)
+            }
         }
 
         group(message("aws.settings.codewhisperer.group.q_chat")) {
@@ -109,7 +135,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                 intTextField(
                     range = IntRange(0, 50)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
-                    .align(AlignX.FILL).apply {
+                    .apply {
                         connect.subscribe(
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {
@@ -119,14 +145,14 @@ class CodeWhispererConfigurable(private val project: Project) :
                             }
                         )
                         enabled(invoke)
-                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
+                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"), maxLineLength = 47)
             }
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {
                 intTextField(
                     range = IntRange(1, 250)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
-                    .align(AlignX.FILL).apply {
+                    .apply {
                         connect.subscribe(
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {

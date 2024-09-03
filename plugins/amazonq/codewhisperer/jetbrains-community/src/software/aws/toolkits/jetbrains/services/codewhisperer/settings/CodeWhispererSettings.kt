@@ -12,6 +12,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.resources.message
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -94,6 +95,22 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
     }
 
+    fun getPrioritizedSuggestionString(): String =
+        if (isQSuggestionPrioritized()) {
+            message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
+        } else {
+            message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text")
+        }
+
+    fun isQSuggestionPrioritized(): Boolean =
+        state.value.getOrDefault(CodeWhispererConfigurationType.isQSuggestionPrioritized, false)
+
+    fun setIsQSuggestionPrioritized(value: String?) {
+        state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized] =
+            value == message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
+        println("set isQSuggestionPrioritized to ${state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized]}")
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -126,7 +143,8 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
     IsProjectContextGpu,
-    HasEnabledProjectContextOnce
+    HasEnabledProjectContextOnce,
+    isQSuggestionPrioritized,
 }
 
 enum class CodeWhispererIntConfigurationType {

@@ -5,11 +5,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.idea.AppMode
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
@@ -37,6 +36,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
+import com.intellij.ui.EditorNotificationPanel.ActionHandler
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
@@ -47,6 +47,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererAcceptAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigateNextAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigatePrevAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -59,8 +63,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.Cod
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupLeftArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
@@ -189,6 +191,7 @@ class CodeWhispererPopupManager {
         if (sessionContext == null || sessionContext.selectedIndex == -1 || sessionContext.isDisposed()) return
         val selectedIndex = sessionContext.selectedIndex
         val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        if (selectedIndex >= previews.size) return
         val validCount = getValidCount()
         val validSelectedIndex = getValidSelectedIndex(selectedIndex)
         updateSelectedRecommendationLabelText(validSelectedIndex, validCount)
@@ -274,20 +277,21 @@ class CodeWhispererPopupManager {
         } else {
             FileEditorManager.getInstance(sessionContext.project).selectedTextEditorWithRemotes.firstOrNull() == editor
         }
-        if (!isSameEditorAsTrigger) {
-            LOG.debug { "Current editor no longer has focus, not showing the popup" }
-            CodeWhispererService.getInstance().disposeDisplaySession(false)
-            return
-        }
+//        if (!isSameEditorAsTrigger) {
+//            LOG.debug { "Current editor no longer has focus, not showing the popup" }
+//            CodeWhispererService.getInstance().disposeDisplaySession(false)
+//            return
+//        }
 
         if (!editorRect.contains(popupRect)) {
             // popup location above first line don't work, so don't show the popup
             shouldHidePopup = true
         } else {
-            LOG.debug {
-                "Show popup above the first line of recommendation. " +
-                    "Editor position: $editorRect, popup position: $popupRect"
-            }
+//            LOG.debug {
+//                "Show popup above the first line of recommendation. " +
+//                    "Editor position: $editorRect, popup position: $popupRect"
+//            }
+            shouldHidePopup
         }
 
         val popupLocation = Point(p.x, yAboveFirstLine)
@@ -355,7 +359,7 @@ class CodeWhispererPopupManager {
         .createComponentPopupBuilder(popupComponents.panel, null)
         .setAlpha(0.1F)
         .setCancelOnClickOutside(true)
-        .setCancelOnOtherWindowOpen(true)
+//        .setCancelOnOtherWindowOpen(true)
 //        .setCancelKeyEnabled(true)
         .setCancelOnWindowDeactivation(true)
         .createPopup()
@@ -438,10 +442,15 @@ class CodeWhispererPopupManager {
 
     private fun setPopupActionHandlers(sessionContext: SessionContext) {
         val actionManager = EditorActionManager.getInstance()
+        val prevAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous") as CodeWhispererNavigatePrevAction
+        prevAction.sessionContext = sessionContext
+        val nextAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next") as CodeWhispererNavigateNextAction
+        nextAction.sessionContext = sessionContext
+        val acceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.accept") as CodeWhispererAcceptAction
+        acceptAction.sessionContext = sessionContext
+        val forceAcceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.force.accept") as CodeWhispererForceAcceptAction
+        forceAcceptAction.sessionContext = sessionContext
         setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(sessionContext), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_LEFT, CodeWhispererPopupLeftArrowHandler(sessionContext), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_RIGHT, CodeWhispererPopupRightArrowHandler(sessionContext), sessionContext)
         setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)
         setPopupActionHandler(
             ACTION_EDITOR_ENTER,
@@ -516,8 +525,9 @@ class CodeWhispererPopupManager {
         if (editorComponent.isShowing) {
             val window = ComponentUtil.getWindow(editorComponent)
             val windowListener: ComponentListener = object : ComponentAdapter() {
-                override fun componentMoved(event: ComponentEvent) {
+                override fun componentMoved(e: ComponentEvent) {
                     CodeWhispererService.getInstance().disposeDisplaySession(false)
+                    super.componentMoved(e)
                 }
 
                 override fun componentShown(e: ComponentEvent?) {

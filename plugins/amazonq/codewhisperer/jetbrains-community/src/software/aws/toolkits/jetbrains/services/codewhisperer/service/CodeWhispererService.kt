@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -20,11 +21,11 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import io.ktor.utils.io.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import io.ktor.utils.io.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -573,6 +574,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             sendDiscardedUserDecisionEventForAll(jobId, sessionContext, requestContext, responseContext, recommendations, coroutine)
             return null
         }
+
         val userInputOriginal = CodeWhispererEditorManager.getInstance().getUserInputSinceInvocation(
             requestContext.editor,
             requestContext.caretPosition.offset
@@ -665,15 +667,15 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // avoid duplicate session disposal logic
         if (sessionContext == null || sessionContext?.isDisposed() == true) return
 
-        val jobIds = ongoingRequests.keys.toList()
-        jobIds.forEach { jobId -> disposeJob(jobId) }
-        ongoingRequests.clear()
-        ongoingRequestsContext.clear()
         sessionContext?.let {
             it.hasAccepted = accept
             Disposer.dispose(it)
         }
         sessionContext = null
+        val jobIds = ongoingRequests.keys.toList()
+        jobIds.forEach { jobId -> disposeJob(jobId) }
+        ongoingRequests.clear()
+        ongoingRequestsContext.clear()
     }
 
     fun getAllSuggestionsPreviewInfo() =
@@ -847,6 +849,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             "CodeWhisperer intelliSense popup on hover",
             CodeWhispererIntelliSenseOnHoverListener::class.java
         )
+        val DATA_KEY_SESSION = DataKey.create<SessionContext>("codewhisperer.session")
 
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
