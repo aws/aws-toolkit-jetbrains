@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val encoderServer: EncoderServer = EncoderServer(project )
+    private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
     init {
         cs.launch {
