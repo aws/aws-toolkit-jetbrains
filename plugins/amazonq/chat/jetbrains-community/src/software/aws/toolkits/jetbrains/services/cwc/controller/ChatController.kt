@@ -29,13 +29,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
@@ -82,6 +86,8 @@ import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
+import java.time.Duration
+import java.lang.management.ManagementFactory
 
 class ChatController private constructor(
     private val context: AmazonQAppInitContext,
@@ -102,6 +108,26 @@ class ChatController private constructor(
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
     )
+
+    init {
+        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            val scope = projectCoroutineScope(context.project)
+            scope.launch {
+                delay(60_000)
+                val startTime = Instant.now()
+                val maxDuration = Duration.ofMinutes(30)
+                while (Duration.between(startTime, Instant.now()).minus(maxDuration).isNegative) {
+                    val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
+                    if (cpuUsage < 0.4 && cpuUsage > 0) {
+                        ProjectContextController.getInstance(project = context.project)
+                        break
+                    } else {
+                        delay(60_000) // Wait for 60 seconds
+                    }
+                }
+            }
+        }
+    }
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
         chatSessionStorage.deleteSession(message.tabId)
@@ -526,7 +552,6 @@ class ChatController private constructor(
 
     companion object {
         private val logger = getLogger<ChatController>()
-
         // This is a special tabID we can receive to indicate that there is no tab available for handling the context menu action
         private const val NO_TAB_AVAILABLE = "no-available-tabs"
 
