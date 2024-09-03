@@ -110,6 +110,8 @@ class ChatController private constructor(
     )
 
     init {
+        // Automatically start the project context LSP after some delay when average CPU load is below 30%.
+        // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
             val scope = projectCoroutineScope(context.project)
             scope.launch {
@@ -118,7 +120,7 @@ class ChatController private constructor(
                 val maxDuration = Duration.ofMinutes(30)
                 while (Duration.between(startTime, Instant.now()).minus(maxDuration).isNegative) {
                     val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
-                    if (cpuUsage < 0.4 && cpuUsage > 0) {
+                    if (cpuUsage > 0 && cpuUsage < 30) {
                         ProjectContextController.getInstance(project = context.project)
                         break
                     } else {
