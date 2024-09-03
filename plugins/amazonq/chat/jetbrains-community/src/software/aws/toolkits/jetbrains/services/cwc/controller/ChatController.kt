@@ -20,6 +20,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
@@ -32,6 +33,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
@@ -46,6 +48,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter.Companion
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -116,16 +120,20 @@ class ChatController private constructor(
             val scope = projectCoroutineScope(context.project)
             scope.launch {
                 delay(60_000) // Wait for 60 seconds to get accurate CPU load for 1 min
-                val startTime = Instant.now()
-                val maxDuration = Duration.ofMinutes(30)
-                while (Duration.between(startTime, Instant.now()).minus(maxDuration).isNegative) {
-                    val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
-                    if (cpuUsage > 0 && cpuUsage < 30) {
-                        ProjectContextController.getInstance(project = context.project)
-                        break
-                    } else {
-                        delay(60_000) // Wait for 60 seconds
+                try {
+                    kotlinx.coroutines.time.withTimeout(Duration.ofMinutes(30)) {
+                        while (true) {
+                            val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
+                            if (cpuUsage > 0 && cpuUsage < 30) {
+                                ProjectContextController.getInstance(project = context.project)
+                                break
+                            } else {
+                                delay(60_000) // Wait for 60 seconds
+                            }
+                        }
                     }
+                } catch (e: TimeoutCancellationException) {
+                    logger.warn(e) { "Failed to start LSP server" }
                 }
             }
         }
