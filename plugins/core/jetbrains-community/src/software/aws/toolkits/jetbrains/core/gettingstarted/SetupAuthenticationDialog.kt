@@ -117,7 +117,7 @@ interface AuthenticationDialog {
 }
 
 class SetupAuthenticationDialog(
-    private val project: Project?,
+    private val project: Project,
     private val scopes: List<String> = emptyList(),
     private val state: SetupAuthenticationDialogState = SetupAuthenticationDialogState(),
     private val tabSettings: Map<SetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
@@ -292,14 +292,12 @@ class SetupAuthenticationDialog(
                 } ?: return
 
                 if (!promptForIdcPermissionSet) {
-                    project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
+                    ToolkitConnectionManager.getInstance(project).switchConnection(connection)
                     close(OK_EXIT_CODE)
                     return
                 }
 
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
-
-                if (project == null) error("Not allowed")
 
                 val rolePopup = IdcRolePopup(
                     project,
