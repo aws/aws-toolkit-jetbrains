@@ -9,6 +9,10 @@ plugins {
 }
 
 dependencies {
+    // provided at runtime by IDE
+    compileOnly(libs.bundles.kotlin)
+    compileOnly(libs.kotlin.coroutines)
+
     compileOnlyApi(project(":plugin-core:resources"))
     compileOnlyApi(project(":plugin-core:sdk-codegen"))
 

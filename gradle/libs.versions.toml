@@ -97,7 +97,7 @@ kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", 
 kotlin-coroutinesDebug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinCoroutines" }
 kotlin-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
-kotlin-stdLibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
@@ -114,7 +114,7 @@ zjsonpatch = { module = "com.flipkart.zjsonpatch:zjsonpatch", version.ref = "zjs
 
 [bundles]
 jackson = ["jackson-datetime", "jackson-kotlin", "jackson-yaml", "jackson-xml"]
-kotlin = ["kotlin-stdLibJdk8", "kotlin-reflect"]
+kotlin = ["kotlin-stdlib", "kotlin-reflect"]
 mockito = ["mockito-core", "mockito-kotlin"]
 sshd = ["sshd-core", "sshd-scp", "sshd-sftp"]
 
