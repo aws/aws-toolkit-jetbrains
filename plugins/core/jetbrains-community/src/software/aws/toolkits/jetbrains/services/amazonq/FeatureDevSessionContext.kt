@@ -104,13 +104,16 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.path)
 
     suspend fun ignoreFile(path: String): Boolean {
-        // ideally we race the coroutines https://github.com/Kotlin/kotlinx.coroutines/issues/2867
+        // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
                 async { pattern.containsMatchIn(path) }
             }
         }
 
+        // this will serially iterate over and block
+        // ideally we race the results https://github.com/Kotlin/kotlinx.coroutines/issues/2867
+        // i.e. Promise.any(...)
         return deferredResults.any { it.await() }
     }
 
