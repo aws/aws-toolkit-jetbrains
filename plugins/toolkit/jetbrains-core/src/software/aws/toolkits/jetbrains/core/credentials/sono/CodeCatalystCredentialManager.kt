@@ -38,11 +38,9 @@ class CodeCatalystCredentialManager {
     fun connection() = (
         project?.let {
             ToolkitConnectionManager.getInstance(project)
-        } ?:
-        // only used for gateway
-            service<ToolkitConnectionManager>()
-    ).activeConnectionForFeature(CodeCatalystConnection.getInstance())
-        as? AwsBearerTokenConnection
+            // app-version only used for gateway
+        } ?: service<ToolkitConnectionManager>()
+        ).activeConnectionForFeature(CodeCatalystConnection.getInstance()) as? AwsBearerTokenConnection
 
     internal fun provider(conn: AwsBearerTokenConnection) = conn.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider
 
