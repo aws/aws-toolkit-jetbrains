@@ -23,8 +23,6 @@ import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
-import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
-import software.aws.toolkits.telemetry.CodeTransformPatchViewerCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
@@ -33,7 +31,7 @@ import java.time.Instant
 import java.util.Base64
 
 /**
- * CodeModernizerTelemetry contains helper functions for common operations that require telemetry.
+ * CodeModernizerTelemetry contains g functions for common operations that require telemetry.
  */
 @Service(Service.Level.PROJECT)
 class CodeTransformTelemetryManager(private val project: Project) {

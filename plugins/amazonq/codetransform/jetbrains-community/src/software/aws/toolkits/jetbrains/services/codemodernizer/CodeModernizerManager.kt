@@ -491,7 +491,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     /**
      * Silently try to resume the job, informs users only when job successfully resumed, suppresses exceptions.
      */
-    fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
+    fun tryResumeJob() = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
             // If the job is already running, compareAndSet will return false because the expected
