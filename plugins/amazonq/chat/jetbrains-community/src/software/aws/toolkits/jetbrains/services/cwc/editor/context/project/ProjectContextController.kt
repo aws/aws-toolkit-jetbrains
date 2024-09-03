@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -15,12 +16,11 @@ import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
-class ProjectContextController(private val project: Project) : Disposable {
-    private val encoderServer: EncoderServer = EncoderServer(project)
-    private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer)
-    private val scope = disposableCoroutineScope(this)
+class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val encoderServer: EncoderServer = EncoderServer(project )
+    private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
     init {
-        scope.launch {
+        cs.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 encoderServer.downloadArtifactsAndStartServer()
             }
