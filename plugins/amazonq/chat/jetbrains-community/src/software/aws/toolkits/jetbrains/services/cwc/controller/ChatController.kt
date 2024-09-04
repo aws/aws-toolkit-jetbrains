@@ -21,6 +21,8 @@ import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
@@ -117,7 +119,7 @@ class ChatController private constructor(
         // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && !projectContextServiceInit) {
             projectContextServiceInit = true
-            val scope = projectCoroutineScope(context.project)
+            val scope = CoroutineScope(SupervisorJob())
             scope.launch {
                 context.project.waitForSmartMode() // Wait for 60 seconds to get accurate CPU load for 1 min
                 try {
