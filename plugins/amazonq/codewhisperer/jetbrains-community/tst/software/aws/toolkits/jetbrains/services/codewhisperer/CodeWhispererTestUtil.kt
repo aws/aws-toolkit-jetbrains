@@ -391,13 +391,13 @@ fun aResponseContext(): ResponseContext = ResponseContext(aString())
 fun aFileContextInfo(language: CodeWhispererProgrammingLanguage? = null): FileContextInfo {
     val caretContextInfo = CaretContext(aString(), aString(), aString())
     val fileName = aString()
-
+    val fileRelativePath = aString()
     val programmingLanguage = language ?: listOf(
         CodeWhispererPython.INSTANCE,
         CodeWhispererJava.INSTANCE
     ).random()
 
-    return FileContextInfo(caretContextInfo, fileName, programmingLanguage)
+    return FileContextInfo(caretContextInfo, fileName, programmingLanguage, fileRelativePath)
 }
 
 fun aTriggerType(): CodewhispererTriggerType =
