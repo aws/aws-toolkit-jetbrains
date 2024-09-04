@@ -17,6 +17,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
@@ -33,7 +34,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.time.withTimeout
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
@@ -48,8 +49,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
-import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
-import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter.Companion
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -116,12 +115,13 @@ class ChatController private constructor(
     init {
         // Automatically start the project context LSP after some delay when average CPU load is below 30%.
         // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
-        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+        if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && !projectContextServiceInit) {
+            projectContextServiceInit = true
             val scope = projectCoroutineScope(context.project)
             scope.launch {
-                delay(60_000) // Wait for 60 seconds to get accurate CPU load for 1 min
+                context.project.waitForSmartMode() // Wait for 60 seconds to get accurate CPU load for 1 min
                 try {
-                    kotlinx.coroutines.time.withTimeout(Duration.ofMinutes(30)) {
+                    withTimeout(Duration.ofMinutes(30)) {
                         while (true) {
                             val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
                             if (cpuUsage > 0 && cpuUsage < 30) {
@@ -572,5 +572,7 @@ class ChatController private constructor(
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+        private var projectContextServiceInit = false
     }
 }
