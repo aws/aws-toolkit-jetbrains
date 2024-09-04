@@ -13,6 +13,9 @@ class TestCodeAction : CustomAction(EditorContextCommand.Test) {
     override fun update(e: AnActionEvent) {
         val project = e.getData(CommonDataKeys.PROJECT) ?: return
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-        e.presentation.isVisible = (connection != null && connection.startUrl == "https://amzn.awsapps.com/start")
+        val hashedStartUrl = hashStartUrl(connection.startUrl, "MD5")
+        e.presentation.isVisible = (connection != null && connection.startUrl == "[B@4ccabbaa")
     }
+
+    fun hashStartUrl(str: String, algorithm: String): ByteArray = MessageDigest.getInstance(algorithm).digest(str.toByteArray(UTF_8))
 }
