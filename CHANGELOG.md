@@ -1,3 +1,60 @@
+# _3.26_ (2024-08-30)
+- **(Bug Fix)** Fix Runtime Exception when opening a tool window ([#4849](https://github.com/aws/aws-toolkit-jetbrains/issues/4849))
+
+# _3.25_ (2024-08-29)
+- **(Bug Fix)** Fix bug where text with inline code copied from Amazon Q Chat had new line breaks around the inline code text
+- **(Bug Fix)** Fix bug when disabled commands does not get filtered in quick actions
+
+# _3.24_ (2024-08-22)
+- **(Feature)** Add notification for IdC users on extended session
+- **(Bug Fix)** Amazon Q: update login logo styling
+- **(Bug Fix)** Amazon Q Code Transformation: show an error notification when download diff fails
+- **(Bug Fix)** Fix UI freeze that occurs when viewing an Amazon Q code security scanning finding
+- **(Bug Fix)** Fix Q building supplemental context under EDT which might slow or block the UI
+
+# _3.23_ (2024-08-15)
+- **(Bug Fix)** Fix NPE in Rider AWS SAM project wizard ([#4768](https://github.com/aws/aws-toolkit-jetbrains/issues/4768))
+- **(Bug Fix)** Amazon Q Chat: Fix Tab selection scrollbar visibility which causes tabs half visible if there are several tabs open
+- **(Bug Fix)** Amazon Q `/dev`: update supported file extensions
+- **(Bug Fix)** Amazon Q: Optimized the workspace file collection logic which makes the collection time now only 5-10% of what it was before.
+- **(Bug Fix)** Amazon Q Chat: / command selector doesn't work if user pastes the command to prompt and submits
+- **(Bug Fix)** Amazon Q Chat: Related link previews sometimes remain on screen and block the whole Chat UI
+- **(Bug Fix)** Amazon Q Chat: @ context selector conflicts with some use cases where the user wants use @ character for a word in the prompt itself
+- **(Bug Fix)** Amazon Q Chat: Fix Header items in card bodies don't wrap if they don't contain spaces
+- **(Removal)** Removed support for 2023.2.x IDEs
+- **(Removal)** Removed support for Gateway 2024.1
+
+# _3.22_ (2024-08-08)
+- **(Feature)** feat(Amazon Q Code Transformation): warn user if absolute path found in pom.xml
+- **(Feature)** feat(Amazon Q Code Transformation): show pro tier users estimated cost of /transform on projects over 100K lines
+- **(Bug Fix)** fix(Amazon Q Code Transformation): prevent empty chat bubble from appearing when starting or cancelling a transformation
+- **(Bug Fix)** Amazon Q /dev: include a retry option for the same prompt after folder reselection
+- **(Bug Fix)** Fix inability to open files on double click and open context menu on right click in the S3 bucket viewer
+- **(Bug Fix)** fix(amazonq): Amazon Q chat `@workspace` uses more than 20% cpu
+- **(Bug Fix)** Fix 'Cannot create extension' in AWS Toolkit
+
+# _3.21_ (2024-08-01)
+- **(Bug Fix)** Fix NullPointerException that may happen when re-authenticating to Amazon Q
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with the max tabs notification not being dismissible
+- **(Bug Fix)** Fix Amazon Q chat context menu actions show up in all chat windows
+- **(Bug Fix)** Amazon Q Chat: Fixing issue with an incorrect input cursor position in the prompt text box
+- **(Bug Fix)** Amazon Q Chat: Showing/hiding the scrollbars is now controlled by the OS settings
+
+# _3.20_ (2024-07-26)
+- **(Bug Fix)** Fix Q chat not responding in 2023.2 and 2023.3
+
+# _3.19_ (2024-07-25)
+- **(Feature)** Q feature dev: Use common code extensions to filter relevant files
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug where multiline user input appears like a code block instead of a paragraph
+- **(Bug Fix)** Amazon Q Chat: Fixes a bug when the prompt input exceeds the width of the chat box it's not always wrapped correctly.
+- **(Bug Fix)** Fix 'ContainerDisposedException' when attempting to sign-in to Amazon Q
+- **(Bug Fix)** Fix Q window reauthenticate button not functioning due to illegal function call outisde of EDT
+
+# _3.18_ (2024-07-19)
+- **(Feature)** Add support for 2024.2
+- **(Bug Fix)** Fix bug when workspace index cache is not loaded
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.1 and for IDEs based on the 2023.2 platform
+
 # _3.17_ (2024-07-15)
 - **(Feature)** Amazon Q/dev: proactively show code generation iterations
 - **(Bug Fix)** Don't allow Q/Core to be installed in the unsupported thin client context ([#4658](https://github.com/aws/aws-toolkit-jetbrains/issues/4658))

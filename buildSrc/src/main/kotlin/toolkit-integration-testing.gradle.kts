@@ -1,9 +1,11 @@
+// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+import org.jetbrains.intellij.platform.gradle.Constants.Configurations.Attributes
+import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformTestingExtension
 import software.aws.toolkits.gradle.ciOnly
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
-
-// Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
 
 plugins {
     id("java")
@@ -21,7 +23,7 @@ sourceSets {
         runtimeClasspath += main.get().output + test.get().output
 
         // different convention for intellij projects
-        plugins.withType<ToolkitIntellijSubpluginPlugin> {
+        plugins.withType<ToolkitIntellijSubpluginPlugin>().configureEach {
             val ideProfile = IdeVersions.ideProfile(project)
             java.srcDirs(findFolders(project, "it", ideProfile))
             resources.srcDirs(findFolders(project, "it-resources", ideProfile))
@@ -29,17 +31,25 @@ sourceSets {
     }
 }
 
-configurations.getByName("integrationTestCompileClasspath") {
+configurations.named("integrationTestCompileClasspath").configure {
     extendsFrom(configurations.getByName(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME))
+    attributes {
+        attribute(Attributes.extracted, true)
+        attribute(Attributes.collected, true)
+    }
 }
 
-configurations.getByName("integrationTestRuntimeClasspath") {
+configurations.named("integrationTestRuntimeClasspath").configure {
     extendsFrom(configurations.getByName(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+    attributes {
+        attribute(Attributes.extracted, true)
+        attribute(Attributes.collected, true)
+    }
     isCanBeResolved = true
 }
 
 // Add the integration test source set to test jar
-val testJar = tasks.named<Jar>("testJar") {
+val testJar = tasks.named<Jar>("testJar").configure {
     from(integrationTests.output)
 }
 
@@ -49,12 +59,11 @@ idea {
         testResourceDirs = testResourceDirs + integrationTests.resources.srcDirs
     }
 }
-
-val integTestTask = tasks.register<Test>("integrationTest") {
+val integrationTestConfiguration: Test.() -> Unit = {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs the integration tests."
     testClassesDirs = integrationTests.output.classesDirs
-    classpath = integrationTests.runtimeClasspath
+    classpath += integrationTests.runtimeClasspath
 
     ciOnly {
         environment.remove("AWS_ACCESS_KEY_ID")
@@ -65,21 +74,16 @@ val integTestTask = tasks.register<Test>("integrationTest") {
     mustRunAfter(tasks.test)
 }
 
-tasks.check {
-    dependsOn(integrationTests.compileJavaTaskName, integrationTests.getCompileTaskName("kotlin"))
-}
-
-afterEvaluate {
-    plugins.withType<ToolkitIntellijSubpluginPlugin> {
-        // weird implicit dependency issue, maybe with how the task graph works?
-        // or because tests are on the ide classpath for some reason?
-        tasks.named("classpathIndexCleanup") {
-            mustRunAfter(tasks.named("compileIntegrationTestKotlin"))
-        }
-
-        // intellij plugin overrides with instrumented classes that we don't want or need
-        integTestTask.configure {
-            testClassesDirs = integrationTests.output.classesDirs
+extensions.findByType<IntelliJPlatformTestingExtension>()?.let {
+    val integrationTest by it.testIde.registering {
+        task {
+            integrationTestConfiguration(this)
         }
     }
+} ?: run {
+    val integrationTest by tasks.registering(Test::class, integrationTestConfiguration)
+}
+
+tasks.check {
+    dependsOn(integrationTests.compileJavaTaskName, integrationTests.getCompileTaskName("kotlin"))
 }

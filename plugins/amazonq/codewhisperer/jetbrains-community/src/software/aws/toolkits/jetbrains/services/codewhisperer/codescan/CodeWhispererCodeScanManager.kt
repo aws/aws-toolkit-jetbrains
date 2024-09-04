@@ -50,6 +50,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -75,7 +76,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConne
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
-import software.aws.toolkits.jetbrains.utils.offsetSuggestedFix
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
@@ -85,6 +85,8 @@ import javax.swing.Icon
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 import kotlin.coroutines.CoroutineContext
+
+private val LOG = getLogger<CodeWhispererCodeScanManager>()
 
 class CodeWhispererCodeScanManager(val project: Project) {
     private val codeScanResultsPanel by lazy {
@@ -221,7 +223,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        var codeScanJobId: String? = null
         var language: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
         var skipTelemetry = false
         try {
@@ -254,7 +255,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     language = codeScanSessionConfig.getProgrammingLanguage()
                     if (language == CodeWhispererPlainText.INSTANCE) { skipTelemetry = true }
                     codeScanResponseContext = codeScanResponse.responseContext
-                    codeScanJobId = codeScanResponseContext.codeScanJobId
                     when (codeScanResponse) {
                         is CodeScanResponse.Success -> {
                             val issues = codeScanResponse.issues
@@ -274,7 +274,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             throw codeScanResponse.failureReason
                         }
                     }
-                    LOG.info { "Security scan completed for jobID: $codeScanJobId." }
+                    LOG.info { "Security scan completed for jobID: ${codeScanResponseContext.codeScanJobId}." }
                 }
             }
         } catch (e: Error) {
@@ -305,7 +305,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             scope
                         )
                     )
-                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanJobId, scope)
+                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanResponseContext.codeScanJobId, scope)
                 }
             }
         }
@@ -338,9 +338,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
         val message = e.message
         return when {
             message.isNullOrBlank() -> null
-            message == message("codewhisperer.codescan.invalid_source_zip_telemetry") -> {
-                message("codewhisperer.codescan.run_scan_error")
-            }
+            message == message("codewhisperer.codescan.invalid_source_zip_telemetry") ||
+                message == "Illegal repetition near index" -> message("codewhisperer.codescan.run_scan_error")
             else -> message
         }
     }
@@ -379,12 +378,11 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
 
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            LOG.error {
+            LOG.error(e) {
                 "Failed to run security scan and display results. Caused by: $errorMessage, status code: $errorCode, " +
                     "exception: ${e::class.simpleName}, request ID: $requestId " +
                     "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
-                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
-                    "stacktrace: ${e.stackTrace.contentDeepToString()}"
+                    "IDE version: ${ApplicationInfo.getInstance().apiVersion}, "
             }
         }
 
@@ -706,7 +704,6 @@ class CodeWhispererCodeScanManager(val project: Project) {
     }
 
     companion object {
-        private val LOG = getLogger<CodeWhispererCodeScanManager>()
         fun getInstance(project: Project): CodeWhispererCodeScanManager = project.service()
     }
 }
@@ -767,7 +764,11 @@ data class CodeWhispererCodeScanIssue(
         markupModel: MarkupModel? =
             DocumentMarkupModel.forDocument(document, project, false)
     ): RangeHighlighterEx? {
-        if (!ApplicationManager.getApplication().isDispatchThread) return null
+        if (!ApplicationManager.getApplication().isDispatchThread) {
+            LOG.warn(RuntimeException()) { "Attempted to call addRangeHighlighter on EDT" }
+            return null
+        }
+
         return markupModel?.let {
             textRange ?: return null
             it.addRangeHighlighter(
@@ -787,4 +788,19 @@ data class CodeWhispererCodeScanIssue(
         if (startOffset < 0 || endOffset > document.textLength || startOffset > endOffset) return null
         return TextRange.create(startOffset, endOffset)
     }
+}
+
+private fun offsetSuggestedFix(suggestedFix: SuggestedFix, lines: Int): SuggestedFix {
+    val updatedCode = suggestedFix.code.replace(
+        Regex("""(@@ -)(\d+)(,\d+ \+)(\d+)(,\d+ @@)""")
+    ) { result ->
+        val prefix = result.groupValues[1]
+        val startLine = result.groupValues[2].toInt() + lines
+        val middle = result.groupValues[3]
+        val endLine = result.groupValues[4].toInt() + lines
+        val suffix = result.groupValues[5]
+        "$prefix$startLine$middle$endLine$suffix"
+    }
+
+    return suggestedFix.copy(code = updatedCode)
 }

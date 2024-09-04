@@ -1,26 +1,53 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.BuildPluginTask
+import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import software.aws.toolkits.gradle.buildMetadata
 import software.aws.toolkits.gradle.intellij.IdeVersions
+import software.aws.toolkits.gradle.isCi
 
 plugins {
-    id("org.jetbrains.intellij")
+    id("org.jetbrains.intellij.platform")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
+val toolkitVersion: String by project
 
-val publishToken: String by project
-val publishChannel: String by project
+// please check changelog generation logic if this format is changed
+version = "$toolkitVersion-${ideProfile.shortName}"
 
-intellij {
-    version.set(ideProfile.community.version())
-    localPath.set(ideProfile.community.localPath())
+// attach the current commit hash on local builds
+if (!project.isCi()) {
+    val buildMetadata = buildMetadata()
+    tasks.withType<PatchPluginXmlTask>().configureEach {
+        pluginVersion.set("${project.version}+$buildMetadata")
+    }
 
-    updateSinceUntilBuild.set(false)
-    instrumentCode.set(false)
+    tasks.named<BuildPluginTask>("buildPlugin") {
+        archiveClassifier.set(buildMetadata)
+    }
+}
+
+intellijPlatform {
+    publishing {
+        val publishToken: String by project
+        val publishChannel: String by project
+
+        token.set(publishToken)
+        channels.set(publishChannel.split(",").map { it.trim() })
+    }
+
+    verifyPlugin {
+        subsystemsToCheck.set(VerifyPluginTask.Subsystems.WITHOUT_ANDROID)
+        // need to tune this
+        failureLevel.set(listOf(VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
+    }
 }
 
 configurations {
-    all {
+    configureEach {
         // IDE provides netty
         exclude("io.netty")
     }
@@ -33,11 +60,9 @@ configurations {
     }
 }
 
-tasks.check {
-    dependsOn(tasks.verifyPlugin)
-}
-
-tasks.publishPlugin {
-    token.set(publishToken)
-    channels.set(publishChannel.split(",").map { it.trim() })
+// not run as part of check because of memory pressue issues
+tasks.verifyPlugin {
+    isEnabled = true
+    // give each instance its own home dir
+    systemProperty("plugin.verifier.home.dir", temporaryDir)
 }

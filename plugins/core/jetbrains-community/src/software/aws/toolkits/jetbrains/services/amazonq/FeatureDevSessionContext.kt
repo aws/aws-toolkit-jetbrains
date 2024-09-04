@@ -21,7 +21,8 @@ import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
@@ -42,13 +43,13 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private val ignorePatterns = setOf(
         "\\.aws-sam",
         "\\.svn",
-        "\\.hg/",
+        "\\.hg/?",
         "\\.rvm",
-        "\\.git/",
+        "\\.git/?",
         "\\.gitignore",
         "\\.project",
         "\\.gem",
-        "/\\.idea/",
+        "/\\.idea/?",
         "\\.zip$",
         "\\.bin$",
         "\\.png$",
@@ -61,9 +62,9 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "/license\\.md$",
         "/License\\.md$",
         "/LICENSE\\.md$",
-        "node_modules/",
-        "build/",
-        "dist/"
+        "node_modules/?",
+        "build/?",
+        "dist/?"
     ).map { Regex(it) }
 
     // projectRoot: is the directory where the project is located when selected to open a project.
@@ -80,7 +81,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     fun getProjectZip(): ZipCreationResult {
         val zippedProject = runBlocking {
-            withBackgroundProgress(project, message("amazonqFeatureDev.create_plan.background_progress_title")) {
+            withBackgroundProgress(project, AwsCoreBundle.message("amazonqFeatureDev.create_plan.background_progress_title")) {
                 zipFiles(selectedSourceFolder)
             }
         }
@@ -88,40 +89,68 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    private suspend fun ignoreFile(file: File, scope: CoroutineScope): Boolean = with(scope) {
+    fun isFileExtensionAllowed(file: VirtualFile): Boolean {
+        // if it is a directory, it is allowed
+        if (file.isDirectory) return true
+
+        val extension = file.extension ?: return false
+        return FeatureDevBundleConfig.ALLOWED_CODE_EXTENSIONS.contains(extension)
+    }
+
+    private fun ignoreFileByExtension(file: VirtualFile, scope: CoroutineScope): Boolean = with(scope) {
+        return !isFileExtensionAllowed(file)
+    }
+
+    suspend fun ignoreFile(file: VirtualFile, scope: CoroutineScope): Boolean = ignoreFile(file.path, scope)
+
+    suspend fun ignoreFile(path: String, scope: CoroutineScope): Boolean = with(scope) {
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             async {
-                pattern.containsMatchIn(file.path)
+                pattern.containsMatchIn(path)
             }
         }
         deferredResults.any { it.await() }
     }
 
-    suspend fun ignoreFile(file: VirtualFile, scope: CoroutineScope): Boolean = ignoreFile(File(file.path), scope)
-
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
+        val ignoredExtensionMap = mutableMapOf<String, Int>().withDefault { 0 }
         var totalSize: Long = 0
 
         VfsUtil.visitChildrenRecursively(
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
-                    val isFileIgnored = runBlocking { ignoreFile(file, this) }
-                    if (file.isFile && !isFileIgnored) {
+                    val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file, this) }
+                    if (isFileIgnoredByExtension) {
+                        val extension = file.extension.orEmpty()
+                        ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
+                        return false
+                    }
+                    val isFileIgnoredByPattern = runBlocking { ignoreFile(file.name, this) }
+                    if (isFileIgnoredByPattern) {
+                        return false
+                    }
+
+                    if (file.isFile) {
                         totalSize += file.length
                         files.add(file)
 
                         if (maxProjectSizeBytes != null && totalSize > maxProjectSizeBytes) {
-                            throw RepoSizeLimitError(message("amazonqFeatureDev.content_length.error_text"))
+                            throw RepoSizeLimitError(AwsCoreBundle.message("amazonqFeatureDev.content_length.error_text"))
                         }
-                        return true
-                    } else {
-                        return !isFileIgnored
                     }
+                    return true
                 }
             }
         )
+
+        for ((key, value) in ignoredExtensionMap) {
+            AmazonqTelemetry.bundleExtensionIgnored(
+                count = value,
+                filenameExt = key
+            )
+        }
 
         // Process files in parallel
         val filesToIncludeFlow = channelFlow {
