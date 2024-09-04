@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConn
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -30,7 +31,7 @@ fun requestCredentialsForCodeCatalyst(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean? {
-    if (JBCefApp.isSupported() && project != null) {
+    if (isQWebviewsAvailable() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
         showWebview(project)
 
@@ -122,7 +123,7 @@ fun requestCredentialsForExplorer(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false
 ): Boolean? {
-    if (JBCefApp.isSupported()) {
+    if (isQWebviewsAvailable()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
         showWebview(project)
         return null

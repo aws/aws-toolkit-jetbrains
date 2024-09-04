@@ -23,7 +23,7 @@ class SignInToQAction : SignInToQActionBase(message("q.sign.in")) {
         val project = e.project ?: return
         UiTelemetry.click(project, "auth_start_Q")
 
-        if (!JBCefApp.isSupported()) {
+        if (!AmazonQToolWindowFactory.shouldBeAvailable()) {
             requestCredentialsForQ(project)
         } else {
             ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)?.show()
