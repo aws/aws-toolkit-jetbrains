@@ -59,7 +59,8 @@
                 "showExample",
                 "citeSources",
                 "explainLineByLine",
-                "explainCodeSelection"
+                "explainCodeSelection",
+                "generateUnitTests"
             ],
             "description": "Explict user intent associated with a chat message"
         },
@@ -677,6 +678,10 @@
                 },
                 {
                     "type": "cwsprChatHasProjectContext",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatUserIntent",
                     "required": false
                 }
             ]

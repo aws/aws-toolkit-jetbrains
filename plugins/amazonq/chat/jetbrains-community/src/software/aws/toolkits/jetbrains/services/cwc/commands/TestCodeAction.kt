@@ -3,5 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
-class TestCodeAction : CustomAction(EditorContextCommand.Test)
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 
+class TestCodeAction : CustomAction(EditorContextCommand.Test) {
+    override fun update(e: AnActionEvent) {
+        val project = e.getData(CommonDataKeys.PROJECT) ?: return
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+        e.presentation.isVisible = (connection != null && connection.startUrl == "https://amzn.awsapps.com/start")
+    }
+}

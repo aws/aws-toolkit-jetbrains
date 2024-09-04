@@ -16,7 +16,7 @@ class UserIntentRecognizer {
         EditorContextCommand.Fix -> UserIntent.APPLY_COMMON_BEST_PRACTICES
         EditorContextCommand.Optimize -> UserIntent.IMPROVE_CODE
         EditorContextCommand.ExplainCodeScanIssue -> UserIntent.EXPLAIN_CODE_SELECTION
-        EditorContextCommand.Test -> null
+        EditorContextCommand.Test -> UserIntent.GENERATE_UNIT_TESTS
         EditorContextCommand.SendToPrompt -> null
     }
 
@@ -25,6 +25,7 @@ class UserIntentRecognizer {
         prompt.startsWith("Refactor") -> UserIntent.SUGGEST_ALTERNATE_IMPLEMENTATION
         prompt.startsWith("Fix") -> UserIntent.APPLY_COMMON_BEST_PRACTICES
         prompt.startsWith("Optimize") -> UserIntent.IMPROVE_CODE
+        prompt.startsWith("Generate tests") || prompt.startsWith("Generate unit tests") -> UserIntent.GENERATE_UNIT_TESTS
         else -> null
     }
 

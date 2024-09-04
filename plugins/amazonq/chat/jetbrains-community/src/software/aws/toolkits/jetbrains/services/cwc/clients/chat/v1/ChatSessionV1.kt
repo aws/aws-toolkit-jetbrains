@@ -297,6 +297,7 @@ class ChatSessionV1(
         UserIntent.EXPLAIN_LINE_BY_LINE -> FollowUpType.LineByLine
         UserIntent.EXPLAIN_CODE_SELECTION -> FollowUpType.ExplainInDetail
         UserIntent.UNKNOWN_TO_SDK_VERSION -> FollowUpType.Generated
+        UserIntent.GENERATE_UNIT_TESTS -> FollowUpType.Generated
         null -> FollowUpType.Generated
     }
 
