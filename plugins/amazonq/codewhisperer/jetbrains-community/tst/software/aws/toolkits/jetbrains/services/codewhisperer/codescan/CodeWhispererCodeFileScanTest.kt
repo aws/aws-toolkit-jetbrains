@@ -119,10 +119,11 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         doNothing().whenever(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         mockClient.stub {
-            onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
-            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
+            // setupResponse dynamically modifies these fake responses so this is very hard to follow and makes me question if we even need this
+            onGeneric { createUploadUrl(any()) }.thenAnswer { fakeCreateUploadUrlResponse }
+            onGeneric { createCodeScan(any(), any()) }.thenAnswer { fakeCreateCodeScanResponse }
+            onGeneric { getCodeScan(any(), any()) }.thenAnswer { fakeGetCodeScanResponse }
+            onGeneric { listCodeScanFindings(any(), any()) }.thenAnswer { fakeListCodeScanFindingsResponse }
         }
     }
 
@@ -327,9 +328,6 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
     @Test
     fun `unsupported languages file scan fail`() = runTest {
-        scanManagerSpy = spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
-        projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, scanManagerSpy, disposableRule.disposable)
-
         val fileEditorManager = mock<FileEditorManager>()
         val selectedEditor = mock<FileEditor>()
         val editorList = mutableListOf(selectedEditor)
