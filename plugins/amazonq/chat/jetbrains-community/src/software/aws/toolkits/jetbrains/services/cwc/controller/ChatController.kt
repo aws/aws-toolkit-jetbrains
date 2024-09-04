@@ -43,8 +43,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
@@ -121,7 +119,7 @@ class ChatController private constructor(
             projectContextServiceInit = true
             val scope = CoroutineScope(SupervisorJob())
             scope.launch {
-                context.project.waitForSmartMode() // Wait for 60 seconds to get accurate CPU load for 1 min
+                context.project.waitForSmartMode()
                 try {
                     withTimeout(Duration.ofMinutes(30)) {
                         while (true) {
