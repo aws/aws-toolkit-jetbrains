@@ -18,9 +18,4 @@ fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
  */
 fun isCodeCatalystDevEnv() = System.getenv("__DEV_ENVIRONMENT_ID") != null
 
-// CW can be supported only after at least build 232.9921.47 on remote env
-fun isRunningOnCWNotSupportedRemoteBackend() =
-    ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromStringOrNull("232.9921.47")) < 0 &&
-        AppMode.isRemoteDevHost()
-
 fun isQWebviewsAvailable() = JBCefApp.isSupported() && !isRunningOnRemoteBackend()
