@@ -4,12 +4,14 @@
 package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
+import kotlinx.coroutines.coroutineScope
 import software.aws.toolkits.telemetry.IdeTelemetry
 
 class OpenedFileTypesMetrics : ProjectActivity, Disposable {
@@ -22,11 +24,10 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
         }
 
         // add newly opened file extensions
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(this).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             object : FileEditorManagerListener {
                 override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-
                     file.extension?.let { currentOpenedFileTypes.add(it) }
                 }
             }
@@ -41,18 +42,18 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     override fun dispose() {}
 
     private fun emitFileTypeMetric() {
-        currentOpenedFileTypes.forEach {
-            IdeTelemetry.editCodeFile(project = null, filenameExt = it)
+        ApplicationManager.getApplication().executeOnPooledThread{
+            currentOpenedFileTypes.forEach {
+                IdeTelemetry.editCodeFile(project = null, filenameExt = it)
+            }
+            currentOpenedFileTypes.clear()
+            scheduleNextMetricEvent()
         }
-        flush()
-        scheduleNextMetricEvent()
-    }
 
-    private fun flush() {
-        currentOpenedFileTypes.clear()
+
     }
 
     companion object {
-        const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
+        const val INTERVAL_BETWEEN_METRICS = 60 * 60 * 1000
     }
 }
