@@ -123,7 +123,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         )
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = !isQWebviewsAvailable()
+    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
