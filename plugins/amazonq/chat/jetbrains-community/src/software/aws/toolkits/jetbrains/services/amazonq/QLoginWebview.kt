@@ -15,7 +15,6 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.error

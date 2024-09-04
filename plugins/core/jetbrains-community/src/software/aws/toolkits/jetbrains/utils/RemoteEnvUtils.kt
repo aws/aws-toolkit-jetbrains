@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.idea.AppMode
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.extensions.ExtensionNotApplicableException
 import com.intellij.openapi.util.BuildNumber
 import com.intellij.ui.jcef.JBCefApp
 

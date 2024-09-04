@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.explorer.showWebview
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel

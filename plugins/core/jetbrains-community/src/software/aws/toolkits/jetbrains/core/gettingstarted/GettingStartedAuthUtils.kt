@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
