@@ -17,14 +17,15 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -34,9 +35,8 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.time.withTimeout
+import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
@@ -87,10 +87,10 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
+import java.lang.management.ManagementFactory
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
-import java.time.Duration
-import java.lang.management.ManagementFactory
 
 class ChatController private constructor(
     private val context: AmazonQAppInitContext,
