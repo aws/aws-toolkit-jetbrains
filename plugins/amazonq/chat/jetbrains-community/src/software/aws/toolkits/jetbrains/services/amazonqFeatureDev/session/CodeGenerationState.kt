@@ -51,7 +51,7 @@ class CodeGenerationState(
                 message = message("amazonqFeatureDev.code_generation.generating_code")
             )
 
-            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId())
+            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger)
             numberOfReferencesGenerated = codeGenerationResult.references.size
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
@@ -102,7 +102,7 @@ class CodeGenerationState(
     }
 }
 
-private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): CodeGenerationResult {
+private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, messenger: MessagePublisher): CodeGenerationResult {
     val pollCount = 180
     val requestDelay = 10000L
 
@@ -129,7 +129,16 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String): 
                     codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount()
                 )
             }
-            CodeGenerationWorkflowStatus.IN_PROGRESS -> delay(requestDelay)
+            CodeGenerationWorkflowStatus.IN_PROGRESS -> {
+                if (codeGenerationResultState.codeGenerationStatusDetail() != null) {
+                    messenger.sendAnswerPart(
+                        tabId = tabID,
+                        message = message("amazonqFeatureDev.code_generation.generating_code") +
+                            "\n\n" + codeGenerationResultState.codeGenerationStatusDetail()
+                    )
+                }
+                delay(requestDelay)
+            }
             CodeGenerationWorkflowStatus.FAILED -> {
                 when (true) {
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
