@@ -1,0 +1,11 @@
+{
+  "date" : "2024-09-05",
+  "version" : "3.27",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Reduce `@workspace` indexing time by 50%"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q /dev: include in progress state agent in code generation"
+  } ]
+}
