@@ -34,10 +34,14 @@ const authUiClickOptionMap = {
     [LoginIdentifier.ENTERPRISE_SSO]: 'auth_idcOption',
     [LoginIdentifier.IAM_CREDENTIAL]: 'auth_credentialsOption',
     [LoginIdentifier.EXISTING_LOGINS]: 'auth_existingAuthOption',
+    [LoginIdentifier.NONE]: "Unknown"
 }
 
 function getUiClickEvent(loginIdentifier: LoginIdentifier) {
-    return (authUiClickOptionMap as any)[loginIdentifier]
+    if(!Object.keys(authUiClickOptionMap).includes(loginIdentifier)) {
+        return "Unknown"
+    }
+    return (authUiClickOptionMap)[loginIdentifier]
 }
 
 export default defineComponent({
