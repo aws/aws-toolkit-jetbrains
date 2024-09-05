@@ -168,6 +168,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     )
 
     fun totalRunTime(codeTransformResultStatusMessage: String, jobId: JobId?) = CodetransformTelemetry.totalRunTime(
+        buildSystemVersion = getMavenVersion(project),
         codeTransformJobId = jobId?.toString(),
         codeTransformSessionId = sessionId,
         codeTransformResultStatusMessage = codeTransformResultStatusMessage,
@@ -176,7 +177,6 @@ class CodeTransformTelemetryManager(private val project: Project) {
             Instant.now()
         ),
         codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
-        codeTransformLocalMavenVersion = getMavenVersion(project),
     )
 
     fun error(errorMessage: String) = CodetransformTelemetry.logGeneralError(
