@@ -58,6 +58,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.nio.file.Paths
 import kotlin.random.Random
 
 object CodeWhispererTestUtil {
@@ -391,7 +392,7 @@ fun aResponseContext(): ResponseContext = ResponseContext(aString())
 fun aFileContextInfo(language: CodeWhispererProgrammingLanguage? = null): FileContextInfo {
     val caretContextInfo = CaretContext(aString(), aString(), aString())
     val fileName = aString()
-    val fileRelativePath = aString()
+    val fileRelativePath = Paths.get("test", fileName).toString()
     val programmingLanguage = language ?: listOf(
         CodeWhispererPython.INSTANCE,
         CodeWhispererJava.INSTANCE

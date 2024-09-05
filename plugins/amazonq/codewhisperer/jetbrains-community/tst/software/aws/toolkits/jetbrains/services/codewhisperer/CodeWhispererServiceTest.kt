@@ -215,7 +215,7 @@ private fun CodeWhispererProgrammingLanguage.toSdkModel(): ProgrammingLanguage =
     .build()
 
 private fun FileContextInfo.toSdkModel(): FileContext = FileContext.builder()
-    .filename(filename)
+    .filename(fileRelativePath)
     .programmingLanguage(programmingLanguage.toCodeWhispererRuntimeLanguage().toSdkModel())
     .leftFileContent(caretContext.leftFileContext)
     .rightFileContent(caretContext.rightFileContext)
