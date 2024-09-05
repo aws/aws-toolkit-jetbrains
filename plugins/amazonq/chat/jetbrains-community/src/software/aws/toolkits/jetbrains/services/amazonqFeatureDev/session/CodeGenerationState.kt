@@ -133,7 +133,8 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                 if (codeGenerationResultState.codeGenerationStatusDetail() != null) {
                     messenger.sendAnswerPart(
                         tabId = tabID,
-                        message =  message("amazonqFeatureDev.code_generation.generating_code") + "\n\n" + codeGenerationResultState.codeGenerationStatusDetail()
+                        message = message("amazonqFeatureDev.code_generation.generating_code") +
+                            "\n\n" + codeGenerationResultState.codeGenerationStatusDetail()
                     )
                 }
                 delay(requestDelay)
