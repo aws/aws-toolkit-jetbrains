@@ -52,6 +52,13 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         val vote: String,
     ) : IncomingFeatureDevMessage
 
+    data class ChatItemFeedbackMessage(
+        @JsonProperty("tabID") val tabId: String,
+        val selectedOption: String,
+        val comment: String?,
+        val messageId: String,
+    ) : IncomingFeatureDevMessage
+
     data class ClickedLink(
         @JsonProperty("tabID") val tabId: String,
         val command: String,

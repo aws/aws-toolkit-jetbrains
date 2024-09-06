@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
@@ -17,6 +19,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -64,8 +67,11 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -155,6 +161,32 @@ class FeatureDevController(
             SessionStatePhase.INIT, null -> {
                 logger.error { "$FEATURE_NAME: ChatItemVotedMessage is received for a conversation that has ${session.sessionState.phase} phase" }
             }
+        }
+    }
+
+    override suspend fun processChatItemFeedbackMessage(message: IncomingFeatureDevMessage.ChatItemFeedbackMessage) {
+        logger.debug { "$FEATURE_NAME: Processing ChatItemFeedbackMessage: ${message.comment}" }
+
+        val session = getSessionInfo(message.tabId)
+
+        val comment = FeedbackComment(
+            conversationId = session.conversationId,
+            userComment = message.comment.orEmpty(),
+            reason = message.selectedOption,
+            messageId = message.messageId,
+            type = "featuredev-chat-answer-feedback"
+        )
+
+        try {
+            TelemetryService.getInstance().sendFeedback(
+                sentiment = Sentiment.NEGATIVE,
+                comment = objectMapper.writeValueAsString(comment),
+            )
+            logger.info { "$FEATURE_NAME answer feedback sent: \"Negative\"" }
+        } catch (e: Throwable) {
+            e.notifyError(message("feedback.submit_failed", e))
+            logger.warn(e) { "Failed to submit feedback" }
+            return
         }
     }
 
@@ -353,7 +385,8 @@ class FeatureDevController(
             messenger.sendAnswer(
                 tabId = tabId,
                 message = message("amazonqFeatureDev.code_generation.updated_code"),
-                messageType = FeatureDevMessageType.Answer
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
             )
 
             messenger.sendSystemPrompt(
@@ -400,9 +433,18 @@ class FeatureDevController(
     }
 
     private suspend fun closeSession(tabId: String) {
-        messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.closed_session"))
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message = message("amazonqFeatureDev.chat_message.closed_session"),
+            canBeVoted = true
+        )
 
-        messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.closed_session"))
+        messenger.sendUpdatePlaceholder(
+            tabId = tabId,
+            newPlaceholder = message("amazonqFeatureDev.placeholder.closed_session")
+        )
+
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
 
         val session = getSessionInfo(tabId)
@@ -429,7 +471,8 @@ class FeatureDevController(
         messenger.sendAnswer(
             tabId = tabId,
             message = message("amazonqFeatureDev.code_generation.provide_code_feedback"),
-            messageType = FeatureDevMessageType.Answer
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = true
         )
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
@@ -729,6 +772,7 @@ class FeatureDevController(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
                 message = message("amazonqFeatureDev.follow_up.modified_source_folder", selectedFolder.path),
+                canBeVoted = true,
             )
 
             messenger.sendAnswer(
@@ -771,5 +815,7 @@ class FeatureDevController(
 
     companion object {
         private val logger = getLogger<FeatureDevController>()
+
+        val objectMapper: ObjectMapper = jacksonObjectMapper()
     }
 }
