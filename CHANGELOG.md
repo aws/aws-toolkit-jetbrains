@@ -1,3 +1,7 @@
+# _3.27_ (2024-09-05)
+- **(Feature)** Reduce `@workspace` indexing time by 50%
+- **(Feature)** Amazon Q /dev: include in progress state agent in code generation
+
 # _3.26_ (2024-08-30)
 - **(Bug Fix)** Fix Runtime Exception when opening a tool window ([#4849](https://github.com/aws/aws-toolkit-jetbrains/issues/4849))
 
