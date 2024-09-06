@@ -237,7 +237,12 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             }
 
             is BrowserMessage.SendUiClickTelemetry -> {
-                UiTelemetry.click(project, message.signInOptionClicked)
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn("Unknown sign in option")
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }
@@ -336,6 +341,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
+        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }
