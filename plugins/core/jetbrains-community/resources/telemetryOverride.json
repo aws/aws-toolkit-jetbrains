@@ -688,10 +688,6 @@
                 {
                     "type": "cwsprChatHasProjectContext",
                     "required": false
-                },
-                {
-                    "type": "cwsprChatUserIntent",
-                    "required": false
                 }
             ]
         },
