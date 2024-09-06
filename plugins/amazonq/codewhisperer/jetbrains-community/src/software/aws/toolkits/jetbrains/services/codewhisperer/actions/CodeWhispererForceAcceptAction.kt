@@ -3,5 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.actions
 
-// A same action but different key shortcut and different logic
-class CodeWhispererForceAcceptAction: CodeWhispererAcceptAction()
+import software.aws.toolkits.resources.message
+
+// A same action but different key shortcut and different promoter logic
+class CodeWhispererForceAcceptAction(title: String = message("codewhisperer.inline.force.accept")): CodeWhispererAcceptAction(title)

@@ -14,10 +14,11 @@ class CodeWhispererActionPromoter : ActionPromoter {
     override fun promote(actions: MutableList<out AnAction>, context: DataContext): MutableList<AnAction> {
         val results = actions.toMutableList()
         if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return results
-        if (!CodeWhispererSettings.getInstance().isQSuggestionPrioritized() &&
-            !results.any { isCodeWhispererForceAction(it) }) {
-            return results
-        }
+
+//        if (!CodeWhispererSettings.getInstance().isQSuggestionPrioritized() &&
+//            !results.any { isCodeWhispererForceAction(it) }) {
+//            return results
+//        }
         results.sortWith { a, b ->
             if (isCodeWhispererForceAction(a) || isCodeWhispererAcceptActionPrioritized(a)) {
                 return@sortWith -1
@@ -55,7 +56,7 @@ class CodeWhispererActionPromoter : ActionPromoter {
         isCodeWhispererForceAcceptAction(action) || isCodeWhispererNavigateAction(action)
 
     private fun isCodeWhispererAcceptActionPrioritized(action: AnAction): Boolean =
-        action is CodeWhispererAcceptAction && CodeWhispererSettings.getInstance().isQSuggestionPrioritized()
+        action is CodeWhispererAcceptAction && false
 
     private fun isCodeWhispererPopupAction(action: AnAction): Boolean =
         isCodeWhispererAcceptAction(action) || isCodeWhispererNavigateAction(action)

@@ -45,6 +45,8 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
         override val sendFeedback = CodeWhispererProvideFeedbackAction()
         override val connectOnGithub = CodeWhispererConnectOnGithubAction()
         override val documentation = CodeWhispererLearnMoreAction()
+        // TODO: add the actions to switch between beta/marketplace plugins
+        val switchToMarketplacePlugin = null
     }
 
     override fun getChildren(e: AnActionEvent?) = e?.project?.let {

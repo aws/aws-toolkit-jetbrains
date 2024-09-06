@@ -4,8 +4,19 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
+import com.intellij.ide.DataManager
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.keymap.KeymapManager
+import com.intellij.openapi.keymap.impl.ui.KeymapPanel
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
+import com.intellij.ui.components.ActionLink
+import com.intellij.util.concurrency.EdtExecutorService
+import com.intellij.util.progress.sleepCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -17,6 +28,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBui
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
@@ -24,6 +37,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIa
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.jetbrains.utils.notifyWarn
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.resources.message
+import java.util.concurrent.TimeUnit
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
@@ -48,6 +66,12 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         if (!isUserBuilderId(project)) {
             scanManager.createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE, isPluginStarting = true)
         }
+
+        if (!CodeWhispererSettings.getInstance().isInlineShortcutFeatureNotificationDisplayed() || true) {
+            CodeWhispererSettings.getInstance().setInlineShortcutFeatureNotificationDisplayed(true)
+            showInlineShortcutFeatureNotification(project)
+        }
+
 
         // ---- Everything below will be triggered once after startup ----
 
@@ -81,5 +105,40 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
                 delay(FEATURE_CONFIG_POLL_INTERVAL_IN_MS)
             }
         }
+    }
+
+    private fun showInlineShortcutFeatureNotification(project: Project) {
+        notifyInfo(
+            title = message("codewhisperer.notification.inline.shortcut_config.title"),
+            content = message("codewhisperer.notification.inline.shortcut_config.content"),
+            project = project,
+            listOf(
+                object: NotificationAction(message("codewhisperer.notification.inline.shortcut_config.open_setting")) {
+                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+//                        notification.expire()
+                        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
+//                            e.inputEvent?.source
+//                            EdtExecutorService.getScheduledExecutorInstance().schedule({
+//                                KeymapManager.getInstance().activeKeymap
+//                                it.showOption("inline suggestion")
+//                            }, 100, TimeUnit.MILLISECONDS)
+//                            val settings = DataManager.getInstance().getDataContext(e.inputEvent?.source as ActionLink?).getData(Settings.KEY)
+//                            if (settings == null) return@showSettingsDialog
+//
+//                            it.showOption("")
+//                            settings.select(it, "Terminal").doWhenDone(Runnable {
+//                                 Remove once https://youtrack.jetbrains.com/issue/IDEA-212247 is fixed
+//                                EdtExecutorService.getScheduledExecutorInstance().schedule({
+//                                    settings.select(it, "Terminal")
+//                                }, 100, TimeUnit.MILLISECONDS)
+//                            })
+                        }
+
+//                        val keymapPanel: KeymapPanel = Settings.KEY.getData(e.dataContext)?.find(KeymapPanel::class.java) ?: return
+//                        keymapPanel.showOption("inline suggestion")
+//                    }
+                }
+            )
+        )
     }
 }

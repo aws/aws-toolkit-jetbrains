@@ -14,13 +14,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.resources.message
 
-open class CodeWhispererAcceptAction : AnAction(message("codewhisperer.inline.accept")), DumbAware {
+open class CodeWhispererAcceptAction(title: String = message("codewhisperer.inline.accept")) : AnAction(title), DumbAware {
     var sessionContext: SessionContext? = null
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = e.project != null && e.getData(CommonDataKeys.EDITOR) != null
+            && CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
     }
 
     override fun actionPerformed(e: AnActionEvent) {

@@ -20,6 +20,7 @@ import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -88,7 +89,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             JBPopupFactory.getInstance().createConfirmation(message("codewhisperer.statusbar.popup.title"), { reconnectCodeWhisperer(project) }, 0)
         } else if (!isQConnected(project)) {
             JBPopupFactory.getInstance().createActionGroupPopup(
-                "Amazon Q",
+                pluginName(),
                 ActionManager.getInstance().getAction(Q_SIGNED_OUT_ACTION_GROUP) as ActionGroup,
                 DataManager.getInstance().getDataContext(myStatusBar?.component),
                 JBPopupFactory.ActionSelectionAid.MNEMONICS,
@@ -96,7 +97,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             )
         } else {
             JBPopupFactory.getInstance().createActionGroupPopup(
-                "Amazon Q",
+                pluginName(),
                 QStatusBarLoggedInActionGroup(),
                 DataManager.getInstance().getDataContext(myStatusBar?.component),
                 JBPopupFactory.ActionSelectionAid.MNEMONICS,
@@ -106,9 +107,9 @@ class CodeWhispererStatusBarWidget(project: Project) :
 
     override fun getSelectedValue(): String = CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
         if (it == null) {
-            message("codewhisperer.statusbar.display_name")
+            pluginName()
         } else {
-            "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+            "${pluginName()} | ${it.name}"
         }
     }
 
@@ -127,6 +128,8 @@ class CodeWhispererStatusBarWidget(project: Project) :
         } else {
             AllIcons.Debugger.ThreadStates.Idle
         }
+
+    private fun pluginName() = if (PluginUpdateManager.getInstance().isBeta()) "Amazon Q (Beta)" else "Amazon Q"
 
     companion object {
         const val ID = "aws.codewhisperer.statusWidget"

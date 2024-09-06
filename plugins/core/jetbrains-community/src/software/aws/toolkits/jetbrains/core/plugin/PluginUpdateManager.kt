@@ -38,6 +38,8 @@ import software.aws.toolkits.telemetry.ToolkitTelemetry
 class PluginUpdateManager : Disposable {
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
 
+    fun isBeta() = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.descriptor?.version?.contains("beta") ?: false
+
     fun scheduleAutoUpdate() {
         if (alarm.isDisposed) return
         scheduleUpdateTask()

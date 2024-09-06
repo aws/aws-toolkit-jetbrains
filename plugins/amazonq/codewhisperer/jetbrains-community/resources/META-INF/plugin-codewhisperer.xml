@@ -81,28 +81,29 @@
         </group>
 
         <action class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererRecommendationAction"
-                text="Show Code Suggestions">
+                text="Invoke Amazon Q Inline Suggestions">
             <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
         </action>
         <action id="codewhisperer.inline.navigate.previous"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigatePrevAction"
-                text="Navigate to previous suggestion" description="Navigate to previous suggestion">
-            <keyboard-shortcut keymap="$default" first-keystroke="alt J"/>
+                text="Navigate to Previous Inline Suggestion" description="Navigate to previous inline suggestion">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt OPEN_BRACKET"/>
         </action>
         <action id="codewhisperer.inline.navigate.next"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigateNextAction"
-                text="Navigate to next suggestion" description="Navigate to next suggestion">
-            <keyboard-shortcut keymap="$default" first-keystroke="alt K"/>
+                text="Navigate to Next Inline Suggestion" description="Navigate to next inline suggestion">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt CLOSE_BRACKET"/>
         </action>
         <action id="codewhisperer.inline.accept"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererAcceptAction"
-                text="Accept Q inline suggestions" description="Accept Q inline suggestions">
+                text="Accept the Current Inline Suggestion" description="Accept the current inline suggestions">
             <keyboard-shortcut keymap="$default" first-keystroke="TAB"/>
         </action>
         <action id="codewhisperer.inline.force.accept"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction"
-                text="Force accept Q inline suggestions" description="Force accept Q inline suggestions">
+                text="Force Accept the Current Inline Suggestion" description="Force accept the current inline suggestion">
             <keyboard-shortcut keymap="$default" first-keystroke="alt TAB"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
         </action>
 
 

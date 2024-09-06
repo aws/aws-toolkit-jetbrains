@@ -4,17 +4,20 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.settings
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.DataManager
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.ListSeparator
 import com.intellij.ui.GroupedComboBoxRenderer
-import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import org.jetbrains.annotations.Nls
+import com.intellij.util.concurrency.EdtExecutorService
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
@@ -22,7 +25,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.resources.message
 import java.awt.Font
-import javax.swing.ListCellRenderer
+import java.util.concurrent.TimeUnit
 
 //  As the connection is project-level, we need to make this project-level too (we have different config for Sono vs SSO users)
 class CodeWhispererConfigurable(private val project: Project) :
@@ -93,25 +96,16 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
 
-            row(message("aws.settings.codewhisperer.inline.suggestion_priority.text")) {
-                comboBox(
-                    listOf(
-                        message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text"),
-                        message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
-                    ),
-                    object : GroupedComboBoxRenderer<String?>() {
-                        override fun getText(item: String?): String = item ?: ""
-                        override fun getSecondaryText(item: String?): String =
-                            if (item == message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text"))  {
-                                " default"
-                            } else {
-                                ""
-                            }
-                        override fun separatorFor(value: String?): ListSeparator? = null
-                    }
-                ).apply {
-                    bindItem(codeWhispererSettings::getPrioritizedSuggestionString, codeWhispererSettings::setIsQSuggestionPrioritized)
-                }.comment(message("aws.settings.codewhisperer.inline.suggestion_priority.tooltip"), maxLineLength = 38)
+            row() {
+                link("Configure inline suggestion keybindings") { e ->
+                    val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
+                    val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
+                    // workaround for sometimes the string is not input there
+                    settings.select(configurable, "inline suggestion")
+                    EdtExecutorService.getScheduledExecutorInstance().schedule({
+                        settings.select(configurable, "inline suggestion")
+                    }, 500, TimeUnit.MILLISECONDS)
+                }
             }
         }
 

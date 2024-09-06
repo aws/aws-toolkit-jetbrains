@@ -21,6 +21,7 @@ class CodeWhispererNavigateNextAction : AnAction(message("codewhisperer.inline.n
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = e.project != null && e.getData(CommonDataKeys.EDITOR) != null
+            && CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
     }
 
     override fun actionPerformed(e: AnActionEvent) {

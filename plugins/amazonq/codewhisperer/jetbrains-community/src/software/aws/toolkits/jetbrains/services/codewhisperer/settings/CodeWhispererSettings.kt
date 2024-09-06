@@ -12,7 +12,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
-import software.aws.toolkits.resources.message
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -95,20 +94,27 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
     }
 
-    fun getPrioritizedSuggestionString(): String =
-        if (isQSuggestionPrioritized()) {
-            message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
-        } else {
-            message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text")
-        }
+//    fun getPrioritizedSuggestionString(): String =
+//        if (isQSuggestionPrioritized()) {
+//            message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
+//        } else {
+//            message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text")
+//        }
 
-    fun isQSuggestionPrioritized(): Boolean =
-        state.value.getOrDefault(CodeWhispererConfigurationType.isQSuggestionPrioritized, false)
+//    fun isQSuggestionPrioritized(): Boolean =
+//        state.value.getOrDefault(CodeWhispererConfigurationType.isQSuggestionPrioritized, false)
 
-    fun setIsQSuggestionPrioritized(value: String?) {
-        state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized] =
-            value == message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
-        println("set isQSuggestionPrioritized to ${state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized]}")
+//    fun setQSuggestionPrioritized(value: String?) {
+//        state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized] =
+//            value == message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
+//        println("set isQSuggestionPrioritized to ${state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized]}")
+//    }
+
+    fun isInlineShortcutFeatureNotificationDisplayed(): Boolean =
+        state.value.getOrDefault(CodeWhispererConfigurationType.IsInlineShortcutFeatureNotificationDisplayed, false)
+
+    fun setInlineShortcutFeatureNotificationDisplayed(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsInlineShortcutFeatureNotificationDisplayed] = value
     }
 
     companion object {
@@ -144,7 +150,7 @@ enum class CodeWhispererConfigurationType {
     IsProjectContextEnabled,
     IsProjectContextGpu,
     HasEnabledProjectContextOnce,
-    isQSuggestionPrioritized,
+    IsInlineShortcutFeatureNotificationDisplayed,
 }
 
 enum class CodeWhispererIntConfigurationType {

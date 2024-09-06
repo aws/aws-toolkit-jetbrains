@@ -18,6 +18,7 @@ class CodeWhispererPopupBackspaceHandler(
 ) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         val popupManager = CodeWhispererPopupManager.getInstance()
+
         popupManager.dontClosePopupAndRun {
             val oldOffset = editor.caretModel.offset
             defaultHandler.execute(editor, caret, dataContext)
