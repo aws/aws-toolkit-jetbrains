@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
-import kotlinx.coroutines.coroutineScope
 import software.aws.toolkits.telemetry.IdeTelemetry
 
 class OpenedFileTypesMetrics : ProjectActivity, Disposable {
@@ -20,7 +19,8 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     override suspend fun execute(project: Project) {
         // add already open file extensions
         FileEditorManager.getInstance(project).openFiles.forEach {
-            it.extension?.let { openFileExtension -> currentOpenedFileTypes.add(openFileExtension) }
+            val extension = it.extension ?: return@forEach
+            addToExistingTelemetryBatch(extension)
         }
 
         // add newly opened file extensions
@@ -28,32 +28,44 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             object : FileEditorManagerListener {
                 override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-                    file.extension?.let { currentOpenedFileTypes.add(it) }
+                    val extension = file.extension ?: return
+                    addToExistingTelemetryBatch(extension)
                 }
             }
         )
         scheduleNextMetricEvent()
     }
 
-    private fun scheduleNextMetricEvent() {
+    private fun addToExistingTelemetryBatch(fileExt: String) {
+        val extension = ".$fileExt"
+        if (extension in codeFileTypes) {
+            currentOpenedFileTypes.add(extension)
+        }
+    }
+
+    fun scheduleNextMetricEvent() {
         alarm.addRequest(this::emitFileTypeMetric, INTERVAL_BETWEEN_METRICS)
     }
 
     override fun dispose() {}
 
-    private fun emitFileTypeMetric() {
-        ApplicationManager.getApplication().executeOnPooledThread{
+    fun emitFileTypeMetric() {
+        ApplicationManager.getApplication().executeOnPooledThread {
             currentOpenedFileTypes.forEach {
-                IdeTelemetry.editCodeFile(project = null, filenameExt = it)
+                emitMetric(it)
             }
             currentOpenedFileTypes.clear()
-            scheduleNextMetricEvent()
+            if (!ApplicationManager.getApplication().isUnitTestMode) {
+                scheduleNextMetricEvent()
+            }
         }
+    }
 
-
+    fun emitMetric(openFileExtension: String) {
+        IdeTelemetry.editCodeFile(project = null, filenameExt = openFileExtension)
     }
 
     companion object {
-        const val INTERVAL_BETWEEN_METRICS = 60 * 60 * 1000
+        const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
     }
 }
