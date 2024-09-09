@@ -36,7 +36,6 @@ import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.credentials.AuthProfile
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -237,8 +236,13 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
 
-            is BrowserMessage.SendTelemetry -> {
-                UiTelemetry.click(project, "auth_continueButton")
+            is BrowserMessage.SendUiClickTelemetry -> {
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn("Unknown sign in option")
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }
@@ -306,19 +310,12 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     }
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onIdCError: (Exception, AuthProfile) -> Unit = { e, profile ->
-            stopAndClearBrowserOpenTimer()
-            // TODO: telemetry
-        }
-        val onIdCSuccess: () -> Unit = {
-            stopAndClearBrowserOpenTimer()
-            // TODO: telemetry
-        }
+        val (onIdCError: (Exception) -> Unit, onIdCSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
 
         val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
 
         loginWithBackgroundContext {
-            val connection = login.loginIdc(project)
+            val connection = login.login(project)
 
             if (connection != null && scopes.contains(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)) {
                 val tokenProvider = connection.getConnectionSettings().tokenProvider
@@ -344,6 +341,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
+        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }

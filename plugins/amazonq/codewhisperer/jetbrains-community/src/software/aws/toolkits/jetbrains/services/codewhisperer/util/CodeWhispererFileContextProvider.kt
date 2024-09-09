@@ -16,6 +16,7 @@ import com.intellij.util.gist.GistManager
 import com.intellij.util.io.DataExternalizer
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.debug
@@ -96,7 +97,7 @@ private object CodeWhispererCodeChunkExternalizer : DataExternalizer<List<Chunk>
 interface FileContextProvider {
     fun extractFileContext(editor: Editor, psiFile: PsiFile): FileContextInfo
 
-    suspend fun extractSupplementalFileContext(psiFile: PsiFile, fileContext: FileContextInfo): SupplementalContextResult
+    suspend fun extractSupplementalFileContext(psiFile: PsiFile, fileContext: FileContextInfo, timeout: Long): SupplementalContextResult
 
     suspend fun extractCodeChunksForFile(psiFile: PsiFile): List<Chunk>
 
@@ -121,58 +122,75 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      * for focal files, e.g. "MainTest.java" -> "Main.java", "test_main.py" -> "main.py"
      * for the most relevant file -> we extract "keywords" from files opened in editor then get the one with the highest similarity with target file
      */
-    override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextResult {
+    override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo, timeout: Long): SupplementalContextResult {
         assertIsNonDispatchThread()
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = isTestFile(psiFile)
-        val language = targetContext.programmingLanguage
-        val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
+        return try {
+            withTimeout(timeout) {
+                val language = targetContext.programmingLanguage
+                val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
-        // if utg is not supported, use crossfile context as fallback
-        val supplementalContext = if (isTst && language.isUTGSupported()) {
-            when (shouldFetchUtgContext(language, group)) {
-                true -> extractSupplementalFileContextForTst(psiFile, targetContext)
-                false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
-            }
-        } else {
-            when (shouldFetchCrossfileContext(language, group)) {
-                true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-                false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
-            }
-        }
+                // if utg is not supported, use crossfile context as fallback
+                val supplementalContext = if (isTst && language.isUTGSupported()) {
+                    when (shouldFetchUtgContext(language, group)) {
+                        true -> extractSupplementalFileContextForTst(psiFile, targetContext)
+                        false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
+                    }
+                } else {
+                    when (shouldFetchCrossfileContext(language, group)) {
+                        true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
+                        false -> SupplementalContextResult.NotSupported(isTst, language, targetContext.filename)
+                    }
+                }
 
-        when (supplementalContext) {
-            is SupplementalContextResult.Success -> run {
-                supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
-                val logStr = buildString {
-                    append("Successfully fetched supplemental context.")
-                    supplementalContext.contents.forEachIndexed { index, chunk ->
-                        append(
-                            """
+                when (supplementalContext) {
+                    is SupplementalContextResult.Success -> run {
+                        supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
+                        val logStr = buildString {
+                            append("Successfully fetched supplemental context.")
+                            supplementalContext.contents.forEachIndexed { index, chunk ->
+                                append(
+                                    """
                             |
                             | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
                             |
-                            """.trimMargin()
-                        )
+                                    """.trimMargin()
+                                )
+                            }
+                        }
+
+                        LOG.info { logStr }
+                    }
+
+                    is SupplementalContextResult.Failure -> run {
+                        supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
+                        LOG.warn { "Failed to fetch supplemental context, error message: ${supplementalContext.error.message}" }
+                    }
+
+                    is SupplementalContextResult.NotSupported -> run {
+                        LOG.debug { "${if (isTst) "UTG" else "Crossfile"} is not supporting ${targetContext.programmingLanguage.languageId}" }
                     }
                 }
-                LOG.info { logStr }
-            }
 
-            is SupplementalContextResult.Failure -> run {
-                supplementalContext.latency = System.currentTimeMillis() - startFetchingTimestamp
-                LOG.warn { "Failed to fetch supplemental context, error message: ${supplementalContext.error.message}" }
+                return@withTimeout supplementalContext
             }
-
-            is SupplementalContextResult.NotSupported -> run {
-                LOG.debug { "${if (isTst) "UTG" else "Crossfile"} is not supporting ${targetContext.programmingLanguage.languageId}" }
+        } catch (e: TimeoutCancellationException) {
+            LOG.debug {
+                "Supplemental context fetch timed out in ${System.currentTimeMillis() - startFetchingTimestamp}ms"
             }
+            SupplementalContextResult.Failure(
+                isUtg = isTst,
+                error = e,
+                latency = System.currentTimeMillis() - startFetchingTimestamp,
+                targetFileName = targetContext.filename
+            )
+        } catch (e: Exception) {
+            throw e
         }
-
-        return supplementalContext
     }
 
     override suspend fun extractCodeChunksForFile(psiFile: PsiFile): List<Chunk> {

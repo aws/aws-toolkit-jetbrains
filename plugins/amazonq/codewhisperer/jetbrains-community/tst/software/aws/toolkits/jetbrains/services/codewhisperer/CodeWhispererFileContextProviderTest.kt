@@ -46,6 +46,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
@@ -216,7 +217,7 @@ class CodeWhispererFileContextProviderTest {
         }
 
         runTest {
-            sut.extractSupplementalFileContext(testPsiFile, aFileContextInfo(CodeWhispererTypeScript.INSTANCE))
+            sut.extractSupplementalFileContext(testPsiFile, aFileContextInfo(CodeWhispererTypeScript.INSTANCE), SUPPLEMENTAL_CONTEXT_TIMEOUT)
             verify(sut).extractSupplementalFileContextForSrc(any(), any())
             verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
         }
@@ -344,7 +345,7 @@ class CodeWhispererFileContextProviderTest {
         val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
         val supplementalContext = runReadAction {
             async {
-                sut.extractSupplementalFileContext(psiFiles[0], fileContext)
+                sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
             }
         }.await()
 
@@ -372,7 +373,7 @@ class CodeWhispererFileContextProviderTest {
         val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
         val supplementalContext = runReadAction {
             async {
-                sut.extractSupplementalFileContext(psiFiles[0], fileContext)
+                sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
             }
         }.await()
 
@@ -423,7 +424,7 @@ class CodeWhispererFileContextProviderTest {
         runReadAction {
             val fileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
             val supplementalContext = runBlocking {
-                sut.extractSupplementalFileContext(tstFile, fileContext)
+                sut.extractSupplementalFileContext(tstFile, fileContext, 50)
             }
             assertThat(supplementalContext)
                 .isInstanceOf(SupplementalContextResult.Success::class.java)
