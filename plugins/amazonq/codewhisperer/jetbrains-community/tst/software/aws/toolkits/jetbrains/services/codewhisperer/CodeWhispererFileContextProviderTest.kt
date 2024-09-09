@@ -15,6 +15,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -26,6 +27,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
@@ -330,62 +332,66 @@ class CodeWhispererFileContextProviderTest {
      */
     @Test
     fun `extractSupplementalFileContext should return successful result if there are files opened`() = runTest {
-        val psiFiles = setupFixture(fixture)
-        sut = spy(sut)
+        withContext(getCoroutineBgContext()) {
+            val psiFiles = setupFixture(fixture)
+            sut = spy(sut)
 
-        runInEdtAndWait {
-            // simulate user opening files
-            fixture.openFileInEditor(psiFiles[1].virtualFile)
-            fixture.openFileInEditor(psiFiles[2].virtualFile)
+            runInEdtAndWait {
+                // simulate user opening files
+                fixture.openFileInEditor(psiFiles[1].virtualFile)
+                fixture.openFileInEditor(psiFiles[2].virtualFile)
 
-            // current active editor
-            fixture.openFileInEditor(psiFiles[0].virtualFile)
-        }
-
-        val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
-        val supplementalContext = runReadAction {
-            async {
-                sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
+                // current active editor
+                fixture.openFileInEditor(psiFiles[0].virtualFile)
             }
-        }.await()
 
-        assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
-        supplementalContext as SupplementalContextResult.Success
-        assertThat(supplementalContext.contentLength).isGreaterThan(0)
-        assertThat(supplementalContext.isUtg).isFalse
-        assertThat(supplementalContext.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
-        assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
-        verify(sut).extractSupplementalFileContextForSrc(any(), any())
-        verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
+            val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
+            val supplementalContext = runReadAction {
+                async {
+                    sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
+                }
+            }.await()
+
+            assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Success::class.java)
+            supplementalContext as SupplementalContextResult.Success
+            assertThat(supplementalContext.contentLength).isGreaterThan(0)
+            assertThat(supplementalContext.isUtg).isFalse
+            assertThat(supplementalContext.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
+            assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
+            verify(sut).extractSupplementalFileContextForSrc(any(), any())
+            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
+        }
     }
 
     @Test
     fun `extractSupplementalFileContext should return failure result if there is no file opened`() = runTest {
-        val psiFiles = setupFixture(fixture)
+        withContext(getCoroutineBgContext()) {
+            val psiFiles = setupFixture(fixture)
 
-        runInEdtAndWait {
-            // current active editor
-            fixture.openFileInEditor(psiFiles[0].virtualFile)
-        }
-
-        sut = spy(sut)
-
-        val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
-        val supplementalContext = runReadAction {
-            async {
-                sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
+            runInEdtAndWait {
+                // current active editor
+                fixture.openFileInEditor(psiFiles[0].virtualFile)
             }
-        }.await()
 
-        assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Failure::class.java)
-        supplementalContext as SupplementalContextResult.Failure
-        assertThat(supplementalContext.error.message).matches {
-            it.contains("No code chunk was found from crossfile candidates")
+            sut = spy(sut)
+
+            val fileContext = runReadAction { sut.extractFileContext(fixture.editor, psiFiles[0]) }
+            val supplementalContext = runReadAction {
+                async {
+                    sut.extractSupplementalFileContext(psiFiles[0], fileContext, SUPPLEMENTAL_CONTEXT_TIMEOUT)
+                }
+            }.await()
+
+            assertThat(supplementalContext).isInstanceOf(SupplementalContextResult.Failure::class.java)
+            supplementalContext as SupplementalContextResult.Failure
+            assertThat(supplementalContext.error.message).matches {
+                it.contains("No code chunk was found from crossfile candidates")
+            }
+            assertThat(supplementalContext.isUtg).isFalse
+            assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
+            verify(sut).extractSupplementalFileContextForSrc(any(), any())
+            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
         }
-        assertThat(supplementalContext.isUtg).isFalse
-        assertThat(supplementalContext.targetFileName).isEqualTo(psiFiles[0].name)
-        verify(sut).extractSupplementalFileContextForSrc(any(), any())
-        verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }
 
     /**
