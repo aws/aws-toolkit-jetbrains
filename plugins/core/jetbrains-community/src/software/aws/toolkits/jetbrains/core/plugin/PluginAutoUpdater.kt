@@ -13,7 +13,7 @@ class PluginAutoUpdater : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         // We want the auto-update feature to be triggered only once per running application
-        if (!autoUpdateRunOnce.getAndSet(true)) {
+        if (!autoUpdateRunOnce.getAndSet(true) || PluginUpdateManager.getInstance().isBeta()) {
             PluginUpdateManager.getInstance().scheduleAutoUpdate()
             if (!AwsSettings.getInstance().isAutoUpdateFeatureNotificationShownOnce) {
                 PluginUpdateManager.getInstance().notifyAutoUpdateFeature(project)

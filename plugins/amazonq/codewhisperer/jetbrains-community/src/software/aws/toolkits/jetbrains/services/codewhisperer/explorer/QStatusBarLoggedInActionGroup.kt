@@ -12,10 +12,12 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererConnectOnGithubAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererProvideFeedbackAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.QSwitchToMarketplaceVersionAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.ActionProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Customize
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Learn
@@ -24,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.P
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.PauseCodeScans
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.ResumeCodeScans
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForBeta
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForCodeScan
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForConnectHelp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.buildActionListForInlineSuggestions
@@ -46,7 +49,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
         override val connectOnGithub = CodeWhispererConnectOnGithubAction()
         override val documentation = CodeWhispererLearnMoreAction()
         // TODO: add the actions to switch between beta/marketplace plugins
-        val switchToMarketplacePlugin = null
+        override val switchToMarketplace = QSwitchToMarketplaceVersionAction()
     }
 
     override fun getChildren(e: AnActionEvent?) = e?.project?.let {
@@ -66,6 +69,12 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             add(Separator.create())
             add(Separator.create(message("codewhisperer.statusbar.sub_menu.connect_help.title")))
             addAll(buildActionListForConnectHelp(actionProvider))
+
+            if (PluginUpdateManager.getInstance().isBeta()) {
+                add(Separator.create())
+                add(Separator.create("Beta"))
+                addAll(buildActionListForBeta(actionProvider))
+            }
 
             add(Separator.create())
             add(CodeWhispererShowSettingsAction())

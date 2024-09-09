@@ -163,6 +163,7 @@ class CodeWhispererPopupManager {
 
     @RequiresEdt
     fun changeStatesForShowing(sessionContext: SessionContext, states: InvocationContext, recommendationAdded: Boolean = false) {
+        sessionContext.isFirstTimeShowingPopup = !recommendationAdded
         if (recommendationAdded) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED)
                 .recommendationAdded(states, sessionContext)
@@ -177,7 +178,7 @@ class CodeWhispererPopupManager {
         }
 
         sessionContext.selectedIndex = selectedIndex
-        sessionContext.isFirstTimeShowingPopup = true
+//        sessionContext.isFirstTimeShowingPopup = true
         if (sessionContext.popupDisplayOffset == -1) {
             sessionContext.popupDisplayOffset = sessionContext.editor.caretModel.offset
         }
@@ -202,8 +203,6 @@ class CodeWhispererPopupManager {
 
     fun render(sessionContext: SessionContext, isRecommendationAdded: Boolean, isScrolling: Boolean) {
         updatePopupPanel(sessionContext)
-
-        sessionContext.seen.add(sessionContext.selectedIndex)
 
         // There are four cases that render() is called:
         // 1. Popup showing for the first time, both booleans are false, we should show the popup and update the latency
@@ -255,6 +254,8 @@ class CodeWhispererPopupManager {
         if (sessionContext.popup == null) {
             popup = initPopup()
             sessionContext.popup = popup
+            CodeWhispererInvocationStatus.getInstance().setPopupStartTimestamp()
+            println("set suggestion display time starting now: ${System.currentTimeMillis()}")
             initPopupListener(sessionContext, popup)
         } else {
             popup = sessionContext.popup

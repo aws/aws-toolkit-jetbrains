@@ -48,6 +48,8 @@ class CodeWhispererEditorManager {
         val insertEndOffset = sessionContext.insertEndOffset
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
 
+        preview.detail.isAccepted = true
+
         WriteCommandAction.runWriteCommandAction(project) {
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)

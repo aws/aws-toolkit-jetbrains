@@ -8,6 +8,7 @@ import com.intellij.ide.DataManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.keymap.impl.ui.KeymapPanel
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -21,13 +22,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener.Companion.TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -41,7 +45,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
-import java.util.concurrent.TimeUnit
+import java.time.LocalDate
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
@@ -67,9 +71,14 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             scanManager.createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE, isPluginStarting = true)
         }
 
-        if (!CodeWhispererSettings.getInstance().isInlineShortcutFeatureNotificationDisplayed() || true) {
+        if (!CodeWhispererSettings.getInstance().isInlineShortcutFeatureNotificationDisplayed()) {
             CodeWhispererSettings.getInstance().setInlineShortcutFeatureNotificationDisplayed(true)
             showInlineShortcutFeatureNotification(project)
+        }
+
+        if (PluginUpdateManager.getInstance().isBeta()) {
+            postWelcomeToBetaMessage()
+            checkBetaExpiryInfo()
         }
 
 
@@ -115,30 +124,35 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             listOf(
                 object: NotificationAction(message("codewhisperer.notification.inline.shortcut_config.open_setting")) {
                     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-//                        notification.expire()
                         ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
-//                            e.inputEvent?.source
-//                            EdtExecutorService.getScheduledExecutorInstance().schedule({
-//                                KeymapManager.getInstance().activeKeymap
-//                                it.showOption("inline suggestion")
-//                            }, 100, TimeUnit.MILLISECONDS)
-//                            val settings = DataManager.getInstance().getDataContext(e.inputEvent?.source as ActionLink?).getData(Settings.KEY)
-//                            if (settings == null) return@showSettingsDialog
-//
-//                            it.showOption("")
-//                            settings.select(it, "Terminal").doWhenDone(Runnable {
-//                                 Remove once https://youtrack.jetbrains.com/issue/IDEA-212247 is fixed
-//                                EdtExecutorService.getScheduledExecutorInstance().schedule({
-//                                    settings.select(it, "Terminal")
-//                                }, 100, TimeUnit.MILLISECONDS)
-//                            })
-                        }
-
-//                        val keymapPanel: KeymapPanel = Settings.KEY.getData(e.dataContext)?.find(KeymapPanel::class.java) ?: return
-//                        keymapPanel.showOption("inline suggestion")
-//                    }
+                    }
                 }
             )
         )
+    }
+
+    private fun postWelcomeToBetaMessage() {
+        notifyInfo(
+            title = "Welcome to Amazon Q Plugin Beta",
+            content = "Thank you for participating in Amazon Q beta plugin testing. Plugin auto-update is always turned on to ensure the best beta experience.",
+            project = null
+        )
+    }
+
+    private fun checkBetaExpiryInfo() {
+        // hard 2024/10/1 stop
+        val expiryDate = LocalDate.of(2024, 10, 1)
+
+        // Get the current date
+        val currentDate = LocalDate.now()
+        if (currentDate.isAfter(expiryDate)) {
+            notifyInfo(
+                title = "Amazon Q current beta period ended",
+                content = "The current beta period has ended on $expiryDate, please switch to the marketplace version to continue using Amazon Q.",
+                project = null
+            )
+            CodeWhispererService.getInstance().isBetaExpired = true
+            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).refreshUi()
+        }
     }
 }

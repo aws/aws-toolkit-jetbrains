@@ -11,7 +11,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 class CodeWhispererPopupListener : JBPopupListener {
     override fun beforeShown(event: LightweightWindowEvent) {
         super.beforeShown(event)
-        CodeWhispererInvocationStatus.getInstance().setPopupStartTimestamp()
     }
     override fun onClosed(event: LightweightWindowEvent) {
         super.onClosed(event)

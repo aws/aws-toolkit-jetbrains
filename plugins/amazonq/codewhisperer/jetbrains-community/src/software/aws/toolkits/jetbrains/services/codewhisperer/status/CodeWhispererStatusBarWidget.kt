@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -129,7 +130,15 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.Debugger.ThreadStates.Idle
         }
 
-    private fun pluginName() = if (PluginUpdateManager.getInstance().isBeta()) "Amazon Q (Beta)" else "Amazon Q"
+    private fun pluginName() = if (PluginUpdateManager.getInstance().isBeta()) {
+        if (CodeWhispererService.getInstance().isBetaExpired) {
+            "Amazon Q (Beta) (Update required)"
+        } else {
+            "Amazon Q (Beta)"
+        }
+    } else {
+        "Amazon Q"
+    }
 
     companion object {
         const val ID = "aws.codewhisperer.statusWidget"

@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
@@ -94,6 +93,7 @@ class CodeWhispererTelemetryService {
     }
 
     fun sendServiceInvocationEvent(
+        jobId: Int,
         requestId: String,
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -102,6 +102,7 @@ class CodeWhispererTelemetryService {
         latency: Double,
         exceptionType: String?
     ) {
+        println("jobId: $jobId, serviceInvocation: $requestId")
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
 
@@ -398,30 +399,32 @@ class CodeWhispererTelemetryService {
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null
     ) {
-        val decisions = mutableListOf<CodewhispererSuggestionState>()
-
+        if (hasUserAccepted) {
+            // find the accepted session, other trigger session will be ignore or unseen
+        } else {
+            // user didn't accept any of the suggestion in this display session, for all the trigger session that they have seen
+            // mark them as reject, otherwise mark them as unseen
+        }
 
         CodeWhispererService.getInstance().getAllPaginationSessions().forEach { (jobId, state) ->
             if (state == null) return@forEach
-            val detailContexts = state.recommendationContext.details
+            val decisions = mutableListOf<CodewhispererSuggestionState>()
+            val details = state.recommendationContext.details
 
-            detailContexts.forEachIndexed { index, detailContext ->
-                val suggestionState = recordSuggestionState(
-                    index,
-                    sessionContext.selectedIndex,
-                    sessionContext.seen.contains(index),
-                    hasUserAccepted,
-                    detailContext.isDiscarded,
-                    detailContext.recommendation.content().isEmpty()
-                )
-                sendUserDecisionEvent(state.requestContext, state.responseContext, detailContext, index, suggestionState, detailContexts.size)
+            details.forEachIndexed { index, detail ->
+                val suggestionState = recordSuggestionState(detail, hasUserAccepted)
+                sendUserDecisionEvent(state.requestContext, state.responseContext, detail, index, suggestionState, details.size)
 
                 decisions.add(suggestionState)
             }
+            print("jobId: $jobId, userDecisions: [")
+            decisions.forEach { print("$it, ") }
+            println("]")
 
-            with(aggregateUserDecision(decisions)) {
+            with(aggregateUserDecision(decisions, hasUserAccepted)) {
                 // the order of the following matters
                 // step 1, send out current decision
+                println("jobId: $jobId, userTriggerDecision: $this")
                 previousUserTriggerDecisionTimestamp = Instant.now()
 
                 val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
@@ -440,7 +443,7 @@ class CodeWhispererTelemetryService {
                     state.requestContext,
                     state.responseContext,
                     state.recommendationContext,
-                    CodewhispererSuggestionState.from(this.toString()),
+                    this,
                     popupShownTime,
                     referenceCount,
                     generatedLineCount,
@@ -448,9 +451,12 @@ class CodeWhispererTelemetryService {
                 )
 
                 // step 2, put current decision into queue for later reference
-                previousUserTriggerDecisions.add(this)
-                // we need this as well because AutoTriggerService will reset the queue periodically
-                CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
+                if (this != CodewhispererSuggestionState.Ignore && this != CodewhispererSuggestionState.Unseen) {
+                    val previousState = CodewhispererPreviousSuggestionState.from(this.toString())
+                    // we need this as well because AutoTriggerService will reset the queue periodically
+                    previousUserTriggerDecisions.add(previousState)
+                    CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(previousState)
+                }
             }
         }
 
@@ -465,23 +471,42 @@ class CodeWhispererTelemetryService {
      * - Record the accepted suggestion index
      * - Discard otherwise
      */
-    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>): CodewhispererPreviousSuggestionState {
+    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>, hasUserAccepted: Boolean): CodewhispererSuggestionState {
         var isEmpty = true
+        var isUnseen = true
+        var isDiscard = true
 
         for (decision in decisions) {
             if (decision == CodewhispererSuggestionState.Accept) {
-                return CodewhispererPreviousSuggestionState.Accept
+                return CodewhispererSuggestionState.Accept
             } else if (decision == CodewhispererSuggestionState.Reject) {
-                return CodewhispererPreviousSuggestionState.Reject
-            } else if (decision != CodewhispererSuggestionState.Empty) {
+                return CodewhispererSuggestionState.Reject
+            } else if (decision == CodewhispererSuggestionState.Unseen) {
+                isEmpty = false
+                isDiscard = false
+            } else if (decision == CodewhispererSuggestionState.Ignore) {
+                isUnseen = false
+                isEmpty = false
+                isDiscard = false
+            } else if (decision == CodewhispererSuggestionState.Empty) {
+                isDiscard = false
+            } else if (decision == CodewhispererSuggestionState.Discard) {
                 isEmpty = false
             }
         }
 
         return if (isEmpty) {
-            CodewhispererPreviousSuggestionState.Empty
+            CodewhispererSuggestionState.Empty
+        } else if (isDiscard) {
+            CodewhispererSuggestionState.Discard
+        } else if (isUnseen) {
+            CodewhispererSuggestionState.Unseen
         } else {
-            CodewhispererPreviousSuggestionState.Discard
+            CodewhispererSuggestionState.Ignore
+//            if (hasUserAccepted) {
+//
+//            }
+//            CodewhispererSuggestionState.Discard
         }
     }
 
@@ -541,21 +566,17 @@ class CodeWhispererTelemetryService {
     }
 
     fun recordSuggestionState(
-        index: Int,
-        selectedIndex: Int,
-        hasSeen: Boolean,
+        detail: DetailContext,
         hasUserAccepted: Boolean,
-        isDiscarded: Boolean,
-        isEmpty: Boolean
     ): CodewhispererSuggestionState =
-        if (isEmpty) {
+        if (detail.recommendation.content().isEmpty()) {
             CodewhispererSuggestionState.Empty
-        } else if (isDiscarded) {
+        } else if (detail.isDiscarded) {
             CodewhispererSuggestionState.Discard
-        } else if (!hasSeen) {
+        } else if (!detail.hasSeen) {
             CodewhispererSuggestionState.Unseen
         } else if (hasUserAccepted) {
-            if (selectedIndex == index) {
+            if (detail.isAccepted) {
                 CodewhispererSuggestionState.Accept
             } else {
                 CodewhispererSuggestionState.Ignore
