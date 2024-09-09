@@ -59,6 +59,6 @@ fun Project.buildMetadata() =
     } catch(e: Exception) {
         logger.warn("Could not determine current commit", e)
 
-        "beta.20240906"
+        "beta.20240909"
 //        "unknownCommit"
     }
