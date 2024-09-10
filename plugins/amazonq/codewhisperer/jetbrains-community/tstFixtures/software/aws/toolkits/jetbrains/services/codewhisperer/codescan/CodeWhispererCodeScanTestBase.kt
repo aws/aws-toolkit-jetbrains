@@ -5,11 +5,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.util.io.systemIndependentPath
@@ -45,10 +45,6 @@ import java.nio.file.Path
 import kotlin.test.assertNotNull
 
 open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeInsightTestFixtureRule) {
-    @Rule
-    @JvmField
-    val applicationRule = ApplicationRule()
-
     @Rule
     @JvmField
     val disposableRule = DisposableRule()
@@ -345,7 +341,7 @@ open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeIn
 
         ToolWindowManager.getInstance(project).registerToolWindow(
             RegisterToolWindowTask(
-                id = com.intellij.analysis.problemsView.toolWindow.ProblemsView.ID
+                id = ProblemsView.ID
             )
         )
 
