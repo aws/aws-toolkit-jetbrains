@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
@@ -816,6 +815,6 @@ class FeatureDevController(
     companion object {
         private val logger = getLogger<FeatureDevController>()
 
-        val objectMapper: ObjectMapper = jacksonObjectMapper()
+        private val objectMapper = jacksonObjectMapper()
     }
 }
