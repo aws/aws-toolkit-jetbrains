@@ -115,13 +115,15 @@ class ChatController private constructor(
     init {
         // Automatically start the project context LSP after some delay when average CPU load is below 30%.
         // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
+        // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && !projectContextServiceInit) {
             projectContextServiceInit = true
             val scope = CoroutineScope(SupervisorJob())
+            val startLspIndexingDuration = Duration.ofMinutes(30)
             scope.launch {
                 context.project.waitForSmartMode()
                 try {
-                    withTimeout(Duration.ofMinutes(30)) {
+                    withTimeout(startLspIndexingDuration) {
                         while (true) {
                             val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
                             if (cpuUsage > 0 && cpuUsage < 30) {
@@ -133,7 +135,9 @@ class ChatController private constructor(
                         }
                     }
                 } catch (e: TimeoutCancellationException) {
-                    logger.warn(e) { "Failed to start LSP server" }
+                    logger.warn(e) { "Failed to start LSP server due to time out" }
+                } catch (e: Error) {
+                    logger.warn(e) {"Failed to start LSP server"}
                 }
             }
         }
