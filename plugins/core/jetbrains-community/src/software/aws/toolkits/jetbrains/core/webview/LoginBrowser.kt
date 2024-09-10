@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
@@ -42,6 +43,7 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
@@ -84,22 +86,23 @@ abstract class LoginBrowser(
 
     private var browserOpenTimer: Timer? = null
 
-    private fun startBrowserOpenTimer(credentialSourceId: CredentialSourceId) {
+    private fun startBrowserOpenTimer(startUrl: String, ssoRegion: String) {
         browserOpenTimer = Timer()
         browserOpenTimer?.schedule(
             object : TimerTask() {
                 override fun run() {
                     AwsTelemetry.loginWithBrowser(
                         project = null,
-                        credentialStartUrl = SONO_URL,
+                        credentialStartUrl = startUrl,
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = credentialSourceId
+                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
+                        authType = getAuthType(ssoRegion)
                     )
                     AuthTelemetry.addConnection(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = credentialSourceId
+                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
                     )
                     stopAndClearBrowserOpenTimer()
                 }
@@ -117,7 +120,7 @@ abstract class LoginBrowser(
     }
 
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
-        startBrowserOpenTimer(if (provider.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
+        startBrowserOpenTimer(provider.startUrl, provider.region)
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -154,21 +157,28 @@ abstract class LoginBrowser(
         else -> ""
     }
 
-    private fun isReAuth(scopes: List<String>): Boolean = ToolkitConnectionManager.getInstance(project)
+    private fun isReAuth(scopes: List<String>, requestedStartUrl: String): Boolean = ToolkitConnectionManager.getInstance(project)
         .let {
+            val qConnection = it.activeConnectionForFeature(QConnection.getInstance()) as AwsBearerTokenConnection?
+            val codeCatalystConnection = it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
             if (scopes.toSet().intersect(Q_SCOPES.toSet()).isNotEmpty()) {
-                it.activeConnectionForFeature(QConnection.getInstance()) != null
+                qConnection != null && qConnection.startUrl == requestedStartUrl
             } else if (scopes.toSet().intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
-                it.activeConnectionForFeature(CodeCatalystConnection.getInstance()) != null
+                codeCatalystConnection != null && codeCatalystConnection.startUrl == requestedStartUrl
             } else {
-                val activeCon = it.activeConnection()
-                val ccCon = it.activeConnectionForFeature(CodeCatalystConnection.getInstance())
-                val qCon = it.activeConnectionForFeature(QConnection.getInstance())
-                activeCon != null && activeCon != ccCon && activeCon != qCon
+                if (it.activeConnection() is AwsBearerTokenConnection) {
+                    val activeCon = it.activeConnection() as? AwsBearerTokenConnection
+                    return activeCon?.scopes?.toSet()?.intersect(IDENTITY_CENTER_ROLE_ACCESS_SCOPE.toSet())?.isNotEmpty() == true &&
+                        activeCon != qConnection &&
+                        activeCon != codeCatalystConnection
+                } else {
+                    return false
+                }
             }
         }
 
     open fun loginBuilderId(scopes: List<String>) {
+        val isReauth = isReAuth(scopes, SONO_URL)
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
             isUserCancellation(e)
@@ -177,12 +187,15 @@ abstract class LoginBrowser(
                 credentialStartUrl = SONO_URL,
                 result = Result.Failed,
                 reason = e.message,
-                credentialSourceId = CredentialSourceId.AwsId
+                credentialSourceId = CredentialSourceId.AwsId,
+                isReAuth = isReauth,
+                authType = getAuthType()
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
                 credentialSourceId = CredentialSourceId.AwsId,
-                reason = e.message
+                reason = e.message,
+                isReAuth = isReauth
             )
         }
         val onSuccess: () -> Unit = {
@@ -191,11 +204,14 @@ abstract class LoginBrowser(
                 project = null,
                 credentialStartUrl = SONO_URL,
                 result = Result.Succeeded,
-                credentialSourceId = CredentialSourceId.AwsId
+                credentialSourceId = CredentialSourceId.AwsId,
+                isReAuth = isReauth,
+                authType = getAuthType()
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
-                credentialSourceId = CredentialSourceId.AwsId
+                credentialSourceId = CredentialSourceId.AwsId,
+                isReAuth = isReauth
             )
         }
 
@@ -208,7 +224,20 @@ abstract class LoginBrowser(
 
     open fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
         // assumes scopes contains either Q or non-Q permissions but not both
-        val isReAuth = isReAuth(scopes)
+        val (onError: (Exception) -> Unit, onSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
+        loginWithBackgroundContext {
+            Login
+                .IdC(url, region, scopes, onPendingToken, onSuccess, onError)
+                .login(project)
+        }
+    }
+
+    fun getSuccessAndErrorActionsForIdcLogin(
+        scopes: List<String>,
+        url: String,
+        region: AwsRegion
+    ): Pair<(Exception) -> Unit, () -> Unit> {
+        val isReAuth = isReAuth(scopes, url)
 
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
@@ -231,7 +260,8 @@ abstract class LoginBrowser(
                 isReAuth = isReAuth,
                 result = result,
                 reason = message,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                authType = getAuthType(region.name)
             )
             AuthTelemetry.addConnection(
                 result = result,
@@ -248,7 +278,8 @@ abstract class LoginBrowser(
                 isReAuth = isReAuth,
                 credentialType = CredentialType.BearerToken,
                 credentialStartUrl = url,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                authType = getAuthType(region.name)
             )
             AuthTelemetry.addConnection(
                 project = null,
@@ -257,11 +288,7 @@ abstract class LoginBrowser(
                 credentialSourceId = CredentialSourceId.IamIdentityCenter
             )
         }
-        loginWithBackgroundContext {
-            Login
-                .IdC(url, region, scopes, onPendingToken, onSuccess, onError)
-                .login(project)
-        }
+        return Pair(onError, onSuccess)
     }
 
     open fun loginIAM(profileName: String, accessKey: String, secretKey: String) {
@@ -275,7 +302,8 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = error.message,
-                        credentialType = CredentialType.StaticProfile
+                        credentialType = CredentialType.StaticProfile,
+                        authType = AuthType.IAM
                     )
                     LOG.error(error) { "Profile file error" }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -285,6 +313,7 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = "Profile already exists",
+                        authType = AuthType.IAM
                     )
                 },
                 { error ->
@@ -293,6 +322,7 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = reason,
+                        authType = AuthType.IAM
                     )
                     LOG.error(error) { reason }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -304,7 +334,8 @@ abstract class LoginBrowser(
                 AwsTelemetry.loginWithBrowser(
                     project = null,
                     result = Result.Succeeded,
-                    credentialType = CredentialType.StaticProfile
+                    credentialType = CredentialType.StaticProfile,
+                    authType = AuthType.IAM
                 )
             }
         }
@@ -330,7 +361,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken)
+                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true)
             }
             stopAndClearBrowserOpenTimer()
         }

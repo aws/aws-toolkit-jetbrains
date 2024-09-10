@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -52,7 +51,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.RefinementState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
@@ -136,31 +134,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     }
 
     @Test
-    fun `test handle chat for planning phase`() {
-        val testAuth = AuthNeededStates(amazonQ = null)
-        val message: IncomingFeatureDevMessage.ChatPrompt = IncomingFeatureDevMessage.ChatPrompt(userMessage, "chat-prompt", testTabId)
-
-        doReturn(testAuth).`when`(authController).getAuthNeededStates(any())
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(featureDevClient.createTaskAssistUploadUrl(any(), any(), any())).thenReturn(exampleCreateUploadUrlResponse)
-
-        runTest {
-            whenever(featureDevClient.generateTaskAssistPlan(any(), any(), any())).thenReturn(exampleGenerateTaskAssistPlanResult)
-
-            controller.processPromptChatMessage(message)
-
-            mockitoVerify(spySession, times(1)).preloader(any(), any())
-            mockitoVerify(spySession, times(1)).send(any())
-            assertThat(spySession.send(userMessage).content?.trim()).isEqualTo(exampleGenerateTaskAssistPlanResult.approach)
-            assertThat(spySession.send(userMessage).interactionSucceeded).isTrue()
-        }
-        mockitoVerify(authController, times(1)).getAuthNeededStates(any())
-        assertThat(spySession.sessionState).isInstanceOf(RefinementState::class.java)
-    }
-
-    @Test
     fun `test newTask and closeSession followUp`() {
         /*
             Testing both followups together as they share logic, atm they could be verified together.
@@ -184,7 +157,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(chatSessionStorage, times(1)).deleteSession(testTabId)
 
         coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.closed_session"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.chat_message.closed_session"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.closed_session"))
             messenger.sendChatInputEnabledMessage(testTabId, false)
             messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), FeatureDevMessageType.Answer)
@@ -194,22 +172,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         verify(
             exactly = 1
         ) { AmazonqTelemetry.endChat(amazonqConversationId = testConversationId, amazonqEndOfTheConversationLatency = any(), createTime = any()) }
-    }
-
-    @Test
-    fun `test generateCodeClicked starts code generation`() = runTest {
-        doNothing().`when`(spySession).initCodegen(any())
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller.FeatureDevControllerExtensionsKt")
-        coEvery { controller.onCodeGeneration(any(), any(), any()) } just runs
-
-        val followUp = FollowUp(FollowUpTypes.GENERATE_CODE, pillText = "Generate code")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
-
-        controller.processFollowupClickedMessage(message)
-
-        mockitoVerify(spySession, times(1)).initCodegen(messenger)
-        coVerify(exactly = 1) { controller.onCodeGeneration(spySession, "", testTabId) }
     }
 
     @Test
@@ -230,7 +192,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         coVerifyOrder {
             AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = testConversationId, enabled = true, createTime = any())
             messenger.sendAsyncEventProgress(testTabId, inProgress = false)
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.provide_code_feedback"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.code_generation.provide_code_feedback"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
         }
     }
@@ -269,7 +236,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 enabled = true,
                 createTime = any()
             )
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.updated_code"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.code_generation.updated_code"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendSystemPrompt(
                 testTabId,
                 listOf(
@@ -298,11 +270,11 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         controller.onCodeGeneration(mockSession, userMessage, testTabId)
 
         coVerifyOrder {
-            messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation"))
+            messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation_retry"))
             messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
             messenger.sendCodeResult(testTabId, testUploadId, newFileContents, deletedFiles, testReferences)
-            messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN, true))
+            messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN))
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.after_code_generation"))
             messenger.sendAsyncEventProgress(testTabId, false)
             messenger.sendChatInputEnabledMessage(testTabId, false)
@@ -484,7 +456,8 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             messenger.sendAnswer(
                 tabId = testTabId,
                 messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path)
+                message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path),
+                canBeVoted = true,
             )
         }
     }

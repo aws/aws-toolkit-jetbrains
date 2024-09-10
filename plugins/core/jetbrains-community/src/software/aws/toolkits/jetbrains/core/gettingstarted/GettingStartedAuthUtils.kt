@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -225,7 +224,7 @@ fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
     pluginAwareExecuteOnPooledThread {
-        reauthConnectionIfNeeded(project, connection)
+        reauthConnectionIfNeeded(project, connection, isReAuth = true)
     }
 }
 
@@ -240,5 +239,3 @@ fun emitUserState(project: Project) {
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
-
-fun shouldShowNonWebviewUI(): Boolean = !JBCefApp.isSupported()

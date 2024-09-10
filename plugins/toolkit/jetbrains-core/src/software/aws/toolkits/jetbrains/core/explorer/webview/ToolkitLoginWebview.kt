@@ -12,7 +12,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
@@ -47,7 +46,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
 import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
@@ -57,6 +55,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -113,7 +112,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     }
 
     init {
-        if (!JBCefApp.isSupported()) {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
@@ -238,8 +237,13 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
 
-            is BrowserMessage.SendTelemetry -> {
-                UiTelemetry.click(project, "auth_continueButton")
+            is BrowserMessage.SendUiClickTelemetry -> {
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn("Unknown sign in option")
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }
@@ -307,19 +311,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     }
 
     override fun loginIdC(url: String, region: AwsRegion, scopes: List<String>) {
-        val onIdCError: (Exception) -> Unit = { e ->
-            stopAndClearBrowserOpenTimer()
-            if (!isUserCancellation(e)) {
-                runInEdt {
-                    Messages.showErrorDialog(jcefBrowser.component, ssoErrorMessageFromException(e), "Failed to Authenticate")
-                }
-            }
-            // TODO: telemetry
-        }
-        val onIdCSuccess: () -> Unit = {
-            stopAndClearBrowserOpenTimer()
-            // TODO: telemetry
-        }
+        val (onIdCError: (Exception) -> Unit, onIdCSuccess: () -> Unit) = getSuccessAndErrorActionsForIdcLogin(scopes, url, region)
 
         val login = Login.IdC(url, region, scopes, onPendingToken, onIdCSuccess, onIdCError)
 
@@ -350,6 +342,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
+        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }

@@ -21,7 +21,7 @@ class EncoderServerTest {
     private val inputBytes = BigInteger(32, DigestUtil.random).toByteArray()
 
     @Before
-    open fun setup() {
+    fun setup() {
         encoderServer = EncoderServer(projectRule.project)
     }
 

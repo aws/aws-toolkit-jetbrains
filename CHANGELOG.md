@@ -1,3 +1,21 @@
+# _3.27_ (2024-09-05)
+- **(Feature)** Reduce `@workspace` indexing time by 50%
+- **(Feature)** Amazon Q /dev: include in progress state agent in code generation
+
+# _3.26_ (2024-08-30)
+- **(Bug Fix)** Fix Runtime Exception when opening a tool window ([#4849](https://github.com/aws/aws-toolkit-jetbrains/issues/4849))
+
+# _3.25_ (2024-08-29)
+- **(Bug Fix)** Fix bug where text with inline code copied from Amazon Q Chat had new line breaks around the inline code text
+- **(Bug Fix)** Fix bug when disabled commands does not get filtered in quick actions
+
+# _3.24_ (2024-08-22)
+- **(Feature)** Add notification for IdC users on extended session
+- **(Bug Fix)** Amazon Q: update login logo styling
+- **(Bug Fix)** Amazon Q Code Transformation: show an error notification when download diff fails
+- **(Bug Fix)** Fix UI freeze that occurs when viewing an Amazon Q code security scanning finding
+- **(Bug Fix)** Fix Q building supplemental context under EDT which might slow or block the UI
+
 # _3.23_ (2024-08-15)
 - **(Bug Fix)** Fix NPE in Rider AWS SAM project wizard ([#4768](https://github.com/aws/aws-toolkit-jetbrains/issues/4768))
 - **(Bug Fix)** Amazon Q Chat: Fix Tab selection scrollbar visibility which causes tabs half visible if there are several tabs open
