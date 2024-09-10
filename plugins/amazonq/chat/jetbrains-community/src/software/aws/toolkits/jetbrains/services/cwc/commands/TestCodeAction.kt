@@ -20,11 +20,6 @@ class TestCodeAction : CustomAction(EditorContextCommand.Test) {
             e.presentation.isEnabledAndVisible = false
             return
         }
-
-        e.presentation.isEnabledAndVisible = hashStartUrl(connection.startUrl) == "222dc4c61f7b8d08cdaf133a0a29f994"
+        e.presentation.isEnabledAndVisible = connection.startUrl == "https://amzn.awsapps.com/start"
     }
-
-    private fun ByteArray.toHex() = joinToString(separator = "") { byte -> "%02x".format(byte) }
-
-    private fun hashStartUrl(startUrl: String, algorithm: String = "MD5"): String = MessageDigest.getInstance(algorithm).digest(startUrl.toByteArray(UTF_8)).toHex()
 }
