@@ -92,11 +92,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             "-"
         }
 
-        val detectorLibraryLink = if (issue.recommendation.url != null) {
-            "<a href=\"${issue.recommendation.url}\">${issue.detectorName}</a>"
-        } else {
-            "-"
-        }
+        val detectorLibraryLink = issue.recommendation.url?.let { "<a href=\"${issue.recommendation.url}\">${issue.detectorName}</a>" } ?: "-"
         val detectorSection = """
             <br />
             <hr />
