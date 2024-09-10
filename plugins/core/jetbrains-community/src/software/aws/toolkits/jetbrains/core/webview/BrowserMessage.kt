@@ -57,5 +57,5 @@ sealed interface BrowserMessage {
 
     object Reauth : BrowserMessage
 
-    data class SendUiClickTelemetry(val signInOptionClicked: String) : BrowserMessage
+    data class SendUiClickTelemetry(val signInOptionClicked: String?) : BrowserMessage
 }
