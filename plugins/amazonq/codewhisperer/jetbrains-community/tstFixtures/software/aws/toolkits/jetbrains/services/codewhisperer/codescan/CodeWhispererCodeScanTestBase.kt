@@ -7,13 +7,16 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.RegisterToolWindowTask
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.util.io.systemIndependentPath
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
+import org.junit.jupiter.api.assertInstanceOf
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
@@ -35,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.nio.file.Path
@@ -310,10 +314,10 @@ open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeIn
         val srcPayloadSize = payloadMetadata.payloadSize
         val totalLines = payloadMetadata.linesScanned
         val maxCountLanguage = payloadMetadata.language
-        Assertions.assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)
-        Assertions.assertThat(srcPayloadSize).isEqualTo(totalSize)
-        Assertions.assertThat(totalLines).isEqualTo(expectedTotalLines)
-        Assertions.assertThat(maxCountLanguage).isEqualTo(payloadLanguage)
+        assertThat(includedSourceFiles.size).isEqualTo(includedSourceFilesSize)
+        assertThat(srcPayloadSize).isEqualTo(totalSize)
+        assertThat(totalLines).isEqualTo(expectedTotalLines)
+        assertThat(maxCountLanguage).isEqualTo(payloadLanguage)
     }
 
     internal suspend fun assertE2ERunsSuccessfully(
@@ -327,10 +331,10 @@ open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeIn
         val codeScanContext = CodeScanSessionContext(
             project,
             sessionConfigSpy,
-            software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope.PROJECT
+            CodeWhispererConstants.CodeAnalysisScope.PROJECT
         )
         val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
-        doNothing().`when`(sessionMock).uploadArtifactToS3(
+        doNothing().whenever(sessionMock).uploadArtifactToS3(
             any(),
             any(),
             any(),
@@ -339,21 +343,21 @@ open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeIn
             any()
         )
 
-        com.intellij.openapi.wm.ToolWindowManager.Companion.getInstance(project).registerToolWindow(
-            com.intellij.openapi.wm.RegisterToolWindowTask(
+        ToolWindowManager.getInstance(project).registerToolWindow(
+            RegisterToolWindowTask(
                 id = com.intellij.analysis.problemsView.toolWindow.ProblemsView.ID
             )
         )
 
         val codeScanResponse = sessionMock.run()
-        org.junit.jupiter.api.assertInstanceOf<CodeScanResponse.Success>(codeScanResponse)
-        Assertions.assertThat(codeScanResponse.issues).hasSize(expectedTotalIssues)
-        Assertions.assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
+        assertInstanceOf<CodeScanResponse.Success>(codeScanResponse)
+        assertThat(codeScanResponse.issues).hasSize(expectedTotalIssues)
+        assertThat(codeScanResponse.responseContext.codeScanJobId).isEqualTo("jobId")
 
         val payloadContext = codeScanResponse.responseContext.payloadContext
-        Assertions.assertThat(payloadContext.totalLines).isEqualTo(expectedTotalLines)
-        Assertions.assertThat(payloadContext.totalFiles).isEqualTo(expectedTotalFiles)
-        Assertions.assertThat(payloadContext.srcPayloadSize).isEqualTo(expectedTotalSize)
+        assertThat(payloadContext.totalLines).isEqualTo(expectedTotalLines)
+        assertThat(payloadContext.totalFiles).isEqualTo(expectedTotalFiles)
+        assertThat(payloadContext.srcPayloadSize).isEqualTo(expectedTotalSize)
 
         scanManagerSpy.testRenderResponseOnUIThread(
             codeScanResponse.issues,
@@ -362,7 +366,7 @@ open class CodeWhispererCodeScanTestBase(@Rule @JvmField val projectRule: CodeIn
         assertNotNull(scanManagerSpy.getScanTree().model)
         val treeModel = scanManagerSpy.getScanTree().model as? CodeWhispererCodeScanTreeModel
         assertNotNull(treeModel)
-        Assertions.assertThat(treeModel.getTotalIssuesCount()).isEqualTo(expectedTotalIssues)
+        assertThat(treeModel.getTotalIssuesCount()).isEqualTo(expectedTotalIssues)
     }
 
     companion object {

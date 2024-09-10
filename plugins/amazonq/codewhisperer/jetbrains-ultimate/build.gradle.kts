@@ -5,6 +5,7 @@ import org.jetbrains.intellij.platform.gradle.Constants.Tasks
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareTestTask
 import software.aws.toolkits.gradle.intellij.IdeFlavor
+import software.aws.toolkits.gradle.withCurrentProfileName
 
 plugins {
     id("toolkit-intellij-subplugin")
@@ -16,7 +17,17 @@ intellijToolkit {
 
 dependencies {
     intellijPlatform {
-        testFramework(TestFrameworkType.Metrics)
+        // FIX_WHEN_MIN_IS_242
+        withCurrentProfileName {
+            when (it) {
+                "2023.3", "2024.1" -> {
+                    // not available
+                }
+                else -> {
+                    testFramework(TestFrameworkType.Metrics)
+                }
+            }
+        }
 
         localPlugin(project(":plugin-core"))
     }
@@ -34,5 +45,4 @@ tasks.test {
     // custom test tasks can retrieve platformPath directly
     val platformPath = project.tasks.named<PrepareTestTask>(Tasks.PREPARE_TEST).get().platformPath
     systemProperty("idea.async.profiler.agent.path", platformPath.resolve("lib/async-profiler/libasyncProfiler.dylib").toString())
-
 }
