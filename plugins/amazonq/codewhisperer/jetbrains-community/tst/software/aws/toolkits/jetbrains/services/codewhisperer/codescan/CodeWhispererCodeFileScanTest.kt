@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.psi.PsiFile
-import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
