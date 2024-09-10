@@ -37,6 +37,7 @@ class FeatureDevApp : AmazonQApp {
             "auth-follow-up-was-clicked" to IncomingFeatureDevMessage.AuthFollowUpWasClicked::class,
             "follow-up-was-clicked" to IncomingFeatureDevMessage.FollowupClicked::class,
             "chat-item-voted" to IncomingFeatureDevMessage.ChatItemVotedMessage::class,
+            "chat-item-feedback" to IncomingFeatureDevMessage.ChatItemFeedbackMessage::class,
             "response-body-link-click" to IncomingFeatureDevMessage.ClickedLink::class,
             "insert_code_at_cursor_position" to IncomingFeatureDevMessage.InsertCodeAtCursorPosition::class,
             "open-diff" to IncomingFeatureDevMessage.OpenDiff::class,
@@ -76,6 +77,7 @@ class FeatureDevApp : AmazonQApp {
             is IncomingFeatureDevMessage.AuthFollowUpWasClicked -> inboundAppMessagesHandler.processAuthFollowUpClick(message)
             is IncomingFeatureDevMessage.FollowupClicked -> inboundAppMessagesHandler.processFollowupClickedMessage(message)
             is IncomingFeatureDevMessage.ChatItemVotedMessage -> inboundAppMessagesHandler.processChatItemVotedMessage(message)
+            is IncomingFeatureDevMessage.ChatItemFeedbackMessage -> inboundAppMessagesHandler.processChatItemFeedbackMessage(message)
             is IncomingFeatureDevMessage.ClickedLink -> inboundAppMessagesHandler.processLinkClick(message)
             is IncomingFeatureDevMessage.InsertCodeAtCursorPosition -> inboundAppMessagesHandler.processInsertCodeAtCursorPosition(message)
             is IncomingFeatureDevMessage.OpenDiff -> inboundAppMessagesHandler.processOpenDiff(message)
