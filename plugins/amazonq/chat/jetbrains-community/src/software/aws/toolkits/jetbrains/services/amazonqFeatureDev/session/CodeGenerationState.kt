@@ -12,6 +12,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.featureDevServiceError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -49,6 +50,10 @@ class CodeGenerationState(
             messenger.sendAnswerPart(
                 tabId = tabID,
                 message = message("amazonqFeatureDev.code_generation.generating_code")
+            )
+            messenger.sendUpdatePlaceholder(
+                tabId = tabID,
+                newPlaceholder = message("amazonqFeatureDev.code_generation.generating_code")
             )
 
             val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger)
