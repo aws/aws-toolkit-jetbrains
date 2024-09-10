@@ -85,6 +85,7 @@
 
     <actions resource-bundle="software.aws.toolkits.resources.MessagesBundle">
         <action id="aws.toolkit.open.telemetry.viewer" class="software.aws.toolkits.jetbrains.services.telemetry.OpenTelemetryAction"/>
+        <action id="aws.toolkit.open.bearertoken.debug" class="BearerTokenDebug"/>
 
         <action class="software.aws.toolkits.jetbrains.core.credentials.CreateOrUpdateCredentialProfilesAction" id="aws.settings.upsertCredentials"/>
 

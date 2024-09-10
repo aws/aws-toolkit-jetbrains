@@ -37,7 +37,7 @@ export default defineComponent({
         login(type: LoginOption) {
             this.$emit('login', type)
         },
-        emitUiClickTelemetry(elementId: String) {
+        emitUiClickTelemetry(elementId: string) {
             this.$emit('emitUiClickTelemetry', elementId)
         }
     }
