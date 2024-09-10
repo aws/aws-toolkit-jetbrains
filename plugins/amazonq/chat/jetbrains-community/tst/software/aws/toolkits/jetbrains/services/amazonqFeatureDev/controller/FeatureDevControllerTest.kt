@@ -157,7 +157,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(chatSessionStorage, times(1)).deleteSession(testTabId)
 
         coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.closed_session"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.chat_message.closed_session"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.closed_session"))
             messenger.sendChatInputEnabledMessage(testTabId, false)
             messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), FeatureDevMessageType.Answer)
@@ -187,7 +192,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         coVerifyOrder {
             AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = testConversationId, enabled = true, createTime = any())
             messenger.sendAsyncEventProgress(testTabId, inProgress = false)
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.provide_code_feedback"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.code_generation.provide_code_feedback"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
         }
     }
@@ -226,7 +236,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 enabled = true,
                 createTime = any()
             )
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.updated_code"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(
+                tabId = testTabId,
+                message = message("amazonqFeatureDev.code_generation.updated_code"),
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             messenger.sendSystemPrompt(
                 testTabId,
                 listOf(
@@ -441,7 +456,8 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             messenger.sendAnswer(
                 tabId = testTabId,
                 messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path)
+                message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path),
+                canBeVoted = true,
             )
         }
     }
