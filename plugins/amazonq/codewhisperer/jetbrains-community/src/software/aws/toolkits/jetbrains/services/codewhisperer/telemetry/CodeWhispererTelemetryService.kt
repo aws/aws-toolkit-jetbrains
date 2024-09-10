@@ -106,7 +106,7 @@ class CodeWhispererTelemetryService {
 
         val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
+        val supIsUtg = supContext?.isUtg
         val supLatency = when (supContext) {
             is SupplementalContextResult.Success -> supContext.latency
             is SupplementalContextResult.Failure -> supContext.latency
@@ -157,7 +157,7 @@ class CodeWhispererTelemetryService {
 
         val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
+        val supIsUtg = supContext?.isUtg
         val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
 
         LOG.debug {
@@ -221,7 +221,7 @@ class CodeWhispererTelemetryService {
 
         val supContext = requestContext.supplementalContext
         val supIsTimeout = if (supContext is SupplementalContextResult.Failure && supContext.isTimeoutFailure()) true else null
-        val supIsUtg = supContext.isUtg
+        val supIsUtg = supContext?.isUtg
         val supStrategy = if (supContext is SupplementalContextResult.Success) supContext.strategy.toString() else null
         val supContentLength = if (supContext is SupplementalContextResult.Success) supContext.contentLength else null
         val completionType = if (recommendationContext.details.isEmpty()) CodewhispererCompletionType.Line else recommendationContext.details[0].completionType

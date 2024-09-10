@@ -25,7 +25,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -120,6 +120,7 @@ fun loginSso(
     onSuccess: () -> Unit = {},
     metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
+    val source = metadata
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
@@ -128,19 +129,6 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
-                )
-                recordLoginWithBrowser(
-                    credentialStartUrl = transientConnection.startUrl,
-                    credentialSourceId = CredentialSourceId.AwsId,
-                    isReAuth = true,
-                    result = Result.Succeeded,
-                    source = metadata?.sourceId
-                )
-                recordAddConnection(
-                    credentialSourceId = CredentialSourceId.AwsId,
-                    isReAuth = true,
-                    result = Result.Failed,
-                    source = metadata?.sourceId
                 )
             }
         } catch (e: Exception) {
@@ -191,6 +179,7 @@ fun loginSso(
         reauthConnectionIfNeeded(
             project = project,
             connection = connection,
+            isReAuth = true
         )
         return connection
     } ?: run {
@@ -243,15 +232,46 @@ fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
+    isReAuth: Boolean = false
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
         onPendingToken(tokenProvider)
     }
 
+    val startUrl = (connection as AwsBearerTokenConnection).startUrl
     maybeReauthProviderIfNeeded(project, tokenProvider) {
-        runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
-            tokenProvider.reauthenticate()
+        runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
+            try {
+                tokenProvider.reauthenticate()
+                if (isReAuth) {
+                    recordLoginWithBrowser(
+                        credentialStartUrl = startUrl,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
+                        isReAuth = true,
+                        result = Result.Succeeded
+                    )
+                    recordAddConnection(
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
+                        isReAuth = true,
+                        result = Result.Succeeded
+                    )
+                }
+            } catch (e: Exception) {
+                if (isReAuth) {
+                    recordLoginWithBrowser(
+                        credentialStartUrl = startUrl,
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
+                        isReAuth = true,
+                        result = Result.Failed
+                    )
+                    recordAddConnection(
+                        credentialSourceId = getCredentialIdForTelemetry(connection),
+                        isReAuth = true,
+                        result = Result.Failed
+                    )
+                }
+            }
         }
     }
     return tokenProvider
@@ -273,7 +293,7 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
-                return runUnderProgressIfNeeded(project, message("credentials.refreshing"), true) {
+                return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
                     return@runUnderProgressIfNeeded false
