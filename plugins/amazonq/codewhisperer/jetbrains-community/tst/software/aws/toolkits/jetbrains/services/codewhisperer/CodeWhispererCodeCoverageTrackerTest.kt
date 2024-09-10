@@ -162,7 +162,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             fixture.editor,
             mock(),
             mock(),
-            FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE),
+            FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE, pythonFileName),
             runBlocking {
                 async {
                     SupplementalContextInfo(
