@@ -97,9 +97,8 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return FeatureDevBundleConfig.ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
 
-    private fun ignoreFileByExtension(file: VirtualFile): Boolean {
-        return !isFileExtensionAllowed(file)
-    }
+    private fun ignoreFileByExtension(file: VirtualFile) =
+        !isFileExtensionAllowed(file)
 
     suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.path)
 
