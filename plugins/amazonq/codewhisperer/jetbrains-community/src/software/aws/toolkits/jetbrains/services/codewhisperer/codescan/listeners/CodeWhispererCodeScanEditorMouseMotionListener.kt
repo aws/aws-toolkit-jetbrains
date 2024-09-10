@@ -92,10 +92,11 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             "-"
         }
 
-        val detectorLibraryLink = "<a href=\"https://docs.aws.amazon.com/codeguru/detector-library/${
-            issue.detectorId.split("@").first()
-        }\">${issue.detectorName}</a>"
-
+        val detectorLibraryLink = if (issue.recommendation.url != null) {
+            "<a href=\"${issue.recommendation.url}\">${issue.detectorName}</a>"
+        } else {
+            "-"
+        }
         val detectorSection = """
             <br />
             <hr />
