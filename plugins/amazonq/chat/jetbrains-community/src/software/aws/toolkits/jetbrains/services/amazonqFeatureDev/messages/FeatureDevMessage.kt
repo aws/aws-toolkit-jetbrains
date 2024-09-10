@@ -52,6 +52,13 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         val vote: String,
     ) : IncomingFeatureDevMessage
 
+    data class ChatItemFeedbackMessage(
+        @JsonProperty("tabID") val tabId: String,
+        val selectedOption: String,
+        val comment: String?,
+        val messageId: String,
+    ) : IncomingFeatureDevMessage
+
     data class ClickedLink(
         @JsonProperty("tabID") val tabId: String,
         val command: String,
@@ -221,9 +228,7 @@ enum class FollowUpTypes(
     RETRY("Retry"),
     MODIFY_DEFAULT_SOURCE_FOLDER("ModifyDefaultSourceFolder"),
     DEV_EXAMPLES("DevExamples"),
-    NEW_PLAN("NewPlan"),
     SEND_FEEDBACK("SendFeedback"),
-    GENERATE_CODE("GenerateCode"),
     INSERT_CODE("InsertCode"),
     PROVIDE_FEEDBACK_AND_REGENERATE_CODE("ProvideFeedbackAndRegenerateCode"),
     NEW_TASK("NewTask"),

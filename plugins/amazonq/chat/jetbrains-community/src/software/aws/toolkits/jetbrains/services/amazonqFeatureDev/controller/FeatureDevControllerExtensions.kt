@@ -4,8 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -26,12 +25,16 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 suspend fun FeatureDevController.onCodeGeneration(session: Session, message: String, tabId: String) {
-    getLogger<FeatureDevController>().info { conversationIDLog(session.conversationId) }
-
     messenger.sendAsyncEventProgress(
         tabId = tabId,
         inProgress = true,
-        message = message("amazonqFeatureDev.chat_message.start_code_generation"),
+        message = if (session.retries == CODE_GENERATION_RETRY_LIMIT) {
+            message(
+                "amazonqFeatureDev.chat_message.start_code_generation"
+            )
+        } else {
+            message("amazonqFeatureDev.chat_message.start_code_generation_retry")
+        },
     )
 
     try {
@@ -96,11 +99,19 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.code_generation.iteration_counts", remainingIterations, totalIterations)
+                message = if (remainingIterations == 0) {
+                    message(
+                        "amazonqFeatureDev.code_generation.iteration_counts",
+                        remainingIterations,
+                        totalIterations
+                    )
+                } else {
+                    message("amazonqFeatureDev.code_generation.iteration_zero")
+                }
             )
         }
 
-        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, interactionSucceeded = true))
+        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase))
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {
