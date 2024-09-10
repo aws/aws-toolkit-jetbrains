@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -13,6 +14,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
@@ -164,7 +166,7 @@ class GatewaySetupAuthenticationDialog(
             scopes
         }
 
-        when (selectedTab()) {
+        val connection = when (selectedTab()) {
             GatewaySetupAuthenticationTabs.IDENTITY_CENTER -> {
                 authType = CredentialSourceId.IamIdentityCenter
                 val startUrl = state.idcTabState.startUrl
@@ -177,6 +179,8 @@ class GatewaySetupAuthenticationDialog(
                 loginSso(project, SONO_URL, SONO_REGION, scopes)
             }
         }
+
+        service<ToolkitConnectionManager>().switchConnection(connection)
 
         close(OK_EXIT_CODE)
     }

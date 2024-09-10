@@ -190,10 +190,6 @@
         <moduleService serviceImplementation="software.aws.toolkits.jetbrains.settings.SyncSettings"/>
         <applicationService serviceImplementation="software.aws.toolkits.jetbrains.settings.UpdateLambdaState"/>
 
-        <!-- application-level ToolkitConnectionManager is gateway-only -->
-        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager"
-                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
-
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.dynamic.CreateResourceFileStatusHandler"/>
 
         <statusBarWidgetFactory id="AwsSettingsPanel" implementation="software.aws.toolkits.jetbrains.core.credentials.AwsSettingsPanelInstaller"/>
