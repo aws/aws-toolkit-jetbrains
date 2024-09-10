@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue preventing login when running on 2024.2 remote environments"
+}
