@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.kotlin.any
@@ -22,18 +24,20 @@ class ProjectContextProviderTest {
     @Rule
     @JvmField
     val projectRule: CodeInsightTestFixtureRule = JavaCodeInsightTestFixtureRule()
-    internal lateinit var project: Project
+
+    private val project: Project
+        get() = projectRule.project
+
     private val encoderServer: EncoderServer = mock()
     private lateinit var sut: ProjectContextProvider
 
     @Before
-    open fun setup() {
-        project = projectRule.project
-        sut = ProjectContextProvider(project, encoderServer)
+    fun setup() {
+        sut = ProjectContextProvider(project, encoderServer, TestScope())
     }
 
     @Test
-    fun `test index payload is encrypted`() {
+    fun `test index payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
         try {
             sut.index()
@@ -43,7 +47,8 @@ class ProjectContextProviderTest {
         verify(encoderServer, times(1)).encrypt(any())
     }
 
-    fun `test query payload is encrypted`() {
+    @Test
+    fun `test query payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
         try {
             sut.query("what does this project do")
