@@ -51,6 +51,8 @@ fun requestCredentialsForCodeCatalyst(
         }
 
         else -> {
+            requireNotNull(project) { "project must not be null when requesting credentials outside of gateway" }
+
             SetupAuthenticationDialog(
                 project,
                 state = SetupAuthenticationDialogState().also {
