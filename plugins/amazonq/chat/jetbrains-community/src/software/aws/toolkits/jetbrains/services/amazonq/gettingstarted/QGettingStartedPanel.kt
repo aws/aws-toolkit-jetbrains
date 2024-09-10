@@ -11,7 +11,7 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.ui.jcef.JBCefApp
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 
 class QGettingStartedPanel(
     val project: Project
@@ -29,7 +29,7 @@ class QGettingStartedPanel(
     }
 
     init {
-        if (!JBCefApp.isSupported()) {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
