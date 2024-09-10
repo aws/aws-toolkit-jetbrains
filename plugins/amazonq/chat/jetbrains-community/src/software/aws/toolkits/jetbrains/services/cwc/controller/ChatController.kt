@@ -19,13 +19,8 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.psi.PsiDocumentManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -34,8 +29,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
@@ -87,8 +80,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
-import java.lang.management.ManagementFactory
-import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -111,37 +102,6 @@ class ChatController private constructor(
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
     )
-
-    init {
-        // Automatically start the project context LSP after some delay when average CPU load is below 30%.
-        // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
-        // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
-        if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && !projectContextServiceInit) {
-            projectContextServiceInit = true
-            val scope = CoroutineScope(SupervisorJob())
-            val startLspIndexingDuration = Duration.ofMinutes(30)
-            scope.launch {
-                context.project.waitForSmartMode()
-                try {
-                    withTimeout(startLspIndexingDuration) {
-                        while (true) {
-                            val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
-                            if (cpuUsage > 0 && cpuUsage < 30) {
-                                ProjectContextController.getInstance(project = context.project)
-                                break
-                            } else {
-                                delay(60_000) // Wait for 60 seconds
-                            }
-                        }
-                    }
-                } catch (e: TimeoutCancellationException) {
-                    logger.warn(e) { "Failed to start LSP server due to time out" }
-                } catch (e: Error) {
-                    logger.warn(e) {"Failed to start LSP server"}
-                }
-            }
-        }
-    }
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {
         chatSessionStorage.deleteSession(message.tabId)
@@ -576,7 +536,5 @@ class ChatController private constructor(
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-
-        private var projectContextServiceInit = false
     }
 }
