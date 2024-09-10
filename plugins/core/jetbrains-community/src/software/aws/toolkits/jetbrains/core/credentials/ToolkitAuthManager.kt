@@ -99,7 +99,7 @@ interface ToolkitConnectionManager : Disposable {
     override fun dispose() {}
 
     companion object {
-        fun getInstance(project: Project?) = project?.let { it.service<ToolkitConnectionManager>() } ?: service()
+        fun getInstance(project: Project) = project.service<ToolkitConnectionManager>()
     }
 }
 
@@ -140,7 +140,7 @@ fun loginSso(
             onSuccess()
         }
 
-        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
         return connection
     }
 
