@@ -185,8 +185,6 @@ dependencies {
     compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(project(":plugin-core:jetbrains-community"))
 
-    // TODO: remove Q dependency when split is fully done
-    implementation(libs.bundles.jackson)
     implementation(libs.zjsonpatch)
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
