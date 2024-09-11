@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.lambda.java
 
 import com.intellij.compiler.CompilerTestUtil
 import com.intellij.execution.executors.DefaultDebugExecutor
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.testFramework.common.ThreadLeakTracker
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -19,6 +21,7 @@ import software.aws.toolkits.core.utils.RuleUtils
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createHandlerBasedRunConfiguration
 import software.aws.toolkits.jetbrains.services.lambda.execution.local.createTemplateRunConfiguration
+import software.aws.toolkits.jetbrains.services.lambda.sam.SamOptions
 import software.aws.toolkits.jetbrains.utils.addBreakpoint
 import software.aws.toolkits.jetbrains.utils.checkBreakPointHit
 import software.aws.toolkits.jetbrains.utils.executeRunConfigurationAndWait
@@ -54,6 +57,9 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
 
     @Before
     fun setUp() {
+        // FIX_WHEN_MIN_IS_241: jdk21 known offender: https://github.com/JetBrains/intellij-community/commit/1bdcfa5340969ba84c0ecf88d48f6e27d3de8a54
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "process reaper")
+
         setSamExecutableFromEnvironment()
 
         val fixture = projectRule.fixture
@@ -97,13 +103,17 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
         MockCredentialsManager.getInstance().reset()
     }
 
+    /* Building in a container ensures consistency with the AWS Lambda runtime, reducing errors
+     and providing isolated environments to avoid conflicts with local dependencies or configurations */
+
     @Test
     fun samIsExecuted() {
         val runConfiguration = createHandlerBasedRunConfiguration(
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
         assertThat(runConfiguration).isNotNull
 
@@ -120,7 +130,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             runtime = runtime.toSdkRuntime(),
             input = projectRule.fixture.tempDirFixture.createFile("tmp", "\"Hello World\"").canonicalPath!!,
             inputIsFile = true,
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
         assertThat(runConfiguration).isNotNull
 
@@ -152,7 +163,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
 
         assertThat(runConfiguration).isNotNull
@@ -185,7 +197,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             templateFile = templateFile.containingFile.virtualFile.path,
             logicalId = "SomeFunction",
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
 
         assertThat(runConfiguration).isNotNull
@@ -204,7 +217,8 @@ class JavaLocalLambdaRunConfigurationIntegrationTest(private val runtime: Lambda
             project = projectRule.project,
             runtime = runtime.toSdkRuntime(),
             input = "\"Hello World\"",
-            credentialsProviderId = mockId
+            credentialsProviderId = mockId,
+            samOptions = SamOptions(buildInContainer = true)
         )
         assertThat(runConfiguration).isNotNull
 

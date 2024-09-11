@@ -11,6 +11,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -44,21 +45,76 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         true
     )
 
+    fun toggleProjectContextEnabled(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
+    }
+
+    fun isProjectContextEnabled() = getIsProjectContextEnabled()
+
+    private fun getIsProjectContextEnabled(): Boolean {
+        val value = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
+        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
+        if (!value) {
+            if (isDataCollectionGroup && !hasEnabledProjectContextOnce()) {
+                toggleProjectContextEnabled(true)
+                toggleEnabledProjectContextOnce(true)
+                return true
+            }
+        }
+        return value
+    }
+
+    private fun hasEnabledProjectContextOnce() = state.value.getOrDefault(CodeWhispererConfigurationType.HasEnabledProjectContextOnce, false)
+
+    private fun toggleEnabledProjectContextOnce(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.HasEnabledProjectContextOnce] = value
+    }
+
+    fun isProjectContextGpu() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextGpu, false)
+
+    fun toggleProjectContextGpu(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsProjectContextGpu] = value
+    }
+
+    fun getProjectContextIndexThreadCount(): Int = state.intValue.getOrDefault(
+        CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount,
+        0
+    )
+
+    fun setProjectContextIndexThreadCount(value: Int) {
+        state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexThreadCount] = value
+    }
+
+    fun getProjectContextIndexMaxSize(): Int = state.intValue.getOrDefault(
+        CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize,
+        200
+    )
+
+    fun setProjectContextIndexMaxSize(value: Int) {
+        state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
 
-    override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply { value.putAll(state.value) }
+    override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply {
+        value.putAll(state.value)
+        intValue.putAll(state.intValue)
+    }
 
     override fun loadState(state: CodeWhispererConfiguration) {
         this.state.value.clear()
+        this.state.intValue.clear()
         this.state.value.putAll(state.value)
+        this.state.intValue.putAll(state.intValue)
     }
 }
 
 class CodeWhispererConfiguration : BaseState() {
     @get:Property
     val value by map<CodeWhispererConfigurationType, Boolean>()
+    val intValue by map<CodeWhispererIntConfigurationType, Int>()
 }
 
 enum class CodeWhispererConfigurationType {
@@ -67,5 +123,13 @@ enum class CodeWhispererConfigurationType {
     IsImportAdderEnabled,
     IsAutoUpdateEnabled,
     IsAutoUpdateNotificationEnabled,
-    IsAutoUpdateFeatureNotificationShownOnce
+    IsAutoUpdateFeatureNotificationShownOnce,
+    IsProjectContextEnabled,
+    IsProjectContextGpu,
+    HasEnabledProjectContextOnce
+}
+
+enum class CodeWhispererIntConfigurationType {
+    ProjectContextIndexThreadCount,
+    ProjectContextIndexMaxSize,
 }

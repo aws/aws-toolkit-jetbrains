@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
@@ -13,7 +12,6 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.createTemporaryZipFile
@@ -21,6 +19,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindBuildArtifacts
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
@@ -34,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
 import java.nio.file.Path
@@ -93,24 +93,30 @@ class CodeScanSessionConfig(
 
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${projectRoot.path}" }
 
-        val payloadMetadata = when (selectedFile) {
-            null -> getProjectPayloadMetadata()
-            else -> when (scope) {
-                CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
-                    getFilePayloadMetadata(selectedFile)
-                } else {
-                    projectRoot = selectedFile.parent
-                    getFilePayloadMetadata(selectedFile)
+        val payloadMetadata: PayloadMetadata = try {
+            when (selectedFile) {
+                null -> getProjectPayloadMetadata()
+                else -> when (scope) {
+                    CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
+                    CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
+                        getFilePayloadMetadata(selectedFile)
+                    } else {
+                        projectRoot = selectedFile.parent
+                        getFilePayloadMetadata(selectedFile)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            val errorMessage = when {
+                e.message?.contains("Illegal repetition near index") == true -> "Illegal repetition near index"
+                else -> e.message
+            }
+            LOG.debug { "Error creating payload metadata: $errorMessage" }
+            throw cannotFindBuildArtifacts(errorMessage ?: message("codewhisperer.codescan.run_scan_error_telemetry"))
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = when (scope) {
-            CodeAnalysisScope.PROJECT -> zipProject(payloadMetadata.sourceFiles.map { Path.of(it) })
-            CodeAnalysisScope.FILE -> zipFile(Path.of(payloadMetadata.sourceFiles.first()))
-        }
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -151,7 +157,7 @@ class CodeScanSessionConfig(
         }
     }
 
-    private fun zipProject(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
                 val relativePath = file.relativeTo(projectRoot.toNioPath())
@@ -160,23 +166,6 @@ class CodeScanSessionConfig(
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
-        }
-    }.toFile()
-
-    private fun zipFile(filePath: Path): File = createTemporaryZipFile {
-        try {
-            val relativePath = filePath.relativeTo(projectRoot.toNioPath())
-            val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(filePath)
-            virtualFile?.let { file ->
-                val document = runReadAction {
-                    FileDocumentManager.getInstance().getDocument(file)
-                }
-                document?.let { doc ->
-                    it.putNextEntry(relativePath.toString(), doc.text.encodeToByteArray())
-                }
-            }
-        } catch (e: Exception) {
-            cannotFindFile("Zipping error: ${e.message}", filePath.pathString)
         }
     }.toFile()
 
@@ -197,7 +186,7 @@ class CodeScanSessionConfig(
 
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -220,7 +209,7 @@ class CodeScanSessionConfig(
                     } else {
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             !traversedDirectories.contains(current) && current.isValid &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {

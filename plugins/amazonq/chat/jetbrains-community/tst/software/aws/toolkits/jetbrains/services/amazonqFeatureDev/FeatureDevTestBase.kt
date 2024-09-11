@@ -34,7 +34,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.GenerateTaskAssistPlanResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
@@ -87,8 +86,6 @@ open class FeatureDevTestBase(
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as CreateUploadUrlResponse
 
-    internal val exampleGenerateTaskAssistPlanResult = GenerateTaskAssistPlanResult(approach = "Generated approach for plan", succeededPlanning = true)
-
     internal val exampleStartTaskAssistConversationResponse = StartTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
         .codeGenerationId(testCodeGenerationId)
@@ -104,6 +101,8 @@ open class FeatureDevTestBase(
     internal val exampleCompleteGetTaskAssistCodeGenerationResponse = GetTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
         .codeGenerationStatus(CodeGenerationStatus.builder().status(CodeGenerationWorkflowStatus.COMPLETE).currentStage("Complete").build())
+        .codeGenerationRemainingIterationCount(2)
+        .codeGenerationTotalIterationCount(3)
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as GetTaskAssistCodeGenerationResponse
 

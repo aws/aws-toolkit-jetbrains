@@ -6,12 +6,11 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
-import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileProperty
+import software.amazon.awssdk.profiles.internal.ProfileFileReader
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
@@ -19,35 +18,41 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
-import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
-import software.aws.toolkits.telemetry.Result
 import java.io.IOException
 
-private val LOG = LoggerFactory.getLogger("LoginUtils")
+sealed class Login<T> {
+    abstract val id: CredentialSourceId
+    abstract val onError: (Exception) -> Unit
+    protected abstract fun doLogin(project: Project): T
 
-sealed interface Login {
-    val id: CredentialSourceId
+    fun login(project: Project): T {
+        try {
+            return doLogin(project)
+        } catch (e: Exception) {
+            onError(e)
+            throw e
+        }
+    }
 
     data class BuilderId(
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onError: (Exception) -> Unit,
+        override val onError: (Exception) -> Unit,
         val onSuccess: () -> Unit
-    ) : Login {
+    ) : Login<Unit>() {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
-        fun loginBuilderId(project: Project): Boolean {
-            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError, onSuccess)
-            return true
+        override fun doLogin(project: Project) {
+            loginSso(project, SONO_URL, SONO_REGION, scopes, onPendingToken, onError, onSuccess) != null
         }
     }
 
@@ -56,16 +61,20 @@ sealed interface Login {
         val region: AwsRegion,
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-        val onError: (Exception, AuthProfile) -> Unit
-    ) : Login {
+        val onSuccess: () -> Unit,
+        override val onError: (Exception) -> Unit
+    ) : Login<AwsBearerTokenConnection?>() {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
         private val configFilesFacade = DefaultConfigFilesFacade()
 
-        fun loginIdc(project: Project): AwsBearerTokenConnection? {
+        override fun doLogin(project: Project): AwsBearerTokenConnection? {
             // we have this check here so we blow up early if user has an invalid config file
-            LOG.tryOrNull("Failed to read sso sessions file", level = Level.ERROR) {
+            try {
                 configFilesFacade.readSsoSessions()
-            } ?: return null
+            } catch (e: Exception) {
+                onError(ConfigFacadeException(e))
+                return null
+            }
 
             val profile = UserConfigSsoSessionProfile(
                 configSessionName = validatedSsoIdentifierFromUrl(startUrl),
@@ -74,7 +83,8 @@ sealed interface Login {
                 scopes = scopes
             )
 
-            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onError) ?: return null
+            // expect 'authAndUpdateConfig' to call onError on failure
+            val conn = authAndUpdateConfig(project, profile, configFilesFacade, onPendingToken, onSuccess, onError) ?: return null
 
             // TODO: delta, make sure we are good to switch immediately
 //            if (!promptForIdcPermissionSet) {
@@ -91,21 +101,21 @@ sealed interface Login {
     data class LongLivedIAM(
         val profileName: String,
         val accessKey: String,
-        val secretKey: String
-    ) : Login {
+        val secretKey: String,
+        val onConfigFileFacadeError: (Exception) -> Unit,
+        val onProfileAlreadyExist: () -> Unit,
+        val onConnectionValidationError: (Exception) -> Unit
+    ) : Login<Boolean>() {
+        override val onError: (Exception) -> Unit = {}
+
         override val id: CredentialSourceId = CredentialSourceId.SharedCredentials
         private val configFilesFacade = DefaultConfigFilesFacade()
 
-        fun loginIAM(
-            project: Project,
-            onConfigFileFacadeError: (Exception) -> Unit,
-            onProfileAlreadyExist: () -> Unit,
-            onConnectionValidationError: () -> Unit
-        ): Boolean {
+        override fun doLogin(project: Project): Boolean {
             val existingProfiles = try {
                 configFilesFacade.readAllProfiles()
             } catch (e: Exception) {
-                onConfigFileFacadeError(e)
+                onConfigFileFacadeError(ConfigFacadeException(e))
                 return false
             }
 
@@ -114,8 +124,8 @@ sealed interface Login {
                 return false
             }
 
-            val callerIdentity = tryOrNull {
-                runUnderProgressIfNeeded(project, message("settings.states.validating.short"), cancelable = true) {
+            try {
+                runUnderProgressIfNeeded(project, AwsCoreBundle.message("settings.states.validating.short"), cancelable = true) {
                     AwsClientManager.getInstance().createUnmanagedClient<StsClient>(
                         StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)),
                         Region.AWS_GLOBAL
@@ -123,10 +133,8 @@ sealed interface Login {
                         client.getCallerIdentity()
                     }
                 }
-            }
-
-            if (callerIdentity == null) {
-                onConnectionValidationError()
+            } catch (e: Exception) {
+                onConnectionValidationError(e)
                 return false
             }
 
@@ -156,7 +164,8 @@ fun authAndUpdateConfig(
     profile: UserConfigSsoSessionProfile,
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
-    onError: (Exception, AuthProfile) -> Unit
+    onSuccess: () -> Unit,
+    onError: (Exception) -> Unit
 ): AwsBearerTokenConnection? {
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()
@@ -181,24 +190,9 @@ fun authAndUpdateConfig(
             reauthConnectionIfNeeded(project, connection, onPendingToken)
         }
     } catch (e: Exception) {
-        val message = ssoErrorMessageFromException(e)
-
-        onError(e, profile)
-        AuthTelemetry.addConnection(
-            project,
-            credentialSourceId = CredentialSourceId.SharedCredentials,
-            credentialStartUrl = updatedProfile.startUrl,
-            reason = message,
-            result = Result.Failed
-        )
+        onError(e)
         return null
     }
-    AuthTelemetry.addConnection(
-        project,
-        credentialSourceId = CredentialSourceId.SharedCredentials,
-        credentialStartUrl = updatedProfile.startUrl,
-        result = Result.Succeeded
-    )
 
     configFilesFacade.updateSectionInConfig(
         SsoSessionConstants.SSO_SESSION_SECTION_NAME,
@@ -212,21 +206,46 @@ fun authAndUpdateConfig(
                 )
             ).build()
     )
+    onSuccess()
 
     return connection
 }
 
-internal fun ssoErrorMessageFromException(e: Exception) = when (e) {
-    is IllegalStateException -> e.message ?: message("general.unknown_error")
-    is ProcessCanceledException -> message("codewhisperer.credential.login.dialog.exception.cancel_login")
-    is InvalidRequestException -> message("codewhisperer.credential.login.exception.invalid_input")
-    is InvalidGrantException, is SsoOidcException -> e.message ?: message("codewhisperer.credential.login.exception.invalid_grant")
+fun ssoErrorMessageFromException(e: Exception) = when (e) {
+    is IllegalStateException -> e.message ?: AwsCoreBundle.message("general.unknown_error")
+    is ProcessCanceledException -> AwsCoreBundle.message("codewhisperer.credential.login.dialog.exception.cancel_login")
+    is InvalidRequestException -> AwsCoreBundle.message("codewhisperer.credential.login.exception.invalid_input")
+    is InvalidGrantException, is SsoOidcException -> e.message ?: AwsCoreBundle.message("codewhisperer.credential.login.exception.invalid_grant")
+    is ConfigFacadeException -> e.message
     else -> {
         val baseMessage = when (e) {
             is IOException -> "codewhisperer.credential.login.exception.io"
             else -> "codewhisperer.credential.login.exception.general"
         }
 
-        message(baseMessage, "${e.javaClass.name}: ${e.message}")
+        AwsCoreBundle.message(baseMessage, "${e.javaClass.name}: ${e.message}")
     }
 }
+
+class ConfigFacadeException(override val cause: Exception) : Exception() {
+    override val message: String
+        get() = messageFromConfigFacadeError(cause).first
+
+    override fun getStackTrace() = cause.stackTrace
+}
+
+fun messageFromConfigFacadeError(e: Exception): Pair<String, String> {
+    // we'll consider nested exceptions and exception loops to be out of scope
+    val (errorTemplate, errorType) = if (e.stackTrace.any { it.className == ProfileFileReader::class.java.canonicalName }) {
+        "gettingstarted.auth.config.issue" to "ConfigParseError"
+    } else {
+        "codewhisperer.credential.login.exception.general" to e::class.java.name
+    }
+
+    val errorMessage = AwsCoreBundle.message(errorTemplate, e.localizedMessage ?: e::class.java.name)
+
+    return errorMessage to errorType
+}
+
+fun getCredentialIdForTelemetry(connection: ToolkitConnection): CredentialSourceId =
+    if (connection.isSono()) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter

@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import kotlin.reflect.KVisibility
-import kotlin.reflect.full.companionObject
-import kotlin.reflect.full.companionObjectInstance
-import kotlin.reflect.full.functions
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.full.memberProperties
+import software.aws.toolkits.gradle.jvmTarget
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -21,9 +16,9 @@ dependencies {
     detektPlugins(project(":detekt-rules"))
 }
 
-private val detektFiles = fileTree(projectDir).asFileTree.matching {
+private val detektFiles = fileTree(projectDir).matching {
     include("**/*.kt", "**/*.kts")
-    exclude("**/build/**")
+    exclude("**/build")
 }
 
 detekt {
@@ -36,14 +31,22 @@ detekt {
     autoCorrect = true
 }
 
-tasks.withType<Detekt> {
+val javaVersion = project.jvmTarget().get()
+
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = javaVersion.majorVersion
+    dependsOn(":detekt-rules:assemble")
+
     reports {
         html.required.set(true) // Human readable report
         xml.required.set(true) // Checkstyle like format for CI tool integrations
     }
 }
 
-tasks.withType<DetektCreateBaselineTask> {
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    jvmTarget = javaVersion.majorVersion
+    dependsOn(":detekt-rules:assemble")
+
     // weird issue where the baseline tasks can't find the source code
     source.plus(detektFiles)
 }

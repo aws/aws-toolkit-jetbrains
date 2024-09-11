@@ -8,7 +8,7 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.jetbrains.rd.util.lifetime.Lifetime
-import com.jetbrains.rider.model.RdProjectTemplate2
+import com.jetbrains.rider.model.RdProjectTemplate
 import com.jetbrains.rider.projectView.projectTemplates.NewProjectDialogContext
 import com.jetbrains.rider.projectView.projectTemplates.ProjectTemplatesSharedModel
 import com.jetbrains.rider.projectView.projectTemplates.StatusMessageType
@@ -75,14 +75,15 @@ abstract class DotNetSamProjectGeneratorRoot(
         return panel
     }
 
-    override fun checkIsAbleToExpand(template: RdProjectTemplate2?, validations: Map<JComponent, ValidationInfo>) {
+    override fun checkIsAbleToExpand(template: RdProjectTemplate?, validations: Map<JComponent, ValidationInfo>) {
         // we don't care about template here.
         canExpand.set(validations.isEmpty())
     }
 
     private fun validateData() {
-        // first validateData comes from SamInitSelectionPanel constructor...
-        samPanel.validate()?.let {
+        // first validateData comes from SamInitSelectionPanel constructor, so is null...
+        @Suppress("UNNECESSARY_SAFE_CALL")
+        samPanel?.validate()?.let {
             context.statusMessages.add(StatusMessages.Error(it.message))
             return
         }

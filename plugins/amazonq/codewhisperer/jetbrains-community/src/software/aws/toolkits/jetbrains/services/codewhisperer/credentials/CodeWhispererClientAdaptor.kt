@@ -150,7 +150,9 @@ interface CodeWhispererClientAdaptor : Disposable {
         fullResponselatency: Double?,
         requestLength: Int?,
         responseLength: Int?,
-        numberOfCodeBlocks: Int?
+        numberOfCodeBlocks: Int?,
+        hasProjectLevelContext: Boolean?,
+        customization: CodeWhispererCustomization?
     ): SendTelemetryEventResponse
 
     fun sendChatInteractWithMessageTelemetry(
@@ -159,7 +161,8 @@ interface CodeWhispererClientAdaptor : Disposable {
         interactionType: ChatMessageInteractionType?,
         interactionTarget: String?,
         acceptedCharacterCount: Int?,
-        acceptedSnippetHasReference: Boolean?
+        acceptedSnippetHasReference: Boolean?,
+        hasProjectLevelContext: Boolean?,
     ): SendTelemetryEventResponse
 
     fun sendChatInteractWithMessageTelemetry(event: ChatInteractWithMessageEvent): SendTelemetryEventResponse
@@ -168,7 +171,9 @@ interface CodeWhispererClientAdaptor : Disposable {
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        modificationPercentage: Double
+        modificationPercentage: Double,
+        hasProjectLevelContext: Boolean?,
+        customization: CodeWhispererCustomization?
     ): SendTelemetryEventResponse
 
     companion object {
@@ -452,7 +457,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         fullResponselatency: Double?,
         requestLength: Int?,
         responseLength: Int?,
-        numberOfCodeBlocks: Int?
+        numberOfCodeBlocks: Int?,
+        hasProjectLevelContext: Boolean?,
+        customization: CodeWhispererCustomization?
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatAddMessageEvent {
@@ -468,6 +475,10 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.requestLength(requestLength)
                 it.responseLength(responseLength)
                 it.numberOfCodeBlocks(numberOfCodeBlocks)
+                it.hasProjectLevelContext(hasProjectLevelContext)
+                customization?.arn?.let { arn ->
+                    it.customizationArn(arn)
+                }
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
@@ -480,7 +491,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         interactionType: ChatMessageInteractionType?,
         interactionTarget: String?,
         acceptedCharacterCount: Int?,
-        acceptedSnippetHasReference: Boolean?
+        acceptedSnippetHasReference: Boolean?,
+        hasProjectLevelContext: Boolean?
     ): SendTelemetryEventResponse = sendChatInteractWithMessageTelemetry(
         ChatInteractWithMessageEvent.builder().apply {
             conversationId(sessionId)
@@ -489,6 +501,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             interactionTarget(interactionTarget)
             acceptedCharacterCount(acceptedCharacterCount)
             acceptedSnippetHasReference(acceptedSnippetHasReference)
+            hasProjectLevelContext(hasProjectLevelContext)
         }.build()
     )
 
@@ -505,7 +518,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        modificationPercentage: Double
+        modificationPercentage: Double,
+        hasProjectLevelContext: Boolean?,
+        customization: CodeWhispererCustomization?
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatUserModificationEvent {
@@ -515,6 +530,10 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     langBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
                 }
                 it.modificationPercentage(modificationPercentage)
+                it.hasProjectLevelContext(hasProjectLevelContext)
+                customization?.arn?.let { arn ->
+                    it.customizationArn(arn)
+                }
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

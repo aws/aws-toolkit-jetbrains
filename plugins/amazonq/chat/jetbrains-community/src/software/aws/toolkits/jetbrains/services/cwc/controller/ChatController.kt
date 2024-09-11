@@ -13,10 +13,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
+import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -39,6 +42,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -59,6 +65,8 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.U
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -68,6 +76,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FocusType
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInteractionMessage
+import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
@@ -115,13 +124,38 @@ class ChatController private constructor(
     }
 
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
+        var prompt = message.chatMessage
+        var queryResult: List<RelevantDocument> = emptyList()
+        val triggerId = UUID.randomUUID().toString()
+        var shouldAddIndexInProgressMessage: Boolean = false
+        var shouldUseWorkspaceContext: Boolean = false
+        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
+        if (prompt.contains("@workspace")) {
+            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+                shouldUseWorkspaceContext = true
+                prompt = prompt.replace("@workspace", "")
+                val projectContextController = ProjectContextController.getInstance(context.project)
+                queryResult = projectContextController.query(prompt)
+                if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
+                logger.info { "project context relevant document count: ${queryResult.size}" }
+            } else {
+                sendOpenSettingsMessage(message.tabId)
+            }
+        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isDataCollectionGroup) {
+            val projectContextController = ProjectContextController.getInstance(context.project)
+            queryResult = projectContextController.query(prompt)
+        }
+
         handleChat(
             tabId = message.tabId,
-            triggerId = UUID.randomUUID().toString(),
-            message = message.chatMessage,
+            triggerId = triggerId,
+            message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
+            projectContextQueryResult = queryResult,
+            shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage,
+            shouldUseWorkspaceContext = shouldUseWorkspaceContext
         )
     }
 
@@ -150,6 +184,7 @@ class ChatController private constructor(
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromFollowupType(message.followUp.type),
             TriggerType.Click,
+            projectContextQueryResult = emptyList()
         )
 
         telemetryHelper.recordInteractWithMessage(message)
@@ -157,6 +192,12 @@ class ChatController private constructor(
 
     override suspend fun processCodeWasCopiedToClipboard(message: IncomingCwcMessage.CopyCodeToClipboard) {
         telemetryHelper.recordInteractWithMessage(message)
+    }
+
+    override suspend fun processOpenSettings(message: IncomingCwcMessage.OpenSettings) {
+        runInEdt {
+            ShowSettingsUtil.getInstance().showSettingsDialog(context.project, CodeWhispererConfigurable::class.java)
+        }
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
@@ -245,7 +286,8 @@ class ChatController private constructor(
             message = prompt,
             activeFileContext = context,
             userIntent = intentRecognizer.getUserIntentFromOnboardingPageInteraction(message),
-            triggerType = TriggerType.Click, // todo trigger type
+            triggerType = TriggerType.Click, // todo trigger type,
+            projectContextQueryResult = emptyList()
         )
     }
 
@@ -265,12 +307,15 @@ class ChatController private constructor(
             "Description:    ${message.issue["description"]} \n" +
             "Code:    $codeSelection"
 
-        processPromptActions(prompt, ContextMenuActionMessage(message.command), triggerId, fileContext, modelPrompt)
+        processPromptActions(prompt, ContextMenuActionMessage(message.command, message.project), triggerId, fileContext, modelPrompt)
     }
 
     // JB specific (not in vscode)
     override suspend fun processContextMenuCommand(message: ContextMenuActionMessage) {
         // Extract context
+        if (message.project != context.project) {
+            return
+        }
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
         val triggerId = UUID.randomUUID().toString()
         val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
@@ -322,8 +367,9 @@ class ChatController private constructor(
             triggerId = triggerId,
             message = inputPrompt,
             activeFileContext = fileContext,
-            userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(EditorContextCommand.ExplainCodeScanIssue),
-            TriggerType.CodeScanButton,
+            userIntent = intentRecognizer.getUserIntentFromContextMenuCommand(message.command),
+            triggerType = message.command.triggerType,
+            projectContextQueryResult = emptyList()
         )
     }
 
@@ -339,6 +385,9 @@ class ChatController private constructor(
         activeFileContext: ActiveFileContext,
         userIntent: UserIntent?,
         triggerType: TriggerType,
+        projectContextQueryResult: List<RelevantDocument>,
+        shouldAddIndexInProgressMessage: Boolean = false,
+        shouldUseWorkspaceContext: Boolean = false
     ) {
         val credentialState = authController.getAuthNeededStates(context.project).chat
         if (credentialState != null) {
@@ -356,19 +405,21 @@ class ChatController private constructor(
             activeFileContext = activeFileContext,
             userIntent = userIntent,
             triggerType = triggerType,
+            customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project),
+            relevantTextDocuments = projectContextQueryResult,
+            useRelevantDocuments = shouldUseWorkspaceContext,
         )
 
         val sessionInfo = getSessionInfo(tabId)
 
         // Save the request in the history
         sessionInfo.history.add(requestData)
-
         telemetryHelper.recordEnterFocusConversation(tabId)
         telemetryHelper.recordStartConversation(tabId, requestData)
 
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
-        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo)
+        ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage)
             .catch { handleError(tabId, it) }
             .onEach { context.messagesFromAppToUi.publish(it) }
             .launchIn(sessionInfo.scope)
@@ -416,6 +467,13 @@ class ChatController private constructor(
         val message = QuickActionMessage(
             triggerId = triggerId,
             message = prompt.message,
+        )
+        messagePublisher.publish(message)
+    }
+
+    private suspend fun sendOpenSettingsMessage(tabId: String) {
+        val message = OpenSettingsMessage(
+            tabId = tabId
         )
         messagePublisher.publish(message)
     }

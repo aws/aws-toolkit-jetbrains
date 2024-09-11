@@ -41,15 +41,13 @@ export class TabDataGenerator {
             'cwc',
             `Hi, I'm Amazon Q. I can answer your software development questions.
         Ask me to explain, debug, or optimize your code. 
-        You can enter \`/\` to see a list of quick actions.`,
+        You can enter \`/\` to see a list of quick actions. Add @workspace at the beginning of your message to enhance Q response with entire workspace files.`,
         ],
         [
             'featuredev',
-            `Hi, I'm the Amazon Q Developer Agent for software development.
-
-I can generate code to implement new functionality across your workspace. We'll start by discussing an implementation plan, and then we can review and regenerate code based on your feedback. 
-
-To get started, describe the task you are trying to accomplish.
+            `I can generate code to implement new functionality across your workspace. To get started, describe the task you're trying to accomplish, and I'll generate code. If you want to make changes, you can provide feedback and I'll regenerate code.
+            
+            What would you like work on?
 `,
         ],
         [
@@ -76,6 +74,17 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
                 'Use of Amazon Q is subject to the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
+            contextCommands: [
+                {
+                    groupName: 'Mention code',
+                    commands: [
+                        {
+                            command: '@workspace',
+                            description: '(BETA) Reference all code in workspace.',
+                        },
+                    ],
+                },
+            ],
             chatItems: needWelcomeMessages
                 ? [
                       {

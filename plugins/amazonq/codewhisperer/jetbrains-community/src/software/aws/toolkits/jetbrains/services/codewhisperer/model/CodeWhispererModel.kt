@@ -42,7 +42,8 @@ data class CaretContext(val leftFileContext: String, val rightFileContext: Strin
 data class FileContextInfo(
     val caretContext: CaretContext,
     val filename: String,
-    val programmingLanguage: CodeWhispererProgrammingLanguage
+    val programmingLanguage: CodeWhispererProgrammingLanguage,
+    val fileRelativePath: String?,
 )
 
 data class SupplementalContextInfo(
@@ -155,8 +156,7 @@ data class CodeScanResponseContext(
     val codeScanJobId: String? = null,
     val codeScanTotalIssues: Int = 0,
     val codeScanIssuesWithFixes: Int = 0,
-    val reason: String? = null,
-    val reasonDesc: String? = null
+    val reason: String? = null
 )
 
 data class LatencyContext(

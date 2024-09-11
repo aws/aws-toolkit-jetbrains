@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -23,7 +22,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEnt
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getStartupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
@@ -50,7 +49,7 @@ fun requestCredentialsForCodeWhisperer(
                 disabled = false,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.WARNING,
-                    message("gettingstarted.setup.codewhisperer.use_builder_id"),
+                    AwsCoreBundle.message("gettingstarted.setup.codewhisperer.use_builder_id"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
                 )
             ),
@@ -58,7 +57,7 @@ fun requestCredentialsForCodeWhisperer(
                 disabled = false,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.WARNING,
-                    message("gettingstarted.setup.codewhisperer.use_identity_center"),
+                    AwsCoreBundle.message("gettingstarted.setup.codewhisperer.use_identity_center"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
                 )
             ),
@@ -66,7 +65,7 @@ fun requestCredentialsForCodeWhisperer(
                 disabled = true,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.ERROR,
-                    message("gettingstarted.setup.auth.no_iam"),
+                    AwsCoreBundle.message("gettingstarted.setup.auth.no_iam"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
 
                 )
@@ -158,7 +157,7 @@ fun requestCredentialsForQ(
                 disabled = false,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.WARNING,
-                    message("gettingstarted.setup.codewhisperer.use_builder_id"),
+                    AwsCoreBundle.message("gettingstarted.setup.codewhisperer.use_builder_id"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
                 )
             ),
@@ -166,7 +165,7 @@ fun requestCredentialsForQ(
                 disabled = false,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.WARNING,
-                    message("gettingstarted.setup.codewhisperer.use_identity_center"),
+                    AwsCoreBundle.message("gettingstarted.setup.codewhisperer.use_identity_center"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
                 )
             ),
@@ -174,7 +173,7 @@ fun requestCredentialsForQ(
                 disabled = true,
                 notice = SetupAuthenticationNotice(
                     SetupAuthenticationNotice.NoticeType.ERROR,
-                    message("gettingstarted.setup.auth.no_iam"),
+                    AwsCoreBundle.message("gettingstarted.setup.auth.no_iam"),
                     CODEWHISPERER_AUTH_LEARN_MORE_LINK
                 )
             )
@@ -225,7 +224,7 @@ fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
     pluginAwareExecuteOnPooledThread {
-        reauthConnectionIfNeeded(project, connection)
+        reauthConnectionIfNeeded(project, connection, isReAuth = true)
     }
 }
 
@@ -240,5 +239,3 @@ fun emitUserState(project: Project) {
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
-
-fun shouldShowNonWebviewUI(): Boolean = !JBCefApp.isSupported()

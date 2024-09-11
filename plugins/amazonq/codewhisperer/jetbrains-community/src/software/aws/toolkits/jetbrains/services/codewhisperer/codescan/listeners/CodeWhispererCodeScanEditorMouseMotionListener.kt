@@ -23,7 +23,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.util.TimeoutUtil.sleep
 import icons.AwsIcons
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
@@ -39,7 +38,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.utils.applyPatch
@@ -83,7 +81,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
     private val issueDataKey = DataKey.create<MutableMap<String, String>>("amazonq.codescan.explainissue")
 
     private fun getHtml(issue: CodeWhispererCodeScanIssue): String {
-        val isFixAvailable = issue.suggestedFixes.isNotEmpty()
+        // not sure why service team allows multiple remediations, but we only show one
+        val suggestedFix = issue.suggestedFixes.firstOrNull()
 
         val cweLinks = if (issue.relatedVulnerabilities.isNotEmpty()) {
             issue.relatedVulnerabilities.joinToString(", ") { cwe ->
@@ -93,10 +92,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             "-"
         }
 
-        val detectorLibraryLink = "<a href=\"https://docs.aws.amazon.com/codeguru/detector-library/${
-            issue.detectorId.split("@").first()
-        }\">${issue.detectorName}</a>"
-
+        val detectorLibraryLink = issue.recommendation.url?.let { "<a href=\"${issue.recommendation.url}\">${issue.detectorName}</a>" } ?: "-"
         val detectorSection = """
             <br />
             <hr />
@@ -111,7 +107,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                 <tbody>
                     <tr>
                         <td>$cweLinks</td>
-                        <td>${if (isFixAvailable) "<span style=\"color:${additionForegroundColor.getHexString()};\">Yes</span>" else "<span style=\"color:${deletionForegroundColor.getHexString()};\">No</span>"}</td>
+                        <td>${if (suggestedFix != null) "<span style=\"color:${additionForegroundColor.getHexString()};\">Yes</span>" else "<span style=\"color:${deletionForegroundColor.getHexString()};\">No</span>"}</td>
                         <td>$detectorLibraryLink</td>
                     </tr>
                 </tbody>
@@ -128,9 +124,9 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         <br />
         """.trimIndent()
 
-        val suggestedFixSection = if (isFixAvailable) {
-            val isFixDescriptionAvailable = issue.suggestedFixes[0].description.isNotBlank() &&
-                issue.suggestedFixes[0].description.trim() != "Suggested remediation:"
+        val suggestedFixSection = suggestedFix?.let {
+            val isFixDescriptionAvailable = it.description.isNotBlank() &&
+                it.description.trim() != "Suggested remediation:"
             """
             |<hr />
             |<br />
@@ -138,7 +134,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             |## ${message("codewhisperer.codescan.suggested_fix_label")}
             |
             |```diff
-            |${issue.suggestedFixes[0].code}
+            |${it.code}
             |```
             |
             |${
@@ -147,14 +143,12 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
                         message(
                             "codewhisperer.codescan.suggested_fix_description"
                         )
-                    }\n${issue.suggestedFixes[0].description}"
+                    }\n${it.description}"
                 } else {
                     ""
                 }
             }
             """.trimMargin()
-        } else {
-            ""
         }
 
         return convertMarkdownToHTML(
@@ -165,7 +159,7 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             |
             |$detectorSection
             |
-            |$suggestedFixSection
+            |${suggestedFixSection.orEmpty()}
             """.trimMargin()
         )
     }
@@ -180,9 +174,9 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
     }
 
     private fun showPopup(issues: List<CodeWhispererCodeScanIssue>, e: EditorMouseEvent, issueIndex: Int = 0) {
-        if (issues == null || issues.isEmpty()) {
+        if (issues.isEmpty()) {
             LOG.debug {
-                "Unable to show popup issue at ${e.logicalPosition} as the issue was null"
+                "Unable to show popup issue at ${e.logicalPosition} as there are no issues"
             }
             return
         }
@@ -378,7 +372,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
         // Only add popup if the issue is still valid. If the issue has gone stale or invalid because
         // the user has made some edits, we don't need to show the popup for the stale or invalid issues.
         if (!issuesInRange.first().isInvalid) {
-            sleep(CODE_SCAN_ISSUE_POPUP_DELAY_IN_SECONDS)
             showPopup(issuesInRange, e)
         }
     }
@@ -396,10 +389,6 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
 
                 val documentContent = document.text
                 val updatedContent = applyPatch(issue.suggestedFixes[0].code, documentContent, issue.file.name)
-                if (updatedContent == null) {
-//                    println(applyPatchToContent(issue.suggestedFixes[0].code, documentContent))
-                    throw Error("Patch apply failed.")
-                }
                 document.replaceString(document.getLineStartOffset(0), document.getLineEndOffset(document.lineCount - 1), updatedContent)
                 PsiDocumentManager.getInstance(issue.project).commitDocument(document)
                 CodeWhispererTelemetryService.getInstance().sendCodeScanIssueApplyFixEvent(issue, Result.Succeeded)

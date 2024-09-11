@@ -9,12 +9,12 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.error
@@ -35,7 +35,9 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
 import javax.swing.JButton
@@ -72,7 +74,20 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 
     init {
-        if (!JBCefApp.isSupported()) {
+        init()
+    }
+
+    fun disposeAndRecreate() {
+        webviewContainer.removeAll()
+        val toDispose = browser
+        init()
+        if (toDispose != null) {
+            Disposer.dispose(toDispose)
+        }
+    }
+
+    private fun init() {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
@@ -91,11 +106,13 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 }
 
-class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : LoginBrowser(
-    project,
-    QWebviewBrowser.DOMAIN,
-    QWebviewBrowser.WEB_SCRIPT_URI
-) {
+class QWebviewBrowser(val project: Project, private val parentDisposable: Disposable) :
+    LoginBrowser(
+        project,
+        QWebviewBrowser.DOMAIN,
+        QWebviewBrowser.WEB_SCRIPT_URI
+    ),
+    Disposable {
     // TODO: confirm if we need such configuration or the default is fine
     override val jcefBrowser = createBrowser(parentDisposable)
     private val query = JBCefJSQuery.create(jcefBrowser)
@@ -114,6 +131,10 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
         loadWebView(query)
 
         query.addHandler(jcefHandler)
+    }
+
+    override fun dispose() {
+        Disposer.dispose(jcefBrowser)
     }
 
     fun component(): JComponent? = jcefBrowser.component
@@ -172,6 +193,15 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
             is BrowserMessage.LoginIAM, is BrowserMessage.ToggleBrowser -> {
                 error("QBrowser doesn't support the provided command ${message::class.simpleName}")
+            }
+
+            is BrowserMessage.SendUiClickTelemetry -> {
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn("Unknown sign in option")
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }

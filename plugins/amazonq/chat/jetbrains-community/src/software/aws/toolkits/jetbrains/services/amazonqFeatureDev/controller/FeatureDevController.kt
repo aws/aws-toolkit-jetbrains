@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
@@ -17,6 +18,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -30,11 +32,13 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWi
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PlanIterationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpIcons
@@ -59,10 +63,12 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Prepar
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
@@ -83,6 +89,7 @@ class FeatureDevController(
             message = message.chatMessage
         )
     }
+
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
         newTabOpened(message.tabId)
     }
@@ -102,9 +109,7 @@ class FeatureDevController(
             FollowUpTypes.RETRY -> retryRequests(message.tabId)
             FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER -> modifyDefaultSourceFolder(message.tabId)
             FollowUpTypes.DEV_EXAMPLES -> messenger.initialExamples(message.tabId)
-            FollowUpTypes.NEW_PLAN -> newPlan(message.tabId)
             FollowUpTypes.SEND_FEEDBACK -> sendFeedback()
-            FollowUpTypes.GENERATE_CODE -> generateCodeClicked(message.tabId)
             FollowUpTypes.INSERT_CODE -> insertCode(message.tabId)
             FollowUpTypes.PROVIDE_FEEDBACK_AND_REGENERATE_CODE -> provideFeedbackAndRegenerateCode(message.tabId)
             FollowUpTypes.NEW_TASK -> newTask(message.tabId)
@@ -116,42 +121,45 @@ class FeatureDevController(
         logger.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
 
         val session = chatSessionStorage.getSession(message.tabId, context.project)
-        when (session.sessionState.phase) {
-            SessionStatePhase.APPROACH -> {
-                when (message.vote) {
-                    "upvote" -> {
-                        AmazonqTelemetry.approachThumbsUp(
-                            amazonqConversationId = session.conversationId,
-                            credentialStartUrl = getStartUrl(project = context.project)
-                        )
-                    }
-                    "downvote" -> {
-                        AmazonqTelemetry.approachThumbsDown(
-                            amazonqConversationId = session.conversationId,
-                            credentialStartUrl = getStartUrl(project = context.project)
-                        )
-                    }
-                }
+        when (message.vote) {
+            "upvote" -> {
+                AmazonqTelemetry.codeGenerationThumbsUp(
+                    amazonqConversationId = session.conversationId,
+                    credentialStartUrl = getStartUrl(project = context.project)
+                )
             }
-            SessionStatePhase.CODEGEN -> {
-                when (message.vote) {
-                    "upvote" -> {
-                        AmazonqTelemetry.codeGenerationThumbsUp(
-                            amazonqConversationId = session.conversationId,
-                            credentialStartUrl = getStartUrl(project = context.project)
-                        )
-                    }
-                    "downvote" -> {
-                        AmazonqTelemetry.codeGenerationThumbsDown(
-                            amazonqConversationId = session.conversationId,
-                            credentialStartUrl = getStartUrl(project = context.project)
-                        )
-                    }
-                }
+            "downvote" -> {
+                AmazonqTelemetry.codeGenerationThumbsDown(
+                    amazonqConversationId = session.conversationId,
+                    credentialStartUrl = getStartUrl(project = context.project)
+                )
             }
-            SessionStatePhase.INIT, null -> {
-                logger.error { "$FEATURE_NAME: ChatItemVotedMessage is received for a conversation that has ${session.sessionState.phase} phase" }
-            }
+        }
+    }
+
+    override suspend fun processChatItemFeedbackMessage(message: IncomingFeatureDevMessage.ChatItemFeedbackMessage) {
+        logger.debug { "$FEATURE_NAME: Processing ChatItemFeedbackMessage: ${message.comment}" }
+
+        val session = getSessionInfo(message.tabId)
+
+        val comment = FeedbackComment(
+            conversationId = session.conversationId,
+            userComment = message.comment.orEmpty(),
+            reason = message.selectedOption,
+            messageId = message.messageId,
+            type = "featuredev-chat-answer-feedback"
+        )
+
+        try {
+            TelemetryService.getInstance().sendFeedback(
+                sentiment = Sentiment.NEGATIVE,
+                comment = objectMapper.writeValueAsString(comment),
+            )
+            logger.info { "$FEATURE_NAME answer feedback sent: \"Negative\"" }
+        } catch (e: Throwable) {
+            e.notifyError(message("feedback.submit_failed", e))
+            logger.warn(e) { "Failed to submit feedback" }
+            return
         }
     }
 
@@ -220,7 +228,6 @@ class FeatureDevController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    phase = session.sessionState.phase,
                     conversationId = session.conversationIdUnsafe
                 )
             }
@@ -270,25 +277,7 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe
-            )
-        }
-    }
-
-    private suspend fun generateCodeClicked(tabId: String) {
-        val session = getSessionInfo(tabId)
-        try {
-            session.initCodegen(messenger)
-            onCodeGeneration(session, "", tabId)
-        } catch (err: Exception) {
-            val message = createUserFacingErrorMessage(err.message)
-            messenger.sendError(
-                tabId = tabId,
-                errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
-                retries = retriesRemaining(session),
-                phase = session.sessionState.phase,
-                conversationId = session.conversationIdUnsafe
             )
         }
     }
@@ -326,7 +315,8 @@ class FeatureDevController(
             messenger.sendAnswer(
                 tabId = tabId,
                 message = message("amazonqFeatureDev.code_generation.updated_code"),
-                messageType = FeatureDevMessageType.Answer
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
             )
 
             messenger.sendSystemPrompt(
@@ -357,7 +347,6 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.insert_code_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe
             )
         }
@@ -374,9 +363,18 @@ class FeatureDevController(
     }
 
     private suspend fun closeSession(tabId: String) {
-        messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.closed_session"))
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message = message("amazonqFeatureDev.chat_message.closed_session"),
+            canBeVoted = true
+        )
 
-        messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.closed_session"))
+        messenger.sendUpdatePlaceholder(
+            tabId = tabId,
+            newPlaceholder = message("amazonqFeatureDev.placeholder.closed_session")
+        )
+
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
 
         val session = getSessionInfo(tabId)
@@ -403,9 +401,94 @@ class FeatureDevController(
         messenger.sendAnswer(
             tabId = tabId,
             message = message("amazonqFeatureDev.code_generation.provide_code_feedback"),
-            messageType = FeatureDevMessageType.Answer
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = true
         )
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
+    }
+
+    private suspend fun processErrorChatMessage(err: Exception, message: String, session: Session?, tabId: String) {
+        logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
+        when (err) {
+            is RepoSizeError -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
+                messenger.sendSystemPrompt(
+                    tabId = tabId,
+                    followUp = listOf(
+                        FollowUp(
+                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
+                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
+                            status = FollowUpStatusType.Info,
+                        )
+                    ),
+                )
+            }
+            is ZipFileError -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = 0,
+                    conversationId = session?.conversationIdUnsafe
+                )
+            }
+            is MonthlyConversationLimitError -> {
+                messenger.sendMonthlyLimitError(tabId = tabId)
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
+            }
+            is FeatureDevException -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
+            }
+            is CodeIterationLimitError -> {
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = err.message,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
+                messenger.sendSystemPrompt(
+                    tabId = tabId,
+                    followUp = listOf(
+                        FollowUp(
+                            pillText = message("amazonqFeatureDev.follow_up.insert_code"),
+                            type = FollowUpTypes.INSERT_CODE,
+                            icon = FollowUpIcons.Ok,
+                            status = FollowUpStatusType.Success,
+                        )
+                    ),
+                )
+            }
+
+            else -> {
+                var msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
+                val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
+                val defaultMessage: String = when (session?.sessionState?.phase) {
+                    SessionStatePhase.CODEGEN -> {
+                        if (isDenyListedError || retriesRemaining(session) > 0) {
+                            message("amazonqFeatureDev.code_generation.error_message")
+                        } else {
+                            message("amazonqFeatureDev.code_generation.no_retries.error_message")
+                        }
+                    }
+                    else -> message("amazonqFeatureDev.error_text")
+                }
+                messenger.sendError(
+                    tabId = tabId,
+                    errMessage = defaultMessage,
+                    retries = retriesRemaining(session),
+                    conversationId = session?.conversationIdUnsafe
+                )
+            }
+        }
     }
 
     private suspend fun handleChat(
@@ -428,124 +511,18 @@ class FeatureDevController(
                 return
             }
 
+            session.preloader(message, messenger)
+
             when (session.sessionState.phase) {
-                SessionStatePhase.INIT, SessionStatePhase.APPROACH -> onApproachGeneration(session, message, tabId)
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)
                 else -> null
             }
         } catch (err: Exception) {
-            logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
-            if (err is RepoSizeError) {
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
-                messenger.sendSystemPrompt(
-                    tabId = tabId,
-                    followUp = listOf(
-                        FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
-                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
-                            status = FollowUpStatusType.Info,
-                        )
-                    ),
-                )
-            } else if (err is MonthlyConversationLimitError) {
-                messenger.sendMonthlyLimitError(tabId = tabId)
-                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
-            } else if (err is PlanIterationLimitError) {
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
-                messenger.sendSystemPrompt(
-                    tabId = tabId,
-                    followUp = listOf(
-                        FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.new_plan"),
-                            type = FollowUpTypes.NEW_PLAN,
-                            status = FollowUpStatusType.Info,
-                        ),
-                        FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.generate_code"),
-                            type = FollowUpTypes.GENERATE_CODE,
-                            status = FollowUpStatusType.Info,
-                        )
-                    ),
-                )
-                messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
-            } else if (err is CodeIterationLimitError) {
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
-                messenger.sendSystemPrompt(
-                    tabId = tabId,
-                    followUp = listOf(
-                        FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.insert_code"),
-                            type = FollowUpTypes.INSERT_CODE,
-                            icon = FollowUpIcons.Ok,
-                            status = FollowUpStatusType.Success,
-                        )
-                    ),
-                )
-            } else {
-                val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = msg ?: message("amazonqFeatureDev.exception.request_failed"),
-                    retries = retriesRemaining(session),
-                    phase = session?.sessionState?.phase,
-                    conversationId = session?.conversationIdUnsafe
-                )
-            }
+            processErrorChatMessage(err, message, session, tabId)
 
             // Lock the chat input until they explicitly click one of the follow-ups
             messenger.sendChatInputEnabledMessage(tabId, enabled = false)
         }
-    }
-
-    /**
-     * Handle a regular incoming message when a user is in the approach phase
-     */
-    private suspend fun onApproachGeneration(session: Session, message: String, tabId: String) {
-        session.preloader(message, messenger)
-
-        logger.info { conversationIDLog(session.conversationId) }
-
-        messenger.sendAnswer(
-            tabId = tabId,
-            messageType = FeatureDevMessageType.AnswerStream,
-            message = message("amazonqFeatureDev.create_plan"),
-        )
-
-        messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.generating_approach"))
-
-        val interactions = session.send(message)
-        messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.iterate_plan"))
-
-        messenger.sendAnswer(tabId = tabId, message = interactions.content, messageType = FeatureDevMessageType.Answer, canBeVoted = true, snapToTop = true)
-
-        if (interactions.interactionSucceeded) {
-            messenger.sendAnswer(
-                tabId = tabId,
-                messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.plan_generation.ask_for_feedback")
-            )
-        }
-
-        // Follow up with action items and complete the request stream
-        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, interactions.interactionSucceeded))
-
-        // Unlock the prompt again so that users can iterate
-        messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false)
     }
 
     private suspend fun retryRequests(tabId: String) {
@@ -572,7 +549,6 @@ class FeatureDevController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                phase = session?.sessionState?.phase,
                 conversationId = session?.conversationIdUnsafe,
             )
         } finally {
@@ -582,22 +558,6 @@ class FeatureDevController(
                 inProgress = false,
             )
         }
-    }
-
-    private suspend fun newPlan(tabId: String) {
-        // Old session for the tab is ending, delete it so we can create a new one for the message id
-        chatSessionStorage.deleteSession(tabId)
-
-        // Re-run the opening flow, where we check auth + create a session
-        getSessionInfo(tabId)
-
-        messenger.sendAnswer(
-            tabId = tabId,
-            messageType = FeatureDevMessageType.Answer,
-            message = message("amazonqFeatureDev.create_new_plan"),
-        )
-
-        messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.new_plan"))
     }
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
@@ -657,7 +617,23 @@ class FeatureDevController(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
                 message = message("amazonqFeatureDev.follow_up.modified_source_folder", selectedFolder.path),
+                canBeVoted = true,
             )
+
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = FeatureDevMessageType.SystemPrompt,
+                followUp = listOf(
+                    FollowUp(
+                        pillText = message("amazonqFeatureDev.follow_up.retry"),
+                        type = FollowUpTypes.RETRY,
+                        status = FollowUpStatusType.Warning
+                    )
+                ),
+            )
+
+            messenger.sendChatInputEnabledMessage(tabId, enabled = false)
+            messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.write_new_prompt"))
         }
 
         AmazonqTelemetry.modifySourceFolder(
@@ -680,9 +656,9 @@ class FeatureDevController(
 
     fun retriesRemaining(session: Session?): Int = session?.retries ?: DEFAULT_RETRY_LIMIT
 
-    fun conversationIDLog(conversationId: String) = "$FEATURE_NAME Conversation ID: $conversationId"
-
     companion object {
         private val logger = getLogger<FeatureDevController>()
+
+        private val objectMapper = jacksonObjectMapper()
     }
 }

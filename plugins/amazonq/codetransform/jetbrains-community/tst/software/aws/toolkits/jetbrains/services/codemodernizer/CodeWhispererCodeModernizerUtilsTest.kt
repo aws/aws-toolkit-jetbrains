@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockkStatic
+import io.mockk.runs
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -11,10 +15,16 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
+import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.util.concurrent.atomic.AtomicBoolean
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
@@ -55,6 +65,88 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 TransformationStatus.STARTED,
             )
         assertThat(expected).isEqualTo(mutableList)
+    }
+
+    @Test
+    fun `refresh on access denied`() {
+        val mockAccessDeniedException = Mockito.mock(AccessDeniedException::class.java)
+
+        mockkStatic(::refreshToken)
+        every { refreshToken(any()) } just runs
+
+        Mockito.doThrow(
+            mockAccessDeniedException
+        ).doReturn(
+            exampleGetCodeMigrationResponse,
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED), // Should stop before this point
+        ).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
+
+        Mockito.doReturn(exampleGetCodeMigrationPlanResponse)
+            .whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
+
+        val mutableList = mutableListOf<TransformationStatus>()
+        runBlocking {
+            jobId.pollTransformationStatusAndPlan(
+                setOf(TransformationStatus.STARTED),
+                setOf(TransformationStatus.FAILED),
+                clientAdaptorSpy,
+                0,
+                0,
+                AtomicBoolean(false),
+                project
+            ) { _, status, _ ->
+                mutableList.add(status)
+            }
+        }
+        val expected =
+            listOf<TransformationStatus>(
+                exampleGetCodeMigrationResponse.transformationJob().status(),
+                TransformationStatus.STARTED,
+            )
+        assertThat(expected).isEqualTo(mutableList)
+        io.mockk.verify { refreshToken(any()) }
+    }
+
+    @Test
+    fun `refresh on invalid grant`() {
+        val mockInvalidGrantException = Mockito.mock(InvalidGrantException::class.java)
+
+        mockkStatic(::refreshToken)
+        every { refreshToken(any()) } just runs
+
+        Mockito.doThrow(
+            mockInvalidGrantException
+        ).doReturn(
+            exampleGetCodeMigrationResponse,
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED), // Should stop before this point
+        ).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
+
+        Mockito.doReturn(exampleGetCodeMigrationPlanResponse)
+            .whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
+
+        val mutableList = mutableListOf<TransformationStatus>()
+        runBlocking {
+            jobId.pollTransformationStatusAndPlan(
+                setOf(TransformationStatus.STARTED),
+                setOf(TransformationStatus.FAILED),
+                clientAdaptorSpy,
+                0,
+                0,
+                AtomicBoolean(false),
+                project
+            ) { _, status, _ ->
+                mutableList.add(status)
+            }
+        }
+        val expected =
+            listOf<TransformationStatus>(
+                exampleGetCodeMigrationResponse.transformationJob().status(),
+                TransformationStatus.STARTED,
+            )
+        assertThat(expected).isEqualTo(mutableList)
+        io.mockk.verify { refreshToken(any()) }
     }
 
     @Test
@@ -113,6 +205,28 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val step0Update3 = TransformationProgressUpdate.builder().name("-1").status("COMPLETED").description(fileChanges).build()
         val actual = getTableMapping(listOf(step0Update0, step0Update1, step0Update2, step0Update3))
         val expected = mapOf("0" to jobStats, "1" to depChanges, "2" to apiChanges, "-1" to fileChanges)
+        assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `parseBuildFile can detect absolute paths in build file`() {
+        val module = projectRule.module
+        val fileText = "<project><properties><path>system/name/here</path></properties></project>"
+        val file = projectRule.fixture.addFileToModule(module, "pom.xml", fileText)
+        val expectedWarning = "I detected 1 potential absolute file path(s) in your pom.xml file: **system/**. " +
+            "Absolute file paths might cause issues when I build your code. Any errors will show up in the build log."
+        assertThat(parseBuildFile(file.virtualFile)).isEqualTo(expectedWarning)
+    }
+
+    @Test
+    fun `getBillingText on small project returns correct String`() {
+        val expected = "<html><body style=\"line-height:2; font-family: Arial, sans-serif; font-size: 14;\"><br>" +
+            "376 lines of code were submitted for transformation. If you reach the quota for lines of code included " +
+            "in your subscription, you will be charged $0.003 for each additional line of code. You might be charged up " +
+            "to $1.13 for this transformation. To avoid being charged, stop the transformation job before it completes. " +
+            "For more information on pricing and quotas, see <a href=\"https://aws.amazon.com/q/developer/pricing/\">" +
+            "Amazon Q Developer pricing</a>.</p>"
+        val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
     }
 }

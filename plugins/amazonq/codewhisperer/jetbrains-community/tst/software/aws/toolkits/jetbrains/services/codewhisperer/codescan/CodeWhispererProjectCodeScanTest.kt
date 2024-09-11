@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -54,7 +55,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
             onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
             onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
-            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
+            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponseE2E)
         }
     }
 
@@ -103,8 +104,8 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     }
 
     @Test
-    fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 10, totalSize, 2)
+    fun `e2e happy path integration test`() = runTest {
+        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 10, totalSize, 1)
     }
 
     private fun setupCsharpProject() {
