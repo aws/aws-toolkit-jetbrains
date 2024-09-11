@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Automatically start workspace indexing when new project is opened"
-}
