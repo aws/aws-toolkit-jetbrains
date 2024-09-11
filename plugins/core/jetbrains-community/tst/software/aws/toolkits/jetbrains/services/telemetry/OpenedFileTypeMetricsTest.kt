@@ -7,7 +7,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -23,7 +23,7 @@ class OpenedFileTypeMetricsTest {
     val projectRule = ProjectRule()
 
     @Test
-    fun `metrics are recorded for already opened file types`() {
+    fun `metrics are recorded for already opened file types`() = runTest {
         val dummyFile = LightVirtualFile("dummy.kt")
         runInEdtAndWait {
             FileEditorManager.getInstance(projectRule.project).openFile(dummyFile)
@@ -36,14 +36,13 @@ class OpenedFileTypeMetricsTest {
             }
         }
 
-        runBlocking {
-            openedFileTypeMetrics.execute(projectRule.project)
-        }
+        openedFileTypeMetrics.execute(projectRule.project)
+
         verify(openedFileTypeMetrics).emitMetric(".kt")
     }
 
     @Test
-    fun `duplicate metrics are not emitted`() {
+    fun `duplicate metrics are not emitted`() = runTest {
         val testFile = LightVirtualFile("test1.kt")
         val testFile2 = LightVirtualFile("test2.kt")
         runInEdtAndWait {
@@ -57,9 +56,8 @@ class OpenedFileTypeMetricsTest {
             }
         }
 
-        runBlocking {
-            openedFileTypeMetrics.execute(projectRule.project)
-        }
+        openedFileTypeMetrics.execute(projectRule.project)
+
         verify(openedFileTypeMetrics).emitMetric(any())
     }
 }

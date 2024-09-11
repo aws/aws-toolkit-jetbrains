@@ -21,6 +21,7 @@ import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
@@ -94,7 +95,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         if (file.isDirectory) return true
 
         val extension = file.extension ?: return false
-        return FeatureDevBundleConfig.ALLOWED_CODE_EXTENSIONS.contains(extension)
+        return ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
 
     private fun ignoreFileByExtension(file: VirtualFile, scope: CoroutineScope): Boolean = with(scope) {

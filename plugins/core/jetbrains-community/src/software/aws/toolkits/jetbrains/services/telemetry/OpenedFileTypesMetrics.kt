@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.telemetry.IdeTelemetry
 
 class OpenedFileTypesMetrics : ProjectActivity, Disposable {
@@ -37,9 +38,10 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     }
 
     private fun addToExistingTelemetryBatch(fileExt: String) {
-        val extension = ".$fileExt"
-        if (extension in codeFileTypes) {
-            currentOpenedFileTypes.add(extension)
+        // val extension = ".$fileExt"
+        notifyInfo("ex")
+        if (fileExt in ALLOWED_CODE_EXTENSIONS) {
+            currentOpenedFileTypes.add(fileExt)
         }
     }
 
@@ -50,14 +52,12 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     override fun dispose() {}
 
     fun emitFileTypeMetric() {
-        ApplicationManager.getApplication().executeOnPooledThread {
-            currentOpenedFileTypes.forEach {
-                emitMetric(it)
-            }
-            currentOpenedFileTypes.clear()
-            if (!ApplicationManager.getApplication().isUnitTestMode) {
-                scheduleNextMetricEvent()
-            }
+        currentOpenedFileTypes.forEach {
+            emitMetric(it)
+        }
+        currentOpenedFileTypes.clear()
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
+            scheduleNextMetricEvent()
         }
     }
 
@@ -66,6 +66,6 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     }
 
     companion object {
-        const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
+        private const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
     }
 }
