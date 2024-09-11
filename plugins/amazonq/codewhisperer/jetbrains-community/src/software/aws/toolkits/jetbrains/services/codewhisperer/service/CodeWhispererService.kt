@@ -81,7 +81,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
-import software.aws.toolkits.jetbrains.utils.isRunningOnCWNotSupportedRemoteBackend
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
@@ -108,11 +107,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         if (!isCodeWhispererEnabled(project)) return
 
         latencyContext.credentialFetchingStart = System.nanoTime()
-
-        if (isRunningOnCWNotSupportedRemoteBackend()) {
-            showCodeWhispererInfoHint(editor, message("codewhisperer.trigger.ide.unsupported"))
-            return
-        }
 
         if (isQExpired(project)) {
             // say the connection is un-refreshable if refresh fails for 3 times
@@ -779,7 +773,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             val fileContext = FileContext.builder()
                 .leftFileContent(fileContextInfo.caretContext.leftFileContext)
                 .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-                .filename(fileContextInfo.filename)
+                .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
                 .programmingLanguage(programmingLanguage)
                 .build()
             val supplementalContexts = supplementalContext?.contents?.map {

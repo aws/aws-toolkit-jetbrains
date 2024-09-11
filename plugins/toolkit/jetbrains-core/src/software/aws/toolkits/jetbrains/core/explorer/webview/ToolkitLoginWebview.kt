@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -111,7 +112,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     }
 
     init {
-        if (!JBCefApp.isSupported()) {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
@@ -237,7 +238,12 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             }
 
             is BrowserMessage.SendUiClickTelemetry -> {
-                UiTelemetry.click(project, message.signInOptionClicked)
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn("Unknown sign in option")
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }
@@ -336,6 +342,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
+        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }
