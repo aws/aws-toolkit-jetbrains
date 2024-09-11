@@ -506,7 +506,7 @@ data class Description(val text: String, val markdown: String)
 
 data class Remediation(val recommendation: Recommendation, val suggestedFixes: List<SuggestedFix>)
 
-data class Recommendation(val text: String, val url: String)
+data class Recommendation(val text: String, val url: String?)
 
 data class SuggestedFix(val description: String, val code: String)
 
