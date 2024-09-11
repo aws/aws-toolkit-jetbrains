@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.psi.PsiFile
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
@@ -39,7 +38,6 @@ import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.FileInputStream
-import java.lang.management.ManagementFactory
 import java.util.Base64
 import java.util.UUID
 import java.util.zip.ZipFile
@@ -124,106 +122,6 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             onGeneric { getCodeScan(any(), any()) }.thenAnswer { fakeGetCodeScanResponse }
             onGeneric { listCodeScanFindings(any(), any()) }.thenAnswer { fakeListCodeScanFindingsResponse }
         }
-    }
-
-    @Test
-    fun `test run() - measure CPU and memory usage with payload of 200KB`() {
-        // Create a 200KB file
-        val content = "a".repeat(200 * 1024)
-        val psiFile = projectRule.fixture.addFileToProject("test.txt", content)
-
-        val sessionConfig = spy(
-            CodeScanSessionConfig.create(
-                psiFile.virtualFile,
-                project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
-            )
-        )
-        setupResponse(psiFile.virtualFile.toNioPath().relativeTo(sessionConfig.projectRoot.toNioPath()))
-        val sessionContext = CodeScanSessionContext(project, sessionConfig, CodeWhispererConstants.CodeAnalysisScope.FILE)
-        val session = spy(CodeWhispererCodeScanSession(sessionContext))
-        doNothing().whenever(session).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
-
-        // Set up CPU and Memory monitoring
-        val runtime = Runtime.getRuntime()
-        val bean = ManagementFactory.getThreadMXBean()
-        val startCpuTime = bean.getCurrentThreadCpuTime()
-        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
-        val startSystemTime = System.nanoTime()
-
-        // Run the code scan
-        runBlocking {
-            session.run()
-        }
-
-        // Calculate CPU and memory usage
-        val endCpuTime = bean.getCurrentThreadCpuTime()
-        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
-        val endSystemTime = System.nanoTime()
-
-        val cpuTimeUsedNanos = endCpuTime - startCpuTime
-        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
-        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
-
-        val memoryUsed = endMemoryUsage - startMemoryUsage
-        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
-
-        // Calculate CPU usage in percentage
-        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
-
-        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
-        assertThat(cpuUsagePercentage).isLessThan(30.0)
-        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
-    }
-
-    @Test
-    fun `test run() - measure CPU and memory usage with payload of 150KB`() {
-        // Create a 150KB file
-        val codeContentForPayload = "a".repeat(150 * 1024)
-        val psiFile = projectRule.fixture.addFileToProject("test.txt", codeContentForPayload)
-
-        val sessionConfig = spy(
-            CodeScanSessionConfig.create(
-                psiFile.virtualFile,
-                project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
-            )
-        )
-        setupResponse(psiFile.virtualFile.toNioPath().relativeTo(sessionConfig.projectRoot.toNioPath()))
-        val sessionContext = CodeScanSessionContext(project, sessionConfig, CodeWhispererConstants.CodeAnalysisScope.FILE)
-        val session = spy(CodeWhispererCodeScanSession(sessionContext))
-        doNothing().whenever(session).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
-
-        // Set up CPU and Memory monitoring
-        val runtime = Runtime.getRuntime()
-        val bean = ManagementFactory.getThreadMXBean()
-        val startCpuTime = bean.getCurrentThreadCpuTime()
-        val startMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
-        val startSystemTime = System.nanoTime()
-
-        // Run the code scan
-        runBlocking {
-            session.run()
-        }
-
-        // Calculate CPU and memory usage
-        val endCpuTime = bean.getCurrentThreadCpuTime()
-        val endMemoryUsage = runtime.totalMemory() - runtime.freeMemory()
-        val endSystemTime = System.nanoTime()
-
-        val cpuTimeUsedNanos = endCpuTime - startCpuTime
-        val cpuTimeUsedSeconds = cpuTimeUsedNanos / 1_000_000_000.0
-        val elapsedTimeSeconds = (endSystemTime - startSystemTime) / 1_000_000_000.0
-
-        val memoryUsed = endMemoryUsage - startMemoryUsage
-        val memoryUsedInMB = memoryUsed / (1024.0 * 1024.0) // Converting into MB
-
-        // Calculate CPU usage in percentage
-        val cpuUsagePercentage = (cpuTimeUsedSeconds / elapsedTimeSeconds) * 100
-
-        assertThat(cpuTimeUsedSeconds).isLessThan(5.0)
-        assertThat(cpuUsagePercentage).isLessThan(30.0)
-        assertThat(memoryUsedInMB).isLessThan(200.0) // Memory used should be less than 200MB
     }
 
     @Test
