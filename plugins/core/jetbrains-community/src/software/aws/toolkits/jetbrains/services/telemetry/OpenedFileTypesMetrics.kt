@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -38,8 +39,6 @@ class OpenedFileTypesMetrics : ProjectActivity, Disposable {
     }
 
     private fun addToExistingTelemetryBatch(fileExt: String) {
-        // val extension = ".$fileExt"
-        notifyInfo("ex")
         if (fileExt in ALLOWED_CODE_EXTENSIONS) {
             currentOpenedFileTypes.add(fileExt)
         }
