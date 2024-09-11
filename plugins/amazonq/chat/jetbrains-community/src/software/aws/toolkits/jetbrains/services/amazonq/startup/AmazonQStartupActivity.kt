@@ -8,11 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.ToolWindowManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -46,32 +43,29 @@ class AmazonQStartupActivity : ProjectActivity {
         runOnce.set(true)
     }
 
-    private fun startLsp(project: Project) {
+    private suspend fun startLsp(project: Project) {
         // Automatically start the project context LSP after some delay when average CPU load is below 30%.
         // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
         // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
         if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-            val scope = CoroutineScope(SupervisorJob())
             val startLspIndexingDuration = Duration.ofMinutes(30)
-            scope.launch {
-                project.waitForSmartMode()
-                try {
-                    withTimeout(startLspIndexingDuration) {
-                        while (true) {
-                            val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
-                            if (cpuUsage > 0 && cpuUsage < 30) {
-                                ProjectContextController.getInstance(project = project)
-                                break
-                            } else {
-                                delay(60_000) // Wait for 60 seconds
-                            }
+            project.waitForSmartMode()
+            try {
+                withTimeout(startLspIndexingDuration) {
+                    while (true) {
+                        val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
+                        if (cpuUsage > 0 && cpuUsage < 30) {
+                            ProjectContextController.getInstance(project = project)
+                            break
+                        } else {
+                            delay(60_000) // Wait for 60 seconds
                         }
                     }
-                } catch (e: TimeoutCancellationException) {
-                    LOG.warn(e) { "Failed to start LSP server due to time out" }
-                } catch (e: Error) {
-                    LOG.warn(e) { "Failed to start LSP server" }
                 }
+            } catch (e: TimeoutCancellationException) {
+                LOG.warn { "Failed to start LSP server due to time out" }
+            } catch (e: Exception) {
+                LOG.warn { "Failed to start LSP server" }
             }
         }
     }
