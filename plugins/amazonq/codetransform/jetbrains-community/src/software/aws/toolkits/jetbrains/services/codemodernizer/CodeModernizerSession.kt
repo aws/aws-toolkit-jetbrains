@@ -176,9 +176,6 @@ class CodeModernizerSession(
             payload = result.payload
             payloadSize = payload.length().toInt()
 
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.jobCreateZipEndTime(payloadSize, startTime)
-
             LOG.info { "Uploading zip file with size: $payloadSize bytes" }
 
             if (payloadSize > MAX_ZIP_SIZE) {
