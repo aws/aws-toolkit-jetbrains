@@ -9,4 +9,5 @@ sealed class MavenCopyCommandsResult {
     data class Success(val dependencyDirectory: File) : MavenCopyCommandsResult()
     object Failure : MavenCopyCommandsResult()
     object Cancelled : MavenCopyCommandsResult()
+    object NoJdk : MavenCopyCommandsResult()
 }

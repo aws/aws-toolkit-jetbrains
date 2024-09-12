@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAb
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedNoJdkChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildDownloadFailureChatContent
@@ -129,7 +130,7 @@ class CodeTransformChatController(
         }
 
         codeTransformChatHelper.updateLastPendingMessage(
-            buildProjectValidChatContent(validationResult)
+            buildProjectValidChatContent()
         )
 
         codeTransformChatHelper.chatDelayShort()
@@ -236,6 +237,10 @@ class CodeTransformChatController(
             return
         } else if (mavenBuildResult == MavenCopyCommandsResult.Failure) {
             codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
+            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+            return
+        } else if (mavenBuildResult == MavenCopyCommandsResult.NoJdk) {
+            codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedNoJdkChatContent())
             codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
             return
         }

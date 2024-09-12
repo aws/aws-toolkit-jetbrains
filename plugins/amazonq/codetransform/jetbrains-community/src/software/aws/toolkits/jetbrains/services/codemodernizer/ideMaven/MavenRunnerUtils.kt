@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootManager
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
@@ -65,6 +66,8 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+
+        if (ProjectRootManager.getInstance(project).projectSdk == null) return MavenCopyCommandsResult.NoJdk
 
         // run copy dependencies
         val copyDependenciesRunnable =
