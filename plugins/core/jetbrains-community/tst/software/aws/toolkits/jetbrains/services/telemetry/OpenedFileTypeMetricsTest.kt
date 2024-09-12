@@ -3,61 +3,34 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.testFramework.LightVirtualFile
-import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.test.runTest
-import org.junit.Rule
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.spy
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.verify
+import org.mockito.kotlin.times
 
 class OpenedFileTypeMetricsTest {
 
-    @Rule
-    @JvmField
-    val projectRule = ProjectRule()
+    private lateinit var service: OpenedFileTypesMetricsService
 
-    @Test
-    fun `metrics are recorded for already opened file types`() = runTest {
-        val dummyFile = LightVirtualFile("dummy.kt")
-        runInEdtAndWait {
-            FileEditorManager.getInstance(projectRule.project).openFile(dummyFile)
-        }
+    @Before
+    fun setup() {
+        service = OpenedFileTypesMetricsService()
+    }
 
-        val openedFileTypeMetrics = spy(OpenedFileTypesMetrics())
-        openedFileTypeMetrics.stub {
-            on { openedFileTypeMetrics.scheduleNextMetricEvent() }.doAnswer {
-                openedFileTypeMetrics.emitFileTypeMetric()
-            }
-        }
-
-        openedFileTypeMetrics.execute(projectRule.project)
-
-        verify(openedFileTypeMetrics).emitMetric(".kt")
+    @After
+    fun teardown() {
+        service.dispose()
     }
 
     @Test
-    fun `duplicate metrics are not emitted`() = runTest {
-        val testFile = LightVirtualFile("test1.kt")
-        val testFile2 = LightVirtualFile("test2.kt")
-        runInEdtAndWait {
-            FileEditorManager.getInstance(projectRule.project).openFile(testFile)
-            FileEditorManager.getInstance(projectRule.project).openFile(testFile2)
-        }
-        val openedFileTypeMetrics = spy(OpenedFileTypesMetrics())
-        openedFileTypeMetrics.stub {
-            on { openedFileTypeMetrics.scheduleNextMetricEvent() }.doAnswer {
-                openedFileTypeMetrics.emitFileTypeMetric()
-            }
-        }
+    fun `test addToExistingTelemetryBatch with allowed extension`() {
+        service.addToExistingTelemetryBatch("kt")
+        assert(service.getOpenedFileTypes().contains("kt"))
+    }
 
-        openedFileTypeMetrics.execute(projectRule.project)
-
-        verify(openedFileTypeMetrics).emitMetric(any())
+    @Test
+    fun `test addToExistingTelemetryBatch with disallowed extension`() {
+        service.addToExistingTelemetryBatch("txt")
+        assert(service.getOpenedFileTypes().isEmpty())
     }
 }
