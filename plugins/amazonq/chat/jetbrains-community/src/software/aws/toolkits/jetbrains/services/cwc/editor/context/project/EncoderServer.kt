@@ -51,7 +51,7 @@ class EncoderServer(val project: Project) : Disposable {
     val port by lazy { NetUtils.findAvailableSocketPort() }
     private val nodeRunnableName = if (manifestManager.getOs() == "windows") "node.exe" else "node"
     private val maxRetry: Int = 3
-    val key = generateHmacKey()
+    private val key = generateHmacKey()
     private var processHandler: KillableProcessHandler? = null
     private val mapper = jacksonObjectMapper()
 

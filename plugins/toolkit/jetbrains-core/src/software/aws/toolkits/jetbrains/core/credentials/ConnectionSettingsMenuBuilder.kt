@@ -246,7 +246,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
                     override fun actionPerformed(e: AnActionEvent) {
                         reauthConnectionIfNeeded(e.project, value, isReAuth = true)
 
-                        ToolkitConnectionManager.getInstance(e.project).switchConnection(value)
+                        e.project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(value) }
                     }
                 },
 

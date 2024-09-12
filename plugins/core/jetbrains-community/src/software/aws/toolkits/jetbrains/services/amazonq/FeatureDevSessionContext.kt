@@ -10,7 +10,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
@@ -29,6 +28,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
 import java.util.zip.ZipOutputStream
+import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
@@ -81,7 +81,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     fun getProjectZip(): ZipCreationResult {
         val zippedProject = runBlocking {
-            withBackgroundProgress(project, AwsCoreBundle.message("amazonqFeatureDev.create_plan.background_progress_title")) {
+            withBackgroundProgress(project, AwsCoreBundle.message("amazonqFeatureDev.placeholder.generating_code")) {
                 zipFiles(selectedSourceFolder)
             }
         }
@@ -97,19 +97,23 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return FeatureDevBundleConfig.ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
 
-    private fun ignoreFileByExtension(file: VirtualFile, scope: CoroutineScope): Boolean = with(scope) {
-        return !isFileExtensionAllowed(file)
-    }
+    private fun ignoreFileByExtension(file: VirtualFile) =
+        !isFileExtensionAllowed(file)
 
-    suspend fun ignoreFile(file: VirtualFile, scope: CoroutineScope): Boolean = ignoreFile(file.path, scope)
+    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.path)
 
-    suspend fun ignoreFile(path: String, scope: CoroutineScope): Boolean = with(scope) {
+    suspend fun ignoreFile(path: String): Boolean {
+        // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
-            async {
-                pattern.containsMatchIn(path)
+            withContext(coroutineContext) {
+                async { pattern.containsMatchIn(path) }
             }
         }
-        deferredResults.any { it.await() }
+
+        // this will serially iterate over and block
+        // ideally we race the results https://github.com/Kotlin/kotlinx.coroutines/issues/2867
+        // i.e. Promise.any(...)
+        return deferredResults.any { it.await() }
     }
 
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
@@ -121,13 +125,13 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
-                    val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file, this) }
+                    val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file) }
                     if (isFileIgnoredByExtension) {
                         val extension = file.extension.orEmpty()
                         ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
                         return false
                     }
-                    val isFileIgnoredByPattern = runBlocking { ignoreFile(file.name, this) }
+                    val isFileIgnoredByPattern = runBlocking { ignoreFile(file.name) }
                     if (isFileIgnoredByPattern) {
                         return false
                     }
