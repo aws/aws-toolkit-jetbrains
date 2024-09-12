@@ -58,6 +58,6 @@ class OpenedFileTypesMetricsService : Disposable {
         IdeTelemetry.editCodeFile(project = null, filenameExt = openFileExtension)
 
     companion object {
-        const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
+        private const val INTERVAL_BETWEEN_METRICS = 30 * 60 * 1000
     }
 }
