@@ -11,7 +11,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.jetbrains.annotations.TestOnly
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.telemetry.IdeTelemetry
 
 class OpenedFileTypesMetricsListener : FileEditorManagerListener {
@@ -36,12 +39,14 @@ class OpenedFileTypesMetricsService : Disposable {
     }
 
     fun emitFileTypeMetric() {
-        currentOpenedFileTypes.forEach {
-            emitMetric(it)
-        }
-        currentOpenedFileTypes.clear()
-        if (!ApplicationManager.getApplication().isUnitTestMode) {
-            scheduleNextMetricEvent()
+        CoroutineScope(getCoroutineBgContext()).launch {
+            currentOpenedFileTypes.forEach {
+                emitMetric(it)
+            }
+            currentOpenedFileTypes.clear()
+            if (!ApplicationManager.getApplication().isUnitTestMode) {
+                scheduleNextMetricEvent()
+            }
         }
     }
 
