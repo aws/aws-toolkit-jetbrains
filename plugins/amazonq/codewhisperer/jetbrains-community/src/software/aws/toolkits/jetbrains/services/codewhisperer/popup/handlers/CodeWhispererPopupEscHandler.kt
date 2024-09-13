@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers
 
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
 class CodeWhispererPopupEscHandler(sessionContext: SessionContext) : CodeWhispererEditorActionHandler(sessionContext) {

@@ -20,8 +20,8 @@ open class CodeWhispererAcceptAction(title: String = message("codewhisperer.inli
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.project != null && e.getData(CommonDataKeys.EDITOR) != null
-            && CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
+        e.presentation.isEnabled = e.project != null && e.getData(CommonDataKeys.EDITOR) != null &&
+            CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
     }
 
     override fun actionPerformed(e: AnActionEvent) {

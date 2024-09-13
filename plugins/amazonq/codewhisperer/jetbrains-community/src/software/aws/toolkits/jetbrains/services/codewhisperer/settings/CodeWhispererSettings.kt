@@ -94,22 +94,6 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
     }
 
-//    fun getPrioritizedSuggestionString(): String =
-//        if (isQSuggestionPrioritized()) {
-//            message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
-//        } else {
-//            message("aws.settings.codewhisperer.inline.suggestion_priority.intellisense.text")
-//        }
-
-//    fun isQSuggestionPrioritized(): Boolean =
-//        state.value.getOrDefault(CodeWhispererConfigurationType.isQSuggestionPrioritized, false)
-
-//    fun setQSuggestionPrioritized(value: String?) {
-//        state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized] =
-//            value == message("aws.settings.codewhisperer.inline.suggestion_priority.q.text")
-//        println("set isQSuggestionPrioritized to ${state.value[CodeWhispererConfigurationType.isQSuggestionPrioritized]}")
-//    }
-
     fun isInlineShortcutFeatureNotificationDisplayed(): Boolean =
         state.value.getOrDefault(CodeWhispererConfigurationType.IsInlineShortcutFeatureNotificationDisplayed, false)
 

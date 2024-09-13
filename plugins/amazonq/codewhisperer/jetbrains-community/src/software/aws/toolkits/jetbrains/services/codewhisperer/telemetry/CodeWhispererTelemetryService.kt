@@ -102,7 +102,7 @@ class CodeWhispererTelemetryService {
         latency: Double,
         exceptionType: String?
     ) {
-        println("jobId: $jobId, serviceInvocation: $requestId")
+        LOG.debug { "Sending serviceInvocation for $requestId, jobId: $jobId" }
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
 
@@ -399,13 +399,6 @@ class CodeWhispererTelemetryService {
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null
     ) {
-        if (hasUserAccepted) {
-            // find the accepted session, other trigger session will be ignore or unseen
-        } else {
-            // user didn't accept any of the suggestion in this display session, for all the trigger session that they have seen
-            // mark them as reject, otherwise mark them as unseen
-        }
-
         CodeWhispererService.getInstance().getAllPaginationSessions().forEach { (jobId, state) ->
             if (state == null) return@forEach
             val decisions = mutableListOf<CodewhispererSuggestionState>()
@@ -417,14 +410,12 @@ class CodeWhispererTelemetryService {
 
                 decisions.add(suggestionState)
             }
-            print("jobId: $jobId, userDecisions: [")
-            decisions.forEach { print("$it, ") }
-            println("]")
+            LOG.debug { "jobId: $jobId, userDecisions: [${decisions.joinToString(", ")}]" }
 
-            with(aggregateUserDecision(decisions, hasUserAccepted)) {
+            with(aggregateUserDecision(decisions)) {
                 // the order of the following matters
                 // step 1, send out current decision
-                println("jobId: $jobId, userTriggerDecision: $this")
+                LOG.debug { "jobId: $jobId, userTriggerDecision: $this" }
                 previousUserTriggerDecisionTimestamp = Instant.now()
 
                 val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
@@ -459,8 +450,6 @@ class CodeWhispererTelemetryService {
                 }
             }
         }
-
-
     }
 
     /**
@@ -468,10 +457,12 @@ class CodeWhispererTelemetryService {
      * - Accept if there is an Accept
      * - Reject if there is a Reject
      * - Empty if all decisions are Empty
+     * - Ignore if at least one suggestion is seen and there's an accept for another trigger in the same display session
+     * - Unseen if the whole trigger is not seen
      * - Record the accepted suggestion index
      * - Discard otherwise
      */
-    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>, hasUserAccepted: Boolean): CodewhispererSuggestionState {
+    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>): CodewhispererSuggestionState {
         var isEmpty = true
         var isUnseen = true
         var isDiscard = true
@@ -503,10 +494,6 @@ class CodeWhispererTelemetryService {
             CodewhispererSuggestionState.Unseen
         } else {
             CodewhispererSuggestionState.Ignore
-//            if (hasUserAccepted) {
-//
-//            }
-//            CodewhispererSuggestionState.Discard
         }
     }
 

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Service
 class CodeWhispererInvocationStatus {
-    private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
+    private val isInvokingService: AtomicBoolean = AtomicBoolean(false)
     private var invokingSessionId: String? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
         private set
@@ -25,20 +25,15 @@ class CodeWhispererInvocationStatus {
     var popupStartTimestamp: Instant? = null
         private set
 
-    fun checkExistingInvocationAndSet(): Boolean =
-        if (isInvokingCodeWhisperer.getAndSet(true)) {
-            LOG.debug { "Have existing CodeWhisperer invocation, sessionId: $invokingSessionId" }
-            true
-        } else {
-            ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(true)
-            LOG.debug { "Starting CodeWhisperer invocation" }
-            false
-        }
+    fun startInvocation() {
+        isInvokingService.set(true)
+        LOG.debug { "Starting CodeWhisperer invocation" }
+    }
 
-    fun hasExistingInvocation(): Boolean = isInvokingCodeWhisperer.get()
+    fun hasExistingServiceInvocation(): Boolean = isInvokingService.get()
 
     fun finishInvocation() {
-        if (isInvokingCodeWhisperer.compareAndSet(true, false)) {
+        if (isInvokingService.compareAndSet(true, false)) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(false)
             LOG.debug { "Ending CodeWhisperer invocation" }
             invokingSessionId = null
@@ -68,7 +63,6 @@ class CodeWhispererInvocationStatus {
 
     fun setDisplaySessionActive(value: Boolean) {
         isPopupActive = value
-//        println("set popup active to $value")
     }
 
     fun setInvocationStart() {

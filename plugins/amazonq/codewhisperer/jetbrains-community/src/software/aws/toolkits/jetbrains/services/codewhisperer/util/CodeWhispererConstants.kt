@@ -36,7 +36,7 @@ object CodeWhispererConstants {
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
 
-    // TODO: this is currently set to 0 to trigger with 0 delays and rely on ML trigger to determine which characters to trigger at
+    // TODO: this is currently set to 0 to trigger with 0ms delay and rely on ML trigger to determine which characters to trigger at
     // We will monitor service side resource utilization and throttling.
     const val INVOCATION_DELAY: Long = 0
 

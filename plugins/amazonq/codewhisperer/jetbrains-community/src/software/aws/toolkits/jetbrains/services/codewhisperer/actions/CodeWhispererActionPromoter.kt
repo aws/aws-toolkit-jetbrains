@@ -26,7 +26,7 @@ class CodeWhispererActionPromoter : ActionPromoter {
             } else if (b is ChooseItemAction) {
                 return@sortWith 1
             }
-            
+
             if (isCodeWhispererAcceptAction(a)) {
                 return@sortWith -1
             } else if (isCodeWhispererAcceptAction(b)) {
@@ -49,5 +49,4 @@ class CodeWhispererActionPromoter : ActionPromoter {
 
     private fun isCodeWhispererForceAction(action: AnAction): Boolean =
         isCodeWhispererForceAcceptAction(action) || isCodeWhispererNavigateAction(action)
-
 }

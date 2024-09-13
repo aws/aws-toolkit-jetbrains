@@ -11,9 +11,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 
 class CodeWhispererCodeReferenceActionListener : CodeWhispererUserActionListener {
     override fun afterAccept(states: InvocationContext, previews: List<PreviewContext>, sessionContext: SessionContext, rangeMarker: RangeMarker) {
-        val (project, editor) = states.requestContext
-        val manager = CodeWhispererCodeReferenceManager.getInstance(project)
+        val manager = CodeWhispererCodeReferenceManager.getInstance(sessionContext.project)
         manager.insertCodeReference(states, previews, sessionContext.selectedIndex)
-        manager.addListeners(editor)
+        manager.addListeners(sessionContext.editor)
     }
 }

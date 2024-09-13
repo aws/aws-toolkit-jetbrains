@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners
 
 import com.intellij.openapi.application.ApplicationManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import java.awt.event.ActionEvent

@@ -184,7 +184,7 @@ open class CodeWhispererTestBase {
         runInEdtAndWait {
             projectRule.fixture.performEditorAction(codeWhispererRecommendationActionId)
         }
-        while (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+        while (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
             Thread.sleep(10)
         }
     }

@@ -99,20 +99,21 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         val coroutineScope = applicationCoroutineScope()
 
         return run {
-                coroutineScope.launch(EDT) {
-                    while (!hasEnoughDelaySinceLastTrigger()) {
-                        if (!isActive) return@launch
-                        delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
-                    }
-
-                    performAutomatedTriggerAction(editor, triggerType, latencyContext)
-                }.also {
-                    lastTrigger = it
+            coroutineScope.launch(EDT) {
+                while (!hasEnoughDelaySinceLastTrigger()) {
+                    if (!isActive) return@launch
+                    delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
                 }
+
+                performAutomatedTriggerAction(editor, triggerType, latencyContext)
+            }.also {
+                lastTrigger = it
             }
+        }
     }
 
-    private fun hasEnoughDelaySinceLastTrigger(): Boolean = lastCharTypedTime == null || lastCharTypedTime?.plusMillis(INVOCATION_DELAY)?.isBefore(Instant.now()) == true
+    private fun hasEnoughDelaySinceLastTrigger(): Boolean =
+        lastCharTypedTime == null || lastCharTypedTime?.plusMillis(INVOCATION_DELAY)?.isBefore(Instant.now()) == true
 
     private fun scheduleReset() {
         if (!alarm.isDisposed) {

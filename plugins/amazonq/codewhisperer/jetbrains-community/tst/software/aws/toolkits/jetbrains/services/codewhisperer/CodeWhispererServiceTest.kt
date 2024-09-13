@@ -128,7 +128,6 @@ class CodeWhispererServiceTest {
         projectRule.project.replaceService(FileContextProvider::class.java, mockFileContextProvider, disposableRule.disposable)
 
         val actual = sut.getRequestContext(
-            TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
             file,
@@ -154,7 +153,6 @@ class CodeWhispererServiceTest {
         }
 
         val actual = sut.getRequestContext(
-            TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
             file,

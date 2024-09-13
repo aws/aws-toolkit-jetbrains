@@ -119,7 +119,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
-        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
             // AnimatedIcon can't serialize over remote host
             if (!AppMode.isRemoteDevHost()) {
                 AnimatedIcon.Default()
@@ -130,15 +130,16 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.Debugger.ThreadStates.Idle
         }
 
-    private fun pluginName() = if (PluginUpdateManager.getInstance().isBeta()) {
-        if (CodeWhispererService.getInstance().isBetaExpired) {
-            "Amazon Q (Beta) (Update required)"
+    private fun pluginName() =
+        if (PluginUpdateManager.getInstance().isBeta()) {
+            if (CodeWhispererService.getInstance().isBetaExpired) {
+                "Amazon Q (Beta) (Update required)"
+            } else {
+                "Amazon Q (Beta)"
+            }
         } else {
-            "Amazon Q (Beta)"
+            "Amazon Q"
         }
-    } else {
-        "Amazon Q"
-    }
 
     companion object {
         const val ID = "aws.codewhisperer.statusWidget"

@@ -8,13 +8,11 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import groovy.lang.Tuple3
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext

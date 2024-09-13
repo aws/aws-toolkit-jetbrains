@@ -10,11 +10,8 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.popup.ListSeparator
-import com.intellij.ui.GroupedComboBoxRenderer
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.dsl.builder.bindIntText
-import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.concurrency.EdtExecutorService
@@ -96,14 +93,16 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
 
-            row() {
+            row {
                 link("Configure inline suggestion keybindings") { e ->
                     val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
                     val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
-                    // workaround for sometimes the string is not input there
-                    settings.select(configurable, "inline suggestion")
+
+                    settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
+
+                    // workaround for certain cases for sometimes the string is not input there
                     EdtExecutorService.getScheduledExecutorInstance().schedule({
-                        settings.select(configurable, "inline suggestion")
+                        settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
                     }, 500, TimeUnit.MILLISECONDS)
                 }
             }
@@ -202,5 +201,9 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }
             }
         }
+    }
+
+    companion object {
+        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "inline suggestion"
     }
 }

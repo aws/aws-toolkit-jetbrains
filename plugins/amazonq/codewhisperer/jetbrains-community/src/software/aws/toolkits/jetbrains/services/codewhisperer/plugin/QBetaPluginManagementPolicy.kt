@@ -7,24 +7,16 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagementPolicy
 import com.intellij.ide.plugins.org.PluginManagerFilters
 
-class QBetaPluginManagementPolicy: PluginManagementPolicy {
-    override fun canEnablePlugin(descriptor: IdeaPluginDescriptor?): Boolean {
-        return descriptor?.let { PluginManagerFilters.getInstance().allowInstallingPlugin(it) } ?: true
-    }
+// Specifically for "Switch Back to Marketplace" action because the default one doesn't support downgrade
+class QBetaPluginManagementPolicy : PluginManagementPolicy {
+    override fun canEnablePlugin(descriptor: IdeaPluginDescriptor?): Boolean =
+        descriptor?.let { PluginManagerFilters.getInstance().allowInstallingPlugin(it) } ?: true
 
-    override fun canInstallPlugin(descriptor: IdeaPluginDescriptor?): Boolean {
-        return canEnablePlugin(descriptor)
-    }
+    override fun canInstallPlugin(descriptor: IdeaPluginDescriptor?): Boolean = canEnablePlugin(descriptor)
 
-    override fun isDowngradeAllowed(localDescriptor: IdeaPluginDescriptor?, remoteDescriptor: IdeaPluginDescriptor?): Boolean {
-        return true
-    }
+    override fun isDowngradeAllowed(localDescriptor: IdeaPluginDescriptor?, remoteDescriptor: IdeaPluginDescriptor?): Boolean = true
 
-    override fun isInstallFromDiskAllowed(): Boolean {
-        return PluginManagerFilters.getInstance().allowInstallFromDisk()
-    }
+    override fun isInstallFromDiskAllowed(): Boolean = PluginManagerFilters.getInstance().allowInstallFromDisk()
 
-    override fun isUpgradeAllowed(localDescriptor: IdeaPluginDescriptor?, remoteDescriptor: IdeaPluginDescriptor?): Boolean {
-        return true
-    }
+    override fun isUpgradeAllowed(localDescriptor: IdeaPluginDescriptor?, remoteDescriptor: IdeaPluginDescriptor?): Boolean = true
 }

@@ -7,7 +7,6 @@ import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.coroutines.Job
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.shouldSkipInvokingBasedOnRightContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
@@ -15,7 +14,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 
 class CodeWhispererTypedHandler : TypedHandlerDelegate() {
     override fun charTyped(c: Char, project: Project, editor: Editor, psiFiles: PsiFile): Result {
-//        println("try triggering at character ${c}")
         if (shouldSkipInvokingBasedOnRightContext(editor)) {
             return Result.CONTINUE
         }

@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners
 
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import java.awt.event.ActionListener
 

@@ -173,7 +173,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             } catch (e: Exception) {
                 sendModificationTelemetry(acceptedSuggestion, null)
                 // temp remove event sent as further discussion needed for metric calculation
-//                 sendUserModificationTelemetryToServiceAPI(acceptedSuggestion, 1.0)
+                // sendUserModificationTelemetryToServiceAPI(acceptedSuggestion, 1.0)
             }
         }
     }

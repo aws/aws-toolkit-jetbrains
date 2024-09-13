@@ -4,20 +4,13 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
-import com.intellij.ide.DataManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.keymap.KeymapManager
-import com.intellij.openapi.keymap.impl.ui.KeymapPanel
 import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.ui.components.ActionLink
-import com.intellij.util.concurrency.EdtExecutorService
-import com.intellij.util.progress.sleepCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -40,9 +33,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.notifyInfo
-import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import java.time.LocalDate
@@ -80,7 +71,6 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             postWelcomeToBetaMessage()
             checkBetaExpiryInfo()
         }
-
 
         // ---- Everything below will be triggered once after startup ----
 
@@ -122,7 +112,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
             content = message("codewhisperer.notification.inline.shortcut_config.content"),
             project = project,
             listOf(
-                object: NotificationAction(message("codewhisperer.notification.inline.shortcut_config.open_setting")) {
+                object : NotificationAction(message("codewhisperer.notification.inline.shortcut_config.open_setting")) {
                     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
                         ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
                     }
@@ -133,8 +123,8 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
 
     private fun postWelcomeToBetaMessage() {
         notifyInfo(
-            title = "Welcome to Amazon Q Plugin Beta",
-            content = "Thank you for participating in Amazon Q beta plugin testing. Plugin auto-update is always turned on to ensure the best beta experience.",
+            title = message("q.beta.notification.welcome.title"),
+            content = message("q.beta.notification.welcome.message"),
             project = null
         )
     }
@@ -143,12 +133,11 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         // hard 2024/10/1 stop
         val expiryDate = LocalDate.of(2024, 10, 1)
 
-        // Get the current date
         val currentDate = LocalDate.now()
         if (currentDate.isAfter(expiryDate)) {
             notifyInfo(
-                title = "Amazon Q current beta period ended",
-                content = "The current beta period has ended on $expiryDate, please switch to the marketplace version to continue using Amazon Q.",
+                title = message("q.beta.notification.end.title"),
+                content = message("q.beta.notification.end.message", expiryDate),
                 project = null
             )
             CodeWhispererService.getInstance().isBetaExpired = true

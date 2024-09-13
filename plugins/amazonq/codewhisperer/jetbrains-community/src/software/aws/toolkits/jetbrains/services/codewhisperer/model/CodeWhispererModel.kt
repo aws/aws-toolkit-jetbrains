@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.model
 
-import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
@@ -12,9 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.wm.WindowManager
-import com.intellij.ui.ComponentUtil
-import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
@@ -28,9 +24,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.AcceptedSuggestionEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
@@ -143,13 +139,7 @@ data class SessionContext(
             CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
             object : CodeWhispererIntelliSenseOnHoverListener {
                 override fun onEnter() {
-                    val popupWindow = (popup as AbstractPopup?)?.popupWindow ?: return
-                    WindowManager.getInstance().setAlphaModeRatio(popupWindow, 1f)
-
-                    val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
-                    if (a != null) {
-                        WindowManager.getInstance().setAlphaModeRatio(a, 0f)
-                    }
+                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(editor, popup, opposite = true)
                 }
             }
         )
@@ -157,19 +147,12 @@ data class SessionContext(
 
     @RequiresEdt
     override fun dispose() {
-        println("disposing the session")
-
         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
             this,
             hasAccepted,
             CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
-
-        val a = ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)
-        if (a != null) {
-            WindowManager.getInstance().setAlphaModeRatio(a, 0f)
-        }
-
+        setIntelliSensePopupAlpha(editor, 0f)
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
 
         if (hasAccepted) {

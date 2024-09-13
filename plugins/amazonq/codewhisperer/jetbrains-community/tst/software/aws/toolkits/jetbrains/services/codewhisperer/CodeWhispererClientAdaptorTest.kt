@@ -82,8 +82,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -92,7 +90,6 @@ import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
-import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
 class CodeWhispererClientAdaptorTest {
     val projectRule = JavaCodeInsightTestFixtureRule()
@@ -248,7 +245,6 @@ class CodeWhispererClientAdaptorTest {
             projectRule.fixture.openFileInEditor(file.virtualFile)
         }
         val requestContext = CodeWhispererService.getInstance().getRequestContext(
-            TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
             file,

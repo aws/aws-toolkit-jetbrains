@@ -48,22 +48,38 @@ import javax.swing.JPanel
 
 class CodeWhispererPopupComponents {
     val prevButton = createNavigationButton(
-        message("codewhisperer.popup.button.prev", POPUP_DIM_HEX, run {
-            val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
-                .shortcutSet.shortcuts.first()
-            val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
-            if (SystemInfo.isMac) MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
-            else KeymapUtil.getKeystrokeText(keyStroke)
-        })
+        message(
+            "codewhisperer.popup.button.prev",
+            POPUP_DIM_HEX,
+            run {
+                // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
+                val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
+                    .shortcutSet.shortcuts.first()
+                val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
+                if (SystemInfo.isMac) {
+                    MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
+                } else {
+                    KeymapUtil.getKeystrokeText(keyStroke)
+                }
+            }
+        )
     )
     val nextButton = createNavigationButton(
-        message("codewhisperer.popup.button.next", POPUP_DIM_HEX, run {
-            val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
-                .shortcutSet.shortcuts.first()
-            val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
-            if (SystemInfo.isMac) MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
-            else KeymapUtil.getKeystrokeText(keyStroke)
-        })
+        message(
+            "codewhisperer.popup.button.next",
+            POPUP_DIM_HEX,
+            run {
+                // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
+                val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
+                    .shortcutSet.shortcuts.first()
+                val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
+                if (SystemInfo.isMac) {
+                    MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
+                } else {
+                    KeymapUtil.getKeystrokeText(keyStroke)
+                }
+            }
+        )
     ).apply {
         preferredSize = prevButton.preferredSize
     }

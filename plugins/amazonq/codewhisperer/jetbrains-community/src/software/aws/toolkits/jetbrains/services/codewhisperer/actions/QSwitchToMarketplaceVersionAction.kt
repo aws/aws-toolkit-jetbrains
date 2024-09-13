@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.ide.plugins.CustomPluginRepositoryService
-import com.intellij.ide.plugins.PluginManagementPolicy
 import com.intellij.ide.plugins.marketplace.MarketplaceRequests
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -20,16 +18,15 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import com.intellij.openapi.updateSettings.impl.UpdateSettings
-import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 
-class QSwitchToMarketplaceVersionAction:
+class QSwitchToMarketplaceVersionAction :
     AnAction(
-        "Switch Back to Marketplace",
+        message("codewhisperer.actions.switch_to_marketplace.title"),
         null,
         AllIcons.Actions.Refresh
     ),
@@ -44,13 +41,13 @@ class QSwitchToMarketplaceVersionAction:
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        val url = "https://d244q0w8umigth.cloudfront.net/"
-        UpdateSettings.getInstance().storedPluginHosts.remove(url)
+        UpdateSettings.getInstance().storedPluginHosts.remove(CUSTOM_PLUGIN_URL)
+        UpdateSettings.getInstance().storedPluginHosts.remove("$CUSTOM_PLUGIN_URL/")
 
         runInEdt {
             ProgressManager.getInstance().run(object : Task.Backgroundable(
                 null,
-                "Switching to marketplace version",
+                message("codewhisperer.actions.switch_to_marketplace.progress.title"),
                 true
             ) {
                 override fun run(indicator: ProgressIndicator) {
@@ -59,7 +56,6 @@ class QSwitchToMarketplaceVersionAction:
                 }
             })
         }
-
     }
 
     private fun installMarketplaceAwsPlugins(pluginId: PluginId, indicator: ProgressIndicator) {
@@ -90,5 +86,9 @@ class QSwitchToMarketplaceVersionAction:
             return
         }
         return
+    }
+
+    companion object {
+        private const val CUSTOM_PLUGIN_URL = "https://d244q0w8umigth.cloudfront.net"
     }
 }

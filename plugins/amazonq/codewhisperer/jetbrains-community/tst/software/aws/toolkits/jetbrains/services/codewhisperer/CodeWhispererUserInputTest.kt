@@ -15,7 +15,6 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
@@ -105,15 +104,13 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
-        val latencyContextCaptor = argumentCaptor<LatencyContext>()
         codewhispererServiceSpy.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
                     editorCaptor.capture(),
                     projectCaptor.capture(),
-                    psiFileCaptor.capture(),
-                    latencyContextCaptor.capture()
+                    psiFileCaptor.capture()
                 )
             }.doAnswer {
                 val requestContext = codewhispererServiceSpy.getRequestContext(
@@ -121,7 +118,6 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
                     psiFileCaptor.firstValue,
-                    latencyContextCaptor.firstValue
                 )
                 projectRule.fixture.type(userInput)
                 requestContext

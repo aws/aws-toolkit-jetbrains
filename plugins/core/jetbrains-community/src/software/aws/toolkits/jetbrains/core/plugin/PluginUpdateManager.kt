@@ -45,9 +45,9 @@ class PluginUpdateManager : Disposable {
         scheduleUpdateTask()
 
         val enabled = AwsSettings.getInstance().isAutoUpdateEnabled
-        LOG.debug { "AWS plugins checking for new updates. Auto update enabled: $enabled" }
+        LOG.debug { "AWS plugins checking for new updates. Auto update enabled: $enabled, isBeta: ${isBeta()}" }
 
-        if (!enabled) return
+        if (!enabled && !isBeta()) return
 
         runInEdt {
             ProgressManager.getInstance().run(object : Task.Backgroundable(
