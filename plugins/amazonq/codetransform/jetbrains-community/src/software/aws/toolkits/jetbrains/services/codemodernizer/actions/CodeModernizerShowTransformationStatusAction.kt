@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.actions
 
-import com.intellij.icons.AllIcons.Vcs.Changelist
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -15,13 +15,13 @@ class CodeModernizerShowTransformationStatusAction :
     AnAction(
         message("codemodernizer.explorer.show_transformation_status"),
         message("codemodernizer.explorer.show_transformation_status_description"),
-        Changelist
+        AllIcons.Vcs.Changelist
     ),
     DumbAware {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(event: AnActionEvent) {
-        event.presentation.icon = Changelist
+        event.presentation.icon = AllIcons.Vcs.Changelist
     }
 
     override fun actionPerformed(event: AnActionEvent) {

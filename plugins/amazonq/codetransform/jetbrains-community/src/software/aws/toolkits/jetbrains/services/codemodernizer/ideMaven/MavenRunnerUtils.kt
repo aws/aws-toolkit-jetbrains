@@ -4,8 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
@@ -66,8 +69,14 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+        val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
+        val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }
+        val moduleSdk = module?.let { ModuleRootManager.getInstance(it).sdk }
+        val sdk = moduleSdk ?: ProjectRootManager.getInstance(project).projectSdk
 
-        if (ProjectRootManager.getInstance(project).projectSdk == null) return MavenCopyCommandsResult.NoJdk
+        if (sdk == null) return MavenCopyCommandsResult.NoJdk // both module SDK and project SDK are null
+
+        mvnSettings.setJreName(sdk.name) // use the SDK we found above
 
         // run copy dependencies
         val copyDependenciesRunnable =
