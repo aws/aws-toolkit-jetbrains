@@ -19,6 +19,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
+import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
@@ -43,18 +44,8 @@ class QSwitchToMarketplaceVersionAction:
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        // remove all custom channel for amazon q and aws core
-        val qId = PluginId.getId(AwsToolkit.Q_PLUGIN_ID)
-        val coreId = PluginId.getId(AwsToolkit.CORE_PLUGIN_ID)
-        val customPlugins = CustomPluginRepositoryService.getInstance().customRepositoryPluginMap
-        val result = customPlugins.filter {
-            it.value.any { node ->
-                listOf(qId, coreId).contains(node.pluginId)
-            }
-        }
-        result.keys.forEach {
-            customPlugins.remove(it)
-        }
+        val url = "https://d244q0w8umigth.cloudfront.net/"
+        UpdateSettings.getInstance().storedPluginHosts.remove(url)
 
         runInEdt {
             ProgressManager.getInstance().run(object : Task.Backgroundable(
@@ -64,7 +55,7 @@ class QSwitchToMarketplaceVersionAction:
             ) {
                 override fun run(indicator: ProgressIndicator) {
                     installMarketplaceAwsPlugins(PluginId.getId(AwsToolkit.CORE_PLUGIN_ID), indicator)
-                    installMarketplaceAwsPlugins(qId, indicator)
+                    installMarketplaceAwsPlugins(PluginId.getId(AwsToolkit.Q_PLUGIN_ID), indicator)
                 }
             })
         }
