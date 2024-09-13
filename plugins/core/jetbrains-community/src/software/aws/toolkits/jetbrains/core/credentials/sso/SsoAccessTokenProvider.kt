@@ -378,7 +378,7 @@ class SsoAccessTokenProvider(
             is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
         }
         if (registration == null) {
-            val message = "Unable to load client registration"
+            val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null client registration",
@@ -388,6 +388,7 @@ class SsoAccessTokenProvider(
             throw InvalidClientException.builder().message(message).build()
         }
 
+        var stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
                 it.clientId(registration.clientId)
@@ -396,12 +397,14 @@ class SsoAccessTokenProvider(
                 it.refreshToken(currentToken.refreshToken)
             }
 
+            stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
             val token = when (currentToken) {
                 is DeviceAuthorizationGrantToken -> newToken.toDAGAccessToken(currentToken.createdAt)
                 is PKCEAuthorizationGrantToken -> newToken.toPKCEAccessToken(currentToken.createdAt)
             }
 
-            saveAccessToken(token)
+            stageName = RefreshCredentialStage.SAVE_TOKEN
+            saveAccessToken(token, isRefresh = true)
 
             sendRefreshCredentialsMetric(
                 currentToken,
@@ -417,18 +420,29 @@ class SsoAccessTokenProvider(
                 else -> null
             }
             val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
-                else -> e.message ?: "Unknown error"
+                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "$stageName: Unknown error"
+                else -> e.message ?: "$stageName: Unknown error"
+            }
+
+            val errorCode = when (e) {
+                is AwsServiceException -> "$stageName : ${e.awsErrorDetails().errorCode()}"
+                else -> null
             }
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Refresh access token request failed",
+                reason = "Refresh access token request failed: $stageName : $errorCode",
                 reasonDesc = message,
                 requestId = requestId,
                 result = Result.Failed
             )
             throw e
         }
+    }
+
+    enum class RefreshCredentialStage {
+        CREATE_TOKEN,
+        GET_TOKEN_DETAILS,
+        SAVE_TOKEN
     }
 
     private fun loadDagClientRegistration(): ClientRegistration? =
@@ -458,13 +472,19 @@ class SsoAccessTokenProvider(
         cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
     }
 
-    private fun saveAccessToken(token: AccessToken) {
-        when (token) {
-            is DeviceAuthorizationGrantToken -> {
-                cache.saveAccessToken(dagAccessTokenCacheKey, token)
-            }
+    private fun saveAccessToken(token: AccessToken, isRefresh: Boolean = false) {
+        try {
+            when (token) {
+                is DeviceAuthorizationGrantToken -> {
+                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
+                }
 
-            is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
+                is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
+            }
+        } catch (e: Exception) {
+            if (isRefresh) {
+                throw e
+            }
         }
     }
 
