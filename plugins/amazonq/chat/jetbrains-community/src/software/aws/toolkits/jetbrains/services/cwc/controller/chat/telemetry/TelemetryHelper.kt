@@ -66,7 +66,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         TriggerType.ContextMenu, TriggerType.Hotkeys -> CwsprChatTriggerInteraction.ContextMenu
     }
 
-    private fun getIsProjectContextEnabled() = CodeWhispererSettings.getInstance().isProjectContextEnabled()
+    fun getIsProjectContextEnabled() = CodeWhispererSettings.getInstance().isProjectContextEnabled()
 
     // When chat panel is focused
     fun recordEnterFocusChat() {
@@ -369,11 +369,13 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         responseStreamTotalTime[tabId] = totalTime
     }
 
-    fun setResponseHasProjectContext(data: ChatRequestData, response: ChatMessage) {
-        responseHasProjectContext[response.messageId] = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
+    fun setResponseHasProjectContext(messageId: String, hasProjectContext: Boolean) {
+        responseHasProjectContext[messageId] = hasProjectContext
+        logger.info("Set $messageId to ${responseHasProjectContext[messageId]}")
     }
 
-    fun getMessageHasProjectContext(messageId: String): Boolean {
+    private fun getMessageHasProjectContext(messageId: String): Boolean {
+        logger.info("Get $messageId = ${responseHasProjectContext.getOrDefault(messageId, false)}")
         return responseHasProjectContext.getOrDefault(messageId, false)
     }
 

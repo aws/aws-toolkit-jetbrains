@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -54,12 +55,12 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         shouldAddIndexInProgressMessage: Boolean
     ) = flow {
         val session = sessionInfo.session
+        val hasProjectContext = telemetryHelper.getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
         session.chat(data)
             .onStart {
                 // The first thing we always send back is an AnswerStream message to indicate the beginning of a streaming answer
                 val response =
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.AnswerStream, message = "")
-
                 telemetryHelper.setResponseStreamStartTime(tabId)
                 emit(response)
             }
@@ -88,9 +89,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 // Send the Answer message to indicate the end of the response stream
                 val response =
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
-
                 telemetryHelper.setResponseStreamTotalTime(tabId)
-                telemetryHelper.setResponseHasProjectContext(data, response)
+                telemetryHelper.setResponseHasProjectContext(requestId, hasProjectContext)
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
             }
@@ -116,14 +116,14 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 }
             }
             .collect { responseEvent ->
-                processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+                processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage, hasProjectContext)?.let { emit(it) }
             }
     }
 
-    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
+    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean, hasProjectContext: Boolean): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
-
+        telemetryHelper.setResponseHasProjectContext(requestId, hasProjectContext)
         if (event.codeReferences != null) {
             codeReferences += event.codeReferences.map { reference ->
                 CodeReference(
