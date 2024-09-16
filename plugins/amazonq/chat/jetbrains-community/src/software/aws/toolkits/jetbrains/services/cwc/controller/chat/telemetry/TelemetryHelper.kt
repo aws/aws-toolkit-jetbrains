@@ -96,6 +96,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     // When Chat API responds to a user message (full response streamed)
     fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, numberOfCodeBlocks: Int) {
         val hasProjectContext = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
+        responseHasProjectContext[response.messageId] = hasProjectContext
         AmazonqTelemetry.addMessage(
             cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
             cwsprChatMessageId = response.messageId,
@@ -120,7 +121,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             codewhispererCustomizationArn = data.customization?.arn,
             cwsprChatHasProjectContext = hasProjectContext
         )
-        responseHasProjectContext[response.messageId] = hasProjectContext
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
 
@@ -137,7 +137,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             data.message.length,
             responseLength,
             numberOfCodeBlocks,
-            getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty(),
+            getMessageHasProjectContext(response.messageId),
             data.customization
         ).also {
             logger.debug {
@@ -164,9 +164,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
     // When user interacts with a message (e.g. copy code, insert code, vote)
     suspend fun recordInteractWithMessage(message: IncomingCwcMessage) {
-        val hasProjectContext = { messageId: String ->
-            responseHasProjectContext.getOrDefault(messageId, false)
-        }
         val event: ChatInteractWithMessageEvent? = when (message) {
             is IncomingCwcMessage.ChatItemVoted -> {
                 AmazonqTelemetry.interactWithMessage(
@@ -178,7 +175,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                         else -> CwsprChatInteractionType.Unknown
                     },
                     credentialStartUrl = getStartUrl(context.project),
-                    cwsprChatHasProjectContext = hasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -190,7 +187,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                             else -> ChatMessageInteractionType.UNKNOWN_TO_SDK_VERSION
                         }
                     )
-                    hasProjectLevelContext(hasProjectContext(message.messageId))
+                    hasProjectLevelContext(getMessageHasProjectContext(message.messageId))
                 }.build()
             }
 
@@ -200,13 +197,13 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatMessageId = message.messageId.orEmpty(),
                     cwsprChatInteractionType = CwsprChatInteractionType.ClickFollowUp,
                     credentialStartUrl = getStartUrl(context.project),
-                    cwsprChatHasProjectContext = hasProjectContext(message.messageId.orEmpty())
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId.orEmpty())
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
                     messageId(message.messageId.orEmpty())
                     interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
-                    hasProjectLevelContext(hasProjectContext(message.messageId.orEmpty()))
+                    hasProjectLevelContext(getMessageHasProjectContext(message.messageId.orEmpty()))
                 }.build()
             }
 
@@ -221,7 +218,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     credentialStartUrl = getStartUrl(context.project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex,
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks,
-                    cwsprChatHasProjectContext = hasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -229,7 +226,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     interactionType(ChatMessageInteractionType.COPY_SNIPPET)
                     interactionTarget(message.insertionTargetType)
                     acceptedCharacterCount(message.code.length)
-                    hasProjectLevelContext(hasProjectContext(message.messageId))
+                    hasProjectLevelContext(getMessageHasProjectContext(message.messageId))
                 }.build()
             }
 
@@ -245,7 +242,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     credentialStartUrl = getStartUrl(context.project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex,
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks,
-                    cwsprChatHasProjectContext = hasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -254,7 +251,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     interactionTarget(message.insertionTargetType)
                     acceptedCharacterCount(message.code.length)
                     acceptedLineCount(message.code.lines().size)
-                    hasProjectLevelContext(hasProjectContext(message.messageId))
+                    hasProjectLevelContext(getMessageHasProjectContext(message.messageId))
                 }.build()
             }
 
@@ -274,7 +271,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     cwsprChatInteractionTarget = message.link,
                     cwsprChatHasReference = null,
                     credentialStartUrl = getStartUrl(context.project),
-                    cwsprChatHasProjectContext = hasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -287,7 +284,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                         }
                     )
                     interactionTarget(message.link)
-                    hasProjectLevelContext(hasProjectContext(message.messageId))
+                    hasProjectLevelContext(getMessageHasProjectContext(message.messageId))
                 }.build()
             }
 
@@ -372,6 +369,14 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     fun setResponseStreamTotalTime(tabId: String) {
         val totalTime = Duration.between(responseStreamStartTime[tabId], Instant.now()).toMillis().toInt()
         responseStreamTotalTime[tabId] = totalTime
+    }
+
+    fun setResponseHasProjectContext(data: ChatRequestData, response: ChatMessage) {
+        responseHasProjectContext[response.messageId] = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
+    }
+
+    fun getMessageHasProjectContext(messageId: String): Boolean {
+        return responseHasProjectContext.getOrDefault(messageId, false)
     }
 
     @VisibleForTesting

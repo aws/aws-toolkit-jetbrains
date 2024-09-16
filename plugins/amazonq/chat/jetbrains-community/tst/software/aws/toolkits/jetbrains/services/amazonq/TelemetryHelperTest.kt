@@ -331,6 +331,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.UPVOTE)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -373,6 +374,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -429,6 +431,7 @@ class TelemetryHelperTest {
                     interactionTarget("insertionTargetType")
                     acceptedCharacterCount("println()".length)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -462,7 +465,6 @@ class TelemetryHelperTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
-
         val codeBlockIndex = 1
         val totalCodeBlocks = 10
         val inserTionTargetType = "insertionTargetType"
@@ -493,6 +495,7 @@ class TelemetryHelperTest {
                     acceptedCharacterCount(code.length)
                     acceptedLineCount(code.lines().size)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -552,6 +555,7 @@ class TelemetryHelperTest {
                     interactionType(ChatMessageInteractionType.CLICK_LINK)
                     interactionTarget(link)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
