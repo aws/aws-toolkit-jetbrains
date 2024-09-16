@@ -95,8 +95,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
     // When Chat API responds to a user message (full response streamed)
     fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, numberOfCodeBlocks: Int) {
-        val hasProjectContext = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
-        responseHasProjectContext[response.messageId] = hasProjectContext
         AmazonqTelemetry.addMessage(
             cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
             cwsprChatMessageId = response.messageId,
@@ -119,7 +117,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatConversationType = CwsprChatConversationType.Chat,
             credentialStartUrl = getStartUrl(context.project),
             codewhispererCustomizationArn = data.customization?.arn,
-            cwsprChatHasProjectContext = hasProjectContext
+            cwsprChatHasProjectContext = getMessageHasProjectContext(response.messageId)
         )
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
