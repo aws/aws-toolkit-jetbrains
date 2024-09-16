@@ -424,13 +424,9 @@ class SsoAccessTokenProvider(
                 else -> e.message ?: "$stageName: Unknown error"
             }
 
-            val errorCode = when (e) {
-                is AwsServiceException -> "$stageName : ${e.awsErrorDetails().errorCode()}"
-                else -> null
-            }
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Refresh access token request failed: $stageName : $errorCode",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 requestId = requestId,
                 result = Result.Failed
