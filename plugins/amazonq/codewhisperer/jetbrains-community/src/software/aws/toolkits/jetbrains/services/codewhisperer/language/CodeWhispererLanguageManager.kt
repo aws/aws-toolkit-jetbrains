@@ -10,24 +10,31 @@ import com.intellij.psi.PsiFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererDart
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererKotlin
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererLua
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPhp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPowershell
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererR
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRust
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererScala
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererShell
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSql
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSwift
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSystemVerilog
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTf
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererVue
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 
 @Service
@@ -73,8 +80,15 @@ class CodeWhispererLanguageManager {
             fileTypeName.contains("php") -> CodeWhispererPhp.INSTANCE
             fileTypeName.contains("sql") -> CodeWhispererSql.INSTANCE
             fileTypeName.contains("go") -> CodeWhispererGo.INSTANCE
-            fileTypeName.contains("shell") -> CodeWhispererShell.INSTANCE
             fileTypeName.contains("rust") -> CodeWhispererRust.INSTANCE
+            fileTypeName.contains("swift") -> CodeWhispererSwift.INSTANCE
+            fileTypeName.contains("lua") -> CodeWhispererLua.INSTANCE
+            fileTypeName.contains("dart") -> CodeWhispererDart.INSTANCE
+            fileTypeName.contains("vue") -> CodeWhispererVue.INSTANCE
+            fileTypeName.contains("systemverilog") -> CodeWhispererSystemVerilog.INSTANCE
+            fileTypeName.contains("powershell") -> CodeWhispererPowershell.INSTANCE
+            fileTypeName.contains("shell") -> CodeWhispererShell.INSTANCE
+            fileTypeName == "r" -> CodeWhispererR.INSTANCE
             // fileTypeName.contains("plain_text") -> CodeWhispererPlainText.INSTANCE // This needs to be removed because Hcl files are recognised as plain_text by JB
             else -> null
         }
@@ -125,7 +139,14 @@ class CodeWhispererLanguageManager {
             listOf("go") to CodeWhispererGo.INSTANCE,
             listOf("php") to CodeWhispererPhp.INSTANCE,
             listOf("sql") to CodeWhispererSql.INSTANCE,
-            listOf("txt") to CodeWhispererPlainText.INSTANCE
+            listOf("txt") to CodeWhispererPlainText.INSTANCE,
+            listOf("sv", "svh", "vh") to CodeWhispererSystemVerilog.INSTANCE,
+            listOf("dart") to CodeWhispererDart.INSTANCE,
+            listOf("lua", "wlua") to CodeWhispererLua.INSTANCE,
+            listOf("swift") to CodeWhispererSwift.INSTANCE,
+            listOf("vue") to CodeWhispererVue.INSTANCE,
+            listOf("ps1", "psm1") to CodeWhispererPowershell.INSTANCE,
+            listOf("r") to CodeWhispererR.INSTANCE,
         ).map {
             val exts = it.first
             val lang = it.second
