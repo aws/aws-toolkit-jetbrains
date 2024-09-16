@@ -12,7 +12,7 @@ class CodeWhispererDart private constructor() : CodeWhispererProgrammingLanguage
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Dart
 
     // TODO: enable it when service is ready
-    override fun isCodeCompletionSupported(): Boolean = true
+    override fun isCodeCompletionSupported(): Boolean = false
 
     companion object {
         // TODO: confirm with service team language id

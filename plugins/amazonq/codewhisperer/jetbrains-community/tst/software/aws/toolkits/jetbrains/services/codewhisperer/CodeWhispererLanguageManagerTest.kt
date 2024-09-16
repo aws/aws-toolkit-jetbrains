@@ -19,21 +19,32 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererDart
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererKotlin
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererLua
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPhp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPowershell
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererR
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRust
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererScala
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererShell
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSql
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSwift
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSystemVerilog
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTf
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererVue
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import kotlin.reflect.full.createInstance
@@ -123,14 +134,50 @@ class CodeWhispererLanguageManagerTest {
 }
 
 class CodeWhispererProgrammingLanguageTest {
+    @Rule
+    @JvmField
+    val applicationRule = ApplicationRule()
+
+    val suts = listOf<CodeWhispererProgrammingLanguage>(
+        CodeWhispererC.INSTANCE,
+        CodeWhispererCpp.INSTANCE,
+        CodeWhispererCsharp.INSTANCE,
+        CodeWhispererDart.INSTANCE,
+        CodeWhispererGo.INSTANCE,
+        CodeWhispererJava.INSTANCE,
+        CodeWhispererJavaScript.INSTANCE,
+        CodeWhispererJson.INSTANCE,
+        CodeWhispererJsx.INSTANCE,
+        CodeWhispererKotlin.INSTANCE,
+        CodeWhispererLua.INSTANCE,
+        CodeWhispererPhp.INSTANCE,
+        CodeWhispererPlainText.INSTANCE,
+        CodeWhispererPowershell.INSTANCE,
+        CodeWhispererPython.INSTANCE,
+        CodeWhispererR.INSTANCE,
+        CodeWhispererRuby.INSTANCE,
+        CodeWhispererRust.INSTANCE,
+        CodeWhispererScala.INSTANCE,
+        CodeWhispererShell.INSTANCE,
+        CodeWhispererSql.INSTANCE,
+        CodeWhispererSwift.INSTANCE,
+        CodeWhispererSystemVerilog.INSTANCE,
+        CodeWhispererTf.INSTANCE,
+        CodeWhispererTsx.INSTANCE,
+        CodeWhispererTypeScript.INSTANCE,
+        CodeWhispererUnknownLanguage.INSTANCE,
+        CodeWhispererVue.INSTANCE,
+        CodeWhispererYaml.INSTANCE,
+    )
+
     class TestLanguage : CodeWhispererProgrammingLanguage() {
         override val languageId: String = "test-language"
         override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Unknown
     }
 
     @Test
-    fun `test language isSupport`() {
-        EP_NAME.extensionList.forEach { language ->
+    fun `test language security scan support`() {
+        suts.forEach { language ->
             val telemetryType = language.toTelemetryType()
             val shouldSupportAutoCompletion = true
 
@@ -158,6 +205,83 @@ class CodeWhispererProgrammingLanguageTest {
 
             assertThat(language.isCodeCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
             assertThat(language.isCodeScanSupported()).isEqualTo(shouldSupportSecurityScan)
+        }
+    }
+
+    @Test
+    fun `test language inline completion support`() {
+        suts.forEach { sut ->
+            val expected = when (sut) {
+                // supported
+                is CodeWhispererC,
+                is CodeWhispererCpp,
+                is CodeWhispererCsharp,
+                is CodeWhispererGo,
+                is CodeWhispererJava,
+                is CodeWhispererJavaScript,
+                is CodeWhispererJson,
+                is CodeWhispererJsx,
+                is CodeWhispererKotlin,
+                is CodeWhispererPhp,
+                is CodeWhispererPython,
+                is CodeWhispererRuby,
+                is CodeWhispererRust,
+                is CodeWhispererScala,
+                is CodeWhispererShell,
+                is CodeWhispererSql,
+                is CodeWhispererTf,
+                is CodeWhispererTsx,
+                is CodeWhispererTypeScript,
+                is CodeWhispererYaml -> true
+
+                // to be supported
+                is CodeWhispererDart,
+                is CodeWhispererLua,
+                is CodeWhispererPowershell,
+                is CodeWhispererR,
+                is CodeWhispererSwift,
+                is CodeWhispererSystemVerilog,
+                is CodeWhispererVue -> false
+
+                // not supported
+                is CodeWhispererPlainText, is CodeWhispererUnknownLanguage -> false
+
+                else -> false
+            }
+
+            assertThat(sut.isCodeCompletionSupported()).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `test language crossfile support`() {
+        suts.forEach { sut ->
+            val expected = when (sut) {
+                is CodeWhispererJava,
+                is CodeWhispererJavaScript,
+                is CodeWhispererJsx,
+                is CodeWhispererPython,
+                is CodeWhispererTsx,
+                is CodeWhispererTypeScript -> true
+
+                else -> false
+            }
+
+            assertThat(sut.isSupplementalContextSupported()).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun `test language utg support`() {
+        suts.forEach { sut ->
+            val expected = when (sut) {
+                is CodeWhispererJava,
+                is CodeWhispererPython, -> true
+
+                else -> false
+            }
+
+            assertThat(sut.isSupplementalContextSupported()).isEqualTo(expected)
         }
     }
 
