@@ -11,10 +11,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.jetbrains.annotations.TestOnly
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.telemetry.IdeTelemetry
 
 class OpenedFileTypesMetricsListener : FileEditorManagerListener {
@@ -38,21 +35,21 @@ class OpenedFileTypesMetricsService : Disposable {
         alarm.addRequest(this::emitFileTypeMetric, INTERVAL_BETWEEN_METRICS)
     }
 
+    @Synchronized
     fun emitFileTypeMetric() {
-        CoroutineScope(getCoroutineBgContext()).launch {
-            currentOpenedFileTypes.forEach {
-                emitMetric(it)
-            }
-            currentOpenedFileTypes.clear()
-            if (!ApplicationManager.getApplication().isUnitTestMode) {
-                scheduleNextMetricEvent()
-            }
+        currentOpenedFileTypes.forEach {
+            emitMetric(it)
+        }
+        currentOpenedFileTypes.clear()
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
+            scheduleNextMetricEvent()
         }
     }
 
     @TestOnly
     fun getOpenedFileTypes(): Set<String> = currentOpenedFileTypes
 
+    @Synchronized
     fun addToExistingTelemetryBatch(fileExt: String) {
         if (fileExt in ALLOWED_CODE_EXTENSIONS) {
             currentOpenedFileTypes.add(fileExt)
