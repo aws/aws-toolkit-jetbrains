@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAM
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.core.webview.getAuthType
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
@@ -404,7 +405,7 @@ class SsoAccessTokenProvider(
             }
 
             stageName = RefreshCredentialStage.SAVE_TOKEN
-            saveAccessToken(token, isRefresh = true)
+            saveAccessToken(token)
 
             sendRefreshCredentialsMetric(
                 currentToken,
@@ -415,6 +416,7 @@ class SsoAccessTokenProvider(
 
             return token
         } catch (e: Exception) {
+            notifyInfo(e.message.toString(), "there is exception")
             val requestId = when (e) {
                 is AwsServiceException -> e.requestId()
                 else -> null
@@ -468,19 +470,13 @@ class SsoAccessTokenProvider(
         cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
     }
 
-    private fun saveAccessToken(token: AccessToken, isRefresh: Boolean = false) {
-        try {
-            when (token) {
-                is DeviceAuthorizationGrantToken -> {
-                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
-                }
+    private fun saveAccessToken(token: AccessToken) {
+        when (token) {
+            is DeviceAuthorizationGrantToken -> {
+                cache.saveAccessToken(dagAccessTokenCacheKey, token)
+            }
 
-                is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
-            }
-        } catch (e: Exception) {
-            if (isRefresh) {
-                throw e
-            }
+            is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
         }
     }
 

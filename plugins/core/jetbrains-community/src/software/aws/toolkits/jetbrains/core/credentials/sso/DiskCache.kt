@@ -137,12 +137,8 @@ class DiskCache(
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
         LOG.debug { "saveAccessToken for $cacheKey" }
         val accessTokenCache = accessTokenCache(cacheKey)
-        try {
-            writeKey(accessTokenCache) {
-                objectMapper.writeValue(it, accessToken)
-            }
-        } catch (e: Exception) {
-            throw e
+        writeKey(accessTokenCache) {
+            objectMapper.writeValue(it, accessToken)
         }
     }
 
