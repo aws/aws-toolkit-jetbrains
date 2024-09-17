@@ -89,7 +89,10 @@ class IdcRolePopup(
                             it.accessToken(token)
                             it.accountId(account.accountId())
                         }.roleList()
-                    }.forEach {
+                    }.toList()
+
+                rolesList.sortedBy { it.roleName() }
+                    .forEach { it ->
                         model.addElement(it)
                     }
 
