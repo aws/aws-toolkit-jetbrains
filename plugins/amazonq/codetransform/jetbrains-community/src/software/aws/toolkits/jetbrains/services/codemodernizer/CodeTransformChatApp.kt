@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Incoming
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getQTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import java.util.concurrent.atomic.AtomicBoolean
 
 private enum class CodeTransformMessageTypes(val type: String) {
