@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "Support `@workspace` queries for specific files like \"`@workspace` what does test.ts do?\". Update `@workspace` index more quickly when files are added or deleted"
+  "description" : "Support `@workspace` queries for specific files like \"`@workspace` what does test.ts do?\". "
 }
