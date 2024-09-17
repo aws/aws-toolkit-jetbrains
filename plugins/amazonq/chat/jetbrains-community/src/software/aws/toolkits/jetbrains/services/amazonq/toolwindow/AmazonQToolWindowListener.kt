@@ -11,15 +11,22 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.Te
 class AmazonQToolWindowListener : ToolWindowManagerListener {
 
     override fun toolWindowShown(toolWindow: ToolWindow) {
-        TelemetryHelper.recordOpenChat()
+        if (toolWindow.id == AmazonQToolWindowFactory.WINDOW_ID) {
+            TelemetryHelper.recordOpenChat()
+        }
     }
 
-    override fun stateChanged(toolWindowManager: ToolWindowManager, event: ToolWindowManagerListener.ToolWindowManagerEventType) {
-        val toolWindow = toolWindowManager.getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
-        toolWindow?.let {
-            if (event == ToolWindowManagerListener.ToolWindowManagerEventType.HideToolWindow && !it.isVisible) {
-                TelemetryHelper.recordCloseChat()
-            }
+    override fun stateChanged(
+        toolWindowManager: ToolWindowManager,
+        toolWindow: ToolWindow,
+        changeType: ToolWindowManagerListener.ToolWindowManagerEventType
+    ) {
+        if (toolWindow.id != AmazonQToolWindowFactory.WINDOW_ID) {
+            return
+        }
+
+        if (changeType == ToolWindowManagerListener.ToolWindowManagerEventType.HideToolWindow) {
+            TelemetryHelper.recordCloseChat()
         }
     }
 }

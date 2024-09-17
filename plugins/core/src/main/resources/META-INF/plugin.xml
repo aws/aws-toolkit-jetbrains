@@ -23,4 +23,7 @@
         <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
         <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
     </extensions>
+    <projectListeners>
+        <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
 </idea-plugin>

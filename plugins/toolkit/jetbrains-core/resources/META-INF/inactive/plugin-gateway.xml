@@ -14,4 +14,9 @@
     <incompatible-with>com.intellij.modules.python</incompatible-with>
     <incompatible-with>com.intellij.modules.ultimate</incompatible-with>
     <incompatible-with>com.intellij.java</incompatible-with>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager"/>
+    </extensions>
 </idea-plugin>

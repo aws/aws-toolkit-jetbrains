@@ -45,9 +45,9 @@ export class TabDataGenerator {
         ],
         [
             'featuredev',
-            `I can generate code to implement new functionality across your workspace. We'll start by discussing an implementation plan, and then we can review and regenerate code based on your feedback.
-
-To get started, describe the task you are trying to accomplish.
+            `I can generate code to implement new functionality across your workspace. To get started, describe the task you're trying to accomplish, and I'll generate code. If you want to make changes, you can provide feedback and I'll regenerate code.
+            
+            What would you like work on?
 `,
         ],
         [

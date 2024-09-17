@@ -4,9 +4,7 @@
 package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.idea.AppMode
-import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.extensions.ExtensionNotApplicableException
-import com.intellij.openapi.util.BuildNumber
+import com.intellij.ui.jcef.JBCefApp
 
 /**
  * @return true if running in any type of remote environment
@@ -18,13 +16,4 @@ fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
  */
 fun isCodeCatalystDevEnv() = System.getenv("__DEV_ENVIRONMENT_ID") != null
 
-fun disableExtensionIfRemoteBackend() {
-    if (isRunningOnRemoteBackend()) {
-        throw ExtensionNotApplicableException.create()
-    }
-}
-
-// CW can be supported only after at least build 232.9921.47 on remote env
-fun isRunningOnCWNotSupportedRemoteBackend() =
-    ApplicationInfo.getInstance().build.compareTo(BuildNumber.fromStringOrNull("232.9921.47")) < 0 &&
-        AppMode.isRemoteDevHost()
+fun isQWebviewsAvailable() = JBCefApp.isSupported() && !isRunningOnRemoteBackend()
