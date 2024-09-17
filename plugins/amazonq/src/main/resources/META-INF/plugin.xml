@@ -62,6 +62,13 @@
     <depends optional="true" config-file="amazonq-ext-rust-deprecated.xml">org.rust.lang</depends>
     <depends optional="true" config-file="amazonq-ext-scala.xml">org.intellij.scala</depends>
     <depends optional="true" config-file="amazonq-ext-shell.xml">com.jetbrains.sh</depends>
+    <depends optional="true" config-file="amazonq-ext-dart.xml">Dart</depends>
+    <depends optional="true" config-file="amazonq-ext-lua.xml">com.tang</depends>
+    <depends optional="true" config-file="amazonq-ext-powershell.xml">com.intellij.plugin.adernov.powershell</depends>
+    <depends optional="true" config-file="amazonq-ext-r.xml">R4Intellij</depends>
+    <depends optional="true" config-file="amazonq-ext-swift.xml">com.intellij.swift</depends>
+    <depends optional="true" config-file="amazonq-ext-systemverfilog.xml">studio.edaphic.sv</depends>
+    <depends optional="true" config-file="amazonq-ext-vue.xml">org.jetbrains.plugins.vue</depends>
 
     <incompatible-with>com.intellij.cwm.guest</incompatible-with>
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
