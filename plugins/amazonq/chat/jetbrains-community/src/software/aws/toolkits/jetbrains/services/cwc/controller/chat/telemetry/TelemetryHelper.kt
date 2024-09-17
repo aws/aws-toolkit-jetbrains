@@ -119,6 +119,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             codewhispererCustomizationArn = data.customization?.arn,
             cwsprChatHasProjectContext = getMessageHasProjectContext(response.messageId)
         )
+
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
 
@@ -371,11 +372,9 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
     fun setResponseHasProjectContext(messageId: String, hasProjectContext: Boolean) {
         responseHasProjectContext[messageId] = hasProjectContext
-        logger.info("Set $messageId to ${responseHasProjectContext[messageId]}")
     }
 
     private fun getMessageHasProjectContext(messageId: String): Boolean {
-        logger.info("Get $messageId = ${responseHasProjectContext.getOrDefault(messageId, false)}")
         return responseHasProjectContext.getOrDefault(messageId, false)
     }
 

@@ -59,6 +59,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 // The first thing we always send back is an AnswerStream message to indicate the beginning of a streaming answer
                 val response =
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.AnswerStream, message = "")
+
                 telemetryHelper.setResponseStreamStartTime(tabId)
                 emit(response)
             }
@@ -87,6 +88,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 // Send the Answer message to indicate the end of the response stream
                 val response =
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
+
                 telemetryHelper.setResponseStreamTotalTime(tabId)
                 telemetryHelper.setResponseHasProjectContext(requestId, telemetryHelper.getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty())
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
@@ -121,6 +123,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
+
         if (event.codeReferences != null) {
             codeReferences += event.codeReferences.map { reference ->
                 CodeReference(
