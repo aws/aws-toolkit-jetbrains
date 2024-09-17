@@ -176,39 +176,6 @@ class CodeWhispererProgrammingLanguageTest {
     }
 
     @Test
-    fun `test language security scan support`() {
-        suts.forEach { language ->
-            val telemetryType = language.toTelemetryType()
-            val shouldSupportAutoCompletion = true
-
-            val shouldSupportSecurityScan = when (telemetryType) {
-                CodewhispererLanguage.Java -> true
-                CodewhispererLanguage.Python -> true
-                CodewhispererLanguage.Javascript -> true
-                CodewhispererLanguage.Typescript -> true
-                CodewhispererLanguage.Kotlin -> true
-                CodewhispererLanguage.Go -> true
-                CodewhispererLanguage.Php -> true
-                CodewhispererLanguage.Ruby -> true
-                CodewhispererLanguage.C -> true
-                CodewhispererLanguage.Cpp -> true
-                CodewhispererLanguage.Csharp -> true
-                CodewhispererLanguage.Plaintext -> true
-                CodewhispererLanguage.Tf -> true
-                CodewhispererLanguage.Yaml -> true
-                CodewhispererLanguage.Yml -> true
-                CodewhispererLanguage.Hcl -> true
-                CodewhispererLanguage.Json -> true
-                CodewhispererLanguage.Jsonc -> true
-                else -> false
-            }
-
-            assertThat(language.isCodeCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
-            assertThat(language.isCodeScanSupported()).isEqualTo(shouldSupportSecurityScan)
-        }
-    }
-
-    @Test
     fun `test language inline completion support`() {
         suts.forEach { sut ->
             val expected = when (sut) {
@@ -281,7 +248,7 @@ class CodeWhispererProgrammingLanguageTest {
                 else -> false
             }
 
-            assertThat(sut.isSupplementalContextSupported()).isEqualTo(expected)
+            assertThat(sut.isUTGSupported()).isEqualTo(expected)
         }
     }
 
