@@ -29,7 +29,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererCodeCompletionServiceListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
@@ -255,7 +255,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                 codewhispererTotalTokens = totalTokensSize,
                 successCount = myServiceInvocationCount.get(),
                 codewhispererCustomizationArn = customizationArn,
-                codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
+                codewhispererUserGroup = CodeWhispererUserGroup.Control.name,
                 credentialStartUrl = getCodeWhispererStartUrl(project)
             )
         }
