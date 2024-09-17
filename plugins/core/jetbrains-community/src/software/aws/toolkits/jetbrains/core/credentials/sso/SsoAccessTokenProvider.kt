@@ -416,7 +416,6 @@ class SsoAccessTokenProvider(
 
             return token
         } catch (e: Exception) {
-            notifyInfo(e.message.toString(), "there is exception")
             val requestId = when (e) {
                 is AwsServiceException -> e.requestId()
                 else -> null
