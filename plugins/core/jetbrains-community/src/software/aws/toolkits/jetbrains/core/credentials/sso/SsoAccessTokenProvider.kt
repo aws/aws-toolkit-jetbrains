@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAM
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.core.webview.getAuthType
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
@@ -421,9 +420,9 @@ class SsoAccessTokenProvider(
                 else -> null
             }
             val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "$stageName: Unknown error"
-                else -> e.message ?: "$stageName: Unknown error"
-            }
+                is AwsServiceException -> e.awsErrorDetails()?.errorMessage()
+                else -> e.message
+            } ?: "$stageName: Unknown error"
 
             sendRefreshCredentialsMetric(
                 currentToken,
