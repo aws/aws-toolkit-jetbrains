@@ -138,7 +138,7 @@ class CodeWhispererProgrammingLanguageTest {
     @JvmField
     val applicationRule = ApplicationRule()
 
-    val suts = listOf<CodeWhispererProgrammingLanguage>(
+    val suts = listOf(
         CodeWhispererC.INSTANCE,
         CodeWhispererCpp.INSTANCE,
         CodeWhispererCsharp.INSTANCE,
