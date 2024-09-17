@@ -363,7 +363,6 @@ class TelemetryHelperTest {
         }
 
         runBlocking {
-            sut.setResponseHasProjectContext(messageId, true)
             sut.recordInteractWithMessage(IncomingCwcMessage.FollowupClicked(mock(), tabId, messageId, "command", "tabType"))
         }
 
@@ -375,7 +374,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
                     customizationArn(customizationArn)
-                    hasProjectLevelContext(true)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )

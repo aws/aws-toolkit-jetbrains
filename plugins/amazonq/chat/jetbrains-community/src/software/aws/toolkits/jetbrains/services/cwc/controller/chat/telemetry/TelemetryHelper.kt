@@ -374,9 +374,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         responseHasProjectContext[messageId] = hasProjectContext
     }
 
-    private fun getMessageHasProjectContext(messageId: String): Boolean {
-        return responseHasProjectContext.getOrDefault(messageId, false)
-    }
+    private fun getMessageHasProjectContext(messageId: String) = responseHasProjectContext.getOrDefault(messageId, false)
 
     @VisibleForTesting
     fun getResponseStreamTimeToFirstChunk(tabId: String): Double {
