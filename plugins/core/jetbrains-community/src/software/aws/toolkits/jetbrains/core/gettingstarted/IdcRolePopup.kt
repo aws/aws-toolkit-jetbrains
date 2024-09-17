@@ -82,17 +82,17 @@ class IdcRolePopup(
             combo.proposeModelUpdate { model ->
                 val token = tokenProvider.resolveToken().token()
 
-                val rolesList = client.listAccountsPaginator() { it.accessToken(token) }
+                val rolesList = client.listAccountsPaginator { it.accessToken(token) }
                     .accountList()
                     .flatMap { account ->
-                        client.listAccountRolesPaginator() {
+                        client.listAccountRolesPaginator {
                             it.accessToken(token)
                             it.accountId(account.accountId())
                         }.roleList()
                     }.toList()
 
                 rolesList.sortedBy { it.roleName() }
-                    .forEach { it ->
+                    .forEach {
                         model.addElement(it)
                     }
 
