@@ -363,6 +363,7 @@ class TelemetryHelperTest {
         }
 
         runBlocking {
+            sut.setResponseHasProjectContext(messageId, true)
             sut.recordInteractWithMessage(IncomingCwcMessage.FollowupClicked(mock(), tabId, messageId, "command", "tabType"))
         }
 
@@ -374,7 +375,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
                     customizationArn(customizationArn)
-                    hasProjectLevelContext(false)
+                    hasProjectLevelContext(true)
                 }.build()
             )
         )
@@ -393,7 +394,7 @@ class TelemetryHelperTest {
                 )
                 .matches({ it.metadata["credentialStartUrl"] == mockUrl }, "startUrl doesn't match")
                 .matches(
-                    { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                    { it.metadata["cwsprChatHasProjectContext"] == "true" },
                     "hasProjectContext doesn't match"
                 )
         }
