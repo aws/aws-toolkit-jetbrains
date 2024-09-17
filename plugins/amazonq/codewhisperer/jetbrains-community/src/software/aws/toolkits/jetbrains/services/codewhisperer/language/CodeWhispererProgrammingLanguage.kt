@@ -24,8 +24,6 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun isCodeCompletionSupported(): Boolean = false
 
-    open fun isCodeScanSupported(): Boolean = false
-
     open fun isAutoFileScanSupported(): Boolean = false
 
     open fun isImportAdderSupported(): Boolean = false
