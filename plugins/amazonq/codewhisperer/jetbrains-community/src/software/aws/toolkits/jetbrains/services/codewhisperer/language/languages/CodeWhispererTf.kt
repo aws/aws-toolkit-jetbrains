@@ -13,8 +13,6 @@ class CodeWhispererTf private constructor() : CodeWhispererProgrammingLanguage()
 
     override fun isCodeCompletionSupported(): Boolean = true
 
-    override fun isCodeScanSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {
