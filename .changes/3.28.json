@@ -1,0 +1,20 @@
+{
+  "date" : "2024-09-11",
+  "version" : "3.28",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Improve workspace indexing by only index files that are changed since last indexing"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Chat: Fixed inline code blocks are not vertically aligned with texts"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue preventing login when running on 2024.2 remote environments"
+  }, {
+    "type" : "bugfix",
+    "description" : "Automatically start workspace indexing when new project is opened"
+  }, {
+    "type" : "removal",
+    "description" : "Amazon Q Feature dev: Improve quality and UX by removing approach generation flow"
+  } ]
+}

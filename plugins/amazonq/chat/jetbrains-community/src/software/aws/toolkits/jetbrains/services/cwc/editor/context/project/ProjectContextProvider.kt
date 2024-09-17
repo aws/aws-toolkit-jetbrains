@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -22,7 +23,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
@@ -33,13 +33,12 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer) : Disposable {
+class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer, private val cs: CoroutineScope) : Disposable {
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
-    private val scope = disposableCoroutineScope(this)
     init {
-        scope.launch {
+        cs.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 while (true) {
                     if (encoderServer.isNodeProcessRunning()) {
@@ -106,7 +105,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     )
 
     private fun initAndIndex() {
-        scope.launch {
+        cs.launch {
             while (retryCount.get() < 5) {
                 try {
                     logger.info { "project context: about to init key" }
@@ -283,7 +282,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     // TODO: refactor this along with /dev & codescan file traversing logic
                     override fun visitFile(file: VirtualFile): Boolean {
                         if ((file.isDirectory && isBuildOrBin(file.name)) ||
-                            runBlocking { featureDevSessionContext.ignoreFile(file.name, scope) } ||
+                            runBlocking { featureDevSessionContext.ignoreFile(file.name) } ||
                             (file.isFile && file.length > 10 * 1024 * 1024)
                         ) {
                             return false

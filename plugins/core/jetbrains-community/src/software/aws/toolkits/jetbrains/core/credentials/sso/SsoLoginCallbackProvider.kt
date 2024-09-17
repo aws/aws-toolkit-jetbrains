@@ -5,10 +5,10 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.ConfirmUserCodeLoginDialog
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
@@ -31,7 +31,7 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
         }
 
         return when {
-            JBCefApp.isSupported() -> SsoPromptWithBrowserSupport
+            isQWebviewsAvailable() -> SsoPromptWithBrowserSupport
             else -> deviceCodeProvider
         }
     }

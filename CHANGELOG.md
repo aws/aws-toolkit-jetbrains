@@ -1,3 +1,10 @@
+# _3.28_ (2024-09-11)
+- **(Feature)** Improve workspace indexing by only index files that are changed since last indexing
+- **(Bug Fix)** Amazon Q Chat: Fixed inline code blocks are not vertically aligned with texts
+- **(Bug Fix)** Fix issue preventing login when running on 2024.2 remote environments
+- **(Bug Fix)** Automatically start workspace indexing when new project is opened
+- **(Removal)** Amazon Q Feature dev: Improve quality and UX by removing approach generation flow
+
 # _3.27_ (2024-09-05)
 - **(Feature)** Reduce `@workspace` indexing time by 50%
 - **(Feature)** Amazon Q /dev: include in progress state agent in code generation

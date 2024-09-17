@@ -46,6 +46,7 @@ class CodeWhispererEditorUtilTest {
         assertThat(fileContext.programmingLanguage).isInstanceOf(CodeWhispererPython::class.java)
         assertThat(fileContext.caretContext.leftFileContext).isEqualTo(pythonTestLeftContext)
         assertThat(fileContext.caretContext.rightFileContext).isEqualTo("")
+        assertThat(fileContext.fileRelativePath).isEqualTo("test.py")
     }
 
     /**

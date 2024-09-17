@@ -207,14 +207,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-                // TODO: Deprecated - remove once BI starts using new metric
-                telemetry.jobArtifactDownloadAndDeserializeTime(
-                    downloadStartTime,
-                    job,
-                    totalDownloadBytes,
-                    telemetryErrorMessage,
-                )
-
                 telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
             }
         } catch (e: Exception) {
@@ -260,18 +252,10 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             )
             dialog.isModal = true
 
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.vcsDiffViewerVisible(jobId) // download succeeded
             if (dialog.showAndGet()) {
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
-
-                // TODO: deprecated metric - remove after BI started using new metric
-                telemetry.vcsViewerSubmitted(jobId)
             } else {
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)
-
-                // TODO: deprecated metric - remove after BI started using new metric
-                telemetry.vscViewerCancelled(jobId)
             }
         }
     }
@@ -385,8 +369,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     }
 
     fun displayDiffAction(jobId: JobId, source: CodeTransformVCSViewerSrcComponents) = runReadAction {
-        // TODO: deprecated metric - remove after BI started using new metric
-        telemetry.vcsViewerClicked(jobId)
         projectCoroutineScope(project).launch {
             displayDiff(jobId, source)
         }

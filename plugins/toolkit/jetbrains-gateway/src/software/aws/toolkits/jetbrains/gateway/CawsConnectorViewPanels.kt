@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.ide.browsers.BrowserLauncher
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.rd.createNestedDisposable
@@ -191,9 +192,8 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     return@startWithModalProgressAsync
                 }
 
-                val currentConnection = ToolkitConnectionManager.getInstance(
-                    null
-                ).activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
+                val currentConnection = service<ToolkitConnectionManager>()
+                    .activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
                     ?: error("Connection cannot be null")
 
                 val parameters = mapOf(
