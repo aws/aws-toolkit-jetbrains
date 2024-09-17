@@ -186,7 +186,7 @@ class CodeScanSessionConfig(
 
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -209,7 +209,7 @@ class CodeScanSessionConfig(
                     } else {
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             !traversedDirectories.contains(current) && current.isValid &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
