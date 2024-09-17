@@ -15,11 +15,6 @@ class TestCodeAction : CustomAction(EditorContextCommand.Test) {
     override fun update(e: AnActionEvent) {
         val project = e.getData(CommonDataKeys.PROJECT) ?: return
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-        if (connection == null) {
-            // Hide the action by default if no connection found.
-            e.presentation.isEnabledAndVisible = false
-            return
-        }
-        e.presentation.isEnabledAndVisible = connection.startUrl == "https://amzn.awsapps.com/start"
+        e.presentation.isEnabledAndVisible = connection?.startUrl == "https://amzn.awsapps.com/start"
     }
 }
