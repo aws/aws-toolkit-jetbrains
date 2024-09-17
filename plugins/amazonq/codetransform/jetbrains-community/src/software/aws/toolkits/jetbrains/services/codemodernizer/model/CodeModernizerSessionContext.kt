@@ -53,6 +53,7 @@ data class CodeModernizerSessionContext(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
+    val skipTestsFlag: String,
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -200,7 +201,7 @@ data class CodeModernizerSessionContext(
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot))
+                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, skipTestsFlag = skipTestsFlag))
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)

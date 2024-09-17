@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.selects.select
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_ALLOW_S3_ACCESS
@@ -46,6 +47,13 @@ private val confirmUserSelectionButton = Button(
     waitMandatoryFormItems = true,
     text = message("codemodernizer.chat.message.button.confirm"),
     id = CodeTransformButtonId.StartTransformation.id,
+)
+
+private val confirmSkipTestsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmSkipTests.id,
 )
 
 private val openMvnBuildButton = Button(
@@ -134,6 +142,26 @@ private val selectTargetVersionFormItem = FormItem(
     )
 )
 
+private val selectSkipTestsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectSkipTestsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_skip_tests_flag"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = "Do not skip tests",
+            value = "Do not skip tests",
+        ),
+        FormItemOption(
+            label = "Skip integration tests",
+            value = "Skip integration tests",
+        ),
+        FormItemOption(
+            label = "Skip all tests",
+            value = "Skip all tests",
+        )
+    )
+)
+
 private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -143,6 +171,13 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
 """.trimIndent()
+
+private fun getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection: String): String {
+    // just for correct grammar
+    var skipTestsText = skipTestsSelection
+    if (skipTestsText == "Do not skip tests") skipTestsText = "not skip tests"
+    return "Got it! Amazon Q will ${skipTestsText.lowercase()} when building your project."
+}
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.dependency_details")}
@@ -184,11 +219,28 @@ fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTran
     )
 )
 
-fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    followUps = listOf(
-        startNewTransformFollowUp
+fun buildUserInputSkipTestsFlagChatIntroContent(): CodeTransformChatMessageContent {
+    return CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.skip_tests"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+}
+
+fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent {
+    return CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmSkipTestsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectSkipTestsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+}
+
+fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.Prompt,
+    message = getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection)
 )
 
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {

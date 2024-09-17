@@ -55,7 +55,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
@@ -78,6 +81,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
@@ -88,6 +92,7 @@ class CodeTransformChatController(
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
+    private var configurationFile: VirtualFile? = null
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
@@ -208,26 +213,46 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
+        configurationFile = modulePath.toVirtualFile() as VirtualFile
+
         codeTransformChatHelper.run {
             addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
-            addNewMessage(buildCompileLocalInProgressChatContent())
+            addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
+            addNewMessage(buildUserInputSkipTestsFlagChatContent())
         }
+    }
 
-        // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
-        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project)
-        logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
-        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
-
+    override suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests) {
+        // should never happen since at this point user has already selected a module with a build file
+        if (configurationFile == null) throw RuntimeException("No build file selected")
+        val sourceJdk = getSourceJdk(configurationFile!!)
+        val skipTestsFlag = when (message.skipTestsSelection) {
+            "Do not skip tests" -> ""
+            "Skip integration tests" -> "-DskipITs"
+            "Skip all tests" -> "-DskipTests"
+            else -> ""
+        }
+        codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
         val selection = CustomerSelection(
-            moduleVirtualFile,
+            configurationFile!!,
             sourceJdk,
-            JavaSdkVersion.JDK_17
+            JavaSdkVersion.JDK_17,
+            skipTestsFlag
         )
 
         // Publish metric to capture user selection before local build starts
         telemetry.submitSelection("Confirm", selection)
 
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.runLocalMavenBuild(context.project, selection)
+    }
+
+    private fun getSourceJdk(moduleConfigurationFile: VirtualFile): JavaSdkVersion {
+        // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
+        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleConfigurationFile, context.project)?.tryGetJdk(context.project)
+        logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
+        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
+        return sourceJdk
     }
 
     private suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
