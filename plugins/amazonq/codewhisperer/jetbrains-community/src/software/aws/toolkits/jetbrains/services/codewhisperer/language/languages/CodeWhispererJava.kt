@@ -16,8 +16,6 @@ class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isCodeCompletionSupported(): Boolean = true
 
-    override fun isCodeScanSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     override fun isImportAdderSupported(): Boolean = true
