@@ -104,15 +104,17 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         latencyContext: LatencyContext
-    ) {
+    ): Job? {
         if (job == null || job?.isCompleted == true) {
             job = cs.launch(getCoroutineBgContext()) {
                 doShowRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
             }
         }
+
+        // did some wrangling, but compiler didn't believe this can't be null
+        return job
     }
 
-    @RequiresEdt
     private suspend fun doShowRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
@@ -123,6 +125,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
+        // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
             // consider changing to only running once a ~minute since this is relatively expensive
             // say the connection is un-refreshable if refresh fails for 3 times
