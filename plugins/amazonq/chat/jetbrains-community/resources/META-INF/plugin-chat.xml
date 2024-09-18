@@ -70,8 +70,8 @@
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt A" />
             </action>
 
-            <action id="aws.toolkit.jetbrains.core.services.cwc.commands.TestCodeAction"
-                    class="software.aws.toolkits.jetbrains.services.cwc.commands.TestCodeAction">
+            <action id="aws.toolkit.jetbrains.core.services.cwc.commands.GenerateUnitTestAction"
+                    class="software.aws.toolkits.jetbrains.services.cwc.commands.GenerateUnitTestAction">
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt T" />
             </action>
 

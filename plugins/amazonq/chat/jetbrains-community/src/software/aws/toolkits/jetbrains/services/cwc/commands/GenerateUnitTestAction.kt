@@ -8,10 +8,8 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import java.security.MessageDigest
-import kotlin.text.Charsets.UTF_8
 
-class TestCodeAction : CustomAction(EditorContextCommand.Test) {
+class GenerateUnitTestAction : CustomAction(EditorContextCommand.GenerateUnitTest) {
     override fun update(e: AnActionEvent) {
         val project = e.getData(CommonDataKeys.PROJECT) ?: return
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
