@@ -19,7 +19,8 @@
 <p><a href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/security-scans.html">10 languages supported including Java, Python, Javascript, Golang, and more</a></p>
 
     <h3>Agent for software development</h3>
-    <p>Let Amazon Q plan and implement new functionality across multiple files in your workspace. Type “/” in chat to open the quick actions menu and choose the “/dev” action.</p>
+    <p>Amazon Q can implement new functionality across multiple files in your workspace. Type “/” in chat to open the quick actions menu and choose the “/dev” action.</p>
+    <img src="https://raw.githubusercontent.com/aws/aws-toolkit-jetbrains/main/marketplaceGifs/JB-dev.png"></img>
 
     <h3>Agent for code transformation</h3>
     <p>Upgrade your Java applications in minutes, not weeks. Type “/” in chat to open the quick actions menu and choose the “/transform” action.</p>
