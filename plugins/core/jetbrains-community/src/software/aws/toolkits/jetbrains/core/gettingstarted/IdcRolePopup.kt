@@ -89,7 +89,7 @@ class IdcRolePopup(
                             it.accessToken(token)
                             it.accountId(account.accountId())
                         }.roleList()
-                    }.toList()
+                    }
 
                 rolesList.sortedBy { it.roleName() }
                     .forEach {
