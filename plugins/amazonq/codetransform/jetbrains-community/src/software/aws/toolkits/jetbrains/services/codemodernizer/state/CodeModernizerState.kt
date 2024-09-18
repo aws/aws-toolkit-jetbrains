@@ -16,7 +16,7 @@ enum class JobDetails {
     CONFIGURATION_FILE_PATH,
     TARGET_JAVA_VERSION,
     SOURCE_JAVA_VERSION,
-    SKIP_TESTS_FLAG,
+    CUSTOM_BUILD_COMMAND,
 }
 
 enum class StateFlags {
@@ -30,7 +30,7 @@ fun buildState(context: CodeModernizerSessionContext, isJobOngoing: Boolean, job
             JobDetails.CONFIGURATION_FILE_PATH to context.configurationFile.path,
             JobDetails.TARGET_JAVA_VERSION to context.targetJavaVersion.description,
             JobDetails.SOURCE_JAVA_VERSION to context.sourceJavaVersion.description,
-            JobDetails.SKIP_TESTS_FLAG to context.skipTestsFlag
+            JobDetails.CUSTOM_BUILD_COMMAND to context.customBuildCommand
         )
     )
     flags.putAll(
@@ -58,6 +58,6 @@ class CodeModernizerState : BaseState() {
             lastJobContext[JobDetails.SOURCE_JAVA_VERSION] ?: throw RuntimeException("Expected source language for migration path of previous job but was null")
         val targetJavaSdkVersion = JavaSdkVersion.fromVersionString(targetString) ?: throw RuntimeException("Invalid Java SDK version $targetString")
         val sourceJavaSdkVersion = JavaSdkVersion.fromVersionString(sourceString) ?: throw RuntimeException("Invalid Java SDK version $sourceString")
-        return CodeModernizerSessionContext(project, configurationFile, sourceJavaSdkVersion, targetJavaSdkVersion, lastJobContext[JobDetails.SKIP_TESTS_FLAG] ?: "")
+        return CodeModernizerSessionContext(project, configurationFile, sourceJavaSdkVersion, targetJavaSdkVersion, lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: "")
     }
 }

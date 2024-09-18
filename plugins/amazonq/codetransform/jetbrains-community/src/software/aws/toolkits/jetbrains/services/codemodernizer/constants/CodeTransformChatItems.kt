@@ -175,7 +175,7 @@ private fun getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection: S
     // just for correct grammar
     var skipTestsText = skipTestsSelection
     if (skipTestsText == "Do not skip tests") skipTestsText = "not skip tests"
-    return "Got it! Amazon Q will ${skipTestsText.lowercase()} when building your project."
+    return "Ok, I will ${skipTestsText.lowercase()} when building your project."
 }
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """

@@ -225,18 +225,17 @@ class CodeTransformChatController(
         // should never happen since at this point user has already selected a module with a build file
         if (configurationFile == null) throw RuntimeException("No build file selected")
         val sourceJdk = getSourceJdk(configurationFile!!)
-        val skipTestsFlag = when (message.skipTestsSelection) {
-            "Do not skip tests" -> ""
-            "Skip integration tests" -> "-DskipITs"
-            "Skip all tests" -> "-DskipTests"
-            else -> ""
+        val customBuildCommand = when (message.skipTestsSelection) {
+            "Skip integration tests" -> "test"
+            "Skip all tests" -> "test-compile"
+            else -> "verify"
         }
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
         val selection = CustomerSelection(
             configurationFile!!,
             sourceJdk,
             JavaSdkVersion.JDK_17,
-            skipTestsFlag
+            customBuildCommand
         )
 
         // Publish metric to capture user selection before local build starts

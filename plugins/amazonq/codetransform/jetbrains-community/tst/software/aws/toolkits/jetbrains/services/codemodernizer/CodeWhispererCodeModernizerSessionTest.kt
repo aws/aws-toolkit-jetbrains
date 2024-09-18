@@ -143,7 +143,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "-DskipTests")
+        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test-compile")
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -158,7 +158,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                 when (Path(entry.name)) {
                     Path("manifest.json") -> {
                         assertNotNull(fileContent)
-                        assertTrue(fileContent.contains("-DskipTests"))
+                        assertTrue(fileContent.contains("test-compile"))
                     }
                     Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
                     Path("build-logs.txt") -> assertNotNull(fileContent)

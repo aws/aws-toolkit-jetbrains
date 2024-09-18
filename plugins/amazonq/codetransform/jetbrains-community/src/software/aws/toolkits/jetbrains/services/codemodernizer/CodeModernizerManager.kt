@@ -674,7 +674,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             customerSelection.configurationFile,
             customerSelection.sourceJavaVersion,
             customerSelection.targetJavaVersion,
-            customerSelection.skipTestsFlag
+            customerSelection.customBuildCommand
         ),
     )
 
