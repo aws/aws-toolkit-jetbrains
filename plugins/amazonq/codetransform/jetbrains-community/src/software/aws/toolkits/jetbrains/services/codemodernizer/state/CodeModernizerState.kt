@@ -58,6 +58,12 @@ class CodeModernizerState : BaseState() {
             lastJobContext[JobDetails.SOURCE_JAVA_VERSION] ?: throw RuntimeException("Expected source language for migration path of previous job but was null")
         val targetJavaSdkVersion = JavaSdkVersion.fromVersionString(targetString) ?: throw RuntimeException("Invalid Java SDK version $targetString")
         val sourceJavaSdkVersion = JavaSdkVersion.fromVersionString(sourceString) ?: throw RuntimeException("Invalid Java SDK version $sourceString")
-        return CodeModernizerSessionContext(project, configurationFile, sourceJavaSdkVersion, targetJavaSdkVersion, lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: "")
+        return CodeModernizerSessionContext(
+            project,
+            configurationFile,
+            sourceJavaSdkVersion,
+            targetJavaSdkVersion,
+            lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: ""
+        )
     }
 }

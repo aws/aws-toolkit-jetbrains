@@ -218,15 +218,14 @@ fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTran
     )
 )
 
-fun buildUserInputSkipTestsFlagChatIntroContent(): CodeTransformChatMessageContent {
-    return CodeTransformChatMessageContent(
+fun buildUserInputSkipTestsFlagChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.message.skip_tests"),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-}
 
-fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent {
-    return CodeTransformChatMessageContent(
+fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.form.user_selection.title"),
         buttons = listOf(
             confirmSkipTestsSelectionButton,
@@ -235,7 +234,6 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent {
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-}
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
