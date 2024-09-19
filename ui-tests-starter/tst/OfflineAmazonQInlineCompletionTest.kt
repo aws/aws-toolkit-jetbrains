@@ -19,8 +19,8 @@ import java.nio.file.Paths
 import kotlin.io.path.writeText
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
-import software.aws.toolkits.core.utils.createParentDirectories
 import java.io.File
+import kotlin.io.path.createParentDirectories
 
 object TestCIServer : CIServer {
     override val isBuildRunningOnCI: Boolean = System.getenv("CI").toBoolean() == true
