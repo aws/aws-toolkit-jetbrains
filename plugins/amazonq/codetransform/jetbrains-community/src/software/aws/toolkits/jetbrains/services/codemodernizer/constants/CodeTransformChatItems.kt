@@ -171,7 +171,7 @@ private fun getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection: S
     var skipTestsText = skipTestsSelection
     // just for correct grammar
     if (skipTestsText == message("codemodernizer.chat.message.skip_tests_form.do_not_skip")) skipTestsText = "not skip unit tests"
-    return message("codemodernizer.chat.message_skip_tests_form.response", skipTestsText.lowercase())
+    return message("codemodernizer.chat.message.skip_tests_form.response", skipTestsText.lowercase())
 }
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
