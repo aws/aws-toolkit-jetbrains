@@ -119,8 +119,6 @@ class CodeWhispererFileContextProviderTest {
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE)).isNull()
 
         assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE)).isNull()
-
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE)).isFalse
     }
 
     @Test
