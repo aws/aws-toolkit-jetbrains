@@ -110,7 +110,7 @@ class OfflineAmazonQInlineCompletionTest {
         }.runIdeWithDriver()
             .useDriverAndCloseIde {
                 waitForProjectOpen()
-                openFile("Empty.java")
+                openFile("Example.java")
                 ui.keyboard {
                     // left meta + c
                     repeat(5) { hotKey(18, 67) }
