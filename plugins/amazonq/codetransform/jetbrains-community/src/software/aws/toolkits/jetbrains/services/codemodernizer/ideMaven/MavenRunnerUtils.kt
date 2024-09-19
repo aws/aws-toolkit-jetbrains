@@ -69,14 +69,13 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+
         val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
         val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }
         val moduleSdk = module?.let { ModuleRootManager.getInstance(it).sdk }
         val sdk = moduleSdk ?: ProjectRootManager.getInstance(project).projectSdk
-
-        if (sdk == null) return MavenCopyCommandsResult.NoJdk // both module SDK and project SDK are null
-
-        mvnSettings.setJreName(sdk.name) // use the SDK we found above
+        // edge case: module SDK and project SDK are null, and Maven Runner Settings is using the null project SDK, so Maven Runner will definitely fail
+        if (sdk == null && mvnSettings.jreName == "#USE_PROJECT_JDK") return MavenCopyCommandsResult.NoJdk
 
         // run copy dependencies
         val copyDependenciesRunnable =
