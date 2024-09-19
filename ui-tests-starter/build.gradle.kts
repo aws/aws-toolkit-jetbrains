@@ -3,7 +3,6 @@ import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
     id("toolkit-kotlin-conventions")
-    id("toolkit-testing")
     id("toolkit-intellij-plugin")
 
     id("org.jetbrains.intellij.platform")
