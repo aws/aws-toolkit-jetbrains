@@ -19,6 +19,7 @@ import java.nio.file.Paths
 import kotlin.io.path.writeText
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
+import software.aws.toolkits.core.utils.createParentDirectories
 import java.io.File
 
 object TestCIServer : CIServer {
@@ -62,6 +63,7 @@ class OfflineAmazonQInlineCompletionTest {
             )
         ).useRelease("2024.2")
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
+            .createParentDirectories()
             .writeText(
                 """
                 {
