@@ -268,7 +268,7 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
+        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test"))
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
@@ -305,7 +305,7 @@ open class CodeWhispererCodeModernizerTestBase(
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationStartStopping()
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationFailedToStop()
         doReturn(Path("/test/pom.xml")).whenever(emptyPomFileSpy).toNioPath()
-        validJDK8CustomerSelection = CustomerSelection(emptyPomFileSpy, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
+        validJDK8CustomerSelection = CustomerSelection(emptyPomFileSpy, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17, "test")
     }
 
     fun setupConnection(authState: BearerTokenAuthState) {
