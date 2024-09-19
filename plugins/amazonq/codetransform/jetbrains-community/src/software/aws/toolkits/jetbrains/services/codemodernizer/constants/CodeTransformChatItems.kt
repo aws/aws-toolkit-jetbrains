@@ -232,7 +232,7 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
     )
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.Prompt,
+    type = CodeTransformChatMessageType.FinalizedAnswer,
     message = getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection)
 )
 
