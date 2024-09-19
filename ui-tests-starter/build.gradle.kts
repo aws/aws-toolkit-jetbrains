@@ -35,5 +35,5 @@ tasks.test {
 
     useJUnitPlatform()
 
-    systemProperty("ui.test.plugins", testPlugins.map { it.asPath })
+    systemProperty("ui.test.plugins", testPlugins.get().asPath)
 }
