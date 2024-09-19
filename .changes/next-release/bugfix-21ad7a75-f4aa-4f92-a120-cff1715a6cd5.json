@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix UI slowdown when Amazon Q Inline Suggestions are enabled, but token cannot be refreshed (#4868)"
+}

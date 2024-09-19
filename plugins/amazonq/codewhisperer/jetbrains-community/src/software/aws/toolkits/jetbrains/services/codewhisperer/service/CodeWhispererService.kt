@@ -28,6 +28,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
@@ -46,6 +47,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -82,7 +84,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextPr
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
@@ -98,7 +99,23 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         Disposer.register(this, codeInsightSettingsFacade)
     }
 
+    private var job: Job? = null
     fun showRecommendationsInPopup(
+        editor: Editor,
+        triggerTypeInfo: TriggerTypeInfo,
+        latencyContext: LatencyContext
+    ): Job? {
+        if (job == null || job?.isCompleted == true) {
+            job = cs.launch(getCoroutineBgContext()) {
+                doShowRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+            }
+        }
+
+        // did some wrangling, but compiler didn't believe this can't be null
+        return job
+    }
+
+    private suspend fun doShowRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         latencyContext: LatencyContext
@@ -108,16 +125,20 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
+        // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
+            // consider changing to only running once a ~minute since this is relatively expensive
             // say the connection is un-refreshable if refresh fails for 3 times
             val shouldReauth = if (refreshFailure < MAX_REFRESH_ATTEMPT) {
-                pluginAwareExecuteOnPooledThread {
+                val attempt = withContext(getCoroutineBgContext()) {
                     promptReAuth(project)
-                }.get().also { success ->
-                    if (!success) {
-                        refreshFailure++
-                    }
                 }
+
+                if (!attempt) {
+                    refreshFailure++
+                }
+
+                attempt
             } else {
                 true
             }
