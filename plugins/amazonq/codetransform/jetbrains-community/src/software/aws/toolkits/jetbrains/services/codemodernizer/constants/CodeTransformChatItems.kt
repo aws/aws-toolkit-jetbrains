@@ -143,20 +143,16 @@ private val selectTargetVersionFormItem = FormItem(
 
 private val selectSkipTestsFlagFormItem = FormItem(
     id = CodeTransformFormItemId.SelectSkipTestsFlag.id,
-    title = message("codemodernizer.chat.form.user_selection.item.choose_skip_tests_flag"),
+    title = message("codemodernizer.chat.form.user_selection.item.choose_skip_tests_option"),
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = "Do not skip tests",
-            value = "Do not skip tests",
+            label = message("codemodernizer.chat.message.skip_tests_form.do_not_skip"),
+            value = message("codemodernizer.chat.message.skip_tests_form.do_not_skip"),
         ),
         FormItemOption(
-            label = "Skip integration tests",
-            value = "Skip integration tests",
-        ),
-        FormItemOption(
-            label = "Skip all tests",
-            value = "Skip all tests",
+            label = message("codemodernizer.chat.message.skip_tests_form.skip"),
+            value = message("codemodernizer.chat.message.skip_tests_form.skip"),
         )
     )
 )
@@ -172,10 +168,10 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
 """.trimIndent()
 
 private fun getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection: String): String {
-    // just for correct grammar
     var skipTestsText = skipTestsSelection
-    if (skipTestsText == "Do not skip tests") skipTestsText = "not skip tests"
-    return "Ok, I will ${skipTestsText.lowercase()} when building your project."
+    // just for correct grammar
+    if (skipTestsText == message("codemodernizer.chat.message.skip_tests_form.do_not_skip")) skipTestsText = "not skip unit tests"
+    return message("codemodernizer.chat.message_skip_tests_form.response", skipTestsText.lowercase())
 }
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """

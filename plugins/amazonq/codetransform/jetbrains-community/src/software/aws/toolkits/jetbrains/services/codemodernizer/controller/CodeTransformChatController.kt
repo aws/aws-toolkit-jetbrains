@@ -226,9 +226,9 @@ class CodeTransformChatController(
         if (configurationFile == null) throw RuntimeException("No build file selected")
         val sourceJdk = getSourceJdk(configurationFile!!)
         val customBuildCommand = when (message.skipTestsSelection) {
-            "Skip integration tests" -> "test"
-            "Skip all tests" -> "test-compile"
-            else -> "verify"
+            message("codemodernizer.chat.message.skip_tests_form.do_not_skip") -> "test"
+            message("codemodernizer.chat.message.skip_tests_form.skip") -> "test-compile"
+            else -> "test"
         }
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
         val selection = CustomerSelection(
