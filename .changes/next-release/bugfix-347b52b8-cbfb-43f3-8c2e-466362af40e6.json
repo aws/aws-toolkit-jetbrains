@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix \"read access\" error that may occur when Amazon Q Inline Suggestion is building context (#4888) (#4848)"
-}
