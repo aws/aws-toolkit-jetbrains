@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAb
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedNoJdkChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildDownloadFailureChatContent
@@ -129,7 +130,7 @@ class CodeTransformChatController(
         }
 
         codeTransformChatHelper.updateLastPendingMessage(
-            buildProjectValidChatContent(validationResult)
+            buildProjectValidChatContent()
         )
 
         codeTransformChatHelper.chatDelayShort()
@@ -230,14 +231,26 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
-        if (mavenBuildResult == MavenCopyCommandsResult.Cancelled) {
-            codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
-            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
-            return
-        } else if (mavenBuildResult == MavenCopyCommandsResult.Failure) {
-            codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
-            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
-            return
+        when (mavenBuildResult) {
+            MavenCopyCommandsResult.Cancelled -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+            MavenCopyCommandsResult.Failure -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+            MavenCopyCommandsResult.NoJdk -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedNoJdkChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+
+            is MavenCopyCommandsResult.Success -> {
+                // proceed with transformation
+            }
         }
 
         codeTransformChatHelper.run {

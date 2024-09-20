@@ -378,7 +378,7 @@ class SsoAccessTokenProvider(
             is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
         }
         if (registration == null) {
-            val message = "Unable to load client registration"
+            val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null client registration",
@@ -388,6 +388,7 @@ class SsoAccessTokenProvider(
             throw InvalidClientException.builder().message(message).build()
         }
 
+        var stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
                 it.clientId(registration.clientId)
@@ -396,11 +397,13 @@ class SsoAccessTokenProvider(
                 it.refreshToken(currentToken.refreshToken)
             }
 
+            stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
             val token = when (currentToken) {
                 is DeviceAuthorizationGrantToken -> newToken.toDAGAccessToken(currentToken.createdAt)
                 is PKCEAuthorizationGrantToken -> newToken.toPKCEAccessToken(currentToken.createdAt)
             }
 
+            stageName = RefreshCredentialStage.SAVE_TOKEN
             saveAccessToken(token)
 
             sendRefreshCredentialsMetric(
@@ -417,18 +420,25 @@ class SsoAccessTokenProvider(
                 else -> null
             }
             val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
-                else -> e.message ?: "Unknown error"
-            }
+                is AwsServiceException -> e.awsErrorDetails()?.errorMessage()
+                else -> e.message
+            } ?: "$stageName: Unknown error"
+
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Refresh access token request failed",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 requestId = requestId,
                 result = Result.Failed
             )
             throw e
         }
+    }
+
+    enum class RefreshCredentialStage {
+        CREATE_TOKEN,
+        GET_TOKEN_DETAILS,
+        SAVE_TOKEN
     }
 
     private fun loadDagClientRegistration(): ClientRegistration? =

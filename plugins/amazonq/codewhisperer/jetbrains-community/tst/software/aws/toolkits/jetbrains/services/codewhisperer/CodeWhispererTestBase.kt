@@ -8,6 +8,10 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -32,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testValidAccessToken
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererRecommendationAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -51,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import java.util.concurrent.atomic.AtomicReference
 
 // TODO: restructure testbase, too bulky and hard to debug
 open class CodeWhispererTestBase {
@@ -180,12 +186,26 @@ open class CodeWhispererTestBase {
         runInEdtAndWait {}
     }
 
+    /**
+     * Block until manual action has either failed or completed
+     */
     fun invokeCodeWhispererService() {
+        val jobRef = AtomicReference<Job?>()
         runInEdtAndWait {
+            projectRule.fixture.editor.putUserData(CodeWhispererRecommendationAction.ACTION_JOB_KEY, jobRef)
+            // does not block, so we need to extract something to track the async task
             projectRule.fixture.performEditorAction(codeWhispererRecommendationActionId)
         }
-        while (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
-            Thread.sleep(10)
+
+        runTest {
+            // wait for CodeWhispererService#showRecommendationsInPopup to complete, if started
+            jobRef.get()?.join()
+
+            // wait for subsequent background operations to be complete
+            while (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+                yield()
+                delay(10)
+            }
         }
     }
 

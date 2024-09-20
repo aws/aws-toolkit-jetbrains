@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.ide.actions.CopyContentRootPathProvider
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -111,7 +112,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      */
     override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo, timeout: Long): SupplementalContextInfo? {
         val startFetchingTimestamp = System.currentTimeMillis()
-        val isTst = isTestFile(psiFile)
+        val isTst = readAction { isTestFile(psiFile) }
         return try {
             withTimeout(timeout) {
                 val language = targetContext.programmingLanguage
