@@ -26,9 +26,9 @@ enum class EditorContextCommand(
         verb = "Optimize",
         actionId = "aws.amazonq.optimizeCode",
     ),
-    Test(
+    GenerateUnitTests(
         verb = "Generate unit tests for",
-        actionId = "aws.amazonq.testCode",
+        actionId = "aws.amazonq.generateUnitTests",
     ),
     SendToPrompt(
         verb = "SendToPrompt",
