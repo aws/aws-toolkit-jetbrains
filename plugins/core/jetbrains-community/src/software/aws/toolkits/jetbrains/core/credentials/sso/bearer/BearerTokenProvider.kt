@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.credentials.sso.bearer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.util.containers.orNull
-import org.jetbrains.annotations.ApiStatus.Internal
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider

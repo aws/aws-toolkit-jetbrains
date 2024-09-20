@@ -14,13 +14,13 @@ import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
 import org.junit.jupiter.api.Test
-import java.nio.file.Path
-import java.nio.file.Paths
-import kotlin.io.path.writeText
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.createParentDirectories
+import kotlin.io.path.writeText
 
 object TestCIServer : CIServer {
     override val isBuildRunningOnCI: Boolean = System.getenv("CI").toBoolean() == true
@@ -41,9 +41,7 @@ object TestCIServer : CIServer {
     override fun ignoreTestFailure(testName: String, message: String, details: String) {
     }
 
-    override fun isTestFailureShouldBeIgnored(message: String): Boolean {
-        return false
-    }
+    override fun isTestFailureShouldBeIgnored(message: String) = false
 }
 
 class OfflineAmazonQInlineCompletionTest {
@@ -88,7 +86,8 @@ class OfflineAmazonQInlineCompletionTest {
                 """.trimIndent()
             )
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "d3b447f809607422aac1470dd17fbb32e358cdb3.json")
-            .writeText("""
+            .writeText(
+                """
                 {
                   "issuerUrl": "https://example.awsapps.com/start",
                   "region": "us-east-1",
@@ -97,7 +96,8 @@ class OfflineAmazonQInlineCompletionTest {
                   "createdAt": "1970-01-01T00:00:00Z",
                   "expiresAt": "1970-01-01T00:00:00Z"
                 }
-            """.trimIndent())
+                """.trimIndent()
+            )
         Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
             System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
                 pluginConfigurator.installPluginFromPath(
@@ -115,6 +115,6 @@ class OfflineAmazonQInlineCompletionTest {
                     // left meta + c
                     repeat(5) { hotKey(18, 67) }
                 }
-        }
+            }
     }
 }
