@@ -3,6 +3,7 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
+import software.aws.toolkits.gradle.createWithInstaller
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -20,7 +21,7 @@ tasks.withType<PatchPluginXmlTask>().configureEach {
 intellijPlatform {
     instrumentCode = false
 
-    verifyPlugin {
+    pluginVerification {
         ides {
             // recommended() appears to resolve latest EAP for a product?
             ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
@@ -59,8 +60,7 @@ dependencies {
                 provider { IntelliJPlatformType.IntellijIdeaCommunity } to toolkitIntelliJ.version()
             }
 
-            create(type, version, useInstaller = false)
-            jetbrainsRuntime()
+            createWithInstaller(type, version)
         }
     }
 }

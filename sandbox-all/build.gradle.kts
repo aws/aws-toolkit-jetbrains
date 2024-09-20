@@ -6,13 +6,8 @@ import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
-    id("toolkit-intellij-plugin")
-    id("org.jetbrains.intellij.platform")
-}
-
-toolkitIntelliJ.apply {
-    val runIdeVariant = providers.gradleProperty("runIdeVariant")
-    ideFlavor.set(IdeFlavor.values().firstOrNull { it.name == runIdeVariant.orNull } ?: IdeFlavor.IC)
+    // we're not publishing anything, but convenient to have the IDE variant selection and sandbox setup logic
+    id("toolkit-publish-root-conventions")
 }
 
 tasks.verifyPlugin {
@@ -31,12 +26,6 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-        val version = toolkitIntelliJ.version()
-
-        create(type, version, useInstaller = false)
-        jetbrainsRuntime()
-
         localPlugin(project(":plugin-core"))
         localPlugin(project(":plugin-amazonq"))
         localPlugin(project(":plugin-toolkit:intellij-standalone"))

@@ -7,6 +7,9 @@ import org.eclipse.jgit.api.Git
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.the
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformDependenciesExtension
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion as KotlinVersionEnum
 
@@ -61,3 +64,17 @@ fun Project.buildMetadata() =
 
         "unknownCommit"
     }
+
+fun IntelliJPlatformDependenciesExtension.createWithInstaller(
+    typeProvider: Provider<IntelliJPlatformType>,
+    versionProvider: Provider<String>
+) {
+    val isEAP = versionProvider.get().contains("SNAPSHOT")
+    val useInstaller = (isEAP || typeProvider.get() == IntelliJPlatformType.Rider)
+
+    create(typeProvider, versionProvider, useInstaller)
+
+    if (useInstaller) {
+        jetbrainsRuntime()
+    }
+}
