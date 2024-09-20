@@ -11,10 +11,10 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.resources.message
 
-class CodeModernizerShowActiveJobDetailsAction :
+class CodeModernizerShowJobStatusAction :
     AnAction(
-        message("codemodernizer.explorer.show_active_job_history"),
-        message("codemodernizer.explorer.show_active_job_history_description"),
+        message("codemodernizer.explorer.show_job_status"),
+        message("codemodernizer.explorer.show_job_status_description"),
         AllIcons.Vcs.History
     ),
     DumbAware {
@@ -26,6 +26,7 @@ class CodeModernizerShowActiveJobDetailsAction :
 
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
-        CodeModernizerManager.getInstance(project).showModernizationProgressUI()
+        val codeModernizerManager = CodeModernizerManager.getInstance(project)
+        codeModernizerManager.showPreviousJobHistoryUI()
     }
 }
