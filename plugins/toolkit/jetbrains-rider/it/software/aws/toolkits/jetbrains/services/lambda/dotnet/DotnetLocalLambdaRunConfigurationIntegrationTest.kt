@@ -106,7 +106,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
     @Test
     fun samIsExecutedWithFileInput() {
-        val input = Files.createTempFile(tempTestDirectory.toPath(), "tmp", null).also {
+        val input = Files.createTempFile("tmp", null).also {
             it.writeText("Hello World")
         }
 

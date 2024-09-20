@@ -12,7 +12,6 @@ import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ex.ApplicationManagerEx
 import com.intellij.openapi.progress.EmptyProgressIndicator
-import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -24,7 +23,7 @@ import software.aws.toolkits.resources.AwsCoreBundle
 import javax.swing.SwingUtilities
 
 class PluginVersionChecker : ApplicationInitializedListener {
-    override suspend fun execute(asyncScope: CoroutineScope) {
+    override suspend fun execute() {
         if (ApplicationManager.getApplication().isHeadlessEnvironment) {
             LOG.info { "Skipping due to headless environment" }
             return
