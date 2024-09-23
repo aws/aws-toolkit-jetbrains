@@ -69,6 +69,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
@@ -91,7 +93,6 @@ class CodeTransformChatController(
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
     private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
-    private var configurationFile: VirtualFile? = null
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
     private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
@@ -212,36 +213,40 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
-        configurationFile = modulePath.toVirtualFile() as VirtualFile
+        codeTransformChatHelper.addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
+
+        val sourceJdk = getSourceJdk(moduleVirtualFile)
+
+        val selection = CustomerSelection(
+            moduleVirtualFile,
+            sourceJdk,
+            JavaSdkVersion.JDK_17,
+        )
+
+        // Create and set a session
+        val session = codeModernizerManager.createCodeModernizerSession(selection, context.project)
+        codeModernizerManager.codeTransformationSession = session
+
+        // Publish metric to capture user selection before local build starts
+        telemetry.submitSelection("Confirm", selection)
 
         codeTransformChatHelper.run {
-            addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
             addNewMessage(buildUserInputSkipTestsFlagChatContent())
         }
     }
 
     override suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests) {
-        // should never happen since at this point user has already selected a module with a build file
-        if (configurationFile == null) throw RuntimeException("No build file selected")
-        val sourceJdk = getSourceJdk(configurationFile!!)
         val customBuildCommand = when (message.skipTestsSelection) {
-            message("codemodernizer.chat.message.skip_tests_form.skip") -> "test-compile"
-            else -> "test"
+            message("codemodernizer.chat.message.skip_tests_form.skip") -> MAVEN_BUILD_SKIP_UNIT_TESTS
+            else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
-        val selection = CustomerSelection(
-            configurationFile!!,
-            sourceJdk,
-            JavaSdkVersion.JDK_17,
-            customBuildCommand
-        )
-
-        // Publish metric to capture user selection before local build starts
-        telemetry.submitSelection("Confirm", selection)
-
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
-        codeModernizerManager.runLocalMavenBuild(context.project, selection)
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.customBuildCommand = customBuildCommand
+            codeModernizerManager.runLocalMavenBuild(context.project, it)
+        }
     }
 
     private fun getSourceJdk(moduleConfigurationFile: VirtualFile): JavaSdkVersion {

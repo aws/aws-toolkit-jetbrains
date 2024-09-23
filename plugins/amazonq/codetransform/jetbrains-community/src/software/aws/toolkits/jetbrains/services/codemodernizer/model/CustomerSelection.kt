@@ -10,5 +10,4 @@ data class CustomerSelection(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
-    val customBuildCommand: String,
 )

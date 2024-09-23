@@ -9,6 +9,7 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 
 enum class JobDetails {
@@ -63,7 +64,7 @@ class CodeModernizerState : BaseState() {
             configurationFile,
             sourceJavaSdkVersion,
             targetJavaSdkVersion,
-            lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: "test" // default to running unit tests
+            lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: MAVEN_BUILD_RUN_UNIT_TESTS // default to running unit tests
         )
     }
 }

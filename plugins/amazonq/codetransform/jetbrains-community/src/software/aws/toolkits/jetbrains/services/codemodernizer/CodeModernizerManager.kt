@@ -112,7 +112,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private val isJobSuccessfullyResumed = AtomicBoolean(false)
 
     private val transformationStoppedByUsr = AtomicBoolean(false)
-    private var codeTransformationSession: CodeModernizerSession? = null
+    var codeTransformationSession: CodeModernizerSession? = null
         set(session) {
             if (session != null) {
                 Disposer.register(this, session)
@@ -383,12 +383,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeTransformMessageListener.instance.onMavenBuildResult(mavenCopyCommandsResult)
     }
 
-    fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
-        // Create and set a session
-        codeTransformationSession = null
-        val session = createCodeModernizerSession(customerSelection, project)
-        codeTransformationSession = session
-
+    fun runLocalMavenBuild(project: Project, session: CodeModernizerSession) {
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
@@ -674,7 +669,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             customerSelection.configurationFile,
             customerSelection.sourceJavaVersion,
             customerSelection.targetJavaVersion,
-            customerSelection.customBuildCommand
         ),
     )
 

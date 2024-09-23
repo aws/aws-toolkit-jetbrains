@@ -44,6 +44,8 @@ const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
+const val MAVEN_BUILD_RUN_UNIT_TESTS = "test"
+const val MAVEN_BUILD_SKIP_UNIT_TESTS = "test-compile"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
 const val INVALID_SUFFIX_SHA = "sha1"
@@ -53,7 +55,7 @@ data class CodeModernizerSessionContext(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
-    val customBuildCommand: String,
+    var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS // run unit tests by default
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
