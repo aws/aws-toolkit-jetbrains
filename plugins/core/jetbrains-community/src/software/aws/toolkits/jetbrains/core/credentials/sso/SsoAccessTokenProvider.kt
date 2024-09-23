@@ -352,7 +352,7 @@ class SsoAccessTokenProvider(
             AwsTelemetry.refreshCredentials(
                 project = null,
                 result = result,
-                sessionDuration = sessionDuration.toMillis().toLong(),
+                sessionDuration = sessionDuration.toMillis(),
                 credentialSourceId = credentialSourceId,
                 reason = reason,
                 reasonDesc = reasonDesc,
