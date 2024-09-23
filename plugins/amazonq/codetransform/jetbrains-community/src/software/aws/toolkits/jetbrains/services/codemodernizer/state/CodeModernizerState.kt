@@ -63,7 +63,7 @@ class CodeModernizerState : BaseState() {
             configurationFile,
             sourceJavaSdkVersion,
             targetJavaSdkVersion,
-            lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: ""
+            lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: "test" // default to running unit tests
         )
     }
 }
