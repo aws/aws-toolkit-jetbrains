@@ -157,14 +157,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(chatSessionStorage, times(1)).deleteSession(testTabId)
 
         coVerifyOrder {
-            messenger.sendAnswer(
-                tabId = testTabId,
-                message = message("amazonqFeatureDev.chat_message.closed_session"),
-                messageType = FeatureDevMessageType.Answer,
-                canBeVoted = true
-            )
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.closed_session"))
-            messenger.sendChatInputEnabledMessage(testTabId, false)
             messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), FeatureDevMessageType.Answer)
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.new_plan"))
         }
@@ -249,7 +241,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     FollowUp(FollowUpTypes.CLOSE_SESSION, message("amazonqFeatureDev.follow_up.close_session"), status = FollowUpStatusType.Info)
                 )
             )
-            messenger.sendChatInputEnabledMessage(testTabId, true)
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
         }
     }

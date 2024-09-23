@@ -92,6 +92,10 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
 
                 telemetryHelper.setResponseStreamTotalTime(tabId)
+                telemetryHelper.setResponseHasProjectContext(
+                    requestId,
+                    telemetryHelper.getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
+                )
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
             }
