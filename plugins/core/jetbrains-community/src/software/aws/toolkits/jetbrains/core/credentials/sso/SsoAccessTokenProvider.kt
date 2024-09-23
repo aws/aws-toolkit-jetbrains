@@ -345,7 +345,7 @@ class SsoAccessTokenProvider(
         result: Result
     ) {
         val tokenCreationTime = currentToken.createdAt
-        val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
+        val sessionDuration = Duration.between(tokenCreationTime, Instant.now(clock))
         val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
 
         if (tokenCreationTime != Instant.EPOCH) {
