@@ -391,10 +391,10 @@ class SsoAccessTokenProvider(
         var stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
-                it.clientId("INVALID CLIENTID FOR TEST")
-                it.clientSecret("INVALID CLIENT SECRET FOR TEST")
+                it.clientId(registration.clientId)
+                it.clientSecret(registration.clientSecret)
                 it.grantType(REFRESH_GRANT_TYPE)
-                it.refreshToken("INVALID REFRESH TOKEN FOR TEST")
+                it.refreshToken(currentToken.refreshToken)
             }
 
             stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
