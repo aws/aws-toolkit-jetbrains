@@ -48,7 +48,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_A
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
-import software.aws.toolkits.telemetry.CodeTransformApiNames
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
@@ -69,7 +68,7 @@ class GumbyClient(private val project: Project) {
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
             .build()
-        return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
+        return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun createHilUploadUrl(sha256Checksum: String, jobId: JobId): CreateUploadUrlResponse {
@@ -90,12 +89,12 @@ class GumbyClient(private val project: Project) {
                     .build()
             )
             .build()
-        return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
+        return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
         val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
-        return callApi({ bearerClient().getTransformation(request) }, apiName = CodeTransformApiNames.GetTransformation)
+        return callApi({ bearerClient().getTransformation(request) }, apiName = "GetTransformation")
     }
 
     fun startCodeModernization(
@@ -114,7 +113,7 @@ class GumbyClient(private val project: Project) {
                     .target { it.language(targetLanguage) }
             }
             .build()
-        return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation)
+        return callApi({ bearerClient().startTransformation(request) }, apiName = "StartTransformation")
     }
 
     fun resumeCodeTransformation(
@@ -125,22 +124,22 @@ class GumbyClient(private val project: Project) {
             .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
             .build()
-        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation)
+        return callApi({ bearerClient().resumeTransformation(request) }, apiName = "ResumeTransformation")
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
         val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
-        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan)
+        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = "GetTransformationPlan")
     }
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
         val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()
-        return callApi({ bearerClient().stopTransformation(request) }, apiName = CodeTransformApiNames.StopTransformation)
+        return callApi({ bearerClient().stopTransformation(request) }, apiName = "StopTransformation")
     }
 
     private fun <T : CodeWhispererRuntimeResponse> callApi(
         apiCall: () -> T,
-        apiName: CodeTransformApiNames,
+        apiName: String,
     ): T {
         var result: CodeWhispererRuntimeResponse? = null
         try {
@@ -174,10 +173,10 @@ class GumbyClient(private val project: Project) {
                 .build()
         },
         { e ->
-            LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
+            LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
         },
         { startTime ->
-            LOG.info { "${CodeTransformApiNames.ExportResultArchive} latency: ${calculateTotalLatency(startTime, Instant.now())}" }
+            LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
         }
     )
 
