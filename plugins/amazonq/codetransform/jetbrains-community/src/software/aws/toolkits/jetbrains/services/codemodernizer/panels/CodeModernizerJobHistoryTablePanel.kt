@@ -16,7 +16,7 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 
 class CodeModernizerJobHistoryTablePanel : JPanel(BorderLayout()) {
-    var headerLabel = PanelHeaderFactory().createPanelHeader(message("codemodernizer.toolwindow.transformation.history.header"))
+    var headerLabel = PanelHeaderFactory().createPanelHeader(message("codemodernizer.toolwindow.job_status.header"))
     val columnNames = arrayOf(
         message("codemodernizer.toolwindow.table.header.module_name"),
         message("codemodernizer.toolwindow.table.header.status"),

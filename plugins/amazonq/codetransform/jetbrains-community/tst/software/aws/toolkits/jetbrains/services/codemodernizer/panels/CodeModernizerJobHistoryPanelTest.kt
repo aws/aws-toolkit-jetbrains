@@ -23,7 +23,7 @@ class CodeModernizerJobHistoryPanelTest {
         tablePanelMock.updateTableData(testData)
         verify(tablePanelMock, times(1)).setDefaultUI()
         verify(tablePanelMock, times(1)).updateTableData(testData)
-        assertThat(tablePanelMock.headerLabel.text).isEqualTo("Transformation job history")
+        assertThat(tablePanelMock.headerLabel.text).isEqualTo("Job status")
         assertThat(tablePanelMock.jbTable.columnCount).isEqualTo(5)
         assertThat(tablePanelMock.jbTable.isEmpty).isFalse()
         assertThat(tablePanelMock.tableData).isEqualTo(testData)

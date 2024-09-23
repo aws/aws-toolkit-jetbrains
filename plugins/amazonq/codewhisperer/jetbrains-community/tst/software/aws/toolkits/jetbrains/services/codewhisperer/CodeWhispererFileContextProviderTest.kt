@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -11,7 +10,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Ignore
@@ -122,20 +121,18 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `languages not supporting supplemental context will return empty`() {
+    fun `languages not supporting supplemental context will return empty`() = runTest {
         val psiFiles = setupFixture(fixture)
         val psi = psiFiles[0]
 
-        runBlocking {
-            var context = aFileContextInfo(CodeWhispererCsharp.INSTANCE)
+        var context = aFileContextInfo(CodeWhispererCsharp.INSTANCE)
 
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
+        assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
+        assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
 
-            context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
-            assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
-            assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
-        }
+        context = aFileContextInfo(CodeWhispererKotlin.INSTANCE)
+        assertThat(sut.extractSupplementalFileContextForSrc(psi, context).contents).isEmpty()
+        assertThat(sut.extractSupplementalFileContextForTst(psi, context).contents).isEmpty()
     }
 
     @Test
@@ -190,7 +187,7 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `test extractCodeChunksFromFiles should read files from file producers to get 60 chunks`() {
+    fun `test extractCodeChunksFromFiles should read files from file producers to get 60 chunks`() = runTest {
         val psiFiles = setupFixture(fixture)
         val virtualFiles = psiFiles.mapNotNull { it.virtualFile }
         val javaMainPsiFile = psiFiles.first()
@@ -203,22 +200,20 @@ class CodeWhispererFileContextProviderTest {
             listOf(virtualFiles[2])
         }
 
-        val result = runBlocking {
-            sut.extractCodeChunksFromFiles(javaMainPsiFile, listOf(fileProducer1, fileProducer2))
-        }
+        val result = sut.extractCodeChunksFromFiles(javaMainPsiFile, listOf(fileProducer1, fileProducer2))
 
         assertThat(result[0].content).isEqualTo(
             """public class UtilClass {
-            |    public static int util() {};
-            |    public static String util2() {};
+            |    public static int util() {}
+            |    public static String util2() {}
             """.trimMargin()
         )
 
         assertThat(result[1].content).isEqualTo(
             """public class UtilClass {
-            |    public static int util() {};
-            |    public static String util2() {};
-            |    private static void helper() {};
+            |    public static int util() {}
+            |    public static String util2() {}
+            |    private static void helper() {}
             |    public static final int constant1;
             |    public static final int constant2;
             |    public static final int constant3;
@@ -229,14 +224,14 @@ class CodeWhispererFileContextProviderTest {
         assertThat(result[2].content).isEqualTo(
             """public class MyController {
             |    @Get
-            |    public Response getRecommendation(Request: req) {}
+            |    public Response getRecommendation(Request req) {}
             """.trimMargin()
         )
 
         assertThat(result[3].content).isEqualTo(
             """public class MyController {
             |    @Get
-            |    public Response getRecommendation(Request: req) {}            
+            |    public Response getRecommendation(Request req) {}
             |}
             """.trimMargin()
         )
@@ -257,21 +252,17 @@ class CodeWhispererFileContextProviderTest {
     // TODO: fix this test, in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile) { psiFile -> ... }
     @Ignore
     @Test
-    fun `extractSupplementalFileContext from src file should extract src`() {
+    fun `extractSupplementalFileContext from src file should extract src`() = runTest {
         val psiFiles = setupFixture(fixture)
         sut = spy(sut)
 
-        runReadAction {
-            val fileContext = sut.extractFileContext(fixture.editor, psiFiles[0])
+        val fileContext = sut.extractFileContext(fixture.editor, psiFiles[0])
 
-            val supplementalContext = runBlocking { sut.extractSupplementalFileContext(psiFiles[0], fileContext, timeout = 50) }
-            assertThat(supplementalContext?.contents).isNotNull.isNotEmpty
-        }
+        val supplementalContext = sut.extractSupplementalFileContext(psiFiles[0], fileContext, timeout = 50)
+        assertThat(supplementalContext?.contents).isNotNull.isNotEmpty
 
-        runBlocking {
-            verify(sut).extractSupplementalFileContextForSrc(any(), any())
-            verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
-        }
+        verify(sut).extractSupplementalFileContextForSrc(any(), any())
+        verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }
 
     /**
@@ -287,7 +278,7 @@ class CodeWhispererFileContextProviderTest {
      *
      */
     @Test
-    fun `extractSupplementalFileContext from tst file should extract focal file`() {
+    fun `extractSupplementalFileContext from tst file should extract focal file`() = runTest {
         val module = fixture.addModule("main")
         fixture.addClass(module, JAVA_MAIN)
 
@@ -302,31 +293,26 @@ class CodeWhispererFileContextProviderTest {
 
         sut = spy(sut)
 
-        runReadAction {
-            val fileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
-            val supplementalContext = runBlocking {
-                sut.extractSupplementalFileContext(tstFile, fileContext, 50)
-            }
-            assertThat(supplementalContext?.contents)
-                .isNotNull
-                .isNotEmpty
-                .hasSize(1)
+        val fileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+        val supplementalContext = sut.extractSupplementalFileContext(tstFile, fileContext, 50)
 
-            assertThat(supplementalContext?.contents?.get(0)?.content)
-                .isNotNull
-                .isEqualTo("UTG\n$JAVA_MAIN")
-        }
+        assertThat(supplementalContext?.contents)
+            .isNotNull
+            .isNotEmpty
+            .hasSize(1)
 
-        runBlocking {
-            verify(sut, times(0)).extractSupplementalFileContextForSrc(any(), any())
-            verify(sut).extractSupplementalFileContextForTst(any(), any())
-        }
+        assertThat(supplementalContext?.contents?.get(0)?.content)
+            .isNotNull
+            .isEqualTo("UTG\n$JAVA_MAIN")
+
+        verify(sut, times(0)).extractSupplementalFileContextForSrc(any(), any())
+        verify(sut).extractSupplementalFileContextForTst(any(), any())
     }
 
     private fun setupFixture(fixture: JavaCodeInsightTestFixture): List<PsiFile> {
         val psiFile1 = fixture.addFileToProject("Main.java", JAVA_MAIN)
         val psiFile2 = fixture.addFileToProject("UtilClass.java", JAVA_UTILCLASS)
-        val psiFile3 = fixture.addFileToProject("controllers/MyController.java", JAVA_MY_CROLLTER)
+        val psiFile3 = fixture.addFileToProject("controllers/MyController.java", JAVA_MYCONTROLLER)
         val psiFile4 = fixture.addFileToProject("helpers/Helper1.java", "Class Helper1 {}")
         val psiFile5 = fixture.addFileToProject("helpers/Helper2.java", "Class Helper2 {}")
         val psiFile6 = fixture.addFileToProject("helpers/Helper3.java", "Class Helper3 {}")
@@ -350,25 +336,27 @@ class CodeWhispererFileContextProviderTest {
 
     companion object {
         private val JAVA_MAIN = """public class Main {
-            |    public static void main() {
+            |    public static void main(String[] args) {
             |        System.out.println("Hello world");               
             |    }
             |}
         """.trimMargin()
 
+        // language=Java
         private val JAVA_UTILCLASS = """public class UtilClass {
-            |    public static int util() {};
-            |    public static String util2() {};
-            |    private static void helper() {};
+            |    public static int util() {}
+            |    public static String util2() {}
+            |    private static void helper() {}
             |    public static final int constant1;
             |    public static final int constant2;
             |    public static final int constant3;
             |}
         """.trimMargin()
 
-        private val JAVA_MY_CROLLTER = """public class MyController {
+        // language=Java
+        private val JAVA_MYCONTROLLER = """public class MyController {
             |    @Get
-            |    public Response getRecommendation(Request: req) {}            
+            |    public Response getRecommendation(Request req) {}
             |}
         """.trimMargin()
     }

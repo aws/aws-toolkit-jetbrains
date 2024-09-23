@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.icons.AllIcons.Vcs.History
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -12,11 +11,11 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.resources.message
 
-class CodeModernizerShowJobHistoryAction :
+class CodeModernizerShowTransformationStatusAction :
     AnAction(
-        message("codemodernizer.explorer.show_job_history"),
-        message("codemodernizer.explorer.show_job_history_description"),
-        History
+        message("codemodernizer.explorer.show_transformation_status"),
+        message("codemodernizer.explorer.show_transformation_status_description"),
+        AllIcons.Vcs.Changelist
     ),
     DumbAware {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -27,7 +26,6 @@ class CodeModernizerShowJobHistoryAction :
 
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
-        val codeModernizerManager = CodeModernizerManager.getInstance(project)
-        codeModernizerManager.showPreviousJobHistoryUI()
+        CodeModernizerManager.getInstance(project).showModernizationProgressUI()
     }
 }
