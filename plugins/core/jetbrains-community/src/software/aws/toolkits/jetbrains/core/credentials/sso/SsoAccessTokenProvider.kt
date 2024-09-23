@@ -352,7 +352,7 @@ class SsoAccessTokenProvider(
             AwsTelemetry.refreshCredentials(
                 project = null,
                 result = result,
-                sessionDuration = sessionDuration.toHours().toInt(),
+                sessionDuration = sessionDuration.toMillis().toLong(),
                 credentialSourceId = credentialSourceId,
                 reason = reason,
                 reasonDesc = reasonDesc,
@@ -391,10 +391,10 @@ class SsoAccessTokenProvider(
         var stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
-                it.clientId(registration.clientId)
-                it.clientSecret(registration.clientSecret)
+                it.clientId("INVALID CLIENTID FOR TEST")
+                it.clientSecret("INVALID CLIENT SECRET FOR TEST")
                 it.grantType(REFRESH_GRANT_TYPE)
-                it.refreshToken(currentToken.refreshToken)
+                it.refreshToken("INVALID REFRESH TOKEN FOR TEST")
             }
 
             stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
