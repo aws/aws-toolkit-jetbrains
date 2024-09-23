@@ -419,10 +419,11 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-            val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage()
-                else -> e.message
-            } ?: "$stageName: Unknown error"
+
+            // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
+            // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
+            // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
+            val message = e.message ?: "$stageName: ${e::class.java.name}"
 
             sendRefreshCredentialsMetric(
                 currentToken,
