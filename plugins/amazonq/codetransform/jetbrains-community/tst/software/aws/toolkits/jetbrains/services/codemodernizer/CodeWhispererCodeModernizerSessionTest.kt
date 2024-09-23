@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
@@ -102,7 +103,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val roots = ModuleRootManager.getInstance(module).contentRoots
         val root = roots[0]
-        val context = spy(CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test"))
+        val context = spy(CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
         val result = spy(MavenCopyCommandsResult.Success(File("")))
         doReturn(null).`when`(result).dependencyDirectory
         doReturn(result).`when`(context).executeMavenCopyCommands(any(), any())
@@ -122,7 +123,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val roots = ModuleRootManager.getInstance(module).contentRoots
         val root = roots[0]
-        val context = spy(CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test"))
+        val context = spy(CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
         val result = MavenCopyCommandsResult.Failure
         doReturn(result).`when`(context).executeMavenCopyCommands(any(), any())
         runInEdtAndWait {
@@ -143,7 +144,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test-compile")
+        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, MAVEN_BUILD_SKIP_UNIT_TESTS)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -158,7 +159,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                 when (Path(entry.name)) {
                     Path("manifest.json") -> {
                         assertNotNull(fileContent)
-                        assertTrue(fileContent.contains("test-compile"))
+                        assertTrue(fileContent.contains(MAVEN_BUILD_SKIP_UNIT_TESTS))
                     }
                     Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
                     Path("build-logs.txt") -> assertNotNull(fileContent)
@@ -185,7 +186,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val pom = roots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -222,7 +223,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -260,7 +261,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -300,7 +301,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -339,7 +340,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
-        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -365,7 +366,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     @Test
     fun `CodeModernizerSession can create zip and excludes maven metadata from dependencies folder`() {
         // get project.projectFile because project.projectFile can not be null
-        val context = CodeModernizerSessionContext(project, emptyPomFile, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test")
+        val context = CodeModernizerSessionContext(project, emptyPomFile, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val m2Folders = listOf(
             "com/groupid1/artifactid1/version1",
             "com/groupid1/artifactid1/version2",

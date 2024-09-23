@@ -224,8 +224,7 @@ class CodeTransformChatController(
         )
 
         // Create and set a session
-        val session = codeModernizerManager.createCodeModernizerSession(selection, context.project)
-        codeModernizerManager.codeTransformationSession = session
+        codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
         telemetry.submitSelection("Confirm", selection)
@@ -253,7 +252,7 @@ class CodeTransformChatController(
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
         val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleConfigurationFile, context.project)?.tryGetJdk(context.project)
         logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
-        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
+        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: error("Unable to determine source JDK version")
         return sourceJdk
     }
 

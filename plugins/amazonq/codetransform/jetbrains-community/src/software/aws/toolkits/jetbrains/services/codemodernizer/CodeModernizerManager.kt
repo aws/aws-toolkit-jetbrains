@@ -663,14 +663,16 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         telemetry.totalRunTime(result.toString(), jobId)
     }
 
-    fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) = CodeModernizerSession(
-        CodeModernizerSessionContext(
-            project,
-            customerSelection.configurationFile,
-            customerSelection.sourceJavaVersion,
-            customerSelection.targetJavaVersion,
-        ),
-    )
+    fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) {
+        codeTransformationSession = CodeModernizerSession(
+            CodeModernizerSessionContext(
+                project,
+                customerSelection.configurationFile,
+                customerSelection.sourceJavaVersion,
+                customerSelection.targetJavaVersion,
+            ),
+        )
+    }
 
     fun showModernizationProgressUI() = codeModernizerBottomWindowPanelManager.showUnalteredJobUI()
 
