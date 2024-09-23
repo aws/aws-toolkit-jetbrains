@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
@@ -65,6 +66,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val command: String?,
         @JsonProperty("tabID") val tabId: String,
         val messageId: String,
+        val userIntent: UserIntent?,
         val code: String,
         val insertionTargetType: String?,
         val eventId: String?,
@@ -75,6 +77,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
     data class InsertCodeAtCursorPosition(
         @JsonProperty("tabID") val tabId: String,
         val messageId: String,
+        val userIntent: UserIntent?,
         val code: String,
         val insertionTargetType: String?,
         val codeReference: List<CodeReference>?,

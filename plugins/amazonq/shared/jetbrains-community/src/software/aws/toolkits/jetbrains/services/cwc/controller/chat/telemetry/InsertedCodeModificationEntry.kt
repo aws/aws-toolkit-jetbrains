@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserModificationTrackingEntry
 import java.time.Instant
 
 data class InsertedCodeModificationEntry(
     val conversationId: String,
     val messageId: String,
+    val userIntent: UserIntent?,
     override val time: Instant,
     val vFile: VirtualFile?,
     val range: RangeMarker,
