@@ -305,7 +305,7 @@ open class CodeWhispererCodeModernizerTestBase(
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationStartStopping()
         doNothing().whenever(codeModernizerManagerSpy).notifyTransformationFailedToStop()
         doReturn(Path("/test/pom.xml")).whenever(emptyPomFileSpy).toNioPath()
-        validJDK8CustomerSelection = CustomerSelection(emptyPomFileSpy, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17, "test")
+        validJDK8CustomerSelection = CustomerSelection(emptyPomFileSpy, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_17)
     }
 
     fun setupConnection(authState: BearerTokenAuthState) {
