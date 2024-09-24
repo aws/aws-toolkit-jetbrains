@@ -52,6 +52,7 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.CancellationException
 import java.util.concurrent.Future
 import java.util.function.Function
 
@@ -368,14 +369,11 @@ abstract class LoginBrowser(
     }
 
     protected fun isUserCancellation(e: Exception): Boolean {
-        if (e !is ProcessCanceledException ||
-            e.cause !is IllegalStateException ||
-            e.message?.contains(AwsCoreBundle.message("credentials.pending.user_cancel.message")) == false
-        ) {
-            return false
+        if (e is ProcessCanceledException || e is CancellationException) {
+            LOG.debug(e) { "User canceled login" }
+            return true
         }
-        LOG.debug(e) { "User canceled login" }
-        return true
+        return false
     }
 
     companion object {
