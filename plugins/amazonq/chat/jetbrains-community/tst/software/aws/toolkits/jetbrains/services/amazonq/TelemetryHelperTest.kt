@@ -106,6 +106,7 @@ class TelemetryHelperTest {
         private const val mockRegion = "us-east-1"
         private const val tabId = "tabId"
         private const val messageId = "messageId"
+        private val userIntent = UserIntent.SHOW_EXAMPLES
         private const val conversationId = "conversationId"
         private const val triggerId = "triggerId"
         private const val customizationArn = "customizationArn"
@@ -414,6 +415,7 @@ class TelemetryHelperTest {
                 "command",
                 tabId,
                 messageId,
+                userIntent,
                 "println()",
                 "insertionTargetType",
                 "eventId",
@@ -476,6 +478,7 @@ class TelemetryHelperTest {
             IncomingCwcMessage.InsertCodeAtCursorPosition(
                 tabId,
                 messageId,
+                userIntent,
                 code,
                 inserTionTargetType,
                 emptyList(),
