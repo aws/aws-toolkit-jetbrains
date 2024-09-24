@@ -5,6 +5,7 @@ package software.aws.toolkits.core.utils
 
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.superclasses
 
 @Target(AnnotationTarget.PROPERTY)
 annotation class SensitiveField
@@ -23,7 +24,13 @@ fun redactedString(o: Any): String {
         properties.forEachIndexed { i, prop ->
             append(prop.name)
             append("=")
-            if (prop.hasAnnotation<SensitiveField>()) {
+
+            // @Inherited does not work in Kotlin
+            // https://youtrack.jetbrains.com/issue/KT-22265/Support-for-inherited-annotations
+            if (
+                prop.hasAnnotation<SensitiveField>() ||
+                clazz.superclasses.flatMap { superClazz -> superClazz.members.filter { it.name == prop.name }}.any { it.hasAnnotation<SensitiveField>() }
+            ) {
                 if (prop.getter.call(o) == null) {
                     append("null")
                 } else {
