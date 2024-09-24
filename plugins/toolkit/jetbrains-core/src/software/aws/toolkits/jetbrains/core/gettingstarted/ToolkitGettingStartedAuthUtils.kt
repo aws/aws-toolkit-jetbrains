@@ -23,7 +23,7 @@ import software.aws.toolkits.telemetry.Result
 fun requestCredentialsForCodeCatalyst(
     project: Project?,
     popupBuilderIdTab: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
@@ -117,7 +117,7 @@ fun requestCredentialsForCodeCatalyst(
 
 fun requestCredentialsForExplorer(
     project: Project,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),

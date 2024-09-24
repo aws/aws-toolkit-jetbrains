@@ -37,7 +37,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 // TODO: reset code coverage calculator on logging out connection?
 abstract class CodeWhispererCodeCoverageTracker(
@@ -48,15 +48,15 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val fileToTokens: MutableMap<Document, CodeCoverageTokens>,
     private val myServiceInvocationCount: AtomicInteger
 ) : Disposable {
-    val percentage: Int?
-        get() = if (totalTokensSize != 0) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
-    val acceptedTokensSize: Int
+    val percentage: Long?
+        get() = if (totalTokensSize != 0L) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
+    val acceptedTokensSize: Long
         get() = fileToTokens.map {
             it.value.acceptedTokens.get()
         }.fold(0) { acc, next ->
             acc + next
         }
-    val totalTokensSize: Int
+    val totalTokensSize: Long
         get() = fileToTokens.map {
             it.value.totalTokens.get()
         }.fold(0) { acc, next ->
@@ -202,7 +202,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         if (myServiceInvocationCount.get() <= 0) return
 
         // accepted char count without considering modification
-        var rawAcceptedCharacterCount = 0
+        var rawAcceptedCharacterCount = 0L
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
             // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
@@ -252,7 +252,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                 codewhispererLanguage = language.toTelemetryType(),
                 codewhispererPercentage = percentage,
                 codewhispererTotalTokens = totalTokensSize,
-                successCount = myServiceInvocationCount.get(),
+                successCount = myServiceInvocationCount.get().toLong(),
                 codewhispererCustomizationArn = customizationArn,
                 credentialStartUrl = getCodeWhispererStartUrl(project)
             )
@@ -282,7 +282,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()
         private val instances: MutableMap<CodeWhispererProgrammingLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
-        fun calculatePercentage(acceptedTokens: Int, totalTokens: Int): Int = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToInt()
+        fun calculatePercentage(acceptedTokens: Long, totalTokens: Long): Long = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToLong()
         fun getInstance(project: Project, language: CodeWhispererProgrammingLanguage): CodeWhispererCodeCoverageTracker =
             when (val instance = instances[language]) {
                 null -> {

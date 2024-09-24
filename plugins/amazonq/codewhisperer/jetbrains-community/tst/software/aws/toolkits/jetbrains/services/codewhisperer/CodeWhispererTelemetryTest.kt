@@ -13,7 +13,6 @@ import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,6 +32,7 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
@@ -501,7 +501,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
-        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length
+        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length.toLong()
         val acceptedTokensSize = rawAcceptedTokenSize - deletedTokenByUser
         val totalTokensSize = keystrokeInput.length + rawAcceptedTokenSize
 
@@ -548,7 +548,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
         }
 
-        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length
+        val rawAcceptedTokenSize = pythonResponse.completions().first().content().length.toLong()
         val totalTokensSize = keystrokeInput.length + rawAcceptedTokenSize + 1
 
         val metricCaptor = argumentCaptor<MetricEvent>()
@@ -626,7 +626,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     CodeWhispererTestUtil.generateMockCompletionDetail("a, b):\n    return a + b"),
                 )
                 .nextToken("")
-                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
                 .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
                 .build() as GenerateCompletionsResponse
         )
@@ -646,7 +646,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         CodeWhispererCodeCoverageTracker.getInstance(project, CodeWhispererPython.INSTANCE).dispose()
 
         val rawAcceptedTokenSize = "x, y):\n    return x + y".length
-        val acceptedTokensSize = rawAcceptedTokenSize
+        val acceptedTokensSize = rawAcceptedTokenSize.toLong()
         val totalTokensSize = "()".length + acceptedTokensSize
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())

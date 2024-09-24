@@ -252,7 +252,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(keystrokeInput)
-        assertThat(sut.totalTokensSize).isEqualTo(keystrokeInput.length)
+        assertThat(sut.totalTokensSize).isEqualTo(keystrokeInput.length.toLong())
     }
 
     @Test
@@ -270,7 +270,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(pythonTestLeftContext)
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length.toLong())
 
         val anotherCode = "(x, y):".repeat(8)
         runInEdtAndWait {
@@ -278,7 +278,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 fixture.editor.appendString(anotherCode)
             }
         }
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length.toLong())
     }
 
     @Test
@@ -292,7 +292,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length.toLong())
 
         runInEdtAndWait {
             fixture.editor.caretModel.primaryCaret.moveToOffset(fixture.editor.document.textLength)
@@ -301,7 +301,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
 
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length.toLong())
     }
 
     @Test
@@ -314,7 +314,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         )
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length.toLong())
 
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
@@ -322,7 +322,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
 
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length + 1)
+        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length + 1L)
     }
 
     @Test
@@ -365,8 +365,8 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
         sut.activateTrackerIfNotActive()
         assertThat(sut.activeRequestCount()).isEqualTo(1)
-        assertThat(sut.acceptedTokensSize).isEqualTo("bar".length)
-        assertThat(sut.totalTokensSize).isEqualTo("foobar".length)
+        assertThat(sut.acceptedTokensSize).isEqualTo("bar".length.toLong())
+        assertThat(sut.totalTokensSize).isEqualTo("foobar".length.toLong())
 
         sut.forceTrackerFlush()
 
@@ -566,7 +566,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
         }
         // reformat should fire documentChanged events, but tracker should not update token from these events
         verify(sut, atLeastOnce()).documentChanged(any())
-        assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
+        assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length.toLong())
 
         val formatted = """
             class Answer {
