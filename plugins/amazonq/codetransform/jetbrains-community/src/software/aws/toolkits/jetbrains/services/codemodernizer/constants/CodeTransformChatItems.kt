@@ -147,8 +147,8 @@ private val selectSkipTestsFlagFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = message("codemodernizer.chat.message.skip_tests_form.do_not_skip"),
-            value = message("codemodernizer.chat.message.skip_tests_form.do_not_skip"),
+            label = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+            value = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
         ),
         FormItemOption(
             label = message("codemodernizer.chat.message.skip_tests_form.skip"),
@@ -166,13 +166,6 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
 """.trimIndent()
-
-private fun getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection: String): String {
-    var skipTestsText = skipTestsSelection
-    // just for correct grammar
-    if (skipTestsText == message("codemodernizer.chat.message.skip_tests_form.do_not_skip")) skipTestsText = "not skip unit tests"
-    return message("codemodernizer.chat.message.skip_tests_form.response", skipTestsText.lowercase())
-}
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.dependency_details")}
@@ -233,7 +226,7 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = getUserSkipTestsFlagSelectionFormattedMarkdown(skipTestsSelection)
+    message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
 )
 
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
