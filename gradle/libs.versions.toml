@@ -3,7 +3,7 @@ apache-commons-collections = "4.4"
 apache-commons-io = "2.16.0"
 assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
-awsSdk = "2.26.25"
+awsSdk = "2.28.7"
 commonmark = "0.22.0"
 detekt = "1.23.6"
 intellijExt = "1.1.8"
