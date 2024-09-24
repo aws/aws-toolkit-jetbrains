@@ -71,7 +71,7 @@ abstract class LoginBrowser(
 
         handleBrowserMessage(obj)
 
-        null
+        JBCefJSQuery.Response(null)
     }
     protected var currentAuthorization: PendingAuthorization? = null
 
