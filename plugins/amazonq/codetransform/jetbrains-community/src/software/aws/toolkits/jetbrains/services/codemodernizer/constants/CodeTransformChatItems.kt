@@ -160,8 +160,8 @@ fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildProjectValidChatContent(validationResult: ValidationResult) = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.validation.check_passed", validationResult.validatedProjectJdkName),
+fun buildProjectValidChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.validation.check_passed"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
@@ -245,6 +245,16 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = "${message(
         "codemodernizer.chat.message.local_build_failed"
+    )}\n\n${message(
+        "codemodernizer.chat.message.validation.error.more_info",
+        CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
+    )}",
+)
+
+fun buildCompileLocalFailedNoJdkChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "${message(
+        "codemodernizer.chat.message.validation.no_jdk"
     )}\n\n${message(
         "codemodernizer.chat.message.validation.error.more_info",
         CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
