@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -87,7 +86,6 @@ class CodeWhispererTelemetryService {
             duration = 0.0,
             reason = exceptionType,
             success = false,
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name
         )
     }
 
@@ -140,7 +138,6 @@ class CodeWhispererTelemetryService {
             codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
             codewhispererSupplementalContextLength = supContext?.contentLength,
             codewhispererCustomizationArn = requestContext.customizationArn,
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name
         )
     }
 
@@ -185,7 +182,6 @@ class CodeWhispererTelemetryService {
             codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
             codewhispererSupplementalContextLength = supplementalContext?.contentLength,
             codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name
         )
     }
 
@@ -278,7 +274,6 @@ class CodeWhispererTelemetryService {
             codewhispererSupplementalContextLength = supplementalContext?.contentLength,
             codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
             codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name,
             codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
             codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()
         )
@@ -493,7 +488,6 @@ class CodeWhispererTelemetryService {
             duration = latency,
             passive = true,
             credentialStartUrl = startUrl,
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name,
             codewhispererCustomizationArn = requestContext.customizationArn,
         )
     }
@@ -517,7 +511,6 @@ class CodeWhispererTelemetryService {
             codewhispererCompletionType = CodewhispererCompletionType.Line,
             codewhispererLanguage = codewhispererLanguage,
             credentialStartUrl = startUrl,
-            codewhispererUserGroup = CodeWhispererUserGroup.Control.name,
             codewhispererCustomizationArn = requestContext.customizationArn,
         )
     }

@@ -58,7 +58,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCoverageTokens
@@ -448,7 +447,6 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             CWSPR_PERCENTAGE to "1",
             CWSPR_ACCEPTED_TOKENS to "1",
             CWSPR_TOTAL_TOKENS to "100",
-            "codewhispererUserGroup" to CodeWhispererUserGroup.Control.name,
         )
     }
 
