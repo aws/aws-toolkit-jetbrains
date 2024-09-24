@@ -104,9 +104,9 @@ interface CodeWhispererClientAdaptor : Disposable {
     fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String?,
-        acceptedTokenCount: Int,
-        totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        acceptedTokenCount: Long,
+        totalTokenCount: Long,
+        unmodifiedAcceptedTokenCount: Long?
     ): SendTelemetryEventResponse
 
     fun sendUserModificationTelemetry(
@@ -337,18 +337,18 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String?,
-        acceptedTokenCount: Int,
-        totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        acceptedTokenCount: Long,
+        totalTokenCount: Long,
+        unmodifiedAcceptedTokenCount: Long?
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeCoverageEvent {
                 it.programmingLanguage { languageBuilder -> languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId) }
                 it.customizationArn(customizationArn)
-                it.acceptedCharacterCount(acceptedTokenCount)
-                it.totalCharacterCount(totalTokenCount)
+                it.acceptedCharacterCount(acceptedTokenCount.toInt())
+                it.totalCharacterCount(totalTokenCount.toInt())
                 it.timestamp(Instant.now())
-                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount)
+                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount?.toInt())
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

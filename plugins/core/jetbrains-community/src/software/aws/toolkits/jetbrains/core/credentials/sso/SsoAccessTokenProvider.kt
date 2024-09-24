@@ -345,14 +345,14 @@ class SsoAccessTokenProvider(
         result: Result
     ) {
         val tokenCreationTime = currentToken.createdAt
-        val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
+        val sessionDuration = Duration.between(tokenCreationTime, Instant.now(clock))
         val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
 
         if (tokenCreationTime != Instant.EPOCH) {
             AwsTelemetry.refreshCredentials(
                 project = null,
                 result = result,
-                sessionDuration = sessionDuration.toHours().toInt(),
+                sessionDuration = sessionDuration.toMillis(),
                 credentialSourceId = credentialSourceId,
                 reason = reason,
                 reasonDesc = reasonDesc,
@@ -419,10 +419,11 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-            val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage()
-                else -> e.message
-            } ?: "$stageName: Unknown error"
+
+            // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
+            // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
+            // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
+            val message = e.message ?: "$stageName: ${e::class.java.name}"
 
             sendRefreshCredentialsMetric(
                 currentToken,
@@ -435,7 +436,7 @@ class SsoAccessTokenProvider(
         }
     }
 
-    enum class RefreshCredentialStage {
+    private enum class RefreshCredentialStage {
         CREATE_TOKEN,
         GET_TOKEN_DETAILS,
         SAVE_TOKEN
