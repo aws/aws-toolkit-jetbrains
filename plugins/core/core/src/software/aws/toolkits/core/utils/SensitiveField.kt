@@ -29,7 +29,7 @@ fun redactedString(o: Any): String {
             // https://youtrack.jetbrains.com/issue/KT-22265/Support-for-inherited-annotations
             if (
                 prop.hasAnnotation<SensitiveField>() ||
-                clazz.superclasses.flatMap { superClazz -> superClazz.members.filter { it.name == prop.name }}.any { it.hasAnnotation<SensitiveField>() }
+                clazz.superclasses.flatMap { superClazz -> superClazz.members.filter { it.name == prop.name } }.any { it.hasAnnotation<SensitiveField>() }
             ) {
                 if (prop.getter.call(o) == null) {
                     append("null")

@@ -25,7 +25,7 @@ class ClientRegistrationTest {
         val sut = PKCEClientRegistration(
             clientId = "clearText",
             clientSecret = "hiddenText",
-            expiresAt =  Instant.EPOCH,
+            expiresAt = Instant.EPOCH,
             scopes = listOf("clearText"),
             issuerUrl = "clearText",
             region = "clearText",
