@@ -68,6 +68,7 @@ class DefaultToolkitAuthManagerTest {
     fun setUp(@TestDisposable disposable: Disposable) {
         mockClientManager.create<SsoOidcClient>()
         sut = DefaultToolkitAuthManager()
+        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
         connectionManager = DefaultToolkitConnectionManager()
         batcher = mock()
         telemetryService = spy(TestTelemetryService(batcher = batcher))

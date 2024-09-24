@@ -8,9 +8,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import java.util.function.Function
-
-typealias MessageReceiver = Function<String, JBCefJSQuery.Response>
 
 /*
 Displays the web view for the Amazon Q tool window
