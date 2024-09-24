@@ -112,7 +112,7 @@ data class SetupAuthenticationNotice(
 }
 
 interface AuthenticationDialog {
-    val attempts: Int
+    val attempts: Long
     val authType: CredentialSourceId
 }
 
@@ -138,7 +138,7 @@ class SetupAuthenticationDialog(
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    override var attempts = 0
+    override var attempts = 0L
         private set
     override var authType = CredentialSourceId.IamIdentityCenter
         private set
