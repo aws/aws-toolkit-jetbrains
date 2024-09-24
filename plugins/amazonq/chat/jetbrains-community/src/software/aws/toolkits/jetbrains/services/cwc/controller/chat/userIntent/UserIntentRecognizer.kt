@@ -3,11 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent
 
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType

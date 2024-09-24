@@ -336,7 +336,7 @@ class ChatController private constructor(
         // Create prompt
         val prompt = if (EditorContextCommand.GenerateUnitTests == message.command)
             "${message.command.verb} the following part of my code for me: $codeSelection" else
-            "${message.command} the following part of my code for me: $codeSelection";
+            "${message.command} the following part of my code for me: $codeSelection"
 
         processPromptActions(prompt, message, triggerId, fileContext)
     }
