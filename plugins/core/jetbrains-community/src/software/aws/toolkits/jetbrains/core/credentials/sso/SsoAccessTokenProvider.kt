@@ -436,7 +436,7 @@ class SsoAccessTokenProvider(
         }
     }
 
-    enum class RefreshCredentialStage {
+    private enum class RefreshCredentialStage {
         CREATE_TOKEN,
         GET_TOKEN_DETAILS,
         SAVE_TOKEN
