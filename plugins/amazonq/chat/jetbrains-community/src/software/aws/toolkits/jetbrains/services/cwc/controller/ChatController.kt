@@ -221,7 +221,6 @@ class ChatController private constructor(
                         InsertedCodeModificationEntry(
                             telemetryHelper.getConversationId(message.tabId).orEmpty(),
                             message.messageId,
-                            message.userIntent,
                             Instant.now(),
                             PsiDocumentManager.getInstance(context.project).getPsiFile(editor.document)?.virtualFile,
                             editor.document.createRangeMarker(caret.selectionStart, caret.selectionEnd, true),
