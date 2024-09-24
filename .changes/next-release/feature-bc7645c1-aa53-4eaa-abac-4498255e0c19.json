@@ -1,4 +1,4 @@
 {
-  "type" : "feature",
+  "type" : "bugfix",
   "description" : "Automatically terminate orphaned process for \`@workspace\` helper"
 }
