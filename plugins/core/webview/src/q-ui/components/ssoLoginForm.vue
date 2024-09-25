@@ -33,7 +33,7 @@
         <div>
             <div class="title no-bold">Region</div>
             <div class="hint">AWS Region that hosts identity directory</div>
-            <div class="custom-select" :class="{ 'is-open': isOpen }">
+            <div class="region-select" :class="{ 'is-open': isOpen }">
                 <div class="select-trigger"
                      @click="toggleDropdown"
                      tabindex="0"
@@ -169,19 +169,41 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-
-.custom-select {
+.region-select {
     position: relative;
     width: 100%;
-    font-family: 'Amazon Ember', sans-serif;
 }
 
 .select-trigger {
     padding: 10px;
-    border: 1px solid #ccc;
+    padding-right: 20px;
     cursor: pointer;
-    background: #fff;
+    position: relative;
 }
+
+.select-trigger::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
+.select-trigger-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.is-open .select-trigger::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
 
 .options-container {
     position: absolute;
@@ -190,23 +212,12 @@ export default defineComponent({
     right: 0;
     max-height: 200px;
     overflow-y: auto;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-top: none;
     z-index: 1000;
 }
 
 .option {
     padding: 10px;
     cursor: pointer;
-}
-
-.option:hover, .option.selected {
-    background-color: #f0f0f0;
-}
-
-.is-open .select-trigger {
-    border-bottom: none;
 }
 
 .hint {
@@ -223,17 +234,26 @@ export default defineComponent({
 
 /* Theme specific styles */
 body.jb-dark {
-    .url-input, .region-select, .sso-profile {
+    .url-input, .region-select, .sso-profile, .select-trigger, .options-container {
         background-color: #252526;
         color: white;
-        border: none;
+        border: 1px solid #3c3c3c;
+    }
+
+    .option:hover, .option.selected {
+        background-color: #3c3c3c;
     }
 }
 
 body.jb-light {
-    .url-input, .region-select, .sso-profile {
+    .url-input, .region-select, .sso-profile, .select-trigger, .options-container {
+        background-color: white;
         color: black;
         border: 1px solid #c9ccd6;
+    }
+
+    .option:hover, .option.selected {
+        background-color: #f0f0f0;
     }
 }
 </style>
