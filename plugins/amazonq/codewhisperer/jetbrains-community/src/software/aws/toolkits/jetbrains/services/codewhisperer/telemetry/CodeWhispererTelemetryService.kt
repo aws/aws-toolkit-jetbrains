@@ -458,7 +458,7 @@ class CodeWhispererTelemetryService {
      * - Reject if there is a Reject
      * - Empty if all decisions are Empty
      * - Ignore if at least one suggestion is seen and there's an accept for another trigger in the same display session
-     * - Unseen if the whole trigger is not seen
+     * - Unseen if the whole trigger is not seen (but has valid suggestions)
      * - Record the accepted suggestion index
      * - Discard otherwise
      */
@@ -478,8 +478,6 @@ class CodeWhispererTelemetryService {
             } else if (decision == CodewhispererSuggestionState.Ignore) {
                 isUnseen = false
                 isEmpty = false
-                isDiscard = false
-            } else if (decision == CodewhispererSuggestionState.Empty) {
                 isDiscard = false
             } else if (decision == CodewhispererSuggestionState.Discard) {
                 isEmpty = false
