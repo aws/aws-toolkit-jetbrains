@@ -211,6 +211,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                 AmazonqTelemetry.interactWithMessage(
                     cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
                     cwsprChatMessageId = message.messageId,
+                    cwsprChatUserIntent = message.userIntent?.let { getTelemetryUserIntent(it) },
                     cwsprChatInteractionType = CwsprChatInteractionType.CopySnippet,
                     cwsprChatAcceptedCharactersLength = message.code.length.toLong(),
                     cwsprChatInteractionTarget = message.insertionTargetType,
@@ -234,6 +235,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                 AmazonqTelemetry.interactWithMessage(
                     cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
                     cwsprChatMessageId = message.messageId,
+                    cwsprChatUserIntent = message.userIntent?.let { getTelemetryUserIntent(it) },
                     cwsprChatInteractionType = CwsprChatInteractionType.InsertAtCursor,
                     cwsprChatAcceptedCharactersLength = message.code.length.toLong(),
                     cwsprChatAcceptedNumberOfLines = message.code.lines().size.toLong(),

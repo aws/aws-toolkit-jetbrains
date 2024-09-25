@@ -15,6 +15,8 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformStopAction(tabId: String)
 
+    suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests)
+
     suspend fun processCodeTransformOpenTransformHub(message: IncomingCodeTransformMessage.CodeTransformOpenTransformHub)
 
     suspend fun processCodeTransformOpenMvnBuild(message: IncomingCodeTransformMessage.CodeTransformOpenMvnBuild)

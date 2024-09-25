@@ -6,6 +6,7 @@
 export const enum FormButtonIds {
   CodeTransformInputConfirm = 'codetransform-input-confirm',
   CodeTransformInputCancel = 'codetransform-input-cancel',
+  CodeTransformInputSkipTests = 'codetransform-input-confirm-skip-tests',
   OpenMvnBuild = 'open_mvn_build',
   StopTransform = 'stop_transform',
   OpenTransformationHub = 'open_transformation_hub',
@@ -21,6 +22,7 @@ export const isFormButtonCodeTransform = (id: string): boolean => {
   return (
     id === FormButtonIds.CodeTransformInputConfirm ||
     id === FormButtonIds.CodeTransformInputCancel ||
+    id === FormButtonIds.CodeTransformInputSkipTests ||
     id === FormButtonIds.CodeTransformViewDiff ||
     id === FormButtonIds.CodeTransformViewSummary ||
     id === FormButtonIds.CodeTransformViewBuildLog ||

@@ -655,6 +655,10 @@
                     "type": "cwsprChatMessageId"
                 },
                 {
+                    "type": "cwsprChatUserIntent",
+                    "required": false
+                },
+                {
                     "type": "cwsprChatInteractionType"
                 },
                 {
