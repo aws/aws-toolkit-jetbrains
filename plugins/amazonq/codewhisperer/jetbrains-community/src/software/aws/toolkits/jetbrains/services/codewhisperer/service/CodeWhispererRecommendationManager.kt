@@ -9,6 +9,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import kotlin.math.max
@@ -63,7 +64,7 @@ class CodeWhispererRecommendationManager {
         userInput: String,
         recommendations: List<Completion>,
         requestId: String,
-    ): List<DetailContext> {
+    ): MutableList<DetailContext> {
         val seen = mutableSetOf<String>()
         return recommendations.map {
             val isDiscardedByUserInput = !it.content().startsWith(userInput) || it.content() == userInput
@@ -126,7 +127,7 @@ class CodeWhispererRecommendationManager {
                 overlap,
                 getCompletionType(it)
             )
-        }
+        }.toMutableList()
     }
 
     fun findRightContextOverlap(
