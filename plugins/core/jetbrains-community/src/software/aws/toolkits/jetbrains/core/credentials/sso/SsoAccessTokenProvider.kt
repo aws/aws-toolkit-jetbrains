@@ -345,14 +345,14 @@ class SsoAccessTokenProvider(
         result: Result
     ) {
         val tokenCreationTime = currentToken.createdAt
-        val sessionDuration = Duration.between(Instant.now(clock), tokenCreationTime)
+        val sessionDuration = Duration.between(tokenCreationTime, Instant.now(clock))
         val credentialSourceId = if (currentToken.ssoUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
 
         if (tokenCreationTime != Instant.EPOCH) {
             AwsTelemetry.refreshCredentials(
                 project = null,
                 result = result,
-                sessionDuration = sessionDuration.toHours().toInt(),
+                sessionDuration = sessionDuration.toMillis(),
                 credentialSourceId = credentialSourceId,
                 reason = reason,
                 reasonDesc = reasonDesc,
@@ -378,7 +378,7 @@ class SsoAccessTokenProvider(
             is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
         }
         if (registration == null) {
-            val message = "Unable to load client registration"
+            val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null client registration",
@@ -388,6 +388,7 @@ class SsoAccessTokenProvider(
             throw InvalidClientException.builder().message(message).build()
         }
 
+        var stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
                 it.clientId(registration.clientId)
@@ -396,11 +397,13 @@ class SsoAccessTokenProvider(
                 it.refreshToken(currentToken.refreshToken)
             }
 
+            stageName = RefreshCredentialStage.GET_TOKEN_DETAILS
             val token = when (currentToken) {
                 is DeviceAuthorizationGrantToken -> newToken.toDAGAccessToken(currentToken.createdAt)
                 is PKCEAuthorizationGrantToken -> newToken.toPKCEAccessToken(currentToken.createdAt)
             }
 
+            stageName = RefreshCredentialStage.SAVE_TOKEN
             saveAccessToken(token)
 
             sendRefreshCredentialsMetric(
@@ -416,19 +419,27 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-            val message = when (e) {
-                is AwsServiceException -> e.awsErrorDetails()?.errorMessage() ?: "Unknown error"
-                else -> e.message ?: "Unknown error"
-            }
+
+            // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
+            // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
+            // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
+            val message = e.message ?: "$stageName: ${e::class.java.name}"
+
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Refresh access token request failed",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 requestId = requestId,
                 result = Result.Failed
             )
             throw e
         }
+    }
+
+    private enum class RefreshCredentialStage {
+        CREATE_TOKEN,
+        GET_TOKEN_DETAILS,
+        SAVE_TOKEN
     }
 
     private fun loadDagClientRegistration(): ClientRegistration? =

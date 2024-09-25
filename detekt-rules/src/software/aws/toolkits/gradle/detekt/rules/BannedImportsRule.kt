@@ -50,6 +50,16 @@ class BannedImportsRule : Rule() {
                 )
             }
 
+            if (importedFqName?.startsWith("org.gradle.internal.impldep") == true) {
+                report(
+                    CodeSmell(
+                        issue,
+                        Entity.from(element),
+                        message = "Avoid using Gradle's internal implementation classes: not public API and may change without notice."
+                    )
+                )
+            }
+
             if (importedFqName?.contains("kotlinx.coroutines.Dispatchers") == true) {
                 report(
                     CodeSmell(

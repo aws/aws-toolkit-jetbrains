@@ -364,10 +364,17 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun handleLocalMavenBuildResult(mavenCopyCommandsResult: MavenCopyCommandsResult) {
         codeTransformationSession?.setLastMvnBuildResult(mavenCopyCommandsResult)
         // Send IDE notifications first
-        if (mavenCopyCommandsResult == MavenCopyCommandsResult.Failure) {
+        if (mavenCopyCommandsResult is MavenCopyCommandsResult.Failure) {
             notifyStickyInfo(
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
+                project,
+                listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
+            )
+        } else if (mavenCopyCommandsResult is MavenCopyCommandsResult.NoJdk) {
+            notifyStickyInfo(
+                message("codemodernizer.notification.warn.maven_failed.title"),
+                message("codemodernizer.notification.warn.validation.no_jdk"),
                 project,
                 listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
             )

@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
@@ -87,7 +86,6 @@ class CodeWhispererTelemetryService {
             duration = 0.0,
             reason = exceptionType,
             success = false,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name
         )
     }
 
@@ -122,11 +120,11 @@ class CodeWhispererTelemetryService {
             project = requestContext.project,
             codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
             codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererCursorOffset = offset,
+            codewhispererCursorOffset = offset.toLong(),
             codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
             codewhispererLanguage = codewhispererLanguage,
-            codewhispererLastSuggestionIndex = lastRecommendationIndex,
-            codewhispererLineNumber = line,
+            codewhispererLastSuggestionIndex = lastRecommendationIndex.toLong(),
+            codewhispererLineNumber = line.toLong(),
             codewhispererRequestId = requestId,
             codewhispererSessionId = responseContext.sessionId,
             codewhispererTriggerType = triggerType,
@@ -138,9 +136,8 @@ class CodeWhispererTelemetryService {
             codewhispererSupplementalContextTimeout = supContext?.isProcessTimeout,
             codewhispererSupplementalContextIsUtg = supContext?.isUtg,
             codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
-            codewhispererSupplementalContextLength = supContext?.contentLength,
+            codewhispererSupplementalContextLength = supContext?.contentLength?.toLong(),
             codewhispererCustomizationArn = requestContext.customizationArn,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name
         )
     }
 
@@ -172,20 +169,19 @@ class CodeWhispererTelemetryService {
             codewhispererCompletionType = detailContext.completionType,
             codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
             codewhispererLanguage = codewhispererLanguage,
-            codewhispererPaginationProgress = numOfRecommendations,
+            codewhispererPaginationProgress = numOfRecommendations.toLong(),
             codewhispererRequestId = requestId,
             codewhispererSessionId = responseContext.sessionId,
-            codewhispererSuggestionIndex = index,
-            codewhispererSuggestionReferenceCount = recommendation.references().size,
+            codewhispererSuggestionIndex = index.toLong(),
+            codewhispererSuggestionReferenceCount = recommendation.references().size.toLong(),
             codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(recommendation.references().map { it.licenseName() }.toSet().toList()),
-            codewhispererSuggestionImportCount = if (importEnabled) recommendation.mostRelevantMissingImports().size else null,
+            codewhispererSuggestionImportCount = if (importEnabled) recommendation.mostRelevantMissingImports().size.toLong() else null,
             codewhispererSuggestionState = suggestionState,
             codewhispererTriggerType = triggerTypeInfo.triggerType,
             credentialStartUrl = startUrl,
             codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength,
+            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
             codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name
         )
     }
 
@@ -253,19 +249,19 @@ class CodeWhispererTelemetryService {
             credentialStartUrl = getConnectionStartUrl(requestContext.connection),
             codewhispererIsPartialAcceptance = null,
             codewhispererPartialAcceptanceCount = null,
-            codewhispererCharactersAccepted = acceptedCharCount,
+            codewhispererCharactersAccepted = acceptedCharCount.toLong(),
             codewhispererCharactersRecommended = null,
             codewhispererCompletionType = completionType,
             codewhispererLanguage = language.toTelemetryType(),
             codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
             codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
-            codewhispererLineNumber = requestContext.caretPosition.line,
-            codewhispererCursorOffset = requestContext.caretPosition.offset,
-            codewhispererSuggestionCount = recommendationContext.details.size,
-            codewhispererSuggestionImportCount = totalImportCount,
+            codewhispererLineNumber = requestContext.caretPosition.line.toLong(),
+            codewhispererCursorOffset = requestContext.caretPosition.offset.toLong(),
+            codewhispererSuggestionCount = recommendationContext.details.size.toLong(),
+            codewhispererSuggestionImportCount = totalImportCount.toLong(),
             codewhispererTotalShownTime = popupShownTime?.toMillis()?.toDouble(),
             codewhispererTriggerCharacter = triggerChar,
-            codewhispererTypeaheadLength = recommendationContext.userInputSinceInvocation.length,
+            codewhispererTypeaheadLength = recommendationContext.userInputSinceInvocation.length.toLong(),
             codewhispererTimeSinceLastDocumentChange = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
             codewhispererTimeSinceLastUserDecision = codewhispererTimeSinceLastUserDecision,
             codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
@@ -275,10 +271,9 @@ class CodeWhispererTelemetryService {
             codewhispererClassifierThreshold = classifierThreshold,
             codewhispererCustomizationArn = requestContext.customizationArn,
             codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength,
+            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
             codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
             codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
             codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
             codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()
         )
@@ -315,19 +310,19 @@ class CodeWhispererTelemetryService {
         }
         CodewhispererTelemetry.securityScan(
             project = project,
-            codewhispererCodeScanLines = payloadContext.totalLines.toInt(),
+            codewhispererCodeScanLines = payloadContext.totalLines,
             codewhispererCodeScanJobId = codeScanJobId,
             codewhispererCodeScanProjectBytes = codeScanEvent.totalProjectSizeInBytes,
-            codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize.toInt(),
-            codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize?.toInt(),
-            codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize.toInt(),
-            codewhispererCodeScanTotalIssues = totalIssues,
-            codewhispererCodeScanIssuesWithFixes = issuesWithFixes,
+            codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize,
+            codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize,
+            codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize,
+            codewhispererCodeScanTotalIssues = totalIssues.toLong(),
+            codewhispererCodeScanIssuesWithFixes = issuesWithFixes.toLong(),
             codewhispererLanguage = payloadContext.language,
             duration = codeScanEvent.duration,
-            contextTruncationDuration = payloadContext.totalTimeInMilliseconds.toInt(),
-            artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration.toInt(),
-            codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration.toInt(),
+            contextTruncationDuration = payloadContext.totalTimeInMilliseconds,
+            artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration,
+            codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration,
             reason = reason,
             result = codeScanEvent.result,
             credentialStartUrl = startUrl,
@@ -493,7 +488,6 @@ class CodeWhispererTelemetryService {
             duration = latency,
             passive = true,
             credentialStartUrl = startUrl,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
             codewhispererCustomizationArn = requestContext.customizationArn,
         )
     }
@@ -517,7 +511,6 @@ class CodeWhispererTelemetryService {
             codewhispererCompletionType = CodewhispererCompletionType.Line,
             codewhispererLanguage = codewhispererLanguage,
             credentialStartUrl = startUrl,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
             codewhispererCustomizationArn = requestContext.customizationArn,
         )
     }

@@ -100,13 +100,13 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
                 message = if (remainingIterations == 0) {
+                    message("amazonqFeatureDev.code_generation.iteration_zero")
+                } else {
                     message(
                         "amazonqFeatureDev.code_generation.iteration_counts",
                         remainingIterations,
                         totalIterations
                     )
-                } else {
-                    message("amazonqFeatureDev.code_generation.iteration_zero")
                 }
             )
         }

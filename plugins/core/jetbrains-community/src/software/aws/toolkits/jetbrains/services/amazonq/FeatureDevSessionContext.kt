@@ -119,7 +119,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
-        val ignoredExtensionMap = mutableMapOf<String, Int>().withDefault { 0 }
+        val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
         var totalSize: Long = 0
 
         VfsUtil.visitChildrenRecursively(
