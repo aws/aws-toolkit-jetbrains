@@ -39,7 +39,10 @@
                      tabindex="0"
                      @keydown.space.prevent="toggleDropdown"
                      @keydown.enter.prevent="toggleDropdown">
-                    {{ selectedRegion }}
+                    <template v-for="region in regions" :key="region.id">
+                        <span v-if="region.id === selectedRegion">{{ region.name }} ({{ region.id }})</span>
+                    </template>
+                    <span v-if="!selectedRegion">Select a Region</span>
                 </div>
                 <div class="options-container" v-if="isOpen">
                     <div class="option"
