@@ -46,7 +46,5 @@ class UserIntentRecognizer {
         OnboardingPageInteractionType.CwcButtonClick -> null
     }
 
-    private fun isInternalAmazonUser(startUrl: String?): Boolean {
-        return startUrl == "https://amzn.awsapps.com/start"
-    }
+    private fun isInternalAmazonUser(startUrl: String?): Boolean = startUrl == "https://amzn.awsapps.com/start"
 }
