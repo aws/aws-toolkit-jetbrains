@@ -6,8 +6,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.idea.AppMode
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
@@ -44,6 +46,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererAcceptAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigateNextAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigatePrevAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -55,8 +61,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupLeftArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
@@ -373,41 +378,52 @@ class CodeWhispererPopupManager {
         )
     }
 
-    private fun addButtonActionListeners(states: InvocationContext) {
-        popupComponents.prevButton.addButtonActionListener(CodeWhispererPrevButtonActionListener(states))
-        popupComponents.nextButton.addButtonActionListener(CodeWhispererNextButtonActionListener(states))
-        popupComponents.acceptButton.addButtonActionListener(CodeWhispererAcceptButtonActionListener(states))
+    private fun addButtonActionListeners(sessionContext: SessionContext) {
+        popupComponents.prevButton.addButtonActionListener(CodeWhispererPrevButtonActionListener(sessionContext), sessionContext)
+        popupComponents.nextButton.addButtonActionListener(CodeWhispererNextButtonActionListener(sessionContext), sessionContext)
+        popupComponents.acceptButton.addButtonActionListener(CodeWhispererAcceptButtonActionListener(sessionContext), sessionContext)
     }
 
-    private fun JButton.addButtonActionListener(listener: CodeWhispererActionListener) {
+    private fun JButton.addButtonActionListener(listener: CodeWhispererActionListener, sessionContext: SessionContext) {
         this.addActionListener(listener)
-        Disposer.register(listener.states) { this.removeActionListener(listener) }
+        Disposer.register(sessionContext) { this.removeActionListener(listener) }
     }
 
-    private fun setPopupActionHandlers(states: InvocationContext) {
+    private fun setPopupActionHandlers(sessionContext: SessionContext) {
         val actionManager = EditorActionManager.getInstance()
-        setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, states))
-        setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states))
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_LEFT, CodeWhispererPopupLeftArrowHandler(states))
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_RIGHT, CodeWhispererPopupRightArrowHandler(states))
+
+        // TODO: find a better way to pass in the local sessionContext for the handler to know the session state
+        val prevAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous") as CodeWhispererNavigatePrevAction
+        prevAction.sessionContext = sessionContext
+        val nextAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next") as CodeWhispererNavigateNextAction
+        nextAction.sessionContext = sessionContext
+        val acceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.accept") as CodeWhispererAcceptAction
+        acceptAction.sessionContext = sessionContext
+        val forceAcceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.force.accept") as CodeWhispererForceAcceptAction
+        forceAcceptAction.sessionContext = sessionContext
+
+        setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)
         setPopupActionHandler(
             ACTION_EDITOR_ENTER,
-            CodeWhispererPopupEnterHandler(actionManager.getActionHandler(ACTION_EDITOR_ENTER), states)
+            CodeWhispererPopupEnterHandler(actionManager.getActionHandler(ACTION_EDITOR_ENTER), sessionContext),
+            sessionContext
         )
         setPopupActionHandler(
             ACTION_EDITOR_BACKSPACE,
-            CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), states)
+            CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), sessionContext),
+            sessionContext
         )
     }
 
-    private fun setPopupTypedHandler(newHandler: CodeWhispererPopupTypedHandler) {
+    private fun setPopupTypedHandler(newHandler: CodeWhispererPopupTypedHandler, sessionContext: SessionContext) {
         val oldTypedHandler = TypedAction.getInstance().setupRawHandler(newHandler)
-        Disposer.register(newHandler.states) { TypedAction.getInstance().setupRawHandler(oldTypedHandler) }
+        Disposer.register(sessionContext) { TypedAction.getInstance().setupRawHandler(oldTypedHandler) }
     }
 
-    private fun setPopupActionHandler(id: String, newHandler: CodeWhispererEditorActionHandler) {
+    private fun setPopupActionHandler(id: String, newHandler: CodeWhispererEditorActionHandler, sessionContext: SessionContext) {
         val oldHandler = EditorActionManager.getInstance().setActionHandler(id, newHandler)
-        Disposer.register(newHandler.states) { EditorActionManager.getInstance().setActionHandler(id, oldHandler) }
+        Disposer.register(sessionContext) { EditorActionManager.getInstance().setActionHandler(id, oldHandler) }
     }
 
     private fun addComponentListeners(sessionContext: SessionContext) {
