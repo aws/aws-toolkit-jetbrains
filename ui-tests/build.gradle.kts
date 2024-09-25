@@ -17,7 +17,6 @@ dependencies {
     testImplementation(project(":plugin-core:core"))
     testImplementation(project(path = ":plugin-core:core", configuration = "testArtifacts"))
     testImplementation(libs.kotlin.coroutines)
-    testImplementation(libs.junit5.jupiterApi)
     testImplementation(libs.intellijRemoteFixtures)
     testImplementation(libs.intellijRemoteRobot)
     testImplementation(libs.aws.cloudformation)
@@ -29,8 +28,6 @@ dependencies {
     testImplementation(libs.commons.io)
     // match version declared by intellijRemoteRobot
     testImplementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    testRuntimeOnly(libs.junit5.jupiterEngine)
 }
 
 // don't run gui tests as part of check

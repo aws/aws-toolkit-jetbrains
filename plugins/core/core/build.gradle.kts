@@ -24,7 +24,6 @@ dependencies {
     implementation(libs.commonmark)
     testImplementation(libs.junit4)
 
-    testRuntimeOnly(libs.junit5.jupiterVintage)
     testRuntimeOnly(project(":plugin-core:resources"))
     testRuntimeOnly(project(":plugin-core:sdk-codegen"))
 }

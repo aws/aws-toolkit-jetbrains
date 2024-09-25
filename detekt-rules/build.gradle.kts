@@ -15,7 +15,6 @@ dependencies {
 
     // only used to make test work
     testRuntimeOnly(libs.slf4j.api)
-    testRuntimeOnly(libs.junit5.jupiterVintage)
 }
 
 tasks.test {
