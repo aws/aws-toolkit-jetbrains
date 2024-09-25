@@ -14,10 +14,10 @@ import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
 
-fun getConnectionCount(): Int {
+fun getConnectionCount(): Long {
     val bearerTokenCount = ToolkitAuthManager.getInstance().listConnections().size
     val iamCredentialCount = CredentialManager.getInstance().getCredentialIdentifiers().count { it !is ProfileCredentialsIdentifierSso }
-    return bearerTokenCount + iamCredentialCount
+    return (bearerTokenCount + iamCredentialCount).toLong()
 }
 
 fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {

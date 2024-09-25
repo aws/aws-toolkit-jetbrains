@@ -3,13 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
-import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.test.runTest
@@ -19,12 +17,9 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
@@ -36,8 +31,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
@@ -70,109 +63,61 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `crossfile configuration`() {
-        val userGroupSetting = mock<CodeWhispererUserGroupSettings>()
-        ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, userGroupSetting, disposableRule.disposable)
-
-        whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.Control)
-        assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
-
-        whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
         assertThat(CodeWhispererConstants.CrossFile.CHUNK_SIZE).isEqualTo(60)
     }
 
     @Test
     fun `shouldFetchUtgContext - fully support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-    }
-
-    @Test
-    fun `shouldFetchUtgContext - partially support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJava.INSTANCE)).isTrue
     }
 
     @Test
     fun `shouldFetchUtgContext - no support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererPython.INSTANCE)).isFalse
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJavaScript.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererJsx.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTypeScript.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererCsharp.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererKotlin.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererGo.INSTANCE)).isNull()
+
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchUtgContext(CodeWhispererTsx.INSTANCE)).isNull()
     }
 
     @Test
     fun `shouldFetchCrossfileContext - fully support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJava.INSTANCE)).isTrue
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE)).isTrue
 
-        assertThat(
-            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
-                CodeWhispererJavaScript.INSTANCE,
-                CodeWhispererUserGroup.CrossFile
-            )
-        ).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJavaScript.INSTANCE)).isTrue
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererJsx.INSTANCE)).isTrue
 
-        assertThat(
-            DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(
-                CodeWhispererTypeScript.INSTANCE,
-                CodeWhispererUserGroup.CrossFile
-            )
-        ).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTypeScript.INSTANCE)).isTrue
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE, CodeWhispererUserGroup.Control)).isTrue
-    }
-
-    @Ignore("Reenable this once we have any partial support language")
-    @Test
-    fun `shouldFetchCrossfileContext - partially support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.Control)).isFalse
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererPython.INSTANCE, CodeWhispererUserGroup.CrossFile)).isTrue
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererTsx.INSTANCE)).isTrue
     }
 
     @Test
     fun `shouldFetchCrossfileContext - no support`() {
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCsharp.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererKotlin.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererGo.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererCpp.INSTANCE)).isNull()
 
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.Control)).isNull()
-        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE, CodeWhispererUserGroup.CrossFile)).isNull()
+        assertThat(DefaultCodeWhispererFileContextProvider.shouldFetchCrossfileContext(CodeWhispererRuby.INSTANCE)).isNull()
     }
 
     @Test
@@ -334,11 +279,6 @@ class CodeWhispererFileContextProviderTest {
      */
     @Test
     fun `extractSupplementalFileContext from tst file should extract focal file`() = runTest {
-        ApplicationManager.getApplication().replaceService(
-            CodeWhispererUserGroupSettings::class.java,
-            mock { on { getUserGroup() } doReturn CodeWhispererUserGroup.CrossFile },
-            disposableRule.disposable
-        )
         val module = fixture.addModule("main")
         fixture.addClass(module, JAVA_MAIN)
 
