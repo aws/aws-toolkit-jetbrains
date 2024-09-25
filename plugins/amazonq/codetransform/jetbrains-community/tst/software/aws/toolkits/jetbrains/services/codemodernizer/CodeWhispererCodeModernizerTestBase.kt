@@ -268,11 +268,10 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
+        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test"))
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
-        doReturn(testSessionSpy).whenever(codeModernizerManagerSpy).createCodeModernizerSession(any(), any())
         testCodeModernizerArtifact =
             spy(
                 CodeModernizerArtifact(
