@@ -9,5 +9,5 @@ import com.intellij.openapi.vfs.VirtualFile
 data class CustomerSelection(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
-    val targetJavaVersion: JavaSdkVersion
+    val targetJavaVersion: JavaSdkVersion,
 )

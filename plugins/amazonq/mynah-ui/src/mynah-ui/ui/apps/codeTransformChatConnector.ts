@@ -225,6 +225,13 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
+        }  else if (action.id === FormButtonIds.CodeTransformInputSkipTests) {
+            this.sendMessageToExtension({
+                command: 'codetransform-confirm-skip-tests',
+                tabID,
+                tabType: 'codetransform',
+                skipTestsSelection: action.formItemValues?.skipTestsSelection
+            })
         } else if (action.id === FormButtonIds.OpenTransformationHub) {
             this.sendMessageToExtension({
                 command: 'codetransform-open-transform-hub',
