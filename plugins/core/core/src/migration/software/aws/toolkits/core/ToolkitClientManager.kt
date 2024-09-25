@@ -20,10 +20,12 @@ import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption
 import software.amazon.awssdk.core.interceptor.Context
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
-import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute
-import software.amazon.awssdk.core.internal.http.pipeline.stages.ApplyUserAgentStage
 import software.amazon.awssdk.core.internal.http.pipeline.stages.ApplyUserAgentStage.HEADER_USER_AGENT
+import software.amazon.awssdk.core.internal.useragent.SdkClientUserAgentProperties
+import software.amazon.awssdk.core.internal.useragent.SdkUserAgentBuilder
+import software.amazon.awssdk.core.internal.useragent.UserAgentConstant
 import software.amazon.awssdk.core.retry.RetryMode
+import software.amazon.awssdk.core.util.SystemUserAgent
 import software.amazon.awssdk.http.SdkHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.utils.SdkAutoCloseable
@@ -205,18 +207,20 @@ abstract class ToolkitClientManager {
                         }
 
                         val clientType = executionAttributes.getAttribute(AwsExecutionAttribute.CLIENT_TYPE)
-                        val sdkClient = executionAttributes.getAttribute(SdkInternalExecutionAttribute.SDK_CLIENT)
-                        val serviceClientConfiguration = sdkClient.serviceClientConfiguration()
-                        val retryMode = serviceClientConfiguration.overrideConfiguration().retryMode().orElse(RetryMode.defaultRetryMode())
                         val toolkitUserAgent = userAgent()
 
-                        val requestUserAgent = ApplyUserAgentStage.resolveClientUserAgent(
-                            toolkitUserAgent,
-                            null,
-                            clientType,
-                            null,
-                            null,
-                            retryMode.toString().lowercase()
+                        // no obvious clean way to do this and multiple people have wasted a lot of time here
+                        val requestUserAgent = "$toolkitUserAgent " + SdkUserAgentBuilder.buildClientUserAgentString(
+                            SystemUserAgent.getOrCreate(),
+                            SdkClientUserAgentProperties().apply {
+                                // assume default because it is very complicated to resolve
+                                putProperty(UserAgentConstant.RETRY_MODE, "standard")
+
+                                putProperty(UserAgentConstant.IO, clientType.name.lowercase())
+
+                                // can probably figure it out, but SDK default resolves as UNKNOWN anyways
+                                // putProperty(UserAgentConstant.HTTP, "UNKNOWN")
+                            }
                         )
 
                         val overrideConfiguration = request.overrideConfiguration()
