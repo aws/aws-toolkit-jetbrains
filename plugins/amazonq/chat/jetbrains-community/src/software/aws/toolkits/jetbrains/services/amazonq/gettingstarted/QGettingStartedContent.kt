@@ -62,7 +62,8 @@ class QGettingStartedContent(val project: Project) : Disposable {
                     AmazonQToolWindow.getStarted(project)
                 }
             }
-            null
+
+            JBCefJSQuery.Response(null)
         }
         receiveMessageQuery.addHandler(handler)
     }
