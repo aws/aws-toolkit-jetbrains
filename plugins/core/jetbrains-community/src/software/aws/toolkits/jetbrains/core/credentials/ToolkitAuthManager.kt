@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
@@ -259,18 +260,21 @@ fun reauthConnectionIfNeeded(
                 }
             } catch (e: Exception) {
                 if (isReAuth) {
+                    val result = if (e is ProcessCanceledException) Result.Cancelled else Result.Failed
                     recordLoginWithBrowser(
                         credentialStartUrl = startUrl,
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Failed
+                        result = result
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Failed
+                        result = result
                     )
                 }
+
+                throw e
             }
         }
     }
