@@ -210,6 +210,8 @@ abstract class ToolkitClientManager {
                         val toolkitUserAgent = userAgent()
 
                         // no obvious clean way to do this and multiple people have wasted a lot of time here
+                        // what we really want is to have a dynamic SdkAdvancedClientOption#USER_AGENT_PREFIX,
+                        // but SDK only allows static values to be set on the client
                         val requestUserAgent = "$toolkitUserAgent " + SdkUserAgentBuilder.buildClientUserAgentString(
                             SystemUserAgent.getOrCreate(),
                             SdkClientUserAgentProperties().apply {
