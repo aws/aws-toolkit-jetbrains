@@ -33,18 +33,24 @@
         <div>
             <div class="title no-bold">Region</div>
             <div class="hint">AWS Region that hosts identity directory</div>
-            <select
-                class="region-select font-amazon"
-                id="regions"
-                name="regions"
-                v-model="selectedRegion"
-                @change="handleRegionInput"
-                tabindex="0"
-            >
-                <option v-for="region in regions" :key="region.id" :value="region.id">
-                    {{ `${region.name} (${region.id})` }}
-                </option>
-            </select>
+            <div class="custom-select" :class="{ 'is-open': isOpen }">
+                <div class="select-trigger"
+                     @click="toggleDropdown"
+                     tabindex="0"
+                     @keydown.space.prevent="toggleDropdown"
+                     @keydown.enter.prevent="toggleDropdown">
+                    {{ selectedRegion }}
+                </div>
+                <div class="options-container" v-if="isOpen">
+                    <div class="option"
+                         v-for="region in regions"
+                         :key="region.id"
+                         @click="selectRegion({regionId : region.id})"
+                         :class="{ 'selected': region.id === selectedRegion }">
+                        {{ `${region.name} (${region.id})` }}
+                    </div>
+                </div>
+            </div>
         </div>
         <br/><br/>
         <button
@@ -70,7 +76,8 @@ export default defineComponent({
     data() {
         return {
             startUrlRegex: /^https:\/\/(([\w-]+(?:\.gamma)?\.awsapps\.com\/start(?:-beta|-alpha)?[\/#]?)|(start\.(?:us-gov-home|us-gov-east-1\.us-gov-home|us-gov-west-1\.us-gov-home)\.awsapps\.com|start\.(?:home|cn-north-1\.home|cn-northwest-1\.home)\.awsapps\.cn)\/directory\/[\w-]+[\/#]?)$/,
-            issueUrlRegex: /^https:\/\/([\w-]+\.)?identitycenter\.(amazonaws\.com|amazonaws\.com\.cn|us-gov\.amazonaws\.com)\/[\w\/-]+[\/#]?$/
+            issueUrlRegex: /^https:\/\/([\w-]+\.)?identitycenter\.(amazonaws\.com|amazonaws\.com\.cn|us-gov\.amazonaws\.com)\/[\w\/-]+[\/#]?$/,
+            isOpen: false,
         }
     },
     computed: {
@@ -128,6 +135,14 @@ export default defineComponent({
         handleRegionInput() {
             this.isRegionValid = this.selectedRegion != "";
         },
+        toggleDropdown() {
+            this.isOpen = !this.isOpen;
+        },
+        selectRegion({regionId}: { regionId: any }){
+            this.selectedRegion = regionId;
+            this.isOpen = false;
+            this.handleRegionInput();
+        },
         async handleContinueClick() {
             if (!this.isInputValid) {
                 return
@@ -151,6 +166,46 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+
+.custom-select {
+    position: relative;
+    width: 100%;
+    font-family: 'Amazon Ember', sans-serif;
+}
+
+.select-trigger {
+    padding: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background: #fff;
+}
+
+.options-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-top: none;
+    z-index: 1000;
+}
+
+.option {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.option:hover, .option.selected {
+    background-color: #f0f0f0;
+}
+
+.is-open .select-trigger {
+    border-bottom: none;
+}
+
 .hint {
     color: #909090;
     margin-bottom: 5px;
