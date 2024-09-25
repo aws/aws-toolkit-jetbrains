@@ -131,33 +131,7 @@ class CodeWhispererProgrammingLanguageTest {
     @Test
     fun `test language isSupport`() {
         EP_NAME.extensionList.forEach { language ->
-            val telemetryType = language.toTelemetryType()
-            val shouldSupportAutoCompletion = true
-
-            val shouldSupportSecurityScan = when (telemetryType) {
-                CodewhispererLanguage.Java -> true
-                CodewhispererLanguage.Python -> true
-                CodewhispererLanguage.Javascript -> true
-                CodewhispererLanguage.Typescript -> true
-                CodewhispererLanguage.Kotlin -> true
-                CodewhispererLanguage.Go -> true
-                CodewhispererLanguage.Php -> true
-                CodewhispererLanguage.Ruby -> true
-                CodewhispererLanguage.C -> true
-                CodewhispererLanguage.Cpp -> true
-                CodewhispererLanguage.Csharp -> true
-                CodewhispererLanguage.Plaintext -> true
-                CodewhispererLanguage.Tf -> true
-                CodewhispererLanguage.Yaml -> true
-                CodewhispererLanguage.Yml -> true
-                CodewhispererLanguage.Hcl -> true
-                CodewhispererLanguage.Json -> true
-                CodewhispererLanguage.Jsonc -> true
-                else -> false
-            }
-
-            assertThat(language.isCodeCompletionSupported()).isEqualTo(shouldSupportAutoCompletion)
-            assertThat(language.isCodeScanSupported()).isEqualTo(shouldSupportSecurityScan)
+            assertThat(language.isCodeCompletionSupported()).isTrue
         }
     }
 

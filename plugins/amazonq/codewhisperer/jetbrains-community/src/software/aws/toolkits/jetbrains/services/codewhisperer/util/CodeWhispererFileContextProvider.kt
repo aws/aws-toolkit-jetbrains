@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 import com.intellij.ide.actions.CopyContentRootPathProvider
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -33,8 +34,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
@@ -111,14 +110,13 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
      */
     override suspend fun extractSupplementalFileContext(psiFile: PsiFile, targetContext: FileContextInfo, timeout: Long): SupplementalContextInfo? {
         val startFetchingTimestamp = System.currentTimeMillis()
-        val isTst = isTestFile(psiFile)
+        val isTst = readAction { isTestFile(psiFile) }
         return try {
             withTimeout(timeout) {
                 val language = targetContext.programmingLanguage
-                val group = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
 
                 val supplementalContext = if (isTst) {
-                    when (shouldFetchUtgContext(language, group)) {
+                    when (shouldFetchUtgContext(language)) {
                         true -> extractSupplementalFileContextForTst(psiFile, targetContext)
                         false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
                         null -> {
@@ -127,7 +125,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                         }
                     }
                 } else {
-                    when (shouldFetchCrossfileContext(language, group)) {
+                    when (shouldFetchCrossfileContext(language)) {
                         true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
                         false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
                         null -> {
@@ -310,18 +308,18 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()
 
-        fun shouldFetchUtgContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+        fun shouldFetchUtgContext(language: CodeWhispererProgrammingLanguage): Boolean? {
             if (!language.isUTGSupported()) {
                 return null
             }
 
             return when (language) {
                 is CodeWhispererJava -> true
-                else -> userGroup == CodeWhispererUserGroup.CrossFile
+                else -> false
             }
         }
 
-        fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage, userGroup: CodeWhispererUserGroup): Boolean? {
+        fun shouldFetchCrossfileContext(language: CodeWhispererProgrammingLanguage): Boolean? {
             if (!language.isSupplementalContextSupported()) {
                 return null
             }
@@ -334,7 +332,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 is CodeWhispererJsx,
                 is CodeWhispererTsx -> true
 
-                else -> userGroup == CodeWhispererUserGroup.CrossFile
+                else -> false
             }
         }
     }

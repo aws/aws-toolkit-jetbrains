@@ -335,8 +335,6 @@ class FeatureDevController(
                 )
             )
 
-            // Ensure that chat input is enabled so that customers can iterate over code generation if they choose to do so
-            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
             messenger.sendUpdatePlaceholder(
                 tabId = tabId,
                 newPlaceholder = message("amazonqFeatureDev.placeholder.additional_improvements")
@@ -353,7 +351,13 @@ class FeatureDevController(
     }
 
     private suspend fun newTask(tabId: String) {
-        closeSession(tabId)
+        val session = getSessionInfo(tabId)
+        val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
+        AmazonqTelemetry.endChat(
+            amazonqConversationId = session.conversationId,
+            amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
+            credentialStartUrl = getStartUrl(project = context.project)
+        )
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)

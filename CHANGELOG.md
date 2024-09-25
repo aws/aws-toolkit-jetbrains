@@ -1,3 +1,9 @@
+# _3.29_ (2024-09-19)
+- **(Feature)** Support `@workspace` queries for specific files like "`@workspace` what does test.ts do?".
+- **(Bug Fix)** Amazon Q Feature Dev: fix iteration count messaging during code insertion
+- **(Bug Fix)** Fix UI slowdown when Amazon Q Inline Suggestions are enabled, but token cannot be refreshed ([#4868](https://github.com/aws/aws-toolkit-jetbrains/issues/4868))
+- **(Bug Fix)** Fix "read access" error that may occur when Amazon Q Inline Suggestion is building context ([#4888](https://github.com/aws/aws-toolkit-jetbrains/issues/4888)) ([#4848](https://github.com/aws/aws-toolkit-jetbrains/issues/4848))
+
 # _3.28_ (2024-09-11)
 - **(Feature)** Improve workspace indexing by only index files that are changed since last indexing
 - **(Bug Fix)** Amazon Q Chat: Fixed inline code blocks are not vertically aligned with texts

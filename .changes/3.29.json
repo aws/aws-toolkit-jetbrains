@@ -1,0 +1,17 @@
+{
+  "date" : "2024-09-19",
+  "version" : "3.29",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Support `@workspace` queries for specific files like \"`@workspace` what does test.ts do?\". "
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Feature Dev: fix iteration count messaging during code insertion"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix UI slowdown when Amazon Q Inline Suggestions are enabled, but token cannot be refreshed (#4868)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix \"read access\" error that may occur when Amazon Q Inline Suggestion is building context (#4888) (#4848)"
+  } ]
+}

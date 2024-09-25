@@ -31,8 +31,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryE
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
-import software.aws.toolkits.jetbrains.AwsPlugin
-import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -43,9 +41,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupStates
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -89,16 +84,6 @@ class CodeWhispererTelemetryServiceTest {
 
         telemetryServiceSpy = NoOpToolkitTelemetryService(batcher = batcher)
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
-
-        val groupSettings = CodeWhispererUserGroupSettings().apply {
-            loadState(
-                CodeWhispererUserGroupStates(
-                    version = AwsToolkit.PLUGINS_INFO.getValue(AwsPlugin.TOOLKIT).version,
-                    settings = mapOf(CodeWhispererUserGroupSettings.USER_GROUP_KEY to CodeWhispererUserGroup.Control.name)
-                )
-            )
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, groupSettings, disposableRule.disposable)
 
         mockClient = spy(CodeWhispererClientAdaptor.getInstance(projectRule.project))
         mockClient.stub {
@@ -285,7 +270,6 @@ class CodeWhispererTelemetryServiceTest {
                 },
                 "codewhispererTypeaheadLength" to recommendationContext.userInputSinceInvocation.length,
                 "codewhispererTimeSinceLastDocumentChange" to timeSinceDocumentChanged,
-                "codewhispererUserGroup" to "Control",
                 "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                 "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                 "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
@@ -321,13 +305,6 @@ class CodeWhispererTelemetryServiceTest {
             )
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
-
-                CodeWhispererTelemetryTest.assertEventsContainsFieldsAndCount(
-                    allValues,
-                    "codewhisperer_userDecision",
-                    count = totalEventCount,
-                    "codewhispererUserGroup" to "Control",
-                )
 
                 eventCount.forEach { (k, v) ->
                     CodeWhispererTelemetryTest.assertEventsContainsFieldsAndCount(
@@ -401,7 +378,6 @@ class CodeWhispererTelemetryServiceTest {
                     "codewhisperer_userTriggerDecision",
                     count = 1,
                     "codewhispererSuggestionState" to expectedState,
-                    "codewhispererUserGroup" to "Control",
                     "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                     "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                     "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
@@ -416,7 +392,6 @@ class CodeWhispererTelemetryServiceTest {
                     "codewhispererSupplementalContextTimeout" to supplementalContextInfo.isProcessTimeout,
                     "codewhispererSupplementalContextIsUtg" to supplementalContextInfo.isUtg,
                     "codewhispererSupplementalContextLength" to supplementalContextInfo.contentLength,
-                    "codewhispererUserGroup" to "Control",
                     atLeast = true
                 )
             }
