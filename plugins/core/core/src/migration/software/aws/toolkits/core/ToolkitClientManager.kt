@@ -218,8 +218,8 @@ abstract class ToolkitClientManager {
 
                                 putProperty(UserAgentConstant.IO, clientType.name.lowercase())
 
-                                // can probably figure it out, but SDK default resolves as UNKNOWN anyways
-                                // putProperty(UserAgentConstant.HTTP, "UNKNOWN")
+                                // can probably figure it out, but SDK default resolves as UNKNOWN anyways without our interceptor
+                                putProperty(UserAgentConstant.HTTP, "UNKNOWN")
                             }
                         )
 
