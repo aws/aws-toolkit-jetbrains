@@ -22,6 +22,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.filePermissions
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
@@ -163,9 +164,9 @@ class EncoderServer(val project: Project) : Disposable {
                     }
                 }
             }
-            if (manifestManager.currentOs != "windows") {
-                makeFileExecutable(nodePath)
-            }
+
+            makeFileExecutable(nodePath)
+
             val files = cachePath.toFile().listFiles()
             if (files.isNotEmpty()) {
                 val filenames = files.map { it.name }
@@ -224,7 +225,7 @@ class EncoderServer(val project: Project) : Disposable {
             PosixFilePermission.OTHERS_READ,
             PosixFilePermission.OTHERS_EXECUTE,
         )
-        Files.setPosixFilePermissions(filePath, permissions)
+        filePath.filePermissions(permissions)
     }
 
     private fun unzipFile(zipFilePath: Path, destDir: Path) {

@@ -8,6 +8,7 @@ import com.intellij.openapi.util.io.FileUtil
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipFile
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel
+import software.aws.toolkits.core.utils.filePermissions
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -39,9 +40,7 @@ class ZipDecompressor(sourceBytes: ByteArray) : AutoCloseable {
                 zipStream.copyTo(outputStream)
             }
 
-            if (SystemInfo.isUnix) {
-                Files.setPosixFilePermissions(outputFile.toPath(), convertPermissions(zipEntry.unixMode))
-            }
+            outputFile.toPath().filePermissions(convertPermissions(zipEntry.unixMode))
         }
     }
 
