@@ -229,10 +229,16 @@ class CodeTransformChatController(
         // Publish metric to capture user selection before local build starts
         telemetry.submitSelection("Confirm", selection)
 
+        // TO-DO: delete this line when backend issue is fixed
+        codeModernizerManager.codeTransformationSession?.let { codeModernizerManager.runLocalMavenBuild(context.project, it) }
+
+        // TO-DO: uncomment these lines when backend issue is fixed
+        /*
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
             addNewMessage(buildUserInputSkipTestsFlagChatContent())
         }
+        */
     }
 
     override suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests) {
