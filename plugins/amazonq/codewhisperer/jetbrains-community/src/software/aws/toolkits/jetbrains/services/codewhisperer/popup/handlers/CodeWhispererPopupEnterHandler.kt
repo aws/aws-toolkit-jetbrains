@@ -9,13 +9,13 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.util.TextRange
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 
 class CodeWhispererPopupEnterHandler(
     private val defaultHandler: EditorActionHandler,
-    states: InvocationContext
-) : CodeWhispererEditorActionHandler(states) {
+    sessionContext: SessionContext
+) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         val popupManager = CodeWhispererPopupManager.getInstance()
         popupManager.dontClosePopupAndRun {
@@ -25,7 +25,7 @@ class CodeWhispererPopupEnterHandler(
             val newText = editor.document.getText(TextRange.create(oldOffset, newOffset))
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-            ).enter(states, newText)
+            ).enter(sessionContext, newText)
         }
     }
 }

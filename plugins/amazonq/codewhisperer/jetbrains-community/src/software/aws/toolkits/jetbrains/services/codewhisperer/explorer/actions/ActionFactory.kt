@@ -27,6 +27,7 @@ interface ActionProvider<T> {
     val sendFeedback: T
     val connectOnGithub: T
     val documentation: T
+    val switchToMarketplace: T
 }
 
 @SuppressWarnings("UnusedParameter")
@@ -83,4 +84,9 @@ fun <T> buildActionListForConnectHelp(actionProvider: ActionProvider<T>): List<T
         add(actionProvider.sendFeedback)
         add(actionProvider.connectOnGithub)
         add(actionProvider.documentation)
+    }
+
+fun <T> buildActionListForBeta(actionProvider: ActionProvider<T>): List<T> =
+    buildList {
+        add(actionProvider.switchToMarketplace)
     }

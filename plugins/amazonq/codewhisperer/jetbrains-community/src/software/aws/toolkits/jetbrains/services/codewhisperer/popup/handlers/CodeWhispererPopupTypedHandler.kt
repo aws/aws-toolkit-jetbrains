@@ -7,19 +7,19 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 
 class CodeWhispererPopupTypedHandler(
     private val defaultHandler: TypedActionHandler,
-    val states: InvocationContext,
+    val sessionContext: SessionContext
 ) : TypedActionHandler {
     override fun execute(editor: Editor, charTyped: Char, dataContext: DataContext) {
         CodeWhispererPopupManager.getInstance().dontClosePopupAndRun {
             defaultHandler.execute(editor, charTyped, dataContext)
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-            ).type(states, charTyped.toString())
+            ).type(sessionContext, charTyped.toString())
         }
     }
 }

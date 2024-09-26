@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
@@ -174,12 +175,11 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 }
             },
             null,
-            mock(),
             aString()
         )
         val responseContext = ResponseContext("sessionId")
         val recommendationContext = RecommendationContext(
-            listOf(
+            mutableListOf(
                 DetailContext(
                     "requestId",
                     pythonResponse.completions()[0],
@@ -192,10 +192,11 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             ),
             "x, y",
             "x, y",
-            mock()
+            mock(),
+            0
         )
-        invocationContext = InvocationContext(requestContext, responseContext, recommendationContext, mock())
-        sessionContext = SessionContext()
+        invocationContext = InvocationContext(requestContext, responseContext, recommendationContext)
+        sessionContext = SessionContext(project, fixture.editor, latencyContext = LatencyContext())
 
         // it is needed because referenceManager is listening to CODEWHISPERER_USER_ACTION_PERFORMED topic
         project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
@@ -338,6 +339,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_USER_ACTION_PERFORMED).afterAccept(
             invocationContext,
             mock(),
+            SessionContext(project, fixture.editor, latencyContext = LatencyContext()),
             rangeMarkerMock
         )
 

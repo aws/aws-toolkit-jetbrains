@@ -94,6 +94,13 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
     }
 
+    fun isInlineShortcutFeatureNotificationDisplayed(): Boolean =
+        state.value.getOrDefault(CodeWhispererConfigurationType.IsInlineShortcutFeatureNotificationDisplayed, false)
+
+    fun setInlineShortcutFeatureNotificationDisplayed(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsInlineShortcutFeatureNotificationDisplayed] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -126,7 +133,8 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
     IsProjectContextGpu,
-    HasEnabledProjectContextOnce
+    HasEnabledProjectContextOnce,
+    IsInlineShortcutFeatureNotificationDisplayed,
 }
 
 enum class CodeWhispererIntConfigurationType {

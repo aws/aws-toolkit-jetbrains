@@ -4,26 +4,39 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.startup
 
 import com.intellij.codeInsight.lookup.LookupManagerListener
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener.Companion.TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 import software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererImportAdderListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_CONFIG_POLL_INTERVAL_IN_MS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.resources.message
+import java.time.LocalDate
 
 // TODO: add logics to check if we want to remove recommendation suspension date when user open the IDE
 class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
@@ -47,6 +60,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         //  Run Proactive Code File Scan and disabling Auto File Scan for Builder ID Users.
         if (!isUserBuilderId(project)) {
             scanManager.createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE, isPluginStarting = true)
+        }
+
+        if (!CodeWhispererSettings.getInstance().isInlineShortcutFeatureNotificationDisplayed()) {
+            CodeWhispererSettings.getInstance().setInlineShortcutFeatureNotificationDisplayed(true)
+            showInlineShortcutFeatureNotification(project)
+        }
+
+        if (PluginUpdateManager.getInstance().isBeta()) {
+            postWelcomeToBetaMessage()
+            checkBetaExpiryInfo()
         }
 
         // ---- Everything below will be triggered once after startup ----
@@ -80,6 +103,45 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
                 CodeWhispererFeatureConfigService.getInstance().fetchFeatureConfigs(project)
                 delay(FEATURE_CONFIG_POLL_INTERVAL_IN_MS)
             }
+        }
+    }
+
+    private fun showInlineShortcutFeatureNotification(project: Project) {
+        notifyInfo(
+            title = message("codewhisperer.notification.inline.shortcut_config.title"),
+            content = message("codewhisperer.notification.inline.shortcut_config.content"),
+            project = project,
+            listOf(
+                object : NotificationAction(message("codewhisperer.notification.inline.shortcut_config.open_setting")) {
+                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
+                    }
+                }
+            )
+        )
+    }
+
+    private fun postWelcomeToBetaMessage() {
+        notifyInfo(
+            title = message("q.beta.notification.welcome.title"),
+            content = message("q.beta.notification.welcome.message"),
+            project = null
+        )
+    }
+
+    private fun checkBetaExpiryInfo() {
+        // hard 2024/10/1 stop
+        val expiryDate = LocalDate.of(2024, 10, 1)
+
+        val currentDate = LocalDate.now()
+        if (currentDate.isAfter(expiryDate)) {
+            notifyInfo(
+                title = message("q.beta.notification.end.title"),
+                content = message("q.beta.notification.end.message", expiryDate),
+                project = null
+            )
+            CodeWhispererService.getInstance().isBetaExpired = true
+            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).refreshUi()
         }
     }
 }

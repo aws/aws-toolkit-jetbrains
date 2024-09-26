@@ -14,15 +14,15 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 
 abstract class CodeWhispererImportAdder {
     abstract val supportedLanguages: List<CodeWhispererProgrammingLanguage>
     abstract val dummyFileName: String
 
-    fun insertImportStatements(states: InvocationContext, sessionContext: SessionContext) {
-        val imports = states.recommendationContext.details[sessionContext.selectedIndex]
-            .recommendation.mostRelevantMissingImports()
+    fun insertImportStatements(states: InvocationContext, previews: List<PreviewContext>, sessionContext: SessionContext) {
+        val imports = previews[sessionContext.selectedIndex].detail.recommendation.mostRelevantMissingImports()
         LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
         imports.forEach {
             insertImportStatement(states, it)

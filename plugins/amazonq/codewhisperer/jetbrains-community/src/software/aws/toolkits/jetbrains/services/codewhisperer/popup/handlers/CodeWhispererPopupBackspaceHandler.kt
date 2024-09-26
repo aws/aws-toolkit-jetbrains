@@ -8,15 +8,16 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 
 class CodeWhispererPopupBackspaceHandler(
     private val defaultHandler: EditorActionHandler,
-    states: InvocationContext
-) : CodeWhispererEditorActionHandler(states) {
+    sessionContext: SessionContext
+) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         val popupManager = CodeWhispererPopupManager.getInstance()
+
         popupManager.dontClosePopupAndRun {
             val oldOffset = editor.caretModel.offset
             defaultHandler.execute(editor, caret, dataContext)
@@ -24,7 +25,7 @@ class CodeWhispererPopupBackspaceHandler(
             val newText = "a".repeat(oldOffset - newOffset)
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-            ).backspace(states, newText)
+            ).backspace(sessionContext, newText)
         }
     }
 }

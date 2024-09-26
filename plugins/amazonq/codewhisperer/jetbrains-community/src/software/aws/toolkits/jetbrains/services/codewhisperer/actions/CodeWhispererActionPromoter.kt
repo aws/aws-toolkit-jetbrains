@@ -3,38 +3,50 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.actions
 
+import com.intellij.codeInsight.lookup.impl.actions.ChooseItemAction
 import com.intellij.openapi.actionSystem.ActionPromoter
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.editor.actionSystem.EditorAction
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupLeftArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 
 class CodeWhispererActionPromoter : ActionPromoter {
     override fun promote(actions: MutableList<out AnAction>, context: DataContext): MutableList<AnAction> {
         val results = actions.toMutableList()
+        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return results
+
         results.sortWith { a, b ->
-            if (isCodeWhispererPopupAction(a)) {
+            if (isCodeWhispererForceAction(a)) {
                 return@sortWith -1
-            } else if (isCodeWhispererPopupAction(b)) {
+            } else if (isCodeWhispererForceAction(b)) {
                 return@sortWith 1
-            } else {
-                0
             }
+
+            if (a is ChooseItemAction) {
+                return@sortWith -1
+            } else if (b is ChooseItemAction) {
+                return@sortWith 1
+            }
+
+            if (isCodeWhispererAcceptAction(a)) {
+                return@sortWith -1
+            } else if (isCodeWhispererAcceptAction(b)) {
+                return@sortWith 1
+            }
+
+            0
         }
         return results
     }
 
     private fun isCodeWhispererAcceptAction(action: AnAction): Boolean =
-        action is EditorAction && action.handler is CodeWhispererPopupTabHandler
+        action is CodeWhispererAcceptAction
+
+    private fun isCodeWhispererForceAcceptAction(action: AnAction): Boolean =
+        action is CodeWhispererForceAcceptAction
 
     private fun isCodeWhispererNavigateAction(action: AnAction): Boolean =
-        action is EditorAction && (
-            action.handler is CodeWhispererPopupRightArrowHandler ||
-                action.handler is CodeWhispererPopupLeftArrowHandler
-            )
+        action is CodeWhispererNavigateNextAction || action is CodeWhispererNavigatePrevAction
 
-    private fun isCodeWhispererPopupAction(action: AnAction): Boolean =
-        isCodeWhispererAcceptAction(action) || isCodeWhispererNavigateAction(action)
+    private fun isCodeWhispererForceAction(action: AnAction): Boolean =
+        isCodeWhispererForceAcceptAction(action) || isCodeWhispererNavigateAction(action)
 }
