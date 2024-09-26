@@ -39,6 +39,10 @@
                 name="regions"
                 v-model="selectedRegion"
                 @change="handleRegionInput"
+                size="1"
+                onfocus='this.size=10;'
+                onblur='this.size=1;'
+                onchange='this.size=1; this.blur();'
                 tabindex="0"
             >
                 <option v-for="region in regions" :key="region.id" :value="region.id">
@@ -156,6 +160,26 @@ export default defineComponent({
     margin-bottom: 5px;
     margin-top: 5px;
     font-size: 12px;
+}
+
+.region-select {
+    height: auto;
+    box-sizing: border-box;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.region-select option {
+    padding: 5px;
+    cursor: pointer;
+    width: auto;
+    box-sizing: border-box;
+}
+
+.region-select:focus {
+    width: auto !important;
+    outline: none;
+    position: absolute;
 }
 
 .invalid-start-url {
