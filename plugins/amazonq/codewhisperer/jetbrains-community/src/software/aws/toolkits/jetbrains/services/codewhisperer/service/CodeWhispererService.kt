@@ -17,6 +17,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -845,7 +846,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             "CodeWhisperer intelliSense popup on hover",
             CodeWhispererIntelliSenseOnHoverListener::class.java
         )
-        val DATA_KEY_SESSION = DataKey.create<SessionContext>("codewhisperer.session")
+        val KEY_SESSION_CONTEXT = Key.create<SessionContext>("codewhisperer.session")
 
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"

@@ -33,6 +33,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
 import com.intellij.ui.awt.RelativePoint
@@ -383,15 +384,7 @@ class CodeWhispererPopupManager {
     private fun setPopupActionHandlers(sessionContext: SessionContext) {
         val actionManager = EditorActionManager.getInstance()
 
-        // TODO: find a better way to pass in the local sessionContext for the handler to know the session state
-        val prevAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous") as CodeWhispererNavigatePrevAction
-        prevAction.sessionContext = sessionContext
-        val nextAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next") as CodeWhispererNavigateNextAction
-        nextAction.sessionContext = sessionContext
-        val acceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.accept") as CodeWhispererAcceptAction
-        acceptAction.sessionContext = sessionContext
-        val forceAcceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.force.accept") as CodeWhispererForceAcceptAction
-        forceAcceptAction.sessionContext = sessionContext
+        sessionContext.project.putUserData(CodeWhispererService.KEY_SESSION_CONTEXT, sessionContext)
 
         setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
         setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)

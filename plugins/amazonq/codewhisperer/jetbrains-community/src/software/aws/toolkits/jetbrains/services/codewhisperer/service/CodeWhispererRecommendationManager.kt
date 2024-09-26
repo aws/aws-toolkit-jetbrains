@@ -17,7 +17,6 @@ import kotlin.math.min
 
 @Service
 class CodeWhispererRecommendationManager {
-    var states: MutableList<InvocationContext> = mutableListOf()
     fun reformatReference(requestContext: RequestContext, recommendation: Completion): Completion {
         // startOffset is the offset at the start of user input since invocation
         val invocationStartOffset = requestContext.caretPosition.offset
