@@ -71,6 +71,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
@@ -392,15 +393,7 @@ class CodeWhispererPopupManager {
     private fun setPopupActionHandlers(sessionContext: SessionContext) {
         val actionManager = EditorActionManager.getInstance()
 
-        // TODO: find a better way to pass in the local sessionContext for the handler to know the session state
-        val prevAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous") as CodeWhispererNavigatePrevAction
-        prevAction.sessionContext = sessionContext
-        val nextAction = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next") as CodeWhispererNavigateNextAction
-        nextAction.sessionContext = sessionContext
-        val acceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.accept") as CodeWhispererAcceptAction
-        acceptAction.sessionContext = sessionContext
-        val forceAcceptAction = ActionManager.getInstance().getAction("codewhisperer.inline.force.accept") as CodeWhispererForceAcceptAction
-        forceAcceptAction.sessionContext = sessionContext
+        sessionContext.project.putUserData(CodeWhispererService.KEY_SESSION_CONTEXT, sessionContext)
 
         setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
         setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)

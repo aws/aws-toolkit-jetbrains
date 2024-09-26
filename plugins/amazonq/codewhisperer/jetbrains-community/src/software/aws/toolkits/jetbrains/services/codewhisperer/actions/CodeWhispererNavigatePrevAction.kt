@@ -12,11 +12,10 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.resources.message
 
 class CodeWhispererNavigatePrevAction : AnAction(message("codewhisperer.inline.navigate.previous")), DumbAware {
-    var sessionContext: SessionContext? = null
-
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun update(e: AnActionEvent) {
@@ -25,7 +24,7 @@ class CodeWhispererNavigatePrevAction : AnAction(message("codewhisperer.inline.n
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionContext = sessionContext ?: return
+        val sessionContext = e.project?.getUserData(CodeWhispererService.KEY_SESSION_CONTEXT) ?: return
         if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED

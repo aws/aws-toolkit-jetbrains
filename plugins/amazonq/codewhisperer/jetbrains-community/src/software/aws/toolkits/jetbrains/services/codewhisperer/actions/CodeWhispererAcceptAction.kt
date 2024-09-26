@@ -12,11 +12,10 @@ import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.resources.message
 
 open class CodeWhispererAcceptAction(title: String = message("codewhisperer.inline.accept")) : AnAction(title), DumbAware {
-    var sessionContext: SessionContext? = null
-
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun update(e: AnActionEvent) {
@@ -25,10 +24,13 @@ open class CodeWhispererAcceptAction(title: String = message("codewhisperer.inli
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        val sessionContext = sessionContext ?: return
+        val sessionContext = e.project?.getUserData(CodeWhispererService.KEY_SESSION_CONTEXT) ?: return
         if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
         ).beforeAccept(sessionContext)
     }
 }
+
+// A same accept action but different key shortcut and different promoter logic
+class CodeWhispererForceAcceptAction(title: String = message("codewhisperer.inline.force.accept")) : CodeWhispererAcceptAction(title)
