@@ -89,7 +89,6 @@ interface ToolkitStartupAuthFactory {
 }
 
 interface ToolkitConnectionManager : Disposable {
-    @Deprecated("Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.", ReplaceWith("activeConnectionForFeature(feature)"))
     fun activeConnection(): ToolkitConnection?
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
@@ -123,7 +122,7 @@ fun loginSso(
     metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
     val source = metadata
-    fun createAndAuthNewConnection(isReAuth: Boolean, profile: AuthProfile): AwsBearerTokenConnection? {
+    fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
             authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
@@ -131,7 +130,6 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
-                    isReAuth = isReAuth
                 )
             }
         } catch (e: Exception) {
@@ -151,8 +149,7 @@ fun loginSso(
 
     val manager = ToolkitAuthManager.getInstance()
     val allScopes = requestedScopes.toMutableSet()
-    var isReAuth = false
-    val connection = manager.getConnection(connectionId)?.let { connection ->
+    return manager.getConnection(connectionId)?.let { connection ->
         val logger = getLogger<ToolkitAuthManager>()
 
         if (connection !is AwsBearerTokenConnection) {
@@ -170,28 +167,32 @@ fun loginSso(
                 """.trimIndent()
             }
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            return@let null
+            return createAndAuthNewConnection(
+                ManagedSsoProfile(
+                    region,
+                    startUrl,
+                    allScopes.toList()
+                )
+            )
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
-        isReAuth = true
-        return@let null
-    }
-
-    // never true?
-    if (connection != null) {
-        return connection
-    }
-
-    // No existing connection, start from scratch
-    return createAndAuthNewConnection(
-        isReAuth = isReAuth,
-        ManagedSsoProfile(
-            region,
-            startUrl,
-            allScopes.toList()
+        reauthConnectionIfNeeded(
+            project = project,
+            connection = connection,
+            isReAuth = true
         )
-    )
+        return connection
+    } ?: run {
+        // No existing connection, start from scratch
+        createAndAuthNewConnection(
+            ManagedSsoProfile(
+                region,
+                startUrl,
+                allScopes.toList()
+            )
+        )
+    }
 }
 
 @Suppress("UnusedParameter")
