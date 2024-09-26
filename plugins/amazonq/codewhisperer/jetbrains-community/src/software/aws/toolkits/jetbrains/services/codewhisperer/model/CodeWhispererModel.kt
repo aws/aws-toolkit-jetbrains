@@ -17,16 +17,12 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
@@ -129,7 +125,7 @@ data class SessionContext(
     var isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
-    var popupDisplayOffset: Int = -1,
+    var popupOffset: Int = -1,
     val latencyContext: LatencyContext,
     var hasAccepted: Boolean = false
 ) : Disposable {

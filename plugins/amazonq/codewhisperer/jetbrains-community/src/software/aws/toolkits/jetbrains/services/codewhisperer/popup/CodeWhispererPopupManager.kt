@@ -27,16 +27,12 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
-import com.intellij.openapi.editor.event.EditorMouseEvent
-import com.intellij.openapi.editor.event.EditorMouseMotionListener
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.popup.AbstractPopup
@@ -70,8 +66,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService.Companion
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
@@ -162,8 +156,8 @@ class CodeWhispererPopupManager {
         }
 
         updateSessionSelectedIndex(sessionContext)
-        if (sessionContext.popupDisplayOffset == -1) {
-            sessionContext.popupDisplayOffset = sessionContext.editor.caretModel.offset
+        if (sessionContext.popupOffset == -1) {
+            sessionContext.popupOffset = sessionContext.editor.caretModel.offset
         }
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
@@ -245,7 +239,7 @@ class CodeWhispererPopupManager {
     }
 
     fun showPopup(sessionContext: SessionContext, force: Boolean = false) {
-        val p = sessionContext.editor.offsetToXY(sessionContext.popupDisplayOffset)
+        val p = sessionContext.editor.offsetToXY(sessionContext.popupOffset)
         val popup: JBPopup?
         if (sessionContext.popup == null) {
             popup = initPopup()

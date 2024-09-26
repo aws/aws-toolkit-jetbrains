@@ -21,7 +21,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
-import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -90,6 +89,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -224,15 +224,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         this.sessionContext = sessionContext
 
         val workerContexts = mutableListOf<WorkerContext>()
-        // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
-        // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
-        // It's possible and ok that coroutine will keep running until the next time we check it's state.
-        // As long as we don't show to the user extra info we are good.
-        val coroutineScope = projectCoroutineScope(requestContext.project)
 
         var lastRecommendationIndex = -1
 
-        val job = coroutineScope.launch {
+        val job = cs.launch {
             try {
                 val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
                     buildCodeWhispererRequest(
@@ -309,11 +304,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                                 sessionContext,
                                                 it,
                                                 ongoingRequests[currentJobId],
-                                                coroutineScope,
+                                                cs,
                                                 currentJobId
                                             )
                                             if (!ongoingRequests.contains(currentJobId)) {
-                                                coroutineScope.coroutineContext.cancel()
+                                                cs.coroutineContext.cancel()
                                             }
                                         }
                                         workerContexts.clear()
@@ -326,7 +321,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                     sessionContext,
                                     workerContext,
                                     ongoingRequests[currentJobId],
-                                    coroutineScope,
+                                    cs,
                                     currentJobId
                                 )
                             }
