@@ -220,6 +220,8 @@ abstract class LoginBrowser(
             Login
                 .BuilderId(scopes, onPendingToken, onError, onSuccess)
                 .login(project)
+
+            // TODO refresh the pane here for case when provider is no-op (i.e. provider exists and has a valid token), to fix issue where user is stuck waiting for browser
         }
     }
 

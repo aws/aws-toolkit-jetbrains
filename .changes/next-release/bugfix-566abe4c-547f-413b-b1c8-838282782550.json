@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue where a user may never be able to login to Builder ID again"
+}
