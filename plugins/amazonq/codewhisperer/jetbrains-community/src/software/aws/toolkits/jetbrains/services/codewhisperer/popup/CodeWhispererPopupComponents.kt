@@ -6,11 +6,16 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.idea.AppMode
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.keymap.KeymapUtil
+import com.intellij.openapi.keymap.MacKeymapUtil
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.ActionLink
 import com.intellij.util.ui.UIUtil
@@ -43,10 +48,38 @@ import javax.swing.JPanel
 
 class CodeWhispererPopupComponents {
     val prevButton = createNavigationButton(
-        message("codewhisperer.popup.button.prev", POPUP_DIM_HEX)
+        message(
+            "codewhisperer.popup.button.prev",
+            POPUP_DIM_HEX,
+            run {
+                // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
+                val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
+                    .shortcutSet.shortcuts.first()
+                val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
+                if (SystemInfo.isMac) {
+                    MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
+                } else {
+                    KeymapUtil.getKeystrokeText(keyStroke)
+                }
+            }
+        )
     )
     val nextButton = createNavigationButton(
-        message("codewhisperer.popup.button.next", POPUP_DIM_HEX)
+        message(
+            "codewhisperer.popup.button.next",
+            POPUP_DIM_HEX,
+            run {
+                // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
+                val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
+                    .shortcutSet.shortcuts.first()
+                val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
+                if (SystemInfo.isMac) {
+                    MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
+                } else {
+                    KeymapUtil.getKeystrokeText(keyStroke)
+                }
+            }
+        )
     ).apply {
         preferredSize = prevButton.preferredSize
     }
