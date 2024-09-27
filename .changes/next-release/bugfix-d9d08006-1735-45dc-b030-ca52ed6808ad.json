@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue where the SSO region selector dropdown was getting cut off at the bottom of the window"
+}
