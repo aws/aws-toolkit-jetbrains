@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
+import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
+import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
@@ -39,14 +41,14 @@ import java.time.Duration
 import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent as CWClientUserIntent
 
-class TelemetryHelper(private val context: AmazonQAppInitContext, private val sessionStorage: ChatSessionStorage) {
+class TelemetryHelper(private val project: Project, private val sessionStorage: ChatSessionStorage) {
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
     private val responseStreamTotalTime: MutableMap<String, Int> = mutableMapOf()
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
     private val responseHasProjectContext: MutableMap<String, Boolean> = mutableMapOf()
 
     private val customization: CodeWhispererCustomization?
-        get() = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
+        get() = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
 
     fun getConversationId(tabId: String): String? = sessionStorage.getSession(tabId)?.session?.conversationId
 
@@ -116,7 +118,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatRequestLength = data.message.length.toLong(),
             cwsprChatResponseLength = responseLength.toLong(),
             cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = getStartUrl(context.project),
+            credentialStartUrl = getStartUrl(project),
             codewhispererCustomizationArn = data.customization?.arn,
             cwsprChatHasProjectContext = getMessageHasProjectContext(response.messageId)
         )
@@ -124,7 +126,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
 
-        CodeWhispererClientAdaptor.getInstance(context.project).sendChatAddMessageTelemetry(
+        CodeWhispererClientAdaptor.getInstance(project).sendChatAddMessageTelemetry(
             getConversationId(response.tabId).orEmpty(),
             response.messageId,
             CWClientUserIntent.fromValue(data.userIntent?.name),
@@ -146,6 +148,28 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         }
     }
 
+    fun recordInlineChatTelemetry(requestId: String,
+                                  inputLength: Int?,
+                                  numSelectedLines: Int?,
+                                  codeIntent: Boolean?,
+                                  userDecision: InlineChatUserDecision?,
+                                  responseStartLatency: Double?,
+                                  responseEndLatency: Double?,
+                                  numSuggestionAddChars: Int?,
+                                  numSuggestionAddLines: Int?,
+                                  numSuggestionDelChars: Int?,
+                                  numSuggestionDelLines: Int?,
+                                  charactersAdded: Int?,
+                                  charactersRemoved: Int?) {
+        CodeWhispererClientAdaptor.getInstance(project).sendInlineChatTelemetry(requestId, inputLength, numSelectedLines, codeIntent, userDecision,
+            responseStartLatency, responseEndLatency,numSuggestionAddChars, numSuggestionAddLines, numSuggestionDelChars, numSuggestionDelLines,
+            charactersAdded, charactersRemoved).also {
+            logger.debug {
+                "Successfully sendTelemetryEvent for InlineChat with requestId=${it.responseMetadata().requestId()}"
+            }
+        }
+    }
+
     fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int) {
         AmazonqTelemetry.messageResponseError(
             cwsprChatConversationId = getConversationId(tabId).orEmpty(),
@@ -158,7 +182,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             cwsprChatResponseCode = responseCode.toLong(),
             cwsprChatRequestLength = data.message.length.toLong(),
             cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = getStartUrl(context.project)
+            credentialStartUrl = getStartUrl(project)
         )
     }
 
@@ -308,7 +332,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         }
 
         event?.let {
-            val steResponse = CodeWhispererClientAdaptor.getInstance(context.project).sendChatInteractWithMessageTelemetry(it)
+            val steResponse = CodeWhispererClientAdaptor.getInstance(project).sendChatInteractWithMessageTelemetry(it)
             logger.debug {
                 "Successfully sendTelemetryEvent for ChatInteractWithMessage with requestId=${steResponse.responseMetadata().requestId()}"
             }

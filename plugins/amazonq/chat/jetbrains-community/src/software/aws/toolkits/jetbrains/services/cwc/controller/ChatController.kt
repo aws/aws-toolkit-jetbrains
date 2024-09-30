@@ -96,7 +96,7 @@ class ChatController private constructor(
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
-    private val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
+    private val telemetryHelper = TelemetryHelper(context.project, chatSessionStorage)
     constructor(
         context: AmazonQAppInitContext,
     ) : this(

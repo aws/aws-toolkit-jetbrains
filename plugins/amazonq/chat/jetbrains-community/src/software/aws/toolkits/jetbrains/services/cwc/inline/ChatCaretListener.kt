@@ -20,13 +20,14 @@ import javax.swing.Icon
 
 class ChatCaretListener(private val project: Project, private val context: AmazonQAppInitContext) : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null
-    private var currentPopup: InlineChatPopup? = null
+//    private var currentPopup: InlineChatPopup? = null
     init {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         editor?.caretModel?.addCaretListener(this)
     }
 
     override fun caretPositionChanged(event: CaretEvent) {
+//        InlineChatCodeVisionProvider()
         val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
         val lineNumber = event.newPosition.line
         val startOffset = editor.document.getLineStartOffset(lineNumber)
@@ -34,8 +35,8 @@ class ChatCaretListener(private val project: Project, private val context: Amazo
         val markupModel: MarkupModel = editor.markupModel
         val gutterIconRenderer = ChatGutterIconRenderer(AllIcons.Actions.Lightning).apply {
             setClickAction {
-                currentPopup?.hidePopup()
-                currentPopup = InlineChatPopup(editor, context)
+//                currentPopup?.hidePopup()
+                InlineChatController(editor, context.project).initPopup()
             }
         }
 

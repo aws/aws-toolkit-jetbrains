@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import java.awt.Point
 import kotlin.math.min
 
-class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, private val project: Project) {
+class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
 
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FocusAreaContext? {
@@ -140,7 +140,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             val requestString = ChatController.objectMapper.writeValueAsString(extractNamesRequest)
 
             codeNames = try {
-                val namesString = fqnWebviewAdapter.extractNames(requestString)
+                val namesString = fqnWebviewAdapter?.let { it.extractNames(requestString) } ?: "{\"simpleNames\": [], \"fullyQualifiedNames\": {\"used\": []}}"
                 ChatController.objectMapper.readValue(namesString, CodeNamesImpl::class.java)
             } catch (e: Exception) {
                 getLogger<FocusAreaContextExtractor>().warn(e) { "Failed to extract names from file" }

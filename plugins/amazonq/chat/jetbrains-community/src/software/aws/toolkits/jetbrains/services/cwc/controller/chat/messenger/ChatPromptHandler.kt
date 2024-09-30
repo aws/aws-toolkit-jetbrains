@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
@@ -55,6 +56,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
         shouldAddIndexInProgressMessage: Boolean,
+        isInlineChat: Boolean = false
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
@@ -134,6 +136,9 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                         cause = exception,
                     )
                 }
+            }
+            .onEach { responseEvent ->
+                if(isInlineChat) processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
             }
             .collect { responseEvent ->
                 processChatEvent(

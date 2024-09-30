@@ -1089,6 +1089,30 @@
             "max":10,
             "min":0
         },
+        "InlineChatEvent": {
+            "type": "structure",
+            "required": ["requestId", "timestamp"],
+            "members": {
+                "requestId": { "shape": "UUID" },
+                "timestamp":{"shape":"Timestamp"},
+                "inputLength": { "shape": "PrimitiveInteger" },
+                "numSelectedLines": { "shape": "PrimitiveInteger" },
+                "numSuggestionAddChars": { "shape": "PrimitiveInteger" },
+                "numSuggestionAddLines": { "shape": "PrimitiveInteger" },
+                "numSuggestionDelChars": { "shape": "PrimitiveInteger" },
+                "numSuggestionDelLines": { "shape": "PrimitiveInteger" },
+                "codeIntent": { "shape": "Boolean" },
+                "userDecision": { "shape": "InlineChatUserDecision" },
+                "responseStartLatency": { "shape": "Double" },
+                "responseEndLatency": { "shape": "Double" },
+                "charactersRemoved": { "shape": "PrimitiveInteger" },
+                "charactersAdded": { "shape": "PrimitiveInteger"}
+            }
+        },
+        "InlineChatUserDecision": {
+            "type": "string",
+            "enum": ["ACCEPT", "REJECT", "DISMISS"]
+        },
         "Integer":{
             "type":"integer",
             "box":true
@@ -1611,7 +1635,8 @@
                 "chatAddMessageEvent": { "shape": "ChatAddMessageEvent" },
                 "chatInteractWithMessageEvent": { "shape": "ChatInteractWithMessageEvent" },
                 "chatUserModificationEvent": { "shape": "ChatUserModificationEvent" },
-                "featureDevEvent":  { "shape":  "FeatureDevEvent" }
+                "featureDevEvent":  { "shape":  "FeatureDevEvent" },
+                "inlineChatEvent": { "shape": "InlineChatEvent" }
             },
             "union":true
         },
