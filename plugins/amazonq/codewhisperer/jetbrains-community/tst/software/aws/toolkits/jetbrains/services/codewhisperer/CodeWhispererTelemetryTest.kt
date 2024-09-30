@@ -514,7 +514,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
             "codewhispererSuggestedTokens" to rawAcceptedTokenSize.toString(),
-            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString(),
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(rawAcceptedTokenSize, totalTokensSize).toString(),
         )
     }
 
