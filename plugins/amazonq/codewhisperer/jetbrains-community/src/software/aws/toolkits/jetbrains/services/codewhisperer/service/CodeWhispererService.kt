@@ -170,7 +170,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         val language = requestContext.fileContextInfo.programmingLanguage
-        if (!language.isCodeCompletionSupported() || !(isConfigFileIfJsonFile(requestContext.fileContextInfo.filename, language))) {
+        val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
+        if (!language.isCodeCompletionSupported() || !isConfigFileIfJsonFile(requestContext.fileContextInfo.filename, leftContext, language)) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(

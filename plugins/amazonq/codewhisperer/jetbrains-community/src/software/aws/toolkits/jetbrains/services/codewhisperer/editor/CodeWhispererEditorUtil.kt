@@ -19,9 +19,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.AWSTemplateCaseInsensitiveKeyWordsRegex
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.AWSTemplateKeyWordsRegex
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JsonConfigFileNamingConvention
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.LEFT_CONTEXT_ON_CURRENT_LINE
 import java.awt.Point
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -108,8 +111,13 @@ object CodeWhispererEditorUtil {
     /**
      * Checks if the language is json and checks if left context contains keywords
      */
-    fun isConfigFileIfJsonFile(fileName: String, language: CodeWhispererProgrammingLanguage): Boolean =
-        (language is CodeWhispererJson) && JsonConfigFileNamingConvention.contains(fileName)
+    fun isConfigFileIfJsonFile(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean =
+        (language is CodeWhispererJson) &&
+            (
+                JsonConfigFileNamingConvention.contains(fileName) ||
+                    AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
+                    AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
+                )
 
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.

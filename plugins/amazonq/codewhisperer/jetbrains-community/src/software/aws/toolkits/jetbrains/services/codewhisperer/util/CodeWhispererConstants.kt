@@ -33,6 +33,9 @@ object CodeWhispererConstants {
     const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
     const val FEATURE_EVALUATION_PRODUCT_NAME = "CodeWhisperer"
 
+    val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
+    val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
+
     val JsonConfigFileNamingConvention = setOf(
         "app.json",
         "appsettings.json",

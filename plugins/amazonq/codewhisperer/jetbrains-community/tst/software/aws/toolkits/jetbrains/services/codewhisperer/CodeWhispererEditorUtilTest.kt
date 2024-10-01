@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.leftContext_success_Iac
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
@@ -78,6 +79,12 @@ class CodeWhispererEditorUtilTest {
         assertThat(caretContext.leftContextOnCurrentLine).isEqualTo(pythonTestLeftContext)
     }
 
+    @Test
+    fun `test for keyword check for json and yaml`() {
+        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", leftContext_success_Iac, CodeWhispererJson.INSTANCE)
+        assertThat(result).isEqualTo(true)
+    }
+
     @ParameterizedTest
     @ValueSource(
         strings = ["app.json",
@@ -93,17 +100,17 @@ class CodeWhispererEditorUtilTest {
             "vcpkg.json"
         ]
     )
-    fun `isConfigFileIfJsonFile should return true`(fileName: String) {
-        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile(fileName, CodeWhispererJson.INSTANCE)
+    fun `isConfigFileIfJsonFile should return true by file name`(fileName: String) {
+        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile(fileName, "", CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(true)
     }
 
     @Test
-    fun `isConfigFileIfJsonFile should retrun false`() {
-        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", CodeWhispererJson.INSTANCE)
+    fun `isConfigFileIfJsonFile should retrun false due to no match`() {
+        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", "",CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(false)
 
-        result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("package.json", CodeWhispererYaml.INSTANCE)
+        result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("package.json", "", CodeWhispererYaml.INSTANCE)
         assertThat(result).isEqualTo(false)
     }
 }
