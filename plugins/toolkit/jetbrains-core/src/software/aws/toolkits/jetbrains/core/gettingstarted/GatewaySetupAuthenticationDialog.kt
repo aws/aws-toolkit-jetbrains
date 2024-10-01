@@ -62,7 +62,7 @@ class GatewaySetupAuthenticationDialog(
     private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val wrappers = GatewaySetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    override var attempts = 0
+    override var attempts = 0L
         private set
     override var authType = CredentialSourceId.IamIdentityCenter
         private set

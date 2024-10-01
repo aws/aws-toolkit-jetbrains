@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
@@ -207,12 +206,11 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             codewhispererRuntime = suggestion.codewhispererRuntime,
             codewhispererRuntimeSource = suggestion.codewhispererRuntimeSource,
             codewhispererSessionId = suggestion.sessionId,
-            codewhispererSuggestionIndex = suggestion.index,
+            codewhispererSuggestionIndex = suggestion.index.toLong(),
             codewhispererTriggerType = suggestion.triggerType,
             credentialStartUrl = startUrl,
-            codewhispererUserGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup().name,
-            codewhispererCharactersModified = diff?.modified?.length ?: 0,
-            codewhispererCharactersAccepted = diff?.original?.length ?: 0
+            codewhispererCharactersModified = diff?.modified?.length?.toLong() ?: 0,
+            codewhispererCharactersAccepted = diff?.original?.length?.toLong() ?: 0
         )
     }
 
