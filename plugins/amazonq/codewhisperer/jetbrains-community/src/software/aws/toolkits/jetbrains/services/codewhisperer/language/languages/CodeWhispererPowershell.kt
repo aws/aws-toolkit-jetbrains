@@ -11,8 +11,7 @@ class CodeWhispererPowershell private constructor() : CodeWhispererProgrammingLa
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Powershell
 
-    // TODO: enable it when service is ready
-    override fun isCodeCompletionSupported(): Boolean = false
+    override fun isCodeCompletionSupported(): Boolean = true
 
     companion object {
         // TODO: confirm with service team language id

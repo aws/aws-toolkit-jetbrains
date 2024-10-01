@@ -269,16 +269,14 @@ class CodeWhispererProgrammingLanguageTest {
                 is CodeWhispererTf,
                 is CodeWhispererTsx,
                 is CodeWhispererTypeScript,
-                is CodeWhispererYaml -> true
-
-                // to be supported
+                is CodeWhispererYaml,
                 is CodeWhispererDart,
                 is CodeWhispererLua,
                 is CodeWhispererPowershell,
                 is CodeWhispererR,
                 is CodeWhispererSwift,
                 is CodeWhispererSystemVerilog,
-                is CodeWhispererVue -> false
+                is CodeWhispererVue -> true
 
                 // not supported
                 is CodeWhispererPlainText, is CodeWhispererUnknownLanguage -> false

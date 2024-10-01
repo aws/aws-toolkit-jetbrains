@@ -11,8 +11,7 @@ class CodeWhispererSwift private constructor() : CodeWhispererProgrammingLanguag
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Swift
 
-    // TODO: enable it when service is ready
-    override fun isCodeCompletionSupported(): Boolean = false
+    override fun isCodeCompletionSupported(): Boolean = true
 
     companion object {
         // TODO: confirm with service team language id
