@@ -41,7 +41,7 @@ TEMPLATE = '''<component name="ProjectRunConfigurationManager">
 </component>'''
 
 if __name__ == '__main__':
-    mvs = ["2023.3", "2024.1", "2024.2"]
+    mvs = ["2023.3", "2024.1", "2024.2", "2024.3"]
     ides = [
         IdeVariant("Community", "IC"),
         IdeVariant("Rider", "RD"),

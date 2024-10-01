@@ -142,26 +142,26 @@ object IdeVersions {
             name = "2024.3",
             gateway = ProductProfile(
                 sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "243.15521-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.16718-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "243.15521-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.16718-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:243.15521.25",
-                    "PythonCore:243.15521.24",
-                    "Docker:243.15521.35"
+                    "org.toml.lang:243.16718.28",
+                    "PythonCore:243.16718.32",
+                    "Docker:243.16718.38"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "243.15521-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.16718-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -169,17 +169,17 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:243.15521.25",
-                    "Pythonid:243.15521.24",
-                    "org.jetbrains.plugins.go:243.15521.24",
+                    "org.toml.lang:243.16718.28",
+                    "Pythonid:243.16718.32",
+                    "org.jetbrains.plugins.go:243.16718.32",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.3-SNAPSHOT",
+                sdkVersion = "2024.3-EAP2-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.3.0",
-                nugetVersion = " 2024.3.0-eap01"
+                nugetVersion = " 2024.3.0-eap02"
             )
         ),
 
