@@ -8,7 +8,7 @@ commonmark = "0.22.0"
 detekt = "1.23.6"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
-intellijGradle = "2.0.0"
+intellijGradle = "2.1.0"
 intellijRemoteRobot = "0.11.22"
 jackson = "2.16.1"
 jacoco = "0.8.12"
