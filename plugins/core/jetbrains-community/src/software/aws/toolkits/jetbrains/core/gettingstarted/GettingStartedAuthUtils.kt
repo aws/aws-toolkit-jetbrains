@@ -30,7 +30,7 @@ import software.aws.toolkits.telemetry.Result
 fun requestCredentialsForCodeWhisperer(
     project: Project,
     popupBuilderIdTab: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
@@ -116,7 +116,7 @@ fun requestCredentialsForCodeWhisperer(
 @Deprecated("pending moving to Q package")
 fun requestCredentialsForQ(
     project: Project,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
