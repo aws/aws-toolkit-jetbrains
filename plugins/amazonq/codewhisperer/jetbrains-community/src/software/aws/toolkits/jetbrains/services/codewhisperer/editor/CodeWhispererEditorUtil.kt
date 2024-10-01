@@ -12,16 +12,16 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiFile
 import com.intellij.ui.popup.AbstractPopup
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JsonConfigFileNamingConvention
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.LEFT_CONTEXT_ON_CURRENT_LINE
 import java.awt.Point
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -106,16 +106,10 @@ object CodeWhispererEditorUtil {
     }
 
     /**
-     * Checks if the language is json or yaml and checks if left context contains keywords
+     * Checks if the language is json and checks if left context contains keywords
      */
-    fun checkLeftContextKeywordsForJsonAndYaml(leftContext: String, language: String): Boolean = (
-        (language == CodeWhispererJson.INSTANCE.languageId) ||
-            (language == CodeWhispererYaml.INSTANCE.languageId)
-        ) &&
-        (
-            (!CodeWhispererConstants.AWSTemplateKeyWordsRegex.containsMatchIn(leftContext)) &&
-                (!CodeWhispererConstants.AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault())))
-            )
+    fun isConfigFileIfJsonFile(fileName: String, language: CodeWhispererProgrammingLanguage): Boolean =
+        (language is CodeWhispererJson) && JsonConfigFileNamingConvention.contains(fileName)
 
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.

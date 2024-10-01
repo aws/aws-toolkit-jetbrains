@@ -11,12 +11,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.leftContext_success_Iac
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.yaml_langauge
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererEditorUtilTest {
@@ -76,12 +78,32 @@ class CodeWhispererEditorUtilTest {
         assertThat(caretContext.leftContextOnCurrentLine).isEqualTo(pythonTestLeftContext)
     }
 
-    /**
-     * Test for keyword checks for json and yaml
-     */
+    @ParameterizedTest
+    @ValueSource(
+        strings = ["app.json",
+            "appsettings.json",
+            "bower.json",
+            "composer.json",
+            "db.json",
+            "manifest.json",
+            "package.json",
+            "schema.json",
+            "settings.json",
+            "tsconfig.json",
+            "vcpkg.json"
+        ]
+    )
+    fun `isConfigFileIfJsonFile should return true`(fileName: String) {
+        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile(fileName, CodeWhispererJson.INSTANCE)
+        assertThat(result).isEqualTo(true)
+    }
+
     @Test
-    fun `test for keyword check for json and yaml`() {
-        val result = CodeWhispererEditorUtil.checkLeftContextKeywordsForJsonAndYaml(leftContext_success_Iac, yaml_langauge)
+    fun `isConfigFileIfJsonFile should retrun false`() {
+        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", CodeWhispererJson.INSTANCE)
+        assertThat(result).isEqualTo(false)
+
+        result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("package.json", CodeWhispererYaml.INSTANCE)
         assertThat(result).isEqualTo(false)
     }
 }
