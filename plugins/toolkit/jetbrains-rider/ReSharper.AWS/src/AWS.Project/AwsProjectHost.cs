@@ -1,4 +1,5 @@
 ﻿using AWS.Toolkit.Rider.Model;
+using JetBrains.Application.Parts;
 using JetBrains.ProjectModel;
 using JetBrains.Rd.Tasks;
 using JetBrains.ReSharper.Feature.Services.Protocol;
@@ -7,7 +8,7 @@ using JetBrains.Util;
 
 namespace AWS.Project
 {
-    [SolutionComponent]
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
     public class AwsProjectHost
     {
         public AwsProjectHost(ISolution solution)

@@ -1,10 +1,11 @@
 using AWS.Toolkit.Rider.Model;
+using JetBrains.Application.Parts;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Feature.Services.Protocol;
 
 namespace AWS.Daemon.Lambda
 {
-    [SolutionComponent]
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
     public class LambdaDaemonHost
     {
         private readonly LambdaDaemonModel _model;

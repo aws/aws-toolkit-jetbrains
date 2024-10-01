@@ -1,6 +1,7 @@
 ﻿using AWS.Daemon.Settings;
 using AWS.Toolkit.Rider.Model;
 using JetBrains.Annotations;
+using JetBrains.Application.Parts;
 using JetBrains.Application.Settings;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
@@ -10,7 +11,7 @@ using JetBrains.ReSharper.Feature.Services.Protocol;
 
 namespace AWS.Settings
 {
-    [SolutionComponent]
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
     public class AwsSettingsHost
     {
         public AwsSettingsHost(Lifetime lifetime, [NotNull] ISolution solution, [NotNull] ISettingsStore settingsStore)
