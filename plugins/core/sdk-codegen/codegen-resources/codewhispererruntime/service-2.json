@@ -1952,7 +1952,8 @@
                 "SHOW_EXAMPLES",
                 "CITE_SOURCES",
                 "EXPLAIN_LINE_BY_LINE",
-                "EXPLAIN_CODE_SELECTION"
+                "EXPLAIN_CODE_SELECTION",
+                "GENERATE_UNIT_TESTS"
             ]
         },
         "UserModificationEvent":{
