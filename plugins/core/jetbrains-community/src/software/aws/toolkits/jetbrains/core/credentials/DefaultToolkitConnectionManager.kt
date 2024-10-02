@@ -98,8 +98,7 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
     }
 
     override fun getState() = ToolkitConnectionManagerState(
-//        connection?.id
-        null
+        connection?.id
     )
 
     override fun loadState(state: ToolkitConnectionManagerState) {
