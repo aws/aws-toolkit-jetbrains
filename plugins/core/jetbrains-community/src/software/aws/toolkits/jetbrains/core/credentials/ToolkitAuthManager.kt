@@ -123,7 +123,7 @@ fun loginSso(
     metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
     val source = metadata
-    fun createAndAuthNewConnection(isReAuth: Boolean, profile: AuthProfile): AwsBearerTokenConnection? {
+    fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
             authManager.tryCreateTransientSsoConnection(profile) { transientConnection ->
@@ -131,7 +131,7 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
-                    isReAuth = isReAuth
+                    isReAuth = false
                 )
             }
         } catch (e: Exception) {
@@ -151,7 +151,6 @@ fun loginSso(
 
     val manager = ToolkitAuthManager.getInstance()
     val allScopes = requestedScopes.toMutableSet()
-    var isReAuth = false
     val connection = manager.getConnection(connectionId)?.let { connection ->
         val logger = getLogger<ToolkitAuthManager>()
 
@@ -174,18 +173,21 @@ fun loginSso(
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
-        isReAuth = true
-        return@let null
+        reauthConnectionIfNeeded(
+            project = project,
+            connection = connection,
+            onPendingToken = onPendingToken,
+            isReAuth = true
+        )
+        return@let connection
     }
 
-    // never true?
     if (connection != null) {
         return connection
     }
 
     // No existing connection, start from scratch
     return createAndAuthNewConnection(
-        isReAuth = isReAuth,
         ManagedSsoProfile(
             region,
             startUrl,
@@ -240,7 +242,9 @@ fun reauthConnectionIfNeeded(
     }
 
     val startUrl = (connection as AwsBearerTokenConnection).startUrl
+    var didReauth = false
     maybeReauthProviderIfNeeded(project, tokenProvider) {
+        didReauth = true
         runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
             try {
                 tokenProvider.reauthenticate()
@@ -276,6 +280,11 @@ fun reauthConnectionIfNeeded(
                 throw e
             }
         }
+    }
+
+    if (!didReauth) {
+        // webview is stuck if reauth was not needed (i.e. token on disk is valid)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
     }
     return tokenProvider
 }

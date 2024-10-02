@@ -60,6 +60,10 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             return null
         }
 
+    @Deprecated(
+        "Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.",
+        replaceWith = ReplaceWith("activeConnectionForFeature(feature)")
+    )
     @Synchronized
     override fun activeConnection() = connection ?: defaultConnection
 
@@ -71,11 +75,11 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         }
 
         return connection?.let {
-            if (feature.supportsConnectionType(it)) {
-                return it
+            return@let if (feature.supportsConnectionType(it)) {
+                it
+            } else {
+                null
             }
-
-            null
         } ?: defaultConnection?.let {
             if (ApplicationInfo.getInstance().build.productCode == "GW") return null
             if (feature.supportsConnectionType(it)) {
@@ -94,7 +98,8 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
     }
 
     override fun getState() = ToolkitConnectionManagerState(
-        connection?.id
+//        connection?.id
+        null
     )
 
     override fun loadState(state: ToolkitConnectionManagerState) {
