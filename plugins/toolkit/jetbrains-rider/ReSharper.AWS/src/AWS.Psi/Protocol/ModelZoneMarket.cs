@@ -1,6 +1,8 @@
 using JetBrains.Application.BuildScript.Application.Zones;
 using JetBrains.Rider.Model;
 
+// https://github.com/JetBrains/resharper-unity/blob/cfd107d555a0a13a4b37273340bf930621d0a3dd/resharper/resharper-unity/src/Unity.Rider/ModelZoneMarker.cs
+
 // ReSharper disable once CheckNamespace
 namespace AWS.Toolkit.Rider.Model
 {
