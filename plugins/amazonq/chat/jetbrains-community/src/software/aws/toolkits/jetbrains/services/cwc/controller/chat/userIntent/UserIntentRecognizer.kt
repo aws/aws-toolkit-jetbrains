@@ -16,14 +16,16 @@ class UserIntentRecognizer {
         EditorContextCommand.Fix -> UserIntent.APPLY_COMMON_BEST_PRACTICES
         EditorContextCommand.Optimize -> UserIntent.IMPROVE_CODE
         EditorContextCommand.ExplainCodeScanIssue -> UserIntent.EXPLAIN_CODE_SELECTION
+        EditorContextCommand.GenerateUnitTests -> UserIntent.GENERATE_UNIT_TESTS
         EditorContextCommand.SendToPrompt -> null
     }
 
-    fun getUserIntentFromPromptChatMessage(prompt: String) = when {
+    fun getUserIntentFromPromptChatMessage(prompt: String, startUrl: String?) = when {
         prompt.startsWith("Explain") -> UserIntent.EXPLAIN_CODE_SELECTION
         prompt.startsWith("Refactor") -> UserIntent.SUGGEST_ALTERNATE_IMPLEMENTATION
         prompt.startsWith("Fix") -> UserIntent.APPLY_COMMON_BEST_PRACTICES
         prompt.startsWith("Optimize") -> UserIntent.IMPROVE_CODE
+        prompt.startsWith("Generate unit tests") && isInternalAmazonUser(startUrl) -> UserIntent.GENERATE_UNIT_TESTS
         else -> null
     }
 
@@ -43,4 +45,6 @@ class UserIntentRecognizer {
     fun getUserIntentFromOnboardingPageInteraction(interaction: OnboardingPageInteraction) = when (interaction.type) {
         OnboardingPageInteractionType.CwcButtonClick -> null
     }
+
+    private fun isInternalAmazonUser(startUrl: String?): Boolean = startUrl == "https://amzn.awsapps.com/start"
 }

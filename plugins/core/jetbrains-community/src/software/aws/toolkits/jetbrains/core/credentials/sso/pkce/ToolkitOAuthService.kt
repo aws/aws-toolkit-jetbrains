@@ -43,6 +43,8 @@ const val PKCE_CLIENT_NAME = "AWS IDE Plugins for JetBrains"
 class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override val name: String = "aws/toolkit"
 
+    internal fun pendingRequest() = (currentRequest.get()?.request as? ToolkitOAuthRequest)?.registration
+
     fun hasPendingRequest() = currentRequest.get() != null
 
     fun authorize(registration: PKCEClientRegistration): CompletableFuture<AccessToken> {

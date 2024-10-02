@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue where multiple SSO login attempts in a short time result in 404"
+}

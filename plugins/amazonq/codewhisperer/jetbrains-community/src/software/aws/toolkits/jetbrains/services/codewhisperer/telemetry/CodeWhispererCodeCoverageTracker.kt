@@ -49,7 +49,7 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val myServiceInvocationCount: AtomicInteger
 ) : Disposable {
     val percentage: Long?
-        get() = if (totalTokensSize != 0L) calculatePercentage(acceptedTokensSize, totalTokensSize) else null
+        get() = if (totalTokensSize != 0L) calculatePercentage(rawAcceptedTokenSize, totalTokensSize) else null
     val acceptedTokensSize: Long
         get() = fileToTokens.map {
             it.value.acceptedTokens.get()
@@ -59,6 +59,12 @@ abstract class CodeWhispererCodeCoverageTracker(
     val totalTokensSize: Long
         get() = fileToTokens.map {
             it.value.totalTokens.get()
+        }.fold(0) { acc, next ->
+            acc + next
+        }
+    private val rawAcceptedTokenSize: Long
+        get() = fileToTokens.map {
+            it.value.rawAcceptedTokens.get()
         }.fold(0) { acc, next ->
             acc + next
         }
@@ -169,20 +175,17 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     private fun incrementAcceptedTokens(document: Document, delta: Int) {
-        var tokens = fileToTokens[document]
-        if (tokens == null) {
-            tokens = CodeCoverageTokens()
-            fileToTokens[document] = tokens
-        }
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.acceptedTokens.addAndGet(delta)
     }
 
+    private fun incrementRawAcceptedTokens(document: Document, delta: Int) {
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
+        tokens.rawAcceptedTokens.addAndGet(delta)
+    }
+
     private fun incrementTotalTokens(document: Document, delta: Int) {
-        var tokens = fileToTokens[document]
-        if (tokens == null) {
-            tokens = CodeCoverageTokens()
-            fileToTokens[document] = tokens
-        }
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.apply {
             totalTokens.addAndGet(delta)
             if (totalTokens.get() < 0) totalTokens.set(0)
@@ -201,8 +204,6 @@ abstract class CodeWhispererCodeCoverageTracker(
         if (percentage == null) return
         if (myServiceInvocationCount.get() <= 0) return
 
-        // accepted char count without considering modification
-        var rawAcceptedCharacterCount = 0L
         rangeMarkers.forEach { rangeMarker ->
             if (!rangeMarker.isValid) return@forEach
             // if users add more code upon the recommendation generated from CodeWhisperer, we consider those added part as userToken but not CwsprTokens
@@ -216,9 +217,9 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
                 return@forEach
             }
-            rawAcceptedCharacterCount += originalRecommendation.length
             val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
             runReadAction {
+                incrementRawAcceptedTokens(rangeMarker.document, originalRecommendation.length)
                 incrementAcceptedTokens(rangeMarker.document, delta)
             }
         }
@@ -230,7 +231,7 @@ abstract class CodeWhispererCodeCoverageTracker(
                 val response = CodeWhispererClientAdaptor.getInstance(project).sendCodePercentageTelemetry(
                     language,
                     customizationArn,
-                    rawAcceptedCharacterCount,
+                    rawAcceptedTokenSize,
                     totalTokensSize,
                     acceptedTokensSize
                 )
@@ -248,7 +249,7 @@ abstract class CodeWhispererCodeCoverageTracker(
             CodewhispererTelemetry.codePercentage(
                 project = null,
                 codewhispererAcceptedTokens = acceptedTokensSize,
-                codewhispererSuggestedTokens = rawAcceptedCharacterCount,
+                codewhispererSuggestedTokens = rawAcceptedTokenSize,
                 codewhispererLanguage = language.toTelemetryType(),
                 codewhispererPercentage = percentage,
                 codewhispererTotalTokens = totalTokensSize,
@@ -282,7 +283,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()
         private val instances: MutableMap<CodeWhispererProgrammingLanguage, CodeWhispererCodeCoverageTracker> = mutableMapOf()
 
-        fun calculatePercentage(acceptedTokens: Long, totalTokens: Long): Long = ((acceptedTokens.toDouble() * 100) / totalTokens).roundToLong()
+        fun calculatePercentage(rawAcceptedTokenSize: Long, totalTokens: Long): Long = ((rawAcceptedTokenSize.toDouble() * 100) / totalTokens).roundToLong()
         fun getInstance(project: Project, language: CodeWhispererProgrammingLanguage): CodeWhispererCodeCoverageTracker =
             when (val instance = instances[language]) {
                 null -> {
@@ -310,12 +311,14 @@ class DefaultCodeWhispererCodeCoverageTracker(project: Project, language: CodeWh
     AtomicInteger(0)
 )
 
-class CodeCoverageTokens(totalTokens: Int = 0, acceptedTokens: Int = 0) {
+class CodeCoverageTokens(totalTokens: Int = 0, acceptedTokens: Int = 0, rawAcceptedTokens: Int = 0) {
     val totalTokens: AtomicInteger
     val acceptedTokens: AtomicInteger
+    val rawAcceptedTokens: AtomicInteger
 
     init {
         this.totalTokens = AtomicInteger(totalTokens)
         this.acceptedTokens = AtomicInteger(acceptedTokens)
+        this.rawAcceptedTokens = AtomicInteger(rawAcceptedTokens)
     }
 }
