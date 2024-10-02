@@ -62,7 +62,7 @@ abstract class CodeWhispererCodeCoverageTracker(
         }.fold(0) { acc, next ->
             acc + next
         }
-    val rawAcceptedTokenSize: Long
+    private val rawAcceptedTokenSize: Long
         get() = fileToTokens.map {
             it.value.rawAcceptedTokens.get()
         }.fold(0) { acc, next ->
@@ -175,29 +175,17 @@ abstract class CodeWhispererCodeCoverageTracker(
     }
 
     private fun incrementAcceptedTokens(document: Document, delta: Int) {
-        var tokens = fileToTokens[document]
-        if (tokens == null) {
-            tokens = CodeCoverageTokens()
-            fileToTokens[document] = tokens
-        }
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.acceptedTokens.addAndGet(delta)
     }
 
     private fun incrementRawAcceptedTokens(document: Document, delta: Int) {
-        var tokens = fileToTokens[document]
-        if (tokens == null) {
-            tokens = CodeCoverageTokens()
-            fileToTokens[document] = tokens
-        }
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.rawAcceptedTokens.addAndGet(delta)
     }
 
     private fun incrementTotalTokens(document: Document, delta: Int) {
-        var tokens = fileToTokens[document]
-        if (tokens == null) {
-            tokens = CodeCoverageTokens()
-            fileToTokens[document] = tokens
-        }
+        val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.apply {
             totalTokens.addAndGet(delta)
             if (totalTokens.get() < 0) totalTokens.set(0)
