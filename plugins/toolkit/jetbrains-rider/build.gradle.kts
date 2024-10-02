@@ -52,6 +52,8 @@ dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
         testFramework(TestFrameworkType.Bundled)
+
+        bundledModule("intellij.rider")
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))

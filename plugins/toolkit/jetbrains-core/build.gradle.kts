@@ -34,6 +34,8 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
+        bundledModule("intellij.platform.vcs.dvcs.impl")
+        bundledModule("intellij.libraries.microba")
     }
 }
 
