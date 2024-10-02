@@ -65,6 +65,15 @@ dependencies {
     }
 }
 
+configurations {
+    runtimeClasspath {
+        exclude(group = "com.fasterxml.jackson.core")
+        exclude(group = "com.fasterxml.jackson.module", "jackson-module-kotlin")
+        exclude(group = "com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+        exclude(group = "com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
+    }
+}
+
 tasks.runIde {
     systemProperty("aws.toolkit.developerMode", true)
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
