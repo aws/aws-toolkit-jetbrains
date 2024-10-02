@@ -130,6 +130,8 @@ class ChatController private constructor(
         var shouldAddIndexInProgressMessage: Boolean = false
         var shouldUseWorkspaceContext: Boolean = false
         val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
+        val startUrl = getStartUrl(context.project)
+
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 shouldUseWorkspaceContext = true
@@ -151,7 +153,7 @@ class ChatController private constructor(
             triggerId = triggerId,
             message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage, startUrl),
             TriggerType.Click,
             projectContextQueryResult = queryResult,
             shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage,
@@ -332,7 +334,11 @@ class ChatController private constructor(
         }
 
         // Create prompt
-        val prompt = "${message.command} the following part of my code for me: $codeSelection"
+        val prompt = if (EditorContextCommand.GenerateUnitTests == message.command) {
+            "${message.command.verb} the following part of my code for me: $codeSelection"
+        } else {
+            "${message.command} the following part of my code for me: $codeSelection"
+        }
 
         processPromptActions(prompt, message, triggerId, fileContext)
     }
