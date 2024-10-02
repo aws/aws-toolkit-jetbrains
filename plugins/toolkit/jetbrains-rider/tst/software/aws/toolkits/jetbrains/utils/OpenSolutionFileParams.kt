@@ -16,4 +16,4 @@ fun openSolutionFile(solutionDirName: String): File {
     return File("$solutionDirName/$solutionFileName")
 }
 
-const val OPEN_SOLUTION_DIR_NAME: String = "testData/solutions/SamHelloWorldApp"
+const val OPEN_SOLUTION_DIR_NAME: String = "SamHelloWorldApp"
