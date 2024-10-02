@@ -11,20 +11,16 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.UserDataHolder
 import com.intellij.ui.dsl.builder.panel
-import com.jetbrains.python.configuration.PyConfigurableInterpreterList
 import com.jetbrains.python.newProject.NewPythonProjectStep
-import com.jetbrains.python.sdk.PreferredSdkComparator
-import com.jetbrains.python.sdk.PythonSdkType
-import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
 import javax.swing.JComponent
 import javax.swing.JLabel
 
+@Suppress("UnusedPrivateProperty")
 class PyCharmSdkSelectionPanel(private val projectLocation: TextFieldWithBrowseButton?) : SdkSelector {
 //    private val sdkPanel by lazy {
 //        sdkPanel()
 //    }
-
 
     private val sdkStep by lazy {
         NewPythonProjectStep(object : NewProjectWizardStep {
@@ -36,7 +32,6 @@ class PyCharmSdkSelectionPanel(private val projectLocation: TextFieldWithBrowseB
                 get() = TODO("Not yet implemented")
             override val data: UserDataHolder
                 get() = TODO("Not yet implemented")
-
         })
     }
 
@@ -71,18 +66,17 @@ class PyCharmSdkSelectionPanel(private val projectLocation: TextFieldWithBrowseB
 //
 //        return interpreterPanel
 //    }
+//
+//    private fun getProjectLocation(): String? = projectLocation?.text?.trim()
+//
+//    private fun getValidPythonSdks(): List<Sdk> = PyConfigurableInterpreterList.getInstance(null).allPythonSdks
+//        .asSequence()
+//        .filter { it.sdkType is PythonSdkType && !PythonSdkUtil.isInvalid(it) }
+//        .sortedWith(PreferredSdkComparator())
+//        .toList()
 
-    private fun getProjectLocation(): String? = projectLocation?.text?.trim()
-
-    private fun getValidPythonSdks(): List<Sdk> = PyConfigurableInterpreterList.getInstance(null).allPythonSdks
-        .asSequence()
-        .filter { it.sdkType is PythonSdkType && !PythonSdkUtil.isInvalid(it) }
-        .sortedWith(PreferredSdkComparator())
-        .toList()
-
-    override fun getSdk(): Sdk? {
-        return sdkStep.pythonSdk
-    }
+    override fun getSdk(): Sdk? =
+        sdkStep.pythonSdk
 
     override fun validateSelection(): ValidationInfo? = sdkPanel.validateAll().firstOrNull()
 }
