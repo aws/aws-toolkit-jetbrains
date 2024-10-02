@@ -141,6 +141,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         const val CWSPR_Language = "codewhispererLanguage"
         const val CWSPR_ACCEPTED_TOKENS = "codewhispererAcceptedTokens"
         const val CWSPR_TOTAL_TOKENS = "codewhispererTotalTokens"
+        const val CWSPR_RAW_ACCEPTED_TOKENS = "codewhispererSuggestedTokens"
     }
 }
 
@@ -429,7 +430,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 TOTAL_SECONDS_IN_MINUTE,
                 CodeWhispererPython.INSTANCE,
                 mutableListOf(rangeMarkerMock1),
-                mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalTokens = 100, acceptedTokens = 0)),
+                mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalTokens = 100, acceptedTokens = 0, rawAcceptedTokens = 0)),
                 1
             )
         ) {
@@ -444,8 +445,9 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             metricCaptor.allValues,
             CODE_PERCENTAGE,
             1,
-            CWSPR_PERCENTAGE to "1",
+            CWSPR_PERCENTAGE to "3",
             CWSPR_ACCEPTED_TOKENS to "1",
+            CWSPR_RAW_ACCEPTED_TOKENS to "3",
             CWSPR_TOTAL_TOKENS to "100",
         )
     }

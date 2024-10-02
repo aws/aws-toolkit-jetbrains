@@ -18,16 +18,22 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
 import java.io.IOException
+
+private val LOG = getLogger<Login<*>>()
 
 sealed class Login<T> {
     abstract val id: CredentialSourceId
@@ -35,7 +41,12 @@ sealed class Login<T> {
     protected abstract fun doLogin(project: Project): T
 
     fun login(project: Project): T {
+        LOG.debug { "Starting login with request: $this" }
         try {
+            check(!ToolkitOAuthService.getInstance().hasPendingRequest()) {
+                LOG.warn { "$this attempt initiated with pending request: ${ToolkitOAuthService.getInstance().pendingRequest()}" }
+                AwsCoreBundle.message("toolkit.login.singleton")
+            }
             return doLogin(project)
         } catch (e: Exception) {
             onError(e)
