@@ -121,7 +121,6 @@ fun loginSso(
     onSuccess: () -> Unit = {},
     metadata: ConnectionMetadata? = null
 ): AwsBearerTokenConnection? {
-    val source = metadata
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
@@ -130,6 +129,7 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
+                    source = metadata?.sourceId,
                 )
             }
         } catch (e: Exception) {
@@ -233,7 +233,8 @@ fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
-    isReAuth: Boolean = false
+    isReAuth: Boolean = false,
+    source: String? = null,
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
@@ -250,12 +251,14 @@ fun reauthConnectionIfNeeded(
                         credentialStartUrl = startUrl,
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Succeeded
+                        result = Result.Succeeded,
+                        source = source,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Succeeded
+                        result = Result.Succeeded,
+                        source = source,
                     )
                 }
             } catch (e: Exception) {
@@ -265,12 +268,14 @@ fun reauthConnectionIfNeeded(
                         credentialStartUrl = startUrl,
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = result
+                        result = result,
+                        source = source,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = result
+                        result = result,
+                        source = source,
                     )
                 }
 
