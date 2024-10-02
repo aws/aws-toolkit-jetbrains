@@ -89,7 +89,10 @@ interface ToolkitStartupAuthFactory {
 }
 
 interface ToolkitConnectionManager : Disposable {
-    @Deprecated("Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.", ReplaceWith("activeConnectionForFeature(feature)"))
+    @Deprecated(
+        "Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.",
+        ReplaceWith("activeConnectionForFeature(feature)")
+    )
     fun activeConnection(): ToolkitConnection?
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
