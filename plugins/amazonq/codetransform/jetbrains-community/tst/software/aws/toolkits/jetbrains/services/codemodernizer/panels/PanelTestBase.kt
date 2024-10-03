@@ -4,8 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.panels
 
 import com.intellij.openapi.project.Project
+import org.junit.Before
 import org.junit.Rule
-import org.junit.jupiter.api.BeforeEach
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
 open class PanelTestBase(
@@ -13,7 +13,7 @@ open class PanelTestBase(
 ) {
     internal lateinit var project: Project
 
-    @BeforeEach
+    @Before
     open fun setup() {
         project = projectRule.project
     }
