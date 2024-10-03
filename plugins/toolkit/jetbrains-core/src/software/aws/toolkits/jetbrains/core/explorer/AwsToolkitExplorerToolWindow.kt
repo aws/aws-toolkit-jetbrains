@@ -10,7 +10,6 @@ import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
@@ -23,6 +22,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.jetbrains.core.credentials.CredsComboBoxActionGroup
+import software.aws.toolkits.jetbrains.core.explorer.ConnectionActionToolbarBuilder
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.CodewhispererQToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.cwqTab.isQInstalled
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
@@ -65,27 +65,7 @@ class AwsToolkitExplorerToolWindow(
             setContent(content)
             val group = CredsComboBoxActionGroup(project)
 
-            toolbar = BorderLayoutPanel().apply {
-                addToCenter(
-                    ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-                        layoutStrategy = ToolbarLayoutStrategy.NOWRAP_STRATEGY
-                        setTargetComponent(this@AwsToolkitExplorerToolWindow)
-                    }.component
-                )
-
-                val actionManager = ActionManager.getInstance()
-                val rightActionGroup = DefaultActionGroup(
-                    actionManager.getAction("aws.toolkit.toolwindow.credentials.rightGroup.more"),
-                    actionManager.getAction("aws.toolkit.toolwindow.credentials.rightGroup.help")
-                )
-
-                addToRight(
-                    ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, rightActionGroup, true).apply {
-                        // revisit if these actions need the tool window as a data provider
-                        setTargetComponent(component)
-                    }.component
-                )
-            }
+            toolbar = ConnectionActionToolbarBuilder.createToolbar(this,group)
 
             // main content
             tabComponents.forEach { name, contentProvider ->
