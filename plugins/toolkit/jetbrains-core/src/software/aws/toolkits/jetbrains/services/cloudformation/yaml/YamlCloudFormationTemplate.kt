@@ -90,7 +90,7 @@ class YamlCloudFormationTemplate(template: YAMLFile) : CloudFormationTemplate {
     private class YamlResource(
         override val logicalName: String,
         override val cloudFormationTemplate: CloudFormationTemplate,
-        private val delegate: YAMLMapping
+        private val delegate: YAMLMapping,
     ) : YAMLMapping by delegate, Resource {
         override fun isType(requestedType: String): Boolean = try {
             type() == requestedType

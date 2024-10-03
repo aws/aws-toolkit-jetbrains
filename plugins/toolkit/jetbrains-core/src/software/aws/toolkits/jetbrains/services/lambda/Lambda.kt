@@ -98,7 +98,7 @@ data class LambdaFunction(
     val timeout: Int,
     val memorySize: Int,
     val xrayEnabled: Boolean,
-    val role: IamRole
+    val role: IamRole,
 )
 
 fun FunctionConfiguration.toDataClass() = LambdaFunction(

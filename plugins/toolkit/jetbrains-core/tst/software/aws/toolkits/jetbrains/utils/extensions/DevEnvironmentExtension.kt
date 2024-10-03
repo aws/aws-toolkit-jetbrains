@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 
 class DevEnvironmentExtension(
     connection: () -> ToolkitConnection,
-    environmentBuilder: (CodeCatalystClient, CreateDevEnvironmentRequest.Builder) -> Unit
+    environmentBuilder: (CodeCatalystClient, CreateDevEnvironmentRequest.Builder) -> Unit,
 ) : AfterAllCallback {
     private val client: CodeCatalystClient by lazy {
         AwsClientManager.getInstance().getClient(connection().getConnectionSettings())
@@ -45,5 +45,5 @@ class DevEnvironmentExtension(
 data class DevEnvironment(
     val spaceName: String,
     val projectName: String,
-    val id: String
+    val id: String,
 )

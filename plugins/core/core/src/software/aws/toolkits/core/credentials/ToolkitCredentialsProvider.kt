@@ -15,7 +15,7 @@ enum class CredentialType {
     AssumeMfaRoleProfile,
     SsoProfile,
     Ec2Metadata,
-    EcsMetadata
+    EcsMetadata,
 }
 
 enum class CredentialSourceId {
@@ -23,7 +23,7 @@ enum class CredentialSourceId {
     SdkStore,
     Ecs,
     Ec2,
-    EnvVars
+    EnvVars,
 }
 
 /**
@@ -100,7 +100,7 @@ interface ToolkitAuthenticationProvider {
 
 class ToolkitCredentialsProvider(
     val identifier: CredentialIdentifier,
-    val delegate: AwsCredentialsProvider
+    val delegate: AwsCredentialsProvider,
 ) : ToolkitAuthenticationProvider, AwsCredentialsProvider by delegate {
     override val id: String = identifier.id
     override val displayName = identifier.displayName

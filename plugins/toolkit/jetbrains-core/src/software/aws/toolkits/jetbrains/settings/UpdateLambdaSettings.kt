@@ -56,12 +56,12 @@ class UpdateLambdaSettings private constructor(private val arn: String) {
 }
 
 data class UpdateLambda(
-    var configs: MutableMap<String, UpdateConfig> = mutableMapOf()
+    var configs: MutableMap<String, UpdateConfig> = mutableMapOf(),
 )
 
 data class UpdateConfig(
     var bucketName: String? = null,
     var ecrRepo: String? = null,
     var dockerfile: String? = null,
-    var useContainer: Boolean = false
+    var useContainer: Boolean = false,
 )

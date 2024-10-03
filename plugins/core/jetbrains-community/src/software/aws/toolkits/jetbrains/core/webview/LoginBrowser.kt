@@ -61,7 +61,7 @@ data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean 
 abstract class LoginBrowser(
     private val project: Project,
     val domain: String,
-    val webScriptUri: String
+    val webScriptUri: String,
 ) {
     abstract val jcefBrowser: JBCefBrowserBase
 
@@ -236,7 +236,7 @@ abstract class LoginBrowser(
     fun getSuccessAndErrorActionsForIdcLogin(
         scopes: List<String>,
         url: String,
-        region: AwsRegion
+        region: AwsRegion,
     ): Pair<(Exception) -> Unit, () -> Unit> {
         val isReAuth = isReAuth(scopes, url)
 

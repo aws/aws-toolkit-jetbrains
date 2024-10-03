@@ -13,7 +13,7 @@ import java.time.Duration
 
 fun RemoteRobot.preferencesDialog(
     timeout: Duration = Duration.ofSeconds(20),
-    function: PreferencesDialog.() -> Unit
+    function: PreferencesDialog.() -> Unit,
 ) {
     step("Search for preferences dialog") {
         val dialog = find<PreferencesDialog>(DialogFixture.byTitleContains(preferencesTitle()), timeout)
@@ -29,7 +29,7 @@ fun RemoteRobot.preferencesDialog(
 @FixtureName("Preferences")
 open class PreferencesDialog(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : DialogFixture(remoteRobot, remoteComponent) {
     fun search(query: String) = step("Search $query") {
         textField(byXpath("//div[@class='SettingsSearch']//div[@class='TextFieldWithProcessing']")).text = query

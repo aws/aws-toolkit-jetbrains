@@ -55,7 +55,7 @@ import software.aws.toolkits.telemetry.Result as TelemetryResult
 
 class CawsCloneDialogComponent(
     private val project: Project,
-    private val modalityState: ModalityState
+    private val modalityState: ModalityState,
 ) : VcsCloneDialogExtensionComponent() {
     private lateinit var client: CodeCatalystClient
     private lateinit var cawsConnectionSettings: ClientConnectionSettings<*>

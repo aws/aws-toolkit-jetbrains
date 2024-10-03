@@ -120,7 +120,7 @@ class CodeWhispererPopupManager {
         indexChange: Int,
         typeaheadChange: String,
         typeaheadAdded: Boolean,
-        recommendationAdded: Boolean = false
+        recommendationAdded: Boolean = false,
     ) {
         val (_, _, recommendationContext, popup) = states
         val (details) = recommendationContext
@@ -216,7 +216,7 @@ class CodeWhispererPopupManager {
         sessionContext: SessionContext,
         overlappingLinesCount: Int,
         isRecommendationAdded: Boolean,
-        isScrolling: Boolean
+        isScrolling: Boolean,
     ) {
         updatePopupPanel(states, sessionContext)
 
@@ -283,7 +283,7 @@ class CodeWhispererPopupManager {
         sessionContext: SessionContext,
         popup: JBPopup,
         p: Point,
-        overlappingLinesCount: Int
+        overlappingLinesCount: Int,
     ) {
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
@@ -627,7 +627,7 @@ class CodeWhispererPopupManager {
         detailContexts: List<DetailContext>,
         userInput: String,
         start: Int,
-        typeahead: String
+        typeahead: String,
     ): Int {
         val count = detailContexts.size
         val unit = if (isReverse) -1 else 1
@@ -651,7 +651,7 @@ class CodeWhispererPopupManager {
         detailContexts: List<DetailContext>,
         userInput: String,
         selectedIndex: Int,
-        typeahead: String
+        typeahead: String,
     ): Int {
         var currIndexIgnoreInvalid = 0
         detailContexts.forEachIndexed { index, value ->

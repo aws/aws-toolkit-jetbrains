@@ -39,7 +39,7 @@ import javax.swing.JComponent
 class OpenShellInContainerDialog(
     private val project: Project,
     private val container: ContainerDetails,
-    private val connectionSettings: ConnectionSettings
+    private val connectionSettings: ConnectionSettings,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     private val shellList = listOf("/bin/bash", "/bin/sh", "/bin/zsh")

@@ -221,7 +221,7 @@ data class ResourceMutationState(
     val status: OperationStatus,
     val resourceIdentifier: String?,
     val message: String?,
-    val startTime: Instant
+    val startTime: Instant,
 ) {
     companion object {
         fun fromEvent(connectionSettings: ConnectionSettings, progress: ProgressEvent, startTime: Instant) =

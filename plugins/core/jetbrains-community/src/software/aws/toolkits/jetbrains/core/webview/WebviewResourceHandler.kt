@@ -17,7 +17,7 @@ import java.net.URLConnection
 
 class WebviewResourceHandlerFactory(
     val domain: String,
-    val assetUri: String
+    val assetUri: String,
 ) : CefSchemeHandlerFactory {
     override fun create(
         browser: CefBrowser?,

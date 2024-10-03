@@ -29,7 +29,7 @@ import java.util.concurrent.CompletionStage
 data class RedshiftSettings(
     val clusterId: String,
     val username: String,
-    val connectionSettings: ConnectionSettings
+    val connectionSettings: ConnectionSettings,
 )
 
 class IamAuth : DatabaseAuthProviderCompatabilityAdapter {

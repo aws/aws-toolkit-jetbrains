@@ -231,7 +231,7 @@ class SyncServerlessAppAction : AnAction(
         project: Project,
         settings: SyncServerlessApplicationSettings,
         syncedResources: SyncedResources,
-        lambdaPackageType: LambdaPackageType
+        lambdaPackageType: LambdaPackageType,
     ) {
         try {
             val templatePath = templateFile.toNioPath()
@@ -283,5 +283,5 @@ class SyncServerlessAppAction : AnAction(
 
 data class PreSyncRequirements(
     val dockerDoesntExist: Boolean? = null,
-    val activeStacks: List<StackSummary>
+    val activeStacks: List<StackSummary>,
 )

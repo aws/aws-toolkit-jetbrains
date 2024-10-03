@@ -46,7 +46,7 @@ fun <T : Any?> AbstractAssert<*, T>.satisfiesKt(requirements: Consumer<T>) =
     satisfies(requirements) as AbstractAssert<*, T>
 
 fun <SELF : AbstractThrowableAssert<SELF, ACTUAL>, ACTUAL : Throwable> AbstractThrowableAssert<SELF, ACTUAL>.hasCauseWithMessage(
-    message: String
+    message: String,
 ): AbstractThrowableAssert<SELF, ACTUAL> {
     satisfiesKt { parentThrowable ->
         assertThat(parentThrowable.cause).isNotNull.hasMessage(message)

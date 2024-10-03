@@ -24,7 +24,7 @@ data class RdsDatabase(
     val engine: String,
     val iamDatabaseAuthenticationEnabled: Boolean,
     val endpoint: Endpoint,
-    val masterUsername: String
+    val masterUsername: String,
 ) {
     fun rdsEngine() = RdsEngine.fromEngine(engine)
 }

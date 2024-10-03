@@ -23,7 +23,7 @@ class DotNetSamProjectGenerator(
     private val context: ProjectTemplateDialogContext,
     group: String,
     categoryName: String,
-    model: ProjectTemplateTransferableModel
+    model: ProjectTemplateTransferableModel,
 ) : DotNetSamProjectGeneratorRoot(context, group, categoryName, model) {
     override fun expand() = Runnable {
         val samPanel = getSamPanel()

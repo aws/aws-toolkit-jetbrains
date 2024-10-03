@@ -31,7 +31,7 @@ private fun String.tokenize(): List<String> = this.split(" ").map { str ->
 
 data class BM25Result(
     val docString: String,
-    val score: Double
+    val score: Double,
 ) : Comparable<BM25Result> {
     override fun compareTo(other: BM25Result): Int = compareValuesBy(other, this) { it.score }
 }

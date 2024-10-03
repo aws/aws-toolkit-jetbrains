@@ -28,7 +28,7 @@ fun createLambdaWorkflowForZip(
     buildDir: Path,
     buildEnvVars: Map<String, String>,
     codeStorageLocation: String,
-    samOptions: SamOptions
+    samOptions: SamOptions,
 ): StepWorkflow {
     val (dummyTemplate, dummyLogicalId) = createTemporaryZipTemplate(buildDir, codeDetails)
     val packagedTemplate = buildDir.resolve("packaged-temp-template.yaml")
@@ -75,7 +75,7 @@ fun createLambdaWorkflowForImage(
     functionDetails: FunctionDetails,
     codeDetails: ImageBasedCode,
     codeStorageLocation: String,
-    samOptions: SamOptions
+    samOptions: SamOptions,
 ): StepWorkflow {
     val (dummyTemplate, dummyLogicalId) = createTemporaryImageTemplate(codeDetails)
     val buildDir = codeDetails.dockerfile.resolveSibling(".aws-sam").resolve("build")
@@ -116,7 +116,7 @@ fun updateLambdaCodeWorkflowForZip(
     buildEnvVars: Map<String, String>,
     codeStorageLocation: String,
     samOptions: SamOptions,
-    updatedHandler: String?
+    updatedHandler: String?,
 ): StepWorkflow {
     val (dummyTemplate, dummyLogicalId) = createTemporaryZipTemplate(buildDir, codeDetails)
     val builtTemplate = buildDir.resolve("template.yaml")
@@ -164,7 +164,7 @@ fun updateLambdaCodeWorkflowForImage(
     functionName: String,
     codeDetails: ImageBasedCode,
     codeStorageLocation: String,
-    samOptions: SamOptions
+    samOptions: SamOptions,
 ): StepWorkflow {
     val (dummyTemplate, dummyLogicalId) = createTemporaryImageTemplate(codeDetails)
     val buildDir = codeDetails.dockerfile.resolveSibling(".aws-sam").resolve("build")
@@ -199,7 +199,7 @@ fun updateLambdaCodeWorkflowForImage(
 fun createDeployWorkflow(
     project: Project,
     template: VirtualFile,
-    settings: DeployServerlessApplicationSettings
+    settings: DeployServerlessApplicationSettings,
 ): StepWorkflow {
     val envVars = createAwsEnvVars(project)
     val region = AwsConnectionManager.getInstance(project).activeRegion

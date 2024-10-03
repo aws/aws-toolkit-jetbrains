@@ -121,7 +121,7 @@ fun CodeInsightTestFixture.addLambdaHandler(
         exports.$handlerName = function (event, context, callback) {
             return 'HelloWorld'
         };
-        """.trimIndent()
+        """.trimIndent(),
 ): PsiElement {
     val psiFile = this.addFileToProject("$subPath/$fileName.js", fileContent) as JSFile
 
@@ -139,7 +139,7 @@ fun CodeInsightTestFixture.addTypeScriptLambdaHandler(
         export const $handlerName = (event: APIGatewayProxyEvent, context: Context, callback: Callback<APIGatewayProxyResult>): APIGatewayProxyResult => {
             return { statusCode: 200 }
         }
-        """.trimIndent()
+        """.trimIndent(),
 ): PsiElement {
     val psiFile = this.addFileToProject("$subPath/$fileName.ts", fileContent) as JSFile
 
@@ -156,7 +156,7 @@ fun CodeInsightTestFixture.addPackageJsonFile(
             "name": "hello-world",
             "version": "1.0.0"
         }
-        """.trimIndent()
+        """.trimIndent(),
 ): PsiFile = this.addFileToProject("$subPath/package.json", content)
 
 fun CodeInsightTestFixture.addTypeScriptPackageJsonFile(
@@ -170,5 +170,5 @@ fun CodeInsightTestFixture.addTypeScriptPackageJsonFile(
               "typescript": "*"
             }
         }
-        """.trimIndent()
+        """.trimIndent(),
 ): PsiFile = this.addPackageJsonFile(subPath, content)

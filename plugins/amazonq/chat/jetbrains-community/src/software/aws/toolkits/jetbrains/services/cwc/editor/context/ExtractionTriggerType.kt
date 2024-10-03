@@ -7,5 +7,5 @@ enum class ExtractionTriggerType {
     ChatMessage,
     ContextMenu,
     OnboardingPageInteraction,
-    CodeScanButton
+    CodeScanButton,
 }

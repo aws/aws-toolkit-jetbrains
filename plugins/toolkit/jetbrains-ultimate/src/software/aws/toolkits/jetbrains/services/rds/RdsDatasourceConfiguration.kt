@@ -7,5 +7,5 @@ data class RdsDatasourceConfiguration(
     val regionId: String,
     val credentialId: String,
     val database: RdsDatabase,
-    val username: String
+    val username: String,
 )

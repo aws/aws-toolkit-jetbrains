@@ -77,7 +77,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
 
     fun pullImage(
         config: DockerRepositoryModel,
-        progressIndicator: ProgressIndicator? = null
+        progressIndicator: ProgressIndicator? = null,
     ) = agent.pullImage(
         DockerAgentRepositoryConfigImpl(config),
         object : DockerAgentProgressCallback {
@@ -141,7 +141,7 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
         agent: DockerAgent,
         config: DockerAgentDeploymentConfig,
         dockerfilePath: String,
-        tag: String
+        tag: String,
     ): String? {
         val queue = agent.createImageBuilder().asyncBuildImage(config).await()
         val future = CompletableFuture<String?>()
@@ -178,5 +178,5 @@ class ToolkitDockerAdapter(protected val project: Project, val runtimeFacade: Do
 
 data class LocalImage(
     val imageId: String,
-    val tag: String?
+    val tag: String?,
 )

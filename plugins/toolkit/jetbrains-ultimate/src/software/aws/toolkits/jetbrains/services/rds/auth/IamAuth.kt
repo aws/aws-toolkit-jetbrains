@@ -45,7 +45,7 @@ data class RdsAuth(
     val address: String,
     val port: Int,
     val user: String,
-    val connectionSettings: ConnectionSettings
+    val connectionSettings: ConnectionSettings,
 )
 
 // [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
@@ -72,7 +72,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun intercept(
         connection: ProtoConnection,
-        silent: Boolean
+        silent: Boolean,
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         val project = connection.project()

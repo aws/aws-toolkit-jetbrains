@@ -117,5 +117,5 @@ class CodeWhispererFeatureConfigService {
 data class FeatureContext(
     val name: String,
     val variation: String,
-    val value: FeatureValue
+    val value: FeatureValue,
 )

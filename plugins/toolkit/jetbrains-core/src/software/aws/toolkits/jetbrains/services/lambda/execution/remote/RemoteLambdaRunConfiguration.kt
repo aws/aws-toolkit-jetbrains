@@ -73,5 +73,5 @@ data class RemoteLambdaRunSettings(
     val credentialProvider: ToolkitCredentialsProvider,
     val region: AwsRegion,
     val functionName: String,
-    val input: String
+    val input: String,
 )
