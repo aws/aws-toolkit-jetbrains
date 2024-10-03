@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.EditorFactoryEvent
 import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
@@ -18,7 +19,7 @@ class CodeWhispererEditorListener : EditorFactoryListener {
         val editor = (event.editor as? EditorImpl) ?: return
         val project = editor.project ?: return
 
-        val language = editor.virtualFile.programmingLanguage()
+        val language = FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage() ?: return
         // If language is not supported by CodeWhisperer, no action needed
         if (!language.isCodeCompletionSupported()) return
         // If language is supported, install document listener for CodeWhisperer service
