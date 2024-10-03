@@ -180,7 +180,8 @@ fun loginSso(
             project = project,
             connection = connection,
             onPendingToken = onPendingToken,
-            isReAuth = true
+            isReAuth = true,
+            source = metadata?.sourceId,
         )
         return@let connection
     }
