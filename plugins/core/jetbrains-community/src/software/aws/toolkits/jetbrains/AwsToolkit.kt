@@ -47,5 +47,5 @@ data class PluginInfo(val id: String, val name: String) {
 enum class AwsPlugin {
     TOOLKIT,
     Q,
-    CORE
+    CORE,
 }

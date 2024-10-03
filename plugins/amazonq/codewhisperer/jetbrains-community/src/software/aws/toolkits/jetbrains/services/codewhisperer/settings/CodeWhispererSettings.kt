@@ -126,7 +126,7 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
     IsProjectContextGpu,
-    HasEnabledProjectContextOnce
+    HasEnabledProjectContextOnce,
 }
 
 enum class CodeWhispererIntConfigurationType {

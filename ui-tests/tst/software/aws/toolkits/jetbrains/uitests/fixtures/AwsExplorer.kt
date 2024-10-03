@@ -14,7 +14,7 @@ import java.time.Duration
 
 fun IdeaFrame.awsExplorer(
     timeout: Duration = Duration.ofSeconds(20),
-    function: AwsExplorer.() -> Unit
+    function: AwsExplorer.() -> Unit,
 ) {
     val locator = byXpath("//div[@accessiblename='AWS Toolkit Tool Window']")
 
@@ -46,7 +46,7 @@ fun IdeaFrame.awsExplorer(
 @FixtureName("AWSExplorer")
 open class AwsExplorer(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
     fun explorerTree() = find<JTreeFixture>(byXpath("//div[@class='Tree']"), timeout = Duration.ofSeconds(5)).also { it.waitUntilLoaded() }
 

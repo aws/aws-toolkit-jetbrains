@@ -111,7 +111,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
         downloadStartTime: Instant,
         jobId: JobId,
         totalDownloadBytes: Int,
-        telemetryErrorMessage: String?
+        telemetryErrorMessage: String?,
     ) {
         CodetransformTelemetry.downloadArtifact(
             codeTransformArtifactType = artifactType,
@@ -130,7 +130,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
         jobId: JobId,
         userChoice: String,
         source: CodeTransformVCSViewerSrcComponents,
-        telemetryErrorMessage: String? = null
+        telemetryErrorMessage: String? = null,
     ) {
         CodetransformTelemetry.viewArtifact(
             codeTransformArtifactType = artifactType,

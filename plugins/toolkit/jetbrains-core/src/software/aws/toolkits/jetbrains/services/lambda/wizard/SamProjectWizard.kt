@@ -42,7 +42,7 @@ data class SamNewProjectSettings(
     val template: SamProjectTemplate,
     val runtime: LambdaRuntime,
     val architecture: LambdaArchitecture,
-    val packagingType: PackageType
+    val packagingType: PackageType,
 )
 
 abstract class SamProjectTemplate {
@@ -64,14 +64,14 @@ abstract class SamProjectTemplate {
         projectName: String,
         runtime: LambdaRuntime,
         architecture: LambdaArchitecture,
-        packagingType: PackageType
+        packagingType: PackageType,
     ): TemplateParameters
 
     open fun postCreationAction(
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         excludeSamDirectory(rootModel, contentRoot)
     }
@@ -136,7 +136,7 @@ abstract class SamAppTemplateBased : SamProjectTemplate() {
         projectName: String,
         runtime: LambdaRuntime,
         architecture: LambdaArchitecture,
-        packagingType: PackageType
+        packagingType: PackageType,
     ): TemplateParameters = when (packagingType) {
         PackageType.IMAGE -> AppBasedImageTemplate(
             name = projectName,

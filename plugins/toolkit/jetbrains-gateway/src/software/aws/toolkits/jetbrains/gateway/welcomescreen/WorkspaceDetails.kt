@@ -59,7 +59,7 @@ class WorkspaceDetails(
     workspaces: WorkspaceList,
     cawsClient: CodeCatalystClient,
     ssoSettings: SsoSettings?,
-    disposable: Disposable
+    disposable: Disposable,
 ) : NonOpaquePanel() {
     init {
         layout = GridBagLayout()

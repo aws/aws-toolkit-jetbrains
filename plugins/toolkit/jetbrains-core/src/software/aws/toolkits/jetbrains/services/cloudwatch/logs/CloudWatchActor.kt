@@ -41,7 +41,7 @@ import java.time.Duration
 sealed class CloudWatchActor<T, Message>(
     protected val project: Project,
     protected val client: CloudWatchLogsClient,
-    protected val table: TableView<T>
+    protected val table: TableView<T>,
 ) : Disposable {
     @Suppress("LeakingThis")
     protected val coroutineScope = disposableCoroutineScope(this)
@@ -110,7 +110,7 @@ sealed class CloudWatchActor<T, Message>(
 abstract class CloudWatchLogsActor<T>(
     project: Project,
     client: CloudWatchLogsClient,
-    table: TableView<T>
+    table: TableView<T>,
 ) : CloudWatchActor<T, CloudWatchLogsActor.Message>(project, client, table) {
     sealed class Message {
         object LoadInitial : Message()
@@ -225,7 +225,7 @@ class LogStreamFilterActor(
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
     private val logGroup: String,
-    private val logStream: String
+    private val logStream: String,
 ) : CloudWatchLogsActor<LogStreamEntry>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_events_query", logStream)
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_stream", logStream)
@@ -276,7 +276,7 @@ class LogStreamListActor(
     client: CloudWatchLogsClient,
     table: TableView<LogStreamEntry>,
     private val logGroup: String,
-    private val logStream: String
+    private val logStream: String,
 ) :
     CloudWatchLogsActor<LogStreamEntry>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_events")
@@ -326,7 +326,7 @@ class LogStreamListActor(
     private fun getLogEvents(
         request: GetLogEventsRequest,
         saveForwardToken: Boolean = false,
-        saveBackwardToken: Boolean = false
+        saveBackwardToken: Boolean = false,
     ): List<LogStreamEntry> {
         val response = client.getLogEvents(request)
         val events = response.events().filterNotNull().map { it.toLogStreamEntry() }
@@ -345,7 +345,7 @@ class LogGroupActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStream>,
-    private val logGroup: String
+    private val logGroup: String,
 ) : CloudWatchLogsActor<LogStream>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_log_streams")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
@@ -390,7 +390,7 @@ class LogGroupSearchActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogStream>,
-    private val logGroup: String
+    private val logGroup: String,
 ) : CloudWatchLogsActor<LogStream>(project, client, table) {
     override val emptyText = message("cloudwatch.logs.no_log_streams")
     override val tableErrorMessage = message("cloudwatch.logs.failed_to_load_streams", logGroup)
@@ -435,7 +435,7 @@ class InsightsQueryResultsActor(
     project: Project,
     client: CloudWatchLogsClient,
     table: TableView<LogResult>,
-    private val queryId: String
+    private val queryId: String,
 ) : CloudWatchActor<LogResult, InsightsQueryResultsActor.Message>(project, client, table) {
     sealed class Message {
         object StartLoadingAll : Message()

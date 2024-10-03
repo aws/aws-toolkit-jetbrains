@@ -58,7 +58,7 @@ sealed class Login<T> {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         override val onError: (Exception) -> Unit,
-        val onSuccess: () -> Unit
+        val onSuccess: () -> Unit,
     ) : Login<Unit>() {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
@@ -73,7 +73,7 @@ sealed class Login<T> {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         val onSuccess: () -> Unit,
-        override val onError: (Exception) -> Unit
+        override val onError: (Exception) -> Unit,
     ) : Login<AwsBearerTokenConnection?>() {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
         private val configFilesFacade = DefaultConfigFilesFacade()
@@ -115,7 +115,7 @@ sealed class Login<T> {
         val secretKey: String,
         val onConfigFileFacadeError: (Exception) -> Unit,
         val onProfileAlreadyExist: () -> Unit,
-        val onConnectionValidationError: (Exception) -> Unit
+        val onConnectionValidationError: (Exception) -> Unit,
     ) : Login<Boolean>() {
         override val onError: (Exception) -> Unit = {}
 
@@ -176,7 +176,7 @@ fun authAndUpdateConfig(
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
     onSuccess: () -> Unit,
-    onError: (Exception) -> Unit
+    onError: (Exception) -> Unit,
 ): AwsBearerTokenConnection? {
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()

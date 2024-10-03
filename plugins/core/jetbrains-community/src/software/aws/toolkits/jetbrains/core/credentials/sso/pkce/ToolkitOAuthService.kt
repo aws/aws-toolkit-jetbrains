@@ -94,7 +94,7 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
 
 private data class OAuthError(
     val error: String?,
-    val errorDescription: String?
+    val errorDescription: String?,
 )
 
 private class ToolkitOAuthRequest(internal val registration: PKCEClientRegistration) : OAuthRequest<AccessToken> {

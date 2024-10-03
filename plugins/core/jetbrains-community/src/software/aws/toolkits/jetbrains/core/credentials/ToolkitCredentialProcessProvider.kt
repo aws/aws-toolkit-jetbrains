@@ -33,7 +33,7 @@ import java.util.Enumeration
  */
 class ToolkitCredentialProcessProvider @TestOnly constructor(
     private val command: String,
-    private val parser: CredentialProcessOutputParser
+    private val parser: CredentialProcessOutputParser,
 ) : AwsCredentialsProvider, SdkAutoCloseable {
     constructor(command: String) : this(command, DefaultCredentialProcessOutputParser)
 

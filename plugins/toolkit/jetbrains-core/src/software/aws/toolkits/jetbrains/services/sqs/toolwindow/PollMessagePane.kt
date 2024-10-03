@@ -33,7 +33,7 @@ import javax.swing.JPanel
 class PollMessagePane(
     private val project: Project,
     private val client: SqsClient,
-    private val queue: Queue
+    private val queue: Queue,
 ) {
     private val coroutineScope = projectCoroutineScope(project)
     private val bgContext = getCoroutineBgContext()

@@ -251,12 +251,12 @@ class DefaultConfigFilesFacade(
     data class ProfileLimitsInConfig(
         val startIndex: Int,
         val endIndex: Int,
-        val shouldBeWrittenToConfig: Boolean = true
+        val shouldBeWrittenToConfig: Boolean = true,
     )
 
     data class CurrentProfileLimitsInConfig(
         val isProfileSso: Boolean,
-        val endIndex: Int = 0
+        val endIndex: Int = 0,
     )
 
     private fun appendSection(path: Path, sectionName: String, profile: Profile) {

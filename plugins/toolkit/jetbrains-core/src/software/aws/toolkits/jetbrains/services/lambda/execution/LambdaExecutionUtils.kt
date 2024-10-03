@@ -107,5 +107,5 @@ fun String?.validateSupportedArchitecture(): LambdaArchitecture {
 data class ResolvedFunction(
     var handler: String,
     var runtime: LambdaRuntime,
-    var architecture: LambdaArchitecture
+    var architecture: LambdaArchitecture,
 )

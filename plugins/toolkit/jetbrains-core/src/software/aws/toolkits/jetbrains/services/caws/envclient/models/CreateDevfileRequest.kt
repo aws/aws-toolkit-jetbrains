@@ -8,5 +8,5 @@ package software.aws.toolkits.jetbrains.services.caws.envclient.models
  * @param path
  */
 data class CreateDevfileRequest(
-    val path: String
+    val path: String,
 )

@@ -70,7 +70,7 @@ fun Row.ideVersionComboBox(disposable: Disposable, product: KMutableProperty0<Ga
                 value: GatewayProductComboBoxItem?,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ): Component {
                 if (value is SeparatorItem) {
                     return SeparatorWithText().apply {
@@ -87,7 +87,7 @@ fun Row.ideVersionComboBox(disposable: Disposable, product: KMutableProperty0<Ga
                 value: GatewayProductComboBoxItem?,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ) {
                 val item = (value as? GatewayProductItem)?.item ?: return
                 append(item.fullName)
@@ -151,7 +151,7 @@ fun Row.ideVersionComboBox(disposable: Disposable, product: KMutableProperty0<Ga
 fun Panel.cawsEnvironmentSize(
     environmentParameters: EnvironmentParameters,
     instanceType: KMutableProperty0<InstanceType>,
-    freeSubscriptionTier: Boolean
+    freeSubscriptionTier: Boolean,
 ) {
     row {
         browserLink(message("caws.environment.view_pricing"), CawsEndpoints.ConsoleFactory.pricing())
@@ -212,7 +212,7 @@ fun Row.cawsEnvironmentTimeout(timeout: KMutableProperty0<InactivityTimeout>) {
                 value: InactivityTimeout?,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ) {
                 if (value == null) return
 

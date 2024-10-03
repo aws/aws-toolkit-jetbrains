@@ -18,7 +18,7 @@ class PackageLambda(
     private val logicalId: String?,
     private val envVars: Map<String, String>,
     private val s3Bucket: String? = null,
-    private val ecrRepo: String? = null
+    private val ecrRepo: String? = null,
 ) : SamCliStep() {
     override val stepName: String = message("lambda.create.step.package")
 

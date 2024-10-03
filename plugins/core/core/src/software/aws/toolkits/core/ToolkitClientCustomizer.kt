@@ -29,6 +29,6 @@ fun interface ToolkitClientCustomizer {
         tokenProvider: SdkTokenProvider?,
         regionId: String,
         builder: AwsClientBuilder<*, *>,
-        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder,
     )
 }
